@@ -12,6 +12,7 @@
  * Runs locally via `npm start` or as a Netlify Function via fintech-api.js adapter.
  */
 
+const path = require('path');
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
@@ -54,6 +55,11 @@ app.use(audit);
 // Routes
 // ---------------------------------------------------------------------------
 
+// Dashboard UI — serve the single-file dashboard at root
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'ui', 'CarbonIQ-Dashboard.html'));
+});
+
 // Health check — no auth required
 app.get('/health', (_req, res) => {
   res.json({
@@ -92,8 +98,9 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`CarbonIQ FinTech API running on port ${port}`);
     console.log(`Environment: ${config.env}`);
+    console.log(`Dashboard:    http://localhost:${port}/`);
     console.log(`Health check: http://localhost:${port}/health`);
-    console.log(`API v1: http://localhost:${port}/v1`);
+    console.log(`API v1:       http://localhost:${port}/v1`);
   });
 }
 
