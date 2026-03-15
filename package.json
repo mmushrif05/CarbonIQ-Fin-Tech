@@ -37,7 +37,8 @@
     "express-rate-limit": "^7.5.0",
     "pdfkit": "^0.15.2",
     "morgan": "^1.10.0",
-    "@netlify/functions": "^2.8.2"
+    "@netlify/functions": "^2.8.2",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "jest": "^29.7.0",
