@@ -1,4 +1,6 @@
 node_modules/
-coverage/
 .env
+coverage/
+.netlify/
 *.log
+dist/

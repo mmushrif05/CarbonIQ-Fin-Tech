@@ -1,0 +1,49 @@
+{
+  "scenarioId": "tender-001",
+  "projectId": "test-project-001",
+  "active": true,
+  "items": [
+    {
+      "id": "item-001",
+      "description": "150mm thick C40 concrete slab",
+      "category": "Concrete",
+      "type": "C40-50",
+      "quantity": 2500,
+      "unit": "m3",
+      "emissionFactor": 430,
+      "baselineEmission": 1075,
+      "targetEmission": 860,
+      "inTop80Pct": true,
+      "factorSource": "A1-A3",
+      "conversionFailed": false
+    },
+    {
+      "id": "item-002",
+      "description": "Steel reinforcement bar B500B",
+      "category": "Steel",
+      "type": "Rebar",
+      "quantity": 350,
+      "unit": "tons",
+      "emissionFactor": 2.26,
+      "baselineEmission": 791,
+      "targetEmission": 633,
+      "inTop80Pct": true,
+      "factorSource": "A1-A3",
+      "conversionFailed": false
+    },
+    {
+      "id": "item-003",
+      "description": "25mm copper pipe to BS EN 1057",
+      "category": "Copper",
+      "type": "Pipe",
+      "quantity": 5000,
+      "unit": "kg",
+      "emissionFactor": 3.01,
+      "baselineEmission": 15.05,
+      "targetEmission": 12.04,
+      "inTop80Pct": false,
+      "factorSource": "ICE",
+      "conversionFailed": false
+    }
+  ]
+}

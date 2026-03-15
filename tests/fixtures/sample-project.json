@@ -1,0 +1,18 @@
+{
+  "projectId": "test-project-001",
+  "name": "Green Office Tower — Singapore",
+  "status": "active",
+  "buildingArea_m2": 25000,
+  "buildingType": "commercial_office",
+  "location": {
+    "country": "SG",
+    "city": "Singapore"
+  },
+  "loanDetails": {
+    "loanAmount": 50000000,
+    "projectValue": 120000000,
+    "lender": "Test Bank",
+    "greenLoan": true
+  },
+  "created": "2026-01-15T08:00:00Z"
+}

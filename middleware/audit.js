@@ -1,51 +1,54 @@
 /**
- * CarbonIQ FinTech — Audit Trail Middleware
+ * CarbonIQ FinTech — Audit Logging Middleware
  *
- * Logs every API request with metadata required for bank compliance:
- *   - timestamp, method, path, client ID, status code, latency
+ * Logs every API request for compliance trail.
+ * Financial APIs require complete audit trails per MAS/HKMA guidelines.
  *
- * In production this would forward to a persistent audit store
- * (e.g., Firebase, S3, or a SIEM). For now it writes structured
- * JSON to stdout so it can be captured by any log aggregator.
+ * Logged fields: timestamp, method, path, user/key, status, duration
  */
 
 const { v4: uuidv4 } = require('uuid');
-const config = require('../config');
 
-const audit = (req, res, next) => {
-  const requestId = req.headers['x-request-id'] || uuidv4();
+function audit(req, res, next) {
+  // Assign unique request ID
+  req.requestId = req.headers['x-request-id'] || uuidv4();
+  res.setHeader('X-Request-ID', req.requestId);
+
   const start = Date.now();
 
-  // Attach request ID so downstream handlers can reference it
-  req.requestId = requestId;
-  res.setHeader('X-Request-Id', requestId);
-
-  // Capture response finish to log the complete picture
+  // Log on response finish
   res.on('finish', () => {
-    const entry = {
+    const duration = Date.now() - start;
+    const logEntry = {
+      requestId: req.requestId,
       timestamp: new Date().toISOString(),
-      requestId,
       method: req.method,
       path: req.originalUrl,
-      statusCode: res.statusCode,
-      latencyMs: Date.now() - start,
-      clientId: req.client ? req.client.id : null,
-      clientName: req.client ? req.client.name : null,
+      status: res.statusCode,
+      duration: `${duration}ms`,
       ip: req.ip,
-      userAgent: req.headers['user-agent'],
+      userAgent: req.headers['user-agent'] || 'unknown'
     };
 
-    if (config.log.verbose) {
-      entry.body = req.body;
+    // Add auth context (without sensitive data)
+    if (req.user) {
+      logEntry.authType = 'jwt';
+      logEntry.userId = req.user.uid;
+      logEntry.role = req.user.role;
+    } else if (req.apiKey) {
+      logEntry.authType = 'api_key';
+      logEntry.orgId = req.apiKey.orgId;
     }
 
-    // Write structured log (only in non-test environments)
-    if (config.env !== 'test') {
-      console.log(JSON.stringify(entry));
+    // Log to stdout (captured by Netlify / Docker logs)
+    if (res.statusCode >= 400) {
+      console.error('[AUDIT]', JSON.stringify(logEntry));
+    } else {
+      console.log('[AUDIT]', JSON.stringify(logEntry));
     }
   });
 
   next();
-};
+}
 
 module.exports = audit;

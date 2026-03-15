@@ -1,52 +1,59 @@
 /**
  * CarbonIQ FinTech — Centralized Error Handler
  *
- * Catches all unhandled errors and returns a consistent JSON response.
- * In development mode, includes the stack trace for debugging.
+ * Catches all unhandled errors and returns structured JSON responses.
+ * Never leaks stack traces or internal details in production.
  */
 
 const config = require('../config');
 
-// eslint-disable-next-line no-unused-vars
-const errorHandler = (err, _req, res, _next) => {
-  // CORS errors from the cors middleware
+function errorHandler(err, req, res, _next) {
+  // Log full error internally
+  console.error('[ERROR]', {
+    requestId: req.requestId,
+    message: err.message,
+    stack: config.env === 'development' ? err.stack : undefined,
+    path: req.originalUrl,
+    method: req.method
+  });
+
+  // CORS error
   if (err.message && err.message.startsWith('CORS:')) {
     return res.status(403).json({
       error: 'CORS_ERROR',
-      message: err.message,
+      message: err.message
     });
   }
 
-  // Joi validation errors
+  // Joi validation error (if not caught by validate middleware)
   if (err.isJoi) {
     return res.status(400).json({
       error: 'VALIDATION_ERROR',
-      message: err.details
-        ? err.details.map(d => d.message).join('; ')
-        : err.message,
+      message: 'Request validation failed.',
+      details: err.details.map(d => ({
+        field: d.path.join('.'),
+        message: d.message
+      }))
     });
   }
 
-  // Known operational errors with a statusCode
-  const statusCode = err.statusCode || err.status || 500;
-  const isServerError = statusCode >= 500;
-
-  if (isServerError) {
-    console.error('[ERROR]', err.message, err.stack);
+  // Firebase errors
+  if (err.code && err.code.startsWith('auth/')) {
+    return res.status(401).json({
+      error: 'AUTH_ERROR',
+      message: 'Authentication failed.'
+    });
   }
 
-  const response = {
-    error: err.code || 'INTERNAL_ERROR',
-    message: isServerError
-      ? 'An unexpected error occurred. Please try again or contact support.'
+  // Default: Internal server error
+  const status = err.status || err.statusCode || 500;
+  res.status(status).json({
+    error: status === 500 ? 'INTERNAL_ERROR' : 'ERROR',
+    message: status === 500
+      ? 'An unexpected error occurred. Please try again.'
       : err.message,
-  };
-
-  if (config.env === 'development' && isServerError) {
-    response.stack = err.stack;
-  }
-
-  res.status(statusCode).json(response);
-};
+    requestId: req.requestId
+  });
+}
 
 module.exports = errorHandler;
