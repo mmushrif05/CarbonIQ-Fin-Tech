@@ -2,6 +2,7 @@
 
 [build]
   command = "npm install"
+  publish = "ui"
   functions = "netlify/functions"
 
 [functions]
@@ -25,7 +26,7 @@
 
 # Catch-all: route everything else to the API
 [[redirects]]
-  from = "/*"
+  from = "/api/*"
   to = "/.netlify/functions/fintech-api/:splat"
   status = 200
 
