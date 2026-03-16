@@ -36,8 +36,9 @@ function createLimiter(limitConfig = RATE_LIMITS.default) {
 }
 
 module.exports = {
-  defaultLimiter: createLimiter(RATE_LIMITS.default),
-  assessLimiter: createLimiter(RATE_LIMITS.assess),
+  defaultLimiter:   createLimiter(RATE_LIMITS.default),
+  assessLimiter:    createLimiter(RATE_LIMITS.assess),
+  extractLimiter:   createLimiter(RATE_LIMITS.extract),
   portfolioLimiter: createLimiter(RATE_LIMITS.portfolio),
-  webhookLimiter: createLimiter(RATE_LIMITS.webhook)
+  webhookLimiter:   createLimiter(RATE_LIMITS.webhook),
 };

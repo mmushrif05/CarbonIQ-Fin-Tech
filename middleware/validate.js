@@ -76,8 +76,9 @@ const schemas = {
       'total_tco2e', 'tco2e_per_m2', 'epd_coverage',
       'reduction_pct', 'material_substitution_rate'
     ).required(),
-    operator: Joi.string().valid('lt', 'lte', 'gt', 'gte', 'eq').required(),
+    operator: Joi.string().valid('lt', 'lte', 'gt', 'gte', 'eq', 'between').required(),
     threshold: Joi.number().required(),
+    upperThreshold: Joi.number().when('operator', { is: 'between', then: Joi.required(), otherwise: Joi.optional() }),
     buildingArea_m2: Joi.number().positive().optional()
   }),
 

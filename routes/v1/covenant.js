@@ -214,15 +214,19 @@ function _reportingStandard(metric) {
 
 async function _fireWebhook(url, payload) {
   const https = require('https');
-  const http  = require('http');
   const body  = JSON.stringify(payload);
   const parsed = new URL(url);
-  const lib   = parsed.protocol === 'https:' ? https : http;
+
+  // HTTPS-only: reject plain HTTP webhook targets (security requirement)
+  if (parsed.protocol !== 'https:') {
+    throw new Error(`Webhook URL must use HTTPS. Received: ${parsed.protocol}`);
+  }
+
   return new Promise((resolve, reject) => {
-    const req = lib.request(url, {
+    const req = https.request(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
-    }, res => resolve(res.statusCode));
+    }, (res) => resolve(res.statusCode));
     req.on('error', reject);
     req.write(body);
     req.end();

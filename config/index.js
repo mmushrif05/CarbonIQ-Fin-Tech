@@ -32,6 +32,7 @@ const config = {
 
   // --- AI ---
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
+  anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
 
   // --- Security ---
   encryptionKey: process.env.DATA_ENCRYPTION_KEY,
@@ -79,4 +80,4 @@ const config = {
   }
 };
 
-module.exports = config;
+module.exports = Object.freeze(config);

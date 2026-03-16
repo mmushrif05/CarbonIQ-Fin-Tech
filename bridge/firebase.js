@@ -58,18 +58,21 @@ function getDatabase() {
 
 async function getProject(projectId) {
   const db = getDatabase();
+  if (!db) return null;
   const snapshot = await db.ref(`projects/${projectId}`).once('value');
   return snapshot.val();
 }
 
 async function getProjectTenders(projectId) {
   const db = getDatabase();
+  if (!db) return null;
   const snapshot = await db.ref(`tenders/${projectId}`).once('value');
   return snapshot.val();
 }
 
 async function getProjectEntries(projectId) {
   const db = getDatabase();
+  if (!db) return null;
   const snapshot = await db.ref(`entries/${projectId}`).once('value');
   return snapshot.val();
 }

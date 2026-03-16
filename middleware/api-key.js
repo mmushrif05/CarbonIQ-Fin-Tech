@@ -67,7 +67,9 @@ async function apiKeyAuth(req, res, next) {
     };
 
     // Update last used timestamp (fire-and-forget)
-    db.ref(`fintech/apiKeys/${hashedKey}/lastUsed`).set(Date.now()).catch(() => {});
+    db.ref(`fintech/apiKeys/${hashedKey}/lastUsed`).set(Date.now()).catch(err =>
+      console.error('[API-KEY] lastUsed update failed:', err.message)
+    );
 
     next();
   } catch (err) {

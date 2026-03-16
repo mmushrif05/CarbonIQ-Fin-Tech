@@ -129,10 +129,11 @@ const COVENANT_DEFAULTS = {
 // ---------------------------------------------------------------------------
 
 const RATE_LIMITS = {
-  default: { windowMs: 60 * 1000, max: 100 },          // 100 req/min
-  assess: { windowMs: 60 * 1000, max: 10 },             // 10 assessments/min (expensive)
-  portfolio: { windowMs: 60 * 1000, max: 30 },           // 30 portfolio queries/min
-  webhook: { windowMs: 60 * 1000, max: 50 }              // 50 webhook registrations/min
+  default:   { windowMs: 60 * 1000, max: 100 },  // 100 req/min
+  assess:    { windowMs: 60 * 1000, max: 10  },  // 10 assessments/min  (expensive AI call)
+  extract:   { windowMs: 60 * 1000, max: 20  },  // 20 extractions/min  (AI-backed)
+  portfolio: { windowMs: 60 * 1000, max: 30  },  // 30 portfolio queries/min
+  webhook:   { windowMs: 60 * 1000, max: 50  },  // 50 webhook registrations/min
 };
 
 // ---------------------------------------------------------------------------

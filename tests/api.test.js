@@ -22,8 +22,14 @@ describe('API Endpoints', () => {
     expect(res.status).toBe(200);
     expect(res.body.api).toBe('CarbonIQ FinTech');
     expect(res.body.endpoints).toBeDefined();
+    expect(res.body.endpoints.extract).toBe('POST /v1/extract');
     expect(res.body.endpoints.assess).toBe('POST /v1/assess');
     expect(res.body.endpoints.score).toBe('GET /v1/projects/:projectId/score');
+    expect(res.body.endpoints.taxonomy).toBe('GET /v1/projects/:projectId/taxonomy');
+    expect(res.body.endpoints.pcaf).toBe('GET /v1/projects/:projectId/pcaf');
+    expect(res.body.endpoints.covenant).toBe('POST /v1/projects/:projectId/covenant');
+    expect(res.body.endpoints.portfolio).toBe('GET /v1/portfolio');
+    expect(res.body.endpoints.webhooks).toBe('POST /v1/webhooks');
   });
 
   test('GET /nonexistent returns 404', async () => {

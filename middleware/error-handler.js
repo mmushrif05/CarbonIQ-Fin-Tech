@@ -29,9 +29,9 @@ function errorHandler(err, req, res, _next) {
   if (err.isJoi) {
     return res.status(400).json({
       error: 'VALIDATION_ERROR',
-      message: 'Request validation failed.',
+      message: err.details.map(d => d.message).join('; '),
       details: err.details.map(d => ({
-        field: d.path.join('.'),
+        field: Array.isArray(d.path) ? d.path.join('.') : '',
         message: d.message
       }))
     });
@@ -45,10 +45,10 @@ function errorHandler(err, req, res, _next) {
     });
   }
 
-  // Default: Internal server error
+  // Default: use err.code as error identifier when available
   const status = err.status || err.statusCode || 500;
   res.status(status).json({
-    error: status === 500 ? 'INTERNAL_ERROR' : 'ERROR',
+    error: status === 500 ? 'INTERNAL_ERROR' : (err.code || 'ERROR'),
     message: status === 500
       ? 'An unexpected error occurred. Please try again.'
       : err.message,

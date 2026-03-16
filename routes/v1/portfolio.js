@@ -1,19 +1,22 @@
 /**
  * CarbonIQ FinTech — Portfolio Aggregation Endpoint
  *
- * GET /v1/portfolio — Aggregated carbon metrics across all projects
+ * GET /v1/portfolio
  *
- * Returns portfolio-level view for bank reporting:
- * - Total financed emissions
- * - PCAF weighted average data quality
- * - Taxonomy distribution (Green/Transition/Brown)
- * - Top carbon contributors
+ * Returns aggregated carbon metrics across all projects accessible to
+ * the authenticated API key. Scoped to req.apiKey.projectIds.
+ *
+ * Query params:
+ *   ?loanAmount[projectId]=5000000   Per-project loan amounts for attribution
+ *   ?projectValue[projectId]=20M     Per-project total values for attribution
  */
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../middleware/api-key');
 const { portfolioLimiter } = require('../../middleware/rate-limit');
 const config = require('../../config');
+const engine = require('../../bridge/engine');
+const { aggregatePortfolio } = require('../../services/portfolio');
 
 const router = Router();
 
@@ -29,24 +32,48 @@ router.get('/',
         });
       }
 
-      // TODO (Step 9): Implement portfolio aggregation
-      // - Call services/portfolio.js → aggregatePortfolio()
-      // - Scoped to API key's projectIds
-      // - Returns aggregated metrics
+      const projectIds = req.apiKey?.projectIds || [];
 
-      res.status(501).json({
-        error: 'NOT_IMPLEMENTED',
-        message: 'Portfolio aggregation endpoint — implementation in Step 9',
-        planned: {
-          output: {
-            totalProjects: 'Number of projects in portfolio',
-            totalFinancedEmissions_tCO2e: 'Sum of all project emissions',
-            pcafWeightedScore: 'Weighted average PCAF data quality (1-5)',
-            taxonomyDistribution: '{ green: N, transition: N, brown: N }',
-            carbonIntensity_per_M_lent: 'tCO2e per $1M in construction loans',
-            topContributors: 'Top 5 projects by emission',
-            trend: 'Portfolio emission trend over time'
-          }
+      if (projectIds.length === 0) {
+        return res.json({
+          totalProjects: 0,
+          totalFinancedEmissions_tCO2e: 0,
+          message: 'No projects are associated with this API key.',
+          aggregatedAt: new Date().toISOString()
+        });
+      }
+
+      // Fetch emission summaries for all accessible projects concurrently
+      const summaryResults = await Promise.allSettled(
+        projectIds.map(async (projectId) => {
+          const summary = await engine.getEmissionSummary(projectId);
+          if (!summary) return null;
+          return {
+            projectId,
+            financedEmissions_tCO2e: summary.totalBaseline_tCO2e,
+            classification: _classifyEmissions(summary.reductionPct),
+            reductionPct: summary.reductionPct,
+            totalMaterials: summary.totalMaterials,
+          };
+        })
+      );
+
+      const projectSummaries = summaryResults
+        .filter((r) => r.status === 'fulfilled' && r.value !== null)
+        .map((r) => r.value);
+
+      const failedCount = summaryResults.filter(
+        (r) => r.status === 'rejected' || r.value === null
+      ).length;
+
+      const result = aggregatePortfolio(projectSummaries);
+
+      res.json({
+        ...result,
+        meta: {
+          requestedProjects: projectIds.length,
+          resolvedProjects:  projectSummaries.length,
+          failedProjects:    failedCount
         }
       });
     } catch (err) {
@@ -54,5 +81,15 @@ router.get('/',
     }
   }
 );
+
+/**
+ * Classify a project based on its achieved reduction percentage.
+ * Mirrors the CFS colour-band logic for quick portfolio roll-up.
+ */
+function _classifyEmissions(reductionPct = 0) {
+  if (reductionPct >= 40) return 'green';
+  if (reductionPct >= 15) return 'transition';
+  return 'brown';
+}
 
 module.exports = router;

@@ -71,7 +71,7 @@ async function extractMaterials(rawInput, inputFormat = 'text') {
   const userMessage = buildUserMessage(rawInput, inputFormat);
 
   const response = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+    model: config.anthropicModel,
     max_tokens: 4096,
     system: SYSTEM_PROMPT,
     messages: [{ role: 'user', content: userMessage }]
