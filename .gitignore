@@ -1,6 +1,47 @@
+# ── Runtime & Dependencies ───────────────────────────────────────────────────
 node_modules/
-.env
-coverage/
 .netlify/
-*.log
+
+# ── Environment & Secrets ────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+service-account.json
+firebase-admin.json
+
+# ── Build & Distribution ─────────────────────────────────────────────────────
 dist/
+build/
+out/
+
+# ── Test Output & Coverage ───────────────────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── OS & Editor Artefacts ─────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.suo
+*.user
+
+# ── Temporary Files ───────────────────────────────────────────────────────────
+tmp/
+temp/
+*.tmp
+*.bak

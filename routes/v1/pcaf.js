@@ -1,19 +1,26 @@
 /**
  * CarbonIQ FinTech — PCAF v3 Output Endpoint
  *
- * GET /v1/projects/:projectId/pcaf — PCAF-compliant carbon assessment
+ * GET /v1/projects/:projectId/pcaf
  *
- * Returns embodied carbon data formatted per PCAF v3 methodology:
- * - Attribution factor calculation
- * - Data quality score (1-5)
- * - Emission factor sources and methodology
- * - Scope classification (A1-A3)
+ * Returns financed emissions formatted per PCAF v3 methodology including:
+ *   - Attribution factor (bank's share of project value)
+ *   - Data quality score (1-5, lower is better)
+ *   - Scope A1-A3 breakdown
+ *   - Methodology justification
+ *
+ * Query params:
+ *   ?loanAmount=5000000      Bank's outstanding loan (default: uses full attribution)
+ *   ?projectValue=20000000   Total project value (used to compute attribution factor)
+ *   ?attributionFactor=0.25  Override direct attribution (0-1, takes precedence)
  */
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../middleware/api-key');
 const { requireProjectAccess } = require('../../middleware/api-key');
 const { defaultLimiter } = require('../../middleware/rate-limit');
+const engine = require('../../bridge/engine');
+const { generatePCAFOutput } = require('../../services/pcaf');
 
 const router = Router();
 
@@ -23,26 +30,33 @@ router.get('/:projectId/pcaf',
   defaultLimiter,
   async (req, res, next) => {
     try {
-      // TODO (Step 7): Implement PCAF v3 output formatting
-      // - Call services/pcaf.js → generatePCAFOutput()
-      // - Uses PCAF_DATA_QUALITY from constants.js
-      // - Returns PCAF-compliant JSON with data quality justification
+      const { projectId } = req.params;
 
-      res.status(501).json({
-        error: 'NOT_IMPLEMENTED',
-        message: 'PCAF v3 output endpoint — implementation in Step 7',
-        planned: {
-          standard: 'PCAF v3.0 (December 2025)',
-          output: {
-            financedEmissions_tCO2e: 'Total attributed emissions',
-            dataQualityScore: '1-5 (lower is better)',
-            dataQualityJustification: 'Why this score was assigned',
-            attributionFactor: 'Bank share of project emissions',
-            methodology: 'ISO 21930, A1-A3 + ICE v3.0',
-            scope: 'Cradle-to-gate (A1-A3)'
-          }
-        }
+      const [emissionSummary, materials80Pct] = await Promise.all([
+        engine.getEmissionSummary(projectId),
+        engine.get80PctMaterials(projectId)
+      ]);
+
+      if (!emissionSummary || !materials80Pct) {
+        return res.status(404).json({
+          error: 'PROJECT_NOT_FOUND',
+          message: `No carbon data found for project ${projectId}.`
+        });
+      }
+
+      const loanAmount        = parseFloat(req.query.loanAmount)        || null;
+      const projectValue      = parseFloat(req.query.projectValue)      || null;
+      const attributionFactor = parseFloat(req.query.attributionFactor) || null;
+
+      const result = generatePCAFOutput({
+        emissionSummary,
+        materials80Pct,
+        attributionFactor,
+        loanAmount,
+        projectValue
       });
+
+      res.json({ projectId, ...result });
     } catch (err) {
       next(err);
     }

@@ -2,6 +2,7 @@
  * CarbonIQ FinTech — Schema Index
  *
  * Re-exports all Joi validation schemas from a single entry point.
+ * Every new schema file MUST be registered here.
  */
 
 const { scoreRequestSchema, materialEntrySchema } = require('./score');
@@ -10,8 +11,12 @@ const { taxonomyRequestSchema } = require('./taxonomy');
 const { covenantRequestSchema, covenantRuleSchema } = require('./covenants');
 const { portfolioRequestSchema, portfolioAssetSchema } = require('./portfolio');
 const { webhookCreateSchema, webhookUpdateSchema } = require('./webhooks');
+const { extractRequestSchema } = require('./extract');
 
 module.exports = {
+  // AI Extraction
+  extractRequestSchema,
+
   // Score
   scoreRequestSchema,
   materialEntrySchema,
