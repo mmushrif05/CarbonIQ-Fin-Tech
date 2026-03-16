@@ -12,10 +12,14 @@ const { covenantRequestSchema, covenantRuleSchema } = require('./covenants');
 const { portfolioRequestSchema, portfolioAssetSchema } = require('./portfolio');
 const { webhookCreateSchema, webhookUpdateSchema } = require('./webhooks');
 const { extractRequestSchema } = require('./extract');
+const { underwritingRequestSchema } = require('./agent');
 
 module.exports = {
   // AI Extraction
   extractRequestSchema,
+
+  // Agent
+  underwritingRequestSchema,
 
   // Score
   scoreRequestSchema,

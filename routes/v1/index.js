@@ -28,6 +28,7 @@ const covenantRouter = require('./covenant');
 const portfolioRouter = require('./portfolio');
 const webhookRouter = require('./webhook');
 const extractRouter = require('./extract');
+const agentRouter = require('./agent');
 
 const router = Router();
 
@@ -46,7 +47,12 @@ router.get('/', (_req, res) => {
       pcaf: 'GET /v1/projects/:projectId/pcaf',
       covenant: 'POST /v1/projects/:projectId/covenant',
       portfolio: 'GET /v1/portfolio',
-      webhooks: 'POST /v1/webhooks'
+      webhooks: 'POST /v1/webhooks',
+      agent: {
+        underwrite: 'POST /v1/agent/underwrite',
+        runs: 'GET /v1/agent/runs',
+        run: 'GET /v1/agent/runs/:runId'
+      }
     },
     documentation: 'https://carboniq.online/docs/api'
   });
@@ -62,5 +68,6 @@ router.use('/projects', pcafRouter);
 router.use('/projects', covenantRouter);
 router.use('/portfolio', portfolioRouter);
 router.use('/webhooks', webhookRouter);
+router.use('/agent', agentRouter);
 
 module.exports = router;
