@@ -49,9 +49,11 @@ router.get('/', (_req, res) => {
       portfolio: 'GET /v1/portfolio',
       webhooks: 'POST /v1/webhooks',
       agent: {
-        underwrite: 'POST /v1/agent/underwrite',
-        runs: 'GET /v1/agent/runs',
-        run: 'GET /v1/agent/runs/:runId'
+        screen:    'POST /v1/agent/screen',
+        underwrite:'POST /v1/agent/underwrite',
+        covenants: 'POST /v1/agent/covenants',
+        runs:      'GET /v1/agent/runs',
+        run:       'GET /v1/agent/runs/:runId'
       }
     },
     documentation: 'https://carboniq.online/docs/api'

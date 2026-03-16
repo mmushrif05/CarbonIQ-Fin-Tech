@@ -1,7 +1,9 @@
 /**
  * CarbonIQ FinTech — Agent API Routes
  *
- * POST /v1/agent/underwrite   → Green Loan Underwriting Agent
+ * POST /v1/agent/screen       → Green Loan Screening Agent (Stage 1)
+ * POST /v1/agent/underwrite   → Green Loan Underwriting Agent (Stage 2)
+ * POST /v1/agent/covenants    → Covenant Design Agent (Stage 3)
  * GET  /v1/agent/runs         → List agent runs for this organisation
  * GET  /v1/agent/runs/:runId  → Get a specific agent run (full step log)
  *
@@ -24,8 +26,10 @@ const { agentLimiter } = require('../../middleware/rate-limit');
 const { runAgent }  = require('../../bridge/agent');
 const { getAgentRun, listAgentRuns } = require('../../bridge/firebase');
 
-const { underwritingRequestSchema } = require('../../schemas/agent');
+const { underwritingRequestSchema, screeningRequestSchema, covenantsRequestSchema } = require('../../schemas/agent');
 const underwritingAgent = require('../../services/agents/underwriting');
+const screeningAgent    = require('../../services/agents/screening');
+const covenantsAgent    = require('../../services/agents/covenants');
 
 const router = Router();
 
@@ -89,6 +93,117 @@ router.post('/underwrite',
           error:   'AI_SERVICE_UNAVAILABLE',
           message: 'Agentic AI is not configured. Contact your administrator.'
         });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/screen
+//
+// Run the Green Loan Screening Agent. No BOQ needed — works from project
+// brief and building parameters. Returns an Eligibility Memo with
+// Go/Conditional/No-Go verdict based on benchmark carbon estimates.
+// ---------------------------------------------------------------------------
+
+router.post('/screen',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: screeningRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = screeningAgent.buildUserMessage(req.body);
+
+      const run = await runAgent({
+        agentType:       'screening',
+        systemPrompt:    screeningAgent.SYSTEM_PROMPT,
+        toolDefinitions: screeningAgent.TOOL_DEFINITIONS,
+        toolFunctions:   screeningAgent.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:    req.body.projectName        || null,
+          buildingType:   req.body.buildingType,
+          buildingArea_m2: req.body.buildingArea_m2,
+          region:         req.body.region             || 'Singapore',
+          targetCertification: req.body.targetCertification || null
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/covenants
+//
+// Run the Covenant Design Agent. Takes underwritten carbon metrics and
+// designs a scientifically calibrated green loan covenant package with
+// 3 scenarios and a recommended pricing ratchet.
+// ---------------------------------------------------------------------------
+
+router.post('/covenants',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: covenantsRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = covenantsAgent.buildUserMessage(req.body);
+
+      const run = await runAgent({
+        agentType:       'covenants',
+        systemPrompt:    covenantsAgent.SYSTEM_PROMPT,
+        toolDefinitions: covenantsAgent.TOOL_DEFINITIONS,
+        toolFunctions:   covenantsAgent.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:    req.body.projectName        || null,
+          buildingType:   req.body.buildingType,
+          buildingArea_m2: req.body.buildingArea_m2,
+          region:         req.body.region             || 'Singapore',
+          currentTCO2e:   req.body.currentTCO2e       || null,
+          loanTermYears:  req.body.loanTermYears       || null
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }
       next(err);
     }
