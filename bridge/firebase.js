@@ -104,6 +104,41 @@ async function savePortfolioSnapshot(orgId, snapshot) {
   await db.ref(`fintech/portfolioSnapshots/${orgId}/${date}`).set(snapshot);
 }
 
+// ---------------------------------------------------------------------------
+// Agent Run Persistence (reads/writes to /fintech/agentRuns/ paths)
+// ---------------------------------------------------------------------------
+
+async function saveAgentRun(orgId, run) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/agentRuns/${orgId}/${run.runId}`).set(run);
+}
+
+async function updateAgentRun(orgId, runId, updates) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/agentRuns/${orgId}/${runId}`).update(updates);
+}
+
+async function getAgentRun(orgId, runId) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/agentRuns/${orgId}/${runId}`).once('value');
+  return snapshot.val();
+}
+
+async function listAgentRuns(orgId, limit = 20) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/agentRuns/${orgId}`)
+    .orderByChild('createdAt')
+    .limitToLast(limit)
+    .once('value');
+  const val = snapshot.val();
+  if (!val) return [];
+  return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -114,5 +149,9 @@ module.exports = {
   getApiKeyData,
   saveCovenantResult,
   saveTaxonomyResult,
-  savePortfolioSnapshot
+  savePortfolioSnapshot,
+  saveAgentRun,
+  updateAgentRun,
+  getAgentRun,
+  listAgentRuns
 };
