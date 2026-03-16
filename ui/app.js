@@ -2,64 +2,107 @@
    CarbonIQ — Navigation & Interactions
    ============================================================ */
 
+/**
+ * Page metadata: title + subtitle shown in the topbar.
+ * Add a new entry here whenever a new page is created.
+ */
+const PAGE_META = {
+  'dashboard':   { title: 'Dashboard',          subtitle: 'Portfolio carbon overview' },
+  'portfolio':   { title: 'Portfolio',           subtitle: 'Aggregated emissions analysis' },
+  'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
+  'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
+  'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
+  'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
+  'reports':     { title: 'Reports',             subtitle: 'Generate PCAF v3 disclosure reports' },
+  'taxonomy':    { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
+};
+
+/**
+ * Pages whose HTML is loaded dynamically from a separate file.
+ * Key: page ID  →  Value: { src, init (function name on window) }
+ */
+const DYNAMIC_PAGES = {
+  'ai-extract': {
+    src:  'pages/extract.html',
+    init: () => typeof ExtractPage !== 'undefined' && ExtractPage.init(),
+  },
+};
+
 document.addEventListener('DOMContentLoaded', () => {
-  const navItems = document.querySelectorAll('.nav-item');
-  const pages = document.querySelectorAll('.page');
-  const pageTitle = document.getElementById('pageTitle');
+  const navItems  = document.querySelectorAll('.nav-item');
+  const pageTitle    = document.getElementById('pageTitle');
   const pageSubtitle = document.getElementById('pageSubtitle');
 
-  const pageMeta = {
-    'dashboard':   { title: 'Dashboard',        subtitle: 'Portfolio carbon overview' },
-    'portfolio':   { title: 'Portfolio',         subtitle: 'Aggregated emissions analysis' },
-    'new-project': { title: 'New Project',       subtitle: 'Submit a construction project for scoring' },
-    'pcaf':        { title: 'PCAF Calculator',   subtitle: 'Compute financed emissions attribution' },
-    'monitoring':  { title: 'Monitoring',        subtitle: 'Track project emissions over time' },
-    'reports':     { title: 'Reports',           subtitle: 'Generate PCAF v3 disclosure reports' },
-    'taxonomy':    { title: 'Taxonomy',          subtitle: 'Check regional taxonomy alignment' },
-  };
+  // ── Navigate to a page ──────────────────────────────────────
+  async function navigateTo(pageId) {
+    // Update active nav state
+    navItems.forEach((n) => n.classList.remove('active'));
+    const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+    if (activeNav) activeNav.classList.add('active');
 
-  navItems.forEach(item => {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach((p) => { p.style.display = 'none'; });
+
+    const target = document.getElementById('page-' + pageId);
+    if (!target) return;
+
+    // Lazy-load dynamic pages on first visit
+    if (DYNAMIC_PAGES[pageId] && !target.dataset.loaded) {
+      await _loadPageFragment(target, pageId);
+    }
+
+    // Reveal and animate
+    target.style.display = 'block';
+    target.style.animation = 'none';
+    target.offsetHeight; // force reflow
+    target.style.animation = '';
+
+    // Update topbar
+    const meta = PAGE_META[pageId] || { title: pageId, subtitle: '' };
+    if (pageTitle)    pageTitle.textContent    = meta.title;
+    if (pageSubtitle) pageSubtitle.textContent = meta.subtitle;
+  }
+
+  // ── Lazy-load an HTML fragment into a placeholder div ───────
+  async function _loadPageFragment(container, pageId) {
+    const config = DYNAMIC_PAGES[pageId];
+    try {
+      const response = await fetch(config.src);
+      if (!response.ok) throw new Error(`Failed to load page fragment: ${config.src}`);
+      container.innerHTML = await response.text();
+      container.dataset.loaded = 'true';
+      // Run the page module's init function (wires all event listeners)
+      if (typeof config.init === 'function') config.init();
+    } catch (err) {
+      container.innerHTML = `
+        <div style="padding:48px;text-align:center;color:var(--text-secondary);">
+          <p style="font-size:14px;font-weight:600;margin-bottom:6px;">Page could not be loaded</p>
+          <p style="font-size:12px;">${err.message}</p>
+        </div>`;
+      container.dataset.loaded = 'error';
+    }
+  }
+
+  // ── Wire nav clicks ─────────────────────────────────────────
+  navItems.forEach((item) => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      const pageId = item.dataset.page;
-
-      // Update active nav
-      navItems.forEach(n => n.classList.remove('active'));
-      item.classList.add('active');
-
-      // Show page
-      pages.forEach(p => {
-        p.style.display = 'none';
-      });
-      const target = document.getElementById('page-' + pageId);
-      if (target) {
-        target.style.display = 'block';
-        // Re-trigger animation
-        target.style.animation = 'none';
-        target.offsetHeight; // force reflow
-        target.style.animation = '';
-      }
-
-      // Update header
-      const meta = pageMeta[pageId] || { title: pageId, subtitle: '' };
-      pageTitle.textContent = meta.title;
-      pageSubtitle.textContent = meta.subtitle;
+      navigateTo(item.dataset.page);
     });
   });
 
-  // DQ selector interactivity
-  const dqOptions = document.querySelectorAll('.dq-option input');
-  dqOptions.forEach(opt => {
+  // ── DQ selector interactivity ────────────────────────────────
+  document.querySelectorAll('.dq-option input').forEach((opt) => {
     opt.addEventListener('change', () => {
-      document.querySelectorAll('.dq-option-card').forEach(c => c.classList.remove('selected'));
-      opt.closest('.dq-option').querySelector('.dq-option-card').classList.add('selected');
+      document.querySelectorAll('.dq-option-card').forEach((c) => c.classList.remove('selected'));
+      opt.closest('.dq-option')?.querySelector('.dq-option-card')?.classList.add('selected');
     });
   });
 
-  // Chip toggle
-  document.querySelectorAll('.chart-controls .chip, .filter-chips .chip').forEach(chip => {
+  // ── Chip toggles ─────────────────────────────────────────────
+  document.querySelectorAll('.chart-controls .chip, .filter-chips .chip').forEach((chip) => {
     chip.addEventListener('click', () => {
-      chip.parentElement.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
     });
   });
