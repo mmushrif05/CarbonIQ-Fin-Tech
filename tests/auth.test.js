@@ -1,120 +1,102 @@
+/**
+ * CarbonIQ FinTech — JWT Auth Middleware Tests
+ *
+ * Tests middleware/auth.js which verifies Firebase Bearer tokens.
+ * Firebase bridge is mocked at module level; per-test behaviour is
+ * controlled via the mockVerifyIdToken variable.
+ */
+
 const request = require('supertest');
 const express = require('express');
-const { authenticate, hashApiKey, clearKeyCache } = require('../middleware/auth');
 
-// Build a tiny Express app with auth middleware for isolated testing
-const createTestApp = (mockDb) => {
+// Module-level mock — Jest allows variables prefixed with "mock" in factories
+let mockVerifyIdToken;
+let mockFirebaseConfigured = true;
+
+jest.mock('../bridge/firebase', () => ({
+  getFirebaseAdmin: () => {
+    if (!mockFirebaseConfigured) return null;
+    return { auth: () => ({ verifyIdToken: (...args) => mockVerifyIdToken(...args) }) };
+  }
+}));
+
+const auth = require('../middleware/auth');
+
+const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  app.use(authenticate(mockDb));
-  app.get('/protected', (req, res) => {
-    res.json({ ok: true, client: req.client });
+  app.get('/protected', auth, (req, res) => {
+    res.json({ ok: true, user: req.user });
   });
   return app;
 };
 
-describe('Auth Middleware', () => {
-  beforeEach(() => clearKeyCache());
+const app = createTestApp();
 
-  const VALID_KEY = 'test-api-key-1234567890';
-  const hashedValid = hashApiKey(VALID_KEY);
-
-  const mockRecord = {
-    name: 'Test Bank',
-    active: true,
-    permissions: ['score', 'pcaf'],
-    rateLimit: 200,
-    tier: 'premium',
-  };
-
-  const createMockDb = (records = {}) => ({
-    ref: (path) => ({
-      once: async () => ({
-        val: () => {
-          // Extract hashed key from path like "fintech/apiKeys/<hash>"
-          const key = path.split('/').pop();
-          return records[key] || null;
-        },
-      }),
-    }),
+describe('JWT Auth Middleware', () => {
+  beforeEach(() => {
+    mockFirebaseConfigured = true;
+    mockVerifyIdToken = async () => ({ uid: 'u1', email: 'a@b.com' });
   });
 
-  it('rejects requests without X-API-Key', async () => {
-    const app = createTestApp(createMockDb());
+  it('returns 401 when Authorization header is missing', async () => {
     const res = await request(app).get('/protected');
     expect(res.statusCode).toBe(401);
     expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
-  it('rejects keys shorter than 16 characters', async () => {
-    const app = createTestApp(createMockDb());
+  it('returns 401 when Authorization header has wrong format', async () => {
     const res = await request(app)
       .get('/protected')
-      .set('X-API-Key', 'short');
+      .set('Authorization', 'Basic dXNlcjpwYXNz');
     expect(res.statusCode).toBe(401);
+    expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
-  it('rejects unknown API keys', async () => {
-    const app = createTestApp(createMockDb());
+  it('returns 503 when Firebase is not configured', async () => {
+    mockFirebaseConfigured = false;
     const res = await request(app)
       .get('/protected')
-      .set('X-API-Key', 'unknown-key-that-is-long-enough');
-    expect(res.statusCode).toBe(403);
-    expect(res.body.error).toBe('FORBIDDEN');
+      .set('Authorization', 'Bearer some.valid.token');
+    expect(res.statusCode).toBe(503);
+    expect(res.body.error).toBe('SERVICE_UNAVAILABLE');
   });
 
-  it('rejects inactive API keys', async () => {
-    const db = createMockDb({ [hashedValid]: { ...mockRecord, active: false } });
-    const app = createTestApp(db);
+  it('returns 401 when token verification fails', async () => {
+    mockVerifyIdToken = async () => { throw new Error('invalid token'); };
     const res = await request(app)
       .get('/protected')
-      .set('X-API-Key', VALID_KEY);
-    expect(res.statusCode).toBe(403);
+      .set('Authorization', 'Bearer bad.token');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
-  it('accepts valid API keys and attaches client info', async () => {
-    const db = createMockDb({ [hashedValid]: mockRecord });
-    const app = createTestApp(db);
-    const res = await request(app)
-      .get('/protected')
-      .set('X-API-Key', VALID_KEY);
-    expect(res.statusCode).toBe(200);
-    expect(res.body.client.name).toBe('Test Bank');
-    expect(res.body.client.permissions).toContain('score');
-    expect(res.body.client.tier).toBe('premium');
-  });
-
-  it('caches API key lookups', async () => {
-    let lookupCount = 0;
-    const db = {
-      ref: () => ({
-        once: async () => {
-          lookupCount++;
-          return { val: () => mockRecord };
-        },
-      }),
+  it('returns 401 with TOKEN_EXPIRED for expired tokens', async () => {
+    mockVerifyIdToken = async () => {
+      const err = new Error('Token expired');
+      err.code = 'auth/id-token-expired';
+      throw err;
     };
-    const app = createTestApp(db);
-
-    // First request — cache miss
-    await request(app).get('/protected').set('X-API-Key', VALID_KEY);
-    // Second request — cache hit
-    await request(app).get('/protected').set('X-API-Key', VALID_KEY);
-
-    expect(lookupCount).toBe(1);
-  });
-});
-
-describe('hashApiKey', () => {
-  it('produces consistent hashes', () => {
-    const h1 = hashApiKey('my-key-12345678');
-    const h2 = hashApiKey('my-key-12345678');
-    expect(h1).toBe(h2);
+    const res = await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer expired.token');
+    expect(res.statusCode).toBe(401);
+    expect(res.body.error).toBe('TOKEN_EXPIRED');
   });
 
-  it('produces different hashes for different keys', () => {
-    const h1 = hashApiKey('key-aaaa-12345678');
-    const h2 = hashApiKey('key-bbbb-12345678');
-    expect(h1).not.toBe(h2);
+  it('attaches decoded user to request on valid token', async () => {
+    mockVerifyIdToken = async () => ({
+      uid: 'user-123',
+      email: 'analyst@bank.com',
+      role: 'bank_analyst',
+      organizationId: 'org-abc'
+    });
+    const res = await request(app)
+      .get('/protected')
+      .set('Authorization', 'Bearer valid.token');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.user.uid).toBe('user-123');
+    expect(res.body.user.email).toBe('analyst@bank.com');
+    expect(res.body.user.role).toBe('bank_analyst');
   });
 });

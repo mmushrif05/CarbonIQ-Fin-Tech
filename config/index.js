@@ -80,4 +80,4 @@ const config = {
   }
 };
 
-module.exports = config;
+module.exports = Object.freeze(config);

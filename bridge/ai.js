@@ -25,14 +25,13 @@ async function triggerBOQAssessment(boqContent, options = {}) {
 
   const response = await fetch(`${baseUrl}/.netlify/functions/parse-boq`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       boqText: boqContent,
       projectId: options.projectId,
       format: options.format || 'structured'
-    })
+    }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {
@@ -57,13 +56,9 @@ async function triggerCarbonAdvisor(projectId, projectData) {
 
   const response = await fetch(`${baseUrl}/.netlify/functions/carbon-advisor`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      projectId,
-      ...projectData
-    })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projectId, ...projectData }),
+    signal: AbortSignal.timeout(30000)
   });
 
   if (!response.ok) {

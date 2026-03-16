@@ -27,7 +27,7 @@ function checkCovenant(covenant, projectMetrics) {
     };
   }
 
-  const passed = evaluateOperator(currentValue, covenant.operator, covenant.threshold);
+  const passed = evaluateOperator(currentValue, covenant.operator, covenant.threshold, covenant.upperThreshold);
   const variance = currentValue - covenant.threshold;
   const variancePct = covenant.threshold !== 0
     ? Math.round((variance / covenant.threshold) * 1000) / 10
@@ -67,13 +67,16 @@ function getMetricValue(metric, projectMetrics, buildingArea) {
   }
 }
 
-function evaluateOperator(value, operator, threshold) {
+function evaluateOperator(value, operator, threshold, upperThreshold) {
   switch (operator) {
-    case 'lt': return value < threshold;
-    case 'lte': return value <= threshold;
-    case 'gt': return value > threshold;
-    case 'gte': return value >= threshold;
-    case 'eq': return Math.abs(value - threshold) < 0.01;
+    case 'lt':      return value < threshold;
+    case 'lte':     return value <= threshold;
+    case 'gt':      return value > threshold;
+    case 'gte':     return value >= threshold;
+    case 'eq':      return Math.abs(value - threshold) < 0.01;
+    case 'between': return upperThreshold != null
+      ? value >= threshold && value <= upperThreshold
+      : value >= threshold;
     default: return false;
   }
 }

@@ -11,7 +11,7 @@ const testSchema = Joi.object({
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
-  app.post('/test', validate(testSchema), (req, res) => {
+  app.post('/test', validate({ body: testSchema }), (req, res) => {
     res.json({ ok: true, body: req.body });
   });
   return app;
