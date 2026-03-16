@@ -41,6 +41,12 @@ async function apiKeyAuth(req, res, next) {
   try {
     const hashedKey = hashApiKey(apiKey);
     const db = getDatabase();
+    if (!db) {
+      return res.status(503).json({
+        error: 'SERVICE_UNAVAILABLE',
+        message: 'Database not configured. API key verification is unavailable.'
+      });
+    }
     const snapshot = await db.ref(`fintech/apiKeys/${hashedKey}`).once('value');
     const keyData = snapshot.val();
 

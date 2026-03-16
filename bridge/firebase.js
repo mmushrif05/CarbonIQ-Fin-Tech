@@ -21,12 +21,10 @@ function initFirebase() {
   }
 
   if (!config.firebase.serviceAccount) {
-    if (config.env === 'test') {
-      // In test mode, Firebase may not be available
-      console.warn('[Firebase] No service account — running in mock mode');
-      return;
-    }
-    throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is required');
+    // No credentials — run without Firebase (frontend-only or test mode)
+    console.warn('[Firebase] No service account — API routes requiring Firebase will return 503');
+    initialized = true;
+    return;
   }
 
   const serviceAccount = JSON.parse(
@@ -44,11 +42,13 @@ function initFirebase() {
 
 function getFirebaseAdmin() {
   initFirebase();
+  if (!admin.apps.length) return null;
   return admin;
 }
 
 function getDatabase() {
   initFirebase();
+  if (!admin.apps.length) return null;
   return admin.database();
 }
 
