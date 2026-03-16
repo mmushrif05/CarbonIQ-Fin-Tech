@@ -41,4 +41,5 @@ module.exports = {
   extractLimiter:   createLimiter(RATE_LIMITS.extract),
   portfolioLimiter: createLimiter(RATE_LIMITS.portfolio),
   webhookLimiter:   createLimiter(RATE_LIMITS.webhook),
+  agentLimiter:     createLimiter(RATE_LIMITS.agent),
 };
