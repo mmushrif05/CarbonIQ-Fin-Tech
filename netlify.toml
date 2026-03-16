@@ -8,7 +8,7 @@
 [functions]
   node_bundler = "esbuild"
 
-# Route all /v1/* and /bank/* to the Express API
+# Route API calls to the Express serverless function
 [[redirects]]
   from = "/v1/*"
   to = "/.netlify/functions/fintech-api/:splat"
@@ -24,10 +24,15 @@
   to = "/.netlify/functions/fintech-api/health"
   status = 200
 
-# Catch-all: route everything else to the API
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/fintech-api/:splat"
+  status = 200
+
+# SPA fallback — serve index.html for all unmatched frontend routes
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
   status = 200
 
 [context.production.environment]

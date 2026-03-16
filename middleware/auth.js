@@ -23,6 +23,12 @@ async function auth(req, res, next) {
 
   try {
     const admin = getFirebaseAdmin();
+    if (!admin) {
+      return res.status(503).json({
+        error: 'SERVICE_UNAVAILABLE',
+        message: 'Authentication service not configured.'
+      });
+    }
     const decoded = await admin.auth().verifyIdToken(token);
 
     // Attach user info to request
