@@ -1531,6 +1531,9 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 .page[style*="display:block"], .page[style*="display: block"] {
   animation: fadeIn 0.3s ease;
 }
@@ -1567,6 +1570,10 @@ body {
       </a>
 
       <div class="nav-section-label">Analysis</div>
+      <a href="#" class="nav-item" data-page="ai-extract">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M6 9c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="9" r="1.2" fill="currentColor"/></svg>
+        AI BOQ Extract
+      </a>
       <a href="#" class="nav-item" data-page="new-project">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M9 6v6M6 9h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         New Project
@@ -2900,6 +2907,194 @@ body {
         </div>
       </div>
 
+      <!-- ============================================================
+           AI BOQ Extract Page
+           ============================================================ -->
+      <div class="page" id="page-ai-extract">
+
+        <!-- Hero banner -->
+        <div style="background:linear-gradient(135deg,#0d1f12 0%,#0a3320 60%,#0c4a2e 100%);border-radius:var(--radius);padding:28px 32px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;gap:24px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <div style="width:36px;height:36px;background:rgba(16,185,129,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="#10b981" stroke-width="1.5"/><path d="M6 9c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3" stroke="#10b981" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="9" r="1.2" fill="#10b981"/></svg>
+              </div>
+              <span style="color:#10b981;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;">AI-Powered</span>
+            </div>
+            <h2 style="color:#fff;font-size:22px;font-weight:600;margin-bottom:6px;">BOQ Material Extractor</h2>
+            <p style="color:#9ca3af;font-size:13px;max-width:520px;line-height:1.5;">Paste any Bill of Quantities — CSV, Excel paste, or raw text. Claude AI maps every line item to ICE v3 carbon factors and computes embodied carbon instantly. No manual template required.</p>
+          </div>
+          <div style="display:flex;gap:12px;flex-shrink:0;">
+            <div style="background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);padding:12px 16px;text-align:center;">
+              <div style="color:#10b981;font-size:20px;font-weight:700;">~2s</div>
+              <div style="color:#6b7280;font-size:11px;margin-top:2px;">Parse time</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);padding:12px 16px;text-align:center;">
+              <div style="color:#10b981;font-size:20px;font-weight:700;">ICE v3</div>
+              <div style="color:#6b7280;font-size:11px;margin-top:2px;">Factors</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border-radius:var(--radius-sm);padding:12px 16px;text-align:center;">
+              <div style="color:#10b981;font-size:20px;font-weight:700;">PCAF</div>
+              <div style="color:#6b7280;font-size:11px;margin-top:2px;">DQ Score 2</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;">
+
+          <!-- LEFT: Input panel -->
+          <div>
+            <div class="card" style="margin-bottom:16px;">
+              <div class="card-header">
+                <span class="card-title">Input BOQ Data</span>
+                <div style="display:flex;gap:6px;">
+                  <button onclick="loadExtractSample('csv')" style="background:var(--accent-light);color:var(--accent);border:none;padding:4px 10px;border-radius:var(--radius-xs);font-size:11px;font-weight:500;cursor:pointer;">CSV Sample</button>
+                  <button onclick="loadExtractSample('text')" style="background:var(--accent-light);color:var(--accent);border:none;padding:4px 10px;border-radius:var(--radius-xs);font-size:11px;font-weight:500;cursor:pointer;">Text Sample</button>
+                  <button onclick="clearExtract()" style="background:var(--border-light);color:var(--text-secondary);border:none;padding:4px 10px;border-radius:var(--radius-xs);font-size:11px;font-weight:500;cursor:pointer;">Clear</button>
+                </div>
+              </div>
+
+              <!-- Format selector -->
+              <div style="display:flex;gap:6px;margin-bottom:12px;">
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:var(--radius-xs);border:1.5px solid var(--border);font-size:12px;font-weight:500;" id="fmt-csv-lbl">
+                  <input type="radio" name="extractFormat" value="csv" id="fmt-csv" style="accent-color:var(--accent);" onchange="updateFormatLabel()"> CSV
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:var(--radius-xs);border:1.5px solid var(--accent);background:var(--accent-light);font-size:12px;font-weight:500;" id="fmt-text-lbl">
+                  <input type="radio" name="extractFormat" value="text" id="fmt-text" checked style="accent-color:var(--accent);" onchange="updateFormatLabel()"> Text / Paste
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:var(--radius-xs);border:1.5px solid var(--border);font-size:12px;font-weight:500;" id="fmt-json-lbl">
+                  <input type="radio" name="extractFormat" value="json" id="fmt-json" style="accent-color:var(--accent);" onchange="updateFormatLabel()"> JSON
+                </label>
+              </div>
+
+              <!-- Project name -->
+              <div style="margin-bottom:12px;">
+                <label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;">Project Name (optional)</label>
+                <input type="text" id="extract-project-name" placeholder="e.g. Marina Bay Tower Phase 2" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);font-size:13px;font-family:var(--font);outline:none;transition:border var(--transition);" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+              </div>
+
+              <!-- BOQ textarea -->
+              <div style="margin-bottom:14px;">
+                <label style="display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:4px;">BOQ Content</label>
+                <textarea id="extract-input" rows="12" placeholder="Paste your BOQ here...
+
+Examples:
+• CSV: Material,Quantity,Unit&#10;Concrete C30,850,tonnes
+• Excel paste: two columns with material names and quantities
+• Free text: 850t of reinforced concrete, 120t rebar steel, 45t float glass..." style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--radius-xs);font-size:12px;font-family:'SF Mono',Menlo,monospace;line-height:1.5;resize:vertical;outline:none;transition:border var(--transition);background:var(--bg);" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></textarea>
+              </div>
+
+              <!-- File upload -->
+              <div id="extract-drop-zone" style="border:1.5px dashed var(--border);border-radius:var(--radius-xs);padding:16px;text-align:center;margin-bottom:14px;cursor:pointer;transition:all var(--transition);" onclick="document.getElementById('extract-file-input').click()" ondragover="event.preventDefault();this.style.borderColor='var(--accent)';this.style.background='var(--accent-light)'" ondragleave="this.style.borderColor='var(--border)';this.style.background=''" ondrop="handleFileDrop(event)">
+                <input type="file" id="extract-file-input" accept=".csv,.txt,.json" style="display:none;" onchange="handleFileSelect(event)">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style="margin:0 auto 6px;display:block;color:var(--text-tertiary)"><path d="M10 3v10M6 7l4-4 4 4M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <div style="font-size:12px;color:var(--text-secondary);">Drop a <strong>.csv</strong> or <strong>.txt</strong> file here, or <span style="color:var(--accent);">click to browse</span></div>
+              </div>
+
+              <!-- Submit -->
+              <button onclick="runExtraction()" id="extract-btn" style="width:100%;padding:11px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-xs);font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background var(--transition);" onmouseover="this.style.background='var(--accent-hover)'" onmouseout="this.style.background='var(--accent)'">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M6 8c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="0.8" fill="currentColor"/></svg>
+                Extract with AI
+              </button>
+
+              <!-- Error display -->
+              <div id="extract-error" style="display:none;margin-top:10px;padding:10px 12px;background:var(--red-bg);border:1px solid #fecaca;border-radius:var(--radius-xs);color:var(--red);font-size:12px;"></div>
+            </div>
+
+            <!-- How it works -->
+            <div class="card">
+              <div class="card-header"><span class="card-title">How It Works</span></div>
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent);">1</div>
+                  <div><div style="font-size:12px;font-weight:600;">Paste any BOQ format</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">CSV, Excel paste, free text, or JSON — Claude understands all formats</div></div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent);">2</div>
+                  <div><div style="font-size:12px;font-weight:600;">AI maps to ICE v3 categories</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Concrete, steel, timber, glass, aluminium, masonry, insulation, plastics</div></div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;background:var(--accent-light);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent);">3</div>
+                  <div><div style="font-size:12px;font-weight:600;">Unit conversions applied</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">m³ → kg, tonnes → kg using standard densities. All quantities normalised.</div></div>
+                </div>
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                  <div style="width:22px;height:22px;background:var(--green-bg);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700;color:var(--green);">4</div>
+                  <div><div style="font-size:12px;font-weight:600;">Ready for scoring & PCAF</div><div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Output feeds directly into /v1/score, /v1/pcaf, and /v1/taxonomy</div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- RIGHT: Results panel -->
+          <div id="extract-results-panel">
+
+            <!-- Placeholder state -->
+            <div id="extract-placeholder" class="card" style="text-align:center;padding:48px 24px;">
+              <div style="width:56px;height:56px;background:var(--border-light);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="var(--text-tertiary)" stroke-width="1.5"/><path d="M9 12c0-1.66 1.34-3 3-3s3 1.34 3 3-1.34 3-3 3" stroke="var(--text-tertiary)" stroke-width="1.5" stroke-linecap="round"/><circle cx="12" cy="12" r="1.5" fill="var(--text-tertiary)"/></svg>
+              </div>
+              <div style="font-size:14px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">Awaiting BOQ Input</div>
+              <div style="font-size:12px;color:var(--text-tertiary);max-width:260px;margin:0 auto;line-height:1.5;">Paste your Bill of Quantities on the left and click <strong>Extract with AI</strong>. Results will appear here.</div>
+              <button onclick="loadExtractSample('csv');runExtraction()" style="margin-top:20px;padding:8px 18px;background:var(--border-light);color:var(--text-secondary);border:none;border-radius:var(--radius-xs);font-size:12px;font-weight:500;cursor:pointer;">Try a sample →</button>
+            </div>
+
+            <!-- Loading state -->
+            <div id="extract-loading" style="display:none;" class="card">
+              <div style="text-align:center;padding:48px 24px;">
+                <div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:6px;">Analysing BOQ...</div>
+                <div style="font-size:12px;color:var(--text-secondary);">Claude AI is mapping materials to ICE v3 factors</div>
+              </div>
+            </div>
+
+            <!-- Results state -->
+            <div id="extract-results" style="display:none;">
+
+              <!-- Summary bar -->
+              <div id="extract-summary-bar" style="background:linear-gradient(135deg,#0d1f12,#0a3320);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;"></div>
+
+              <!-- Carbon totals card -->
+              <div class="card" style="margin-bottom:16px;" id="extract-totals-card">
+                <div class="card-header"><span class="card-title">Embodied Carbon Totals</span><span id="extract-dq-badge" style="font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px;background:var(--green-bg);color:var(--green);">PCAF DQ Score 2</span></div>
+                <div id="extract-totals-content"></div>
+              </div>
+
+              <!-- Materials table card -->
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-header">
+                  <span class="card-title">Extracted Materials</span>
+                  <button onclick="copyMaterialsJSON()" style="background:var(--border-light);color:var(--text-secondary);border:none;padding:4px 10px;border-radius:var(--radius-xs);font-size:11px;font-weight:500;cursor:pointer;">Copy JSON</button>
+                </div>
+                <div id="extract-table-container" style="overflow-x:auto;"></div>
+              </div>
+
+              <!-- Next steps card -->
+              <div class="card">
+                <div class="card-header"><span class="card-title">Next Steps</span></div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+                  <div style="background:var(--accent-light);border-radius:var(--radius-xs);padding:12px;cursor:pointer;" onclick="navigateTo('new-project')">
+                    <div style="font-size:11px;font-weight:700;color:var(--accent);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Score</div>
+                    <div style="font-size:12px;font-weight:500;">/v1/score</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">0-100 Carbon Finance Score</div>
+                  </div>
+                  <div style="background:var(--green-bg);border-radius:var(--radius-xs);padding:12px;cursor:pointer;" onclick="navigateTo('pcaf')">
+                    <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">PCAF</div>
+                    <div style="font-size:12px;font-weight:500;">/v1/pcaf</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Financed emissions attribution</div>
+                  </div>
+                  <div style="background:var(--amber-bg);border-radius:var(--radius-xs);padding:12px;cursor:pointer;" onclick="navigateTo('taxonomy')">
+                    <div style="font-size:11px;font-weight:700;color:var(--amber);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;">Taxonomy</div>
+                    <div style="font-size:12px;font-weight:500;">/v1/taxonomy</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">ASEAN/EU/HK/SG alignment</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -2918,6 +3113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'dashboard':   { title: 'Dashboard',        subtitle: 'Portfolio carbon overview' },
     'proof-case':  { title: 'Proof Case',       subtitle: 'End-to-end pipeline — Marina Bay Tower' },
     'portfolio':   { title: 'Portfolio',         subtitle: 'Aggregated emissions analysis' },
+    'ai-extract':  { title: 'AI BOQ Extractor', subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
     'new-project': { title: 'New Project',       subtitle: 'Submit a construction project for scoring' },
     'pcaf':        { title: 'PCAF Calculator',   subtitle: 'Compute financed emissions attribution' },
     'monitoring':  { title: 'Monitoring',        subtitle: 'Track project emissions over time' },
@@ -2980,6 +3176,382 @@ function showResults() {
     panel.offsetHeight;
     panel.style.animation = 'fadeIn 0.4s ease';
   }
+}
+
+// ============================================================
+// AI BOQ Extractor — Client-side logic
+// ============================================================
+
+const EXTRACT_SAMPLES = {
+  csv: `Material,Quantity,Unit,Notes
+Concrete C30/37,850,tonnes,Foundation and columns
+Rebar Steel,120,tonnes,High-yield reinforcement
+Float Glass,45,tonnes,Curtain wall glazing
+Structural Timber (Glulam),30,m3,Roof structure
+Primary Aluminium,8,tonnes,Window frames
+Clay Bricks,60,tonnes,Internal partition walls
+Generic Insulation,12,tonnes,Roof and wall insulation
+HDPE Plastic Pipes,3,tonnes,Plumbing`,
+
+  text: `Marina Bay Tower — Bill of Quantities Summary
+
+Site preparation and foundations:
+- 850 metric tonnes of reinforced concrete (C30/37 specification)
+- 120 tonnes high-yield rebar steel (B500B)
+
+Superstructure:
+- 30 cubic metres of glulam structural timber
+- 8 tonnes primary aluminium extrusions for curtain wall frames
+- 45 tonnes float glass for glazing
+
+Internal fit-out:
+- 60 tonnes clay masonry bricks (partition walls)
+- 12 tonnes glass wool insulation
+- 3 tonnes HDPE plastic piping (mechanical services)`
+};
+
+// Category colour map
+const CAT_COLORS = {
+  concrete:'#3b82f6', steel:'#ef4444', timber:'#10b981', aluminium:'#8b5cf6',
+  glass:'#06b6d4', insulation:'#f59e0b', masonry:'#ec4899', plastics:'#6366f1', other:'#6b7280'
+};
+
+// ICE v3 factors (mirrors backend constants — used for offline mode)
+const ICE_FACTORS = {
+  concrete:0.13, steel:1.55, timber:-1.0, aluminium:6.67,
+  glass:1.44, insulation:1.86, masonry:0.24, plastics:3.31, other:0.50
+};
+
+let lastExtractedMaterials = [];
+
+function loadExtractSample(type) {
+  document.getElementById('extract-input').value = EXTRACT_SAMPLES[type] || '';
+  const radio = document.getElementById('fmt-' + type);
+  if (radio) { radio.checked = true; updateFormatLabel(); }
+}
+
+function clearExtract() {
+  document.getElementById('extract-input').value = '';
+  document.getElementById('extract-project-name').value = '';
+  document.getElementById('extract-error').style.display = 'none';
+  showExtractState('placeholder');
+  lastExtractedMaterials = [];
+}
+
+function updateFormatLabel() {
+  ['csv','text','json'].forEach(f => {
+    const lbl = document.getElementById('fmt-' + f + '-lbl');
+    const radio = document.getElementById('fmt-' + f);
+    if (!lbl || !radio) return;
+    if (radio.checked) {
+      lbl.style.borderColor = 'var(--accent)';
+      lbl.style.background = 'var(--accent-light)';
+    } else {
+      lbl.style.borderColor = 'var(--border)';
+      lbl.style.background = '';
+    }
+  });
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  readFileToTextarea(file);
+}
+
+function handleFileDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('extract-drop-zone');
+  dz.style.borderColor = 'var(--border)';
+  dz.style.background = '';
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  readFileToTextarea(file);
+}
+
+function readFileToTextarea(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('extract-input').value = e.target.result;
+    // Auto-detect format from extension
+    if (file.name.endsWith('.csv')) {
+      document.getElementById('fmt-csv').checked = true;
+    } else if (file.name.endsWith('.json')) {
+      document.getElementById('fmt-json').checked = true;
+    } else {
+      document.getElementById('fmt-text').checked = true;
+    }
+    updateFormatLabel();
+  };
+  reader.readAsText(file);
+}
+
+function showExtractState(state) {
+  document.getElementById('extract-placeholder').style.display = state === 'placeholder' ? 'block' : 'none';
+  document.getElementById('extract-loading').style.display   = state === 'loading'     ? 'block' : 'none';
+  document.getElementById('extract-results').style.display   = state === 'results'     ? 'block' : 'none';
+}
+
+async function runExtraction() {
+  const content = document.getElementById('extract-input').value.trim();
+  const projectName = document.getElementById('extract-project-name').value.trim();
+  const format = document.querySelector('input[name="extractFormat"]:checked')?.value || 'text';
+  const errorEl = document.getElementById('extract-error');
+
+  errorEl.style.display = 'none';
+
+  if (!content) {
+    errorEl.textContent = 'Please paste your BOQ data before extracting.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('extract-btn');
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+
+  showExtractState('loading');
+
+  try {
+    // Try live API first; fall back to client-side simulation if unavailable
+    let result;
+    try {
+      const resp = await fetch('/v1/extract', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': 'ck_test_demo00000000000000000000000000' },
+        body: JSON.stringify({ content, format, projectName, computeTotal: true }),
+        signal: AbortSignal.timeout(15000)
+      });
+      if (resp.ok) {
+        result = await resp.json();
+      } else {
+        throw new Error('API returned ' + resp.status);
+      }
+    } catch (_apiErr) {
+      // Offline / demo mode — simulate extraction from content
+      result = simulateExtraction(content, format, projectName);
+    }
+
+    lastExtractedMaterials = result.extraction.materials;
+    renderExtractResults(result, projectName);
+    showExtractState('results');
+
+  } catch (err) {
+    showExtractState('placeholder');
+    errorEl.textContent = 'Extraction failed: ' + (err.message || 'Unknown error');
+    errorEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  }
+}
+
+/**
+ * Client-side simulation — parses simple CSV/text for demo when API is unavailable.
+ */
+function simulateExtraction(content, format, projectName) {
+  const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
+  const materials = [];
+
+  // Simple regex: look for "NUMBER unit MATERIAL" or "MATERIAL,NUMBER,unit"
+  const csvRe = /^(.+?),\s*([\d.,]+)\s*,\s*(\w+)/;
+  const textRe = /([\d.,]+)\s*(kg|t|tonnes?|m3|m2|m)\s+(?:of\s+)?(.+)/i;
+
+  const catKeywords = {
+    concrete:'concrete', steel:'steel|rebar|reinforce', timber:'timber|wood|glulam|lumber',
+    aluminium:'alumin', glass:'glass|glazing', insulation:'insulat|wool',
+    masonry:'brick|masonry|block', plastics:'plastic|hdpe|pvc'
+  };
+
+  for (const line of lines) {
+    if (/material|item|description/i.test(line)) continue; // skip headers
+
+    let name = '', qty = null, unit = '';
+
+    const csvM = line.match(csvRe);
+    const txtM = line.match(textRe);
+
+    if (csvM) {
+      name = csvM[1].trim();
+      qty = parseFloat(csvM[2].replace(',', ''));
+      unit = csvM[3];
+    } else if (txtM) {
+      qty = parseFloat(txtM[1].replace(',', ''));
+      unit = txtM[2];
+      name = txtM[3].trim();
+    } else continue;
+
+    // Determine category
+    let category = 'other';
+    const nameLower = name.toLowerCase();
+    for (const [cat, kw] of Object.entries(catKeywords)) {
+      if (new RegExp(kw).test(nameLower)) { category = cat; break; }
+    }
+
+    // Normalise to kg
+    let qtyKg = qty;
+    if (/^t$|tonnes?/i.test(unit)) qtyKg = qty * 1000;
+    else if (/m3/i.test(unit)) {
+      const densities = { concrete:2400, steel:7850, timber:550, glass:2500, aluminium:2700, masonry:1800, insulation:30, plastics:950, other:1000 };
+      qtyKg = qty * (densities[category] || 1000);
+    }
+
+    const factor = ICE_FACTORS[category] || 0.50;
+    materials.push({
+      name, category, quantity: parseFloat(qtyKg.toFixed(1)),
+      originalQuantity: qty, originalUnit: unit,
+      recycledContent: null, confidence: category === 'other' ? 'low' : 'high',
+      notes: unit.toLowerCase() !== 'kg' ? `Converted from ${qty} ${unit} using standard density` : '',
+      emissionFactor: factor, emissionFactorUnit: 'kgCO2e/kg',
+      emissionFactorSource: 'ICE v3', totalKgCO2e: parseFloat((qtyKg * factor).toFixed(2))
+    });
+  }
+
+  const valid = materials.filter(m => m.totalKgCO2e != null);
+  const totalKg = valid.reduce((s, m) => s + m.totalKgCO2e, 0);
+  const byCategory = {};
+  for (const m of valid) {
+    if (!byCategory[m.category]) byCategory[m.category] = { kgCO2e:0, quantityKg:0, itemCount:0 };
+    byCategory[m.category].kgCO2e += m.totalKgCO2e;
+    byCategory[m.category].itemCount++;
+  }
+  for (const c of Object.keys(byCategory)) {
+    byCategory[c].kgCO2e = parseFloat(byCategory[c].kgCO2e.toFixed(2));
+    byCategory[c].pct = totalKg > 0 ? parseFloat((byCategory[c].kgCO2e / totalKg * 100).toFixed(1)) : 0;
+  }
+
+  return {
+    extraction: {
+      materials,
+      summary: { totalItems: materials.length, lowConfidenceItems: materials.filter(m=>m.confidence==='low').length, unresolvableItems:0, parseNotes:'Client-side simulation (demo mode — API not available)' }
+    },
+    carbonTotals: {
+      totalKgCO2e: parseFloat(totalKg.toFixed(2)),
+      totalTCO2e: parseFloat((totalKg/1000).toFixed(3)),
+      byCategory, itemsExtracted: materials.length, itemsWithEmissions: valid.length,
+      coveragePercent: materials.length > 0 ? parseFloat((valid.length/materials.length*100).toFixed(1)) : 0
+    },
+    meta: { model: 'demo-simulation', tokensUsed: { input:0, output:0 }, extractedAt: new Date().toISOString(), inputFormat: format, factorSource:'ICE v3' }
+  };
+}
+
+function renderExtractResults(result, projectName) {
+  const { extraction, carbonTotals, meta } = result;
+  const { materials, summary } = extraction;
+
+  // --- Summary bar ---
+  const highConf = materials.filter(m => m.confidence === 'high').length;
+  const summaryBar = document.getElementById('extract-summary-bar');
+  summaryBar.innerHTML = `
+    <div style="text-align:center;">
+      <div style="color:#10b981;font-size:22px;font-weight:700;">${materials.length}</div>
+      <div style="color:#9ca3af;font-size:11px;margin-top:2px;">Materials Found</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="color:#10b981;font-size:22px;font-weight:700;">${highConf}</div>
+      <div style="color:#9ca3af;font-size:11px;margin-top:2px;">High Confidence</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="color:#10b981;font-size:22px;font-weight:700;">${carbonTotals ? carbonTotals.totalTCO2e.toFixed(1) : '—'}</div>
+      <div style="color:#9ca3af;font-size:11px;margin-top:2px;">tCO2e Total</div>
+    </div>
+    <div style="text-align:center;">
+      <div style="color:#10b981;font-size:22px;font-weight:700;">${carbonTotals ? carbonTotals.coveragePercent + '%' : '—'}</div>
+      <div style="color:#9ca3af;font-size:11px;margin-top:2px;">Coverage</div>
+    </div>`;
+
+  // --- Carbon totals ---
+  if (carbonTotals) {
+    const totalsEl = document.getElementById('extract-totals-content');
+    const catRows = Object.entries(carbonTotals.byCategory)
+      .sort((a,b) => b[1].kgCO2e - a[1].kgCO2e)
+      .map(([cat, data]) => `
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:10px;height:10px;border-radius:50%;background:${CAT_COLORS[cat]||'#6b7280'};flex-shrink:0;"></div>
+              <span style="font-size:12px;font-weight:500;text-transform:capitalize;">${cat}</span>
+              <span style="font-size:11px;color:var(--text-tertiary);">(${data.itemCount} item${data.itemCount!==1?'s':''})</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:12px;font-weight:600;">${(data.kgCO2e/1000).toFixed(2)} tCO2e</span>
+              <span style="font-size:11px;color:var(--text-secondary);margin-left:6px;">${data.pct}%</span>
+            </div>
+          </div>
+          <div style="height:6px;background:var(--border-light);border-radius:3px;overflow:hidden;">
+            <div style="height:100%;background:${CAT_COLORS[cat]||'#6b7280'};width:${data.pct}%;border-radius:3px;transition:width 0.6s ease;"></div>
+          </div>
+        </div>`).join('');
+
+    totalsEl.innerHTML = `
+      <div style="display:flex;gap:20px;margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid var(--border-light);">
+        <div>
+          <div style="font-size:28px;font-weight:700;color:var(--text-primary);">${carbonTotals.totalTCO2e.toFixed(2)}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">tCO2e total embodied</div>
+        </div>
+        <div style="border-left:1px solid var(--border);padding-left:20px;">
+          <div style="font-size:28px;font-weight:700;color:var(--text-primary);">${carbonTotals.totalKgCO2e.toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-secondary);">kgCO2e</div>
+        </div>
+        <div style="border-left:1px solid var(--border);padding-left:20px;margin-left:auto;text-align:right;">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Factor source</div>
+          <div style="font-size:12px;font-weight:600;">ICE Database v3</div>
+          <div style="font-size:11px;color:var(--text-secondary);">PCAF Data Quality Score 2</div>
+        </div>
+      </div>
+      <div>${catRows}</div>
+      ${summary.parseNotes ? `<div style="margin-top:10px;padding:8px 10px;background:var(--amber-bg);border-radius:var(--radius-xs);font-size:11px;color:#92400e;">ℹ️ ${summary.parseNotes}</div>` : ''}`;
+  }
+
+  // --- Materials table ---
+  const tableContainer = document.getElementById('extract-table-container');
+  const confBadge = (c) => {
+    const map = { high:'var(--green-bg);color:var(--green)', medium:'var(--amber-bg);color:var(--amber)', low:'var(--red-bg);color:var(--red)' };
+    return `<span style="font-size:10px;font-weight:600;padding:2px 6px;border-radius:10px;background:${(map[c]||map.low).split(';')[0]};${(map[c]||map.low).split(';')[1]}">${c||'?'}</span>`;
+  };
+
+  const rows = materials.map(m => `
+    <tr style="border-top:1px solid var(--border-light);">
+      <td style="padding:8px 10px;font-size:12px;max-width:180px;font-weight:500;" title="${m.name}">${m.name.length>32?m.name.slice(0,32)+'…':m.name}</td>
+      <td style="padding:8px 10px;font-size:11px;">
+        <span style="background:${CAT_COLORS[m.category]||'#6b7280'}20;color:${CAT_COLORS[m.category]||'#6b7280'};padding:2px 7px;border-radius:10px;font-weight:600;text-transform:capitalize;">${m.category}</span>
+      </td>
+      <td style="padding:8px 10px;font-size:12px;text-align:right;">${m.originalQuantity ? m.originalQuantity.toLocaleString() : '—'} ${m.originalUnit||''}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:right;">${m.quantity ? m.quantity.toLocaleString() : '—'} kg</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:right;">${m.emissionFactor}</td>
+      <td style="padding:8px 10px;font-size:12px;font-weight:600;text-align:right;color:${m.totalKgCO2e&&m.totalKgCO2e>100000?'var(--red)':m.totalKgCO2e&&m.totalKgCO2e>50000?'var(--amber)':'var(--text-primary)'};">${m.totalKgCO2e!=null?m.totalKgCO2e.toLocaleString():'—'}</td>
+      <td style="padding:8px 10px;">${confBadge(m.confidence)}</td>
+    </tr>`).join('');
+
+  tableContainer.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;">
+      <thead>
+        <tr style="border-bottom:1.5px solid var(--border);">
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Material</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Category</th>
+          <th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Original Qty</th>
+          <th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Qty (kg)</th>
+          <th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Factor</th>
+          <th style="padding:8px 10px;text-align:right;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">kgCO2e</th>
+          <th style="padding:8px 10px;text-align:left;font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.05em;">Conf.</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function copyMaterialsJSON() {
+  const json = JSON.stringify(lastExtractedMaterials, null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    const btn = event.target;
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy JSON'; }, 2000);
+  });
+}
+
+function navigateTo(pageId) {
+  const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+  if (navItem) navItem.click();
 }
 
 // ============================================================

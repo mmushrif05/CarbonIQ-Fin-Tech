@@ -27,6 +27,7 @@ const pcafRouter = require('./pcaf');
 const covenantRouter = require('./covenant');
 const portfolioRouter = require('./portfolio');
 const webhookRouter = require('./webhook');
+const extractRouter = require('./extract');
 
 const router = Router();
 
@@ -37,6 +38,7 @@ router.get('/', (_req, res) => {
     version: `v1 (${config.version})`,
     status: config.apiEnabled ? 'active' : 'disabled',
     endpoints: {
+      extract: 'POST /v1/extract',
       assess: 'POST /v1/assess',
       project: 'GET /v1/projects/:projectId',
       score: 'GET /v1/projects/:projectId/score',
@@ -51,6 +53,7 @@ router.get('/', (_req, res) => {
 });
 
 // Mount route modules
+router.use('/extract', extractRouter);
 router.use('/assess', assessRouter);
 router.use('/projects', projectsRouter);
 router.use('/projects', scoreRouter);
