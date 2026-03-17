@@ -26,7 +26,7 @@ const ExtractPage = (() => {
    * ────────────────────────────────────────────────────────── */
 
   const API_ENDPOINT = '/v1/extract';
-  const API_DEMO_KEY = 'ck_test_demo00000000000000000000000000';
+  const API_DEMO_KEY = 'ck_test_00000000000000000000000000000000';
   const FETCH_TIMEOUT_MS = 15_000;
 
   /** ICE Database v3 emission factors (kgCO2e / kg material) */
