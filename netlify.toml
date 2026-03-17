@@ -7,16 +7,19 @@
 
 [functions]
   node_bundler = "nft"
+  timeout = 26
 
 # Route API calls to the Express serverless function
+# IMPORTANT: :splat captures everything after the prefix, so we must include
+# the /v1/ segment in the destination so Express receives the correct path.
 [[redirects]]
   from = "/v1/*"
-  to = "/.netlify/functions/fintech-api/:splat"
+  to = "/.netlify/functions/fintech-api/v1/:splat"
   status = 200
 
 [[redirects]]
   from = "/bank/*"
-  to = "/.netlify/functions/fintech-api/:splat"
+  to = "/.netlify/functions/fintech-api/v1/:splat"
   status = 200
 
 [[redirects]]
@@ -26,7 +29,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "/.netlify/functions/fintech-api/:splat"
+  to = "/.netlify/functions/fintech-api/v1/:splat"
   status = 200
 
 # SPA fallback — serve index.html for all unmatched frontend routes
