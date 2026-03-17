@@ -11,7 +11,7 @@
 const AgentsPage = (() => {
   'use strict';
 
-  const API_KEY    = 'ck_test_demo00000000000000000000000000';
+  const API_KEY    = 'ck_test_00000000000000000000000000000000';
   const ENDPOINTS  = {
     screen:     '/v1/agent/screen',
     underwrite: '/v1/agent/underwrite',

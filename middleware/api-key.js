@@ -38,9 +38,17 @@ async function apiKeyAuth(req, res, next) {
     });
   }
 
+  // Dev bypass: when Firebase is not configured, allow the DEV_API_KEY env var.
+  // Set DEV_API_KEY in .env (development only — never set in production).
+  const devKey = process.env.DEV_API_KEY;
+  const db = getDatabase();
+  if (!db && devKey && apiKey === devKey) {
+    req.apiKey = { orgId: 'dev', orgName: 'Development', projectIds: [], permissions: [], rateLimit: 1000 };
+    return next();
+  }
+
   try {
     const hashedKey = hashApiKey(apiKey);
-    const db = getDatabase();
     if (!db) {
       return res.status(503).json({
         error: 'SERVICE_UNAVAILABLE',
