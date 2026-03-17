@@ -7,7 +7,6 @@
 
 [functions]
   node_bundler = "nft"
-  timeout = 26
 
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include
