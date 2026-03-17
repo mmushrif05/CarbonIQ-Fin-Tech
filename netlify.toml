@@ -6,7 +6,7 @@
   functions = "netlify/functions"
 
 [functions]
-  node_bundler = "esbuild"
+  node_bundler = "nft"
 
 # Route API calls to the Express serverless function
 [[redirects]]
