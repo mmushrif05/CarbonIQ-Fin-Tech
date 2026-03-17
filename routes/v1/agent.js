@@ -4,6 +4,8 @@
  * POST /v1/agent/screen       → Green Loan Screening Agent (Stage 1)
  * POST /v1/agent/underwrite   → Green Loan Underwriting Agent (Stage 2)
  * POST /v1/agent/covenants    → Covenant Design Agent (Stage 3)
+ * POST /v1/agent/monitor      → Covenant Monitoring Agent (Stage 4)
+ * POST /v1/agent/portfolio    → Portfolio Reporting Agent (Stage 5)
  * GET  /v1/agent/runs         → List agent runs for this organisation
  * GET  /v1/agent/runs/:runId  → Get a specific agent run (full step log)
  *
@@ -26,10 +28,18 @@ const { agentLimiter } = require('../../middleware/rate-limit');
 const { runAgent }  = require('../../bridge/agent');
 const { getAgentRun, listAgentRuns } = require('../../bridge/firebase');
 
-const { underwritingRequestSchema, screeningRequestSchema, covenantsRequestSchema } = require('../../schemas/agent');
+const {
+  underwritingRequestSchema,
+  screeningRequestSchema,
+  covenantsRequestSchema,
+  monitoringRequestSchema,
+  portfolioReportRequestSchema
+} = require('../../schemas/agent');
 const underwritingAgent = require('../../services/agents/underwriting');
 const screeningAgent    = require('../../services/agents/screening');
 const covenantsAgent    = require('../../services/agents/covenants');
+const monitoringAgent   = require('../../services/agents/monitoring');
+const portfolioAgent    = require('../../services/agents/portfolio');
 
 const router = Router();
 
@@ -185,6 +195,117 @@ router.post('/covenants',
           region:         req.body.region             || 'Singapore',
           currentTCO2e:   req.body.currentTCO2e       || null,
           loanTermYears:  req.body.loanTermYears       || null
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/monitor
+//
+// Run the Covenant Monitoring Agent. Takes the agreed covenant package and
+// current construction-stage metrics. Tests each KPI, projects trajectory
+// to practical completion, and makes a Drawdown Recommendation.
+// ---------------------------------------------------------------------------
+
+router.post('/monitor',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: monitoringRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = monitoringAgent.buildUserMessage(req.body);
+
+      const run = await runAgent({
+        agentType:       'monitoring',
+        systemPrompt:    monitoringAgent.SYSTEM_PROMPT,
+        toolDefinitions: monitoringAgent.TOOL_DEFINITIONS,
+        toolFunctions:   monitoringAgent.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:         req.body.projectName            || null,
+          buildingType:        req.body.buildingType,
+          buildingArea_m2:     req.body.buildingArea_m2,
+          region:              req.body.region                 || 'Singapore',
+          projectComplete_pct: req.body.projectComplete_pct,
+          drawdownRequested:   req.body.drawdownRequested      || false,
+          covenantCount:       (req.body.covenants || []).length
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/portfolio
+//
+// Run the Portfolio Reporting Agent. Takes an array of loan assets with
+// their carbon metrics and produces a PCAF/TCFD/GLP-aligned ESG portfolio
+// report with taxonomy distribution, financed emissions, and priority actions.
+// ---------------------------------------------------------------------------
+
+router.post('/portfolio',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: portfolioReportRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = portfolioAgent.buildUserMessage(req.body);
+
+      const run = await runAgent({
+        agentType:       'portfolio',
+        systemPrompt:    portfolioAgent.SYSTEM_PROMPT,
+        toolDefinitions: portfolioAgent.TOOL_DEFINITIONS,
+        toolFunctions:   portfolioAgent.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          portfolioName:   req.body.portfolioName   || null,
+          reportingPeriod: req.body.reportingPeriod || null,
+          reportingEntity: req.body.reportingEntity || null,
+          assetCount:      (req.body.assets || []).length
         }
       });
 
