@@ -272,6 +272,77 @@ function buildUserMessage({ projectDescription, projectName, buildingType, build
   return parts.join('\n');
 }
 
+/**
+ * Pre-execute all 3 screening tools locally (they are pure synchronous functions)
+ * and return a user message that already contains all tool results.
+ *
+ * Used by the /v1/agent/screen route to make a SINGLE Claude API call instead
+ * of a multi-turn agentic loop, so the function completes well within Netlify's
+ * 10-second execution limit.
+ */
+function buildUserMessageWithResults({ projectDescription, projectName, buildingType, buildingArea_m2, region, targetCertification, investorJurisdiction, loanAmount }) {
+  const carbonEstimate = TOOL_FUNCTIONS.estimate_preliminary_carbon({
+    buildingType,
+    buildingArea_m2,
+    region: region || 'Singapore'
+  });
+
+  const medianTCO2e = carbonEstimate.estimatedTotals
+    ? carbonEstimate.estimatedTotals.median_tCO2e
+    : 0;
+
+  const taxonomyResult = TOOL_FUNCTIONS.check_taxonomy_alignment({
+    totalEmission_tCO2e: medianTCO2e,
+    buildingArea_m2,
+    reductionPct: 0,
+    hasLCA: false,
+    hasEPD: false
+  });
+
+  const scoreResult = TOOL_FUNCTIONS.calculate_carbon_score({
+    epdCoveragePct: 0,
+    reductionPct: 0,
+    certificationLevel: targetCertification || null,
+    verificationStatus: 'none'
+  });
+
+  const parts = [
+    `Please produce a Green Loan Eligibility Memo for the following project.`,
+    `The 3 required tool assessments have already been executed — use these results exactly as-is.`,
+    ``,
+    `**Project Details:**`,
+    `- Project Name: ${projectName || 'Not specified'}`,
+    `- Building Type: ${buildingType || 'Not specified'}`,
+    `- Gross Floor Area: ${buildingArea_m2 ? `${buildingArea_m2} m²` : 'Not specified'}`,
+    `- Region: ${region || 'Singapore'}`,
+    `- Target Certification: ${targetCertification || 'Not specified'}`,
+    `- Investor Jurisdiction(s): ${investorJurisdiction || 'ASEAN / Singapore'}`,
+    `- Indicative Loan Amount: ${loanAmount ? loanAmount.toLocaleString() : 'Not provided'}`,
+  ];
+
+  if (projectDescription) {
+    parts.push(``, `**Project Description:**`, projectDescription);
+  }
+
+  parts.push(
+    ``,
+    `**Tool Results (pre-computed — do not call tools again):**`,
+    ``,
+    `STEP 1 — estimate_preliminary_carbon result:`,
+    JSON.stringify(carbonEstimate, null, 2),
+    ``,
+    `STEP 2 — check_taxonomy_alignment result (using median ${medianTCO2e} tCO2e):`,
+    JSON.stringify(taxonomyResult, null, 2),
+    ``,
+    `STEP 3 — calculate_carbon_score result:`,
+    JSON.stringify(scoreResult, null, 2),
+    ``,
+    `Using only these tool results, produce the complete Green Loan Eligibility Memo following the exact format specified in your instructions.`
+  );
+
+  return parts.join('\n');
+}
+
 module.exports = {
   SYSTEM_PROMPT,
   TOOL_DEFINITIONS,
@@ -280,5 +351,6 @@ module.exports = {
     check_taxonomy_alignment:    TOOL_FUNCTIONS.check_taxonomy_alignment,
     calculate_carbon_score:      TOOL_FUNCTIONS.calculate_carbon_score
   },
-  buildUserMessage
+  buildUserMessage,
+  buildUserMessageWithResults
 };

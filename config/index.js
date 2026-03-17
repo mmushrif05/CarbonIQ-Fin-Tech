@@ -36,7 +36,7 @@ const config = {
 
   // --- Security ---
   encryptionKey: process.env.DATA_ENCRYPTION_KEY,
-  allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean),
+  allowedOrigins: (process.env.ALLOWED_ORIGINS || process.env.LLOWED_ORIGINS || '').split(',').filter(Boolean),
 
   // --- API Keys ---
   apiKey: {

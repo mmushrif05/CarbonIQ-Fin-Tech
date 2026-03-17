@@ -25,7 +25,7 @@ const { Router }    = require('express');
 const apiKeyAuth    = require('../../middleware/api-key');
 const validate      = require('../../middleware/validate');
 const { agentLimiter } = require('../../middleware/rate-limit');
-const { runAgent }  = require('../../bridge/agent');
+const { runAgent, runAgentSingleCall } = require('../../bridge/agent');
 const { getAgentRun, listAgentRuns } = require('../../bridge/firebase');
 
 const {
@@ -124,13 +124,14 @@ router.post('/screen',
   async (req, res, next) => {
     try {
       const orgId = req.apiKey.orgId;
-      const userMessage = screeningAgent.buildUserMessage(req.body);
+      // Pre-execute the 3 local tools and embed results into the prompt so that
+      // Claude needs only ONE API call to write the memo. This keeps the Netlify
+      // function well under the 10-second execution limit.
+      const userMessage = screeningAgent.buildUserMessageWithResults(req.body);
 
-      const run = await runAgent({
-        agentType:       'screening',
-        systemPrompt:    screeningAgent.SYSTEM_PROMPT,
-        toolDefinitions: screeningAgent.TOOL_DEFINITIONS,
-        toolFunctions:   screeningAgent.TOOL_FUNCTIONS,
+      const run = await runAgentSingleCall({
+        agentType:    'screening',
+        systemPrompt: screeningAgent.SYSTEM_PROMPT,
         userMessage,
         orgId,
         metadata: {

@@ -186,4 +186,67 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
   return run;
 }
 
-module.exports = { runAgent };
+/**
+ * Run an agent with a single Claude API call (no tool-calling loop).
+ *
+ * Use this when tool results have already been pre-computed locally and
+ * embedded in the userMessage. Claude just needs to write the final output.
+ * This avoids multi-turn agentic loops and keeps execution under Netlify's
+ * 10-second function timeout.
+ *
+ * @param {Object} params - Same shape as runAgent, minus toolDefinitions/toolFunctions
+ * @returns {Promise<Object>} Run record with status, result, tokensUsed
+ */
+async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId, metadata }) {
+  if (!config.anthropicApiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not configured. Agentic AI is unavailable.');
+  }
+
+  const runId = generateRunId();
+  const run   = createRunRecord({ runId, agentType, orgId, userMessage, metadata: metadata || {} });
+
+  await saveAgentRun(orgId, run);
+
+  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+
+  try {
+    const response = await client.messages.create({
+      model:      config.anthropicModel,
+      max_tokens: 8192,
+      system:     systemPrompt,
+      messages:   [{ role: 'user', content: userMessage }]
+    });
+
+    run.tokensUsed.input  += response.usage.input_tokens;
+    run.tokensUsed.output += response.usage.output_tokens;
+
+    run.result      = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    run.status      = AGENT_STATUS.COMPLETED;
+    run.completedAt = new Date().toISOString();
+
+    run.steps.push({
+      step:      1,
+      type:      STEP_TYPES.REASONING,
+      content:   run.result,
+      timestamp: run.completedAt
+    });
+
+  } catch (err) {
+    run.status      = AGENT_STATUS.FAILED;
+    run.error       = err.message;
+    run.completedAt = new Date().toISOString();
+  }
+
+  await updateAgentRun(orgId, runId, {
+    status:      run.status,
+    steps:       run.steps,
+    result:      run.result,
+    error:       run.error,
+    tokensUsed:  run.tokensUsed,
+    completedAt: run.completedAt
+  });
+
+  return run;
+}
+
+module.exports = { runAgent, runAgentSingleCall };
