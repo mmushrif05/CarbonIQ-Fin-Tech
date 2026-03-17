@@ -9,6 +9,7 @@
 const PAGE_META = {
   'dashboard':   { title: 'Dashboard',          subtitle: 'Portfolio carbon overview' },
   'portfolio':   { title: 'Portfolio',           subtitle: 'Aggregated emissions analysis' },
+  'ai-agents':   { title: 'AI Agents',           subtitle: '5-stage green loan lifecycle agents — Screen · Underwrite · Covenants · Monitor · Portfolio' },
   'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
@@ -22,6 +23,10 @@ const PAGE_META = {
  * Key: page ID  →  Value: { src, init (function name on window) }
  */
 const DYNAMIC_PAGES = {
+  'ai-agents': {
+    src:  'pages/agents.html',
+    init: () => typeof AgentsPage !== 'undefined' && AgentsPage.init(),
+  },
   'ai-extract': {
     src:  'pages/extract.html',
     init: () => typeof ExtractPage !== 'undefined' && ExtractPage.init(),
