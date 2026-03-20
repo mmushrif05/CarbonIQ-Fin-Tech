@@ -7,6 +7,10 @@
 
 [functions]
   node_bundler = "nft"
+  # Keep firebase-admin as a real node_module rather than inlining it.
+  # Its internal dynamic requires confuse nft's static tracer and can
+  # cause "Cannot find module" crashes at function startup.
+  external_node_modules = ["firebase-admin", "@firebase/app", "@google-cloud/storage"]
 
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include

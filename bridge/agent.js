@@ -210,9 +210,13 @@ async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId,
   const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
   try {
+    // Use the fast Haiku model with a capped token budget for single-call memo
+    // generation. Haiku completes in 2-4s vs 10-20s for Sonnet, keeping the
+    // response well within Netlify's 10-second function limit.
+    const fastModel = process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5-20251001';
     const response = await client.messages.create({
-      model:      config.anthropicModel,
-      max_tokens: 8192,
+      model:      fastModel,
+      max_tokens: 2048,
       system:     systemPrompt,
       messages:   [{ role: 'user', content: userMessage }]
     });
