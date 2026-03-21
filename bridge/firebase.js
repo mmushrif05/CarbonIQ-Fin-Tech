@@ -27,17 +27,34 @@ function initFirebase() {
     return;
   }
 
-  const serviceAccount = JSON.parse(
-    Buffer.from(config.firebase.serviceAccount, 'base64').toString()
-  );
+  let serviceAccount;
+  try {
+    const decoded = Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8');
+    serviceAccount = JSON.parse(decoded);
+  } catch (e) {
+    console.error('[Firebase] FIREBASE_SERVICE_ACCOUNT is not valid base64-encoded JSON:', e.message);
+    console.error('[Firebase] Hint: encode the service account JSON with: cat key.json | base64 -w 0');
+    initialized = true;
+    return;
+  }
 
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: config.firebase.databaseURL
-  });
+  if (!config.firebase.databaseURL) {
+    console.error('[Firebase] FIREBASE_DATABASE_URL is not set — cannot initialize');
+    initialized = true;
+    return;
+  }
 
-  initialized = true;
-  console.log('[Firebase] Initialized for FinTech API');
+  try {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: config.firebase.databaseURL
+    });
+    initialized = true;
+    console.log('[Firebase] Initialized for FinTech API');
+  } catch (e) {
+    console.error('[Firebase] initializeApp failed:', e.message);
+    initialized = true;
+  }
 }
 
 function getFirebaseAdmin() {
