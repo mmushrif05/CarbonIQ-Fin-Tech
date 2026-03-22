@@ -717,6 +717,18 @@ const AgentsPage = (() => {
     const payload = collectFormData();
     if (!payload) return;
 
+    // Client-side required field validation
+    if (currentStage === 'screen' && !payload.buildingType) {
+      showOutput('error');
+      elErrorMsg.textContent = 'Please select a Building Type before running the agent.';
+      return;
+    }
+    if (currentStage === 'underwrite' && !payload.buildingType) {
+      showOutput('error');
+      elErrorMsg.textContent = 'Please select a Building Type before running the agent.';
+      return;
+    }
+
     isRunning = true;
     elRunBtn.disabled = true;
     elRunBtn.classList.add('running');
@@ -745,8 +757,18 @@ const AgentsPage = (() => {
       const data = await res.json();
 
       if (!res.ok) {
-        const msg = data.message || data.error || `HTTP ${res.status}`;
+        let msg = data.message || data.error || `HTTP ${res.status}`;
+        if (res.status === 503 && data.error === 'AI_SERVICE_UNAVAILABLE') {
+          msg = 'AI service not configured. Ask your administrator to set ANTHROPIC_API_KEY in Netlify environment variables.';
+        } else if (res.status === 401) {
+          msg = 'Authentication failed. Ensure UI_API_KEY is set in Netlify environment variables.';
+        }
         throw new Error(msg);
+      }
+
+      // Agent run completed but with a failed status (Claude error, etc.)
+      if (data.success === false && data.error) {
+        throw new Error(`Agent failed: ${data.error}`);
       }
 
       lastResult = data;
