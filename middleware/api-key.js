@@ -38,12 +38,11 @@ async function apiKeyAuth(req, res, next) {
     });
   }
 
-  // UI Dashboard bypass: allows the internal dashboard to call agent endpoints
-  // without needing a Firebase-registered key. Set UI_API_KEY in Netlify env vars
-  // to match the key hardcoded in ui/js/agents.js.
+  // UI key bypass: UI_API_KEY env var allows the frontend's hardcoded key to work
+  // in all environments (dev + production). Set this in Netlify environment variables.
   const uiKey = process.env.UI_API_KEY;
   if (uiKey && apiKey === uiKey) {
-    req.apiKey = { orgId: 'ui', orgName: 'CarbonIQ Dashboard', projectIds: [], permissions: [], rateLimit: 1000 };
+    req.apiKey = { orgId: 'ui', orgName: 'CarbonIQ Frontend', projectIds: [], permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'], rateLimit: 500 };
     return next();
   }
 

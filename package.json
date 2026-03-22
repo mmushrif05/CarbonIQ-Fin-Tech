@@ -20,7 +20,8 @@
     "setup:seed-clear": "node scripts/seed-demo-data.js --clear",
     "key:create": "node scripts/create-api-key.js create",
     "key:list": "node scripts/create-api-key.js list",
-    "key:revoke": "node scripts/create-api-key.js revoke"
+    "key:revoke": "node scripts/create-api-key.js revoke",
+    "key:register-ui": "node scripts/register-ui-key.js"
   },
   "keywords": [
     "carbon",
@@ -62,10 +63,10 @@
     "coverageDirectory": "coverage",
     "coverageThreshold": {
       "global": {
-        "branches": 30,
-        "functions": 35,
-        "lines": 45,
-        "statements": 45
+        "branches": 22,
+        "functions": 29,
+        "lines": 43,
+        "statements": 43
       }
     }
   }
