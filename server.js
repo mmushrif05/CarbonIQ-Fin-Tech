@@ -94,6 +94,16 @@ if (require.main === module) {
     console.log(`Environment: ${config.env}`);
     console.log(`Health check: http://localhost:${port}/health`);
     console.log(`API v1: http://localhost:${port}/v1`);
+
+    // Startup diagnostics
+    const hasFirebase = !!config.firebase.serviceAccount;
+    const hasUiKey    = !!process.env.UI_API_KEY;
+    const hasDevKey   = !!process.env.DEV_API_KEY;
+    const hasAI       = !!config.anthropicApiKey;
+    console.log(`Firebase: ${hasFirebase ? '✓ connected' : '✗ not configured (503 on DB routes)'}`);
+    console.log(`UI Key:   ${hasUiKey   ? '✓ set (frontend auth enabled)' : '✗ not set (frontend will get 401)'}`);
+    console.log(`Dev Key:  ${hasDevKey  ? '✓ set' : '— not set'}`);
+    console.log(`AI:       ${hasAI      ? '✓ ready' : '✗ no ANTHROPIC_API_KEY'}`);
   });
 }
 

@@ -48,6 +48,22 @@
 
 [context.production.environment]
   NODE_ENV = "production"
+  FINTECH_API_ENABLED = "true"
+  FF_COVENANT_ENGINE = "true"
+  FF_PORTFOLIO_AGGREGATION = "true"
+  FF_TAXONOMY_CHECKER = "true"
+  FF_CERTIFICATE_GENERATION = "false"
+  FF_INSURANCE_OUTPUT = "false"
+  PCAF_VERSION = "3.0"
+  PCAF_DEFAULT_ATTRIBUTION = "1.0"
+  TAXONOMY_ASEAN_VERSION = "3"
+  TAXONOMY_EU_VERSION = "2024"
+  TAXONOMY_HK_VERSION = "2024"
+  WEBHOOK_TIMEOUT_MS = "5000"
+  WEBHOOK_MAX_RETRIES = "3"
+  LOG_LEVEL = "info"
+  LOG_VERBOSE = "false"
 
 [context.deploy-preview.environment]
   NODE_ENV = "staging"
+  FINTECH_API_ENABLED = "true"
