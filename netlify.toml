@@ -12,6 +12,11 @@
   # cause "Cannot find module" crashes at function startup.
   external_node_modules = ["firebase-admin", "@firebase/app", "@google-cloud/storage"]
 
+[functions."fintech-api"]
+  # Increase timeout to 26s (Netlify Pro max) to give the Claude Haiku call
+  # enough time even under cold-start conditions. Free plan is capped at 10s.
+  timeout = 26
+
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include
 # the /v1/ segment in the destination so Express receives the correct path.
