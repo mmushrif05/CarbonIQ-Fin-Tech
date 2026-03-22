@@ -1,0 +1,90 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "fintech": {
+      "apiKeys": {
+        "$keyHash": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      },
+      "projects": {
+        ".read": "auth != null",
+        "$projectId": {
+          ".write": "auth != null"
+        }
+      },
+      "pcaf": {
+        ".read": "auth != null",
+        "$recordId": {
+          ".write": "auth != null"
+        }
+      },
+      "scores": {
+        ".read": "auth != null",
+        "$scoreId": {
+          ".write": "auth != null"
+        }
+      },
+      "covenants": {
+        ".read": "auth != null",
+        "$projectId": {
+          ".write": "auth != null"
+        }
+      },
+      "monitoring": {
+        ".read": "auth != null",
+        "$projectId": {
+          ".write": "auth != null"
+        }
+      },
+      "taxonomyResults": {
+        ".read": "auth != null",
+        "$projectId": {
+          ".write": "auth != null"
+        }
+      },
+      "portfolioSnapshots": {
+        ".read": "auth != null",
+        "$orgId": {
+          ".write": "auth != null"
+        }
+      },
+      "agentRuns": {
+        ".read": "auth != null",
+        "$orgId": {
+          ".write": "auth != null"
+        }
+      },
+      "webhooks": {
+        "$clientId": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        }
+      },
+      "audit": {
+        ".write": "auth != null",
+        ".read": "auth != null"
+      },
+      "_setup_test": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      }
+    },
+
+    "projects": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "tenders": {
+      ".read": "auth != null",
+      ".write": false
+    },
+    "entries": {
+      ".read": "auth != null",
+      ".write": false
+    }
+  }
+}

@@ -13,7 +13,14 @@
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "setup:env": "node scripts/generate-env.js",
+    "setup:verify": "node scripts/verify-setup.js",
+    "setup:seed": "node scripts/seed-demo-data.js",
+    "setup:seed-clear": "node scripts/seed-demo-data.js --clear",
+    "key:create": "node scripts/create-api-key.js create",
+    "key:list": "node scripts/create-api-key.js list",
+    "key:revoke": "node scripts/create-api-key.js revoke"
   },
   "keywords": [
     "carbon",
