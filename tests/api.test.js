@@ -22,7 +22,7 @@ describe('API Endpoints', () => {
     expect(res.status).toBe(200);
     expect(res.body.api).toBe('CarbonIQ FinTech');
     expect(res.body.endpoints).toBeDefined();
-    expect(res.body.endpoints.extract).toBe('POST /v1/extract');
+    expect(res.body.endpoints.extract).toContain('POST /v1/extract');
     expect(res.body.endpoints.assess).toBe('POST /v1/assess');
     expect(res.body.endpoints.score).toBe('GET /v1/projects/:projectId/score');
     expect(res.body.endpoints.taxonomy).toBe('GET /v1/projects/:projectId/taxonomy');

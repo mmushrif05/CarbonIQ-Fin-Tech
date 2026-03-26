@@ -38,9 +38,9 @@ app.use(helmet({
 // CORS — configured per environment
 app.use(cors(corsConfig));
 
-// Body parsing
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: false }));
+// Body parsing — 20 MB to accommodate base64-encoded PDF BOQ uploads (~15 MB PDF)
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ extended: false, limit: '20mb' }));
 
 // Request logging
 if (config.env !== 'test') {

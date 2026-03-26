@@ -3,38 +3,56 @@
  *
  * POST /v1/extract
  *
- * Accepts raw BOQ content (CSV, text, or JSON) and uses Claude AI to
- * parse and map materials to ICE v3 carbon factors.
+ * Three input modes:
+ *   1. content + format (text|csv|json)  — paste raw BOQ text
+ *   2. pdfBase64 + format=pdf            — upload PDF directly (≤ ~15 MB)
+ *   3. fileId                            — reference a pre-uploaded PDF
+ *                                          (from POST /v1/extract/upload)
+ *
  * Returns a structured materials array ready for /v1/score and /v1/pcaf.
  */
 
+'use strict';
+
 const { Router } = require('express');
-const apiKeyAuth = require('../../middleware/api-key');
-const validate = require('../../middleware/validate');
+const apiKeyAuth  = require('../../middleware/api-key');
+const validate    = require('../../middleware/validate');
 const { extractLimiter } = require('../../middleware/rate-limit');
 const { extractRequestSchema } = require('../../schemas/extract');
-const { extractMaterials } = require('../../services/extract');
+const { extractFromRequest }   = require('../../services/extract');
 
 const router = Router();
 
+// ---------------------------------------------------------------------------
+// POST /v1/extract — extract materials from text, CSV, JSON, or PDF
+// ---------------------------------------------------------------------------
 router.post('/',
   apiKeyAuth,
   validate({ body: extractRequestSchema }),
   extractLimiter,
   async (req, res, next) => {
     try {
-      const { content, format, projectName, computeTotal } = req.body;
+      const { content, format, pdfBase64, fileId, pageHint, projectName, computeTotal } = req.body;
 
-      const result = await extractMaterials(content, format);
+      const result = await extractFromRequest({ content, format, pdfBase64, fileId, pageHint });
 
-      let carbonTotals = null;
-      if (computeTotal) {
-        carbonTotals = _computeCarbonTotals(result.materials);
-      }
+      const carbonTotals = computeTotal ? _computeCarbonTotals(result.materials) : null;
+
+      // Surface cache savings to the caller so they can see the cost benefit
+      const cacheInfo = (result.tokensUsed.cacheRead > 0 || result.tokensUsed.cacheCreated > 0)
+        ? {
+            cacheReadTokens:    result.tokensUsed.cacheRead,
+            cacheCreatedTokens: result.tokensUsed.cacheCreated,
+            estimatedSavingPct: result.tokensUsed.cacheRead > 0
+              ? Math.round(result.tokensUsed.cacheRead / (result.tokensUsed.input + result.tokensUsed.cacheRead) * 90)
+              : 0
+          }
+        : null;
 
       res.json({
-        success: true,
-        projectName: projectName || null,
+        success:      true,
+        projectName:  projectName || null,
+        inputMode:    pdfBase64 ? 'pdf_base64' : fileId ? 'pdf_file_id' : 'text',
         extraction: {
           materials: result.materials,
           summary:   result.summary
@@ -48,6 +66,7 @@ router.post('/',
         meta: {
           model:        result.model,
           tokensUsed:   result.tokensUsed,
+          cacheInfo,
           extractedAt:  new Date().toISOString(),
           inputFormat:  format,
           factorSource: 'ICE Database v3'
@@ -65,11 +84,10 @@ router.post('/',
   }
 );
 
-/**
- * Compute total embodied carbon and per-category breakdown.
- * @param {Object[]} materials
- * @returns {Object}
- */
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 function _computeCarbonTotals(materials) {
   const valid = materials.filter((m) => m.totalKgCO2e != null);
 

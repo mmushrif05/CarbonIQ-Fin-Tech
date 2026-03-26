@@ -9,7 +9,7 @@ describe('GET /v1', () => {
     expect(res.body.version).toBeDefined();
     expect(res.body.endpoints).toBeDefined();
     expect(typeof res.body.endpoints).toBe('object');
-    expect(res.body.endpoints.extract).toBe('POST /v1/extract');
+    expect(res.body.endpoints.extract).toContain('POST /v1/extract');
     expect(res.body.endpoints.assess).toBe('POST /v1/assess');
     expect(res.body.endpoints.webhooks).toBe('POST /v1/webhooks');
   });
