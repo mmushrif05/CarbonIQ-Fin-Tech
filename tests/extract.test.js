@@ -124,7 +124,22 @@ describe('extractRequestSchema', () => {
   });
 
   test('rejects unknown format values', () => {
-    const { error } = extractRequestSchema.validate({ content: VALID_BODY.content, format: 'pdf' });
+    const { error } = extractRequestSchema.validate({ content: VALID_BODY.content, format: 'docx' });
+    expect(error).toBeDefined();
+  });
+
+  test('accepts pdf as a valid format', () => {
+    const { error } = extractRequestSchema.validate({ pdfBase64: 'dGVzdA==', format: 'pdf' });
+    expect(error).toBeUndefined();
+  });
+
+  test('accepts fileId without content', () => {
+    const { error } = extractRequestSchema.validate({ fileId: 'file_abc123' });
+    expect(error).toBeUndefined();
+  });
+
+  test('rejects request with no content, pdfBase64, or fileId', () => {
+    const { error } = extractRequestSchema.validate({ format: 'text', projectName: 'Test' });
     expect(error).toBeDefined();
   });
 

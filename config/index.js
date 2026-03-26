@@ -33,6 +33,8 @@ const config = {
   // --- AI ---
   anthropicApiKey: process.env.ANTHROPIC_API_KEY,
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+  // Vision model used for PDF BOQ extraction — Opus for complex table layouts
+  anthropicVisionModel: process.env.ANTHROPIC_VISION_MODEL || 'claude-opus-4-6',
 
   // --- Security ---
   encryptionKey: process.env.DATA_ENCRYPTION_KEY,

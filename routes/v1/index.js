@@ -27,8 +27,9 @@ const pcafRouter = require('./pcaf');
 const covenantRouter = require('./covenant');
 const portfolioRouter = require('./portfolio');
 const webhookRouter = require('./webhook');
-const extractRouter = require('./extract');
-const agentRouter = require('./agent');
+const extractRouter       = require('./extract');
+const extractUploadRouter = require('./extract-upload');
+const agentRouter         = require('./agent');
 
 const router = Router();
 
@@ -39,7 +40,8 @@ router.get('/', (_req, res) => {
     version: `v1 (${config.version})`,
     status: config.apiEnabled ? 'active' : 'disabled',
     endpoints: {
-      extract: 'POST /v1/extract',
+      extract:       'POST /v1/extract — text/CSV/JSON or PDF (pdfBase64 / fileId)',
+      extractUpload: 'POST /v1/extract/upload — pre-upload a PDF to Files API, returns fileId',
       assess: 'POST /v1/assess',
       project: 'GET /v1/projects/:projectId',
       score: 'GET /v1/projects/:projectId/score',
@@ -63,6 +65,7 @@ router.get('/', (_req, res) => {
 });
 
 // Mount route modules
+router.use('/extract', extractUploadRouter);
 router.use('/extract', extractRouter);
 router.use('/assess', assessRouter);
 router.use('/projects', projectsRouter);
