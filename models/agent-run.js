@@ -48,7 +48,7 @@ function createRunRecord({ runId, agentType, orgId, userMessage, metadata = {} }
     steps: [],
     result: null,
     error: null,
-    tokensUsed: { input: 0, output: 0 },
+    tokensUsed: { input: 0, output: 0, cacheRead: 0, cacheCreated: 0 },
     metadata,
     createdAt: new Date().toISOString(),
     completedAt: null
