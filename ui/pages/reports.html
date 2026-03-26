@@ -1,0 +1,324 @@
+<!-- CarbonIQ FinTech — Reports Page (dynamically loaded) -->
+<link rel="stylesheet" href="css/reports.css">
+
+<!-- ── Header ──────────────────────────────────────────────── -->
+<div class="rpt-header">
+  <div class="rpt-header-text">
+    <p>Select a regulatory report format, set the reporting period, and generate a ready-to-submit disclosure document.</p>
+  </div>
+  <div class="rpt-period-row">
+    <div class="rpt-field-group">
+      <label class="rpt-label" for="rptOrgName">Organisation Name</label>
+      <input id="rptOrgName" type="text" class="form-input" placeholder="e.g. OCBC Bank" value="CarbonIQ Demo Bank" />
+    </div>
+    <div class="rpt-field-group rpt-field-sm">
+      <label class="rpt-label" for="rptPeriod">Reporting Year</label>
+      <select id="rptPeriod" class="form-input">
+        <option value="2025" selected>FY 2025</option>
+        <option value="2024">FY 2024</option>
+        <option value="2026">FY 2026</option>
+      </select>
+    </div>
+    <div class="rpt-field-group rpt-field-sm">
+      <label class="rpt-label" for="rptFormat">Output Format</label>
+      <select id="rptFormat" class="form-input">
+        <option value="pdf" selected>PDF</option>
+        <option value="json">JSON</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<!-- ── Report Type Cards ───────────────────────────────────── -->
+<div class="rpt-cards">
+
+  <!-- PCAF -->
+  <div class="rpt-card" data-type="pcaf">
+    <div class="rpt-card-top">
+      <div class="rpt-card-icon rpt-icon-green">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect x="3" y="3" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M7 11l3 3 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="rpt-card-badge">Most Used</div>
+    </div>
+    <h3 class="rpt-card-title">PCAF Annual Disclosure</h3>
+    <p class="rpt-card-standard">PCAF v3 · December 2025</p>
+    <p class="rpt-card-desc">Portfolio financed emissions with attribution factors, PCAF data quality scores (1–5), and year-on-year comparison. Required for HKMA, MAS ENRM, and ISSB S2 filings.</p>
+    <div class="rpt-card-covers">
+      <span class="rpt-chip">Financed Emissions</span>
+      <span class="rpt-chip">Attribution Factor</span>
+      <span class="rpt-chip">Data Quality Score</span>
+      <span class="rpt-chip">YoY Analysis</span>
+    </div>
+    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('pcaf')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate Report
+    </button>
+    <div class="rpt-progress" id="rpt-progress-pcaf" style="display:none">
+      <div class="rpt-spinner"></div>
+      <span>Generating PCAF report…</span>
+    </div>
+    <div class="rpt-result" id="rpt-result-pcaf" style="display:none"></div>
+  </div>
+
+  <!-- GRI 305 -->
+  <div class="rpt-card" data-type="gri305">
+    <div class="rpt-card-top">
+      <div class="rpt-card-icon rpt-icon-blue">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M11 7v4l3 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+    </div>
+    <h3 class="rpt-card-title">GRI 305 Emissions</h3>
+    <p class="rpt-card-standard">GRI 305: Emissions 2016</p>
+    <p class="rpt-card-desc">Scope 1, 2 and 3 GHG emissions disclosure aligned with GRI Standards. Includes emission intensity ratios, reduction initiatives, and omissions register.</p>
+    <div class="rpt-card-covers">
+      <span class="rpt-chip">Scope 1 Direct</span>
+      <span class="rpt-chip">Scope 2 Energy</span>
+      <span class="rpt-chip">Scope 3 Value Chain</span>
+      <span class="rpt-chip">Intensity Ratio</span>
+    </div>
+    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('gri305')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate Report
+    </button>
+    <div class="rpt-progress" id="rpt-progress-gri305" style="display:none">
+      <div class="rpt-spinner"></div>
+      <span>Generating GRI 305 report…</span>
+    </div>
+    <div class="rpt-result" id="rpt-result-gri305" style="display:none"></div>
+  </div>
+
+  <!-- TCFD -->
+  <div class="rpt-card" data-type="tcfd">
+    <div class="rpt-card-top">
+      <div class="rpt-card-icon rpt-icon-amber">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 3l7 4v8l-7 4-7-4V7l7-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M11 9v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="11" cy="15" r="0.8" fill="currentColor"/>
+        </svg>
+      </div>
+    </div>
+    <h3 class="rpt-card-title">TCFD Climate Risk</h3>
+    <p class="rpt-card-standard">TCFD Recommendations · 2017 / 2021</p>
+    <p class="rpt-card-desc">Four-pillar climate risk report covering Governance, Strategy, Risk Management, and Metrics & Targets. Includes 1.5°C and 2°C scenario analysis.</p>
+    <div class="rpt-card-covers">
+      <span class="rpt-chip">Governance</span>
+      <span class="rpt-chip">Strategy</span>
+      <span class="rpt-chip">Risk Management</span>
+      <span class="rpt-chip">Scenario Analysis</span>
+    </div>
+    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('tcfd')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate Report
+    </button>
+    <div class="rpt-progress" id="rpt-progress-tcfd" style="display:none">
+      <div class="rpt-spinner"></div>
+      <span>Generating TCFD report…</span>
+    </div>
+    <div class="rpt-result" id="rpt-result-tcfd" style="display:none"></div>
+  </div>
+
+  <!-- IFRS S2 -->
+  <div class="rpt-card" data-type="ifrs-s2">
+    <div class="rpt-card-top">
+      <div class="rpt-card-icon rpt-icon-purple">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M5 3h12a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V4a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M8 8h6M8 11h6M8 14h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="rpt-card-badge rpt-badge-new">New Standard</div>
+    </div>
+    <h3 class="rpt-card-title">IFRS S2 Climate Disclosures</h3>
+    <p class="rpt-card-standard">IFRS S2 / ISSB · June 2023 (effective FY2024)</p>
+    <p class="rpt-card-desc">Full ISSB-compliant climate disclosure: risks & opportunities, financial effects, resilience scenarios, and transition plan with year-by-year milestones.</p>
+    <div class="rpt-card-covers">
+      <span class="rpt-chip">Financial Effects</span>
+      <span class="rpt-chip">Resilience Scenarios</span>
+      <span class="rpt-chip">Transition Plan</span>
+      <span class="rpt-chip">Scope 1/2/3</span>
+    </div>
+    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('ifrs-s2')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate Report
+    </button>
+    <div class="rpt-progress" id="rpt-progress-ifrs-s2" style="display:none">
+      <div class="rpt-spinner"></div>
+      <span>Generating IFRS S2 report…</span>
+    </div>
+    <div class="rpt-result" id="rpt-result-ifrs-s2" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- ── History Table ───────────────────────────────────────── -->
+<div class="table-card rpt-history" id="rptHistory" style="display:none">
+  <div class="table-header">
+    <h3>Generated This Session</h3>
+    <button class="btn btn-ghost btn-sm" onclick="ReportsPage.clearHistory()">Clear</button>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Report</th>
+        <th>Period</th>
+        <th>Format</th>
+        <th>Generated</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="rptHistoryBody"></tbody>
+  </table>
+</div>
+
+<!-- ── JavaScript ─────────────────────────────────────────── -->
+<script>
+const ReportsPage = (() => {
+  const API_BASE = window.CARBONIQ_API_BASE || '';
+  const API_KEY  = window.CARBONIQ_API_KEY  || '';
+
+  const history = [];
+
+  function _typeLabel(type) {
+    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures' }[type] || type;
+  }
+
+  async function generate(type) {
+    const orgName = document.getElementById('rptOrgName').value.trim() || 'Your Organisation';
+    const period  = document.getElementById('rptPeriod').value;
+    const format  = document.getElementById('rptFormat').value;
+
+    const progressEl = document.getElementById(`rpt-progress-${type}`);
+    const resultEl   = document.getElementById(`rpt-result-${type}`);
+    const card       = document.querySelector(`.rpt-card[data-type="${type}"]`);
+    const btn        = card.querySelector('.rpt-generate-btn');
+
+    // Show loading state
+    btn.disabled = true;
+    resultEl.style.display = 'none';
+    progressEl.style.display = 'flex';
+
+    try {
+      const res = await fetch(`${API_BASE}/v1/reports/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        },
+        body: JSON.stringify({ type, period, format, orgName }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || `Server error ${res.status}`);
+      }
+
+      progressEl.style.display = 'none';
+
+      if (format === 'pdf') {
+        // Trigger browser download
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `CarbonIQ-${type.toUpperCase()}-${period}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        _showSuccess(resultEl, type, period, format, null, a.download);
+      } else {
+        const data = await res.json();
+        _showSuccess(resultEl, type, period, format, data.report, null);
+      }
+
+      _addHistory(type, period, format);
+
+    } catch (err) {
+      progressEl.style.display = 'none';
+      _showError(resultEl, err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function _showSuccess(el, type, period, format, reportData, filename) {
+    if (format === 'pdf') {
+      el.innerHTML = `
+        <div class="rpt-success">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>PDF downloaded — <strong>${filename}</strong></span>
+        </div>`;
+    } else {
+      // JSON: show a collapsible preview + download button
+      const jsonStr = JSON.stringify(reportData, null, 2);
+      const blob    = new Blob([jsonStr], { type: 'application/json' });
+      const url     = URL.createObjectURL(blob);
+      el.innerHTML = `
+        <div class="rpt-success">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Report generated</span>
+          <a href="${url}" download="CarbonIQ-${type}-${period}.json" class="btn btn-secondary btn-sm" style="margin-left:auto">Download JSON</a>
+        </div>
+        <details class="rpt-json-preview">
+          <summary>Preview JSON</summary>
+          <pre>${_escapeHtml(JSON.stringify(reportData, null, 2).slice(0, 3000))}${jsonStr.length > 3000 ? '\n…(truncated)' : ''}</pre>
+        </details>`;
+    }
+    el.style.display = 'block';
+  }
+
+  function _showError(el, message) {
+    el.innerHTML = `
+      <div class="rpt-error">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ef4444" stroke-width="1.4"/><path d="M7 4v3M7 9.5v.5" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
+        ${_escapeHtml(message)}
+      </div>`;
+    el.style.display = 'block';
+  }
+
+  function _addHistory(type, period, format) {
+    const now = new Date().toLocaleTimeString();
+    history.unshift({ type, period, format, time: now });
+
+    const historyEl = document.getElementById('rptHistory');
+    const tbody     = document.getElementById('rptHistoryBody');
+    historyEl.style.display = 'block';
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${_typeLabel(type)}</strong></td>
+      <td>FY ${period}</td>
+      <td><span class="format-tag format-tag-${format}">${format.toUpperCase()}</span></td>
+      <td>${now}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="ReportsPage.regenerate('${type}')">Re-generate</button></td>`;
+    tbody.prepend(row);
+  }
+
+  function regenerate(type) {
+    generate(type);
+  }
+
+  function clearHistory() {
+    history.length = 0;
+    document.getElementById('rptHistoryBody').innerHTML = '';
+    document.getElementById('rptHistory').style.display = 'none';
+  }
+
+  function _escapeHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // Public init hook (called by app.js after lazy-load)
+  function init() {
+    // Nothing to init — all handlers are inline
+  }
+
+  return { generate, regenerate, clearHistory, init };
+})();
+</script>

@@ -14,7 +14,7 @@ const PAGE_META = {
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
-  'reports':     { title: 'Reports',             subtitle: 'Generate PCAF v3 disclosure reports' },
+  'reports':     { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 disclosure reports' },
   'taxonomy':    { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
 };
 
@@ -30,6 +30,10 @@ const DYNAMIC_PAGES = {
   'ai-extract': {
     src:  'pages/extract.html',
     init: () => typeof ExtractPage !== 'undefined' && ExtractPage.init(),
+  },
+  'reports': {
+    src:  'pages/reports.html',
+    init: () => typeof ReportsPage !== 'undefined' && ReportsPage.init(),
   },
 };
 
