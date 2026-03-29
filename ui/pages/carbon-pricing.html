@@ -1,0 +1,392 @@
+<!-- CarbonIQ FinTech — Carbon Pricing & Financial Impact (dynamic page) -->
+<link rel="stylesheet" href="css/carbon-pricing.css">
+
+<div class="cp-layout">
+
+  <!-- ══════════════════════════════════════════════
+       LEFT: Input Form
+  ═══════════════════════════════════════════════ -->
+  <div class="cp-form-panel">
+
+    <div class="cp-section">
+      <h3 class="cp-section-title">Project & Loan</h3>
+      <p class="cp-section-desc">Enter the physical carbon and financial details to quantify monetary exposure.</p>
+
+      <div class="cp-form-grid">
+        <div class="form-group full-width">
+          <label>Embodied Carbon (tCO2e)</label>
+          <input id="cp-emissions" type="number" class="form-input" placeholder="e.g. 4 200" value="4200" min="0" />
+          <span class="form-hint">Total project embodied carbon (A1–A3 scope)</span>
+        </div>
+        <div class="form-group">
+          <label>Outstanding Loan (USD)</label>
+          <input id="cp-loan" type="number" class="form-input" placeholder="e.g. 75 000 000" value="75000000" min="0" />
+        </div>
+        <div class="form-group">
+          <label>Total Project Value (USD)</label>
+          <input id="cp-project-value" type="number" class="form-input" placeholder="e.g. 250 000 000" value="250000000" min="0" />
+          <span class="form-hint">Equity + all debt from all lenders</span>
+        </div>
+        <div class="form-group">
+          <label>Building GFA (m²) <span class="cp-optional">optional</span></label>
+          <input id="cp-area" type="number" class="form-input" placeholder="e.g. 45 000" value="" min="0" />
+          <span class="form-hint">Enables intensity (kgCO2e/m²) calculation</span>
+        </div>
+        <div class="form-group">
+          <label>Loan Term (years)</label>
+          <input id="cp-term" type="number" class="form-input" value="5" min="1" max="30" />
+        </div>
+      </div>
+    </div>
+
+    <div class="cp-divider"></div>
+
+    <div class="cp-section">
+      <h3 class="cp-section-title">Region & Score</h3>
+
+      <div class="cp-form-grid">
+        <div class="form-group">
+          <label>Jurisdiction</label>
+          <select id="cp-region" class="form-input">
+            <option value="SG" selected>Singapore (SGD 45/tCO2e)</option>
+            <option value="EU">European Union ETS (EUR 65/tCO2e)</option>
+            <option value="MY">Malaysia (MYR 35/tCO2e)</option>
+            <option value="HK">Hong Kong (no carbon tax)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>CarbonIQ Score (0–100)</label>
+          <input id="cp-score" type="number" class="form-input" placeholder="0–100" value="58" min="0" max="100" />
+        </div>
+      </div>
+
+      <!-- Score classification pill -->
+      <div class="cp-score-preview" id="cpScorePreview">
+        <span class="cp-score-label">CarbonIQ Score</span>
+        <div class="cp-score-value" id="cpScoreValue">58</div>
+        <span class="cp-class-pill status-amber" id="cpClassPill">Transition</span>
+        <span class="cp-score-hint" id="cpScoreHint">Raise to ≥ 70 for full green pricing discount</span>
+      </div>
+    </div>
+
+    <div class="cp-actions">
+      <button class="btn btn-primary btn-lg cp-calc-btn" id="cpCalcBtn" onclick="CarbonPricingPage.calculate()">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M8 2v12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        Calculate Financial Impact
+      </button>
+      <button class="btn btn-ghost btn-lg" onclick="CarbonPricingPage.reset()">Reset</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════
+       RIGHT: Results Panel
+  ═══════════════════════════════════════════════ -->
+  <div class="cp-results-panel" id="cpResultsPanel">
+
+    <!-- Idle state -->
+    <div class="cp-idle" id="cpIdle">
+      <div class="cp-idle-icon">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <circle cx="20" cy="20" r="18" stroke="var(--border)" stroke-width="2"/>
+          <path d="M12 20h16M20 12v16" stroke="var(--border)" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <p>Enter project details and click <strong>Calculate Financial Impact</strong></p>
+    </div>
+
+    <!-- Loading state -->
+    <div class="cp-loading" id="cpLoading" style="display:none">
+      <div class="rpt-spinner" style="width:24px;height:24px;border-width:3px"></div>
+      <span>Calculating…</span>
+    </div>
+
+    <!-- Results -->
+    <div id="cpResults" style="display:none">
+
+      <!-- Attribution summary bar -->
+      <div class="cp-attr-bar" id="cpAttrBar"></div>
+
+      <!-- Summary bullets -->
+      <div class="cp-summary-box" id="cpSummaryBox"></div>
+
+      <!-- 4 metric cards -->
+      <div class="cp-metric-grid">
+
+        <!-- 1. Tax Exposure -->
+        <div class="cp-metric-card cp-card-tax">
+          <div class="cp-metric-header">
+            <div class="cp-metric-icon cp-icon-red">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 3.5v7L9 16l-6-3.5v-7L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <div class="cp-metric-title">Carbon Tax Exposure</div>
+              <div class="cp-metric-subtitle" id="taxRegionLabel">Annual (current rate)</div>
+            </div>
+          </div>
+          <div class="cp-metric-value" id="taxCurrentUSD">—</div>
+          <div class="cp-metric-unit" id="taxCurrentLocal">—</div>
+          <div class="cp-metric-footer" id="taxPeakNote">—</div>
+          <div class="cp-trajectory" id="taxTrajectory"></div>
+        </div>
+
+        <!-- 2. Loan Pricing -->
+        <div class="cp-metric-card cp-card-green">
+          <div class="cp-metric-header">
+            <div class="cp-metric-icon cp-icon-green">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 15V7l4-4h4l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.5"/><path d="M7 16v-5h4v5" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <div>
+              <div class="cp-metric-title">Loan Pricing Adjustment</div>
+              <div class="cp-metric-subtitle" id="pricingClassLabel">—</div>
+            </div>
+          </div>
+          <div class="cp-metric-value" id="pricingBps">—</div>
+          <div class="cp-metric-unit">basis points</div>
+          <div class="cp-metric-footer" id="pricingSaving">—</div>
+          <div class="cp-upgrade-note" id="pricingUpgrade"></div>
+        </div>
+
+        <!-- 3. Stranded Asset Risk -->
+        <div class="cp-metric-card cp-card-amber">
+          <div class="cp-metric-header">
+            <div class="cp-metric-icon" id="strandedIcon">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 3.5v7L9 16l-6-3.5v-7L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 7v3M9 12.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="cp-metric-title">Stranded Asset Risk</div>
+              <div class="cp-metric-subtitle" id="strandedLevel">—</div>
+            </div>
+          </div>
+          <div class="cp-metric-value" id="strandedExposure">—</div>
+          <div class="cp-metric-unit">estimated lender exposure</div>
+          <div class="cp-metric-footer" id="strandedRefi">—</div>
+          <div class="cp-mitigation" id="strandedMitigation"></div>
+        </div>
+
+        <!-- 4. Sensitivity -->
+        <div class="cp-metric-card cp-card-blue cp-card-wide">
+          <div class="cp-metric-header">
+            <div class="cp-metric-icon cp-icon-blue">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 14l4-4 3 3 7-8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div>
+              <div class="cp-metric-title">Carbon Price Sensitivity</div>
+              <div class="cp-metric-subtitle">Annual tax on financed emissions</div>
+            </div>
+          </div>
+          <table class="cp-sensitivity-table" id="sensitivityTable">
+            <thead><tr><th>Carbon Price</th><th>Annual Tax</th><th>vs Current</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Mitigation actions -->
+      <div class="cp-actions-card" id="cpMitigationCard" style="display:none">
+        <h4>Recommended Actions</h4>
+        <ul id="cpMitigationList"></ul>
+      </div>
+
+    </div><!-- /cpResults -->
+  </div><!-- /cp-results-panel -->
+</div><!-- /cp-layout -->
+
+<script>
+const CarbonPricingPage = (() => {
+  const API_BASE = window.CARBONIQ_API_BASE || '';
+  const API_KEY  = window.CARBONIQ_API_KEY  || '';
+
+  // ── Score preview ──────────────────────────────────────────
+  function _updateScorePreview() {
+    const score = parseInt(document.getElementById('cp-score').value, 10) || 0;
+    document.getElementById('cpScoreValue').textContent = score;
+
+    const pillEl  = document.getElementById('cpClassPill');
+    const hintEl  = document.getElementById('cpScoreHint');
+
+    pillEl.className = 'cp-class-pill';
+    if (score >= 70) {
+      pillEl.textContent = 'Green';
+      pillEl.classList.add('status-green');
+      hintEl.textContent = 'Maximum green pricing tier — −20 bps discount active';
+    } else if (score >= 40) {
+      pillEl.textContent = 'Transition';
+      pillEl.classList.add('status-amber');
+      hintEl.textContent = `Raise to ≥ 70 for full green pricing discount (+${20 - 8} bps improvement)`;
+    } else {
+      pillEl.textContent = 'Brown';
+      pillEl.classList.add('status-red');
+      hintEl.textContent = 'Raise to ≥ 40 to enter Transition tier and unlock partial discount';
+    }
+  }
+
+  // ── Calculate ──────────────────────────────────────────────
+  async function calculate() {
+    const payload = {
+      emissions_tCO2e:  parseFloat(document.getElementById('cp-emissions').value)     || 0,
+      loanAmount:       parseFloat(document.getElementById('cp-loan').value)           || 0,
+      projectValue:     parseFloat(document.getElementById('cp-project-value').value)  || 0,
+      region:           document.getElementById('cp-region').value,
+      cfsScore:         parseFloat(document.getElementById('cp-score').value)          || 50,
+      loanTerm_years:   parseInt(document.getElementById('cp-term').value, 10)         || 5,
+    };
+
+    const area = parseFloat(document.getElementById('cp-area').value);
+    if (area > 0) payload.buildingArea_m2 = area;
+
+    _showLoading();
+
+    try {
+      const res = await fetch(`${API_BASE}/v1/carbon-pricing/calculate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || `Server error ${res.status}`);
+      }
+
+      const data = await res.json();
+      _renderResults(data);
+
+    } catch (err) {
+      _showError(err.message);
+    }
+  }
+
+  // ── Render ─────────────────────────────────────────────────
+  function _renderResults(d) {
+    document.getElementById('cpIdle').style.display    = 'none';
+    document.getElementById('cpLoading').style.display = 'none';
+    document.getElementById('cpResults').style.display = 'block';
+
+    const { inputs, taxExposure, loanPricing, strandedRisk, sensitivity, summary } = d;
+
+    // Attribution bar
+    document.getElementById('cpAttrBar').innerHTML = `
+      <span class="cp-attr-item"><strong>${_fmt(inputs.financedEmissions_tCO2e)} tCO2e</strong> financed emissions</span>
+      <span class="cp-attr-sep">·</span>
+      <span class="cp-attr-item">Attribution factor <strong>${inputs.attributionFactor}</strong></span>
+      <span class="cp-attr-sep">·</span>
+      <span class="cp-attr-item">$<strong>${_fmt(inputs.loanAmount)}</strong> / $<strong>${_fmt(inputs.projectValue)}</strong> project</span>`;
+
+    // Summary
+    document.getElementById('cpSummaryBox').innerHTML =
+      summary.map(s => `<div class="cp-summary-item">• ${s}</div>`).join('');
+
+    // ── Tax Exposure ──
+    document.getElementById('taxRegionLabel').textContent = inputs.region + ' · Annual (current rate)';
+    document.getElementById('taxCurrentUSD').textContent =
+      taxExposure.annualExposure_USD > 0 ? `$${_fmt(taxExposure.annualExposure_USD)}` : '—';
+    document.getElementById('taxCurrentLocal').textContent =
+      taxExposure.annualExposure_USD > 0
+        ? `${taxExposure.currency} ${_fmt(taxExposure.annualExposure_local)} / yr`
+        : `No current carbon tax in ${inputs.region}`;
+    document.getElementById('taxPeakNote').textContent =
+      `Peak by ${taxExposure.peakExposure.year}: $${_fmt(taxExposure.peakExposure.USD)} (${taxExposure.currency} ${_fmt(taxExposure.peakExposure.local)})`;
+
+    // Trajectory mini-chart
+    const maxRate = Math.max(...taxExposure.trajectory.map(t => t.usdAmount));
+    document.getElementById('taxTrajectory').innerHTML = taxExposure.trajectory.map(t => `
+      <div class="cp-traj-row">
+        <span class="cp-traj-year">${t.year}</span>
+        <div class="cp-traj-bar-wrap">
+          <div class="cp-traj-bar" style="width:${maxRate > 0 ? Math.round((t.usdAmount / maxRate) * 100) : 0}%"></div>
+        </div>
+        <span class="cp-traj-val">$${_fmt(t.usdAmount)}</span>
+      </div>`).join('');
+
+    // ── Loan Pricing ──
+    const bps = loanPricing.adjustment_bps;
+    document.getElementById('pricingClassLabel').textContent = loanPricing.classification;
+    document.getElementById('pricingBps').textContent = (bps <= 0 ? '' : '+') + bps;
+    document.getElementById('pricingBps').className =
+      'cp-metric-value ' + (bps < 0 ? 'cp-val-green' : bps > 0 ? 'cp-val-red' : 'cp-val-neutral');
+    document.getElementById('pricingSaving').textContent =
+      loanPricing.financialImpact.annualInterestSaving_USD > 0
+        ? `$${_fmt(loanPricing.financialImpact.annualInterestSaving_USD)}/yr saving — $${_fmt(loanPricing.financialImpact.npvSaving_USD)} NPV over ${loanPricing.financialImpact.loanTerm_years}yr`
+        : 'No interest saving at current score';
+    document.getElementById('pricingUpgrade').textContent = loanPricing.upgradeOpportunity;
+
+    // ── Stranded Asset Risk ──
+    const riskLevel = strandedRisk.riskLevel;
+    const iconEl    = document.getElementById('strandedIcon');
+    iconEl.className = `cp-metric-icon cp-icon-${riskLevel === 'high' ? 'red' : riskLevel === 'medium' ? 'amber' : 'green'}`;
+    document.getElementById('strandedLevel').innerHTML =
+      `<span class="cp-risk-pill cp-risk-${riskLevel}">${riskLevel.toUpperCase()}</span>`;
+    document.getElementById('strandedExposure').textContent =
+      `$${_fmt(strandedRisk.financialImpairment.lenderExposure_USD)}`;
+    document.getElementById('strandedRefi').textContent = strandedRisk.refinancingRisk;
+
+    // Mitigation actions (inside stranded card)
+    const mit = strandedRisk.mitigationActions || [];
+    if (mit.length) {
+      const mitigationCard = document.getElementById('cpMitigationCard');
+      const mitigationList = document.getElementById('cpMitigationList');
+      mitigationList.innerHTML = mit.map(a => `<li>${a}</li>`).join('');
+      mitigationCard.style.display = 'block';
+    }
+
+    // ── Sensitivity Table ──
+    const tbody = document.querySelector('#sensitivityTable tbody');
+    const currentUSD = taxExposure.annualExposure_USD;
+    tbody.innerHTML = sensitivity.table.map(row => {
+      const delta = row.annualTax_USD - currentUSD;
+      const sign  = delta >= 0 ? '+' : '';
+      const cls   = delta > 0 ? 'cp-delta-up' : delta < 0 ? 'cp-delta-down' : '';
+      const isCurrent = row.carbonPrice_USD === taxExposure.currentRate_local;
+      return `<tr class="${isCurrent ? 'cp-row-current' : ''}">
+        <td>$${row.carbonPrice_USD}/tCO2e ${isCurrent ? '<span class="cp-now-tag">now</span>' : ''}</td>
+        <td>$${_fmt(row.annualTax_USD)}</td>
+        <td class="${cls}">${sign}$${_fmt(Math.abs(delta))}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── State helpers ──────────────────────────────────────────
+  function _showLoading() {
+    document.getElementById('cpIdle').style.display    = 'none';
+    document.getElementById('cpResults').style.display = 'none';
+    document.getElementById('cpLoading').style.display = 'flex';
+  }
+
+  function _showError(msg) {
+    document.getElementById('cpLoading').style.display = 'none';
+    document.getElementById('cpIdle').style.display    = 'none';
+    document.getElementById('cpResults').style.display = 'none';
+    document.getElementById('cpResultsPanel').insertAdjacentHTML('afterbegin',
+      `<div class="rpt-error" style="margin-bottom:12px">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ef4444" stroke-width="1.4"/><path d="M7 4v3M7 9.5v.5" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
+        ${msg}
+      </div>`);
+  }
+
+  function reset() {
+    document.getElementById('cpIdle').style.display    = 'block';
+    document.getElementById('cpLoading').style.display = 'none';
+    document.getElementById('cpResults').style.display = 'none';
+    document.querySelectorAll('.rpt-error').forEach(e => e.remove());
+  }
+
+  function _fmt(n) {
+    return Number(n || 0).toLocaleString('en-US');
+  }
+
+  function init() {
+    // Wire live score preview
+    const scoreInput = document.getElementById('cp-score');
+    if (scoreInput) {
+      scoreInput.addEventListener('input', _updateScorePreview);
+      _updateScorePreview(); // initial state
+    }
+  }
+
+  return { calculate, reset, init };
+})();
+</script>

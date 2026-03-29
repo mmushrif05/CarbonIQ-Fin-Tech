@@ -31,6 +31,7 @@ const extractRouter       = require('./extract');
 const extractUploadRouter = require('./extract-upload');
 const agentRouter         = require('./agent');
 const reportsRouter       = require('./reports');
+const carbonPricingRouter = require('./carbon-pricing');
 
 const router = Router();
 
@@ -54,6 +55,10 @@ router.get('/', (_req, res) => {
       reports: {
         generate: 'POST /v1/reports/generate',
         types:    'GET /v1/reports/types',
+      },
+      carbonPricing: {
+        calculate: 'POST /v1/carbon-pricing/calculate',
+        rates:     'GET /v1/carbon-pricing/rates',
       },
       agent: {
         screen:    'POST /v1/agent/screen',
@@ -82,5 +87,6 @@ router.use('/portfolio', portfolioRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
 router.use('/reports', reportsRouter);
+router.use('/carbon-pricing', carbonPricingRouter);
 
 module.exports = router;
