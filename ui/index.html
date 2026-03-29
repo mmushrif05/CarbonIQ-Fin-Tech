@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="css/extract.css">
   <link rel="stylesheet" href="css/agents.css">
+  <link rel="stylesheet" href="css/reports.css">
 </head>
 <body>
   <!-- Sidebar -->
@@ -723,94 +724,8 @@
         </div>
       </div>
 
-      <!-- =================== REPORTS PAGE =================== -->
-      <div class="page" id="page-reports">
-        <div class="report-hero">
-          <div class="report-hero-content">
-            <h2>PCAF v3 Disclosure Report</h2>
-            <p>Generate a compliant portfolio emissions report aligned with the PCAF Global GHG Standard Third Edition (December 2025)</p>
-            <div class="report-hero-actions">
-              <button class="btn btn-primary btn-lg">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 2h5l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.5"/><path d="M8 2v4h4" stroke="currentColor" stroke-width="1.5"/></svg>
-                Generate Full Report
-              </button>
-              <button class="btn btn-secondary btn-lg">Download Template</button>
-            </div>
-          </div>
-          <div class="report-hero-checklist">
-            <h4>Disclosure Checklist</h4>
-            <div class="checklist">
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Absolute financed emissions</label>
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Physical & economic intensity</label>
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Weighted data quality score</label>
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Portfolio coverage (94.2%)</label>
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Scope 1, 2, 3 breakdown</label>
-              <label class="check-item checked"><input type="checkbox" checked disabled/> Fluctuation analysis</label>
-              <label class="check-item"><input type="checkbox" disabled/> Inflation adjustment</label>
-              <label class="check-item"><input type="checkbox" disabled/> Methodology documentation</label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Report Preview Cards -->
-        <div class="kpi-grid kpi-grid-3">
-          <div class="kpi-card report-summary-card">
-            <div class="kpi-label">Report Period</div>
-            <div class="kpi-value">FY 2025</div>
-            <div class="kpi-secondary">Jan 1 — Dec 31, 2025</div>
-          </div>
-          <div class="kpi-card report-summary-card">
-            <div class="kpi-label">Standard Version</div>
-            <div class="kpi-value">PCAF v3</div>
-            <div class="kpi-secondary">Third Edition, Dec 2025</div>
-          </div>
-          <div class="kpi-card report-summary-card">
-            <div class="kpi-label">Compliance Status</div>
-            <div class="kpi-value kpi-value-green">6 / 8</div>
-            <div class="kpi-secondary">Mandatory items complete</div>
-          </div>
-        </div>
-
-        <!-- Past Reports -->
-        <div class="table-card">
-          <div class="table-header">
-            <h3>Generated Reports</h3>
-          </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Report</th>
-                <th>Period</th>
-                <th>Projects</th>
-                <th>Total Emissions</th>
-                <th>Generated</th>
-                <th>Format</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>PCAF Portfolio Disclosure FY2025</strong></td>
-                <td>FY 2025</td>
-                <td>87</td>
-                <td>48,230 tCO2e</td>
-                <td>Mar 5, 2026</td>
-                <td><span class="format-tag">PDF</span></td>
-                <td><button class="btn btn-ghost btn-sm">Download</button></td>
-              </tr>
-              <tr>
-                <td><strong>PCAF Portfolio Disclosure FY2024</strong></td>
-                <td>FY 2024</td>
-                <td>72</td>
-                <td>42,100 tCO2e</td>
-                <td>Feb 28, 2025</td>
-                <td><span class="format-tag">PDF</span></td>
-                <td><button class="btn btn-ghost btn-sm">Download</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <!-- =================== REPORTS PAGE (dynamic) =================== -->
+      <div class="page" id="page-reports"></div>
 
       <!-- =================== NEW PROJECT PAGE =================== -->
       <div class="page" id="page-new-project">

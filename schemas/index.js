@@ -13,6 +13,7 @@ const { portfolioRequestSchema, portfolioAssetSchema } = require('./portfolio');
 const { webhookCreateSchema, webhookUpdateSchema } = require('./webhooks');
 const { extractRequestSchema } = require('./extract');
 const { underwritingRequestSchema, screeningRequestSchema, covenantsRequestSchema, monitoringRequestSchema, portfolioReportRequestSchema } = require('./agent');
+const { reportGenerateSchema } = require('./reports');
 
 module.exports = {
   // AI Extraction
@@ -46,4 +47,7 @@ module.exports = {
   // Webhooks
   webhookCreateSchema,
   webhookUpdateSchema,
+
+  // Reports
+  reportGenerateSchema,
 };

@@ -30,6 +30,7 @@ const webhookRouter = require('./webhook');
 const extractRouter       = require('./extract');
 const extractUploadRouter = require('./extract-upload');
 const agentRouter         = require('./agent');
+const reportsRouter       = require('./reports');
 
 const router = Router();
 
@@ -50,6 +51,10 @@ router.get('/', (_req, res) => {
       covenant: 'POST /v1/projects/:projectId/covenant',
       portfolio: 'GET /v1/portfolio',
       webhooks: 'POST /v1/webhooks',
+      reports: {
+        generate: 'POST /v1/reports/generate',
+        types:    'GET /v1/reports/types',
+      },
       agent: {
         screen:    'POST /v1/agent/screen',
         underwrite:'POST /v1/agent/underwrite',
@@ -76,5 +81,6 @@ router.use('/projects', covenantRouter);
 router.use('/portfolio', portfolioRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
+router.use('/reports', reportsRouter);
 
 module.exports = router;
