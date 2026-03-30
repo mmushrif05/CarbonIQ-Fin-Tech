@@ -14,6 +14,7 @@ const { webhookCreateSchema, webhookUpdateSchema } = require('./webhooks');
 const { extractRequestSchema } = require('./extract');
 const { underwritingRequestSchema, screeningRequestSchema, covenantsRequestSchema, monitoringRequestSchema, portfolioReportRequestSchema } = require('./agent');
 const { reportGenerateSchema } = require('./reports');
+const { carbonPricingSchema } = require('./carbon-pricing');
 
 module.exports = {
   // AI Extraction
@@ -50,4 +51,7 @@ module.exports = {
 
   // Reports
   reportGenerateSchema,
+
+  // Carbon Pricing
+  carbonPricingSchema,
 };

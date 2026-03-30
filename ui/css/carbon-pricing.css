@@ -1,0 +1,366 @@
+/* ============================================================
+   CarbonIQ — Carbon Pricing & Financial Impact Page
+   ============================================================ */
+
+/* ── Two-panel layout ──────────────────────────────────────── */
+.cp-layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── Form Panel ────────────────────────────────────────────── */
+.cp-form-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  position: sticky;
+  top: 80px;
+}
+.cp-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.cp-section-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+.cp-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.cp-optional {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-left: 4px;
+}
+.cp-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 20px 0;
+}
+
+/* Score Preview */
+.cp-score-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+.cp-score-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.cp-score-value {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  min-width: 36px;
+}
+.cp-class-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.cp-score-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+  flex: 1;
+  min-width: 160px;
+}
+
+/* Actions */
+.cp-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-light);
+}
+.cp-calc-btn { flex: 1; justify-content: center; }
+
+/* ── Results Panel ─────────────────────────────────────────── */
+.cp-results-panel {
+  min-height: 320px;
+}
+
+/* Idle */
+.cp-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 64px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* Loading */
+.cp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 64px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Attribution bar */
+.cp-attr-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 14px;
+}
+.cp-attr-sep { color: var(--border); }
+.cp-attr-item strong { color: var(--text-primary); }
+
+/* Summary */
+.cp-summary-box {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  background: var(--accent-light);
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius-sm);
+}
+.cp-summary-item {
+  font-size: 12.5px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+/* ── Metric Cards Grid ─────────────────────────────────────── */
+.cp-metric-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.cp-card-wide { grid-column: 1 / -1; }
+
+.cp-metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-metric-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.cp-metric-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cp-icon-red    { background: var(--red-bg);  color: var(--red); }
+.cp-icon-green  { background: var(--green-bg); color: var(--green); }
+.cp-icon-amber  { background: var(--amber-bg); color: var(--amber); }
+.cp-icon-blue   { background: #eff6ff;          color: var(--blue); }
+
+.cp-metric-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.cp-metric-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.cp-metric-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+.cp-val-green   { color: var(--green); }
+.cp-val-red     { color: var(--red); }
+.cp-val-neutral { color: var(--text-secondary); }
+
+.cp-metric-unit {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.cp-metric-footer {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* Upgrade note */
+.cp-upgrade-note {
+  font-size: 11.5px;
+  color: var(--accent);
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--accent-light);
+  border-radius: var(--radius-xs);
+  line-height: 1.4;
+}
+
+/* Risk pill */
+.cp-risk-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.cp-risk-high   { background: var(--red-bg);   color: var(--red); }
+.cp-risk-medium { background: var(--amber-bg); color: var(--amber); }
+.cp-risk-low    { background: var(--green-bg); color: var(--green); }
+
+/* ── Tax Trajectory ────────────────────────────────────────── */
+.cp-trajectory {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.cp-traj-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 70px;
+  align-items: center;
+  gap: 8px;
+}
+.cp-traj-year { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.cp-traj-bar-wrap {
+  height: 6px;
+  background: var(--border-light);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cp-traj-bar {
+  height: 100%;
+  background: var(--red);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  opacity: 0.7;
+}
+.cp-traj-val { font-size: 11px; font-weight: 600; text-align: right; }
+
+/* ── Sensitivity Table ─────────────────────────────────────── */
+.cp-sensitivity-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 12.5px;
+}
+.cp-sensitivity-table th {
+  text-align: left;
+  padding: 6px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+}
+.cp-sensitivity-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+.cp-sensitivity-table tr:last-child td { border-bottom: none; }
+.cp-row-current { background: var(--accent-light); font-weight: 600; }
+.cp-now-tag {
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--accent);
+  color: #fff;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+}
+.cp-delta-up   { color: var(--red);   font-weight: 600; }
+.cp-delta-down { color: var(--green); font-weight: 600; }
+
+/* ── Mitigation card ───────────────────────────────────────── */
+.cp-actions-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.cp-actions-card h4 {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+.cp-actions-card ul {
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cp-actions-card li {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding-left: 16px;
+  position: relative;
+  line-height: 1.5;
+}
+.cp-actions-card li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .cp-layout { grid-template-columns: 1fr; }
+  .cp-form-panel { position: static; }
+}
+@media (max-width: 700px) {
+  .cp-metric-grid { grid-template-columns: 1fr; }
+  .cp-card-wide { grid-column: 1; }
+}
