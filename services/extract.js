@@ -140,6 +140,9 @@ async function extractMaterials(rawInput, inputFormat = 'text') {
   const response = await client.messages.create({
     model:      config.anthropicModel,
     max_tokens: 4096,
+    // Structured output: response is guaranteed valid JSON — no markdown fences,
+    // no preamble text. Removes the brittle regex cleanup in _parseAndEnrich.
+    output_config: { format: { type: 'json_object' } },
     // Prompt caching — system prompt is identical on every call; cache it.
     system: [{ type: 'text', text: SYSTEM_PROMPT_TEXT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userMessage }]
@@ -201,6 +204,8 @@ async function extractMaterialsFromPdf({ pdfBase64, fileId, pageHint } = {}) {
   const createParams = {
     model:      config.anthropicVisionModel,
     max_tokens: 8192,
+    // Structured output: PDF extraction always returns raw JSON — never markdown.
+    output_config: { format: { type: 'json_object' } },
     // Prompt caching on the system prompt
     system: [{ type: 'text', text: SYSTEM_PROMPT_PDF, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: userContent }]
@@ -250,12 +255,14 @@ async function extractFromRequest({ content, format = 'text', pdfBase64, fileId,
  * Parse Claude's JSON response and enrich each material with ICE v3 factor.
  */
 function _parseAndEnrich(response) {
-  const rawText  = response.content[0].text.trim();
-  const jsonText = rawText.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim();
+  // output_config json_object guarantees the response is raw valid JSON — no
+  // markdown code fences, no preamble. A parse failure here means an API-level
+  // contract violation, not a prompt formatting issue.
+  const rawText = response.content[0].text;
 
   let parsed;
   try {
-    parsed = JSON.parse(jsonText);
+    parsed = JSON.parse(rawText);
   } catch {
     throw new Error('AI returned invalid JSON. Raw response: ' + rawText.slice(0, 300));
   }

@@ -194,6 +194,8 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
 
       // Thinking blocks are internal reasoning — strip them before surfacing to
       // callers; only text and tool_use blocks are meaningful for the run record.
+      // Thinking blocks are internal reasoning — strip them before surfacing
+      // to callers; only text and tool_use blocks matter for the run record.
       const textBlocks    = response.content.filter(b => b.type === 'text');
       const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
 
@@ -208,7 +210,20 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       }
 
       // ------------------------------------------------------------------
-      // No tool calls → agent has finished reasoning and produced its answer
+      // pause_turn — server-side tool loop (web_search, web_fetch, code
+      // execution) hit its 10-iteration limit. Append the assistant turn
+      // and re-send so the API resumes from where it left off. The API
+      // detects the trailing server_tool_use block and resumes automatically.
+      // ------------------------------------------------------------------
+      if (response.stop_reason === 'pause_turn') {
+        messages.push({ role: 'assistant', content: response.content });
+        continue;
+      }
+
+      // ------------------------------------------------------------------
+      // No user-defined tool calls → agent has finished and produced its answer
+      // server_tool_use blocks (web searches) are handled by the API internally
+      // and do not appear here; they are invisible to the client-side loop.
       // ------------------------------------------------------------------
       if (toolUseBlocks.length === 0 || response.stop_reason === 'end_turn') {
         run.result      = textBlocks.map(b => b.text).join('\n');

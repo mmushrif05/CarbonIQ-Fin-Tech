@@ -388,9 +388,32 @@ function buildUserMessage({ boqContent, boqFormat, projectName, buildingArea_m2,
   return parts.join('\n');
 }
 
+// ---------------------------------------------------------------------------
+// Server-side tool definitions — web_search and web_fetch run on Anthropic's
+// infrastructure; no client-side handler is needed. The underwriting agent
+// uses these to fetch live carbon tax rates (SG, EU, MY, HK) and current
+// green bond market pricing rather than relying on hardcoded values in
+// services/carbon-pricing.js, which can lag behind legislative changes.
+// ---------------------------------------------------------------------------
+
+const SERVER_TOOL_DEFINITIONS = [
+  {
+    type: 'web_search_20260209',
+    name: 'web_search'
+  },
+  {
+    type: 'web_fetch_20260209',
+    name: 'web_fetch'
+  }
+];
+
 module.exports = {
   SYSTEM_PROMPT,
-  TOOL_DEFINITIONS,
+  // Merge user-defined tools with server-side web tools. The agent loop in
+  // bridge/agent.js filters tool_use blocks (user tools) vs server_tool_use
+  // blocks (handled by the API internally), so no client-side change is needed
+  // to execute web searches — only pause_turn resumption must be handled.
+  TOOL_DEFINITIONS: [...TOOL_DEFINITIONS, ...SERVER_TOOL_DEFINITIONS],
   TOOL_FUNCTIONS: {
     parse_boq_materials:      TOOL_FUNCTIONS.parse_boq_materials,
     estimate_preliminary_carbon: TOOL_FUNCTIONS.estimate_preliminary_carbon,
