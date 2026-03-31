@@ -214,13 +214,47 @@ const NewProject = (() => {
     if (btn) btn.disabled = true;
     if (msg) { msg.textContent = 'Submitting…'; msg.className = ''; }
 
-    const name     = $$('np-proj-name')?.value?.trim() || 'New Project';
+    const name        = $$('np-proj-name')?.value?.trim() || 'New Project';
     const totalKgCO2e = _materials.reduce((s, m) => s + _kgCO2e(m), 0);
-    const bomText  = _materials.map(m =>
+    const bomText     = _materials.map(m =>
       `${m.name}: ${m.qty} ${m.unit} (${m.category})`
     ).join('\n');
 
+    const projectPayload = {
+      name,
+      projectId:    $$('np-proj-id')?.value?.trim() || '',
+      type:         $$('np-proj-type')?.value || 'Commercial',
+      region:       $$('np-proj-region')?.value || 'SG',
+      phase:        $$('np-proj-phase')?.value || 'Construction',
+      floorArea_m2: parseFloat($$('np-proj-area')?.value || 0),
+      materials:    _materials.map(m => ({ name: m.name, category: m.category, qty: m.qty, unit: m.unit })),
+      loan: {
+        outstanding: parseFloat($$('np-outstanding')?.value || 0) * 1e6,
+        equity:      parseFloat($$('np-equity')?.value || 0) * 1e6,
+        debt:        parseFloat($$('np-debt')?.value || 0) * 1e6,
+        currency:    $$('np-currency')?.value || 'USD',
+      },
+      totalEmbodiedCarbon_kgCO2e: totalKgCO2e,
+    };
+
     try {
+      // Step 1: Save project to Firebase via POST /v1/projects
+      let savedProjectId = null;
+      try {
+        const projRes = await window.CARBONIQ_fetch('/v1/projects', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(projectPayload),
+        });
+        if (projRes.ok) {
+          const projData = await projRes.json();
+          savedProjectId = projData.projectId;
+        }
+      } catch (_) {
+        // Continue even if project save fails
+      }
+
+      // Step 2: Call /v1/assess for AI scoring
       const res = await window.CARBONIQ_fetch('/v1/assess', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -228,10 +262,9 @@ const NewProject = (() => {
       });
       if (res.ok) {
         const data = await res.json();
-        if (msg) {
-          msg.textContent = `Project submitted. AI assessment complete — ${data.assessment?.materials?.length || _materials.length} materials, ${_fmtN(Math.round(data.assessment?.carbonTotals?.totalKgCO2e || totalKgCO2e))} kgCO2e.`;
-          msg.className = 'mon-msg-success';
-        }
+        const successMsg = `Project submitted${savedProjectId ? ` (ID: ${savedProjectId})` : ''}. AI assessment complete — ${data.assessment?.materials?.length || _materials.length} materials, ${_fmtN(Math.round(data.assessment?.carbonTotals?.totalKgCO2e || totalKgCO2e))} kgCO2e.`;
+        if (msg) { msg.textContent = successMsg; msg.className = 'mon-msg-success'; }
+        if (typeof Toast !== 'undefined' && Toast.success) Toast.success(successMsg);
         // Refresh dashboard data
         if (typeof Dashboard !== 'undefined') Dashboard.refresh();
       } else {
@@ -239,10 +272,9 @@ const NewProject = (() => {
       }
     } catch (_) {
       // Graceful offline mode
-      if (msg) {
-        msg.textContent = `Project saved locally. Total: ${_fmtN(Math.round(totalKgCO2e))} kgCO2e. Connect to API for full assessment.`;
-        msg.className = 'mon-msg-success';
-      }
+      const offlineMsg = `Project saved locally. Total: ${_fmtN(Math.round(totalKgCO2e))} kgCO2e. Connect to API for full assessment.`;
+      if (msg) { msg.textContent = offlineMsg; msg.className = 'mon-msg-success'; }
+      if (typeof Toast !== 'undefined' && Toast.success) Toast.success(offlineMsg);
     } finally {
       if (btn) btn.disabled = false;
     }

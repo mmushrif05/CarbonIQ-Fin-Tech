@@ -5,15 +5,19 @@
  * Each route file handles its own auth middleware.
  *
  * Endpoints:
- *   GET  /v1                              → API info
- *   POST /v1/assess                       → BOQ assessment
- *   GET  /v1/projects/:projectId          → Project carbon data
- *   GET  /v1/projects/:projectId/score    → Carbon Finance Score
- *   GET  /v1/projects/:projectId/taxonomy → Taxonomy alignment
- *   GET  /v1/projects/:projectId/pcaf     → PCAF-compliant output
- *   POST /v1/projects/:projectId/covenant → Covenant check
- *   GET  /v1/portfolio                    → Portfolio aggregation
- *   POST /v1/webhooks                     → Webhook registration
+ *   GET  /v1                                        → API info
+ *   POST /v1/assess                                 → BOQ assessment
+ *   POST /v1/projects                               → Create or update a fintech project
+ *   GET  /v1/projects                               → List all projects for this org
+ *   GET  /v1/projects/:projectId                    → Project carbon data
+ *   GET  /v1/projects/:projectId/score              → Carbon Finance Score
+ *   GET  /v1/projects/:projectId/taxonomy           → Taxonomy alignment
+ *   GET  /v1/projects/:projectId/pcaf               → PCAF-compliant output
+ *   POST /v1/projects/:projectId/covenant           → Covenant check
+ *   POST /v1/projects/:projectId/monitoring         → Submit annual monitoring entry
+ *   GET  /v1/projects/:projectId/monitoring         → List monitoring history
+ *   GET  /v1/portfolio                              → Portfolio aggregation
+ *   POST /v1/webhooks                               → Webhook registration
  */
 
 const { Router } = require('express');
@@ -45,11 +49,17 @@ router.get('/', (_req, res) => {
       extract:       'POST /v1/extract — text/CSV/JSON or PDF (pdfBase64 / fileId)',
       extractUpload: 'POST /v1/extract/upload — pre-upload a PDF to Files API, returns fileId',
       assess: 'POST /v1/assess',
+      projectCreate: 'POST /v1/projects',
+      projectList:   'GET /v1/projects',
       project: 'GET /v1/projects/:projectId',
       score: 'GET /v1/projects/:projectId/score',
       taxonomy: 'GET /v1/projects/:projectId/taxonomy',
       pcaf: 'GET /v1/projects/:projectId/pcaf',
       covenant: 'POST /v1/projects/:projectId/covenant',
+      monitoring: {
+        submit: 'POST /v1/projects/:id/monitoring',
+        list:   'GET /v1/projects/:id/monitoring',
+      },
       portfolio: 'GET /v1/portfolio',
       webhooks: 'POST /v1/webhooks',
       reports: {

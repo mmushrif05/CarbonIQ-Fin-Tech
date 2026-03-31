@@ -156,6 +156,46 @@ async function listAgentRuns(orgId, limit = 20) {
   return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+async function saveProject(projectId, projectData) {
+  const db = getDatabase();
+  if (!db) return null;
+  await db.ref(`fintech/projects/${projectId}`).set({ ...projectData, updatedAt: new Date().toISOString() });
+  return projectId;
+}
+
+async function getFintechProject(projectId) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/projects/${projectId}`).once('value');
+  return snapshot.val();
+}
+
+async function listFintechProjects(orgId) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/projects`).orderByChild('orgId').equalTo(orgId).once('value');
+  const val = snapshot.val();
+  if (!val) return [];
+  return Object.entries(val).map(([id, data]) => ({ projectId: id, ...data }));
+}
+
+async function saveMonitoringEntry(projectId, year, entry) {
+  const db = getDatabase();
+  if (!db) return null;
+  await db.ref(`fintech/monitoring/${projectId}/${year}`).set({ ...entry, savedAt: new Date().toISOString() });
+}
+
+async function listMonitoringEntries(projectId) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/monitoring/${projectId}`).once('value');
+  const val = snapshot.val();
+  if (!val) return [];
+  return Object.entries(val)
+    .map(([year, data]) => ({ year: parseInt(year), ...data }))
+    .sort((a, b) => a.year - b.year);
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -170,5 +210,10 @@ module.exports = {
   saveAgentRun,
   updateAgentRun,
   getAgentRun,
-  listAgentRuns
+  listAgentRuns,
+  saveProject,
+  getFintechProject,
+  listFintechProjects,
+  saveMonitoringEntry,
+  listMonitoringEntries,
 };

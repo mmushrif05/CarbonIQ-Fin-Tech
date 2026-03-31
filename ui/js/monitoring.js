@@ -57,6 +57,17 @@ const Monitoring = (() => {
 
   // ── Fetch project history ─────────────────────────────────
   async function _loadHistory(projectId) {
+    // First try GET /v1/projects/:projectId/monitoring for persisted entries
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/projects/${projectId}/monitoring`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.entries && data.entries.length > 0) {
+          return data.entries;
+        }
+      }
+    } catch (_) {}
+    // Fall back to PCAF history
     try {
       const res = await window.CARBONIQ_fetch(`/v1/projects/${projectId}/pcaf`);
       if (res.ok) {

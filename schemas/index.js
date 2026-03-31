@@ -15,6 +15,7 @@ const { extractRequestSchema } = require('./extract');
 const { underwritingRequestSchema, screeningRequestSchema, covenantsRequestSchema, monitoringRequestSchema, portfolioReportRequestSchema } = require('./agent');
 const { reportGenerateSchema } = require('./reports');
 const { carbonPricingSchema } = require('./carbon-pricing');
+const { createProjectSchema, monitoringEntrySchema } = require('./projects');
 
 module.exports = {
   // AI Extraction
@@ -54,4 +55,8 @@ module.exports = {
 
   // Carbon Pricing
   carbonPricingSchema,
+
+  // Projects
+  createProjectSchema,
+  monitoringEntrySchema,
 };
