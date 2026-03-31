@@ -1,0 +1,198 @@
+<!-- ============================================================
+     CarbonIQ — NDC & SDG Alignment Page
+     Powered by Claude AI | Sri Lanka Green Finance Taxonomy
+     ============================================================ -->
+
+<div class="ndc-page">
+
+  <!-- Hero -->
+  <div class="ndc-hero">
+    <div class="ndc-hero-text">
+      <h2>NDC &amp; SDG Alignment</h2>
+      <p>AI-powered alignment analysis against Sri Lanka's National Determined Contributions and the UN Sustainable Development Goals, under the <strong>Sri Lanka Green Finance Taxonomy (SLGFT v2024)</strong>.</p>
+    </div>
+    <div class="ndc-hero-badges">
+      <span class="ndc-framework-badge">🇱🇰 CBSL SLGFT</span>
+      <span class="ndc-framework-badge">📋 NDC 2030</span>
+      <span class="ndc-framework-badge">🌱 SDGs</span>
+      <span class="ndc-framework-badge ndc-ai-badge">⚡ Claude AI</span>
+    </div>
+  </div>
+
+  <!-- NDC targets info strip -->
+  <div class="ndc-targets-strip">
+    <div class="ndc-target-item">
+      <div class="ndc-target-label">Unconditional Target</div>
+      <div class="ndc-target-value">4.5% GHG reduction by 2030 vs BAU</div>
+    </div>
+    <div class="ndc-target-item">
+      <div class="ndc-target-label">Conditional Target</div>
+      <div class="ndc-target-value">14.5% GHG reduction by 2030 (with intl. support)</div>
+    </div>
+    <div class="ndc-target-item">
+      <div class="ndc-target-label">Net Zero</div>
+      <div class="ndc-target-value">2050</div>
+    </div>
+    <div class="ndc-target-item">
+      <div class="ndc-target-label">Key SDGs</div>
+      <div class="ndc-target-value">7 · 9 · 11 · 13 · 14 · 15</div>
+    </div>
+  </div>
+
+  <!-- Input form -->
+  <div class="ndc-form-card">
+    <h3 class="ndc-section-title">Project Details</h3>
+    <p style="color:var(--text-tertiary);font-size:13px;margin-bottom:16px">Enter project data for AI-powered NDC/SDG assessment. More data = higher confidence score.</p>
+
+    <div class="ndc-form-grid">
+      <div class="form-group">
+        <label for="ndc-proj-name">Project Name <span style="color:var(--red)">*</span></label>
+        <input id="ndc-proj-name" type="text" class="form-input" placeholder="e.g. Colombo Green Office Tower" />
+      </div>
+      <div class="form-group">
+        <label for="ndc-building-type">Building Type</label>
+        <select id="ndc-building-type" class="form-input">
+          <option value="">— Select —</option>
+          <option value="Commercial Office">Commercial Office</option>
+          <option value="Residential — Low Rise">Residential — Low Rise</option>
+          <option value="Residential — High Rise">Residential — High Rise</option>
+          <option value="Industrial">Industrial</option>
+          <option value="Mixed-Use">Mixed-Use</option>
+          <option value="Hospitality">Hospitality</option>
+          <option value="Healthcare">Healthcare</option>
+          <option value="Education">Education</option>
+          <option value="Infrastructure">Infrastructure</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ndc-slsic">SLSIC Sector <span class="slgft-tag">Sri Lanka</span></label>
+        <select id="ndc-slsic" class="form-input">
+          <option value="">— Select sector —</option>
+          <option value="F">F — Construction (F 41-43)</option>
+          <option value="A">A — Agriculture, Forestry &amp; Fishing</option>
+          <option value="B">B — Mining &amp; Quarrying</option>
+          <option value="C">C — Manufacturing</option>
+          <option value="D">D — Electricity, Gas, Steam &amp; Air Conditioning</option>
+          <option value="E">E — Water Supply; Sewerage, Waste Management</option>
+          <option value="G">G — Wholesale &amp; Retail Trade</option>
+          <option value="H">H — Transportation &amp; Storage</option>
+          <option value="I">I — Accommodation &amp; Food Service</option>
+          <option value="J">J — Information &amp; Communication</option>
+          <option value="K">K — Financial &amp; Insurance Activities</option>
+          <option value="L">L — Real Estate Activities</option>
+          <option value="M">M — Professional, Scientific &amp; Technical</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="ndc-activity-code">SLGFT Activity Code <span class="slgft-tag">Sri Lanka</span></label>
+        <input id="ndc-activity-code" type="text" class="form-input"
+          placeholder="e.g. M1.1, M4.1, A2.1"
+          oninput="NdcSdgPage.onActivityInput(this.value)" />
+        <span class="form-hint">M1.1 = Green Buildings · M4.1 = Solar PV · A2.1 = Flood-Resilient</span>
+      </div>
+      <div class="form-group">
+        <label for="ndc-emissions">Embodied Carbon (tCO2e)</label>
+        <input id="ndc-emissions" type="number" class="form-input" placeholder="e.g. 4850" min="0" />
+      </div>
+      <div class="form-group">
+        <label for="ndc-area">Gross Floor Area (m²)</label>
+        <input id="ndc-area" type="number" class="form-input" placeholder="e.g. 25000" min="0"
+          oninput="NdcSdgPage.calcIntensity()" />
+      </div>
+      <div class="form-group">
+        <label for="ndc-reduction">Carbon Reduction vs Baseline (%)</label>
+        <input id="ndc-reduction" type="number" class="form-input" placeholder="e.g. 22" min="0" max="100" />
+      </div>
+      <div class="form-group ndc-checkboxes">
+        <label style="margin-bottom:8px">Documentation Available</label>
+        <label class="ndc-checkbox-label">
+          <input type="checkbox" id="ndc-has-epd" /> Has EPD (Environmental Product Declarations)
+        </label>
+        <label class="ndc-checkbox-label">
+          <input type="checkbox" id="ndc-has-lca" /> Has LCA (Whole Life Carbon Assessment)
+        </label>
+      </div>
+    </div>
+
+    <!-- Live intensity indicator -->
+    <div id="ndc-intensity-bar" class="ndc-intensity-bar" style="display:none">
+      <span class="ndc-intensity-label">Embodied Carbon Intensity:</span>
+      <span id="ndc-intensity-value" class="ndc-intensity-value">—</span>
+      <span id="ndc-intensity-badge" class="kpi-badge">—</span>
+      <span style="color:var(--text-tertiary);font-size:12px;margin-left:8px">
+        SLGFT: ≤600 = Green · ≤900 = Transition · &gt;900 = Not Aligned
+      </span>
+    </div>
+
+    <!-- Activity code lookup result -->
+    <div id="ndc-activity-desc" class="slgft-activity-result" style="display:none;margin-top:8px"></div>
+
+    <div style="margin-top:20px;display:flex;gap:12px;align-items:center">
+      <button class="btn btn-primary" onclick="NdcSdgPage.runAssessment()" id="ndc-assess-btn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Run AI NDC/SDG Assessment
+      </button>
+      <button class="btn btn-ghost" onclick="NdcSdgPage.loadFramework()">View SLGFT Framework →</button>
+      <span id="ndc-status-msg" style="font-size:13px;color:var(--text-tertiary)"></span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="ndc-results" style="display:none">
+
+    <!-- NDC Alignment card -->
+    <div class="ndc-result-grid">
+      <div class="ndc-result-card" id="ndc-card-main">
+        <div class="ndc-card-header">
+          <h3>NDC Alignment</h3>
+          <span id="ndc-tier-badge" class="kpi-badge badge-neutral">—</span>
+        </div>
+        <div id="ndc-contribution-bar" class="ndc-contribution-bar">
+          <div id="ndc-contribution-fill" class="ndc-contribution-fill" style="width:0%"></div>
+        </div>
+        <div id="ndc-contribution-label" class="ndc-contribution-label">—% estimated NDC contribution</div>
+        <div id="ndc-explanation" class="ndc-explanation"></div>
+        <div id="ndc-key-drivers" class="ndc-key-drivers"></div>
+      </div>
+
+      <div class="ndc-result-card">
+        <div class="ndc-card-header"><h3>Bankability Narrative</h3></div>
+        <div id="ndc-narrative" class="ndc-narrative"></div>
+        <div id="ndc-confidence" class="ndc-confidence"></div>
+      </div>
+    </div>
+
+    <!-- SDG Alignment -->
+    <div class="ndc-result-card ndc-sdg-card">
+      <div class="ndc-card-header"><h3>SDG Alignment</h3></div>
+      <div id="ndc-sdg-grid" class="ndc-sdg-grid"></div>
+    </div>
+
+    <!-- DNSH Assessment -->
+    <div class="ndc-result-card">
+      <div class="ndc-card-header">
+        <h3>DNSH Assessment</h3>
+        <span id="ndc-dnsh-badge" class="kpi-badge badge-neutral">—</span>
+      </div>
+      <div id="ndc-dnsh-checks" class="ndc-dnsh-checks"></div>
+    </div>
+
+    <!-- Recommendations -->
+    <div class="ndc-result-card">
+      <div class="ndc-card-header"><h3>Recommendations</h3></div>
+      <ol id="ndc-recommendations" class="ndc-recommendations"></ol>
+    </div>
+
+  </div>
+
+  <!-- Framework panel -->
+  <div id="ndc-framework-panel" style="display:none">
+    <div class="ndc-result-card">
+      <div class="ndc-card-header"><h3>SLGFT Framework Reference</h3>
+        <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.hideFramework()">Hide ×</button>
+      </div>
+      <div id="ndc-framework-body" class="ndc-framework-body">Loading…</div>
+    </div>
+  </div>
+
+</div>

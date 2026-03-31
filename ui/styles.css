@@ -1417,3 +1417,199 @@ body {
   color: var(--text-secondary);
   line-height: 1.9;
 }
+
+/* ============================================================
+   NDC & SDG Alignment Page
+   ============================================================ */
+
+/* Hero */
+.ndc-page { padding: 0 0 40px; }
+.ndc-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.ndc-hero-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.ndc-hero-text p  { color: var(--text-secondary); font-size: 14px; max-width: 560px; }
+.ndc-hero-badges  { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ndc-framework-badge {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ndc-ai-badge {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* NDC targets strip */
+.ndc-targets-strip {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.ndc-target-item {
+  flex: 1;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.ndc-target-item:last-child { border-right: none; }
+.ndc-target-label  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ndc-target-value  { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+/* Form card */
+.ndc-form-card {
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.ndc-section-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.ndc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.ndc-checkboxes { display: flex; flex-direction: column; gap: 8px; }
+.ndc-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.ndc-checkbox-label input { cursor: pointer; }
+
+/* Intensity bar */
+.ndc-intensity-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  flex-wrap: wrap;
+}
+.ndc-intensity-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ndc-intensity-value { font-size: 14px; font-weight: 700; }
+
+/* Results grid */
+.ndc-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 768px) { .ndc-result-grid { grid-template-columns: 1fr; } }
+
+.ndc-result-card {
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.ndc-sdg-card { margin-bottom: 16px; }
+.ndc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.ndc-card-header h3 { font-size: 14px; font-weight: 700; }
+
+/* NDC contribution bar */
+.ndc-contribution-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.ndc-contribution-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #16a34a);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.ndc-contribution-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
+.ndc-explanation { font-size: 13.5px; color: var(--text-primary); line-height: 1.6; margin-bottom: 10px; }
+.ndc-key-drivers { margin-top: 8px; }
+.ndc-drivers-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
+.ndc-driver-item { font-size: 13px; color: var(--text-secondary); padding: 3px 0; }
+
+/* Bankability */
+.ndc-narrative { font-size: 13.5px; color: var(--text-primary); line-height: 1.7; margin-bottom: 12px; font-style: italic; }
+.ndc-confidence { display: flex; align-items: center; gap: 6px; }
+
+/* SDG grid */
+.ndc-sdg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.ndc-sdg-item {
+  padding: 12px;
+  border-radius: var(--radius-xs);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.ndc-sdg-high   { background: #f0fdf4; }
+.ndc-sdg-medium { background: #fffbeb; }
+.ndc-sdg-low    { background: #f8fafc; }
+.ndc-sdg-num    { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.ndc-sdg-label  { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ndc-sdg-relevance { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ndc-sdg-rationale { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+/* DNSH */
+.ndc-dnsh-checks { display: flex; flex-direction: column; gap: 10px; }
+.ndc-dnsh-row { padding: 8px 12px; border-radius: var(--radius-xs); background: #f8fafc; }
+
+/* Recommendations */
+.ndc-recommendations { padding-left: 20px; }
+.ndc-recommendations li { font-size: 13.5px; color: var(--text-primary); margin-bottom: 8px; line-height: 1.6; }
+
+/* Framework panel */
+.ndc-framework-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 13px; line-height: 1.8; }
+.ndc-framework-body .data-table td, .ndc-framework-body .data-table th { font-size: 12px; }
+
+/* ============================================================
+   New Project Wizard — Sri Lanka SLGFT fields
+   ============================================================ */
+
+.slgft-wizard-fields {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+}
+.slgft-wizard-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 14px;
+}
+
+/* Review panel — full-width Sri Lanka section */
+.review-section-full {
+  grid-column: 1 / -1;
+}
+.slgft-review-section {
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+}
+.badge-blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}

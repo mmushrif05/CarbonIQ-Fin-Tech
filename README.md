@@ -34,14 +34,35 @@ CarbonIQ-Fin-Tech/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `GET`  | `/health` | Health check — no auth |
-| `POST` | `/v1/assess` | Full project carbon assessment |
-| `GET/POST` | `/v1/projects` | Project list / create |
-| `POST` | `/v1/score` | Carbon Finance Score (CRS) |
-| `GET`  | `/v1/taxonomy` | Taxonomy alignment check |
-| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions |
-| `POST/GET` | `/v1/covenant` | Covenant check / full SLL suite |
+| `POST` | `/v1/assess` | Full project carbon assessment (Claude AI) |
+| `POST/GET` | `/v1/projects` | Project list / create |
+| `GET`  | `/v1/projects/:id/score` | Carbon Finance Score (CFS 0-100) |
+| `GET`  | `/v1/projects/:id/taxonomy` | Taxonomy alignment — 5 frameworks incl. SLGFT |
+| `GET`  | `/v1/projects/:id/pcaf` | PCAF v3 financed emissions |
+| `POST` | `/v1/projects/:id/covenant` | Green loan covenant check |
+| `POST/GET` | `/v1/projects/:id/monitoring` | Annual monitoring entries |
 | `GET`  | `/v1/portfolio` | Portfolio carbon risk aggregation |
-| `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
+| `POST` | `/v1/carbon-pricing/calculate` | Carbon tax exposure + loan pricing + stranded risk |
+| `GET`  | `/v1/carbon-pricing/rates` | Carbon tax rates (SG, EU, MY, HK, LK) |
+| `POST` | `/v1/reports/generate` | PCAF / GRI 305 / TCFD / IFRS S2 reports |
+| `POST` | `/v1/ndc-sdg/assess` | **AI-powered NDC/SDG alignment — Sri Lanka SLGFT** |
+| `GET`  | `/v1/ndc-sdg/framework` | SLGFT framework metadata (sectors, activities, NDC) |
+| `POST` | `/v1/agent/screen` | AI agent — green loan screening |
+| `POST` | `/v1/agent/underwrite` | AI agent — underwriting analysis |
+| `POST` | `/v1/webhooks` | Webhook subscription management |
+
+### Sri Lanka Green Finance Taxonomy (SLGFT)
+
+Regions supported: **SG · EU · MY · HK · LK (Sri Lanka)**
+
+Sri Lanka-specific fields on `/v1/projects` and `/v1/ndc-sdg/assess`:
+- `slsicSector` — SLSIC sector code (A–M, e.g. `F` = Construction)
+- `activityCode` — SLGFT activity code (e.g. `M1.1` = Green Buildings, `M4.1` = Solar PV)
+
+NDC targets assessed:
+- Unconditional: 4.5% GHG reduction by 2030 vs BAU
+- Conditional: 14.5% GHG reduction by 2030 (with international support)
+- Key SDGs: 7, 9, 11, 13, 14, 15
 
 ## Authentication
 

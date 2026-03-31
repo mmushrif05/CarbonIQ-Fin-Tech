@@ -17,6 +17,7 @@ const PAGE_META = {
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
+  'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'AI-powered National Determined Contribution & SDG alignment for Sri Lanka Green Finance Taxonomy' },
 };
 
 /**
@@ -39,6 +40,10 @@ const DYNAMIC_PAGES = {
   'carbon-pricing': {
     src:  'pages/carbon-pricing.html',
     init: () => typeof CarbonPricingPage !== 'undefined' && CarbonPricingPage.init(),
+  },
+  'ndc-sdg': {
+    src:  'pages/ndc-sdg.html',
+    init: () => typeof NdcSdgPage !== 'undefined' && NdcSdgPage.init(),
   },
 };
 

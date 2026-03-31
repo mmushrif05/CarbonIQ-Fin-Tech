@@ -36,6 +36,7 @@ const extractUploadRouter = require('./extract-upload');
 const agentRouter         = require('./agent');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
+const ndcSdgRouter        = require('./ndc-sdg');
 
 const router = Router();
 
@@ -78,7 +79,11 @@ router.get('/', (_req, res) => {
         portfolio: 'POST /v1/agent/portfolio',
         runs:      'GET /v1/agent/runs',
         run:       'GET /v1/agent/runs/:runId'
-      }
+      },
+      ndcSdg: {
+        assess:    'POST /v1/ndc-sdg/assess',
+        framework: 'GET /v1/ndc-sdg/framework',
+      },
     },
     documentation: 'https://carboniq.online/docs/api'
   });
@@ -98,5 +103,6 @@ router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
+router.use('/ndc-sdg', ndcSdgRouter);
 
 module.exports = router;
