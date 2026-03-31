@@ -787,16 +787,16 @@
 
       <!-- =================== TAXONOMY PAGE =================== -->
       <div class="page" id="page-taxonomy">
-        <!-- Header -->
+        <!-- Header with project selector -->
         <div class="taxonomy-hero">
           <div>
             <h2>Taxonomy Alignment Checker</h2>
-            <p>Real-time compliance against EU, ASEAN, HK, SG and <strong>Sri Lanka Green Finance Taxonomy</strong></p>
+            <p>Real-time compliance check against EU, ASEAN, HK, and SG green taxonomy thresholds</p>
           </div>
-          <span id="tax-summary-badge" class="kpi-badge badge-neutral">— / 5 frameworks</span>
+          <span id="tax-summary-badge" class="kpi-badge badge-neutral">— / 4 frameworks</span>
         </div>
 
-        <!-- Controls row 1: project + intensity -->
+        <!-- Controls -->
         <div class="taxonomy-controls">
           <div class="form-group" style="flex:1;min-width:200px">
             <label>Project</label>
@@ -810,31 +810,8 @@
           </div>
         </div>
 
-        <!-- Controls row 2: Sri Lanka specific inputs -->
-        <div class="taxonomy-controls slgft-controls">
-          <div class="form-group" style="flex:1;min-width:220px">
-            <label>SLSIC Sector <span class="slgft-tag">Sri Lanka</span></label>
-            <select id="tax-slsic-select" class="form-input"
-              onchange="Taxonomy.updateIntensity(document.getElementById('tax-intensity-input')?.value||380)">
-            </select>
-          </div>
-          <div class="form-group" style="flex:0 0 200px">
-            <label>Activity Code <span class="slgft-tag">Sri Lanka</span></label>
-            <input id="tax-activity-code" type="text" class="form-input"
-              placeholder="e.g. M4.2 or M1.1"
-              oninput="Taxonomy.lookupActivity(this.value)" />
-          </div>
-          <div id="tax-activity-desc" class="slgft-activity-result" style="display:none;flex:2"></div>
-        </div>
-
-        <!-- International 4 cards — filled by taxonomy.js -->
+        <!-- 4 Taxonomy cards — filled by taxonomy.js -->
         <div class="taxonomy-grid" id="tax-grid"></div>
-
-        <!-- Sri Lanka card — rendered separately so it spans full width -->
-        <div id="tax-lk-card" class="taxonomy-card taxonomy-lk-placeholder">
-          <div class="taxonomy-region">🇱🇰 Sri Lanka Green Finance Taxonomy</div>
-          <p style="color:var(--text-tertiary);font-size:13px;margin:12px 0 0">Loading…</p>
-        </div>
       </div>
 
       <!-- AI Agents Panel — content injected dynamically by app.js -->

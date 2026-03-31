@@ -68,18 +68,6 @@ const CARBON_TAX_RATES = {
     ],
     notes: 'No legislated carbon tax. HKEX Core Climate launched 2022 for voluntary credits. Watch HKMA Net-Zero Financial Centre roadmap.',
   },
-  LK: {
-    name: 'Sri Lanka',
-    currency: 'LKR',
-    usdFx: 0.0031,
-    current: 0,            // No legislated carbon tax; voluntary SLCCE market
-    trajectory: [
-      { year: 2025, rate: 0,    label: 'Voluntary credits only (2025)' },
-      { year: 2027, rate: 500,  label: 'Proposed SLCCE floor (LKR/tCO2e)' },
-      { year: 2030, rate: 1500, label: 'NDC alignment scenario (LKR/tCO2e)' },
-    ],
-    notes: 'No legislated carbon tax. Sri Lanka Carbon Credits Exchange (SLCCE) operational for voluntary credits. Watch CBSL Green Finance Taxonomy roadmap for mandatory pricing post-2027.',
-  },
 };
 
 // ---------------------------------------------------------------------------
