@@ -33,13 +33,18 @@ const {
   screeningRequestSchema,
   covenantsRequestSchema,
   monitoringRequestSchema,
-  portfolioReportRequestSchema
+  portfolioReportRequestSchema,
+  borrowerCoachingRequestSchema,
+  decisionTriageRequestSchema
 } = require('../../schemas/agent');
-const underwritingAgent = require('../../services/agents/underwriting');
-const screeningAgent    = require('../../services/agents/screening');
-const covenantsAgent    = require('../../services/agents/covenants');
-const monitoringAgent   = require('../../services/agents/monitoring');
-const portfolioAgent    = require('../../services/agents/portfolio');
+const underwritingAgent  = require('../../services/agents/underwriting');
+const screeningAgent     = require('../../services/agents/screening');
+const covenantsAgent     = require('../../services/agents/covenants');
+const monitoringAgent    = require('../../services/agents/monitoring');
+const portfolioAgent     = require('../../services/agents/portfolio');
+const borrowerCoaching   = require('../../services/agents/borrower-coaching');
+const decisionReview     = require('../../services/agents/decision-review');
+const { classifyDecisionTier, DECISION_TIERS } = require('../../services/decision-engine');
 
 const router = Router();
 
@@ -321,6 +326,205 @@ router.post('/portfolio',
         metadata:   run.metadata,
         createdAt:  run.createdAt,
         completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/coach
+//
+// AI Borrower Coaching — Stage 2 of the borrower journey.
+//
+// Guides borrowers through completing their green loan application with
+// personalised, AI-generated coaching. Assesses application completeness
+// (0–100%), computes preliminary carbon metrics from available data, and
+// produces a coaching report with a prioritised action plan.
+//
+// Validated impact: AI-guided applications raise completion rates by 32%.
+// Uses runAgentSingleCall — tools pre-computed locally for sub-second response.
+// ---------------------------------------------------------------------------
+
+router.post('/coach',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: borrowerCoachingRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+
+      // Pre-compute all tool results and embed them in the user message
+      // so Claude needs only one API call to write the coaching report.
+      const userMessage = borrowerCoaching.buildUserMessageWithResults(req.body);
+
+      const run = await runAgentSingleCall({
+        agentType:    'borrower_coaching',
+        systemPrompt: borrowerCoaching.SYSTEM_PROMPT,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:         req.body.projectName        || null,
+          buildingType:        req.body.buildingType        || null,
+          buildingArea_m2:     req.body.buildingArea_m2     || null,
+          region:              req.body.region              || 'Singapore',
+          hasBOQ:              !!req.body.boqContent,
+          targetCertification: req.body.targetCertification || null,
+          loanAmount:          req.body.loanAmount          || null
+        }
+      });
+
+      // Include the pre-computed completeness score in the response so
+      // callers can display a progress bar without parsing the memo text.
+      const completeness = borrowerCoaching.assessApplicationCompleteness(req.body);
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:      run.status === 'completed',
+        runId:        run.runId,
+        agentType:    run.agentType,
+        status:       run.status,
+        result:       run.result,
+        completeness: {
+          pct:         completeness.completionPct,
+          statusLabel: completeness.statusLabel,
+          missing:     completeness.missingFields.map(f => f.label),
+          readyForScreening:    completeness.readyForScreening,
+          readyForUnderwriting: completeness.readyForUnderwriting,
+          readyForDecision:     completeness.readyForDecision
+        },
+        steps:       run.steps,
+        tokensUsed:  run.tokensUsed,
+        metadata:    run.metadata,
+        createdAt:   run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/triage
+//
+// Tiered Decision Framework — bank review workflow for green loan decisions.
+//
+// Routes each application to one of three decision tiers:
+//   Tier 1 — Auto-Decision   (70–85%): immediate approve or decline
+//   Tier 2 — AI-Assisted     (10–20%): AI review memo + loan officer sign-off
+//   Tier 3 — Manual Review   (5–10%):  escalate to credit officer
+//
+// For Tier 2 cases, this endpoint runs the decision-review agent and
+// returns a full AI Decision Review Memo alongside the tier classification.
+// Tier 1 and Tier 3 decisions return immediately without an AI call.
+// ---------------------------------------------------------------------------
+
+router.post('/triage',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: decisionTriageRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const body  = req.body;
+
+      // Step 1 — deterministic tier classification (no AI, always fast)
+      const tierResult = classifyDecisionTier({
+        cfsScore:             body.cfsScore,
+        cfsClassification:    body.cfsClassification,
+        taxonomyAlignments:   body.taxonomyAlignments,
+        pcafDataQualityScore: body.pcafDataQualityScore,
+        loanAmount:           body.loanAmount,
+        forceManualReview:    body.forceManualReview
+      });
+
+      // Tier 1 (auto-decision) and Tier 3 (manual) return immediately —
+      // no AI call needed. Only Tier 2 triggers the AI review agent.
+      if (tierResult.tier !== DECISION_TIERS.AI) {
+        return res.status(200).json({
+          success:     true,
+          agentType:   'decision_triage',
+          tier:        tierResult.tier,
+          tierLabel:   tierResult.tierLabel,
+          verdict:     tierResult.verdict,
+          confidence:  tierResult.confidence,
+          autoDecision: tierResult.autoDecision,
+          reasons:     tierResult.reasons,
+          conditions:  tierResult.conditions,
+          escalationNote: tierResult.escalationNote,
+          thresholds:  tierResult.thresholds,
+          aiReview:    null   // No AI memo for auto or manual tiers
+        });
+      }
+
+      // Step 2 — Tier 2: run the AI Decision Review agent
+      const userMessage = decisionReview.buildUserMessage({
+        projectName:                 body.projectName,
+        buildingType:                body.buildingType,
+        buildingArea_m2:             body.buildingArea_m2,
+        region:                      body.region,
+        loanAmount:                  body.loanAmount,
+        projectValue:                body.projectValue,
+        cfsScore:                    body.cfsScore,
+        cfsClassification:           body.cfsClassification,
+        cfsComponents:               body.cfsComponents,
+        taxonomyAlignments:          body.taxonomyAlignments,
+        pcafDataQualityScore:        body.pcafDataQualityScore,
+        pcafFinancedEmissions_tCO2e: body.pcafFinancedEmissions_tCO2e,
+        carbonIntensity_kgCO2e_m2:   body.carbonIntensity_kgCO2e_m2,
+        totalTCO2e:                  body.totalTCO2e,
+        certificationLevel:          body.certificationLevel,
+        verificationStatus:          body.verificationStatus,
+        reductionPct:                body.reductionPct,
+        tierResult,
+        underwritingRunId:           body.underwritingRunId
+      });
+
+      const run = await runAgentSingleCall({
+        agentType:    'decision_review',
+        systemPrompt: decisionReview.SYSTEM_PROMPT,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:          body.projectName          || null,
+          cfsScore:             body.cfsScore,
+          cfsClassification:    body.cfsClassification    || null,
+          tier:                 tierResult.tier,
+          verdict:              tierResult.verdict,
+          loanAmount:           body.loanAmount            || null,
+          underwritingRunId:    body.underwritingRunId     || null
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:      run.status === 'completed',
+        runId:        run.runId,
+        agentType:    run.agentType,
+        status:       run.status,
+        tier:         tierResult.tier,
+        tierLabel:    tierResult.tierLabel,
+        verdict:      tierResult.verdict,
+        confidence:   tierResult.confidence,
+        autoDecision: tierResult.autoDecision,
+        reasons:      tierResult.reasons,
+        conditions:   tierResult.conditions,
+        escalationNote: tierResult.escalationNote,
+        thresholds:   tierResult.thresholds,
+        aiReview:     run.result,   // Full AI Decision Review Memo
+        steps:        run.steps,
+        tokensUsed:   run.tokensUsed,
+        metadata:     run.metadata,
+        createdAt:    run.createdAt,
+        completedAt:  run.completedAt,
         ...(run.error && { error: run.error })
       });
     } catch (err) {

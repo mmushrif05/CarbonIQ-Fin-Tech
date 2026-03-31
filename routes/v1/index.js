@@ -76,6 +76,8 @@ router.get('/', (_req, res) => {
         covenants: 'POST /v1/agent/covenants',
         monitor:   'POST /v1/agent/monitor',
         portfolio: 'POST /v1/agent/portfolio',
+        coach:     'POST /v1/agent/coach    — AI Borrower Coaching (Stage 2: +32% completion rate)',
+        triage:    'POST /v1/agent/triage   — Tiered Decision Framework (70-85% auto / 10-20% AI / 5-10% manual)',
         runs:      'GET /v1/agent/runs',
         run:       'GET /v1/agent/runs/:runId'
       }

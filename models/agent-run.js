@@ -9,11 +9,13 @@
  */
 
 const AGENT_TYPES = {
-  SCREENING:    'screening',
-  UNDERWRITING: 'underwriting',
-  COVENANTS:    'covenants',
-  MONITORING:   'monitoring',
-  PORTFOLIO:    'portfolio'
+  SCREENING:        'screening',
+  UNDERWRITING:     'underwriting',
+  COVENANTS:        'covenants',
+  MONITORING:       'monitoring',
+  PORTFOLIO:        'portfolio',
+  BORROWER_COACHING: 'borrower_coaching',  // Stage 2: AI-guided borrower coaching
+  DECISION_REVIEW:  'decision_review'       // Stage 2: Tier 2 AI-assisted decision review
 };
 
 const AGENT_STATUS = {
