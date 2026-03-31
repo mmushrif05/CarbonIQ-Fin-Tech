@@ -111,6 +111,41 @@ Copy `.env.example` to `.env` and fill in:
 
 ---
 
+## Claude API Skills in Use
+
+This app uses the Anthropic Claude API (`@anthropic-ai/sdk`) with the following skills active across the agentic pipeline:
+
+| Skill | Where | Purpose |
+|---|---|---|
+| **Agentic tool loop** | `bridge/agent.js` `runAgent()` | Multi-turn tool-calling loop driving all 5 agents |
+| **Adaptive Thinking** (`thinking: {type:'adaptive'}`) | `bridge/agent.js` `runAgent()` | Deep reasoning on PCAF attribution, multi-taxonomy analysis, covenant stress-testing |
+| **Streaming** (`.stream()` + `.finalMessage()`) | `bridge/agent.js` `runAgent()` | Prevents Netlify 10s timeout; supports 32K output tokens |
+| **Prompt Caching** (`cache_control: ephemeral`) | `bridge/agent.js`, `services/extract.js` | 3 breakpoints per loop iteration (tools + system + conversation history); 60–80% input cost reduction |
+| **Structured Outputs** (`output_config: {format: {type:'json_object'}}`) | `services/extract.js` | Guaranteed raw JSON from BOQ extraction — no markdown fence regex hacks |
+| **Files API** (`client.beta.files.upload`) | `routes/v1/extract-upload.js` | Upload BOQ PDFs once → reuse `fileId` across multiple extractions for 30 days |
+| **PDF / Vision** (document blocks) | `services/extract.js` `extractMaterialsFromPdf()` | Claude reads multi-column BOQ PDF tables directly via `claude-opus-4-6` |
+| **Web Search** (`web_search_20260209`) | `services/agents/underwriting.js` | Live carbon tax rates (SG/EU/MY/HK) and green bond pricing during underwriting |
+| **Web Fetch** (`web_fetch_20260209`) | `services/agents/underwriting.js` | Fetch specific regulatory pages (MAS, EU ETS, PCAF) for current compliance data |
+| **`pause_turn` resumption** | `bridge/agent.js` | Resumes server-side tool loops (web search / code execution) that hit the 10-iteration limit |
+
+### Model Routing
+
+| Agent | Model | Rationale |
+|---|---|---|
+| Underwriting, Covenant, Monitoring, Portfolio | `claude-opus-4-6` (via `ANTHROPIC_MODEL`) | Complex multi-regulation reasoning; adaptive thinking enabled |
+| PDF BOQ extraction | `claude-opus-4-6` (via `ANTHROPIC_VISION_MODEL`) | Best multi-column table recognition |
+| Screening (single-call) | `claude-haiku-4-5` (via `ANTHROPIC_FAST_MODEL`) | Pre-computed tool results embedded in prompt; speed > depth |
+
+### Next Skills to Add
+
+| Skill | Target | Benefit |
+|---|---|---|
+| **Batch API** | Portfolio agent with large asset counts | 50% cost reduction on per-asset scoring when portfolio > 10 assets |
+| **Code Execution** (`code_execution_20260120`) | PCAF financial calculations | Claude runs Python (pandas/numpy) for sensitivity tables and attribution maths |
+| **Structured Outputs (Zod)** | All agent outputs | Return validated typed JSON alongside markdown memos for programmatic consumption |
+
+---
+
 ## Key Business Domain Concepts
 
 - **CRS (Carbon Finance Score)** — 0–100 score for construction loan risk assessment; calculated in `services/score.js`
