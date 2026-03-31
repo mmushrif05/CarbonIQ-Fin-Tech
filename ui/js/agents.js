@@ -102,6 +102,67 @@ const AgentsPage = (() => {
     ['gt',  '> (greater than)'],
   ];
 
+  // ── Demo responses (offline / API unavailable fallback) ──
+  const DEMO_RESPONSES = {
+    screen: {
+      steps: [
+        { type: 'tool_use',    tool: 'get_carbon_benchmarks',   input: { buildingType: 'commercial_office', region: 'SG' } },
+        { type: 'tool_result', tool: 'get_carbon_benchmarks',   output: { p25: 360, p50: 510, p75: 670, unit: 'kgCO2e/m²' } },
+        { type: 'tool_use',    tool: 'check_taxonomy_alignment', input: { region: 'SG', intensity_kgCO2e_m2: 510 } },
+        { type: 'tool_result', tool: 'check_taxonomy_alignment', output: { aligned: ['SGBS', 'ASEAN Green'], ineligible: ['EU Taxonomy'] } },
+        { type: 'tool_use',    tool: 'get_green_loan_pricing',  input: { region: 'SG', verdict: 'Conditional Go' } },
+        { type: 'tool_result', tool: 'get_green_loan_pricing',  output: { greenPremium_bps: -18, baseRate_pct: 4.2 } },
+      ],
+      result: `> **[DEMO MODE]** — Backend unavailable. Showing representative output.\n\n# Green Loan Eligibility Memo\n**Stage 1 · Pre-Screening Agent**\n\n---\n\n## Verdict: ✅ Conditional Go\n\n### Carbon Benchmarks — Commercial Office, Singapore\n| Percentile | Intensity (kgCO2e/m²) |\n|------------|----------------------|\n| P25 | 360 |\n| P50 | 510 |\n| P75 | 670 |\n\n### Taxonomy Alignment\n- ✅ **SGBS Green** — Aligned (intensity ≤ 750 kgCO2e/m²)\n- ✅ **ASEAN Green** — Aligned (intensity ≤ 600 kgCO2e/m²)\n- ⚠️ **EU Taxonomy** — Ineligible (requires ≤ 300 kgCO2e/m² or top 15% of national stock)\n- ⚠️ **HK Green** — Borderline (requires BCA Green Mark Platinum or equivalent)\n\n### Green Loan Pricing Indication\n- Base rate: **4.20%**\n- Green premium: **−18 bps**\n- Indicative SLL rate: **4.02%**\n\n### Conditions for Full Go\n1. Provide Bill of Quantities for full underwriting (Stage 2)\n2. Confirm target certification (BCA Green Mark Gold Plus or above)\n3. Appoint an independent verification body prior to first drawdown\n`,
+    },
+    underwrite: {
+      steps: [
+        { type: 'tool_use',    tool: 'extract_boq_materials',   input: { format: 'pdf', pages: 12 } },
+        { type: 'tool_result', tool: 'extract_boq_materials',   output: { materials: 14, topMaterial: 'Ready-Mix Concrete', coverage_pct: 87 } },
+        { type: 'tool_use',    tool: 'calculate_embodied_carbon', input: { materials: 14, standard: 'ICEv3' } },
+        { type: 'tool_result', tool: 'calculate_embodied_carbon', output: { total_tCO2e: 4820, intensity_kgCO2e_m2: 482, dqScore: 2 } },
+        { type: 'tool_use',    tool: 'compute_cfs_score',       input: { intensity: 482, region: 'SG', certification: 'BCA_GM_Gold_Plus' } },
+        { type: 'tool_result', tool: 'compute_cfs_score',       output: { cfs: 74, tier: 'Transition', rationale: 'Below P50 benchmark' } },
+        { type: 'tool_use',    tool: 'check_taxonomy_alignment', input: { intensity_kgCO2e_m2: 482, region: 'SG' } },
+        { type: 'tool_result', tool: 'check_taxonomy_alignment', output: { aligned: ['SGBS', 'ASEAN Green'], ineligible: ['EU Taxonomy'] } },
+      ],
+      result: `> **[DEMO MODE]** — Backend unavailable. Showing representative output.\n\n# Green Loan Underwriting Memo\n**Stage 2 · Underwriting Agent**\n\n---\n\n## Credit Recommendation: ✅ Approve (Conditional)\n\n### Embodied Carbon Summary\n| Metric | Value |\n|--------|-------|\n| Total Embodied Carbon | 4,820 tCO2e |\n| Carbon Intensity | 482 kgCO2e/m² |\n| Data Quality Score | 2 (Good) |\n| Benchmark Percentile | P47 |\n\n### CarbonIQ Finance Score\n**CFS: 74 / 100 — Transition Tier**\n\nThe project sits below the Singapore P50 benchmark (510 kgCO2e/m²) and holds BCA Green Mark Gold Plus certification, supporting a Transition classification under SGBS and ASEAN Green frameworks.\n\n### Top Carbon Contributors (Pareto 80%)\n| Material | tCO2e | % of Total |\n|----------|-------|------------|\n| Ready-Mix Concrete | 2,180 | 45.2% |\n| Structural Steel | 1,060 | 22.0% |\n| Aluminium Curtain Wall | 680 | 14.1% |\n| Float Glass | 410 | 8.5% |\n\n### Conditions Precedent\n1. Independent third-party verification of BOQ carbon calculation\n2. Covenant package as per Stage 3 Covenant Design Agent\n3. EPD coverage to be increased from 28% to ≥ 40% by PC\n`,
+    },
+    covenants: {
+      steps: [
+        { type: 'tool_use',    tool: 'get_carbon_benchmarks',    input: { buildingType: 'commercial_office', region: 'SG' } },
+        { type: 'tool_result', tool: 'get_carbon_benchmarks',    output: { p25: 360, p50: 510, p75: 670 } },
+        { type: 'tool_use',    tool: 'stress_test_covenants',    input: { scenarios: 3, kpis: ['tco2e_per_m2', 'epd_coverage', 'substitution_rate'] } },
+        { type: 'tool_result', tool: 'stress_test_covenants',    output: { conservative: 'pass', standard: 'pass', ambitious: 'conditional' } },
+        { type: 'tool_use',    tool: 'get_green_bond_pricing',   input: { region: 'SG', covenant_tier: 'standard' } },
+        { type: 'tool_result', tool: 'get_green_bond_pricing',   output: { ratchet_bps: [-5, -15, -25], milestones: ['PC-25%', 'PC-50%', 'PC'] } },
+      ],
+      result: `> **[DEMO MODE]** — Backend unavailable. Showing representative output.\n\n# Covenant Design Report\n**Stage 3 · Covenant Design Agent**\n\n---\n\n## Recommended Package: Standard Scenario\n\n### KPI Covenant Suite\n| KPI | Conservative | Standard | Ambitious |\n|-----|-------------|----------|-----------|\n| Carbon Intensity (kgCO2e/m²) | ≤ 550 | ≤ 490 | ≤ 420 |\n| EPD Coverage (%) | ≥ 30% | ≥ 45% | ≥ 60% |\n| Low-Carbon Substitution (%) | ≥ 10% | ≥ 20% | ≥ 35% |\n\n### Pricing Ratchet (Standard Scenario)\n| Milestone | Margin Adjustment |\n|-----------|------------------|\n| PC 25% — Intensity ≤ 520 kgCO2e/m² | −5 bps |\n| PC 50% — EPD Coverage ≥ 45% | −15 bps |\n| Practical Completion | −25 bps |\n\n### APLMA Model Provisions\nCovenant terms drafted in accordance with **LMA/APLMA Green Loan Principles 2021**. Independent verification required at each milestone per GLP §4.4.\n\n### Stress Test Results\n- **Conservative**: ✅ Pass — achievable under base case assumptions\n- **Standard**: ✅ Pass — requires active EPD procurement programme\n- **Ambitious**: ⚠️ Conditional — dependent on structural steel supplier EPD availability in SG market\n`,
+    },
+    monitor: {
+      steps: [
+        { type: 'tool_use',    tool: 'test_covenant_compliance', input: { covenants: 3, currentPct: 40 } },
+        { type: 'tool_result', tool: 'test_covenant_compliance', output: { passing: 2, failing: 1, onTrack: true } },
+        { type: 'tool_use',    tool: 'project_completion_trajectory', input: { currentPct: 40, remainingMonths: 18 } },
+        { type: 'tool_result', tool: 'project_completion_trajectory', output: { projectedIntensity: 478, confidenceInterval: [450, 510] } },
+        { type: 'tool_use',    tool: 'assess_drawdown_risk',     input: { covenantStatus: 'partial', projectedIntensity: 478 } },
+        { type: 'tool_result', tool: 'assess_drawdown_risk',     output: { recommendation: 'Conditional', holdback_pct: 10 } },
+      ],
+      result: `> **[DEMO MODE]** — Backend unavailable. Showing representative output.\n\n# Monitoring Report\n**Stage 4 · Monitoring Agent**\n\n---\n\n## Drawdown Recommendation: ⚠️ Conditional Approval\n\n**Construction Progress:** 40% complete\n\n### Covenant Status\n| Covenant | Target | Current | Status |\n|----------|--------|---------|--------|\n| Carbon Intensity | ≤ 490 kgCO2e/m² | 495 kgCO2e/m² | ⚠️ Borderline |\n| EPD Coverage | ≥ 45% | 38% | ❌ Below Target |\n| Low-Carbon Substitution | ≥ 20% | 22% | ✅ On Track |\n\n### Projected Trajectory to PC\n- **Projected final intensity:** 478 kgCO2e/m² (90% CI: 450–510)\n- **Probability of covenant breach at PC:** 18%\n\n### Drawdown Conditions\n1. Release 90% of requested drawdown amount immediately\n2. Withhold 10% (SGD 1,000,000) pending EPD coverage milestone\n3. Contractor to submit updated EPD procurement schedule within 30 days\n4. Next monitoring review at 60% construction completion\n`,
+    },
+    portfolio: {
+      steps: [
+        { type: 'tool_use',    tool: 'score_portfolio_assets',   input: { assetCount: 5, standard: 'PCAF_v2' } },
+        { type: 'tool_result', tool: 'score_portfolio_assets',   output: { avgCFS: 71, greenCount: 2, transitionCount: 2, brownCount: 1 } },
+        { type: 'tool_use',    tool: 'calculate_pcaf_emissions',  input: { assets: 5, attributionMethod: 'outstanding_amount' } },
+        { type: 'tool_result', tool: 'calculate_pcaf_emissions',  output: { total_tCO2e: 18_240, avgDQ: 2.4, coverage_pct: 100 } },
+        { type: 'tool_use',    tool: 'check_taxonomy_alignment',  input: { portfolio: true, frameworks: ['SGBS', 'ASEAN', 'EU', 'HK'] } },
+        { type: 'tool_result', tool: 'check_taxonomy_alignment',  output: { aligned_pct: 60, transition_pct: 20, ineligible_pct: 20 } },
+      ],
+      result: `> **[DEMO MODE]** — Backend unavailable. Showing representative output.\n\n# Portfolio ESG Report\n**Stage 5 · Portfolio Reporting Agent**\n\n---\n\n## Portfolio Summary — 5 Assets, SGD 375M AUM\n\n### PCAF Financed Emissions (v2.0)\n| Metric | Value |\n|--------|-------|\n| Total Financed Emissions | 18,240 tCO2e |\n| Weighted Avg Data Quality | 2.4 (Good) |\n| PCAF Coverage | 100% |\n| Emissions Intensity | 48.6 tCO2e / SGD M |\n\n### CarbonIQ Finance Score Distribution\n| Tier | Count | AUM Weight |\n|------|-------|------------|\n| 🟢 Green (CFS ≥ 80) | 2 | 41% |\n| 🟡 Transition (CFS 50–79) | 2 | 47% |\n| 🔴 Brown (CFS < 50) | 1 | 12% |\n\n### Taxonomy Alignment\n- **60%** of portfolio AUM meets ≥ 1 green taxonomy framework\n- **20%** classified Transition (SGBS / ASEAN)\n- **20%** ineligible across all frameworks\n\n### TCFD Physical Risk Summary\nNo acute physical risk flags identified. Chronic sea-level rise exposure assessed as Low for all 5 assets (above 5m elevation).\n\n### GLP 2025 Compliance\nPortfolio meets GLP 2025 reporting requirements. Annual impact report recommended for investor disclosure.\n`,
+    },
+  };
+
   // ── State ────────────────────────────────────────────────
   let currentStage   = 'screen';
   let isRunning      = false;
@@ -749,7 +810,7 @@ const AgentsPage = (() => {
     try {
       const res = await fetch(ENDPOINTS[currentStage], {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': API_KEY },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': window.CARBONIQ_API_KEY || API_KEY },
         body:    JSON.stringify(payload),
         signal:  abortCtrl.signal,
       });
@@ -777,8 +838,14 @@ const AgentsPage = (() => {
 
     } catch (err) {
       if (err.name === 'AbortError') return;
-      showOutput('error');
-      elErrorMsg.textContent = err.message || 'An unexpected error occurred.';
+      // Network failure (backend unreachable) → show demo response
+      if (err instanceof TypeError && DEMO_RESPONSES[currentStage]) {
+        lastResult = DEMO_RESPONSES[currentStage];
+        await displayResults(lastResult);
+      } else {
+        showOutput('error');
+        elErrorMsg.textContent = err.message || 'An unexpected error occurred.';
+      }
     } finally {
       isRunning = false;
       elRunBtn.disabled = false;
@@ -877,7 +944,7 @@ const AgentsPage = (() => {
   async function loadRecentRuns() {
     try {
       const res = await fetch('/v1/agent/runs?limit=5', {
-        headers: { 'X-API-Key': API_KEY }
+        headers: { 'X-API-Key': window.CARBONIQ_API_KEY || API_KEY }
       });
       if (!res.ok) return;
       const data = await res.json();
