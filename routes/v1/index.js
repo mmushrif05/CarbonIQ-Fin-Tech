@@ -81,8 +81,10 @@ router.get('/', (_req, res) => {
         run:       'GET /v1/agent/runs/:runId'
       },
       ndcSdg: {
-        assess:    'POST /v1/ndc-sdg/assess',
-        framework: 'GET /v1/ndc-sdg/framework',
+        assess:            'POST /v1/ndc-sdg/assess',
+        certificate:       'POST /v1/ndc-sdg/certificate',
+        verifyCertificate: 'POST /v1/ndc-sdg/certificate/verify',
+        framework:         'GET /v1/ndc-sdg/framework',
       },
     },
     documentation: 'https://carboniq.online/docs/api'

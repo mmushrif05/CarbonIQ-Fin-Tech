@@ -46,6 +46,8 @@ CarbonIQ-Fin-Tech/
 | `GET`  | `/v1/carbon-pricing/rates` | Carbon tax rates (SG, EU, MY, HK, LK) |
 | `POST` | `/v1/reports/generate` | PCAF / GRI 305 / TCFD / IFRS S2 reports |
 | `POST` | `/v1/ndc-sdg/assess` | **AI-powered NDC/SDG alignment — Sri Lanka SLGFT** |
+| `POST` | `/v1/ndc-sdg/certificate` | Generate SLGFT Green Loan Certificate (SHA-256 tamper-evident) |
+| `POST` | `/v1/ndc-sdg/certificate/verify` | Verify certificate hash |
 | `GET`  | `/v1/ndc-sdg/framework` | SLGFT framework metadata (sectors, activities, NDC) |
 | `POST` | `/v1/agent/screen` | AI agent — green loan screening |
 | `POST` | `/v1/agent/underwrite` | AI agent — underwriting analysis |

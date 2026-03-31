@@ -87,7 +87,8 @@ CarbonIQ-Fin-Tech/
 ├── schemas/
 │   ├── carbon-pricing.js     # Joi schema for carbon pricing endpoint
 │   ├── extract.js            # Joi schema for extract/assess
-│   └── projects.js           # Joi schema — includes slsicSector, activityCode
+│   ├── projects.js           # Joi schema — includes slsicSector, activityCode
+│   └── reports.js            # Joi schema — includes slgft report type + slgftData
 ├── middleware/
 │   ├── api-key.js            # x-api-key auth + requireProjectAccess
 │   ├── rate-limit.js         # Per-endpoint rate limits
@@ -140,8 +141,10 @@ CarbonIQ-Fin-Tech/
 | GET    | /v1/portfolio                     | Portfolio aggregation                  |
 | POST   | /v1/carbon-pricing/calculate      | Carbon tax/pricing analysis            |
 | GET    | /v1/carbon-pricing/rates          | Current rates by region                |
-| POST   | /v1/reports/generate              | Generate compliance report             |
+| POST   | /v1/reports/generate              | Generate compliance report (incl. SLGFT type) |
 | POST   | /v1/ndc-sdg/assess                | NDC/SDG alignment (Claude AI)          |
+| POST   | /v1/ndc-sdg/certificate           | Generate SLGFT Green Loan Certificate  |
+| POST   | /v1/ndc-sdg/certificate/verify    | Verify certificate SHA-256 hash        |
 | GET    | /v1/ndc-sdg/framework             | SLGFT framework metadata               |
 | POST   | /v1/agent/screen                  | AI agent — loan screening              |
 | POST   | /v1/agent/underwrite              | AI agent — underwriting                |
@@ -177,6 +180,17 @@ In tests, set header to `test-api-key` (matches `process.env.CARBONIQ_API_KEY` f
 - Net Zero: 2050
 
 ### Key SDGs: 7, 9, 11, 13, 14, 15
+
+### Stage 5 — SLGFT Certificate & CBSL Report (Step 5)
+- `services/certificate.js` — digital Green Loan Certificate with SHA-256 audit hash + verify
+- `services/reports.js` — `slgft` report type added + `_slgftReport()` function
+- `schemas/reports.js` — `slgft` added to valid types, `slgftData` optional field
+- `routes/v1/ndc-sdg.js` — POST /v1/ndc-sdg/certificate, POST /v1/ndc-sdg/certificate/verify
+- `routes/v1/reports.js` — passes `slgftData` through, adds SLGFT to `/types` endpoint
+- `ui/pages/reports.html` — SLGFT CBSL Compliance Report card
+- `ui/pages/ndc-sdg.html` — certificate generation section in results
+- `ui/js/ndc-sdg.js` — generateCertificate(), copyCertHash(), downloadCert()
+- `ui/styles.css` — certificate display + SLGFT report card styles
 
 ### Files Modified for SLGFT
 - `config/constants.js` — `TAXONOMY_LK` object

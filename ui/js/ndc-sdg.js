@@ -122,6 +122,7 @@ const NdcSdgPage = (() => {
       }
 
       const data = await res.json();
+      _lastAnalysis = data;
       _renderResults(data);
       if (status) { status.textContent = '✓ Analysis complete'; status.style.color = 'var(--green-600,#16a34a)'; }
       if (typeof Toast !== 'undefined') Toast.success('NDC/SDG assessment complete.');
@@ -278,5 +279,138 @@ const NdcSdgPage = (() => {
     if (panel) panel.style.display = 'none';
   }
 
-  return { init, onActivityInput, calcIntensity, runAssessment, loadFramework, hideFramework };
+  // ── Certificate generation ────────────────────────────────
+  // Store last AI analysis result so certificate can reference it
+  let _lastAnalysis = null;
+
+  async function generateCertificate() {
+    const bankName = $$('ndc-cert-bank')?.value?.trim();
+    if (!bankName) {
+      if (typeof Toast !== 'undefined') Toast.error('Please enter the issuing bank name.');
+      return;
+    }
+
+    const btn    = $$('ndc-cert-btn');
+    const status = $$('ndc-cert-status');
+    if (btn) btn.disabled = true;
+    if (status) { status.textContent = 'Generating certificate…'; status.style.color = 'var(--text-secondary)'; }
+
+    const payload = {
+      projectName:     $$('ndc-proj-name')?.value?.trim() || 'SLGFT Project',
+      projectId:       $$('ndc-proj-id')?.value?.trim() || undefined,
+      bankName,
+      slsicSector:     $$('ndc-slsic')?.value || undefined,
+      activityCode:    ($$('ndc-activity-code')?.value || '').trim().toUpperCase() || undefined,
+      emissions_tCO2e: parseFloat($$('ndc-emissions')?.value) || undefined,
+      buildingArea_m2: parseFloat($$('ndc-area')?.value) || undefined,
+      loanAmount_M:    parseFloat($$('ndc-cert-loan')?.value) || undefined,
+      currency:        'LKR',
+    };
+
+    // Enrich from AI analysis if available
+    if (_lastAnalysis) {
+      const ndc = _lastAnalysis.analysis?.ndcAlignment;
+      const dnsh = _lastAnalysis.analysis?.dnshAssessment;
+      const sdgList = _lastAnalysis.analysis?.sdgAlignment;
+      if (ndc?.tier)            payload.ndcTier = ndc.tier;
+      if (ndc?.ndcContribution_pct != null) payload.ndcContrib_pct = ndc.ndcContribution_pct;
+      if (dnsh?.overallStatus)  payload.dnshStatus = dnsh.overallStatus;
+      if (sdgList?.length)      payload.sdgs = sdgList.map(s => s.sdg);
+    }
+
+    // Remove undefined keys
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/ndc-sdg/certificate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `API ${res.status}`);
+      }
+
+      const data = await res.json();
+      const cert = data.certificate;
+      _renderCertificate(cert);
+      if (status) { status.textContent = '✓ Certificate generated'; status.style.color = 'var(--green-600,#16a34a)'; }
+      if (typeof Toast !== 'undefined') Toast.success(`SLGFT certificate generated (${cert.certId})`);
+    } catch (err) {
+      if (status) { status.textContent = '✗ ' + err.message; status.style.color = 'var(--red)'; }
+      if (typeof Toast !== 'undefined') Toast.error('Certificate failed: ' + err.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  function _renderCertificate(cert) {
+    const el = $$('ndc-cert-result');
+    if (!el) return;
+
+    const tierClass = {
+      green: 'badge-green', transition: 'badge-amber',
+      directly_eligible: 'badge-blue', conditional: 'badge-red',
+    }[cert.classification?.tier] || 'badge-neutral';
+
+    const sdgPills = (cert.sdgAlignment?.sdgs || []).map(n =>
+      `<span class="slgft-sdg-pill">SDG ${n}</span>`
+    ).join(' ');
+
+    el.style.display = 'block';
+    el.innerHTML = `
+      <div class="ndc-cert-display">
+        <div class="ndc-cert-header">
+          <div>
+            <div class="ndc-cert-title">SLGFT Green Loan Certificate</div>
+            <div class="ndc-cert-id">${cert.certId}</div>
+          </div>
+          <span class="kpi-badge ${tierClass}">${cert.classification?.tierLabel || cert.classification?.tier}</span>
+        </div>
+        <div class="ndc-cert-grid">
+          <div><span class="ndc-cert-label">Project</span><strong>${cert.project?.name}</strong></div>
+          <div><span class="ndc-cert-label">Bank</span><strong>${cert.loanDetails?.bankName}</strong></div>
+          <div><span class="ndc-cert-label">Activity Code</span><strong>${cert.project?.activityCode || '—'}</strong></div>
+          <div><span class="ndc-cert-label">Intensity</span><strong>${cert.project?.intensity_kgCO2e_m2 !== null ? cert.project.intensity_kgCO2e_m2 + ' kgCO2e/m²' : '—'}</strong></div>
+          <div><span class="ndc-cert-label">Loan Type</span><strong>${cert.loanDetails?.loanClassification}</strong></div>
+          <div><span class="ndc-cert-label">Pricing Adjustment</span><strong>${cert.loanDetails?.pricingLabel}</strong></div>
+          <div><span class="ndc-cert-label">NDC Tier</span><strong>${cert.ndcAlignment?.tier || '—'}</strong></div>
+          <div><span class="ndc-cert-label">NDC Contribution</span><strong>${cert.ndcAlignment?.contribution_pct != null ? cert.ndcAlignment.contribution_pct + '%' : '—'}</strong></div>
+          <div><span class="ndc-cert-label">DNSH Status</span><strong>${cert.dnsh?.status?.toUpperCase() || '—'}</strong></div>
+          <div><span class="ndc-cert-label">Valid Until</span><strong>${cert.expiresAt ? cert.expiresAt.slice(0, 10) : '—'}</strong></div>
+        </div>
+        ${sdgPills ? `<div style="margin:10px 0"><span class="ndc-cert-label">SDG Alignment</span><div class="slgft-sdg-row" style="margin-top:5px">${sdgPills}</div></div>` : ''}
+        <div class="ndc-cert-description">${cert.classification?.description || ''}</div>
+        <div class="ndc-cert-hash">
+          <span style="font-weight:600;color:var(--text-secondary)">SHA-256 Audit Hash:</span>
+          <code style="font-size:10px;color:var(--text-tertiary);word-break:break-all">${cert.hash}</code>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.copyCertHash('${cert.hash}')">Copy Hash</button>
+          <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.downloadCert(${JSON.stringify(JSON.stringify(cert))})">Download JSON</button>
+        </div>
+      </div>`;
+  }
+
+  function copyCertHash(hash) {
+    navigator.clipboard?.writeText(hash);
+    if (typeof Toast !== 'undefined') Toast.info('Hash copied to clipboard.');
+  }
+
+  function downloadCert(certStr) {
+    const cert = JSON.parse(certStr);
+    const blob = new Blob([JSON.stringify(cert, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = `${cert.certId}.json`; a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return {
+    init, onActivityInput, calcIntensity, runAssessment,
+    loadFramework, hideFramework,
+    generateCertificate, copyCertHash, downloadCert,
+  };
 })();

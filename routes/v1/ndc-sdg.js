@@ -16,8 +16,28 @@ const apiKeyAuth = require('../../middleware/api-key');
 const validate   = require('../../middleware/validate');
 const { assessLimiter } = require('../../middleware/rate-limit');
 const { assessNdcSdgAlignment } = require('../../services/ndc-sdg');
+const { generateCertificate, verifyCertificate } = require('../../services/certificate');
 
 const router = Router();
+
+// Certificate request schema
+const certSchema = Joi.object({
+  projectName:        Joi.string().max(200).required().messages({ 'any.required': 'projectName is required.' }),
+  projectId:          Joi.string().max(100).optional().allow('', null),
+  bankName:           Joi.string().max(200).required().messages({ 'any.required': 'bankName is required.' }),
+  bankOrgId:          Joi.string().max(100).optional().allow('', null),
+  slsicSector:        Joi.string().valid('A','B','C','D','E','F','G','H','I','J','K','L','M').optional().allow('', null),
+  activityCode:       Joi.string().max(10).uppercase().optional().allow('', null),
+  emissions_tCO2e:    Joi.number().positive().optional().allow(null),
+  buildingArea_m2:    Joi.number().positive().optional().allow(null),
+  ndcTier:            Joi.string().valid('strong','moderate','partial','not_aligned').optional().allow('', null),
+  ndcContrib_pct:     Joi.number().min(0).max(100).optional().allow(null),
+  sdgs:               Joi.array().items(Joi.number().integer().min(1).max(17)).optional().default([]),
+  dnshStatus:         Joi.string().valid('pass','conditional','fail').optional().default('pass'),
+  classificationTier: Joi.string().valid('green','transition','directly_eligible','conditional').optional().allow('', null),
+  loanAmount_M:       Joi.number().positive().optional().allow(null),
+  currency:           Joi.string().valid('LKR','USD','SGD','EUR').optional().default('LKR'),
+});
 
 // ---------------------------------------------------------------------------
 // Request schema
@@ -62,6 +82,45 @@ router.post('/assess',
           message: 'AI assessment service is not configured. Contact your administrator.',
         });
       }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/ndc-sdg/certificate
+// Generate a tamper-evident SLGFT Green Loan Certificate (no AI required)
+// ---------------------------------------------------------------------------
+
+router.post('/certificate',
+  apiKeyAuth,
+  validate({ body: certSchema }),
+  async (req, res, next) => {
+    try {
+      const cert = generateCertificate(req.body);
+      return res.status(201).json({ success: true, certificate: cert });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/ndc-sdg/certificate/verify
+// Verify a certificate's tamper-evident hash
+// ---------------------------------------------------------------------------
+
+router.post('/certificate/verify',
+  apiKeyAuth,
+  async (req, res, next) => {
+    try {
+      const cert = req.body;
+      if (!cert || !cert.certId || !cert.hash) {
+        return res.status(400).json({ error: 'INVALID_CERTIFICATE', message: 'Provide a full certificate object with certId and hash.' });
+      }
+      const result = verifyCertificate(cert);
+      return res.status(200).json({ success: true, ...result });
+    } catch (err) {
       next(err);
     }
   }

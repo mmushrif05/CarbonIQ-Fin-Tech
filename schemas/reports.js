@@ -6,10 +6,10 @@ const Joi = require('joi');
 
 const reportGenerateSchema = Joi.object({
   type: Joi.string()
-    .valid('pcaf', 'gri305', 'tcfd', 'ifrs-s2')
+    .valid('pcaf', 'gri305', 'tcfd', 'ifrs-s2', 'slgft')
     .required()
     .messages({
-      'any.only': 'type must be one of: pcaf, gri305, tcfd, ifrs-s2',
+      'any.only': 'type must be one of: pcaf, gri305, tcfd, ifrs-s2, slgft',
       'any.required': 'Report type is required.',
     }),
 
@@ -41,6 +41,20 @@ const reportGenerateSchema = Joi.object({
     dqDistribution:        Joi.object(),
     assetClasses:          Joi.array(),
     yoy:                   Joi.object(),
+  }).optional(),
+
+  // SLGFT-specific data — used only when type = 'slgft'
+  slgftData: Joi.object({
+    totalLKProjects:        Joi.number().integer().min(0).optional(),
+    totalLKEmissions_tCO2e: Joi.number().min(0).optional(),
+    ndcContribution_pct:    Joi.number().min(0).max(100).optional(),
+    dnshStatus:             Joi.string().valid('Pass', 'Conditional', 'Fail').optional(),
+    ndcKeyDrivers:          Joi.array().items(Joi.string()).optional(),
+    taxonomyDistribution:   Joi.object({
+      green:      Joi.object({ count: Joi.number(), pct: Joi.number(), financed_emissions_tCO2e: Joi.number() }).optional(),
+      transition: Joi.object({ count: Joi.number(), pct: Joi.number(), financed_emissions_tCO2e: Joi.number() }).optional(),
+      not_aligned: Joi.object({ count: Joi.number(), pct: Joi.number(), financed_emissions_tCO2e: Joi.number() }).optional(),
+    }).optional(),
   }).optional(),
 });
 

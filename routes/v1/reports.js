@@ -28,10 +28,10 @@ router.post('/generate', apiKeyAuth, async (req, res, next) => {
       });
     }
 
-    const { type, period, format, orgName, portfolioData } = value;
+    const { type, period, format, orgName, portfolioData, slgftData } = value;
 
     // Build the structured report object
-    const report = generateReport({ type, period, orgName, portfolioData });
+    const report = generateReport({ type, period, orgName, portfolioData, slgftData });
 
     // Return PDF binary
     if (format === 'pdf') {
@@ -93,6 +93,16 @@ router.get('/types', (_req, res) => {
         description: 'Climate-related financial disclosures per IFRS S2: risks & opportunities, financial effects, resilience scenarios, and transition plan milestones.',
         formats: ['json', 'pdf'],
         requiredInputs: ['orgName', 'period'],
+      },
+      {
+        id: 'slgft',
+        name: 'SLGFT CBSL Compliance Report',
+        standard: 'Sri Lanka Green Finance Taxonomy v2024 · CBSL Direction No. 05 of 2022',
+        description: 'CBSL-aligned Sri Lanka Green Finance Taxonomy disclosure: taxonomy distribution (Green/Transition/Not Aligned), NDC contribution, SDG alignment, DNSH compliance, and carbon pricing exposure under SLCCE.',
+        formats: ['json', 'pdf'],
+        requiredInputs: ['orgName', 'period'],
+        optionalInputs: ['slgftData'],
+        region: 'LK',
       },
     ],
   });

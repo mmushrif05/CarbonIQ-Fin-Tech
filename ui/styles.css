@@ -1613,3 +1613,61 @@ body {
   color: #1d4ed8;
   border-color: #bfdbfe;
 }
+
+/* ============================================================
+   SLGFT Certificate Display
+   ============================================================ */
+
+.ndc-cert-card { border-left: 3px solid #10b981; }
+
+.ndc-cert-display {
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+  padding: 18px;
+  background: #f0fdf4;
+}
+.ndc-cert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.ndc-cert-title { font-size: 14px; font-weight: 700; color: #065f46; }
+.ndc-cert-id    { font-size: 11px; color: var(--text-tertiary); font-family: monospace; margin-top: 2px; }
+
+.ndc-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ndc-cert-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.ndc-cert-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); }
+.ndc-cert-description {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 10px;
+  background: white;
+  border-radius: var(--radius-xs);
+  border: 1px solid #a7f3d0;
+  margin-bottom: 10px;
+}
+.ndc-cert-hash {
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   Reports — SLGFT card styling
+   ============================================================ */
+
+.rpt-card-lk {
+  border-left: 3px solid #10b981;
+}

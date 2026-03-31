@@ -23,13 +23,14 @@ const PDFDocument = require('pdfkit');
  * Generate a structured report object for the requested format.
  *
  * @param {Object} opts
- * @param {'pcaf'|'gri305'|'tcfd'|'ifrs-s2'} opts.type
+ * @param {'pcaf'|'gri305'|'tcfd'|'ifrs-s2'|'slgft'} opts.type
  * @param {string} opts.period          - Reporting year, e.g. "2025"
  * @param {string} opts.orgName         - Bank / organisation name
  * @param {Object} [opts.portfolioData] - Pre-computed portfolio summary (optional; demo data used if omitted)
+ * @param {Object} [opts.slgftData]     - SLGFT-specific data (NDC alignment, SDG, taxonomy dist)
  * @returns {Object} Structured report data
  */
-function generateReport({ type, period, orgName, portfolioData }) {
+function generateReport({ type, period, orgName, portfolioData, slgftData }) {
   const portfolio = portfolioData || _demoPortfolio(period);
   const meta = {
     generatedAt: new Date().toISOString(),
@@ -43,6 +44,7 @@ function generateReport({ type, period, orgName, portfolioData }) {
     case 'gri305':  return _gri305Report(meta, portfolio);
     case 'tcfd':    return _tcfdReport(meta, portfolio);
     case 'ifrs-s2': return _ifrsS2Report(meta, portfolio);
+    case 'slgft':   return _slgftReport(meta, portfolio, slgftData || {});
     default:        throw new Error(`Unknown report type: ${type}`);
   }
 }
@@ -327,6 +329,147 @@ function _ifrsS2Report(meta, p) {
         ],
       },
     },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Sri Lanka Green Finance Taxonomy (SLGFT) Report
+// ---------------------------------------------------------------------------
+
+function _slgftReport(meta, p, slgft) {
+  // Taxonomy distribution — default to demo data if not supplied
+  const taxDist = slgft.taxonomyDistribution || {
+    green:      { count: 4,  pct: 40, financed_emissions_tCO2e: 12400 },
+    transition: { count: 5,  pct: 50, financed_emissions_tCO2e: 19800 },
+    not_aligned: { count: 1, pct: 10, financed_emissions_tCO2e: 5400  },
+  };
+
+  const totalLKProjects  = slgft.totalLKProjects || (taxDist.green.count + taxDist.transition.count + (taxDist.not_aligned?.count || 0));
+  const totalLKEmissions = slgft.totalLKEmissions_tCO2e || Object.values(taxDist).reduce((s, t) => s + (t.financed_emissions_tCO2e || 0), 0);
+  const ndcContrib       = slgft.ndcContribution_pct || 35;
+  const alignedPct       = Math.round(((taxDist.green?.count || 0) + (taxDist.transition?.count || 0)) / totalLKProjects * 100);
+
+  return {
+    ...meta,
+    type:     'slgft',
+    title:    'Sri Lanka Green Finance Taxonomy (SLGFT) Compliance Report',
+    standard: 'SLGFT v2024 · Central Bank of Sri Lanka (CBSL) · Direction No. 05 of 2022',
+    summary: {
+      reportingPeriod:         meta.reportingPeriod,
+      totalLKProjects,
+      slgftAligned_pct:        `${alignedPct}%`,
+      totalFinancedEmissions:  `${(totalLKEmissions / 1000).toFixed(1)} ktCO2e`,
+      ndcContribution:         `${ndcContrib}% estimated contribution to unconditional NDC target`,
+      keySDGs:                 'SDG 7 · SDG 9 · SDG 11 · SDG 13 · SDG 14 · SDG 15',
+      taxonomyVersion:         'SLGFT v2024',
+      regulator:               'Central Bank of Sri Lanka (CBSL)',
+    },
+
+    regulatoryContext: {
+      cbslDirection:           'Direction No. 05 of 2022 — Sustainable Finance',
+      slfrs:                   'SLFRS S2 — Sri Lanka Financial Reporting Standard (climate disclosures)',
+      taxonomyScope:           '13 SLSIC Sectors (A–M), 4 Environmental Objectives (M/A/P/E)',
+      carbonThresholds:        'Green: ≤600 kgCO2e/m² · Transition: ≤900 kgCO2e/m² · Not Aligned: >900 kgCO2e/m²',
+      carbonPricingStatus:     'Voluntary SLCCE market (2025) · Proposed SLCCE floor LKR 500/tCO2e (2027)',
+    },
+
+    taxonomyAlignment: {
+      distribution: {
+        green: {
+          classification: 'Green — SLGFT Aligned',
+          projectCount:   taxDist.green?.count || 0,
+          portfolioPct:   `${taxDist.green?.pct || 0}%`,
+          financed_tCO2e: taxDist.green?.financed_emissions_tCO2e || 0,
+          loanPricing:    '−20 bps (Green Loan designation)',
+        },
+        transition: {
+          classification: 'Transition — Pathway to Alignment',
+          projectCount:   taxDist.transition?.count || 0,
+          portfolioPct:   `${taxDist.transition?.pct || 0}%`,
+          financed_tCO2e: taxDist.transition?.financed_emissions_tCO2e || 0,
+          loanPricing:    '−8 bps (Sustainability-Linked Loan with ratchet)',
+        },
+        not_aligned: {
+          classification: 'Not Aligned — Standard Classification',
+          projectCount:   taxDist.not_aligned?.count || 0,
+          portfolioPct:   `${taxDist.not_aligned?.pct || 0}%`,
+          financed_tCO2e: taxDist.not_aligned?.financed_emissions_tCO2e || 0,
+          loanPricing:    'Standard rate (no adjustment)',
+        },
+      },
+      eligibilityTypes: {
+        directEligibility:   'Activities meeting SLGFT criteria regardless of carbon intensity (e.g. M4.1 Solar PV)',
+        thresholdEligibility: 'Construction activities assessed against embodied carbon thresholds',
+      },
+    },
+
+    ndcAlignment: {
+      unconditionalTarget: '4.5% GHG reduction by 2030 vs Business-As-Usual',
+      conditionalTarget:   '14.5% GHG reduction by 2030 (with international support)',
+      netZeroTarget:       '2050',
+      portfolioContribution_pct: ndcContrib,
+      keyDrivers: slgft.ndcKeyDrivers || [
+        'Below-threshold embodied carbon intensity in green-classified projects',
+        'Solar PV and clean energy infrastructure (directly eligible activities)',
+        'Embodied carbon monitoring via ICE v3 factors and PCAF attribution',
+      ],
+      improvementLevers: [
+        'Incentivise EPD procurement for top-3 emission materials (improves PCAF DQ score)',
+        'Increase share of directly-eligible activities (M4.1, M4.2, M4.3) in portfolio',
+        'Introduce SLCCE voluntary carbon credits for residual emissions offset',
+      ],
+    },
+
+    sdgAlignment: {
+      keySDGs: [
+        { sdg: 7,  label: 'Affordable & Clean Energy',               relevance: 'high',   rationale: 'Solar PV and clean energy infrastructure financing.' },
+        { sdg: 9,  label: 'Industry, Innovation & Infrastructure',   relevance: 'high',   rationale: 'Low-carbon construction and green building finance.' },
+        { sdg: 11, label: 'Sustainable Cities & Communities',         relevance: 'high',   rationale: 'Urban green buildings reduce operational emissions.' },
+        { sdg: 13, label: 'Climate Action',                           relevance: 'high',   rationale: 'Direct contribution to NDC targets and 2050 net zero.' },
+        { sdg: 14, label: 'Life Below Water',                         relevance: 'medium', rationale: 'Coastal resilient construction (Activity A2.1).' },
+        { sdg: 15, label: 'Life on Land',                             relevance: 'medium', rationale: 'Sustainable land use and biodiversity (Activity E3.1).' },
+      ],
+      sdgMonitoringFramework: 'Aligned with UNDP SDG Impact Standards for Finance',
+    },
+
+    dnshCompliance: {
+      status:     slgft.dnshStatus || 'Conditional',
+      objectives: [
+        { code: 'M', label: 'Climate Change Mitigation',       status: 'Compliant',    note: 'All green-classified projects below 600 kgCO2e/m² threshold.' },
+        { code: 'A', label: 'Climate Change Adaptation',       status: 'Conditional',  note: '3 projects require climate risk assessment documentation.' },
+        { code: 'P', label: 'Pollution Prevention & Control',  status: 'Compliant',    note: 'Waste management plans required for all construction loans.' },
+        { code: 'E', label: 'Ecological Conservation',         status: 'In Progress',  note: 'Biodiversity impact assessments planned for Q3.' },
+      ],
+      guidingPrinciples: [
+        'Respect for human rights and labour standards',
+        'Transparency in environmental impact reporting',
+        'Stakeholder engagement and community consultation',
+        'Alignment with CBSL Green Finance roadmap',
+      ],
+    },
+
+    carbonPricingExposure: {
+      currentRate:        'LKR 0/tCO2e (voluntary SLCCE market, 2025)',
+      projectedRate2027:  'LKR 500/tCO2e (proposed SLCCE regulatory floor)',
+      projectedRate2030:  'LKR 1,500/tCO2e (NDC alignment scenario)',
+      portfolioExposure2030: `LKR ${Math.round(totalLKEmissions * 1500 / 1e6)}M (estimated at LKR 1,500/tCO2e)`,
+      recommendation:     'Green-classified projects reduce future carbon liability by ~40% vs not-aligned portfolio.',
+    },
+
+    verificationReadiness: {
+      thirdPartyVerification: 'Recommended for green-classified projects > LKR 500M loan value',
+      cbslReporting:          'Annual SLGFT portfolio disclosure recommended to CBSL from FY2026',
+      auditTrail:             'All calculations logged in CarbonIQ audit trail with ICE v3 factor references',
+      dataQualityTarget:      'PCAF DQ Score ≤ 2 for 80% of LK portfolio by FY2027',
+    },
+
+    nextSteps: [
+      { priority: 'High',   action: 'Submit annual SLGFT portfolio report to CBSL by Q1 of following year' },
+      { priority: 'High',   action: 'Complete DNSH climate risk assessments for 3 conditional projects' },
+      { priority: 'Medium', action: 'Enroll transition-classified borrowers in carbon reduction covenant programme' },
+      { priority: 'Medium', action: 'Commission third-party verification for top 5 green-classified projects' },
+      { priority: 'Low',    action: 'Explore SLCCE voluntary carbon credit registration for eligible projects' },
+    ],
   };
 }
 
