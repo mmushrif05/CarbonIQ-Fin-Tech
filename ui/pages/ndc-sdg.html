@@ -183,35 +183,35 @@
       <ol id="ndc-recommendations" class="ndc-recommendations"></ol>
     </div>
 
-    <!-- Certificate generation -->
-    <div class="ndc-result-card ndc-cert-card">
-      <div class="ndc-card-header">
-        <h3>🏅 SLGFT Green Loan Certificate</h3>
-        <span class="ndc-framework-badge" style="font-size:11px">Tamper-Evident · SHA-256</span>
-      </div>
-      <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">
-        Generate a digital certificate that encapsulates this project's SLGFT classification, NDC alignment, and SDG badges. Includes a tamper-evident SHA-256 audit hash for CBSL reporting.
-      </p>
-      <div class="ndc-form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div class="form-group">
-          <label for="ndc-cert-bank">Issuing Bank Name <span style="color:var(--red)">*</span></label>
-          <input id="ndc-cert-bank" type="text" class="form-input" placeholder="e.g. DFCC Bank PLC" />
-        </div>
-        <div class="form-group">
-          <label for="ndc-cert-loan">Loan Amount (M LKR)</label>
-          <input id="ndc-cert-loan" type="number" class="form-input" placeholder="e.g. 500" min="0" />
-        </div>
-      </div>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="NdcSdgPage.generateCertificate()" id="ndc-cert-btn">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Generate Certificate
-        </button>
-        <span id="ndc-cert-status" style="font-size:13px;color:var(--text-tertiary)"></span>
-      </div>
-      <div id="ndc-cert-result" style="display:none;margin-top:16px"></div>
-    </div>
+  </div>
 
+  <!-- Certificate generation — always visible, can be used independently or after AI assessment -->
+  <div class="ndc-result-card ndc-cert-card" style="margin-top:20px">
+    <div class="ndc-card-header">
+      <h3>🏅 SLGFT Green Loan Certificate</h3>
+      <span class="ndc-framework-badge" style="font-size:11px">Tamper-Evident · SHA-256</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:14px">
+      Generate a tamper-evident digital certificate for CBSL reporting. Run the AI assessment above first to enrich the certificate with NDC tier, SDG alignment, and DNSH status — or generate a classification-only certificate directly from project data.
+    </p>
+    <div class="ndc-form-grid" style="grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="form-group">
+        <label for="ndc-cert-bank">Issuing Bank Name <span style="color:var(--red)">*</span></label>
+        <input id="ndc-cert-bank" type="text" class="form-input" placeholder="e.g. DFCC Bank PLC" />
+      </div>
+      <div class="form-group">
+        <label for="ndc-cert-loan">Loan Amount (M LKR)</label>
+        <input id="ndc-cert-loan" type="number" class="form-input" placeholder="e.g. 500" min="0" />
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="NdcSdgPage.generateCertificate()" id="ndc-cert-btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Generate Certificate
+      </button>
+      <span id="ndc-cert-status" style="font-size:13px;color:var(--text-tertiary)"></span>
+    </div>
+    <div id="ndc-cert-result" style="display:none;margin-top:16px"></div>
   </div>
 
   <!-- Framework panel -->

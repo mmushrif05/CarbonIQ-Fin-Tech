@@ -14,7 +14,7 @@ const PAGE_META = {
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
-  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 disclosure reports' },
+  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'AI-powered National Determined Contribution & SDG alignment for Sri Lanka Green Finance Taxonomy' },

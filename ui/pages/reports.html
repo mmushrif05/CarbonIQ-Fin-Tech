@@ -219,7 +219,7 @@ const ReportsPage = (() => {
   const history = [];
 
   function _typeLabel(type) {
-    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures' }[type] || type;
+    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures', slgft: 'SLGFT CBSL Compliance Report' }[type] || type;
   }
 
   async function generate(type) {
@@ -238,12 +238,9 @@ const ReportsPage = (() => {
     progressEl.style.display = 'flex';
 
     try {
-      const res = await fetch(`${API_BASE}/v1/reports/generate`, {
+      const res = await window.CARBONIQ_fetch('/v1/reports/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ type, period, format, orgName }),
       });
 
