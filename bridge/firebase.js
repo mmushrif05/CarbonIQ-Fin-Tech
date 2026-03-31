@@ -196,6 +196,60 @@ async function listMonitoringEntries(projectId) {
     .sort((a, b) => a.year - b.year);
 }
 
+// ---------------------------------------------------------------------------
+// EU AI Act Article 22 — Human Review for Covenant Design (Stage 3)
+//
+// Covenant Design is a high-risk AI system per EU AI Act Annex III, point 5(b)
+// (AI used for creditworthiness assessment and credit scoring). Banks must
+// maintain mandatory human oversight before AI-recommended covenant terms
+// take legal effect in the facility agreement.
+//
+// This function records the human reviewer's decision and transitions the
+// run from 'pending_human_review' to the final status.
+// ---------------------------------------------------------------------------
+
+/**
+ * Submit a human review decision for a covenant design run.
+ *
+ * @param {string} orgId          - Organisation ID
+ * @param {string} runId          - Agent run ID
+ * @param {Object} review         - Review payload
+ * @param {string} review.decision        - 'approved' | 'modified' | 'rejected'
+ * @param {string} review.reviewerId      - Reviewer identifier (email or user ID)
+ * @param {string} [review.reason]        - Reason for modification or rejection
+ * @param {Object[]} [review.modifications] - If 'modified': array of covenant overrides
+ * @returns {Promise<void>}
+ */
+async function submitHumanReview(orgId, runId, review) {
+  const db = getDatabase();
+  if (!db) return;
+
+  const { AGENT_STATUS } = require('../models/agent-run');
+
+  const statusMap = {
+    approved: AGENT_STATUS.HUMAN_APPROVED,
+    modified: AGENT_STATUS.HUMAN_MODIFIED,
+    rejected: AGENT_STATUS.HUMAN_REJECTED
+  };
+
+  const finalStatus = statusMap[review.decision];
+  if (!finalStatus) {
+    throw new Error(`Invalid review decision: ${review.decision}. Must be approved, modified, or rejected.`);
+  }
+
+  await db.ref(`fintech/agentRuns/${orgId}/${runId}`).update({
+    status: finalStatus,
+    humanReview: {
+      decision:      review.decision,
+      reviewerId:    review.reviewerId,
+      reason:        review.reason        || null,
+      modifications: review.modifications || null,
+      reviewedAt:    new Date().toISOString()
+    },
+    completedAt: new Date().toISOString()
+  });
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -216,4 +270,5 @@ module.exports = {
   listFintechProjects,
   saveMonitoringEntry,
   listMonitoringEntries,
+  submitHumanReview
 };
