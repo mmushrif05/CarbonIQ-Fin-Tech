@@ -1293,3 +1293,127 @@ body {
 .taxonomy-fill-red  { background: var(--red) !important; }
 .taxonomy-transition { border-color: var(--amber); }
 .taxonomy-transition .taxonomy-region { color: var(--amber); }
+
+/* ============================================================
+   Sri Lanka Green Finance Taxonomy (SLGFT) — Step 2
+   ============================================================ */
+.slgft-controls {
+  margin-top: -8px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.slgft-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.slgft-activity-result {
+  font-size: 12.5px;
+  padding: 8px 12px;
+  background: var(--accent-light);
+  border-radius: var(--radius-xs);
+  border: 1px solid #bfdbfe;
+  color: var(--text-primary);
+  align-self: flex-end;
+  margin-bottom: 2px;
+  line-height: 1.6;
+}
+.slgft-card {
+  margin-top: 16px;
+  grid-column: 1 / -1;  /* full width in grid */
+}
+.taxonomy-lk-placeholder {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.slgft-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: -4px 0 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+.slgft-activity-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+}
+.slgft-code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.slgft-activity-name { font-size: 13px; font-weight: 500; flex: 1; }
+.slgft-obj {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.slgft-ndc {
+  margin: 14px 0 10px;
+  padding: 12px;
+  background: #ecfdf5;
+  border-radius: var(--radius-xs);
+  border: 1px solid #a7f3d0;
+}
+.slgft-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+  cursor: pointer;
+}
+.slgft-ndc-text {
+  font-size: 12.5px;
+  color: #065f46;
+  margin-bottom: 8px;
+}
+.slgft-sdg-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.slgft-sdg-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+.slgft-dnsh {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 8px 12px;
+}
+.slgft-dnsh-list {
+  margin: 6px 0 2px 16px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.9;
+}

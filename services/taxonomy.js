@@ -6,18 +6,17 @@
  * - EU Taxonomy (DNSH criteria, WLC threshold)
  * - HK Green Classification Framework (Dark/Light Green, Transitioning)
  * - Singapore TSC (Green Mark alignment)
- *
- * Implementation: Step 6
+ * - Sri Lanka Green Finance Taxonomy (SLGFT) — SLSIC sector + activity code
  */
 
 const {
-  TAXONOMY_ASEAN, TAXONOMY_EU, TAXONOMY_HK, TAXONOMY_SG
+  TAXONOMY_ASEAN, TAXONOMY_EU, TAXONOMY_HK, TAXONOMY_SG, TAXONOMY_LK
 } = require('../config/constants');
 
 /**
  * Check project against all taxonomies.
  *
- * @param {Object} projectMetrics - { totalEmission_tCO2e, buildingArea_m2, reductionPct, hasLCA, hasEPD }
+ * @param {Object} projectMetrics - { totalEmission_tCO2e, buildingArea_m2, reductionPct, hasLCA, hasEPD, slsicSector, activityCode }
  * @returns {Object} Alignment results per taxonomy
  */
 function checkAllTaxonomies(projectMetrics) {
@@ -26,6 +25,7 @@ function checkAllTaxonomies(projectMetrics) {
     eu: checkEU(projectMetrics),
     hongKong: checkHK(projectMetrics),
     singapore: checkSG(projectMetrics),
+    sriLanka: checkSriLanka(projectMetrics),
     assessedAt: new Date().toISOString()
   };
 }
@@ -90,4 +90,72 @@ function checkSG(metrics) {
   };
 }
 
-module.exports = { checkAllTaxonomies };
+/**
+ * Check project against Sri Lanka Green Finance Taxonomy (SLGFT).
+ * Uses SLSIC sector code, activity code, and embodied carbon intensity.
+ */
+function checkSriLanka(metrics) {
+  const intensity = metrics.buildingArea_m2 > 0
+    ? (metrics.totalEmission_tCO2e * 1000) / metrics.buildingArea_m2
+    : null;
+
+  const activityCode = metrics.activityCode || null;
+  const slsicSector  = metrics.slsicSector  || null;
+
+  // Look up activity from the taxonomy
+  let matchedActivity = null;
+  if (activityCode) {
+    matchedActivity = TAXONOMY_LK.constructionActivities.find(a => a.code === activityCode) || null;
+  }
+
+  // Determine eligibility tier
+  let tier, label, dnshStatus;
+
+  if (matchedActivity && matchedActivity.eligibility === 'direct') {
+    tier  = 'directly_eligible';
+    label = 'Directly Eligible';
+  } else if (intensity !== null && intensity <= TAXONOMY_LK.thresholds.green) {
+    tier  = 'green';
+    label = 'Green — Aligned';
+  } else if (intensity !== null && intensity <= TAXONOMY_LK.thresholds.transition) {
+    tier  = 'transition';
+    label = 'Transition — Conditional';
+  } else {
+    tier  = 'not_aligned';
+    label = intensity === null ? 'Pending Assessment' : 'Not Aligned';
+  }
+
+  // DNSH checklist — guiding principles
+  dnshStatus = TAXONOMY_LK.guidingPrinciples.map(p => ({
+    principle: p,
+    status: 'pending_verification',
+  }));
+
+  // Sector info
+  const sectorInfo = slsicSector ? TAXONOMY_LK.sectors[slsicSector] : null;
+
+  // Objective classification from activity code prefix
+  const objectiveCode = activityCode ? activityCode[0] : null;
+  const objective = objectiveCode ? TAXONOMY_LK.environmentalObjectives[objectiveCode] : null;
+
+  return {
+    tier,
+    label,
+    intensity_kgCO2e_m2:  intensity !== null ? Math.round(intensity) : null,
+    threshold_green:       TAXONOMY_LK.thresholds.green,
+    threshold_transition:  TAXONOMY_LK.thresholds.transition,
+    activityCode,
+    matchedActivity:       matchedActivity || null,
+    objective:             objective || null,
+    slsicSector:           sectorInfo || null,
+    dnshChecks:            dnshStatus,
+    ndcContribution: {
+      unconditional: TAXONOMY_LK.ndcTargets.unconditional,
+      sdgs:          TAXONOMY_LK.ndcTargets.keySDGs,
+    },
+    framework: TAXONOMY_LK.name,
+    version:   TAXONOMY_LK.version,
+  };
+}
+
+module.exports = { checkAllTaxonomies, checkSriLanka };
