@@ -65,6 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
       await _loadPageFragment(target, pageId);
     }
 
+    // Inline pages that need a one-time init on first visit
+    if (pageId === 'pcaf' && !target.dataset.pcafInit) {
+      target.dataset.pcafInit = 'true';
+      if (typeof PCAFCalculator !== 'undefined') PCAFCalculator.init();
+    }
+
     // Reveal and animate
     target.style.display = 'block';
     target.style.animation = 'none';

@@ -382,35 +382,35 @@
 
               <div class="form-grid">
                 <div class="form-group">
-                  <label>Project Name</label>
-                  <input type="text" class="form-input" placeholder="e.g. Marina Bay Tower" value="Marina Bay Tower" />
+                  <label for="pcaf-project-name">Project Name</label>
+                  <input id="pcaf-project-name" type="text" class="form-input" placeholder="e.g. Marina Bay Tower" value="Marina Bay Tower" />
                 </div>
                 <div class="form-group">
-                  <label>Loan ID</label>
-                  <input type="text" class="form-input" placeholder="e.g. SG-2024-001" value="SG-2024-001" />
+                  <label for="pcaf-loan-id">Loan ID</label>
+                  <input id="pcaf-loan-id" type="text" class="form-input" placeholder="e.g. SG-2024-001" value="SG-2024-001" />
                 </div>
                 <div class="form-group">
-                  <label>Outstanding Amount ($)</label>
-                  <input type="number" class="form-input" placeholder="Bank's outstanding exposure" value="50000000" />
+                  <label for="pcaf-outstanding">Outstanding Amount</label>
+                  <input id="pcaf-outstanding" type="number" class="form-input" placeholder="Bank's outstanding exposure" value="50000000" min="0" />
                 </div>
                 <div class="form-group">
-                  <label>Currency</label>
-                  <select class="form-input">
-                    <option selected>USD</option>
-                    <option>SGD</option>
-                    <option>EUR</option>
-                    <option>GBP</option>
-                    <option>HKD</option>
+                  <label for="pcaf-currency">Currency</label>
+                  <select id="pcaf-currency" class="form-input">
+                    <option value="USD" selected>USD</option>
+                    <option value="SGD">SGD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="HKD">HKD</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Total Project Equity ($)</label>
-                  <input type="number" class="form-input" placeholder="From project balance sheet" value="80000000" />
+                  <label for="pcaf-equity">Total Project Equity</label>
+                  <input id="pcaf-equity" type="number" class="form-input" placeholder="From project balance sheet" value="80000000" min="0" />
                   <span class="form-hint">Equity shown on the project's balance sheet</span>
                 </div>
                 <div class="form-group">
-                  <label>Total Project Debt ($)</label>
-                  <input type="number" class="form-input" placeholder="All lenders combined" value="120000000" />
+                  <label for="pcaf-debt">Total Project Debt</label>
+                  <input id="pcaf-debt" type="number" class="form-input" placeholder="All lenders combined" value="120000000" min="0" />
                   <span class="form-hint">Current + long-term debt from all lenders</span>
                 </div>
               </div>
@@ -477,36 +477,36 @@
 
               <div class="form-grid" style="margin-top:20px">
                 <div class="form-group full-width">
-                  <label>Project Emissions (tCO2e/year)</label>
-                  <input type="number" class="form-input" placeholder="Scope 1 + Scope 2 + Scope 3" value="10000" />
+                  <label for="pcaf-emissions">Project Emissions (tCO2e/year)</label>
+                  <input id="pcaf-emissions" type="number" class="form-input" placeholder="Scope 1 + Scope 2 + Scope 3" value="10000" min="0" />
                   <span class="form-hint">Total annual Scope 1 + 2 (+ Scope 3 from 2025)</span>
                 </div>
                 <div class="form-group">
-                  <label>Project Phase</label>
-                  <select class="form-input">
-                    <option>Operational</option>
-                    <option>Construction</option>
+                  <label for="pcaf-project-phase">Project Phase</label>
+                  <select id="pcaf-project-phase" class="form-input">
+                    <option value="Operational">Operational</option>
+                    <option value="Construction">Construction</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>Project Type</label>
-                  <select class="form-input">
-                    <option selected>Commercial</option>
-                    <option>Residential</option>
-                    <option>Industrial</option>
-                    <option>Infrastructure</option>
-                    <option>Mixed-Use</option>
+                  <label for="pcaf-project-type">Project Type</label>
+                  <select id="pcaf-project-type" class="form-input">
+                    <option value="Commercial" selected>Commercial</option>
+                    <option value="Residential">Residential</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Infrastructure">Infrastructure</option>
+                    <option value="Mixed-Use">Mixed-Use</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div class="form-actions">
-              <button class="btn btn-primary btn-lg" onclick="showResults()">
+              <button class="btn btn-primary btn-lg" onclick="PCAFCalculator.calculate()">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 13l4-4 3 3 7-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Calculate PCAF Attribution
               </button>
-              <button class="btn btn-ghost btn-lg">Reset</button>
+              <button class="btn btn-ghost btn-lg" onclick="PCAFCalculator.reset()">Reset</button>
             </div>
           </div>
 
@@ -514,16 +514,16 @@
           <div class="results-panel" id="resultsPanel">
             <div class="results-header">
               <h3>PCAF v3 Results</h3>
-              <span class="results-badge">Live Preview</span>
+              <span class="results-badge" id="pcaf-results-badge">Live Preview</span>
             </div>
 
             <div class="result-card result-hero">
               <div class="result-label">Attribution Factor</div>
-              <div class="result-value-xl">0.25</div>
+              <div class="result-value-xl" id="pcaf-result-attribution">0.250</div>
               <div class="result-formula">
-                <span class="formula-num">$50,000,000</span>
+                <span class="formula-num" id="pcaf-result-formula-num">$50,000,000</span>
                 <span class="formula-div">/</span>
-                <span class="formula-denom">($80,000,000 + $120,000,000)</span>
+                <span class="formula-denom" id="pcaf-result-formula-denom">($80,000,000 + $120,000,000)</span>
               </div>
               <div class="result-formula-label">Outstanding / (Total Equity + Total Debt)</div>
             </div>
@@ -531,51 +531,57 @@
             <div class="results-grid">
               <div class="result-card">
                 <div class="result-label">Financed Emissions</div>
-                <div class="result-value">2,500</div>
+                <div class="result-value" id="pcaf-result-financed">2,500</div>
                 <div class="result-unit">tCO2e / year</div>
-                <div class="result-calc">0.25 x 10,000 tCO2e</div>
+                <div class="result-calc" id="pcaf-result-financed-calc">0.250 × 10,000 tCO2e</div>
               </div>
               <div class="result-card">
                 <div class="result-label">Data Quality Score</div>
-                <div class="result-value"><span class="dq-badge dq-2 dq-lg">2</span></div>
-                <div class="result-unit">Unverified Reported</div>
-              </div>
-              <div class="result-card">
-                <div class="result-label">Physical Intensity</div>
-                <div class="result-value">—</div>
-                <div class="result-unit">tCO2e / MWh</div>
+                <div class="result-value"><span id="pcaf-result-dq-badge" class="dq-badge dq-2 dq-lg">2</span></div>
+                <div class="result-unit" id="pcaf-result-dq-label">Unverified Reported</div>
               </div>
               <div class="result-card">
                 <div class="result-label">Economic Intensity</div>
-                <div class="result-value">50.0</div>
-                <div class="result-unit">tCO2e / $M invested</div>
+                <div class="result-value" id="pcaf-result-intensity">50.0</div>
+                <div class="result-unit">tCO2e / $M outstanding</div>
+              </div>
+              <div class="result-card">
+                <div class="result-label">Project Value</div>
+                <div class="result-value" id="pcaf-result-project-value">$200M</div>
+                <div class="result-unit" id="pcaf-result-project-value-label">Equity + Debt</div>
               </div>
             </div>
 
             <div class="result-card result-breakdown">
-              <h4>Emission Scopes</h4>
+              <h4>Financed Emission Scopes</h4>
               <div class="scope-bars">
                 <div class="scope-row">
                   <span class="scope-label">Scope 1 <span class="scope-tag">Direct</span></span>
-                  <div class="scope-track"><div class="scope-fill" style="width:30%;background:#3b82f6"></div></div>
-                  <span class="scope-val">750 tCO2e</span>
+                  <div class="scope-track"><div id="pcaf-scope-s1-bar" class="scope-fill" style="width:30%;background:#3b82f6"></div></div>
+                  <span class="scope-val" id="pcaf-scope-s1-val">750 tCO2e</span>
                 </div>
                 <div class="scope-row">
                   <span class="scope-label">Scope 2 <span class="scope-tag">Energy</span></span>
-                  <div class="scope-track"><div class="scope-fill" style="width:50%;background:#8b5cf6"></div></div>
-                  <span class="scope-val">1,250 tCO2e</span>
+                  <div class="scope-track"><div id="pcaf-scope-s2-bar" class="scope-fill" style="width:50%;background:#8b5cf6"></div></div>
+                  <span class="scope-val" id="pcaf-scope-s2-val">1,250 tCO2e</span>
                 </div>
                 <div class="scope-row">
                   <span class="scope-label">Scope 3 <span class="scope-tag">Value Chain</span></span>
-                  <div class="scope-track"><div class="scope-fill" style="width:20%;background:#ec4899"></div></div>
-                  <span class="scope-val">500 tCO2e</span>
+                  <div class="scope-track"><div id="pcaf-scope-s3-bar" class="scope-fill" style="width:20%;background:#ec4899"></div></div>
+                  <span class="scope-val" id="pcaf-scope-s3-val">500 tCO2e</span>
                 </div>
               </div>
             </div>
 
+            <!-- Validation / error message area -->
+            <div id="pcaf-error" style="display:none" class="pcaf-error-box"></div>
+
             <div class="result-actions">
-              <button class="btn btn-primary">Save & Submit</button>
-              <button class="btn btn-secondary">Export PDF</button>
+              <button id="pcaf-save-btn" class="btn btn-primary" onclick="PCAFCalculator.saveAndSubmit()">Save &amp; Copy</button>
+              <button id="pcaf-export-pdf-btn" class="btn btn-secondary" onclick="PCAFCalculator.exportPDF()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export PDF
+              </button>
             </div>
           </div>
         </div>
@@ -1031,6 +1037,7 @@
   <!-- marked.js: lightweight markdown renderer for agent reports -->
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
   <script src="app.js"></script>
+  <script src="js/pcaf.js"></script>
   <script src="js/extract.js"></script>
   <script src="js/agents.js"></script>
 </body>
