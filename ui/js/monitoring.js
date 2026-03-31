@@ -229,7 +229,7 @@ const Monitoring = (() => {
     const attribution = outstanding / (equity + debt);
     const financed    = Math.round(emissions * attribution);
 
-    // Add to local history (API submission is fire-and-forget)
+    // Add to local history immediately for responsive UI
     const newRow = { year, outstanding, equity, debt, attribution, emissions, financed, dq, current: true };
     if (_history) {
       _history = _history.map(h => ({ ...h, current: false }));
@@ -239,10 +239,35 @@ const Monitoring = (() => {
     _renderKPIs(_history);
     _renderTable(_history);
 
-    const msg = $$('mon-modal-msg');
-    if (msg) {
-      msg.textContent = `Annual update submitted. Attribution factor: ${attribution.toFixed(3)}, Financed emissions: ${_fmtN(financed)} tCO2e`;
-      msg.className = 'mon-msg-success';
+    // POST to API to persist the entry
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/projects/${_currentId}/monitoring`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          year,
+          outstanding,
+          equity,
+          debt,
+          emissions,
+          dq,
+        }),
+      });
+      const successMsg = `Annual update submitted. Attribution factor: ${attribution.toFixed(3)}, Financed emissions: ${_fmtN(financed)} tCO2e`;
+      const msg = $$('mon-modal-msg');
+      if (res.ok) {
+        if (msg) { msg.textContent = successMsg; msg.className = 'mon-msg-success'; }
+        if (typeof Toast !== 'undefined' && Toast.success) Toast.success(successMsg);
+      } else {
+        const errMsg = `Update saved locally. API error: ${res.status}`;
+        if (msg) { msg.textContent = errMsg; msg.className = 'mon-msg-success'; }
+        if (typeof Toast !== 'undefined' && Toast.success) Toast.success(errMsg);
+      }
+    } catch (_) {
+      const msg = $$('mon-modal-msg');
+      const offlineMsg = `Annual update saved locally. Attribution factor: ${attribution.toFixed(3)}, Financed emissions: ${_fmtN(financed)} tCO2e`;
+      if (msg) { msg.textContent = offlineMsg; msg.className = 'mon-msg-success'; }
+      if (typeof Toast !== 'undefined' && Toast.success) Toast.success(offlineMsg);
     }
     setTimeout(closeModal, 2500);
   }
