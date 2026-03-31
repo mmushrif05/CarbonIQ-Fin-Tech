@@ -446,16 +446,20 @@
 
       <!-- =================== MONITORING PAGE =================== -->
       <div class="page" id="page-monitoring">
+        <!-- Loading -->
+        <div id="mon-loading" class="dash-loading">
+          <div class="rpt-spinner" style="width:20px;height:20px;border-width:2.5px"></div>
+          <span>Loading project data…</span>
+        </div>
+
+        <!-- Project selector + action -->
         <div class="monitoring-header">
           <div class="project-selector">
             <label>Monitoring Project</label>
-            <select class="form-input form-input-lg">
-              <option>Marina Bay Tower — SG-2024-001</option>
-              <option>Orchard Green Residences — SG-2024-017</option>
-              <option>Jurong Data Centre — SG-2025-003</option>
-            </select>
+            <select class="form-input form-input-lg" id="mon-project-select"
+              onchange="Monitoring.loadProject(this.value)"></select>
           </div>
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" onclick="Monitoring.showUpdateModal()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             Submit Annual Update
           </button>
@@ -464,132 +468,93 @@
         <!-- Timeline -->
         <div class="timeline-card">
           <h3>Attribution Factor History</h3>
-          <div class="timeline-chart">
-            <div class="tl-row">
-              <div class="tl-year">2024</div>
-              <div class="tl-bar-area">
-                <div class="tl-bar" style="width:100%">
-                  <span>0.31</span>
-                </div>
-              </div>
-              <div class="tl-detail">$62M / $200M</div>
-            </div>
-            <div class="tl-row">
-              <div class="tl-year">2025</div>
-              <div class="tl-bar-area">
-                <div class="tl-bar" style="width:84%">
-                  <span>0.28</span>
-                </div>
-              </div>
-              <div class="tl-detail">$56M / $200M</div>
-            </div>
-            <div class="tl-row highlight">
-              <div class="tl-year">2026</div>
-              <div class="tl-bar-area">
-                <div class="tl-bar tl-current" style="width:77%">
-                  <span>0.25</span>
-                </div>
-              </div>
-              <div class="tl-detail">$50M / $200M</div>
-            </div>
+          <div class="timeline-chart" id="mon-timeline">
+            <!-- filled by monitoring.js -->
           </div>
         </div>
 
-        <!-- Monitoring KPIs -->
+        <!-- KPI cards -->
         <div class="kpi-grid kpi-grid-3">
           <div class="kpi-card">
             <div class="kpi-header">
               <span class="kpi-label">Emissions vs Last Year</span>
             </div>
-            <div class="kpi-value kpi-value-green">-12.3%</div>
-            <div class="kpi-secondary">2,500 vs 2,850 tCO2e</div>
+            <div id="mon-kpi-em"><!-- filled --></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-header">
               <span class="kpi-label">Data Quality Trend</span>
             </div>
-            <div class="dq-trend">
-              <span class="dq-badge dq-4">4</span>
-              <svg width="20" height="14" viewBox="0 0 20 14"><path d="M2 7h16M14 2l4 5-4 5" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="dq-badge dq-3">3</span>
-              <svg width="20" height="14" viewBox="0 0 20 14"><path d="M2 7h16M14 2l4 5-4 5" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="dq-badge dq-2">2</span>
-            </div>
-            <div class="kpi-secondary">Improving over 3 years</div>
+            <div id="mon-kpi-dq"><!-- filled --></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-header">
               <span class="kpi-label">Fluctuation Analysis</span>
               <span class="kpi-badge badge-green">PCAF v3</span>
             </div>
-            <div class="fluctuation-breakdown">
-              <div class="fluct-row">
-                <span>Attribution change</span>
-                <span class="fluct-val fluct-neg">-107 tCO2e</span>
-              </div>
-              <div class="fluct-row">
-                <span>Emissions change</span>
-                <span class="fluct-val fluct-neg">-243 tCO2e</span>
-              </div>
-              <div class="fluct-row fluct-total">
-                <span>Net change</span>
-                <span class="fluct-val fluct-neg">-350 tCO2e</span>
-              </div>
-            </div>
+            <div id="mon-kpi-fluct"><!-- filled --></div>
           </div>
         </div>
 
-        <!-- Monitoring History Table -->
+        <!-- History table -->
         <div class="table-card">
-          <div class="table-header">
-            <h3>Annual Monitoring Submissions</h3>
-          </div>
+          <div class="table-header"><h3>Annual Monitoring Submissions</h3></div>
           <table class="data-table">
             <thead>
               <tr>
-                <th>Period</th>
-                <th>Outstanding</th>
-                <th>Equity</th>
-                <th>Debt</th>
-                <th>Attribution</th>
-                <th>Emissions</th>
-                <th>Financed</th>
-                <th>DQ</th>
+                <th>Period</th><th>Outstanding</th><th>Equity</th><th>Debt</th>
+                <th>Attribution</th><th>Emissions</th><th>Financed</th><th>DQ</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><strong>2026</strong> <span class="cell-tag">Current</span></td>
-                <td>$50.0M</td>
-                <td>$80.0M</td>
-                <td>$120.0M</td>
-                <td>0.25</td>
-                <td>10,000 tCO2e</td>
-                <td>2,500 tCO2e</td>
-                <td><span class="dq-badge dq-2">2</span></td>
-              </tr>
-              <tr>
-                <td><strong>2025</strong></td>
-                <td>$56.0M</td>
-                <td>$80.0M</td>
-                <td>$120.0M</td>
-                <td>0.28</td>
-                <td>10,180 tCO2e</td>
-                <td>2,850 tCO2e</td>
-                <td><span class="dq-badge dq-3">3</span></td>
-              </tr>
-              <tr>
-                <td><strong>2024</strong></td>
-                <td>$62.0M</td>
-                <td>$80.0M</td>
-                <td>$120.0M</td>
-                <td>0.31</td>
-                <td>10,500 tCO2e</td>
-                <td>3,255 tCO2e</td>
-                <td><span class="dq-badge dq-4">4</span></td>
-              </tr>
+            <tbody id="mon-tbody">
+              <tr><td colspan="8" style="text-align:center;color:var(--text-tertiary);padding:32px">Loading…</td></tr>
             </tbody>
           </table>
+        </div>
+
+        <!-- Annual Update Modal -->
+        <div id="mon-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)Monitoring.closeModal()">
+          <div class="modal-box">
+            <div class="modal-header">
+              <h3>Submit Annual Update</h3>
+              <button class="btn-icon-sm" onclick="Monitoring.closeModal()">×</button>
+            </div>
+            <div class="modal-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Outstanding Amount ($M)</label>
+                  <input id="mon-upd-outstanding" type="number" class="form-input" placeholder="e.g. 50" />
+                </div>
+                <div class="form-group">
+                  <label>Project Equity ($M)</label>
+                  <input id="mon-upd-equity" type="number" class="form-input" placeholder="e.g. 80" />
+                </div>
+                <div class="form-group">
+                  <label>Project Debt ($M)</label>
+                  <input id="mon-upd-debt" type="number" class="form-input" placeholder="e.g. 120" />
+                </div>
+                <div class="form-group">
+                  <label>Total Emissions (tCO2e)</label>
+                  <input id="mon-upd-emissions" type="number" class="form-input" placeholder="e.g. 10000" />
+                </div>
+                <div class="form-group">
+                  <label>Data Quality Score</label>
+                  <select id="mon-upd-dq" class="form-input">
+                    <option value="1">1 — Verified Reported</option>
+                    <option value="2" selected>2 — Unverified Reported</option>
+                    <option value="3">3 — Physical Activity-Based</option>
+                    <option value="4">4 — Economic (Revenue Known)</option>
+                    <option value="5">5 — Economic (Revenue Unknown)</option>
+                  </select>
+                </div>
+              </div>
+              <div id="mon-modal-msg" style="margin-top:8px;font-size:13px"></div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" onclick="Monitoring.closeModal()">Cancel</button>
+              <button class="btn btn-primary" onclick="Monitoring.submitUpdate()">Submit Update</button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -602,122 +567,140 @@
       <!-- =================== NEW PROJECT PAGE =================== -->
       <div class="page" id="page-new-project">
         <div class="wizard">
+          <!-- Step indicators -->
           <div class="wizard-steps">
-            <div class="wizard-step active">
-              <div class="step-number">1</div>
-              <span>Project Details</span>
+            <div class="wizard-step active" id="np-step-1"><div class="step-number">1</div><span>Project Details</span></div>
+            <div class="wizard-connector" id="np-conn-1"></div>
+            <div class="wizard-step" id="np-step-2"><div class="step-number">2</div><span>Materials &amp; BOM</span></div>
+            <div class="wizard-connector" id="np-conn-2"></div>
+            <div class="wizard-step" id="np-step-3"><div class="step-number">3</div><span>Loan &amp; Finance</span></div>
+            <div class="wizard-connector" id="np-conn-3"></div>
+            <div class="wizard-step" id="np-step-4"><div class="step-number">4</div><span>Review &amp; Score</span></div>
+          </div>
+
+          <!-- Step 1: Project Details -->
+          <div class="wizard-body" id="np-panel-1">
+            <h3 class="form-section-title">Project Details</h3>
+            <p class="form-section-desc">Basic information about the construction project.</p>
+            <div id="np-err-step1" class="pcaf-error-box" style="display:none"></div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="np-proj-name">Project Name <span style="color:var(--red)">*</span></label>
+                <input id="np-proj-name" type="text" class="form-input" placeholder="e.g. Marina Bay Tower" />
+              </div>
+              <div class="form-group">
+                <label for="np-proj-id">Project ID / Loan Reference</label>
+                <input id="np-proj-id" type="text" class="form-input" placeholder="e.g. SG-2026-001" />
+              </div>
+              <div class="form-group">
+                <label for="np-proj-type">Building Type</label>
+                <select id="np-proj-type" class="form-input">
+                  <option>Commercial</option>
+                  <option>Residential</option>
+                  <option>Industrial</option>
+                  <option>Mixed-Use</option>
+                  <option>Data Centre</option>
+                  <option>Hospitality</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="np-proj-region">Region</label>
+                <select id="np-proj-region" class="form-input">
+                  <option value="SG">Singapore</option>
+                  <option value="MY">Malaysia</option>
+                  <option value="HK">Hong Kong</option>
+                  <option value="EU">Europe</option>
+                  <option value="TH">Thailand</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="np-proj-area">Gross Floor Area (m²)</label>
+                <input id="np-proj-area" type="number" class="form-input" placeholder="e.g. 25000" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="np-proj-phase">Project Phase</label>
+                <select id="np-proj-phase" class="form-input">
+                  <option>Construction</option>
+                  <option>Operational</option>
+                  <option>Demolition</option>
+                </select>
+              </div>
             </div>
-            <div class="wizard-connector active"></div>
-            <div class="wizard-step active">
-              <div class="step-number">2</div>
-              <span>Materials & BOM</span>
-            </div>
-            <div class="wizard-connector"></div>
-            <div class="wizard-step">
-              <div class="step-number">3</div>
-              <span>Loan & Finance</span>
-            </div>
-            <div class="wizard-connector"></div>
-            <div class="wizard-step">
-              <div class="step-number">4</div>
-              <span>Review & Score</span>
+            <div class="wizard-actions">
+              <span></span>
+              <button class="btn btn-primary btn-lg" onclick="NewProject.nextFromStep1()">Continue to Materials →</button>
             </div>
           </div>
 
-          <div class="wizard-body">
+          <!-- Step 2: BOM -->
+          <div class="wizard-body" id="np-panel-2" style="display:none">
             <h3 class="form-section-title">Bill of Materials</h3>
-            <p class="form-section-desc">Enter the construction materials. CarbonIQ will calculate embodied carbon using ICE v3 factors.</p>
-
+            <p class="form-section-desc">Enter construction materials. Embodied carbon calculated live using ICE Database v3 factors.</p>
             <table class="data-table material-table">
               <thead>
                 <tr>
-                  <th>Material</th>
-                  <th>Category</th>
-                  <th>Quantity</th>
-                  <th>Unit</th>
-                  <th>kgCO2e/unit</th>
-                  <th>Total kgCO2e</th>
-                  <th></th>
+                  <th>Material</th><th>Category</th><th>Quantity</th><th>Unit</th>
+                  <th>kgCO2e/unit</th><th>Total kgCO2e</th><th></th>
                 </tr>
               </thead>
-              <tbody>
-                <tr>
-                  <td><input type="text" class="form-input form-input-sm" value="Concrete C30/37" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option selected>Concrete</option>
-                      <option>Steel</option>
-                      <option>Timber</option>
-                    </select>
-                  </td>
-                  <td><input type="number" class="form-input form-input-sm" value="850000" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option selected>kg</option>
-                      <option>tonnes</option>
-                    </select>
-                  </td>
-                  <td class="cell-auto">0.13</td>
-                  <td class="cell-computed">110,500</td>
-                  <td><button class="btn-icon-sm">×</button></td>
-                </tr>
-                <tr>
-                  <td><input type="text" class="form-input form-input-sm" value="Rebar Steel" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option>Concrete</option>
-                      <option selected>Steel</option>
-                      <option>Timber</option>
-                    </select>
-                  </td>
-                  <td><input type="number" class="form-input form-input-sm" value="120000" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option selected>kg</option>
-                      <option>tonnes</option>
-                    </select>
-                  </td>
-                  <td class="cell-auto">1.55</td>
-                  <td class="cell-computed">186,000</td>
-                  <td><button class="btn-icon-sm">×</button></td>
-                </tr>
-                <tr>
-                  <td><input type="text" class="form-input form-input-sm" value="Float Glass" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option>Concrete</option>
-                      <option>Steel</option>
-                      <option>Timber</option>
-                      <option selected>Glass</option>
-                    </select>
-                  </td>
-                  <td><input type="number" class="form-input form-input-sm" value="45000" /></td>
-                  <td>
-                    <select class="form-input form-input-sm">
-                      <option selected>kg</option>
-                      <option>tonnes</option>
-                    </select>
-                  </td>
-                  <td class="cell-auto">1.44</td>
-                  <td class="cell-computed">64,800</td>
-                  <td><button class="btn-icon-sm">×</button></td>
-                </tr>
-              </tbody>
+              <tbody id="np-bom-tbody"></tbody>
               <tfoot>
                 <tr>
                   <td colspan="5" class="cell-total-label">Total Embodied Carbon</td>
-                  <td class="cell-total-value">361,300 kgCO2e</td>
+                  <td class="cell-total-value" id="np-bom-total">—</td>
                   <td></td>
                 </tr>
               </tfoot>
             </table>
-
-            <button class="btn btn-ghost" style="margin-top:12px">+ Add Material</button>
-
+            <button class="btn btn-ghost" style="margin-top:12px" onclick="NewProject.addMaterial()">+ Add Material</button>
             <div class="wizard-actions">
-              <button class="btn btn-ghost btn-lg">Back</button>
-              <button class="btn btn-primary btn-lg">Continue to Loan Details</button>
+              <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(1)">← Back</button>
+              <button class="btn btn-primary btn-lg" onclick="NewProject.goTo(3)">Continue to Loan Details →</button>
             </div>
+          </div>
+
+          <!-- Step 3: Loan & Finance -->
+          <div class="wizard-body" id="np-panel-3" style="display:none">
+            <h3 class="form-section-title">Loan &amp; Finance</h3>
+            <p class="form-section-desc">Capital structure for PCAF attribution factor calculation.</p>
+            <div id="np-err-step3" class="pcaf-error-box" style="display:none"></div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="np-outstanding">Outstanding Loan Amount ($M)</label>
+                <input id="np-outstanding" type="number" class="form-input" placeholder="e.g. 50" min="0" />
+                <span class="form-hint">Bank's current exposure in millions</span>
+              </div>
+              <div class="form-group">
+                <label for="np-equity">Total Project Equity ($M)</label>
+                <input id="np-equity" type="number" class="form-input" placeholder="e.g. 80" min="0" />
+              </div>
+              <div class="form-group">
+                <label for="np-debt">Total Project Debt ($M)</label>
+                <input id="np-debt" type="number" class="form-input" placeholder="e.g. 120" min="0" />
+                <span class="form-hint">All lenders combined</span>
+              </div>
+              <div class="form-group">
+                <label for="np-currency">Currency</label>
+                <select id="np-currency" class="form-input">
+                  <option value="USD">USD</option>
+                  <option value="SGD">SGD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="HKD">HKD</option>
+                  <option value="MYR">MYR</option>
+                </select>
+              </div>
+            </div>
+            <div class="wizard-actions">
+              <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(2)">← Back</button>
+              <button class="btn btn-primary btn-lg" onclick="NewProject.nextFromStep3()">Continue to Review →</button>
+            </div>
+          </div>
+
+          <!-- Step 4: Review & Score -->
+          <div class="wizard-body" id="np-panel-4" style="display:none">
+            <h3 class="form-section-title">Review &amp; Score</h3>
+            <p class="form-section-desc">Carbon footprint summary, PCAF attribution and taxonomy alignment check.</p>
+            <div id="np-review-body"><!-- filled by new-project.js --></div>
           </div>
         </div>
       </div>
@@ -861,6 +844,8 @@
   <script src="app.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/pcaf.js"></script>
+  <script src="js/monitoring.js"></script>
+  <script src="js/new-project.js"></script>
   <script src="js/extract.js"></script>
   <script src="js/agents.js"></script>
 </body>

@@ -75,6 +75,14 @@ document.addEventListener('DOMContentLoaded', () => {
       target.dataset.pcafInit = 'true';
       if (typeof PCAFCalculator !== 'undefined') PCAFCalculator.init();
     }
+    if (pageId === 'monitoring' && !target.dataset.monInit) {
+      target.dataset.monInit = 'true';
+      if (typeof Monitoring !== 'undefined') Monitoring.init();
+    }
+    if (pageId === 'new-project' && !target.dataset.npInit) {
+      target.dataset.npInit = 'true';
+      if (typeof NewProject !== 'undefined') NewProject.init();
+    }
 
     // Reveal and animate
     target.style.display = 'block';
