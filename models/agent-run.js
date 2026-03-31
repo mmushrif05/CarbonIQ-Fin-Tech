@@ -11,15 +11,23 @@
 const AGENT_TYPES = {
   SCREENING:    'screening',
   UNDERWRITING: 'underwriting',
+  ORIGINATION:  'origination',
   COVENANTS:    'covenants',
   MONITORING:   'monitoring',
   PORTFOLIO:    'portfolio'
 };
 
 const AGENT_STATUS = {
-  RUNNING:   'running',
-  COMPLETED: 'completed',
-  FAILED:    'failed'
+  RUNNING:              'running',
+  COMPLETED:            'completed',
+  FAILED:               'failed',
+  // EU AI Act Article 22 — high-risk AI systems in financial services must
+  // pause for mandatory human review before decisions take legal effect.
+  // Covenant Design (Stage 3) sets this status after AI recommendation.
+  PENDING_HUMAN_REVIEW: 'pending_human_review',
+  HUMAN_APPROVED:       'human_approved',
+  HUMAN_MODIFIED:       'human_modified',
+  HUMAN_REJECTED:       'human_rejected'
 };
 
 const STEP_TYPES = {
@@ -51,7 +59,9 @@ function createRunRecord({ runId, agentType, orgId, userMessage, metadata = {} }
     tokensUsed: { input: 0, output: 0, cacheRead: 0, cacheCreated: 0 },
     metadata,
     createdAt: new Date().toISOString(),
-    completedAt: null
+    completedAt: null,
+    // Populated when agentType === 'covenants' after EU AI Act human review
+    humanReview: null
   };
 }
 

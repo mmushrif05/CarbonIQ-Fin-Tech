@@ -7,7 +7,9 @@
  * POST /v1/agent/monitor      → Covenant Monitoring Agent (Stage 4)
  * POST /v1/agent/portfolio    → Portfolio Reporting Agent (Stage 5)
  * GET  /v1/agent/runs         → List agent runs for this organisation
- * GET  /v1/agent/runs/:runId  → Get a specific agent run (full step log)
+ * POST /v1/agent/originate               → Green Loan Origination Agent (Stage 2)
+ * POST /v1/agent/covenants/:runId/review → Human Review for Covenant Design (EU AI Act Art. 22)
+ * GET  /v1/agent/runs/:runId             → Get a specific agent run (full step log)
  *
  * Each agent run:
  *   1. Validates the request
@@ -17,6 +19,13 @@
  *
  * All runs are persisted in Firebase under /fintech/agentRuns/{orgId}/{runId}
  * for audit trail compliance.
+ *
+ * EU AI Act compliance (Stage 3 — Covenant Design):
+ *   High-Risk AI per Annex III, point 5(b) — creditworthiness/credit scoring in
+ *   financial services. Enforcement: August 2026. The covenants endpoint sets
+ *   status 'pending_human_review' after AI recommendation. A bank officer must
+ *   post a review decision to /covenants/:runId/review before covenant terms
+ *   take legal effect in the facility agreement.
  */
 
 'use strict';
@@ -26,20 +35,24 @@ const apiKeyAuth    = require('../../middleware/api-key');
 const validate      = require('../../middleware/validate');
 const { agentLimiter } = require('../../middleware/rate-limit');
 const { runAgent, runAgentSingleCall } = require('../../bridge/agent');
-const { getAgentRun, listAgentRuns } = require('../../bridge/firebase');
+const { getAgentRun, listAgentRuns, updateAgentRun, submitHumanReview } = require('../../bridge/firebase');
+const { AGENT_STATUS } = require('../../models/agent-run');
 
 const {
   underwritingRequestSchema,
   screeningRequestSchema,
+  originationRequestSchema,
   covenantsRequestSchema,
+  covenantReviewSchema,
   monitoringRequestSchema,
   portfolioReportRequestSchema
 } = require('../../schemas/agent');
-const underwritingAgent = require('../../services/agents/underwriting');
-const screeningAgent    = require('../../services/agents/screening');
-const covenantsAgent    = require('../../services/agents/covenants');
-const monitoringAgent   = require('../../services/agents/monitoring');
-const portfolioAgent    = require('../../services/agents/portfolio');
+const underwritingAgent  = require('../../services/agents/underwriting');
+const screeningAgent     = require('../../services/agents/screening');
+const originationAgent   = require('../../services/agents/origination');
+const covenantsAgent     = require('../../services/agents/covenants');
+const monitoringAgent    = require('../../services/agents/monitoring');
+const portfolioAgent     = require('../../services/agents/portfolio');
 
 const router = Router();
 
@@ -110,6 +123,76 @@ router.post('/underwrite',
 );
 
 // ---------------------------------------------------------------------------
+// POST /v1/agent/originate
+//
+// Stage 2 — Construction-Specific Green Loan Origination.
+//
+// The primary bank integration point at the moment a construction loan
+// application arrives. Unlike general ESG platforms (Persefoni, Watershed,
+// Sweep, Plan A) that rely on sector-average proxies, CarbonIQ processes the
+// Bill of Quantities the bank already holds — upgrading PCAF Data Quality
+// Score from 4-5 to 2-3 at the point of origination.
+//
+// Returns a complete Green Loan Origination Decision Package: carbon risk
+// assessment, taxonomy alignment, PCAF financed emissions, Carbon Finance
+// Score, preliminary covenant framework, and PROCEED / PROCEED WITH
+// CONDITIONS / DECLINE verdict ready for credit committee.
+// ---------------------------------------------------------------------------
+
+router.post('/originate',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: originationRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = originationAgent.buildUserMessage(req.body);
+
+      const run = await runAgent({
+        agentType:       'origination',
+        systemPrompt:    originationAgent.SYSTEM_PROMPT,
+        toolDefinitions: originationAgent.TOOL_DEFINITIONS,
+        toolFunctions:   originationAgent.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          applicationReference: req.body.applicationReference || null,
+          applicantName:        req.body.applicantName        || null,
+          projectName:          req.body.projectName          || null,
+          buildingType:         req.body.buildingType,
+          buildingArea_m2:      req.body.buildingArea_m2,
+          region:               req.body.region               || 'Singapore',
+          loanAmount:           req.body.loanAmount           || null,
+          projectValue:         req.body.projectValue         || null,
+          hasBOQ:               !!req.body.boqContent,
+          greenLoanTarget:      req.body.greenLoanTarget !== false
+        }
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error })
+      });
+
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured. Contact your administrator.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
 // POST /v1/agent/screen
 //
 // Run the Green Loan Screening Agent. No BOQ needed — works from project
@@ -168,9 +251,22 @@ router.post('/screen',
 // ---------------------------------------------------------------------------
 // POST /v1/agent/covenants
 //
-// Run the Covenant Design Agent. Takes underwritten carbon metrics and
-// designs a scientifically calibrated green loan covenant package with
-// 3 scenarios and a recommended pricing ratchet.
+// Stage 3 — Covenant Design Agent.
+//
+// Takes underwritten carbon metrics and designs a scientifically calibrated
+// green loan covenant package with 3 scenarios and a recommended pricing
+// ratchet.
+//
+// EU AI Act Article 22 compliance:
+//   Covenant Design is classified as a High-Risk AI system under EU AI Act
+//   Annex III, point 5(b) (creditworthiness/credit scoring for financial
+//   services). Enforcement begins August 2026. This endpoint therefore sets
+//   run status to 'pending_human_review' after the AI recommendation — the
+//   covenant terms must NOT be inserted into a facility agreement until a bank
+//   officer posts an approval decision to POST /v1/agent/covenants/:runId/review.
+//
+//   The AI recommendation and the human decision are both immutably persisted
+//   in Firebase for regulatory audit trail purposes.
 // ---------------------------------------------------------------------------
 
 router.post('/covenants',
@@ -199,8 +295,22 @@ router.post('/covenants',
         }
       });
 
-      return res.status(run.status === 'completed' ? 200 : 500).json({
-        success:    run.status === 'completed',
+      // EU AI Act Art. 22: override 'completed' → 'pending_human_review' so
+      // that covenant terms cannot be used until a bank officer reviews them.
+      if (run.status === 'completed') {
+        await updateAgentRun(orgId, run.runId, {
+          status: AGENT_STATUS.PENDING_HUMAN_REVIEW
+        });
+        run.status = AGENT_STATUS.PENDING_HUMAN_REVIEW;
+      }
+
+      // 202 Accepted: AI recommendation is ready but awaiting human review.
+      const httpStatus = run.status === AGENT_STATUS.PENDING_HUMAN_REVIEW ? 202
+        : run.status === 'failed' ? 500
+        : 200;
+
+      return res.status(httpStatus).json({
+        success:    run.status === AGENT_STATUS.PENDING_HUMAN_REVIEW,
         runId:      run.runId,
         agentType:  run.agentType,
         status:     run.status,
@@ -210,12 +320,106 @@ router.post('/covenants',
         metadata:   run.metadata,
         createdAt:  run.createdAt,
         completedAt: run.completedAt,
+        // Inform the caller of the required next step
+        nextStep: run.status === AGENT_STATUS.PENDING_HUMAN_REVIEW
+          ? `EU AI Act Art. 22: a bank officer must review and approve/modify/reject this covenant recommendation via POST /v1/agent/covenants/${run.runId}/review before the terms may be used in a facility agreement.`
+          : undefined,
         ...(run.error && { error: run.error })
       });
     } catch (err) {
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/covenants/:runId/review
+//
+// EU AI Act Article 22 — Human-in-the-Loop review for Covenant Design.
+//
+// A bank officer submits their review decision for an AI-generated covenant
+// recommendation. The decision (approved / modified / rejected) and the
+// reviewer's identity are immutably recorded alongside the AI recommendation
+// in the agent run audit trail.
+//
+// Required fields:
+//   decision    — 'approved' | 'modified' | 'rejected'
+//   reviewerId  — Bank officer identifier (email or system user ID)
+//   reason      — Required for 'modified' and 'rejected' decisions
+//   modifications — Required for 'modified': array of covenant overrides
+//                   with documented justification per EU AI Act Art. 13(3)(f)
+//
+// After this call the run status transitions to:
+//   'human_approved'  — Covenant terms may be used in the facility agreement
+//   'human_modified'  — Modified terms (see modifications[]) may be used
+//   'human_rejected'  — Run must be re-submitted via POST /v1/agent/covenants
+// ---------------------------------------------------------------------------
+
+router.post('/covenants/:runId/review',
+  apiKeyAuth,
+  validate({ body: covenantReviewSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId  = req.apiKey.orgId;
+      const { runId } = req.params;
+
+      // Fetch the run and confirm it belongs to this org and is awaiting review
+      const run = await getAgentRun(orgId, runId);
+
+      if (!run) {
+        return res.status(404).json({
+          error:   'RUN_NOT_FOUND',
+          message: `Agent run ${runId} not found for this organisation.`
+        });
+      }
+
+      if (run.agentType !== 'covenants') {
+        return res.status(400).json({
+          error:   'INVALID_RUN_TYPE',
+          message: `Run ${runId} is of type '${run.agentType}'. Human review is only applicable to covenant design runs.`
+        });
+      }
+
+      if (run.status !== AGENT_STATUS.PENDING_HUMAN_REVIEW) {
+        return res.status(409).json({
+          error:   'REVIEW_NOT_APPLICABLE',
+          message: `Run ${runId} has status '${run.status}'. Review is only permitted when status is 'pending_human_review'.`,
+          currentStatus: run.status
+        });
+      }
+
+      await submitHumanReview(orgId, runId, {
+        decision:      req.body.decision,
+        reviewerId:    req.body.reviewerId,
+        reason:        req.body.reason        || null,
+        modifications: req.body.modifications || null
+      });
+
+      const finalStatusMap = {
+        approved: AGENT_STATUS.HUMAN_APPROVED,
+        modified: AGENT_STATUS.HUMAN_MODIFIED,
+        rejected: AGENT_STATUS.HUMAN_REJECTED
+      };
+
+      return res.status(200).json({
+        success:   true,
+        runId,
+        status:    finalStatusMap[req.body.decision],
+        decision:  req.body.decision,
+        reviewerId: req.body.reviewerId,
+        reviewedAt: new Date().toISOString(),
+        message:   req.body.decision === 'approved'
+          ? 'Covenant terms approved. They may now be used in the facility agreement.'
+          : req.body.decision === 'modified'
+          ? 'Covenant terms approved with modifications. The revised thresholds in modifications[] may be used in the facility agreement.'
+          : 'Covenant terms rejected. Re-submit via POST /v1/agent/covenants with updated parameters.',
+        auditNote: 'This review decision has been immutably recorded per EU AI Act Art. 22 and PCAF v3 audit trail requirements.'
+      });
+
+    } catch (err) {
       next(err);
     }
   }
