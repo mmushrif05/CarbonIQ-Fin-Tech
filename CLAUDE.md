@@ -103,6 +103,9 @@ Copy `.env.example` to `.env` and fill in:
 | `UI_API_KEY` | Internal dashboard key (`ck_test_` + 32 chars) |
 | `NODE_ENV` | `development` or `production` |
 | `FINTECH_API_PORT` | Server port (default: 3001) |
+| `ANTHROPIC_MODEL` | Main agentic loop model (default: `claude-sonnet-4-6`) |
+| `ANTHROPIC_VISION_MODEL` | PDF/BOQ vision model (default: `claude-opus-4-6`) |
+| `ANTHROPIC_FAST_MODEL` | Screening single-call model (default: `claude-haiku-4-5`) |
 
 **Never commit `.env` to version control.**
 
