@@ -47,25 +47,6 @@ function generateReport({ type, period, orgName, portfolioData }) {
   }
 }
 
-/**
- * Stream a PDF for the given report object.
- * Caller is responsible for piping the returned stream to res or a file.
- *
- * @param {Object} report - Output of generateReport()
- * @returns {PDFDocument} Node.js Readable stream
- */
-function buildPDF(report) {
-  const doc = new PDFDocument({ margin: 56, size: 'A4', compress: true });
-
-  _pdfCover(doc, report);
-  _pdfSummaryTable(doc, report);
-  _pdfSections(doc, report);
-  _pdfFooter(doc, report);
-
-  doc.end();
-  return doc;
-}
-
 // ---------------------------------------------------------------------------
 // Report Builders
 // ---------------------------------------------------------------------------

@@ -65,6 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
       await _loadPageFragment(target, pageId);
     }
 
+    // Dashboard & Portfolio share live data from the same module
+    if ((pageId === 'dashboard' || pageId === 'portfolio') && typeof Dashboard !== 'undefined') {
+      Dashboard.init(); // idempotent — only fetches once
+    }
+
     // Inline pages that need a one-time init on first visit
     if (pageId === 'pcaf' && !target.dataset.pcafInit) {
       target.dataset.pcafInit = 'true';
