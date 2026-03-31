@@ -1181,3 +1181,115 @@ body {
   align-items: center;
   margin-top: 8px;
 }
+
+/* ============================================================
+   Settings Drawer
+   ============================================================ */
+.btn-icon-ghost {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  color: var(--sidebar-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s, background 0.15s;
+}
+.btn-icon-ghost:hover {
+  color: var(--sidebar-text);
+  background: rgba(255,255,255,0.1);
+}
+.settings-drawer {
+  position: absolute;
+  bottom: 56px;
+  left: 12px;
+  right: 12px;
+  background: #2a2a2c;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  z-index: 200;
+}
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sidebar-text);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.settings-body {
+  padding: 14px 16px;
+}
+.settings-body label {
+  font-size: 11px;
+  color: var(--sidebar-muted);
+}
+.settings-body .form-input {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.12);
+  color: var(--sidebar-text);
+  font-size: 12px;
+}
+.settings-body .form-hint { color: var(--sidebar-muted); font-size: 10.5px; }
+.settings-body .form-group { margin-bottom: 10px; }
+
+/* ============================================================
+   Toast Notifications
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 2000;
+}
+.toast {
+  padding: 12px 18px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 340px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none;
+}
+.toast-visible { opacity: 1; transform: translateY(0); }
+.toast-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+.toast-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.toast-info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+
+/* ============================================================
+   Taxonomy — dynamic additions
+   ============================================================ */
+.taxonomy-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.taxonomy-controls {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+.taxonomy-note {
+  font-size: 10.5px;
+  color: var(--text-tertiary);
+  margin-top: 10px;
+  line-height: 1.4;
+}
+.taxonomy-fill-red  { background: var(--red) !important; }
+.taxonomy-transition { border-color: var(--amber); }
+.taxonomy-transition .taxonomy-region { color: var(--amber); }
