@@ -120,59 +120,53 @@
 
       <!-- =================== DASHBOARD PAGE =================== -->
       <div class="page" id="page-dashboard" style="display:block">
-        <!-- KPI Cards -->
-        <div class="kpi-grid">
-          <div class="kpi-card">
+        <!-- Loading overlay -->
+        <div id="dash-loading" class="dash-loading">
+          <div class="rpt-spinner" style="width:20px;height:20px;border-width:2.5px"></div>
+          <span>Loading portfolio data…</span>
+        </div>
+
+        <!-- KPI Cards (populated by dashboard.js) -->
+        <div class="kpi-grid" id="dash-kpi-grid">
+          <div class="kpi-card" id="dash-kpi-emissions">
             <div class="kpi-header">
               <span class="kpi-label">Total Financed Emissions</span>
-              <span class="kpi-badge badge-red">+2.1% YoY</span>
+              <span class="kpi-badge badge-neutral" id="dash-emissions-badge">—</span>
             </div>
-            <div class="kpi-value">48,230 <span class="kpi-unit">tCO2e</span></div>
-            <div class="kpi-sparkline">
-              <svg viewBox="0 0 120 32" preserveAspectRatio="none">
-                <polyline points="0,28 15,24 30,26 45,20 60,18 75,14 90,16 105,12 120,10" fill="none" stroke="#ef4444" stroke-width="2"/>
-              </svg>
-            </div>
+            <div class="kpi-value" id="dash-emissions-value">— <span class="kpi-unit">tCO2e</span></div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" id="dash-kpi-dq">
             <div class="kpi-header">
               <span class="kpi-label">Weighted Data Quality</span>
-              <span class="kpi-badge badge-green">Improved</span>
+              <span class="kpi-badge badge-neutral" id="dash-dq-badge">—</span>
             </div>
-            <div class="kpi-value">2.4 <span class="kpi-unit">/ 5</span></div>
+            <div class="kpi-value" id="dash-dq-value">— <span class="kpi-unit">/ 5</span></div>
             <div class="kpi-meter">
               <div class="meter-track">
-                <div class="meter-fill" style="width:72%"></div>
+                <div class="meter-fill" id="dash-dq-meter" style="width:0%"></div>
               </div>
-              <div class="meter-labels">
-                <span>1 Best</span><span>5 Worst</span>
-              </div>
+              <div class="meter-labels"><span>1 Best</span><span>5 Worst</span></div>
             </div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" id="dash-kpi-coverage">
             <div class="kpi-header">
               <span class="kpi-label">Portfolio Coverage</span>
-              <span class="kpi-badge badge-blue">87 projects</span>
+              <span class="kpi-badge badge-blue" id="dash-coverage-badge">—</span>
             </div>
-            <div class="kpi-value">94.2<span class="kpi-unit">%</span></div>
+            <div class="kpi-value" id="dash-coverage-value">—<span class="kpi-unit">%</span></div>
             <div class="kpi-donut">
               <svg viewBox="0 0 36 36" class="donut-svg">
                 <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" stroke-width="2.5"/>
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="94.2 5.8" stroke-dashoffset="25" stroke-linecap="round"/>
+                <circle id="dash-donut-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"/>
               </svg>
             </div>
           </div>
-          <div class="kpi-card">
+          <div class="kpi-card" id="dash-kpi-taxonomy">
             <div class="kpi-header">
-              <span class="kpi-label">Avg Attribution Factor</span>
-              <span class="kpi-badge badge-neutral">Stable</span>
+              <span class="kpi-label">Taxonomy Alignment</span>
+              <span class="kpi-badge badge-green" id="dash-taxonomy-badge">—</span>
             </div>
-            <div class="kpi-value">0.31 <span class="kpi-unit">avg</span></div>
-            <div class="kpi-sparkline">
-              <svg viewBox="0 0 120 32" preserveAspectRatio="none">
-                <polyline points="0,16 15,18 30,15 45,16 60,14 75,15 90,14 105,15 120,14" fill="none" stroke="#6366f1" stroke-width="2"/>
-              </svg>
-            </div>
+            <div class="kpi-value" id="dash-taxonomy-value">— <span class="kpi-unit">green</span></div>
           </div>
         </div>
 
@@ -180,31 +174,15 @@
         <div class="charts-row">
           <div class="chart-card chart-wide">
             <div class="chart-header">
-              <h3>Financed Emissions Trend</h3>
-              <div class="chart-controls">
-                <button class="chip active">12M</button>
-                <button class="chip">6M</button>
-                <button class="chip">3M</button>
-              </div>
+              <h3>Emissions by Asset Class</h3>
+              <button class="btn btn-ghost btn-sm" onclick="Dashboard.refresh()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7a6 6 0 0111.2-3M13 7a6 6 0 01-11.2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v3h-3M2 13v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Refresh
+              </button>
             </div>
             <div class="chart-body">
-              <div class="bar-chart">
-                <div class="bar-group" data-label="Q1 '25">
-                  <div class="bar" style="height:62%"><span class="bar-val">11,200</span></div>
-                </div>
-                <div class="bar-group" data-label="Q2 '25">
-                  <div class="bar" style="height:70%"><span class="bar-val">12,600</span></div>
-                </div>
-                <div class="bar-group" data-label="Q3 '25">
-                  <div class="bar" style="height:58%"><span class="bar-val">10,440</span></div>
-                </div>
-                <div class="bar-group" data-label="Q4 '25">
-                  <div class="bar" style="height:65%"><span class="bar-val">11,700</span></div>
-                </div>
-                <div class="bar-group highlight" data-label="Q1 '26">
-                  <div class="bar bar-current" style="height:53%"><span class="bar-val">2,290</span></div>
-                  <div class="bar-label-tag">Current</div>
-                </div>
+              <div class="bar-chart" id="dash-asset-bars">
+                <!-- filled by dashboard.js -->
               </div>
             </div>
           </div>
@@ -213,27 +191,8 @@
               <h3>By Asset Type</h3>
             </div>
             <div class="chart-body">
-              <div class="h-bars">
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Commercial</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-blue" style="width:78%"></div></div>
-                  <span class="h-bar-value">37,580</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Residential</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-green" style="width:42%"></div></div>
-                  <span class="h-bar-value">5,870</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Industrial</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-amber" style="width:28%"></div></div>
-                  <span class="h-bar-value">3,120</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Infrastructure</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-purple" style="width:14%"></div></div>
-                  <span class="h-bar-value">1,660</span>
-                </div>
+              <div class="h-bars" id="dash-hbars">
+                <!-- filled by dashboard.js -->
               </div>
             </div>
           </div>
@@ -242,14 +201,12 @@
         <!-- Projects Table -->
         <div class="table-card">
           <div class="table-header">
-            <h3>Active Projects</h3>
+            <h3>Top Projects by Emissions</h3>
             <div class="table-controls">
-              <div class="filter-chips">
-                <button class="chip active">All</button>
-                <button class="chip">Construction</button>
-                <button class="chip">Operational</button>
-              </div>
-              <button class="btn btn-secondary btn-sm">Export CSV</button>
+              <button class="btn btn-secondary btn-sm" id="dash-export-csv" onclick="Dashboard.exportCSV()">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Export CSV
+              </button>
             </div>
           </div>
           <table class="data-table">
@@ -257,118 +214,18 @@
               <tr>
                 <th>Project</th>
                 <th>Type</th>
-                <th>Phase</th>
-                <th>Outstanding</th>
-                <th>Attribution</th>
                 <th>Financed Emissions</th>
-                <th>DQ Score</th>
-                <th>Status</th>
+                <th>Classification</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <div class="project-cell">
-                    <span class="project-name">Marina Bay Tower</span>
-                    <span class="project-id">SG-2024-001</span>
-                  </div>
-                </td>
-                <td><span class="type-tag tag-commercial">Commercial</span></td>
-                <td><span class="phase-dot phase-operational"></span>Operational</td>
-                <td>$50.0M</td>
-                <td>
-                  <div class="attribution-cell">
-                    <span>0.25</span>
-                    <span class="attr-formula">$50M / $200M</span>
-                  </div>
-                </td>
-                <td>2,500 tCO2e</td>
-                <td><span class="dq-badge dq-1">1</span></td>
-                <td><span class="status-pill status-green">On Track</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="project-cell">
-                    <span class="project-name">Orchard Green Residences</span>
-                    <span class="project-id">SG-2024-017</span>
-                  </div>
-                </td>
-                <td><span class="type-tag tag-residential">Residential</span></td>
-                <td><span class="phase-dot phase-construction"></span>Construction</td>
-                <td>$32.0M</td>
-                <td>
-                  <div class="attribution-cell">
-                    <span>0.40</span>
-                    <span class="attr-formula">$32M / $80M</span>
-                  </div>
-                </td>
-                <td>1,840 tCO2e</td>
-                <td><span class="dq-badge dq-3">3</span></td>
-                <td><span class="status-pill status-amber">Review</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="project-cell">
-                    <span class="project-name">Jurong Data Centre</span>
-                    <span class="project-id">SG-2025-003</span>
-                  </div>
-                </td>
-                <td><span class="type-tag tag-industrial">Industrial</span></td>
-                <td><span class="phase-dot phase-construction"></span>Construction</td>
-                <td>$75.0M</td>
-                <td>
-                  <div class="attribution-cell">
-                    <span>0.30</span>
-                    <span class="attr-formula">$75M / $250M</span>
-                  </div>
-                </td>
-                <td>4,200 tCO2e</td>
-                <td><span class="dq-badge dq-4">4</span></td>
-                <td><span class="status-pill status-red">High Risk</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="project-cell">
-                    <span class="project-name">Sentosa Solar Farm</span>
-                    <span class="project-id">SG-2025-011</span>
-                  </div>
-                </td>
-                <td><span class="type-tag tag-infrastructure">Infrastructure</span></td>
-                <td><span class="phase-dot phase-operational"></span>Operational</td>
-                <td>$18.5M</td>
-                <td>
-                  <div class="attribution-cell">
-                    <span>0.37</span>
-                    <span class="attr-formula">$18.5M / $50M</span>
-                  </div>
-                </td>
-                <td>185 tCO2e</td>
-                <td><span class="dq-badge dq-2">2</span></td>
-                <td><span class="status-pill status-green">On Track</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="project-cell">
-                    <span class="project-name">KL Metro Extension</span>
-                    <span class="project-id">MY-2024-042</span>
-                  </div>
-                </td>
-                <td><span class="type-tag tag-infrastructure">Infrastructure</span></td>
-                <td><span class="phase-dot phase-construction"></span>Construction</td>
-                <td>$120.0M</td>
-                <td>
-                  <div class="attribution-cell">
-                    <span>0.24</span>
-                    <span class="attr-formula">$120M / $500M</span>
-                  </div>
-                </td>
-                <td>8,400 tCO2e</td>
-                <td><span class="dq-badge dq-5">5</span></td>
-                <td><span class="status-pill status-red">High Risk</span></td>
-              </tr>
+            <tbody id="dash-projects-tbody">
+              <tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:32px">Loading…</td></tr>
             </tbody>
           </table>
         </div>
+
+        <!-- Error state -->
+        <div id="dash-error" style="display:none"></div>
       </div>
 
       <!-- =================== PCAF CALCULATOR PAGE =================== -->
@@ -867,88 +724,52 @@
 
       <!-- =================== PORTFOLIO PAGE =================== -->
       <div class="page" id="page-portfolio">
+        <!-- Loading -->
+        <div id="pf-loading" class="dash-loading">
+          <div class="rpt-spinner" style="width:20px;height:20px;border-width:2.5px"></div>
+          <span>Loading portfolio data…</span>
+        </div>
+
+        <!-- KPI row -->
         <div class="portfolio-summary">
           <div class="kpi-grid kpi-grid-3">
             <div class="kpi-card">
               <div class="kpi-label">Total Outstanding</div>
-              <div class="kpi-value">$1.24B</div>
+              <div class="kpi-value" id="pf-outstanding">—</div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Total Financed Emissions</div>
-              <div class="kpi-value">48,230 <span class="kpi-unit">tCO2e</span></div>
+              <div class="kpi-value" id="pf-emissions">— <span class="kpi-unit">tCO2e</span></div>
             </div>
             <div class="kpi-card">
               <div class="kpi-label">Economic Intensity</div>
-              <div class="kpi-value">38.9 <span class="kpi-unit">tCO2e/$M</span></div>
+              <div class="kpi-value" id="pf-intensity">— <span class="kpi-unit">tCO2e/$M</span></div>
             </div>
           </div>
         </div>
 
+        <!-- Charts -->
         <div class="charts-row">
           <div class="chart-card">
-            <div class="chart-header">
-              <h3>Data Quality Distribution</h3>
-            </div>
+            <div class="chart-header"><h3>Data Quality Distribution</h3></div>
             <div class="chart-body">
-              <div class="dq-distribution">
-                <div class="dq-dist-row">
-                  <span class="dq-badge dq-1">1</span>
-                  <div class="dq-dist-bar-track"><div class="dq-dist-bar dq-fill-1" style="width:22%"></div></div>
-                  <span class="dq-dist-pct">22%</span>
-                </div>
-                <div class="dq-dist-row">
-                  <span class="dq-badge dq-2">2</span>
-                  <div class="dq-dist-bar-track"><div class="dq-dist-bar dq-fill-2" style="width:31%"></div></div>
-                  <span class="dq-dist-pct">31%</span>
-                </div>
-                <div class="dq-dist-row">
-                  <span class="dq-badge dq-3">3</span>
-                  <div class="dq-dist-bar-track"><div class="dq-dist-bar dq-fill-3" style="width:24%"></div></div>
-                  <span class="dq-dist-pct">24%</span>
-                </div>
-                <div class="dq-dist-row">
-                  <span class="dq-badge dq-4">4</span>
-                  <div class="dq-dist-bar-track"><div class="dq-dist-bar dq-fill-4" style="width:15%"></div></div>
-                  <span class="dq-dist-pct">15%</span>
-                </div>
-                <div class="dq-dist-row">
-                  <span class="dq-badge dq-5">5</span>
-                  <div class="dq-dist-bar-track"><div class="dq-dist-bar dq-fill-5" style="width:8%"></div></div>
-                  <span class="dq-dist-pct">8%</span>
-                </div>
+              <div class="dq-distribution" id="pf-dq-dist">
+                <!-- filled by dashboard.js -->
               </div>
             </div>
           </div>
           <div class="chart-card">
-            <div class="chart-header">
-              <h3>By Region</h3>
-            </div>
+            <div class="chart-header"><h3>By Region</h3></div>
             <div class="chart-body">
-              <div class="h-bars">
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Singapore</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-blue" style="width:45%"></div></div>
-                  <span class="h-bar-value">42 projects</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Malaysia</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-green" style="width:25%"></div></div>
-                  <span class="h-bar-value">22 projects</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Hong Kong</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-purple" style="width:18%"></div></div>
-                  <span class="h-bar-value">15 projects</span>
-                </div>
-                <div class="h-bar-row">
-                  <span class="h-bar-label">Thailand</span>
-                  <div class="h-bar-track"><div class="h-bar-fill fill-amber" style="width:10%"></div></div>
-                  <span class="h-bar-value">8 projects</span>
-                </div>
+              <div class="h-bars" id="pf-region-bars">
+                <!-- filled by dashboard.js -->
               </div>
             </div>
           </div>
         </div>
+
+        <!-- Error -->
+        <div id="pf-error" style="display:none"></div>
       </div>
 
       <!-- =================== TAXONOMY PAGE =================== -->
@@ -1036,7 +857,9 @@
 
   <!-- marked.js: lightweight markdown renderer for agent reports -->
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+  <script src="config.js"></script>
   <script src="app.js"></script>
+  <script src="js/dashboard.js"></script>
   <script src="js/pcaf.js"></script>
   <script src="js/extract.js"></script>
   <script src="js/agents.js"></script>
