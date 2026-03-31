@@ -83,6 +83,10 @@ document.addEventListener('DOMContentLoaded', () => {
       target.dataset.npInit = 'true';
       if (typeof NewProject !== 'undefined') NewProject.init();
     }
+    if (pageId === 'taxonomy' && !target.dataset.taxInit) {
+      target.dataset.taxInit = 'true';
+      if (typeof Taxonomy !== 'undefined') Taxonomy.init();
+    }
 
     // Reveal and animate
     target.style.display = 'block';
