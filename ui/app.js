@@ -43,12 +43,22 @@ const DYNAMIC_PAGES = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Enforce authentication on load ────────────────────────
+  if (typeof Auth !== 'undefined') {
+    Auth.enforceAuth();
+  }
+
   const navItems  = document.querySelectorAll('.nav-item');
   const pageTitle    = document.getElementById('pageTitle');
   const pageSubtitle = document.getElementById('pageSubtitle');
 
   // ── Navigate to a page ──────────────────────────────────────
   async function navigateTo(pageId) {
+    // Role-based access check
+    if (typeof Auth !== 'undefined' && !Auth.canAccessPage(pageId)) {
+      Toast.error('Access denied — your role does not have permission to view this page.');
+      return;
+    }
     // Update active nav state
     navItems.forEach((n) => n.classList.remove('active'));
     const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);
