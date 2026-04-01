@@ -9,12 +9,12 @@
 const PAGE_META = {
   'dashboard':   { title: 'Dashboard',          subtitle: 'Portfolio carbon overview' },
   'portfolio':   { title: 'Portfolio',           subtitle: 'Aggregated emissions analysis' },
-  'ai-agents':   { title: 'AI Agents',           subtitle: '5-stage green loan lifecycle agents — Screen · Underwrite · Covenants · Monitor · Portfolio' },
+  'ai-agents':   { title: 'AI Agents',           subtitle: '8-stage green loan lifecycle agents — Coach · Originate · Screen · Underwrite · Triage · Covenants · Monitor · Portfolio' },
   'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
-  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 disclosure reports' },
+  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
 };

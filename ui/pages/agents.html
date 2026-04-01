@@ -24,7 +24,7 @@
           <path d="M7 1.5C4 1.5 1.5 4 1.5 7S4 12.5 7 12.5 12.5 10 12.5 7 10 1.5 7 1.5z" stroke="currentColor" stroke-width="1.3"/>
           <path d="M7 4.5v3l2 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
         </svg>
-        Agentic AI · Full Loan Lifecycle · 5 Stages
+        Agentic AI · Full Loan Lifecycle · 8 Stages
       </div>
       <h1 class="agents-hero__title">Green Loan AI Agents</h1>
       <p class="agents-hero__description">
@@ -36,7 +36,7 @@
     <dl class="agents-hero__metrics">
       <div class="agents-hero__metric">
         <dt>Agents</dt>
-        <dd>5 stages</dd>
+        <dd>8 stages</dd>
       </div>
       <div class="agents-hero__metric">
         <dt>Frameworks</dt>
@@ -51,8 +51,24 @@
 
   <!-- ── Stage Selector ──────────────────────────────────────── -->
   <div class="agents-stages" id="agentStages" role="tablist" aria-label="Loan lifecycle stage">
-    <button class="agents-stage active" data-stage="screen" role="tab" aria-selected="true">
+    <button class="agents-stage active" data-stage="coach" role="tab" aria-selected="true">
       <span class="agents-stage__num">1</span>
+      <span class="agents-stage__info">
+        <span class="agents-stage__name">Borrower Coaching</span>
+        <span class="agents-stage__desc">Readiness scoring</span>
+      </span>
+    </button>
+    <span class="agents-stage-sep" aria-hidden="true">›</span>
+    <button class="agents-stage" data-stage="originate" role="tab" aria-selected="false">
+      <span class="agents-stage__num">2</span>
+      <span class="agents-stage__info">
+        <span class="agents-stage__name">Origination</span>
+        <span class="agents-stage__desc">Full decision package</span>
+      </span>
+    </button>
+    <span class="agents-stage-sep" aria-hidden="true">›</span>
+    <button class="agents-stage" data-stage="screen" role="tab" aria-selected="false">
+      <span class="agents-stage__num">3</span>
       <span class="agents-stage__info">
         <span class="agents-stage__name">Pre-Screening</span>
         <span class="agents-stage__desc">No BOQ needed</span>
@@ -60,15 +76,23 @@
     </button>
     <span class="agents-stage-sep" aria-hidden="true">›</span>
     <button class="agents-stage" data-stage="underwrite" role="tab" aria-selected="false">
-      <span class="agents-stage__num">2</span>
+      <span class="agents-stage__num">4</span>
       <span class="agents-stage__info">
         <span class="agents-stage__name">Underwriting</span>
         <span class="agents-stage__desc">Full BOQ analysis</span>
       </span>
     </button>
     <span class="agents-stage-sep" aria-hidden="true">›</span>
+    <button class="agents-stage" data-stage="triage" role="tab" aria-selected="false">
+      <span class="agents-stage__num">5</span>
+      <span class="agents-stage__info">
+        <span class="agents-stage__name">Decision Triage</span>
+        <span class="agents-stage__desc">Tier classification</span>
+      </span>
+    </button>
+    <span class="agents-stage-sep" aria-hidden="true">›</span>
     <button class="agents-stage" data-stage="covenants" role="tab" aria-selected="false">
-      <span class="agents-stage__num">3</span>
+      <span class="agents-stage__num">6</span>
       <span class="agents-stage__info">
         <span class="agents-stage__name">Covenants</span>
         <span class="agents-stage__desc">KPI design</span>
@@ -76,7 +100,7 @@
     </button>
     <span class="agents-stage-sep" aria-hidden="true">›</span>
     <button class="agents-stage" data-stage="monitor" role="tab" aria-selected="false">
-      <span class="agents-stage__num">4</span>
+      <span class="agents-stage__num">7</span>
       <span class="agents-stage__info">
         <span class="agents-stage__name">Monitoring</span>
         <span class="agents-stage__desc">In-flight checks</span>
@@ -84,7 +108,7 @@
     </button>
     <span class="agents-stage-sep" aria-hidden="true">›</span>
     <button class="agents-stage" data-stage="portfolio" role="tab" aria-selected="false">
-      <span class="agents-stage__num">5</span>
+      <span class="agents-stage__num">8</span>
       <span class="agents-stage__info">
         <span class="agents-stage__name">Portfolio</span>
         <span class="agents-stage__desc">ESG reporting</span>
