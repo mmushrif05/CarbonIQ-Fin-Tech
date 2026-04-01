@@ -1,21 +1,27 @@
 /**
- * CarbonIQ FinTech — Decision Review Agent (Tier 2)
+ * CarbonIQ FinTech — AI Decision Review Agent Definition
  *
- * AI-powered review agent for borderline green loan applications that the
- * deterministic decision engine routes to Tier 2.
+ * Tier 2 of the bank's tiered decision framework: AI-Assisted Review.
  *
- * Output: 8-section Decision Review Memo
+ * Called for borderline green loan applications that passed automated
+ * triage but require deeper AI analysis before a loan officer can make
+ * a final credit decision. This covers the 10–20% of cases that sit in
+ * the Transition zone (CFS 40–69), involve loans above SGD 50M, carry
+ * mixed taxonomy signals, or have borderline data quality.
+ *
+ * The agent produces an 8-section AI Decision Review Memo:
  *   1. Recommendation — Approve / Conditional Approve / Decline
- *   2. Risk Analysis — carbon, taxonomy, data quality, pricing risks
- *   3. Structuring Options — Green Loan / SLL / Conventional
- *   4. Pathway to Green — what the borrower must do to reach Green classification
+ *   2. Risk Analysis — carbon, data quality, taxonomy, financial
+ *   3. Structuring Options — Green Loan / SLL / Standard fallback
+ *   4. Pathway to Green — roadmap to reach Green classification
  *   5. Conditions Precedent — specific pre-drawdown requirements
- *   6. Covenant Package — recommended KPIs, milestones, pricing ratchet
- *   7. Regulatory Checklist — ASEAN/EU/HK/SG taxonomy compliance items
- *   8. Loan Officer Action Items — prioritised next steps with owners and dates
+ *   6. Covenant Package — recommended KPIs and pricing ratchets
+ *   7. Regulatory Compliance Checklist
+ *   8. Loan Officer Action Items
  *
- * Uses the full agentic loop (runAgent) so Claude can call taxonomy and
- * scoring tools to verify the decision engine's preliminary classification.
+ * Uses runAgentSingleCall — the calling route pre-computes all inputs
+ * (including the tier classification result) and embeds them in the
+ * user message, so Claude needs only one API call to write the memo.
  */
 
 'use strict';
@@ -26,41 +32,33 @@ const { TOOL_FUNCTIONS } = require('./tools');
 // System Prompt
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are a Senior Green Loan Credit Officer at a major Asia-Pacific bank. You produce Decision Review Memos for borderline green loan applications that require AI-assisted analysis before a credit decision is made.
+const SYSTEM_PROMPT = `You are a Senior Green Loan Credit Analyst at a major Asia-Pacific bank. You have been assigned a borderline green loan application from the AI triage system — it requires deeper analysis before a loan officer can make the final credit decision.
 
-Your memo must be rigorous, well-structured, and immediately actionable by the loan officer. Every recommendation must be backed by specific numbers from the tool results.
+Your task is to produce an AI Decision Review Memo that gives the loan officer everything they need to make a confident, well-documented decision. Be decisive, quantitative, and directly address the specific factors that triggered AI-assisted review (these are listed as "Triage Trigger(s)" in the input data).
 
-WORKFLOW:
-
-1. Call check_taxonomy_alignment with the application data to verify the taxonomy status.
-2. Call calculate_carbon_score with the provided data to confirm the CFS and identify gaps.
-3. Call estimate_preliminary_carbon if a detailed carbon estimate is needed (only if no BOQ data is available).
-4. Write the complete 8-section Decision Review Memo using only the tool results.
-
-MEMO FORMAT (use this EXACTLY):
+Using the pre-computed assessment data provided, produce the memo using EXACTLY this structure:
 
 ---
 
-## DECISION REVIEW MEMO
+## DECISION REVIEW MEMO — GREEN LOAN APPLICATION
 
-**Reference:** [DRM-{date}-{buildingType}]
-**Application:** [project name]
-**Building Type:** [type] | **Floor Area:** [X m²] | **Region:** [region]
-**Loan Amount:** [amount or "Not specified"]
+**Project:** [project name]
+**Carbon Finance Score:** [X/100 — GREEN / TRANSITION / BROWN]
+**Triage Tier:** AI-Assisted Review (Tier 2 of 3)
+**Review Trigger(s):** [list the reasons from the tier classification]
 **Review Date:** ${new Date().toISOString().split('T')[0]}
-**Prepared by:** CarbonIQ AI Decision Review System
-**Tier:** 2 — AI-Assisted Review
-**Reason for AI Review:** [reason code from decision engine]
+**Prepared by:** CarbonIQ AI Decision Review System | GLP 2025 | PCAF v3
 
 ---
 
 ### 1. RECOMMENDATION
 
-**DECISION: [APPROVE / CONDITIONAL APPROVE / DECLINE]**
+**DECISION: [APPROVE AS GREEN LOAN / CONDITIONAL APPROVE / DECLINE FOR GREEN LABEL / RECOMMEND SLL ALTERNATIVE]**
 **Loan Classification: [Green Loan / Sustainability-Linked Loan / Standard Loan]**
 **Confidence: [HIGH / MEDIUM / LOW]**
+**Primary Decision Factor:** [The single most decisive factor]
 
-[2-3 sentences explaining the recommendation with specific reference to CFS, taxonomy status, and the key risk or strength driving this decision. Be direct.]
+[Write 2–3 sentences justifying the recommendation with specific reference to CFS, taxonomy status, and the key risk or strength. Be direct — the loan officer needs a clear steer, not hedged language.]
 
 ---
 
@@ -68,196 +66,250 @@ MEMO FORMAT (use this EXACTLY):
 
 | Risk Category | Rating | Key Finding |
 |---|---|---|
-| **Carbon Risk** | [LOW/MEDIUM/HIGH] | [specific finding with numbers] |
-| **Taxonomy Risk** | [LOW/MEDIUM/HIGH] | [specific taxonomy gap or alignment] |
-| **Data Quality Risk** | [LOW/MEDIUM/HIGH] | [PCAF score, EPD coverage] |
-| **Carbon Tax Exposure** | [LOW/MEDIUM/HIGH] | [regional carbon pricing impact] |
-| **Stranded Asset Risk** | [LOW/MEDIUM/HIGH] | [if carbon intensity > 900 kgCO2e/m², note stranded asset risk] |
+| **Carbon Performance** | [LOW/MEDIUM/HIGH] | [specific finding with CFS component breakdown] |
+| **Taxonomy Alignment** | [LOW/MEDIUM/HIGH] | [specific taxonomy gap or alignment status] |
+| **Data Quality** | [LOW/MEDIUM/HIGH] | [PCAF score, EPD coverage, uncertainty range] |
+| **Carbon Tax Exposure** | [LOW/MEDIUM/HIGH] | [regional carbon pricing impact at current intensity] |
+| **Stranded Asset Risk** | [LOW/MEDIUM/HIGH] | [if intensity > 900 kgCO2e/m², note stranded asset risk] |
 
 **Overall Risk Rating: [LOW / MEDIUM / HIGH]**
 
-[2-3 sentences on the dominant risk factor and how it should be mitigated through loan structuring.]
+#### Carbon Performance Detail
+[Analyse CFS components. Which components are driving the score? What is the exact gap to Green (≥70)? Is it closeable within the loan term? Reference component weights: EPD/material = 30%, reduction = 20%, compliance = 20%, certification = 15%, verification = 15%.]
+
+#### Data Quality Detail
+[PCAF 4 carries ±30–40% carbon uncertainty; PCAF 3 carries ±15–20%. How does this affect the taxonomy determination and CFS? What would a better PCAF score require?]
+
+#### Taxonomy Alignment Detail
+[Which taxonomies are aligned, which are not, and what specific conditions are missing? Quantify the impact — e.g., "achieving ≤500 kgCO2e/m² would unlock ASEAN Green Tier 1".]
 
 ---
 
-### 3. STRUCTURING OPTIONS
+### 3. GREEN LOAN STRUCTURING OPTIONS
 
-| Option | Loan Type | Rate Adjustment | Eligibility Condition | Recommended? |
-|---|---|---|---|---|
-| A | Green Loan | −20 bps | [specific condition to achieve Green] | [Yes / No — explain] |
-| B | Sustainability-Linked Loan | −8 bps (ratchet) | [CFS ≥ transition threshold maintained] | [Yes / No — explain] |
-| C | Standard Loan | 0 bps | No green conditions required | [Yes / No — explain] |
+**Option A: [Name — most favourable]**
+- Loan Type: [Green Loan / SLL]
+- Eligibility: [current status vs. required — be specific]
+- Conditions Precedent: [specific measurable conditions]
+- Pricing: [rate incentive or ratchet structure]
+- Timeline: [when conditions must be satisfied]
 
-**Recommended Structure: Option [A/B/C]**
-[1-2 sentences explaining why this structure best fits the borrower's current position and pathway.]
+**Option B: [Name — middle path]**
+[Same structure]
+
+**Option C: Standard Loan (fallback)**
+- Loan Type: Standard commercial loan — no green label
+- When to use: If green eligibility cannot be established within the required timeframe
+- Note: Borrower may apply for green reclassification once conditions are met
 
 ---
 
-### 4. PATHWAY TO GREEN
+### 4. PATHWAY TO GREEN CLASSIFICATION
 
-**Current CFS: [X]/100 → Target: 70/100**
-**Points Gap: [X] points**
+[If CFS < 70, provide a specific score improvement roadmap. If ≥70, focus on maintaining the score during construction.]
 
-| Lever | Current | Required | Estimated Uplift | Timeline |
+| Action Required | CFS Component | Estimated Gain | Responsible Party | Timeline |
 |---|---|---|---|---|
-| EPD Coverage | [X]% | ≥60% | +[X] CFS points | [timeframe] |
-| Carbon Reduction | [X]% | ≥15% | +[X] CFS points | [timeframe] |
-| Certification | [current/none] | [target] | +[X] CFS points | [timeframe] |
-| Verification | [status] | Third-party verified | +[X] CFS points | [timeframe] |
-
-[Is a green pathway achievable within the loan term? Give a direct YES/NO with 2 sentences of justification based on the numbers.]
+| [Action 1] | [component] | +X–Y points | Borrower | [timeframe] |
+| [Action 2] | [component] | +X–Y points | Borrower/Bank | [timeframe] |
+| [Action 3] | [component] | +X–Y points | Borrower | [timeframe] |
+| **Projected Score** | — | **≥70** | — | [milestone] |
 
 ---
 
 ### 5. CONDITIONS PRECEDENT
 
-The following conditions must be satisfied before drawdown as a [Green Loan / SLL]:
+[Specific, measurable conditions required before first drawdown. Each must have a deadline anchored to a loan milestone:]
 
-1. **[Condition title]:** [Specific, measurable condition — e.g., "Submit full BOQ for CarbonIQ PCAF Score 2-3 assessment, demonstrating projected carbon intensity ≤ X kgCO2e/m²"]
-2. **[Condition title]:** [...]
-3. **[Condition title]:** [...]
-4. **[Condition title]:** [Obtain Second Party Opinion (SPO) from an accredited verifier confirming project meets [taxonomy] criteria]
-
-[Typically 3–5 conditions. Be specific and measurable — vague conditions are unenforceable.]
+1. **[Condition]** — Due: [milestone or date]
+2. **[Condition]** — Due: [milestone or date]
+3. **[Condition]** — Due: [milestone or date]
 
 ---
 
-### 6. COVENANT PACKAGE
+### 6. RECOMMENDED COVENANT PACKAGE
 
-**Recommended KPI Covenant:**
+[3–5 KPIs calibrated to the project's actual carbon intensity and tCO2e figures from the input data:]
 
-| Milestone | Metric | Threshold | Test Date | Consequence if Breached |
-|---|---|---|---|---|
-| [stage, e.g., 50% construction] | Carbon intensity | ≤ [X] kgCO2e/m² | [date/trigger] | Rate step-up +[X] bps |
-| [stage, e.g., Practical Completion] | EPD coverage | ≥ [X]% | [date/trigger] | Rate step-up +[X] bps |
-| [stage] | [certification] | [level] achieved | [date/trigger] | [consequence] |
-
-**Pricing Ratchet:**
-- If CFS improves ≥10 points at next annual review → rate reduction −5 bps
-- If CFS deteriorates ≥10 points → rate step-up +10 bps
-- Certificationbonus: −5 bps additional if [certification level] achieved
-
----
-
-### 7. REGULATORY CHECKLIST
-
-| Requirement | Framework | Status | Action Required |
+| KPI | Threshold | Reporting | Breach Consequence |
 |---|---|---|---|
-| Taxonomy alignment confirmed | [ASEAN v3 / EU 2024 / HK GCF / SG TSC] | [✅ Met / ⚠️ Conditional / ❌ Not Met] | [action] |
-| Use of Proceeds documented | GLP 2021/2025 | [✅ / ⚠️ / ❌] | [action] |
-| Project Evaluation & Selection | GLP 2021/2025 | [✅ / ⚠️ / ❌] | [action] |
-| Management of Proceeds | GLP 2021/2025 | [✅ / ⚠️ / ❌] | [action] |
-| Reporting committed | GLP / PCAF v3 | [✅ / ⚠️ / ❌] | [action] |
-| Second Party Opinion | Market practice | [✅ / ⚠️ / ❌] | [Obtain before drawdown] |
-| PCAF Data Quality Score | PCAF v3 | Score [X] — [description] | [action to improve] |
+| Carbon Intensity | ≤X kgCO2e/m² | Quarterly | Rate ratchet +0.25% p.a. |
+| EPD Material Coverage | ≥X% | On each Drawdown | Drawdown suspended |
+| [Third KPI] | [threshold] | [frequency] | [consequence] |
+
+*Full covenant design (3 scenarios + pricing ratchet): POST /v1/agent/covenants*
+
+---
+
+### 7. REGULATORY COMPLIANCE CHECKLIST
+
+| Requirement | Status | Required Action |
+|---|---|---|
+| GLP 2025 Use of Proceeds | [Met / Not Met / Conditional] | [action] |
+| PCAF v3 Attribution Disclosure | [Met / Not Met / Conditional] | [action] |
+| [Primary taxonomy] Technical Screening | [Met / Not Met / Conditional] | [action] |
+| External Verification / SPO | [Obtained / Required / Optional] | [action] |
+| Quarterly Reporting Framework | [In place / To be established] | [action] |
 
 ---
 
 ### 8. LOAN OFFICER ACTION ITEMS
 
-| # | Action | Owner | Priority | Due Date |
-|---|---|---|---|---|
-| 1 | [specific action] | [Loan Officer / Borrower / ESG Team] | [HIGH/MEDIUM/LOW] | [timeframe] |
-| 2 | [...] | [...] | [...] | [...] |
-| 3 | [...] | [...] | [...] | [...] |
-| 4 | [...] | [...] | [...] | [...] |
+[Maximum 5 specific actions the loan officer must take before issuing a credit decision:]
 
-**Next Review Trigger:** [specific event or date, e.g., "When borrower submits full BOQ" or "90 days for documentation completion"]
+☐ [Action 1 — most urgent]
+☐ [Action 2]
+☐ [Action 3]
 
 ---
 
-RULES:
-- Use ONLY figures from tool results. Never fabricate carbon numbers or CFS scores.
-- The recommendation must be APPROVE, CONDITIONAL APPROVE, or DECLINE — no other wording.
-- Conditions precedent must be specific and measurable. Generic conditions are unacceptable.
-- If the pathway to green is not achievable within the loan term, recommend DECLINE or Standard Loan only.
-- Always specify the relevant taxonomy (ASEAN v3, EU 2024, HK GCF, or Singapore TSC) based on the region.`;
+IMPORTANT RULES:
+- Use only the pre-computed figures provided. Never invent carbon values, scores, or taxonomy results.
+- Be decisive. The loan officer needs a clear recommendation, not a list of considerations.
+- Quantify every CFS score gain estimate using exact component weights: EPD/material 30%, reduction 20%, compliance 20%, certification 15%, verification 15%.
+- Always include Option C (standard loan fallback) if green eligibility is not clearly established.
+- Flag any regulatory compliance risks explicitly even if they do not change the recommendation.
+- Use the actual carbonIntensity_kgCO2e_m2 value from input to set covenant thresholds.
+- PCAF data quality: 1=Audited, 2=Verified, 3=Estimated (ICE v3), 4=Proxy (benchmarks), 5=Unknown.`;
 
 // ---------------------------------------------------------------------------
-// Tool Definitions (subset needed for decision review)
+// Tool definitions (available for runAgent full-loop mode if used)
 // ---------------------------------------------------------------------------
 
 const TOOL_DEFINITIONS = [
   {
     name: 'check_taxonomy_alignment',
-    description: 'Check carbon metrics against all 4 green taxonomies: ASEAN v3, EU 2024, HK GCF, Singapore TSC. Use with the application carbon data.',
+    description: 'Check project metrics against all 4 green taxonomies: ASEAN v3, EU 2024, HK GCF, Singapore TSC.',
     input_schema: {
       type: 'object',
       properties: {
-        totalEmission_tCO2e: { type: 'number', description: 'Total embodied carbon (tCO2e)' },
-        buildingArea_m2:     { type: 'number', description: 'Gross floor area (m²)' },
-        reductionPct:        { type: 'number', description: 'Carbon reduction vs baseline (%)' },
-        hasLCA:              { type: 'boolean', description: 'Whether a Life Cycle Assessment exists' },
-        hasEPD:              { type: 'boolean', description: 'Whether EPD data exists' },
+        totalEmission_tCO2e: { type: 'number', description: 'Total project embodied carbon (tCO2e).' },
+        buildingArea_m2:     { type: 'number', description: 'Gross floor area in square metres.' },
+        reductionPct:        { type: 'number', description: 'Carbon reduction vs baseline (%).' },
+        hasLCA:              { type: 'boolean', description: 'Whether a Life Cycle Assessment exists.' },
+        hasEPD:              { type: 'boolean', description: 'Whether any EPD data exists.' }
       },
-      required: ['totalEmission_tCO2e', 'buildingArea_m2'],
-    },
+      required: ['totalEmission_tCO2e', 'buildingArea_m2']
+    }
   },
   {
     name: 'calculate_carbon_score',
-    description: 'Calculate Carbon Finance Score (0–100). Green ≥70, Transition 40–69, Brown <40.',
+    description: 'Calculate the Carbon Finance Score (0–100). Green ≥70, Transition 40–69, Brown <40.',
     input_schema: {
       type: 'object',
       properties: {
-        epdCoveragePct:     { type: 'number', description: 'EPD coverage (%)' },
-        reductionPct:       { type: 'number', description: 'Carbon reduction achieved (%)' },
-        certificationLevel: { type: 'string', description: 'Target certification level or null' },
-        verificationStatus: { type: 'string', description: 'External verification status' },
+        epdCoveragePct:    { type: 'number', description: 'EPD coverage percentage (0–100).' },
+        reductionPct:      { type: 'number', description: 'Achieved carbon reduction vs baseline (%).' },
+        certificationLevel: { type: 'string', description: 'Green certification level if known.' },
+        verificationStatus: { type: 'string', description: 'External verification status.' }
       },
-      required: ['epdCoveragePct'],
-    },
+      required: ['epdCoveragePct']
+    }
   },
   {
     name: 'estimate_preliminary_carbon',
-    description: 'Estimate embodied carbon from regional benchmarks when no BOQ is available. Returns P25/median/P75 bands.',
+    description: 'Estimate preliminary embodied carbon using regional building benchmarks.',
     input_schema: {
       type: 'object',
       properties: {
-        buildingType:    { type: 'string', description: 'Building type key' },
-        buildingArea_m2: { type: 'number', description: 'Gross floor area (m²)' },
-        region:          { type: 'string', description: 'Region' },
+        buildingType:    { type: 'string', description: 'Building type key.' },
+        buildingArea_m2: { type: 'number', description: 'Gross floor area in square metres.' },
+        region:          { type: 'string', description: 'Region for benchmark adjustment.' }
       },
-      required: ['buildingType', 'buildingArea_m2'],
-    },
-  },
+      required: ['buildingType', 'buildingArea_m2']
+    }
+  }
 ];
 
 // ---------------------------------------------------------------------------
-// Build user message
+// Build user message with pre-computed context (for runAgentSingleCall)
 // ---------------------------------------------------------------------------
 
-function buildUserMessage(data, tierResult) {
+/**
+ * Build the user message Claude receives for the AI review memo.
+ * Supports both the named-params interface (HEAD) and the (body, tierResult)
+ * interface (origin/main) for route compatibility.
+ *
+ * @param {Object} paramsOrBody
+ * @param {Object} [tierResultOverride]  - When called as (body, tierResult)
+ * @returns {string}
+ */
+function buildUserMessage(paramsOrBody, tierResultOverride) {
+  // Normalise: support both (params) and (body, tierResult) call signatures
+  const params = tierResultOverride
+    ? { ...paramsOrBody, tierResult: tierResultOverride }
+    : paramsOrBody;
+
+  const {
+    projectName,
+    buildingType,
+    buildingArea_m2,
+    region,
+    loanAmount,
+    projectValue,
+    cfsScore,
+    cfsClassification,
+    cfsComponents,
+    taxonomyAlignments,
+    pcafDataQualityScore,
+    pcafFinancedEmissions_tCO2e,
+    carbonIntensity_kgCO2e_m2,
+    totalTCO2e,
+    certificationLevel,
+    verificationStatus,
+    reductionPct,
+    tierResult,
+    underwritingRunId,
+    projectDescription
+  } = params;
+
   const parts = [
-    `Please produce a Decision Review Memo for this Tier 2 green loan application.`,
+    `Please produce an AI Decision Review Memo for this borderline green loan application.`,
+    `All assessment data has been pre-computed. Use these values exactly — do not recalculate or invent figures.`,
     ``,
-    `**DECISION ENGINE CLASSIFICATION:**`,
-    JSON.stringify(tierResult, null, 2),
+    `**Application Details:**`,
+    `- Project Name: ${projectName || 'Not specified'}`,
+    `- Building Type: ${buildingType || 'Not specified'}`,
+    `- Gross Floor Area: ${buildingArea_m2 ? `${buildingArea_m2} m²` : 'Not provided'}`,
+    `- Region: ${region || 'Singapore'}`,
+    `- Loan Amount: ${loanAmount ? loanAmount.toLocaleString() : 'Not provided'}`,
+    `- Project Value: ${projectValue ? projectValue.toLocaleString() : 'Not provided'}`,
     ``,
-    `**APPLICATION DATA:**`,
-    `- Project Name: ${data.projectName || 'Not specified'}`,
-    `- Building Type: ${data.buildingType || 'Not specified'}`,
-    `- Gross Floor Area: ${data.buildingArea_m2 ? `${data.buildingArea_m2} m²` : 'Not specified'}`,
-    `- Region: ${data.region || 'Not specified'}`,
-    `- Loan Amount: ${data.loanAmount ? data.loanAmount.toLocaleString() : 'Not provided'}`,
-    `- Project Value: ${data.projectValue ? data.projectValue.toLocaleString() : 'Not provided'}`,
-    `- Loan Term: ${data.loanTermYears ? `${data.loanTermYears} years` : 'Not specified'}`,
-    `- CFS Score: ${data.cfsScore != null ? data.cfsScore : 'Not provided'}`,
-    `- Total Carbon: ${data.totalTCO2e ? `${data.totalTCO2e} tCO2e` : 'Not provided'}`,
-    `- EPD Coverage: ${data.epdCoveragePct != null ? `${data.epdCoveragePct}%` : 'Not provided'}`,
-    `- Carbon Reduction: ${data.reductionPct != null ? `${data.reductionPct}%` : 'Not provided'}`,
-    `- BOQ Available: ${data.hasBOQ ? 'Yes' : 'No'}`,
-    `- Verification Status: ${data.verificationStatus || 'none'}`,
-    `- Target Certification: ${data.targetCertification || 'Not specified'}`,
+    `**Carbon Assessment:**`,
+    `- Carbon Finance Score (CFS): ${cfsScore !== undefined ? `${cfsScore}/100` : 'Not provided'} — ${(cfsClassification || 'unknown').toUpperCase()}`,
+    `- Carbon Intensity: ${carbonIntensity_kgCO2e_m2 !== undefined ? `${carbonIntensity_kgCO2e_m2} kgCO2e/m²` : 'Not provided'}`,
+    `- Total Embodied Carbon: ${totalTCO2e !== undefined ? `${totalTCO2e} tCO2e` : 'Not provided'}`,
+    `- EPD Coverage: ${cfsComponents && cfsComponents.epdCoveragePct !== undefined ? `${cfsComponents.epdCoveragePct}%` : params.epdCoveragePct !== undefined ? `${params.epdCoveragePct}%` : 'Not provided'}`,
+    `- Carbon Reduction vs Baseline: ${reductionPct !== undefined ? `${reductionPct}%` : 'Not provided'}`,
+    `- Target / Achieved Certification: ${certificationLevel || 'None specified'}`,
+    `- External Verification Status: ${verificationStatus || 'none'}`,
+    ``,
+    `**PCAF Data:**`,
+    `- PCAF Data Quality Score: ${pcafDataQualityScore !== undefined ? `${pcafDataQualityScore}/5` : 'Not provided'} (1=Audited, 2=Verified, 3=Estimated, 4=Proxy, 5=Unknown)`,
+    `- PCAF Financed Emissions: ${pcafFinancedEmissions_tCO2e !== undefined ? `${pcafFinancedEmissions_tCO2e} tCO2e` : 'Not provided'}`,
+    ``,
+    `**Taxonomy Alignment Results:**`,
+    JSON.stringify(taxonomyAlignments || {}, null, 2),
+    ``,
+    `**Triage Classification (why this is Tier 2 — AI-Assisted Review):**`,
+    JSON.stringify(tierResult || {}, null, 2)
   ];
 
-  if (data.projectDescription) {
-    parts.push(``, `**Project Description:**`, data.projectDescription);
+  if (projectDescription) {
+    parts.push(``, `**Project Description:**`, projectDescription);
+  }
+
+  if (underwritingRunId) {
+    parts.push(
+      ``,
+      `**Reference Underwriting Run ID:** ${underwritingRunId}`,
+      `(Full underwriting memo with tool audit trail available via the agent runs endpoint)`
+    );
   }
 
   parts.push(
     ``,
-    `Please call check_taxonomy_alignment and calculate_carbon_score (and estimate_preliminary_carbon if needed) ` +
-    `to gather the data you need, then produce the complete 8-section Decision Review Memo.`
+    `Using all of the above pre-computed data, produce the complete AI Decision Review Memo following your instructions.`
   );
 
   return parts.join('\n');
@@ -269,7 +321,7 @@ module.exports = {
   TOOL_FUNCTIONS: {
     check_taxonomy_alignment:    TOOL_FUNCTIONS.check_taxonomy_alignment,
     calculate_carbon_score:      TOOL_FUNCTIONS.calculate_carbon_score,
-    estimate_preliminary_carbon: TOOL_FUNCTIONS.estimate_preliminary_carbon,
+    estimate_preliminary_carbon: TOOL_FUNCTIONS.estimate_preliminary_carbon
   },
-  buildUserMessage,
+  buildUserMessage
 };

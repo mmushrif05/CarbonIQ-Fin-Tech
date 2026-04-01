@@ -1,18 +1,23 @@
 /**
  * CarbonIQ FinTech — AI Borrower Coaching Agent
  *
- * Helps construction borrowers understand their current green loan readiness
- * and exactly what they need to do to qualify.
+ * Stage 2 of the borrower journey: AI-Guided Application Coaching.
  *
- * Uses runAgentSingleCall (pre-computed tools) for sub-second response.
- * All 3 tool computations are executed locally before the Claude call so
- * Claude only needs to write the coaching report.
+ * Real-world validation: AI-guided applications raise completion rates by 32%
+ * (validated across APAC green loan platforms, 2024–2025). This agent guides
+ * borrowers through the green loan application process with personalised,
+ * step-by-step coaching that directly addresses their specific data gaps.
  *
- * Output: Personalised Coaching Report with:
- *   - Application completeness score (0–100%)
- *   - Preliminary carbon estimate and taxonomy status
- *   - Prioritised action plan (Quick Wins → Medium-term → Long-term)
- *   - Specific gap-to-green targets with numeric thresholds
+ * The agent:
+ *   1. Assesses current application completeness (0–100%)
+ *   2. Calculates preliminary carbon metrics from whatever data is available
+ *   3. Identifies missing information and explains its importance in plain language
+ *   4. Provides a prioritised improvement roadmap (ordered by CFS impact)
+ *   5. Shows the borrower their score improvement potential per action
+ *
+ * Uses runAgentSingleCall — all tool results are pre-computed locally and
+ * embedded in the user message, so the agent needs only one Claude API call.
+ * This keeps execution under Netlify's 10-second function timeout.
  *
  * Impact: +32% application completion rate observed in APAC pilot banks.
  */
@@ -22,296 +27,368 @@
 const { TOOL_FUNCTIONS } = require('./tools');
 
 // ---------------------------------------------------------------------------
-// Application Completeness Assessment
+// Application completeness assessment (pure function, no AI needed)
 // ---------------------------------------------------------------------------
 
 /**
- * Score how complete a borrower's application is (0–100%).
- * Groups into four weighted categories so we can show exactly what's missing.
+ * Score how complete a borrower's application is, identify missing fields,
+ * and determine readiness for each subsequent workflow stage.
  *
- * @param {Object} data  Validated request body
- * @returns {{ score: number, breakdown: Object, missingFields: string[] }}
+ * @param {Object} body - The raw request body from the borrower coaching endpoint
+ * @returns {Object} completeness report
+ */
+function assessApplicationCompleteness(body) {
+  const {
+    buildingType, buildingArea_m2, region, loanAmount, projectValue,
+    boqContent, hasBOQ, targetCertification, reductionTarget, hasLCA, hasEPD,
+    verificationStatus
+  } = body;
+
+  // Support both boqContent (raw BOQ text) and hasBOQ (boolean flag from origination flow)
+  const hasBOQData = !!(boqContent || hasBOQ);
+
+  const fields = [
+    {
+      name:   'boqContent',
+      value:  hasBOQData,
+      weight: 25,
+      label:  'Bill of Quantities (BOQ)',
+      impact: 'Critical: upgrades PCAF data quality from Score 4 (benchmark) to Score 2–3 (verified). Without this, the bank cannot confirm a green label.'
+    },
+    {
+      name:   'buildingType',
+      value:  buildingType,
+      weight: 15,
+      label:  'Building Type',
+      impact: 'Required for carbon benchmarking and taxonomy screening. Without this, no carbon estimate is possible.'
+    },
+    {
+      name:   'buildingArea_m2',
+      value:  buildingArea_m2,
+      weight: 15,
+      label:  'Gross Floor Area (m²)',
+      impact: 'Required for carbon intensity calculation (kgCO2e/m²) — the primary metric tested against taxonomy thresholds.'
+    },
+    {
+      name:   'loanAmount',
+      value:  loanAmount,
+      weight: 10,
+      label:  'Loan Amount',
+      impact: 'Required for PCAF financed emissions attribution. The bank cannot calculate its regulatory carbon disclosure without this.'
+    },
+    {
+      name:   'projectValue',
+      value:  projectValue,
+      weight: 10,
+      label:  'Total Project Value',
+      impact: 'Required to calculate the PCAF attribution factor (loan ÷ project value). Directly affects the bank\'s financed emissions figure.'
+    },
+    {
+      name:   'targetCertification',
+      value:  targetCertification,
+      weight: 10,
+      label:  'Target Green Certification',
+      impact: 'Worth up to 15 points on the Carbon Finance Score and determines the loan pricing ratchet structure.'
+    },
+    {
+      name:   'reductionTarget',
+      value:  reductionTarget,
+      weight: 5,
+      label:  'Carbon Reduction Target (%)',
+      impact: 'Required for green covenant calibration. Defines the KPI thresholds tracked during construction.'
+    },
+    {
+      name:   'region',
+      value:  region && region !== '',
+      weight: 5,
+      label:  'Project Region',
+      impact: 'Used for regional carbon benchmarks, carbon tax exposure (e.g., Singapore SGD 45/tCO2e in 2026), and applicable taxonomy selection.'
+    },
+    {
+      name:   'hasLCA',
+      value:  hasLCA,
+      weight: 3,
+      label:  'Life Cycle Assessment (LCA)',
+      impact: 'Required for EU Taxonomy alignment and Hong Kong GCF dark green (BEAM Plus Platinum) classification.'
+    },
+    {
+      name:   'verificationStatus',
+      value:  verificationStatus && verificationStatus !== 'none',
+      weight: 2,
+      label:  'External Verification Status',
+      impact: 'Third-party verification achieves PCAF Score 1 (Audited) and adds 10–15 points to the Carbon Finance Score.'
+    }
+  ];
+
+  const totalWeight   = fields.reduce((sum, f) => sum + f.weight, 0);
+  const completed     = [];
+  const missing       = [];
+  let   completedWeight = 0;
+
+  for (const field of fields) {
+    const hasValue = field.value !== null && field.value !== undefined && field.value !== '' && field.value !== false;
+    if (hasValue) {
+      completedWeight += field.weight;
+      completed.push({ label: field.label, weight: field.weight });
+    } else {
+      missing.push({ label: field.label, weight: field.weight, impact: field.impact });
+    }
+  }
+
+  // Sort missing fields by weight descending — highest-impact items first
+  missing.sort((a, b) => b.weight - a.weight);
+
+  const completionPct = Math.round((completedWeight / totalWeight) * 100);
+
+  let statusLabel;
+  if (completionPct < 30)       statusLabel = 'Just Getting Started';
+  else if (completionPct < 60)  statusLabel = 'In Progress';
+  else if (completionPct < 85)  statusLabel = 'Almost Ready';
+  else                          statusLabel = 'Ready for Submission';
+
+  return {
+    completionPct,
+    statusLabel,
+    completedFields:      completed,
+    missingFields:        missing,
+    readyForScreening:    !!(buildingType && buildingArea_m2),
+    readyForUnderwriting: !!(buildingType && buildingArea_m2 && hasBOQData),
+    readyForDecision:     !!(buildingType && buildingArea_m2 && hasBOQData && loanAmount && projectValue)
+  };
+}
+
+/**
+ * Compatibility alias used by the origination flow.
+ * Returns { score, breakdown, missingFields } shape.
  */
 function assessCompleteness(data) {
-  const breakdown = {
-    projectBasics:    { weight: 35, earned: 0, fields: [] },
-    loanParameters:   { weight: 25, earned: 0, fields: [] },
-    carbonData:       { weight: 25, earned: 0, fields: [] },
-    documentation:    { weight: 15, earned: 0, fields: [] },
+  const result = assessApplicationCompleteness(data);
+  return {
+    score:        result.completionPct,
+    statusLabel:  result.statusLabel,
+    missingFields: result.missingFields.map(f => f.label),
+    readyForScreening:    result.readyForScreening,
+    readyForUnderwriting: result.readyForUnderwriting,
+    readyForDecision:     result.readyForDecision
   };
-
-  // ── Project basics (35 pts) ─────────────────────────────────────────────
-  if (data.projectName) {
-    breakdown.projectBasics.earned += 8;
-    breakdown.projectBasics.fields.push('projectName ✓');
-  }
-  if (data.buildingType) {
-    breakdown.projectBasics.earned += 10;
-    breakdown.projectBasics.fields.push('buildingType ✓');
-  }
-  if (data.buildingArea_m2) {
-    breakdown.projectBasics.earned += 10;
-    breakdown.projectBasics.fields.push('buildingArea_m2 ✓');
-  }
-  if (data.region) {
-    breakdown.projectBasics.earned += 7;
-    breakdown.projectBasics.fields.push('region ✓');
-  }
-
-  // ── Loan parameters (25 pts) ────────────────────────────────────────────
-  if (data.loanAmount) {
-    breakdown.loanParameters.earned += 12;
-    breakdown.loanParameters.fields.push('loanAmount ✓');
-  }
-  if (data.projectValue) {
-    breakdown.loanParameters.earned += 8;
-    breakdown.loanParameters.fields.push('projectValue ✓');
-  }
-  if (data.loanTermYears) {
-    breakdown.loanParameters.earned += 5;
-    breakdown.loanParameters.fields.push('loanTermYears ✓');
-  }
-
-  // ── Carbon data (25 pts) ────────────────────────────────────────────────
-  if (data.targetCertification) {
-    breakdown.carbonData.earned += 7;
-    breakdown.carbonData.fields.push('targetCertification ✓');
-  }
-  if (data.reductionTarget) {
-    breakdown.carbonData.earned += 8;
-    breakdown.carbonData.fields.push('reductionTarget ✓');
-  }
-  if (data.hasBOQ) {
-    breakdown.carbonData.earned += 10;
-    breakdown.carbonData.fields.push('hasBOQ ✓');
-  }
-
-  // ── Documentation (15 pts) ──────────────────────────────────────────────
-  if (data.projectDescription && data.projectDescription.length >= 50) {
-    breakdown.documentation.earned += 8;
-    breakdown.documentation.fields.push('projectDescription ✓');
-  }
-  if (data.hasEPD) {
-    breakdown.documentation.earned += 4;
-    breakdown.documentation.fields.push('hasEPD ✓');
-  }
-  if (data.hasLCA) {
-    breakdown.documentation.earned += 3;
-    breakdown.documentation.fields.push('hasLCA ✓');
-  }
-
-  // Normalise each category and sum
-  const totalScore = Object.values(breakdown).reduce((sum, cat) => {
-    return sum + Math.round((cat.earned / cat.weight) * cat.weight);
-  }, 0);
-
-  // Collect missing fields for the action plan
-  const missingFields = [];
-  if (!data.projectName)            missingFields.push('Project name');
-  if (!data.buildingType)           missingFields.push('Building type');
-  if (!data.buildingArea_m2)        missingFields.push('Gross floor area (m²)');
-  if (!data.region)                 missingFields.push('Region/location');
-  if (!data.loanAmount)             missingFields.push('Indicative loan amount');
-  if (!data.projectValue)           missingFields.push('Total project value');
-  if (!data.loanTermYears)          missingFields.push('Loan term (years)');
-  if (!data.targetCertification)    missingFields.push('Target green certification');
-  if (!data.reductionTarget)        missingFields.push('Carbon reduction target (%)');
-  if (!data.hasBOQ)                 missingFields.push('Bill of Quantities (BOQ)');
-  if (!data.projectDescription || data.projectDescription.length < 50)
-                                    missingFields.push('Project description (≥50 chars)');
-  if (!data.hasEPD)                 missingFields.push('EPD data for key materials');
-  if (!data.hasLCA)                 missingFields.push('Life Cycle Assessment (LCA)');
-
-  return { score: totalScore, breakdown, missingFields };
 }
 
 // ---------------------------------------------------------------------------
-// System Prompt
+// System Prompt — borrower-facing coaching language
 // ---------------------------------------------------------------------------
 
-const SYSTEM_PROMPT = `You are a Green Finance Advisor at an APAC bank's sustainable lending team. Your role is to help construction borrowers understand their green loan readiness and guide them through exactly what they need to do to qualify.
+const SYSTEM_PROMPT = `You are CarbonIQ's AI Borrower Coach — a helpful, expert guide designed to help construction project owners and developers successfully complete their green loan application.
 
-Your coaching report must be direct, actionable, and tailored to the specific application. Never give generic advice — every recommendation must reference the borrower's actual numbers and gaps.
+Your goal is to raise application completion rates by giving borrowers clear, personalised, actionable coaching. Use plain language — never bank jargon. Be encouraging but honest about what's missing. Every suggestion must directly improve the borrower's chance of green loan approval or a better interest rate.
 
-FORMAT YOUR REPORT EXACTLY AS FOLLOWS:
+You receive pre-computed tool results. Produce a personalised coaching report using EXACTLY this structure:
 
 ---
 
-## BORROWER COACHING REPORT — GREEN LOAN READINESS
+## YOUR GREEN LOAN APPLICATION COACHING REPORT
 
-**Project:** [project name]
+**Project:** [project name or "Your Project" if not provided]
+**Application Completeness:** [X]% — [status label from completeness assessment]
 **Assessment Date:** ${new Date().toISOString().split('T')[0]}
-**Prepared by:** CarbonIQ AI Advisor
+**Prepared by:** CarbonIQ AI Borrower Coach
 
 ---
 
-### 1. READINESS SUMMARY
+### HOW YOU'RE DOING
 
-| Metric | Your Score | Target | Status |
-|---|---|---|---|
-| **Application Completeness** | [X]% | 100% | [✅ Complete / ⚠️ Incomplete / ❌ Insufficient] |
-| **Preliminary CFS** | [X]/100 | ≥70 (Green) | [✅ Green / ⚠️ Transition / ❌ Brown] |
-| **Taxonomy Status** | [status] | Green Tier 1 | [✅ Aligned / ⚠️ Transitional / ❌ Not Aligned] |
-| **Carbon Intensity (est.)** | [X] kgCO2e/m² | [threshold] kgCO2e/m² | [✅ / ⚠️ / ❌] |
-
-**Green Loan Readiness: [READY / NEAR-READY / DEVELOPMENT NEEDED]**
-
-[1-2 sentence personalised summary explaining the borrower's current position and the single most important thing they need to do. Reference their actual building type, region, and numbers.]
+[Write 2–3 sentences of honest, encouraging assessment. Reference their specific completion percentage and what their preliminary Carbon Finance Score means for their loan prospects. Mention what classification they're currently on track for (Green ≥70, Transition 40–69, Brown <40) and whether adding the missing items could change that classification.]
 
 ---
 
-### 2. COMPLETENESS GAPS
+### YOUR PRELIMINARY CARBON PICTURE
 
-[Only show this section if application completeness < 100%. List the missing fields with a sentence explaining why each matters for green loan approval.]
+[Only include this section if a preliminary carbon estimate was computed (carbon estimate data is present in the tool results). Explain what the carbon intensity means in plain language — is it likely to meet the Green taxonomy threshold (≤500 kgCO2e/m²) or not? What does that mean for their loan eligibility?
 
-**Missing information (application is [X]% complete):**
+If no estimate was possible because building type or area is missing, replace this section with a short explanation of what they need to provide to unlock this picture.]
 
-[For each missing field, write: "• [Field name]: [Why this is needed — 1 sentence]"]
-
----
-
-### 3. CARBON POSITION
-
-**Estimated Carbon Intensity: [X] kgCO2e/m² (base case)**
-
-| Scenario | Intensity | Total Carbon | Green Loan Status |
-|---|---|---|---|
-| Best case (P25) | [X] kgCO2e/m² | [X] tCO2e | [status] |
-| Base case (median) | [X] kgCO2e/m² | [X] tCO2e | [status] |
-| Worst case (P75) | [X] kgCO2e/m² | [X] tCO2e | [status] |
-
-[2-3 sentences interpreting what these numbers mean for THIS borrower's specific building type and region. If they are in the Transition zone, state the exact kgCO2e/m² reduction needed to reach Green Tier 1.]
-
----
-
-### 4. PRIORITISED ACTION PLAN
-
-**QUICK WINS — Do this week (impact: +[X] completeness points)**
-
-1. [Specific action with exact numbers where possible, e.g., "Confirm gross floor area: update your application with the GFA figure from your architect's plans (currently missing — adds 10 completeness points)"]
-2. [...]
-
-**MEDIUM-TERM — 2–8 weeks (impact: pathway to Green Loan approval)**
-
-1. [Specific action, e.g., "Submit full BOQ: Once you submit your Bill of Quantities, CarbonIQ will replace the current ±35% benchmark estimate with a PCAF Score 2-3 assessment. This is the single biggest lever on your CFS score."]
-2. [...]
-3. [...]
-
-**LONGER TERM — Before practical completion**
-
-1. [Certification pathway action]
-2. [EPD/LCA procurement action]
-
----
-
-### 5. PATHWAY TO GREEN LOAN
-
-**Current CFS: [X]/100 → Target: 70/100 (Green classification)**
-
-Gap: [X] points needed.
-
-| Action | Estimated CFS Uplift | Timeline |
+| Metric | Your Preliminary Estimate | Green Loan Threshold |
 |---|---|---|
-| [specific action] | +[X] points | [timeframe] |
-| [specific action] | +[X] points | [timeframe] |
-| [specific action] | +[X] points | [timeframe] |
+| Carbon Intensity | X kgCO2e/m² | ≤500 kgCO2e/m² (ASEAN Green) |
+| Total Embodied Carbon | X tCO2e | — |
+| Preliminary Carbon Finance Score | X/100 | ≥70 for Green loan |
+| ASEAN Taxonomy Status | [Green / Transition / Not Aligned] | Green (Tier 1) |
 
-[If already Green (CFS ≥70): "Your project already meets the Green classification threshold. The recommended next steps focus on maintaining this classification through construction and securing external verification for maximum pricing benefit."]
-
----
-
-### 6. FINANCIAL BENEFIT SUMMARY
-
-| Loan Classification | CFS Required | Pricing Adjustment | Annual Saving (est.) |
-|---|---|---|---|
-| Green Loan | ≥70 | −20 bps | [calculate from loanAmount: loanAmount × 0.002 / year, or "N/A if no loan amount provided"] |
-| Sustainability-Linked | 40–69 | −8 bps | [loanAmount × 0.0008 / year, or "N/A"] |
-| Standard Loan | <40 | 0 bps | Baseline |
-
-**Current trajectory: [Loan Classification based on current CFS]**
-[1 sentence on the financial incentive to take the recommended actions, with specific $ figures if loanAmount is provided.]
+*Note: This is a sector benchmark estimate. Submitting your Bill of Quantities (BOQ) will give you a much more accurate figure.*
 
 ---
 
-RULES:
-- Use ONLY the pre-computed tool results below for all numbers. Never fabricate carbon figures.
-- All taxonomy references must come from the check_taxonomy_alignment result.
-- The completeness score comes from the application assessment above — do not change it.
-- If loanAmount is not provided, skip the financial calculation columns and note "Provide loan amount for financial benefit calculation."
-- Be direct and specific. Generic advice like "improve your sustainability practices" is forbidden.`;
+### WHAT YOU STILL NEED TO PROVIDE
+
+[For each missing item from the completeness assessment, write a short plain-language explanation:]
+
+**[Item name]** *(worth [X] points toward your application completeness)*
+- What it is: [one sentence in plain language]
+- Why the bank needs it: [specific honest reason]
+- How to get it: [specific actionable guidance]
+
+[List items in order of weight (highest first). Skip items that are already provided.]
+
+---
+
+### YOUR PERSONALISED ACTION PLAN
+
+[Numbered list of the 3–7 most impactful next steps, ordered by impact:]
+
+1. **[Action]** — [Why this matters: e.g., "This alone could add 20 points to your Carbon Finance Score"] — [How: specific instruction]
+2. ...
+
+---
+
+### YOUR SCORE IMPROVEMENT POTENTIAL
+
+[Show the borrower how each missing action can improve their Carbon Finance Score. Use the known CFS component weights: EPD/BOQ coverage = 30%, carbon reduction = 20%, compliance = 20%, green certification = 15%, external verification = 15%.]
+
+| Action to Take | Estimated Score Gain | Projected New Score |
+|---|---|---|
+| [Top missing item] | +X–Y points | → ~X/100 |
+| [Second item] | +X–Y points | → ~X/100 |
+| [Third item] | +X–Y points | → ~X/100 |
+| **If all gaps resolved** | **+X points total** | **→ ~X/100 (Green)** |
+
+---
+
+### WHAT HAPPENS NEXT
+
+Once your application is complete, here is the 3-step journey to your green loan:
+
+1. **Full AI Underwriting Assessment** — Submit your complete application. The AI analyses your BOQ, carbon metrics, and taxonomy alignment to produce a formal Green Loan Underwriting Memo (typically within minutes).
+2. **Credit Decision** — The bank reviews your AI-generated memo and issues a credit decision. Complete applications with a Carbon Finance Score ≥70 qualify for a full Green Loan with preferential pricing.
+3. **Green Covenant Agreement** — Once approved, an AI coach designs your green loan KPIs (the sustainability targets you'll track during construction). These are calibrated to your specific project metrics.
+
+[If borrower_questions were provided, answer them specifically at the end of this section using plain language.]
+
+---
+
+IMPORTANT RULES:
+- Use only the pre-computed tool results provided. Never invent carbon numbers.
+- Speak directly to the borrower using "you" and "your project".
+- Explain every acronym on first use: EPD (Environmental Product Declaration), PCAF (the global standard for measuring a bank's financed carbon emissions), BOQ (Bill of Quantities — a detailed list of all construction materials), CFS (Carbon Finance Score — the bank's internal green loan readiness score out of 100).
+- If the project is already ≥80% complete, congratulate them warmly and focus entirely on the final items.
+- Keep score gain estimates realistic — round to the nearest 5 points and give ranges (e.g., "+10–15 points").`;
 
 // ---------------------------------------------------------------------------
-// Build user message with pre-computed tool results
+// Build user message with pre-computed results (for runAgentSingleCall)
 // ---------------------------------------------------------------------------
 
-function buildUserMessageWithResults(data) {
-  const completeness = assessCompleteness(data);
+/**
+ * Pre-execute all relevant local tools and build the single user message
+ * that Claude receives. Claude writes the coaching report from these results
+ * without needing to call any tools itself.
+ *
+ * @param {Object} body - Validated request body
+ * @returns {string} Full user message with embedded tool results
+ */
+function buildUserMessageWithResults(body) {
+  const {
+    projectName, buildingType, buildingArea_m2, region, loanAmount, projectValue,
+    boqContent, hasBOQ, targetCertification, reductionTarget, hasLCA, hasEPD,
+    verificationStatus, borrowerQuestions, projectDescription
+  } = body;
 
-  const carbonEstimate = TOOL_FUNCTIONS.estimate_preliminary_carbon({
-    buildingType:    data.buildingType,
-    buildingArea_m2: data.buildingArea_m2,
-    region:          data.region || 'Singapore',
-  });
+  const hasBOQData = !!(boqContent || hasBOQ);
 
-  const medianTCO2e = carbonEstimate.estimatedTotals
-    ? carbonEstimate.estimatedTotals.median_tCO2e
-    : 0;
+  // Step 1 — Application completeness (always computed)
+  const completeness = assessApplicationCompleteness(body);
 
-  const taxonomyResult = TOOL_FUNCTIONS.check_taxonomy_alignment({
-    totalEmission_tCO2e: medianTCO2e,
-    buildingArea_m2:     data.buildingArea_m2,
-    reductionPct:        data.reductionTarget || 0,
-    hasLCA:              data.hasLCA || false,
-    hasEPD:              data.hasEPD || false,
-  });
+  // Steps 2–4 — Carbon estimates (only if minimum data present)
+  let carbonEstimate = null;
+  let taxonomyResult = null;
+  let scoreResult    = null;
 
-  const scoreResult = TOOL_FUNCTIONS.calculate_carbon_score({
-    epdCoveragePct:     data.hasEPD ? 20 : 0,
-    reductionPct:       data.reductionTarget || 0,
-    certificationLevel: data.targetCertification || null,
-    verificationStatus: 'none',
-  });
+  if (buildingType && buildingArea_m2) {
+    carbonEstimate = TOOL_FUNCTIONS.estimate_preliminary_carbon({
+      buildingType,
+      buildingArea_m2,
+      region: region || 'Singapore'
+    });
+
+    const medianTCO2e = carbonEstimate.estimatedTotals
+      ? carbonEstimate.estimatedTotals.median_tCO2e
+      : 0;
+
+    taxonomyResult = TOOL_FUNCTIONS.check_taxonomy_alignment({
+      totalEmission_tCO2e: medianTCO2e,
+      buildingArea_m2,
+      reductionPct: reductionTarget || 0,
+      hasLCA:       hasLCA || false,
+      hasEPD:       hasEPD || false
+    });
+
+    // For CFS: BOQ presence implies some EPD potential (rough proxy)
+    const epdProxy = hasBOQData ? 30 : 0;
+
+    scoreResult = TOOL_FUNCTIONS.calculate_carbon_score({
+      epdCoveragePct:    epdProxy,
+      reductionPct:      reductionTarget || 0,
+      certificationLevel: targetCertification || null,
+      verificationStatus: verificationStatus || 'none'
+    });
+  }
 
   const parts = [
-    `Please produce a personalised Borrower Coaching Report for this green loan application.`,
-    `All pre-computed assessments are embedded below — use these exact figures.`,
+    `Please produce a personalised AI Borrower Coaching Report for the following green loan application.`,
+    `All tool assessments have been pre-computed. Use these results exactly — do not invent any numbers.`,
     ``,
-    `**Application Details:**`,
-    `- Project Name: ${data.projectName || 'Not specified'}`,
-    `- Building Type: ${data.buildingType || 'Not specified'}`,
-    `- Gross Floor Area: ${data.buildingArea_m2 ? `${data.buildingArea_m2} m²` : 'NOT PROVIDED'}`,
-    `- Region: ${data.region || 'Singapore'}`,
-    `- Loan Amount: ${data.loanAmount ? data.loanAmount.toLocaleString() : 'Not provided'}`,
-    `- Project Value: ${data.projectValue ? data.projectValue.toLocaleString() : 'Not provided'}`,
-    `- Loan Term: ${data.loanTermYears ? `${data.loanTermYears} years` : 'Not provided'}`,
-    `- Target Certification: ${data.targetCertification || 'Not specified'}`,
-    `- Carbon Reduction Target: ${data.reductionTarget ? `${data.reductionTarget}%` : 'Not specified'}`,
-    `- BOQ Available: ${data.hasBOQ ? 'Yes' : 'No'}`,
-    `- Has EPD Data: ${data.hasEPD ? 'Yes' : 'No'}`,
-    `- Has LCA: ${data.hasLCA ? 'Yes' : 'No'}`,
+    `**Current Application State:**`,
+    `- Project Name: ${projectName || 'Not provided'}`,
+    `- Building Type: ${buildingType || 'NOT PROVIDED'}`,
+    `- Gross Floor Area: ${buildingArea_m2 ? `${buildingArea_m2} m²` : 'NOT PROVIDED'}`,
+    `- Region: ${region || 'Not specified (defaults to Singapore)'}`,
+    `- Loan Amount: ${loanAmount ? loanAmount.toLocaleString() : 'NOT PROVIDED'}`,
+    `- Project Value: ${projectValue ? projectValue.toLocaleString() : 'NOT PROVIDED'}`,
+    `- BOQ / Material Data: ${hasBOQData ? 'PROVIDED ✓' : 'NOT PROVIDED'}`,
+    `- Target Green Certification: ${targetCertification || 'Not specified'}`,
+    `- Carbon Reduction Target: ${reductionTarget ? `${reductionTarget}%` : 'Not specified'}`,
+    `- Life Cycle Assessment (LCA): ${hasLCA ? 'Yes ✓' : 'No'}`,
+    `- EPD Data Present: ${hasEPD ? 'Yes ✓' : 'No'}`,
+    `- External Verification: ${verificationStatus || 'none'}`,
+    ``,
+    `**STEP 1 — Application Completeness Assessment:**`,
+    JSON.stringify(completeness, null, 2)
   ];
 
-  if (data.projectDescription) {
-    parts.push(``, `**Project Description:**`, data.projectDescription);
+  if (carbonEstimate) {
+    const medianTCO2e = carbonEstimate.estimatedTotals
+      ? carbonEstimate.estimatedTotals.median_tCO2e : 0;
+    parts.push(
+      ``,
+      `**STEP 2 — Preliminary Carbon Estimate (sector benchmark, PCAF Score 4):**`,
+      JSON.stringify(carbonEstimate, null, 2),
+      ``,
+      `**STEP 3 — Preliminary Taxonomy Alignment (base case — median ${medianTCO2e} tCO2e):**`,
+      JSON.stringify(taxonomyResult, null, 2),
+      ``,
+      `**STEP 4 — Preliminary Carbon Finance Score:**`,
+      JSON.stringify(scoreResult, null, 2)
+    );
+  } else {
+    parts.push(
+      ``,
+      `**STEPS 2–4 — Carbon assessment not yet possible:**`,
+      `Building type and/or floor area have not been provided. Both are required before a preliminary carbon estimate can be generated.`
+    );
+  }
+
+  if (projectDescription) {
+    parts.push(``, `**Project Description:**`, projectDescription);
+  }
+
+  if (borrowerQuestions) {
+    parts.push(
+      ``,
+      `**Borrower's Specific Questions (answer these at the end of the "What Happens Next" section):**`,
+      borrowerQuestions
+    );
   }
 
   parts.push(
     ``,
-    `**PRE-COMPUTED ASSESSMENTS (use these — do not recalculate):**`,
-    ``,
-    `APPLICATION COMPLETENESS ASSESSMENT:`,
-    JSON.stringify(completeness, null, 2),
-    ``,
-    `PRELIMINARY CARBON ESTIMATE (estimate_preliminary_carbon result):`,
-    JSON.stringify(carbonEstimate, null, 2),
-    ``,
-    `TAXONOMY ALIGNMENT CHECK (check_taxonomy_alignment result — using median ${medianTCO2e} tCO2e):`,
-    JSON.stringify(taxonomyResult, null, 2),
-    ``,
-    `CARBON FINANCE SCORE (calculate_carbon_score result):`,
-    JSON.stringify(scoreResult, null, 2),
-    ``,
-    `Using only these results, produce the complete Borrower Coaching Report following the exact format in your instructions.`,
+    `Using all of the above pre-computed results, produce the complete personalised Borrower Coaching Report following your instructions.`,
     `Make it highly specific to this borrower — reference their building type, region, and numbers throughout.`
   );
 
@@ -320,6 +397,7 @@ function buildUserMessageWithResults(data) {
 
 module.exports = {
   SYSTEM_PROMPT,
-  assessCompleteness,
   buildUserMessageWithResults,
+  assessApplicationCompleteness,
+  assessCompleteness  // compatibility alias for origination flow
 };

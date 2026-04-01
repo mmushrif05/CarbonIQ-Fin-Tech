@@ -24,208 +24,349 @@
  *   - GLP 2021/2025 eligibility requirements
  *   - MAS ENRM, HKMA CRMF thresholds
  *   - PCAF v3 data quality requirements
+ *
+ * IMPORTANT: This engine classifies the tier and verdict but does NOT make
+ * the final lending decision. Tier 1 auto-approvals are pending covenant
+ * agreement. Tier 3 manual reviews are always resolved by a human officer.
  */
 
 'use strict';
+
+const { CFS_THRESHOLDS } = require('../config/constants');
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-// CFS thresholds
-const CFS_GREEN       = 70;   // ≥70 → Green classification
-const CFS_TRANSITION  = 40;   // 40–69 → Transition
-const CFS_FLOOR       = 25;   // <25 → very unlikely green pathway, default decline
+const DECISION_TIERS = {
+  AUTO:   1,   // Auto-Decision (approve or decline without human review)
+  AI:     2,   // AI-Assisted Review (AI memo + loan officer sign-off)
+  MANUAL: 3    // Manual Review (full credit officer escalation)
+};
 
-// Loan amount thresholds (in the reporting currency units provided)
-const HIGH_VALUE_THRESHOLD   = 50_000_000;   // >50M → escalate to manual
-const MEDIUM_VALUE_THRESHOLD = 10_000_000;   // >10M adds complexity to borderline
+const DECISION_VERDICTS = {
+  AUTO_APPROVE:  'auto_approve',
+  AUTO_DECLINE:  'auto_decline',
+  AI_RECOMMEND:  'ai_recommend',
+  MANUAL_REVIEW: 'manual_review'
+};
 
-// Data quality minimums for auto-approval
-const MIN_EPD_FOR_AUTO_APPROVE  = 20;  // At least 20% EPD coverage needed for auto-approve
-const MIN_AREA_FOR_ANY_DECISION = 50;  // Floor area < 50 m² is suspicious
+// Loan thresholds (SGD-equivalent; applied regardless of currency denomination)
+const AUTO_APPROVE_LOAN_LIMIT  = 50_000_000;   // ≤ SGD 50M → eligible for auto-approval
+const MANUAL_REVIEW_LOAN_LIMIT = 100_000_000;  // > SGD 100M → always manual
+
+// Expected tier distribution for portfolio analytics
+const TIER_DISTRIBUTION = {
+  [DECISION_TIERS.AUTO]: {
+    label:         'Auto-Decision',
+    expectedShare: '70–85%',
+    description:   'Clear approve or decline based on CFS, taxonomy, and data quality thresholds. No human review required.'
+  },
+  [DECISION_TIERS.AI]: {
+    label:         'AI-Assisted Review',
+    expectedShare: '10–20%',
+    description:   'Borderline cases — AI generates a detailed review memo; loan officer makes the final decision.'
+  },
+  [DECISION_TIERS.MANUAL]: {
+    label:         'Manual Review',
+    expectedShare: '5–10%',
+    description:   'Complex, high-value, or data-poor cases requiring full credit officer and sustainability team review.'
+  }
+};
 
 // ---------------------------------------------------------------------------
-// Tier Classification
+// Taxonomy alignment helper
 // ---------------------------------------------------------------------------
 
 /**
- * @typedef {Object} TierResult
- * @property {1|2|3}       tier         - Decision tier
- * @property {string}      track        - 'auto_approve' | 'auto_decline' | 'ai_review' | 'manual_review'
- * @property {string}      reason       - Machine-readable reason code
- * @property {string}      rationale    - Human-readable explanation for the loan officer
- * @property {string[]}    flags        - Any additional risk flags
- * @property {Object}      inputs       - Echo of key inputs used for classification
- */
-
-/**
- * Classify a loan application into a decision tier.
+ * Determine whether any taxonomy alignment result counts as "aligned".
+ * Accepts both boolean flags and string classification labels from
+ * the check_taxonomy_alignment tool output.
  *
- * @param {Object} params
- * @param {number}  params.cfsScore          - Carbon Finance Score (0–100)
- * @param {number}  [params.loanAmount]      - Loan amount (any currency)
- * @param {number}  [params.projectValue]    - Total project value
- * @param {number}  [params.buildingArea_m2] - Gross floor area
- * @param {number}  [params.epdCoveragePct]  - EPD data coverage (0–100)
- * @param {string}  [params.verificationStatus] - 'verified'|'in_review'|'submitted'|'none'
- * @param {string}  [params.region]          - Project region
- * @param {string}  [params.buildingType]    - Building type
- * @param {boolean} [params.hasBOQ]          - Whether a BOQ has been submitted
- * @param {number}  [params.reductionPct]    - Carbon reduction % vs baseline
- * @returns {TierResult}
+ * @param {Object|null} taxonomyAlignments
+ * @returns {boolean}
  */
-function classifyApplication({
-  cfsScore,
-  loanAmount,
-  projectValue,
-  buildingArea_m2,
-  epdCoveragePct = 0,
-  verificationStatus = 'none',
-  region,
-  buildingType,
-  hasBOQ = false,
-  reductionPct = 0,
-}) {
-  const flags = [];
-  const inputs = {
-    cfsScore, loanAmount, buildingArea_m2, epdCoveragePct,
-    verificationStatus, hasBOQ, reductionPct,
-  };
-
-  // ── Data poverty checks ─────────────────────────────────────────────────
-  if (cfsScore == null || cfsScore === undefined) {
-    return _result(3, 'manual_review', 'NO_CFS_SCORE',
-      'Carbon Finance Score is missing. A CFS cannot be computed without carbon data — manual ESG review required.',
-      ['missing_cfs'], inputs);
-  }
-
-  if (!buildingArea_m2 || buildingArea_m2 < MIN_AREA_FOR_ANY_DECISION) {
-    return _result(3, 'manual_review', 'MISSING_FLOOR_AREA',
-      'Gross floor area is missing or suspiciously small. Carbon intensity cannot be reliably assessed without this — manual review required.',
-      ['missing_area'], inputs);
-  }
-
-  // ── High-value escalation ───────────────────────────────────────────────
-  const isHighValue = loanAmount && loanAmount > HIGH_VALUE_THRESHOLD;
-  if (isHighValue) {
-    flags.push('high_value_loan');
-    if (cfsScore < CFS_GREEN) {
-      // High value + not green → always manual
-      return _result(3, 'manual_review', 'HIGH_VALUE_BELOW_GREEN',
-        `Loan amount exceeds ${HIGH_VALUE_THRESHOLD.toLocaleString()} and CFS ${cfsScore}/100 is below the Green threshold (70). ` +
-        'High-value non-green loans require specialist credit and ESG review.',
-        flags, inputs);
-    }
-    // High value + green CFS → AI-assisted for senior review
-    return _result(2, 'ai_review', 'HIGH_VALUE_GREEN',
-      `Loan amount exceeds ${HIGH_VALUE_THRESHOLD.toLocaleString()}. Even with a Green CFS (${cfsScore}/100), ` +
-      'high-value green loans require AI-assisted review memo for senior credit approval.',
-      flags, inputs);
-  }
-
-  // ── Tier 1 — Auto-Decline (check before data-poor so clear declines are fast) ─
-  const isClearBrownEarly = cfsScore < CFS_FLOOR && epdCoveragePct < 10 && reductionPct < 5;
-  if (isClearBrownEarly) {
-    return _result(1, 'auto_decline', 'CLEAR_BROWN',
-      `CFS ${cfsScore}/100 is significantly below the minimum transition threshold (40) with negligible EPD data ` +
-      `and no meaningful carbon reduction achieved (${reductionPct}%). ` +
-      'No credible green pathway identified at this stage.',
-      flags, inputs);
-  }
-
-  // ── Data-poor escalation ────────────────────────────────────────────────
-  const isDataPoor = !hasBOQ && epdCoveragePct < 5 && cfsScore < CFS_GREEN;
-  if (isDataPoor) {
-    flags.push('data_poor');
-    return _result(2, 'ai_review', 'DATA_POOR_BORDERLINE',
-      `No BOQ and minimal EPD data (${epdCoveragePct}% coverage). CFS ${cfsScore}/100 is based on benchmarks only (PCAF Score 4). ` +
-      'AI review required to assess pathway and structure conditions precedent.',
-      flags, inputs);
-  }
-
-  // ── Verification status flags ───────────────────────────────────────────
-  if (verificationStatus === 'in_review' || verificationStatus === 'submitted') {
-    flags.push('verification_pending');
-  }
-  if (verificationStatus === 'verified') {
-    flags.push('third_party_verified');
-  }
-
-  // ── Tier 1 — Auto-Approve ───────────────────────────────────────────────
-  const isClearGreen = cfsScore >= CFS_GREEN;
-  const hasAdequateEPD = epdCoveragePct >= MIN_EPD_FOR_AUTO_APPROVE || verificationStatus === 'verified';
-  const isMediumValue = loanAmount && loanAmount > MEDIUM_VALUE_THRESHOLD;
-
-  if (isClearGreen && hasAdequateEPD && !isMediumValue) {
-    return _result(1, 'auto_approve', 'CLEAR_GREEN',
-      `CFS ${cfsScore}/100 meets the Green threshold (≥70) with adequate EPD coverage (${epdCoveragePct}%). ` +
-      'Standard green loan structure recommended. Subject to final documentation review.',
-      flags, inputs);
-  }
-
-  // Green CFS but medium value or lower EPD — AI review for memo quality
-  if (isClearGreen && isMediumValue) {
-    flags.push('medium_value_loan');
-    return _result(2, 'ai_review', 'GREEN_MEDIUM_VALUE',
-      `CFS ${cfsScore}/100 meets Green threshold but loan amount warrants AI review memo ` +
-      'for documented credit approval trail.',
-      flags, inputs);
-  }
-
-  if (isClearGreen && !hasAdequateEPD) {
-    flags.push('low_epd_coverage');
-    return _result(2, 'ai_review', 'GREEN_LOW_EPD',
-      `CFS ${cfsScore}/100 meets Green threshold but EPD coverage is only ${epdCoveragePct}% ` +
-      `(minimum ${MIN_EPD_FOR_AUTO_APPROVE}% required for auto-approval). ` +
-      'AI review required to assess data quality risk and structure EPD conditions.',
-      flags, inputs);
-  }
-
-  // ── Tier 2 — AI-Assisted (borderline and remaining cases) ──────────────
-  if (cfsScore >= CFS_TRANSITION) {
-    return _result(2, 'ai_review', 'TRANSITION_ZONE',
-      `CFS ${cfsScore}/100 is in the Transition zone (40–69). Qualifies for a Sustainability-Linked Loan. ` +
-      'AI review will assess green pathway feasibility, covenant structure, and conditions to reach Green classification.',
-      flags, inputs);
-  }
-
-  // CFS below transition but not clear decline — could have specific mitigants
-  return _result(2, 'ai_review', 'BELOW_TRANSITION_WITH_CONTEXT',
-    `CFS ${cfsScore}/100 is below the Transition threshold (40) but project context may contain mitigating factors. ` +
-    'AI review required to assess whether a structured pathway or SLL with aggressive ratchet is viable.',
-    flags, inputs);
+function _anyTaxonomyAligned(taxonomyAlignments) {
+  if (!taxonomyAlignments || typeof taxonomyAlignments !== 'object') return false;
+  const ALIGNED_VALUES = new Set(['true', 'aligned', 'green', 'transition', 'light_green', 'dark_green', 'transitioning']);
+  return Object.values(taxonomyAlignments).some(v => {
+    if (typeof v === 'boolean') return v;
+    if (typeof v === 'string') return ALIGNED_VALUES.has(v.toLowerCase());
+    return false;
+  });
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Core tier classification
 // ---------------------------------------------------------------------------
 
-function _result(tier, track, reason, rationale, flags, inputs) {
-  const tierLabels = {
-    1: 'Tier 1 — Auto-Decision',
-    2: 'Tier 2 — AI-Assisted Review',
-    3: 'Tier 3 — Manual Review',
-  };
+/**
+ * Classify a green loan application into the appropriate decision tier.
+ *
+ * @param {Object}  params
+ * @param {number}  params.cfsScore                 - Carbon Finance Score 0–100
+ * @param {string}  [params.cfsClassification]      - 'green' | 'transition' | 'brown'
+ * @param {Object}  [params.taxonomyAlignments]     - Per-taxonomy results from check_taxonomy_alignment
+ * @param {number}  [params.pcafDataQualityScore]   - PCAF score 1–5 (1=Audited, 5=Unknown)
+ * @param {number}  [params.loanAmount]             - Loan amount in local currency
+ * @param {number}  [params.buildingArea_m2]        - Gross floor area (guards against missing data)
+ * @param {number}  [params.epdCoveragePct]         - EPD data coverage (0–100)
+ * @param {boolean} [params.forceManualReview]      - Override — always escalate to Tier 3
+ *
+ * @returns {Object} {
+ *   tier, tierLabel, verdict, confidence, autoDecision,
+ *   reasons: string[],
+ *   conditions: string[],
+ *   escalationNote: string|null,
+ *   thresholds: { autoApproveLoanLimit, manualReviewLoanLimit }
+ * }
+ */
+function classifyDecisionTier({
+  cfsScore,
+  cfsClassification,
+  taxonomyAlignments,
+  pcafDataQualityScore,
+  loanAmount,
+  buildingArea_m2,
+  epdCoveragePct,
+  forceManualReview
+}) {
+  // -------------------------------------------------------------------------
+  // Guard: forceManualReview override → always Tier 3
+  // -------------------------------------------------------------------------
+  if (forceManualReview) {
+    return _tier3({
+      reasons:       ['Manual review explicitly requested by submitter'],
+      conditions:    [],
+      escalationNote: 'Escalated by request flag. Assign to green lending officer for full review.'
+    });
+  }
 
-  const trackLabels = {
-    auto_approve: 'Auto-Approve',
-    auto_decline: 'Auto-Decline',
-    ai_review:    'AI Decision Review',
-    manual_review: 'Manual Credit Review',
-  };
+  // -------------------------------------------------------------------------
+  // Guard: missing floor area → Tier 3 (carbon intensity cannot be assessed)
+  // -------------------------------------------------------------------------
+  if (!buildingArea_m2 || buildingArea_m2 < 50) {
+    return _tier3({
+      reasons: ['Gross floor area is missing or implausibly small — carbon intensity cannot be reliably assessed'],
+      conditions: ['Borrower must provide verified gross floor area before re-triage'],
+      escalationNote: 'Missing critical project data. Use /v1/agent/coach to guide the borrower.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Guard: loan > MANUAL_REVIEW_LOAN_LIMIT → always Tier 3
+  // -------------------------------------------------------------------------
+  if (loanAmount && loanAmount > MANUAL_REVIEW_LOAN_LIMIT) {
+    return _tier3({
+      reasons: [
+        `Loan amount (${loanAmount.toLocaleString()}) exceeds the SGD 100M threshold for automated or AI-assisted decision`
+      ],
+      conditions:    [],
+      escalationNote: 'High-value facility. Requires senior credit officer + sustainability team sign-off before proceeding.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Guard: PCAF Score 5 (no project-specific data at all) → Tier 3
+  // -------------------------------------------------------------------------
+  if (pcafDataQualityScore === 5) {
+    return _tier3({
+      reasons: [
+        'PCAF data quality score 5 (Unknown) — only sector-level averages available, no project-specific data'
+      ],
+      conditions: [
+        'Borrower must submit a full BOQ or independent carbon assessment before a decision can be issued'
+      ],
+      escalationNote: 'Insufficient data quality for AI or automated decision. Request BOQ from borrower before re-triage.'
+    });
+  }
+
+  const anyAligned      = _anyTaxonomyAligned(taxonomyAlignments);
+  const isGreenCFS      = cfsScore >= CFS_THRESHOLDS.green;        // ≥ 70
+  const isTransitionCFS = cfsScore >= CFS_THRESHOLDS.transition && cfsScore < CFS_THRESHOLDS.green; // 40–69
+  const isBrownCFS      = cfsScore < CFS_THRESHOLDS.transition;    // < 40
+  const poorData        = pcafDataQualityScore && pcafDataQualityScore >= 4;
+  const goodData        = !pcafDataQualityScore || pcafDataQualityScore <= 3;
+  const withinAutoLimit = !loanAmount || loanAmount <= AUTO_APPROVE_LOAN_LIMIT;
+  const aboveAutoLimit  = loanAmount && loanAmount > AUTO_APPROVE_LOAN_LIMIT && loanAmount <= MANUAL_REVIEW_LOAN_LIMIT;
+
+  // -------------------------------------------------------------------------
+  // Tier 1 — Auto-Decline
+  // Brown CFS AND no taxonomy alignment → clear decline
+  // -------------------------------------------------------------------------
+  if (isBrownCFS && !anyAligned) {
+    return _tier1({
+      verdict: DECISION_VERDICTS.AUTO_DECLINE,
+      reasons: [
+        `Carbon Finance Score ${cfsScore}/100 is Brown (<40) — below the minimum green loan threshold`,
+        'No taxonomy alignment found across ASEAN v3, EU 2024, HK GCF, or Singapore TSC'
+      ],
+      conditions:    [],
+      escalationNote: 'Application does not meet minimum green loan criteria. Can be offered a standard loan product.'
+    });
+  }
+
+  // Very low CFS (< 30) even with partial taxonomy alignment — still decline
+  if (cfsScore < 30) {
+    return _tier1({
+      verdict: DECISION_VERDICTS.AUTO_DECLINE,
+      reasons: [
+        `Carbon Finance Score ${cfsScore}/100 is critically low — well below the Brown/Transition boundary of 40`
+      ],
+      conditions:    [],
+      escalationNote: 'Score is far below the minimum threshold. Recommend standard loan or full application rework before re-submission.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Tier 1 — Auto-Approve
+  // Green CFS + taxonomy aligned + good data + within loan limit
+  // -------------------------------------------------------------------------
+  if (isGreenCFS && anyAligned && goodData && withinAutoLimit) {
+    const conditions = [
+      'Green loan covenants required via the Covenant Design workflow before first drawdown',
+      'Quarterly carbon KPI reporting obligation applies for the full loan term'
+    ];
+    if (pcafDataQualityScore && pcafDataQualityScore === 3) {
+      conditions.push('Submit full BOQ for PCAF Score 2 upgrade within 90 days of drawdown');
+    }
+
+    return _tier1({
+      verdict: DECISION_VERDICTS.AUTO_APPROVE,
+      reasons: [
+        `Carbon Finance Score ${cfsScore}/100 — Green classification (≥70 threshold met)`,
+        'At least one green taxonomy confirmed aligned',
+        `PCAF data quality score ${pcafDataQualityScore || 'N/A'} — sufficient for automated decision`,
+        loanAmount
+          ? `Loan amount ${loanAmount.toLocaleString()} is within the SGD 50M auto-approval limit`
+          : 'No loan amount specified — defaulting to within auto-approval limit'
+      ],
+      conditions,
+      escalationNote: null
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Tier 3 — Borderline CFS with poor data (too uncertain for AI-assisted)
+  // -------------------------------------------------------------------------
+  if (isTransitionCFS && poorData) {
+    return _tier3({
+      reasons: [
+        `Carbon Finance Score ${cfsScore}/100 is in the Transition zone (40–69) — borderline eligibility`,
+        `PCAF data quality score ${pcafDataQualityScore} — insufficient data for a confident AI-assisted recommendation`
+      ],
+      conditions: [
+        'Request full BOQ from borrower to improve PCAF data quality to Score 2–3',
+        'Consider commissioning an independent carbon consultant review'
+      ],
+      escalationNote: 'Low-data borderline case. Senior analyst must assess whether the conditions precedent are achievable before any indicative offer.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Tier 2 — AI-Assisted Review (all remaining cases)
+  // -------------------------------------------------------------------------
+  const reasons    = [];
+  const conditions = [];
+  let   confidence = 'medium';
+
+  if (isTransitionCFS) {
+    reasons.push(`Carbon Finance Score ${cfsScore}/100 is in the Transition zone (40–69) — AI analysis needed to assess the pathway to Green classification`);
+  } else if (isGreenCFS && aboveAutoLimit) {
+    reasons.push(`Carbon Finance Score ${cfsScore}/100 qualifies as Green, but loan amount (${loanAmount.toLocaleString()}) exceeds the SGD 50M auto-approval limit`);
+    confidence = 'medium-high';
+  } else if (isGreenCFS && !anyAligned) {
+    reasons.push(`Carbon Finance Score ${cfsScore}/100 is Green, but no taxonomy alignment confirmed — AI will assess the most viable taxonomy pathway`);
+    confidence = 'medium';
+  }
+
+  if (aboveAutoLimit && !isGreenCFS) {
+    reasons.push(`Loan amount ${loanAmount.toLocaleString()} is above the SGD 50M auto-approval limit — AI review required`);
+  }
+
+  if (poorData) {
+    reasons.push(`PCAF data quality score ${pcafDataQualityScore} — AI will assess whether conditions can bridge the data quality gap`);
+    conditions.push('Borrower must submit BOQ or third-party carbon assessment within 60 days of AI recommendation');
+  }
+
+  if (!anyAligned && !isBrownCFS) {
+    reasons.push('No confirmed taxonomy alignment — AI will identify the most viable taxonomy pathway and conditions to achieve it');
+    conditions.push('Borrower must confirm target taxonomy framework and provide supporting technical documentation');
+  }
+
+  conditions.push('Green loan covenants required via the Covenant Design workflow before facility agreement');
 
   return {
-    tier,
-    tierLabel:  tierLabels[tier],
-    track,
-    trackLabel: trackLabels[track],
-    reason,
-    rationale,
-    flags:      flags || [],
-    inputs,
-    classifiedAt: new Date().toISOString(),
+    tier:          DECISION_TIERS.AI,
+    tierLabel:     TIER_DISTRIBUTION[DECISION_TIERS.AI].label,
+    verdict:       DECISION_VERDICTS.AI_RECOMMEND,
+    confidence,
+    autoDecision:  false,
+    reasons,
+    conditions,
+    escalationNote: 'AI review memo generated. Loan officer sign-off required before final credit decision.',
+    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
   };
 }
 
-module.exports = { classifyApplication };
+// ---------------------------------------------------------------------------
+// Tier builder helpers
+// ---------------------------------------------------------------------------
+
+function _tier1({ verdict, reasons, conditions, escalationNote }) {
+  return {
+    tier:          DECISION_TIERS.AUTO,
+    tierLabel:     TIER_DISTRIBUTION[DECISION_TIERS.AUTO].label,
+    verdict,
+    confidence:    'high',
+    autoDecision:  true,
+    reasons,
+    conditions,
+    escalationNote,
+    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+  };
+}
+
+function _tier3({ reasons, conditions, escalationNote }) {
+  return {
+    tier:          DECISION_TIERS.MANUAL,
+    tierLabel:     TIER_DISTRIBUTION[DECISION_TIERS.MANUAL].label,
+    verdict:       DECISION_VERDICTS.MANUAL_REVIEW,
+    confidence:    'n/a',
+    autoDecision:  false,
+    reasons,
+    conditions,
+    escalationNote,
+    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+  };
+}
+
+/**
+ * Compatibility alias for origin/main's classifyApplication interface.
+ * Maps the alternate parameter names to classifyDecisionTier.
+ */
+function classifyApplication(params) {
+  return classifyDecisionTier({
+    cfsScore:             params.cfsScore,
+    taxonomyAlignments:   params.taxonomyAlignments,
+    pcafDataQualityScore: params.pcafDataQualityScore,
+    loanAmount:           params.loanAmount,
+    buildingArea_m2:      params.buildingArea_m2,
+    epdCoveragePct:       params.epdCoveragePct,
+    forceManualReview:    params.forceManualReview
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Exports
+// ---------------------------------------------------------------------------
+
+module.exports = {
+  classifyDecisionTier,
+  classifyApplication,   // compatibility alias
+  DECISION_TIERS,
+  DECISION_VERDICTS,
+  TIER_DISTRIBUTION,
+  AUTO_APPROVE_LOAN_LIMIT,
+  MANUAL_REVIEW_LOAN_LIMIT
+};

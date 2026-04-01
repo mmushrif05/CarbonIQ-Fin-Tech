@@ -270,7 +270,6 @@ const portfolioReportRequestSchema = Joi.object({
 // ---------------------------------------------------------------------------
 
 const originationRequestSchema = Joi.object({
-  // Loan application context
   applicationReference: Joi.string().max(100).optional()
     .description('Bank-internal loan application reference number'),
 
@@ -280,7 +279,6 @@ const originationRequestSchema = Joi.object({
   projectName: Joi.string().max(300).optional()
     .description('Project name'),
 
-  // Construction specifics — the differentiating data Persefoni/Watershed lack
   boqContent: Joi.string().min(10).max(200000).optional()
     .description('Raw Bill of Quantities: CSV rows, pasted text, or JSON string. '
       + 'When supplied, CarbonIQ performs material-level embodied carbon assessment '
@@ -300,7 +298,6 @@ const originationRequestSchema = Joi.object({
   region: Joi.string().max(100).optional().default('Singapore')
     .description('Region for regulatory taxonomy and carbon tax context'),
 
-  // Financial parameters for PCAF attribution
   loanAmount: Joi.number().positive().optional()
     .description('Requested loan amount (local currency)'),
 
@@ -310,7 +307,6 @@ const originationRequestSchema = Joi.object({
   loanTermYears: Joi.number().integer().min(1).max(30).optional()
     .description('Loan term in years for covenant trajectory design'),
 
-  // Green loan parameters
   greenLoanTarget: Joi.boolean().optional().default(true)
     .description('Whether the bank is targeting green loan classification'),
 
@@ -322,7 +318,6 @@ const originationRequestSchema = Joi.object({
   investorJurisdiction: Joi.string().max(200).optional()
     .description('Taxonomies to screen against, e.g. "ASEAN, Singapore, EU"'),
 
-  // Additional context
   projectDescription: Joi.string().max(5000).optional()
     .description('Free-text project description for context'),
 });
@@ -385,28 +380,38 @@ const covenantReviewSchema = Joi.object({
 // ---------------------------------------------------------------------------
 
 const borrowerCoachingRequestSchema = Joi.object({
+  // Project identity
   projectName: Joi.string().max(300).optional()
-    .description('Project name'),
+    .description('Project name for the coaching report header'),
 
+  // Core building data — both needed for preliminary carbon estimate
   buildingType: Joi.string().valid(
     'residential_low_rise', 'residential_high_rise', 'commercial_office',
     'retail', 'industrial_warehouse', 'hospital', 'education', 'infrastructure'
-  ).required().description('Building type — required for carbon benchmarking'),
+  ).optional().description('Building type for carbon benchmarking'),
 
-  buildingArea_m2: Joi.number().positive().max(5000000).required()
-    .description('Gross floor area (m²) — required for carbon estimate'),
+  buildingArea_m2: Joi.number().positive().max(5000000).optional()
+    .description('Gross floor area in square metres'),
 
   region: Joi.string().max(100).optional().default('Singapore')
-    .description('Project region for benchmark and tax calculations'),
+    .description('Project region for benchmark and carbon tax calculations'),
 
+  // Financial parameters
   loanAmount: Joi.number().positive().optional()
-    .description('Indicative loan amount (local currency)'),
+    .description('Requested loan amount in local currency'),
 
   projectValue: Joi.number().positive().optional()
-    .description('Total project value (local currency)'),
+    .description('Total project value in local currency'),
 
   loanTermYears: Joi.number().integer().min(1).max(30).optional()
     .description('Loan term in years'),
+
+  // Carbon / green performance data
+  boqContent: Joi.string().min(10).max(200000).optional()
+    .description('Raw Bill of Quantities if available: CSV, text, or JSON'),
+
+  hasBOQ: Joi.boolean().optional().default(false)
+    .description('Whether a Bill of Quantities has been submitted'),
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
@@ -414,19 +419,25 @@ const borrowerCoachingRequestSchema = Joi.object({
   ).optional().description('Target green certification level'),
 
   reductionTarget: Joi.number().min(0).max(100).optional()
-    .description('Target carbon reduction vs baseline (%)'),
-
-  hasBOQ: Joi.boolean().optional().default(false)
-    .description('Whether a Bill of Quantities has been submitted'),
-
-  hasEPD: Joi.boolean().optional().default(false)
-    .description('Whether EPD data is available for key materials'),
+    .description('Target embodied carbon reduction vs baseline (%)'),
 
   hasLCA: Joi.boolean().optional().default(false)
-    .description('Whether a Life Cycle Assessment has been conducted'),
+    .description('Whether a Life Cycle Assessment has been commissioned'),
+
+  hasEPD: Joi.boolean().optional().default(false)
+    .description('Whether any Environmental Product Declarations exist for project materials'),
+
+  verificationStatus: Joi.string()
+    .valid('verified', 'in_review', 'submitted', 'none')
+    .optional().default('none')
+    .description('Current external verification status'),
 
   projectDescription: Joi.string().min(10).max(5000).optional()
     .description('Free-text project description for personalised coaching'),
+
+  // Free-text borrower questions answered at the end of the coaching report
+  borrowerQuestions: Joi.string().max(2000).optional()
+    .description('Specific questions from the borrower — answered in the coaching report')
 });
 
 // ---------------------------------------------------------------------------
@@ -434,25 +445,63 @@ const borrowerCoachingRequestSchema = Joi.object({
 // ---------------------------------------------------------------------------
 
 const decisionTriageRequestSchema = Joi.object({
+  // Project context
   projectName: Joi.string().max(300).optional()
-    .description('Project name'),
+    .description('Project name for the review memo'),
 
   buildingType: Joi.string().valid(
     'residential_low_rise', 'residential_high_rise', 'commercial_office',
     'retail', 'industrial_warehouse', 'hospital', 'education', 'infrastructure'
-  ).optional().description('Building type'),
+  ).optional().description('Building type for covenant calibration context'),
 
   buildingArea_m2: Joi.number().positive().max(5000000).optional()
-    .description('Gross floor area (m²)'),
+    .description('Gross floor area in square metres'),
 
   region: Joi.string().max(100).optional().default('Singapore')
     .description('Project region'),
 
+  // Financial parameters
+  loanAmount: Joi.number().positive().optional()
+    .description('Loan amount in local currency — used for tier threshold check'),
+
+  projectValue: Joi.number().positive().optional()
+    .description('Total project value for PCAF attribution context'),
+
+  loanTermYears: Joi.number().integer().min(1).max(30).optional()
+    .description('Loan term in years'),
+
+  // Carbon Finance Score — used for tier classification
   cfsScore: Joi.number().min(0).max(100).optional()
-    .description('Carbon Finance Score (0–100) — pre-computed or from /v1/projects/:id/score'),
+    .description('Carbon Finance Score (0–100) from the underwriting or screening assessment'),
+
+  cfsClassification: Joi.string().valid('green', 'transition', 'brown').optional()
+    .description('CFS classification label corresponding to the cfsScore'),
+
+  // CFS component breakdown for AI review context
+  cfsComponents: Joi.object({
+    epdCoveragePct:    Joi.number().min(0).max(100).optional(),
+    reductionPct:      Joi.number().min(0).max(100).optional(),
+    certificationLevel: Joi.string().optional(),
+    verificationStatus: Joi.string().optional()
+  }).optional().description('CFS score component values for AI review context'),
+
+  // Taxonomy results — object with per-taxonomy alignment status
+  taxonomyAlignments: Joi.object().optional()
+    .description('Per-taxonomy alignment results from check_taxonomy_alignment tool'),
+
+  // PCAF data
+  pcafDataQualityScore: Joi.number().integer().min(1).max(5).optional()
+    .description('PCAF data quality score 1–5 (1=Audited, 5=Unknown)'),
+
+  pcafFinancedEmissions_tCO2e: Joi.number().positive().optional()
+    .description('Bank\'s PCAF financed emissions in tCO2e'),
+
+  // Carbon metrics for covenant calibration
+  carbonIntensity_kgCO2e_m2: Joi.number().positive().optional()
+    .description('Carbon intensity in kgCO2e/m² — used to calibrate covenant thresholds'),
 
   totalTCO2e: Joi.number().positive().optional()
-    .description('Total embodied carbon (tCO2e)'),
+    .description('Total project embodied carbon in tCO2e'),
 
   epdCoveragePct: Joi.number().min(0).max(100).optional().default(0)
     .description('EPD data coverage (%)'),
@@ -460,28 +509,32 @@ const decisionTriageRequestSchema = Joi.object({
   reductionPct: Joi.number().min(0).max(100).optional().default(0)
     .description('Achieved carbon reduction vs baseline (%)'),
 
-  loanAmount: Joi.number().positive().optional()
-    .description('Loan amount (local currency)'),
-
-  projectValue: Joi.number().positive().optional()
-    .description('Total project value'),
-
-  loanTermYears: Joi.number().integer().min(1).max(30).optional()
-    .description('Loan term in years'),
-
-  verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')
-    .optional().default('none').description('External verification status'),
+  certificationLevel: Joi.string().valid(
+    'platinum', 'gold', 'silver', 'certified',
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+  ).optional().description('Achieved or target green certification level'),
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
     'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
   ).optional().description('Target green certification level'),
 
+  verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')
+    .optional().default('none').description('External verification status'),
+
   hasBOQ: Joi.boolean().optional().default(false)
     .description('Whether a BOQ has been submitted'),
 
   projectDescription: Joi.string().min(10).max(5000).optional()
     .description('Project description — used by AI review for Tier 2 decisions'),
+
+  // Reference to prior agent run for traceability
+  underwritingRunId: Joi.string().max(100).optional()
+    .description('Run ID of the prior underwriting agent run (for cross-reference in the review memo)'),
+
+  // Override flag — always escalate to manual regardless of other criteria
+  forceManualReview: Joi.boolean().optional().default(false)
+    .description('Set to true to force Tier 3 manual review regardless of scoring criteria')
 });
 
 module.exports = {

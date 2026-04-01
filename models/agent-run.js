@@ -11,18 +11,18 @@
 const AGENT_TYPES = {
   SCREENING:         'screening',
   UNDERWRITING:      'underwriting',
-  ORIGINATION:       'origination',
+  ORIGINATION:       'origination',       // Stage 2: Green Loan Origination
   COVENANTS:         'covenants',
   MONITORING:        'monitoring',
   PORTFOLIO:         'portfolio',
-  BORROWER_COACHING: 'borrower_coaching',
-  DECISION_REVIEW:   'decision_review',
+  BORROWER_COACHING: 'borrower_coaching', // Stage 2: AI-guided borrower coaching
+  DECISION_REVIEW:   'decision_review'    // Stage 2: Tier 2 AI-assisted decision review
 };
 
 const AGENT_STATUS = {
-  RUNNING:              'running',
-  COMPLETED:            'completed',
-  FAILED:               'failed',
+  RUNNING:   'running',
+  COMPLETED: 'completed',
+  FAILED:    'failed',
   // EU AI Act Article 22 — high-risk AI systems in financial services must
   // pause for mandatory human review before decisions take legal effect.
   // Covenant Design (Stage 3) sets this status after AI recommendation.
