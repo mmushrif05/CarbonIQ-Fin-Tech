@@ -72,15 +72,16 @@ const AgentsPage = (() => {
   ];
 
   const REGIONS = [
-    ['Singapore', 'Singapore'],
-    ['Hong Kong', 'Hong Kong'],
-    ['Malaysia',  'Malaysia'],
-    ['Thailand',  'Thailand'],
-    ['Indonesia', 'Indonesia'],
-    ['Vietnam',   'Vietnam'],
-    ['Australia', 'Australia'],
-    ['UK',        'United Kingdom'],
-    ['EU',        'European Union'],
+    ['Singapore',  'Singapore'],
+    ['Hong Kong',  'Hong Kong'],
+    ['Sri Lanka',  'Sri Lanka'],
+    ['Malaysia',   'Malaysia'],
+    ['Thailand',   'Thailand'],
+    ['Indonesia',  'Indonesia'],
+    ['Vietnam',    'Vietnam'],
+    ['Australia',  'Australia'],
+    ['UK',         'United Kingdom'],
+    ['EU',         'European Union'],
   ];
 
   const CERTIFICATIONS = [
@@ -90,6 +91,8 @@ const AgentsPage = (() => {
     ['zero_carbon_ready','Green Mark Zero Carbon Ready'],
     ['platinum',         'BEAM Plus Platinum (HK)'],
     ['gold_plus',        'BEAM Plus Gold+ (HK)'],
+    ['greensl_platinum', 'Green SL Platinum (Sri Lanka)'],
+    ['greensl_gold',     'Green SL Gold (Sri Lanka)'],
     ['gold',             'LEED Gold'],
     ['silver',           'LEED Silver'],
     ['certified',        'LEED Certified'],
