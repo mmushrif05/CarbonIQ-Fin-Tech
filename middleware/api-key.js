@@ -73,12 +73,13 @@ async function apiKeyAuth(req, res, next) {
       });
     }
 
-    // Attach key metadata to request
+    // Attach key metadata to request — includes optional role for RBAC
     req.apiKey = {
       orgId: keyData.orgId,
       orgName: keyData.orgName,
       projectIds: keyData.projectIds || [],
       permissions: keyData.permissions || [],
+      role: keyData.role || null,
       rateLimit: keyData.rateLimit || config.apiKey.defaultRateLimit
     };
 

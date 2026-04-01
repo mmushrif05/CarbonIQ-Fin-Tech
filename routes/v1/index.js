@@ -34,6 +34,7 @@ const webhookRouter = require('./webhook');
 const extractRouter       = require('./extract');
 const extractUploadRouter = require('./extract-upload');
 const agentRouter         = require('./agent');
+const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
 
@@ -80,6 +81,13 @@ router.get('/', (_req, res) => {
         portfolio: 'POST /v1/agent/portfolio',
         runs:      'GET /v1/agent/runs',
         run:       'GET /v1/agent/runs/:runId',
+      },
+      supervisor: {
+        pipeline:     'POST /v1/supervisor/pipeline',
+        pipelineGet:  'GET /v1/supervisor/pipeline/:pipelineId',
+        pipelines:    'GET /v1/supervisor/pipelines',
+        resume:       'POST /v1/supervisor/pipeline/:pipelineId/resume',
+        templates:    'GET /v1/supervisor/templates',
       }
     },
     documentation: 'https://carboniq.online/docs/api'
@@ -98,6 +106,7 @@ router.use('/projects', covenantRouter);
 router.use('/portfolio', portfolioRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
+router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
 

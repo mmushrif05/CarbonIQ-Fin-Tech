@@ -8,6 +8,7 @@
  */
 
 const { getFirebaseAdmin } = require('../bridge/firebase');
+const { ROLES, DEFAULT_ROLE } = require('../config/policies');
 
 async function auth(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -31,11 +32,16 @@ async function auth(req, res, next) {
     }
     const decoded = await admin.auth().verifyIdToken(token);
 
-    // Attach user info to request
+    // Attach user info to request — role maps to RBAC policy definitions
+    const roleName = decoded.role || DEFAULT_ROLE;
+    const roleDef  = ROLES[roleName] || ROLES[DEFAULT_ROLE];
+
     req.user = {
       uid: decoded.uid,
       email: decoded.email,
-      role: decoded.role || 'bank_analyst',
+      role: roleName,
+      roleLevel: roleDef.level,
+      roleLabel: roleDef.label,
       organizationId: decoded.organizationId || null
     };
 

@@ -250,6 +250,41 @@ async function submitHumanReview(orgId, runId, review) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Pipeline Run Persistence (reads/writes to /fintech/pipelineRuns/ paths)
+// ---------------------------------------------------------------------------
+
+async function savePipelineRun(orgId, pipeline) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/pipelineRuns/${orgId}/${pipeline.pipelineId}`).set(pipeline);
+}
+
+async function updatePipelineRun(orgId, pipelineId, updates) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/pipelineRuns/${orgId}/${pipelineId}`).update(updates);
+}
+
+async function getPipelineRun(orgId, pipelineId) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/pipelineRuns/${orgId}/${pipelineId}`).once('value');
+  return snapshot.val();
+}
+
+async function listPipelineRuns(orgId, limit = 20) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/pipelineRuns/${orgId}`)
+    .orderByChild('createdAt')
+    .limitToLast(limit)
+    .once('value');
+  const val = snapshot.val();
+  if (!val) return [];
+  return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -270,5 +305,9 @@ module.exports = {
   listFintechProjects,
   saveMonitoringEntry,
   listMonitoringEntries,
-  submitHumanReview
+  submitHumanReview,
+  savePipelineRun,
+  updatePipelineRun,
+  getPipelineRun,
+  listPipelineRuns
 };
