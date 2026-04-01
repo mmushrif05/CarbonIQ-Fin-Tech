@@ -33,13 +33,18 @@ const {
   screeningRequestSchema,
   covenantsRequestSchema,
   monitoringRequestSchema,
-  portfolioReportRequestSchema
+  portfolioReportRequestSchema,
+  borrowerCoachingRequestSchema,
+  decisionTriageRequestSchema,
 } = require('../../schemas/agent');
-const underwritingAgent = require('../../services/agents/underwriting');
-const screeningAgent    = require('../../services/agents/screening');
-const covenantsAgent    = require('../../services/agents/covenants');
-const monitoringAgent   = require('../../services/agents/monitoring');
-const portfolioAgent    = require('../../services/agents/portfolio');
+const underwritingAgent  = require('../../services/agents/underwriting');
+const screeningAgent     = require('../../services/agents/screening');
+const covenantsAgent     = require('../../services/agents/covenants');
+const monitoringAgent    = require('../../services/agents/monitoring');
+const portfolioAgent     = require('../../services/agents/portfolio');
+const borrowerCoaching   = require('../../services/agents/borrower-coaching');
+const decisionReview     = require('../../services/agents/decision-review');
+const { classifyApplication } = require('../../services/decision-engine');
 
 const router = Router();
 
@@ -322,6 +327,173 @@ router.post('/portfolio',
         createdAt:  run.createdAt,
         completedAt: run.completedAt,
         ...(run.error && { error: run.error })
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/coach
+//
+// AI Borrower Coaching — assess application completeness, pre-compute carbon
+// estimates, and produce a personalised coaching report with a prioritised
+// action plan. Uses runAgentSingleCall for sub-second response.
+// ---------------------------------------------------------------------------
+
+router.post('/coach',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: borrowerCoachingRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+      const userMessage = borrowerCoaching.buildUserMessageWithResults(req.body);
+
+      const run = await runAgentSingleCall({
+        agentType:    'borrower_coaching',
+        systemPrompt: borrowerCoaching.SYSTEM_PROMPT,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:    req.body.projectName     || null,
+          buildingType:   req.body.buildingType,
+          buildingArea_m2: req.body.buildingArea_m2,
+          region:         req.body.region          || 'Singapore',
+          loanAmount:     req.body.loanAmount      || null,
+          completenessScore: borrowerCoaching.assessCompleteness(req.body).score,
+        },
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        runId:      run.runId,
+        agentType:  run.agentType,
+        status:     run.status,
+        result:     run.result,
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed,
+        metadata:   run.metadata,
+        createdAt:  run.createdAt,
+        completedAt: run.completedAt,
+        ...(run.error && { error: run.error }),
+      });
+    } catch (err) {
+      if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
+        return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
+      }
+      next(err);
+    }
+  }
+);
+
+// ---------------------------------------------------------------------------
+// POST /v1/agent/triage
+//
+// Tiered Decision Framework — classify the application into one of three
+// decision tracks using the deterministic engine, then optionally invoke
+// the AI Decision Review Agent for Tier 2 borderline cases.
+//
+// Tier 1 Auto-Decision:  returns immediately (no AI call)
+// Tier 2 AI-Assisted:    runs decision-review agent, returns full memo
+// Tier 3 Manual Review:  returns classification + escalation instructions
+// ---------------------------------------------------------------------------
+
+router.post('/triage',
+  apiKeyAuth,
+  agentLimiter,
+  validate({ body: decisionTriageRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const orgId = req.apiKey.orgId;
+
+      // Step 1: deterministic tier classification (no AI call)
+      const tierResult = classifyApplication({
+        cfsScore:          req.body.cfsScore,
+        loanAmount:        req.body.loanAmount,
+        projectValue:      req.body.projectValue,
+        buildingArea_m2:   req.body.buildingArea_m2,
+        epdCoveragePct:    req.body.epdCoveragePct || 0,
+        verificationStatus: req.body.verificationStatus || 'none',
+        region:            req.body.region,
+        buildingType:      req.body.buildingType,
+        hasBOQ:            req.body.hasBOQ || false,
+        reductionPct:      req.body.reductionPct || 0,
+      });
+
+      // Tier 1 and Tier 3 — no AI call required, return immediately
+      if (tierResult.tier !== 2) {
+        return res.status(200).json({
+          success:    true,
+          tier:       tierResult.tier,
+          tierLabel:  tierResult.tierLabel,
+          track:      tierResult.track,
+          trackLabel: tierResult.trackLabel,
+          reason:     tierResult.reason,
+          rationale:  tierResult.rationale,
+          flags:      tierResult.flags,
+          classifiedAt: tierResult.classifiedAt,
+          aiReview:   null,
+          ...(tierResult.tier === 3 && {
+            escalation: {
+              message:     'This application requires manual review by a credit officer and ESG specialist.',
+              nextSteps:   [
+                'Assign to Senior Credit Officer',
+                'Request ESG specialist review',
+                'Schedule borrower consultation',
+                'Consider Borrower Coaching (/v1/agent/coach) to improve application quality',
+              ],
+            },
+          }),
+        });
+      }
+
+      // Tier 2 — run AI Decision Review Agent
+      const userMessage = decisionReview.buildUserMessage(req.body, tierResult);
+
+      const run = await runAgent({
+        agentType:       'decision_review',
+        systemPrompt:    decisionReview.SYSTEM_PROMPT,
+        toolDefinitions: decisionReview.TOOL_DEFINITIONS,
+        toolFunctions:   decisionReview.TOOL_FUNCTIONS,
+        userMessage,
+        orgId,
+        metadata: {
+          projectName:    req.body.projectName    || null,
+          buildingType:   req.body.buildingType   || null,
+          buildingArea_m2: req.body.buildingArea_m2 || null,
+          region:         req.body.region         || 'Singapore',
+          loanAmount:     req.body.loanAmount     || null,
+          cfsScore:       req.body.cfsScore       || null,
+          triageReason:   tierResult.reason,
+        },
+      });
+
+      return res.status(run.status === 'completed' ? 200 : 500).json({
+        success:    run.status === 'completed',
+        tier:       tierResult.tier,
+        tierLabel:  tierResult.tierLabel,
+        track:      tierResult.track,
+        trackLabel: tierResult.trackLabel,
+        reason:     tierResult.reason,
+        rationale:  tierResult.rationale,
+        flags:      tierResult.flags,
+        classifiedAt: tierResult.classifiedAt,
+        aiReview: {
+          runId:       run.runId,
+          agentType:   run.agentType,
+          status:      run.status,
+          result:      run.result,
+          steps:       run.steps,
+          tokensUsed:  run.tokensUsed,
+          createdAt:   run.createdAt,
+          completedAt: run.completedAt,
+          ...(run.error && { error: run.error }),
+        },
       });
     } catch (err) {
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {

@@ -9,11 +9,13 @@
  */
 
 const AGENT_TYPES = {
-  SCREENING:    'screening',
-  UNDERWRITING: 'underwriting',
-  COVENANTS:    'covenants',
-  MONITORING:   'monitoring',
-  PORTFOLIO:    'portfolio'
+  SCREENING:         'screening',
+  UNDERWRITING:      'underwriting',
+  COVENANTS:         'covenants',
+  MONITORING:        'monitoring',
+  PORTFOLIO:         'portfolio',
+  BORROWER_COACHING: 'borrower_coaching',
+  DECISION_REVIEW:   'decision_review',
 };
 
 const AGENT_STATUS = {

@@ -71,13 +71,15 @@ router.get('/', (_req, res) => {
         rates:     'GET /v1/carbon-pricing/rates',
       },
       agent: {
+        coach:     'POST /v1/agent/coach',
+        triage:    'POST /v1/agent/triage',
         screen:    'POST /v1/agent/screen',
         underwrite:'POST /v1/agent/underwrite',
         covenants: 'POST /v1/agent/covenants',
         monitor:   'POST /v1/agent/monitor',
         portfolio: 'POST /v1/agent/portfolio',
         runs:      'GET /v1/agent/runs',
-        run:       'GET /v1/agent/runs/:runId'
+        run:       'GET /v1/agent/runs/:runId',
       }
     },
     documentation: 'https://carboniq.online/docs/api'

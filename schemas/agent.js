@@ -259,10 +259,116 @@ const portfolioReportRequestSchema = Joi.object({
     .description('Array of loan assets in the portfolio')
 });
 
+// ---------------------------------------------------------------------------
+// Borrower Coaching Agent — POST /v1/agent/coach
+// ---------------------------------------------------------------------------
+
+const borrowerCoachingRequestSchema = Joi.object({
+  projectName: Joi.string().max(300).optional()
+    .description('Project name'),
+
+  buildingType: Joi.string().valid(
+    'residential_low_rise', 'residential_high_rise', 'commercial_office',
+    'retail', 'industrial_warehouse', 'hospital', 'education', 'infrastructure'
+  ).required().description('Building type — required for carbon benchmarking'),
+
+  buildingArea_m2: Joi.number().positive().max(5000000).required()
+    .description('Gross floor area (m²) — required for carbon estimate'),
+
+  region: Joi.string().max(100).optional().default('Singapore')
+    .description('Project region for benchmark and tax calculations'),
+
+  loanAmount: Joi.number().positive().optional()
+    .description('Indicative loan amount (local currency)'),
+
+  projectValue: Joi.number().positive().optional()
+    .description('Total project value (local currency)'),
+
+  loanTermYears: Joi.number().integer().min(1).max(30).optional()
+    .description('Loan term in years'),
+
+  targetCertification: Joi.string().valid(
+    'platinum', 'gold', 'silver', 'certified',
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+  ).optional().description('Target green certification level'),
+
+  reductionTarget: Joi.number().min(0).max(100).optional()
+    .description('Target carbon reduction vs baseline (%)'),
+
+  hasBOQ: Joi.boolean().optional().default(false)
+    .description('Whether a Bill of Quantities has been submitted'),
+
+  hasEPD: Joi.boolean().optional().default(false)
+    .description('Whether EPD data is available for key materials'),
+
+  hasLCA: Joi.boolean().optional().default(false)
+    .description('Whether a Life Cycle Assessment has been conducted'),
+
+  projectDescription: Joi.string().min(10).max(5000).optional()
+    .description('Free-text project description for personalised coaching'),
+});
+
+// ---------------------------------------------------------------------------
+// Decision Triage — POST /v1/agent/triage
+// ---------------------------------------------------------------------------
+
+const decisionTriageRequestSchema = Joi.object({
+  projectName: Joi.string().max(300).optional()
+    .description('Project name'),
+
+  buildingType: Joi.string().valid(
+    'residential_low_rise', 'residential_high_rise', 'commercial_office',
+    'retail', 'industrial_warehouse', 'hospital', 'education', 'infrastructure'
+  ).optional().description('Building type'),
+
+  buildingArea_m2: Joi.number().positive().max(5000000).optional()
+    .description('Gross floor area (m²)'),
+
+  region: Joi.string().max(100).optional().default('Singapore')
+    .description('Project region'),
+
+  cfsScore: Joi.number().min(0).max(100).optional()
+    .description('Carbon Finance Score (0–100) — pre-computed or from /v1/projects/:id/score'),
+
+  totalTCO2e: Joi.number().positive().optional()
+    .description('Total embodied carbon (tCO2e)'),
+
+  epdCoveragePct: Joi.number().min(0).max(100).optional().default(0)
+    .description('EPD data coverage (%)'),
+
+  reductionPct: Joi.number().min(0).max(100).optional().default(0)
+    .description('Achieved carbon reduction vs baseline (%)'),
+
+  loanAmount: Joi.number().positive().optional()
+    .description('Loan amount (local currency)'),
+
+  projectValue: Joi.number().positive().optional()
+    .description('Total project value'),
+
+  loanTermYears: Joi.number().integer().min(1).max(30).optional()
+    .description('Loan term in years'),
+
+  verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')
+    .optional().default('none').description('External verification status'),
+
+  targetCertification: Joi.string().valid(
+    'platinum', 'gold', 'silver', 'certified',
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+  ).optional().description('Target green certification level'),
+
+  hasBOQ: Joi.boolean().optional().default(false)
+    .description('Whether a BOQ has been submitted'),
+
+  projectDescription: Joi.string().min(10).max(5000).optional()
+    .description('Project description — used by AI review for Tier 2 decisions'),
+});
+
 module.exports = {
   underwritingRequestSchema,
   screeningRequestSchema,
   covenantsRequestSchema,
   monitoringRequestSchema,
-  portfolioReportRequestSchema
+  portfolioReportRequestSchema,
+  borrowerCoachingRequestSchema,
+  decisionTriageRequestSchema,
 };
