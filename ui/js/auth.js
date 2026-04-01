@@ -62,6 +62,7 @@ const Auth = (() => {
     'new-project':    40,   // relationship_manager+
     'pcaf':           60,   // esg_analyst+
     'monitoring':     60,   // esg_analyst+
+    'pipeline':       60,   // esg_analyst+
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
     'taxonomy':       30,   // auditor+
@@ -223,3 +224,11 @@ const Auth = (() => {
     getDefaultPage,
   };
 })();
+
+// Run enforceAuth as soon as the DOM is ready (or immediately if already ready).
+// This prevents any flash of the app before the login screen appears.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => Auth.enforceAuth());
+} else {
+  Auth.enforceAuth();
+}

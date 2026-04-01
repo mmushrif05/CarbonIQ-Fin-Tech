@@ -1101,6 +1101,9 @@ const AgentsPage = (() => {
       elReportBody.textContent = reportText;
     }
     elReportBody.scrollTop = 0;
+
+    // Inject covenant human review panel (EU AI Act Art. 22)
+    _injectCovenantReviewPanel(data);
   }
 
   // ── Triage result renderer ────────────────────────────────
@@ -1250,5 +1253,151 @@ const AgentsPage = (() => {
     });
   }
 
-  return { init };
+  // ── Covenant Human Review Panel (EU AI Act Art. 22) ───────
+  function _injectCovenantReviewPanel(data) {
+    // Remove any existing review panel
+    const existing = document.getElementById('covenant-review-panel');
+    if (existing) existing.remove();
+
+    // Only show for covenants stage
+    if (currentStage !== 'covenants') return;
+
+    const runId = data.runId || data.id || '';
+
+    const panel = document.createElement('div');
+    panel.id = 'covenant-review-panel';
+    panel.className = 'covenant-review-panel';
+    panel.innerHTML = `
+      <div class="covenant-review-header">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l6 3.5v7L9 16l-6-3.5v-7L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 7v3M9 12.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <div>
+          <div class="covenant-review-title">EU AI Act Art. 22 — Human Review Required</div>
+          <div class="covenant-review-subtitle">AI-recommended covenant terms must be reviewed by a credit officer before they take legal effect.</div>
+        </div>
+      </div>
+      <div class="covenant-review-form">
+        <div class="covenant-review-grid">
+          <div class="form-group">
+            <label>Reviewer ID (email or employee ID)</label>
+            <input id="cvr-reviewer" type="text" class="form-input form-input-sm" placeholder="e.g. kamal.perera@dfcc.lk" />
+          </div>
+          <div class="form-group">
+            <label>Decision</label>
+            <select id="cvr-decision" class="form-input form-input-sm" onchange="AgentsPage._onReviewDecisionChange()">
+              <option value="">-- Select --</option>
+              <option value="approved">Approved — accept all AI recommendations</option>
+              <option value="modified">Modified — accept with threshold changes</option>
+              <option value="rejected">Rejected — re-submit required</option>
+            </select>
+          </div>
+        </div>
+        <div id="cvr-reason-wrap" class="form-group" style="display:none">
+          <label>Reason (required for modified/rejected)</label>
+          <textarea id="cvr-reason" class="form-input form-input-sm" rows="3" placeholder="Document your rationale — this becomes part of the immutable audit record."></textarea>
+        </div>
+        <div id="cvr-mods-wrap" style="display:none">
+          <label style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;display:block">Modifications</label>
+          <div id="cvr-mods-list"></div>
+          <button class="btn btn-ghost btn-sm" onclick="AgentsPage._addModRow()" style="margin-top:4px">+ Add Modification</button>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary btn-sm" id="cvr-submit-btn" onclick="AgentsPage._submitCovenantReview('${runId}')">
+            Submit Review
+          </button>
+          <span id="cvr-status" style="font-size:12px;color:var(--text-secondary)"></span>
+        </div>
+      </div>`;
+
+    // Insert after the report body
+    elReportBody.parentElement.appendChild(panel);
+  }
+
+  function _onReviewDecisionChange() {
+    const decision = document.getElementById('cvr-decision')?.value;
+    const reasonWrap = document.getElementById('cvr-reason-wrap');
+    const modsWrap = document.getElementById('cvr-mods-wrap');
+    if (reasonWrap) reasonWrap.style.display = (decision === 'modified' || decision === 'rejected') ? 'block' : 'none';
+    if (modsWrap) modsWrap.style.display = decision === 'modified' ? 'block' : 'none';
+  }
+
+  function _addModRow() {
+    const list = document.getElementById('cvr-mods-list');
+    if (!list) return;
+    const row = document.createElement('div');
+    row.style.cssText = 'display:grid;grid-template-columns:1fr 80px 80px 1fr;gap:8px;margin-bottom:8px;align-items:end';
+    row.innerHTML = `
+      <div class="form-group" style="margin:0">
+        <label style="font-size:10px">Metric</label>
+        <select class="form-input form-input-sm cvr-mod-metric">
+          ${COVENANT_METRICS.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:10px">AI Threshold</label>
+        <input type="number" class="form-input form-input-sm cvr-mod-original" placeholder="e.g. 490" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:10px">Revised</label>
+        <input type="number" class="form-input form-input-sm cvr-mod-revised" placeholder="e.g. 520" />
+      </div>
+      <div class="form-group" style="margin:0">
+        <label style="font-size:10px">Justification</label>
+        <input type="text" class="form-input form-input-sm cvr-mod-justification" placeholder="Reason for override" />
+      </div>`;
+    list.appendChild(row);
+  }
+
+  async function _submitCovenantReview(runId) {
+    const reviewer = document.getElementById('cvr-reviewer')?.value?.trim();
+    const decision = document.getElementById('cvr-decision')?.value;
+    const reason = document.getElementById('cvr-reason')?.value?.trim();
+    const statusEl = document.getElementById('cvr-status');
+
+    if (!reviewer || !decision) {
+      if (statusEl) { statusEl.textContent = 'Reviewer ID and decision are required.'; statusEl.style.color = 'var(--red)'; }
+      return;
+    }
+
+    const payload = { reviewerId: reviewer, decision, reason: reason || undefined };
+
+    if (decision === 'modified') {
+      const modRows = document.querySelectorAll('#cvr-mods-list > div');
+      const modifications = [];
+      modRows.forEach(row => {
+        const metric = row.querySelector('.cvr-mod-metric')?.value;
+        const original = parseFloat(row.querySelector('.cvr-mod-original')?.value);
+        const revised = parseFloat(row.querySelector('.cvr-mod-revised')?.value);
+        const justification = row.querySelector('.cvr-mod-justification')?.value?.trim();
+        if (metric && !isNaN(original) && !isNaN(revised) && justification) {
+          modifications.push({ metric, originalThreshold: original, revisedThreshold: revised, justification });
+        }
+      });
+      if (modifications.length === 0) {
+        if (statusEl) { statusEl.textContent = 'Add at least one modification with all fields filled.'; statusEl.style.color = 'var(--red)'; }
+        return;
+      }
+      payload.modifications = modifications;
+    }
+
+    if (statusEl) { statusEl.textContent = 'Submitting…'; statusEl.style.color = 'var(--text-secondary)'; }
+
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/agent/covenants/${runId}/review`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ message: res.statusText }));
+        throw new Error(err.message || `Server error ${res.status}`);
+      }
+
+      if (statusEl) { statusEl.textContent = 'Review submitted successfully.'; statusEl.style.color = 'var(--green)'; }
+      Toast.success(`Covenant review submitted: ${decision}`);
+    } catch (err) {
+      if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = 'var(--red)'; }
+    }
+  }
+
+  return { init, _onReviewDecisionChange: _onReviewDecisionChange, _addModRow: _addModRow, _submitCovenantReview: _submitCovenantReview };
 })();
