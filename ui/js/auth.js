@@ -223,3 +223,11 @@ const Auth = (() => {
     getDefaultPage,
   };
 })();
+
+// Run enforceAuth as soon as the DOM is ready (or immediately if already ready).
+// This prevents any flash of the app before the login screen appears.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => Auth.enforceAuth());
+} else {
+  Auth.enforceAuth();
+}

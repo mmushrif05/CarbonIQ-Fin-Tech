@@ -15,7 +15,7 @@
 </head>
 <body>
   <!-- =================== LOGIN / STAKEHOLDER SCREEN =================== -->
-  <div class="login-screen" id="login-screen" style="display:none">
+  <div class="login-screen" id="login-screen">
     <div class="login-container">
 
       <div class="login-header">
@@ -205,8 +205,8 @@
   })();
   </script>
 
-  <!-- Sidebar -->
-  <aside class="sidebar" id="sidebar">
+  <!-- Sidebar (hidden until auth check) -->
+  <aside class="sidebar" id="sidebar" style="display:none">
     <div class="sidebar-brand">
       <div class="brand-icon">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
@@ -320,7 +320,7 @@
   </aside>
 
   <!-- Main Content -->
-  <main class="main" id="main">
+  <main class="main" id="main" style="display:none">
     <!-- Top Bar -->
     <header class="topbar">
       <div class="topbar-left">
@@ -1020,7 +1020,7 @@
   </main>
 
   <!-- Global toast notifications -->
-  <div id="toast-container" class="toast-container"></div>
+  <div id="toast-container" class="toast-container" style="display:none"></div>
 
   <!-- marked.js: lightweight markdown renderer for agent reports -->
   <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
