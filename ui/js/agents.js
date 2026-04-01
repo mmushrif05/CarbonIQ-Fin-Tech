@@ -13,8 +13,11 @@ const AgentsPage = (() => {
 
   const API_KEY    = 'ck_test_00000000000000000000000000000000';
   const ENDPOINTS  = {
+    coach:      '/v1/agent/coach',
+    originate:  '/v1/agent/originate',
     screen:     '/v1/agent/screen',
     underwrite: '/v1/agent/underwrite',
+    triage:     '/v1/agent/triage',
     covenants:  '/v1/agent/covenants',
     monitor:    '/v1/agent/monitor',
     portfolio:  '/v1/agent/portfolio',
@@ -22,24 +25,36 @@ const AgentsPage = (() => {
 
   // ── Stage configuration ──────────────────────────────────
   const STAGE_META = {
+    coach: {
+      label: 'Borrower Coaching · Pre-Application',
+      desc:  'Scores application completeness (0–100%) and pre-computes preliminary carbon estimates, taxonomy checks, and CFS score. Produces a personalised coaching report with a prioritised action plan — Quick Wins, Medium-term, and Long-term. Validated +32% application completion rate.',
+    },
+    originate: {
+      label: 'Loan Origination Agent · Stage 1',
+      desc:  'End-to-end green loan origination decision package in a single call. Optionally parses a Bill of Quantities for PCAF Score 2–3 accuracy, runs taxonomy screening across ASEAN/EU/HK/SG, computes CFS, and produces a complete Origination Decision Package with covenants and pricing indication.',
+    },
     screen: {
-      label: 'Pre-Screening Agent · Stage 1',
+      label: 'Pre-Screening Agent · Stage 2',
       desc:  'Benchmark-based eligibility assessment before a BOQ exists. Returns a Go/Conditional/No-Go Eligibility Memo with P25/P50/P75 carbon ranges and taxonomy alignment across all 4 frameworks.',
     },
     underwrite: {
-      label: 'Underwriting Agent · Stage 2',
+      label: 'Underwriting Agent · Stage 3',
       desc:  'Full green loan underwriting from a Bill of Quantities. Extracts materials, computes embodied carbon, checks taxonomies, calculates CFS score, and drafts an Underwriting Memo with a credit recommendation.',
     },
+    triage: {
+      label: 'Decision Triage · Stage 4',
+      desc:  'Deterministic tier classifier (70–85% resolved instantly, no AI cost) plus optional AI Decision Review Memo for borderline cases. Tier 1: Auto-Approve/Decline · Tier 2: AI 8-section Decision Review Memo · Tier 3: Manual escalation with next-step guidance.',
+    },
     covenants: {
-      label: 'Covenant Design Agent · Stage 3',
-      desc:  'Designs a scientifically calibrated covenant package with 3 scenarios (Conservative/Standard/Ambitious). Benchmarks KPI thresholds, stress-tests them, and drafts APLMA Model Provisions-aligned terms with a pricing ratchet.',
+      label: 'Covenant Design Agent · Stage 5',
+      desc:  'Designs a scientifically calibrated covenant package with 3 scenarios (Conservative/Standard/Ambitious). Benchmarks KPI thresholds, stress-tests them, and drafts APLMA Model Provisions-aligned terms with a pricing ratchet. EU AI Act Art. 22 compliant — requires human officer review before terms take effect.',
     },
     monitor: {
-      label: 'Monitoring Agent · Stage 4',
+      label: 'Monitoring Agent · Stage 6',
       desc:  'Tests agreed covenants against current construction metrics. Projects trajectory to practical completion and produces a Monitoring Report with a Drawdown Recommendation (Approve/Conditional/Hold).',
     },
     portfolio: {
-      label: 'Portfolio Reporting Agent · Stage 5',
+      label: 'Portfolio Reporting Agent · Stage 7',
       desc:  'Aggregates a portfolio of green loans for PCAF/TCFD/GLP 2025 ESG disclosure. Calculates financed emissions, CFS distribution, taxonomy alignment, and produces a regulatory-ready Portfolio Report.',
     },
   };
@@ -209,7 +224,7 @@ const AgentsPage = (() => {
     elRetryBtn.addEventListener('click', runAgent);
     elRefreshBtn.addEventListener('click', loadRecentRuns);
 
-    switchStage('screen');
+    switchStage('coach');
     loadRecentRuns();
   }
 
@@ -249,7 +264,7 @@ const AgentsPage = (() => {
     elForm.innerHTML = '';
     elRunBtn.disabled = false;
 
-    const builders = { screen, underwrite, covenants, monitor, portfolio };
+    const builders = { coach, originate, screen, underwrite, triage, covenants, monitor, portfolio };
     builders[stage]();
   }
 
@@ -309,7 +324,141 @@ const AgentsPage = (() => {
     nodes.forEach(n => elForm.appendChild(n));
   }
 
-  // ── Stage 1: Screen ──────────────────────────────────────
+  // ── Borrower Coaching ────────────────────────────────────
+  function coach() {
+    const sec1 = section('Project Details');
+    sec1.appendChild(field('projectName', 'Project Name', 'text', { placeholder: 'Colombo Green Tower' }));
+    sec1.appendChild(fieldRow(
+      field('buildingType',    'Building Type',   'select', { options: BUILDING_TYPES, required: true }),
+      field('buildingArea_m2', 'Floor Area (m²)',  'number', { min: 1, placeholder: '10000', required: true })
+    ));
+    sec1.appendChild(fieldRow(
+      field('region',              'Region',             'select', { options: REGIONS }),
+      field('targetCertification', 'Target Certification', 'select', { options: CERTIFICATIONS })
+    ));
+
+    const sec2 = section('Loan Parameters');
+    sec2.appendChild(fieldRow(
+      field('loanAmount',   'Loan Amount (local currency)', 'number', { min: 0, placeholder: '50000000' }),
+      field('projectValue', 'Project Value',               'number', { min: 0, placeholder: '200000000' })
+    ));
+    sec2.appendChild(fieldRow(
+      field('loanTermYears',  'Loan Term (years)', 'number', { min: 1, max: 30, placeholder: '5' }),
+      field('reductionTarget','Reduction Target (%)', 'number', { min: 0, max: 100, placeholder: '20' })
+    ));
+
+    const sec3 = section('Application Completeness Checklist');
+    ['hasBOQ', 'hasEPD', 'hasLCA'].forEach(id => {
+      const labels = { hasBOQ: 'Bill of Quantities available', hasEPD: 'EPD data for key materials', hasLCA: 'Life Cycle Assessment conducted' };
+      const wrap = document.createElement('div');
+      wrap.className = 'agents-checkbox';
+      wrap.innerHTML = `<input type="checkbox" id="${id}" name="${id}"><label for="${id}">${labels[id]}</label>`;
+      sec3.appendChild(wrap);
+    });
+
+    const sec4 = section('Project Description');
+    sec4.appendChild(field('projectDescription', '', 'textarea', {
+      rows: 3, placeholder: 'Briefly describe the project for personalised coaching — design intent, sustainability goals, location…'
+    }));
+
+    append(sec1, sec2, sec3, sec4);
+  }
+
+  // ── Loan Origination ─────────────────────────────────────
+  function originate() {
+    const sec1 = section('Application Reference');
+    sec1.appendChild(fieldRow(
+      field('applicationReference', 'Application Reference', 'text', { placeholder: 'LN-2026-0042' }),
+      field('applicantName',        'Applicant / Borrower',  'text', { placeholder: 'Colombo Green Developments Ltd' })
+    ));
+
+    const sec2 = section('Project Details');
+    sec2.appendChild(field('projectName', 'Project Name', 'text', { placeholder: 'Colombo Green Tower' }));
+    sec2.appendChild(field('boqContent', 'Bill of Quantities (optional)', 'textarea', {
+      rows: 6,
+      placeholder: 'Paste BOQ here — CSV rows, Excel copy, or free text (optional).\n\nWith BOQ: PCAF Score 2–3 accuracy\nWithout BOQ: PCAF Score 4 benchmarks\n\nExample:\nConcrete C35, 2500 m³\nReinforcement rebar, 450 tonnes\nStructural steel, 180 tonnes'
+    }));
+    sec2.appendChild(fieldRow(
+      field('buildingType',    'Building Type',   'select', { options: BUILDING_TYPES, required: true }),
+      field('buildingArea_m2', 'Floor Area (m²)',  'number', { min: 1, placeholder: '10000', required: true })
+    ));
+    sec2.appendChild(fieldRow(
+      field('region',              'Region',                'select', { options: REGIONS }),
+      field('investorJurisdiction','Investor Jurisdiction', 'text',   { placeholder: 'ASEAN, Singapore, EU' })
+    ));
+
+    const sec3 = section('Financial Parameters');
+    sec3.appendChild(fieldRow(
+      field('loanAmount',   'Loan Amount',   'number', { min: 0, placeholder: '50000000' }),
+      field('projectValue', 'Project Value', 'number', { min: 0, placeholder: '200000000' })
+    ));
+    sec3.appendChild(fieldRow(
+      field('loanTermYears',       'Loan Term (years)',     'number', { min: 1, max: 30, placeholder: '5' }),
+      field('targetCertification', 'Target Certification',  'select', { options: CERTIFICATIONS })
+    ));
+
+    const greenWrap = document.createElement('div');
+    greenWrap.className = 'agents-checkbox';
+    greenWrap.innerHTML = `<input type="checkbox" id="greenLoanTarget" name="greenLoanTarget" checked><label for="greenLoanTarget">Targeting green loan classification</label>`;
+    sec3.appendChild(greenWrap);
+
+    append(sec1, sec2, sec3);
+  }
+
+  // ── Decision Triage ──────────────────────────────────────
+  function triage() {
+    const info = document.createElement('div');
+    info.className = 'agents-form-section';
+    info.innerHTML = `<div class="agents-form-section__title">Decision Engine</div>
+      <p style="font-size:12.5px;color:var(--text-secondary);margin:6px 0 0;line-height:1.5">
+        The deterministic tier classifier resolves 70–85% of cases instantly (no AI call). Tier 2 borderline cases automatically trigger a full 8-section AI Decision Review Memo.
+      </p>`;
+
+    const sec1 = section('Project Details');
+    sec1.appendChild(fieldRow(
+      field('projectName',     'Project Name',    'text',   { placeholder: 'Colombo Green Tower' }),
+      field('buildingType',    'Building Type',   'select', { options: BUILDING_TYPES })
+    ));
+    sec1.appendChild(fieldRow(
+      field('buildingArea_m2', 'Floor Area (m²)', 'number', { min: 1, placeholder: '10000' }),
+      field('region',          'Region',          'select', { options: REGIONS })
+    ));
+
+    const sec2 = section('Carbon Assessment');
+    sec2.appendChild(fieldRow(
+      field('cfsScore',     'CFS Score (0–100)', 'number', { min: 0, max: 100, placeholder: '65', hint: 'from /v1/projects/:id/score' }),
+      field('totalTCO2e',   'Total Carbon (tCO2e)', 'number', { min: 0, step: '0.1', placeholder: '1250' })
+    ));
+    sec2.appendChild(fieldRow(
+      field('epdCoveragePct', 'EPD Coverage (%)',       'number', { min: 0, max: 100, placeholder: '25' }),
+      field('reductionPct',   'Carbon Reduction (%)',   'number', { min: 0, max: 100, placeholder: '10' })
+    ));
+    sec2.appendChild(fieldRow(
+      field('verificationStatus',  'Verification Status', 'select', { options: VERIFICATION_STATUSES }),
+      field('targetCertification', 'Target Certification','select', { options: CERTIFICATIONS })
+    ));
+
+    const sec3 = section('Loan Parameters');
+    sec3.appendChild(fieldRow(
+      field('loanAmount',   'Loan Amount',   'number', { min: 0, placeholder: '50000000' }),
+      field('projectValue', 'Project Value', 'number', { min: 0, placeholder: '200000000' })
+    ));
+    sec3.appendChild(fieldRow(
+      field('loanTermYears', 'Loan Term (years)', 'number', { min: 1, max: 30, placeholder: '5' }),
+      field('_pad', '', 'text', {})
+    ));
+    const padEl = sec3.querySelector('#_pad');
+    if (padEl) padEl.closest('.agents-field').style.visibility = 'hidden';
+
+    const hasBOQWrap = document.createElement('div');
+    hasBOQWrap.className = 'agents-checkbox';
+    hasBOQWrap.innerHTML = `<input type="checkbox" id="hasBOQ" name="hasBOQ"><label for="hasBOQ">BOQ has been submitted</label>`;
+    sec3.appendChild(hasBOQWrap);
+
+    append(info, sec1, sec2, sec3);
+  }
+
+  // ── Pre-Screening ─────────────────────────────────────────
   function screen() {
     append(
       field('projectName',       'Project Name', 'text', { placeholder: 'Marina Bay Tower 3' }),
@@ -652,6 +801,61 @@ const AgentsPage = (() => {
     const str = (k) => raw[k] || undefined;
     const bool = (k) => !!raw[k];
 
+    if (currentStage === 'coach') {
+      return {
+        projectName:          str('projectName'),
+        buildingType:         str('buildingType'),
+        buildingArea_m2:      num('buildingArea_m2'),
+        region:               str('region'),
+        targetCertification:  str('targetCertification'),
+        loanAmount:           num('loanAmount'),
+        projectValue:         num('projectValue'),
+        loanTermYears:        num('loanTermYears'),
+        reductionTarget:      num('reductionTarget'),
+        hasBOQ:               bool('hasBOQ'),
+        hasEPD:               bool('hasEPD'),
+        hasLCA:               bool('hasLCA'),
+        projectDescription:   str('projectDescription'),
+      };
+    }
+
+    if (currentStage === 'originate') {
+      return {
+        applicationReference:  str('applicationReference'),
+        applicantName:         str('applicantName'),
+        projectName:           str('projectName'),
+        boqContent:            str('boqContent'),
+        buildingType:          str('buildingType'),
+        buildingArea_m2:       num('buildingArea_m2'),
+        region:                str('region'),
+        investorJurisdiction:  str('investorJurisdiction'),
+        loanAmount:            num('loanAmount'),
+        projectValue:          num('projectValue'),
+        loanTermYears:         num('loanTermYears'),
+        targetCertification:   str('targetCertification'),
+        greenLoanTarget:       bool('greenLoanTarget'),
+      };
+    }
+
+    if (currentStage === 'triage') {
+      return {
+        projectName:          str('projectName'),
+        buildingType:         str('buildingType'),
+        buildingArea_m2:      num('buildingArea_m2'),
+        region:               str('region'),
+        cfsScore:             num('cfsScore'),
+        totalTCO2e:           num('totalTCO2e'),
+        epdCoveragePct:       num('epdCoveragePct'),
+        reductionPct:         num('reductionPct'),
+        verificationStatus:   str('verificationStatus') || 'none',
+        targetCertification:  str('targetCertification'),
+        loanAmount:           num('loanAmount'),
+        projectValue:         num('projectValue'),
+        loanTermYears:        num('loanTermYears'),
+        hasBOQ:               bool('hasBOQ'),
+      };
+    }
+
     if (currentStage === 'screen') {
       return {
         projectName:          str('projectName'),
@@ -779,14 +983,20 @@ const AgentsPage = (() => {
     if (!payload) return;
 
     // Client-side required field validation
-    if (currentStage === 'screen' && !payload.buildingType) {
+    const requiresBuildingType = ['coach', 'originate', 'screen', 'underwrite', 'covenants', 'monitor'];
+    if (requiresBuildingType.includes(currentStage) && !payload.buildingType) {
       showOutput('error');
       elErrorMsg.textContent = 'Please select a Building Type before running the agent.';
       return;
     }
-    if (currentStage === 'underwrite' && !payload.buildingType) {
+    if (currentStage === 'coach' && !payload.buildingArea_m2) {
       showOutput('error');
-      elErrorMsg.textContent = 'Please select a Building Type before running the agent.';
+      elErrorMsg.textContent = 'Please enter a Floor Area before running the agent.';
+      return;
+    }
+    if (currentStage === 'originate' && !payload.buildingArea_m2) {
+      showOutput('error');
+      elErrorMsg.textContent = 'Please enter a Floor Area before running the agent.';
       return;
     }
 
@@ -797,8 +1007,11 @@ const AgentsPage = (() => {
     showOutput('running');
 
     const subtitles = {
+      coach:      'Scoring completeness · estimating carbon · building action plan…',
+      originate:  'Analysing application · running taxonomy screens · drafting origination package…',
       screen:     'Estimating carbon · checking taxonomies · generating Eligibility Memo…',
       underwrite: 'Parsing BOQ · computing carbon · checking taxonomies · drafting memo…',
+      triage:     'Classifying application · routing decision tier…',
       covenants:  'Anchoring benchmarks · stress-testing KPIs · designing covenant package…',
       monitor:    'Testing covenants · projecting trajectory · assessing drawdown risk…',
       portfolio:  'Scoring assets · checking taxonomies · aggregating PCAF emissions…',
@@ -859,8 +1072,15 @@ const AgentsPage = (() => {
   async function displayResults(data) {
     showOutput('results');
 
-    // Steps
-    const toolSteps = (data.steps || []).filter(s => s.type === 'tool_use' || s.type === 'tool_result');
+    // Triage returns a different shape — tier/track/rationale + optional aiReview
+    if (currentStage === 'triage') {
+      _displayTriageResult(data);
+      return;
+    }
+
+    // Standard agent response — steps + markdown report
+    const source    = data.aiReview || data; // coach/originate/screen/etc. all return at top level
+    const toolSteps = (source.steps || []).filter(s => s.type === 'tool_use' || s.type === 'tool_result');
     elStepsCount.textContent = `${toolSteps.length} steps`;
     elStepsList.innerHTML = '';
 
@@ -871,13 +1091,64 @@ const AgentsPage = (() => {
     }
 
     // Render markdown report
-    const reportText = data.result || '';
+    const reportText = source.result || data.result || '';
     if (window.marked) {
       elReportBody.innerHTML = window.marked.parse(reportText);
     } else {
-      // Fallback: pre-wrap plain text
       elReportBody.textContent = reportText;
     }
+    elReportBody.scrollTop = 0;
+  }
+
+  // ── Triage result renderer ────────────────────────────────
+  function _displayTriageResult(data) {
+    const tierColour = { 1: '#10b981', 2: '#f59e0b', 3: '#ef4444' }[data.tier] || '#6b7280';
+    const trackIcon  = { auto_approve: '✅', auto_decline: '❌', ai_review: '🤖', manual_review: '👤' }[data.track] || '⚙';
+
+    // Build markdown-style summary for the report body
+    const lines = [
+      `## ${trackIcon} ${data.tierLabel || 'Triage Result'}`,
+      `**Track:** ${data.trackLabel || data.track}  `,
+      `**Reason:** \`${data.reason}\`  `,
+      `**Classified:** ${data.classifiedAt ? new Date(data.classifiedAt).toLocaleString() : '—'}`,
+      ``,
+      `### Rationale`,
+      data.rationale || '—',
+    ];
+
+    if (data.flags && data.flags.length) {
+      lines.push('', `### Flags`, data.flags.map(f => `- \`${f}\``).join('\n'));
+    }
+
+    if (data.escalation) {
+      lines.push('', `### Escalation Required`, ...data.escalation.nextSteps.map(s => `- ${s}`));
+    }
+
+    if (data.aiReview && data.aiReview.result) {
+      lines.push('', '---', '', data.aiReview.result);
+      // Show AI review steps
+      const aiSteps = (data.aiReview.steps || []).filter(s => s.type === 'tool_use' || s.type === 'tool_result');
+      elStepsCount.textContent = `${aiSteps.length} AI review steps`;
+      elStepsList.innerHTML = '';
+      aiSteps.forEach((s, i) => renderStep(s, i));
+    } else {
+      elStepsCount.textContent = '0 steps (deterministic)';
+      elStepsList.innerHTML = `<div style="font-size:12px;color:var(--text-tertiary);padding:8px 0">Tier 1 &amp; Tier 3 decisions are deterministic — no AI call needed.</div>`;
+    }
+
+    const reportText = lines.join('\n');
+    if (window.marked) {
+      elReportBody.innerHTML = window.marked.parse(reportText);
+    } else {
+      elReportBody.textContent = reportText;
+    }
+
+    // Inject tier badge into the report toolbar
+    const label = elReportBody.closest('.agents-report')?.querySelector('.agents-report__label');
+    if (label) {
+      label.innerHTML = `Agent Report <span style="display:inline-block;margin-left:8px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;background:${tierColour}20;color:${tierColour}">${data.tierLabel}</span>`;
+    }
+
     elReportBody.scrollTop = 0;
   }
 
