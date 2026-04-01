@@ -94,6 +94,14 @@ router.get('/types', (_req, res) => {
         formats: ['json', 'pdf'],
         requiredInputs: ['orgName', 'period'],
       },
+      {
+        id: 'slgft-cbsl',
+        name: 'SLGFT CBSL Disclosure',
+        standard: 'CBSL Direction No. 05/2022 · SLFRS S2',
+        description: 'Sri Lanka Green Finance Taxonomy disclosure for CBSL regulatory compliance. Covers SLFRS S2 climate reporting, CBSL Direction No. 05 green lending classification, and ESG metrics for licensed Sri Lankan banks.',
+        formats: ['json', 'pdf'],
+        requiredInputs: ['orgName', 'period'],
+      },
     ],
   });
 });

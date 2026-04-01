@@ -16,6 +16,7 @@ const PAGE_META = {
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
+  'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
 };
 
@@ -35,6 +36,10 @@ const DYNAMIC_PAGES = {
   'reports': {
     src:  'pages/reports.html',
     init: () => typeof ReportsPage !== 'undefined' && ReportsPage.init(),
+  },
+  'pipeline': {
+    src:  'pages/pipeline.html',
+    init: () => typeof PipelinePage !== 'undefined' && PipelinePage.init(),
   },
   'carbon-pricing': {
     src:  'pages/carbon-pricing.html',

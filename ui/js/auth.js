@@ -62,6 +62,7 @@ const Auth = (() => {
     'new-project':    40,   // relationship_manager+
     'pcaf':           60,   // esg_analyst+
     'monitoring':     60,   // esg_analyst+
+    'pipeline':       60,   // esg_analyst+
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
     'taxonomy':       30,   // auditor+

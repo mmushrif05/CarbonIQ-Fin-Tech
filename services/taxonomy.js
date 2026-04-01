@@ -11,7 +11,7 @@
  */
 
 const {
-  TAXONOMY_ASEAN, TAXONOMY_EU, TAXONOMY_HK, TAXONOMY_SG
+  TAXONOMY_ASEAN, TAXONOMY_EU, TAXONOMY_HK, TAXONOMY_SG, TAXONOMY_SL
 } = require('../config/constants');
 
 /**
@@ -26,6 +26,7 @@ function checkAllTaxonomies(projectMetrics) {
     eu: checkEU(projectMetrics),
     hongKong: checkHK(projectMetrics),
     singapore: checkSG(projectMetrics),
+    sriLanka: checkSL(projectMetrics),
     assessedAt: new Date().toISOString()
   };
 }
@@ -88,6 +89,22 @@ function checkSG(metrics) {
     greenMark: greenMark || { level: 'not_rated', label: 'Below threshold' },
     carbonTaxExposure_SGD: Math.round(metrics.totalEmission_tCO2e * TAXONOMY_SG.carbonTax.rate_SGD_per_tCO2e)
   };
+}
+
+function checkSL(metrics) {
+  const intensity = metrics.buildingArea_m2 > 0
+    ? (metrics.totalEmission_tCO2e * 1000) / metrics.buildingArea_m2
+    : null;
+
+  const criteria = TAXONOMY_SL.classifications;
+
+  if (intensity !== null && intensity <= criteria.green.maxIntensity) {
+    return { classification: 'green', label: criteria.green.label, intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
+  }
+  if (intensity !== null && intensity <= criteria.transition.maxIntensity) {
+    return { classification: 'transition', label: criteria.transition.label, intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
+  }
+  return { classification: 'not_aligned', label: 'Not Aligned', intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
 }
 
 module.exports = { checkAllTaxonomies };

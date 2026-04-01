@@ -6,10 +6,10 @@ const Joi = require('joi');
 
 const reportGenerateSchema = Joi.object({
   type: Joi.string()
-    .valid('pcaf', 'gri305', 'tcfd', 'ifrs-s2')
+    .valid('pcaf', 'gri305', 'tcfd', 'ifrs-s2', 'slgft-cbsl')
     .required()
     .messages({
-      'any.only': 'type must be one of: pcaf, gri305, tcfd, ifrs-s2',
+      'any.only': 'type must be one of: pcaf, gri305, tcfd, ifrs-s2, slgft-cbsl',
       'any.required': 'Report type is required.',
     }),
 

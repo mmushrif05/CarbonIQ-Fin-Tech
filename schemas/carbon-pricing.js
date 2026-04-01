@@ -21,9 +21,9 @@ const carbonPricingSchema = Joi.object({
     .messages({ 'any.required': 'projectValue (total project value) is required.' }),
 
   region: Joi.string()
-    .valid('SG', 'EU', 'MY', 'HK')
+    .valid('SG', 'EU', 'MY', 'HK', 'SL')
     .default('SG')
-    .messages({ 'any.only': 'region must be one of: SG, EU, MY, HK' }),
+    .messages({ 'any.only': 'region must be one of: SG, EU, MY, HK, SL' }),
 
   cfsScore: Joi.number()
     .min(0)
