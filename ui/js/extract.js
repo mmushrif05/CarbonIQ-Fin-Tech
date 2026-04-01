@@ -319,7 +319,7 @@ Internal fit-out and services:
         method:  'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key':    API_DEMO_KEY,
+          'X-API-Key':    window.CARBONIQ_API_KEY || API_DEMO_KEY,
         },
         body:   JSON.stringify({ content, format, projectName, computeTotal: true }),
         signal: controller.signal,

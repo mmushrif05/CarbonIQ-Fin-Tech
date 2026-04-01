@@ -174,16 +174,28 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       // iteration reads prior history cheaply.
       const cachedMessages = _withCachedLastUserMessage(messages);
 
-      const response = await client.messages.create({
+      // Use streaming + finalMessage() to prevent Netlify 10s HTTP timeouts
+      // on long memo generation, and to allow up to 32K output tokens safely.
+      // Adaptive thinking lets claude-opus-4-6 decide how deeply to reason on
+      // complex steps (PCAF attribution, multi-taxonomy analysis, etc.) without
+      // a fixed budget_tokens cap.
+      const stream = client.messages.stream({
         model:      config.anthropicModel,
-        max_tokens: 8192,
+        max_tokens: 32000,
+        thinking:   { type: 'adaptive' },
         system:     cachedSystem,
         tools:      cachedTools,
         messages:   cachedMessages
       });
 
+      const response = await stream.finalMessage();
+
       _accumulateTokens(run, response.usage);
 
+      // Thinking blocks are internal reasoning — strip them before surfacing to
+      // callers; only text and tool_use blocks are meaningful for the run record.
+      // Thinking blocks are internal reasoning — strip them before surfacing
+      // to callers; only text and tool_use blocks matter for the run record.
       const textBlocks    = response.content.filter(b => b.type === 'text');
       const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
 
@@ -198,7 +210,20 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       }
 
       // ------------------------------------------------------------------
-      // No tool calls → agent has finished reasoning and produced its answer
+      // pause_turn — server-side tool loop (web_search, web_fetch, code
+      // execution) hit its 10-iteration limit. Append the assistant turn
+      // and re-send so the API resumes from where it left off. The API
+      // detects the trailing server_tool_use block and resumes automatically.
+      // ------------------------------------------------------------------
+      if (response.stop_reason === 'pause_turn') {
+        messages.push({ role: 'assistant', content: response.content });
+        continue;
+      }
+
+      // ------------------------------------------------------------------
+      // No user-defined tool calls → agent has finished and produced its answer
+      // server_tool_use blocks (web searches) are handled by the API internally
+      // and do not appear here; they are invisible to the client-side loop.
       // ------------------------------------------------------------------
       if (toolUseBlocks.length === 0 || response.stop_reason === 'end_turn') {
         run.result      = textBlocks.map(b => b.text).join('\n');
@@ -312,11 +337,14 @@ async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId,
   const client = new Anthropic({ apiKey: config.anthropicApiKey });
 
   try {
-    const fastModel = process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5-20251001';
+    // claude-haiku-4-5 is the current alias (date-suffix IDs are deprecated).
+    // max_tokens raised to 8000: screening memos have 6 sections + tables and
+    // regularly exceed 2048 tokens, causing truncated output.
+    const fastModel = process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5';
 
     const response = await client.messages.create({
       model:      fastModel,
-      max_tokens: 2048,
+      max_tokens: 8000,
       // Cache the system prompt — same for every call to this agent type
       system:   [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
       messages: [{ role: 'user', content: userMessage }]
