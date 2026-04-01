@@ -17,6 +17,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 
+const path = require('path');
+
 const config = require('./config');
 const corsConfig = require('./config/cors');
 const errorHandler = require('./middleware/error-handler');
@@ -51,6 +53,13 @@ if (config.env !== 'test') {
 app.use(audit);
 
 // ---------------------------------------------------------------------------
+// Static UI — serves the ui/ directory for local development.
+// In production (Netlify), the publish directory handles this.
+// ---------------------------------------------------------------------------
+
+app.use(express.static(path.join(__dirname, 'ui')));
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 
@@ -71,7 +80,17 @@ app.use('/v1', v1Router);
 // Error Handling
 // ---------------------------------------------------------------------------
 
-// 404 handler
+// SPA fallback — any non-API GET request that wasn't matched by express.static
+// returns index.html so client-side routing works in local dev.
+app.get('*', (req, res, next) => {
+  // Don't intercept API-prefixed or health routes — let them fall to 404
+  if (req.path.startsWith('/v1') || req.path === '/health') {
+    return next();
+  }
+  res.sendFile(path.join(__dirname, 'ui', 'index.html'));
+});
+
+// 404 handler (API routes only)
 app.use((_req, res) => {
   res.status(404).json({
     error: 'NOT_FOUND',
@@ -92,6 +111,7 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`CarbonIQ FinTech API running on port ${port}`);
     console.log(`Environment: ${config.env}`);
+    console.log(`Dashboard: http://localhost:${port}`);
     console.log(`Health check: http://localhost:${port}/health`);
     console.log(`API v1: http://localhost:${port}/v1`);
 
