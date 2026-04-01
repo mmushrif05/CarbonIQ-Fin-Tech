@@ -1,26 +1,29 @@
 /**
  * CarbonIQ FinTech — Tiered Decision Engine
  *
- * Implements the bank's three-tier review framework for green loan decisions.
- * This is the deterministic classification layer that runs before any AI
- * agent is invoked, routing each application to the correct decision track.
+ * Deterministic classifier that routes each green loan application to the
+ * appropriate decision track WITHOUT making an AI call. This keeps the
+ * 70–85% of straightforward cases fast and cost-free, reserving AI
+ * processing for genuinely borderline or complex applications.
  *
- * Tier Distribution (validated by McKinsey/Deutsche Bank APAC patterns):
+ * TIER 1 — Auto-Decision (≈70–85% of applications)
+ *   Clear approve: high CFS, adequate data quality, standard loan size
+ *   Clear decline: very low CFS, no credible green pathway
+ *   No AI call required — decision is deterministic.
  *
- *   Tier 1 — Auto-Decision   (70–85% of cases)
- *     Clear approve or decline. Criteria unambiguous: CFS ≥70 + taxonomy
- *     aligned + acceptable data quality + within loan limit → auto-approve.
- *     CFS < 40 + no taxonomy alignment → auto-decline. No AI call needed.
+ * TIER 2 — AI-Assisted Review (≈10–20% of applications)
+ *   Borderline CFS, missing key data, or moderate complexity.
+ *   Triggers the Decision Review Agent (decision-review.js) which
+ *   produces an 8-section Decision Review Memo for the loan officer.
  *
- *   Tier 2 — AI-Assisted     (10–20% of cases)
- *     Borderline cases: CFS 40–69, mixed taxonomy signals, mid-range data
- *     quality, or loan above auto-approval limit. The decision-review agent
- *     generates a full review memo for loan officer sign-off.
+ * TIER 3 — Manual Review (≈5–10% of applications)
+ *   High-value loans, data-poor applications, or regulatory complexity
+ *   that requires a human credit officer and specialist ESG review.
  *
- *   Tier 3 — Manual Review   (5–10% of cases)
- *     Complex or data-poor cases requiring full credit officer involvement:
- *     loan > SGD 100M, PCAF Score 5 (no project data), borderline CFS with
- *     insufficient data, or explicit force flag.
+ * Routing logic is calibrated to APAC green loan market norms:
+ *   - GLP 2021/2025 eligibility requirements
+ *   - MAS ENRM, HKMA CRMF thresholds
+ *   - PCAF v3 data quality requirements
  *
  * IMPORTANT: This engine classifies the tier and verdict but does NOT make
  * the final lending decision. Tier 1 auto-approvals are pending covenant
@@ -80,7 +83,7 @@ const TIER_DISTRIBUTION = {
  * Accepts both boolean flags and string classification labels from
  * the check_taxonomy_alignment tool output.
  *
- * @param {Object|null} taxonomyAlignments - e.g. { asean: 'green', eu: false, hk: 'light_green', sg: true }
+ * @param {Object|null} taxonomyAlignments
  * @returns {boolean}
  */
 function _anyTaxonomyAligned(taxonomyAlignments) {
@@ -106,6 +109,8 @@ function _anyTaxonomyAligned(taxonomyAlignments) {
  * @param {Object}  [params.taxonomyAlignments]     - Per-taxonomy results from check_taxonomy_alignment
  * @param {number}  [params.pcafDataQualityScore]   - PCAF score 1–5 (1=Audited, 5=Unknown)
  * @param {number}  [params.loanAmount]             - Loan amount in local currency
+ * @param {number}  [params.buildingArea_m2]        - Gross floor area (guards against missing data)
+ * @param {number}  [params.epdCoveragePct]         - EPD data coverage (0–100)
  * @param {boolean} [params.forceManualReview]      - Override — always escalate to Tier 3
  *
  * @returns {Object} {
@@ -122,6 +127,8 @@ function classifyDecisionTier({
   taxonomyAlignments,
   pcafDataQualityScore,
   loanAmount,
+  buildingArea_m2,
+  epdCoveragePct,
   forceManualReview
 }) {
   // -------------------------------------------------------------------------
@@ -132,6 +139,17 @@ function classifyDecisionTier({
       reasons:       ['Manual review explicitly requested by submitter'],
       conditions:    [],
       escalationNote: 'Escalated by request flag. Assign to green lending officer for full review.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Guard: missing floor area → Tier 3 (carbon intensity cannot be assessed)
+  // -------------------------------------------------------------------------
+  if (!buildingArea_m2 || buildingArea_m2 < 50) {
+    return _tier3({
+      reasons: ['Gross floor area is missing or implausibly small — carbon intensity cannot be reliably assessed'],
+      conditions: ['Borrower must provide verified gross floor area before re-triage'],
+      escalationNote: 'Missing critical project data. Use /v1/agent/coach to guide the borrower.'
     });
   }
 
@@ -219,7 +237,9 @@ function classifyDecisionTier({
         `Carbon Finance Score ${cfsScore}/100 — Green classification (≥70 threshold met)`,
         'At least one green taxonomy confirmed aligned',
         `PCAF data quality score ${pcafDataQualityScore || 'N/A'} — sufficient for automated decision`,
-        loanAmount ? `Loan amount ${loanAmount.toLocaleString()} is within the SGD 50M auto-approval limit` : 'No loan amount specified — defaulting to within auto-approval limit'
+        loanAmount
+          ? `Loan amount ${loanAmount.toLocaleString()} is within the SGD 50M auto-approval limit`
+          : 'No loan amount specified — defaulting to within auto-approval limit'
       ],
       conditions,
       escalationNote: null
@@ -245,7 +265,6 @@ function classifyDecisionTier({
 
   // -------------------------------------------------------------------------
   // Tier 2 — AI-Assisted Review (all remaining cases)
-  // Builds specific reasons so the AI review agent has rich context
   // -------------------------------------------------------------------------
   const reasons    = [];
   const conditions = [];
@@ -291,7 +310,7 @@ function classifyDecisionTier({
 }
 
 // ---------------------------------------------------------------------------
-// Tier builder helpers (reduce repetition and ensure consistent shape)
+// Tier builder helpers
 // ---------------------------------------------------------------------------
 
 function _tier1({ verdict, reasons, conditions, escalationNote }) {
@@ -322,12 +341,29 @@ function _tier3({ reasons, conditions, escalationNote }) {
   };
 }
 
+/**
+ * Compatibility alias for origin/main's classifyApplication interface.
+ * Maps the alternate parameter names to classifyDecisionTier.
+ */
+function classifyApplication(params) {
+  return classifyDecisionTier({
+    cfsScore:             params.cfsScore,
+    taxonomyAlignments:   params.taxonomyAlignments,
+    pcafDataQualityScore: params.pcafDataQualityScore,
+    loanAmount:           params.loanAmount,
+    buildingArea_m2:      params.buildingArea_m2,
+    epdCoveragePct:       params.epdCoveragePct,
+    forceManualReview:    params.forceManualReview
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Exports
 // ---------------------------------------------------------------------------
 
 module.exports = {
   classifyDecisionTier,
+  classifyApplication,   // compatibility alias
   DECISION_TIERS,
   DECISION_VERDICTS,
   TIER_DISTRIBUTION,
