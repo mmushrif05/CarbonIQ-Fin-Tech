@@ -949,41 +949,182 @@
           <span>Loading portfolio data…</span>
         </div>
 
-        <!-- KPI row -->
+        <!-- Header with AI Report trigger -->
+        <div class="pf-hero">
+          <div>
+            <h2>Portfolio Carbon Risk Dashboard</h2>
+            <p>PCAF-aligned financed emissions, taxonomy distribution, and concentration risk analysis</p>
+          </div>
+          <div class="pf-hero-actions">
+            <button class="btn btn-ghost" onclick="Dashboard.exportCSV()" title="Export CSV">Export CSV</button>
+            <button class="btn btn-primary pf-ai-btn" id="pf-ai-report-btn" onclick="Dashboard.generateAIReport()">
+              <span class="pf-ai-icon">&#9670;</span> Generate AI ESG Report
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI row — 6 cards for banking stakeholders -->
         <div class="portfolio-summary">
-          <div class="kpi-grid kpi-grid-3">
+          <div class="kpi-grid pf-kpi-grid-6">
             <div class="kpi-card">
-              <div class="kpi-label">Total Outstanding</div>
+              <div class="kpi-header">
+                <div class="kpi-label">Total Loan Outstanding</div>
+                <span class="kpi-badge badge-blue" id="pf-outstanding-badge">—</span>
+              </div>
               <div class="kpi-value" id="pf-outstanding">—</div>
+              <div class="kpi-secondary" id="pf-outstanding-sub">Across — loans</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Total Financed Emissions</div>
+              <div class="kpi-header">
+                <div class="kpi-label">Financed Emissions</div>
+                <span class="kpi-badge badge-neutral" id="pf-emissions-badge">PCAF v3</span>
+              </div>
               <div class="kpi-value" id="pf-emissions">— <span class="kpi-unit">tCO2e</span></div>
+              <div class="kpi-secondary" id="pf-emissions-sub">Scope 1 + Scope 2 + Embodied</div>
             </div>
             <div class="kpi-card">
-              <div class="kpi-label">Economic Intensity</div>
+              <div class="kpi-header">
+                <div class="kpi-label">Economic Intensity</div>
+                <span class="kpi-badge badge-neutral" id="pf-intensity-badge">—</span>
+              </div>
               <div class="kpi-value" id="pf-intensity">— <span class="kpi-unit">tCO2e/$M</span></div>
+              <div class="kpi-secondary">Emissions per $M loan outstanding</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <div class="kpi-label">Weighted Data Quality</div>
+                <span class="kpi-badge" id="pf-dq-badge">—</span>
+              </div>
+              <div class="kpi-value" id="pf-wdq">— <span class="kpi-unit">/ 5</span></div>
+              <div class="kpi-meter">
+                <div class="meter-track"><div class="meter-fill" id="pf-dq-meter" style="width:0%"></div></div>
+                <div class="meter-labels"><span>1 Best</span><span>5 Worst</span></div>
+              </div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <div class="kpi-label">Portfolio Coverage</div>
+                <span class="kpi-badge badge-blue" id="pf-cov-badge">—</span>
+              </div>
+              <div class="kpi-value" id="pf-coverage">—<span class="kpi-unit">%</span></div>
+              <div class="kpi-secondary" id="pf-cov-sub">— of — projects resolved</div>
+            </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <div class="kpi-label">Green Loan Ratio</div>
+                <span class="kpi-badge badge-green" id="pf-green-badge">—</span>
+              </div>
+              <div class="kpi-value kpi-value-green" id="pf-green-ratio">—<span class="kpi-unit">%</span></div>
+              <div class="kpi-secondary" id="pf-green-sub">— green / — total projects</div>
             </div>
           </div>
         </div>
 
-        <!-- Charts -->
+        <!-- Row 2: Taxonomy Distribution + CFS Score Distribution -->
         <div class="charts-row">
           <div class="chart-card">
-            <div class="chart-header"><h3>Data Quality Distribution</h3></div>
+            <div class="chart-header">
+              <h3>Taxonomy Classification</h3>
+              <span class="kpi-badge badge-neutral" id="pf-tax-total">— projects</span>
+            </div>
             <div class="chart-body">
-              <div class="dq-distribution" id="pf-dq-dist">
-                <!-- filled by dashboard.js -->
+              <div class="pf-taxonomy-ring-wrap">
+                <svg class="pf-taxonomy-ring" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border-light)" stroke-width="14"/>
+                  <circle id="pf-tax-green-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--green)" stroke-width="14"
+                    stroke-dasharray="0 326.73" stroke-dashoffset="0" stroke-linecap="round"/>
+                  <circle id="pf-tax-trans-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--amber)" stroke-width="14"
+                    stroke-dasharray="0 326.73" stroke-dashoffset="0" stroke-linecap="round"/>
+                  <circle id="pf-tax-brown-arc" cx="60" cy="60" r="52" fill="none" stroke="var(--red)" stroke-width="14"
+                    stroke-dasharray="0 326.73" stroke-dashoffset="0" stroke-linecap="round"/>
+                </svg>
+                <div class="pf-taxonomy-legend" id="pf-tax-legend"></div>
               </div>
             </div>
           </div>
           <div class="chart-card">
-            <div class="chart-header"><h3>By Region</h3></div>
+            <div class="chart-header"><h3>Carbon Finance Score Distribution</h3></div>
             <div class="chart-body">
-              <div class="h-bars" id="pf-region-bars">
-                <!-- filled by dashboard.js -->
+              <div class="pf-cfs-bars" id="pf-cfs-bars"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Top Emitters Table -->
+        <div class="charts-row">
+          <div class="chart-card" style="grid-column: span 2">
+            <div class="chart-header">
+              <h3>Top Emitting Assets — Concentration Risk</h3>
+              <span class="kpi-badge badge-neutral" id="pf-top-pct">Top 5 = —% of portfolio emissions</span>
+            </div>
+            <table class="data-table" id="pf-top-table">
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>Region</th>
+                  <th>Building Type</th>
+                  <th>Financed Emissions</th>
+                  <th>Loan Outstanding</th>
+                  <th>Intensity</th>
+                  <th>Classification</th>
+                  <th>CFS</th>
+                </tr>
+              </thead>
+              <tbody id="pf-top-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Row 4: Data Quality Distribution + Regional Concentration -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header"><h3>PCAF Data Quality Distribution</h3></div>
+            <div class="chart-body">
+              <div class="dq-distribution" id="pf-dq-dist"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>Regional Exposure</h3></div>
+            <div class="chart-body">
+              <div class="h-bars" id="pf-region-bars"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 5: Asset Class Breakdown + Regulatory Readiness -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <div class="chart-header"><h3>Emissions by Asset Class</h3></div>
+            <div class="chart-body">
+              <div class="bar-chart" id="pf-asset-class-bars"></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>Regulatory Compliance Readiness</h3></div>
+            <div class="chart-body">
+              <div class="pf-reg-grid" id="pf-reg-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI ESG Report Panel (hidden by default) -->
+        <div class="pf-ai-panel" id="pf-ai-panel" style="display:none">
+          <div class="chart-card pf-ai-card">
+            <div class="chart-header">
+              <h3><span class="pf-ai-icon">&#9670;</span> AI-Generated ESG Portfolio Report</h3>
+              <div>
+                <span class="kpi-badge badge-neutral" id="pf-ai-status">Pending</span>
+                <button class="btn btn-ghost" onclick="document.getElementById('pf-ai-panel').style.display='none'" style="margin-left:8px">Close</button>
               </div>
             </div>
+            <div class="pf-ai-steps" id="pf-ai-steps">
+              <div class="pf-ai-step" id="pf-ai-step-1"><span class="pf-step-dot"></span> Asset-level CFS scoring</div>
+              <div class="pf-ai-step" id="pf-ai-step-2"><span class="pf-step-dot"></span> Multi-taxonomy alignment (EU, ASEAN, HK, SG)</div>
+              <div class="pf-ai-step" id="pf-ai-step-3"><span class="pf-step-dot"></span> PCAF financed emissions attribution</div>
+              <div class="pf-ai-step" id="pf-ai-step-4"><span class="pf-step-dot"></span> Concentration &amp; transition risk analysis</div>
+              <div class="pf-ai-step" id="pf-ai-step-5"><span class="pf-step-dot"></span> TCFD disclosure &amp; regulatory mapping</div>
+            </div>
+            <div class="pf-ai-body" id="pf-ai-body"></div>
           </div>
         </div>
 

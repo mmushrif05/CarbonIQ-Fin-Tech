@@ -980,6 +980,170 @@ body {
 /* ============================================================
    Portfolio Page
    ============================================================ */
+
+/* Hero header */
+.pf-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.pf-hero h2 { font-size: 22px; font-weight: 700; }
+.pf-hero p { font-size: 14px; color: var(--text-secondary); margin-top: 4px; }
+.pf-hero-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.pf-ai-btn { display: flex; align-items: center; gap: 6px; }
+.pf-ai-icon { font-size: 12px; opacity: 0.8; }
+
+/* 6-column KPI grid */
+.pf-kpi-grid-6 { grid-template-columns: repeat(6, 1fr); }
+@media (max-width: 1400px) { .pf-kpi-grid-6 { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px)  { .pf-kpi-grid-6 { grid-template-columns: repeat(2, 1fr); } }
+
+/* Taxonomy ring chart */
+.pf-taxonomy-ring-wrap {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 8px 0;
+}
+.pf-taxonomy-ring { width: 120px; height: 120px; flex-shrink: 0; transform: rotate(-90deg); }
+.pf-taxonomy-legend { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+.pf-tax-legend-row { display: flex; align-items: center; gap: 10px; }
+.pf-tax-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.pf-tax-dot-green { background: var(--green); }
+.pf-tax-dot-transition { background: var(--amber); }
+.pf-tax-dot-brown { background: var(--red); }
+.pf-tax-legend-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); flex: 1; }
+.pf-tax-legend-value { font-size: 15px; font-weight: 700; }
+.pf-tax-legend-pct { font-size: 12px; color: var(--text-tertiary); margin-left: 4px; }
+
+/* CFS score distribution bars */
+.pf-cfs-bars { display: flex; flex-direction: column; gap: 14px; }
+.pf-cfs-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 60px;
+  align-items: center;
+  gap: 12px;
+}
+.pf-cfs-label { font-size: 12px; font-weight: 600; }
+.pf-cfs-label-green { color: var(--green); }
+.pf-cfs-label-transition { color: var(--amber); }
+.pf-cfs-label-brown { color: var(--red); }
+.pf-cfs-bar-track {
+  height: 24px;
+  background: var(--border-light);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.pf-cfs-bar {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  min-width: fit-content;
+}
+.pf-cfs-bar-green { background: linear-gradient(90deg, #10b981, #34d399); }
+.pf-cfs-bar-transition { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.pf-cfs-bar-brown { background: linear-gradient(90deg, #ef4444, #f87171); }
+.pf-cfs-count { font-size: 13px; font-weight: 600; text-align: right; }
+
+/* Regulatory readiness grid */
+.pf-reg-grid { display: flex; flex-direction: column; gap: 12px; }
+.pf-reg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  transition: box-shadow var(--transition);
+}
+.pf-reg-row:hover { box-shadow: var(--shadow-sm); }
+.pf-reg-info { display: flex; flex-direction: column; gap: 2px; }
+.pf-reg-name { font-size: 13px; font-weight: 600; }
+.pf-reg-desc { font-size: 11px; color: var(--text-tertiary); }
+.pf-reg-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.pf-reg-ready { background: var(--green-bg); color: var(--green); }
+.pf-reg-partial { background: var(--amber-bg); color: var(--amber); }
+.pf-reg-gap { background: var(--red-bg); color: var(--red); }
+
+/* AI Report panel */
+.pf-ai-panel { margin-top: 24px; }
+.pf-ai-card { border-left: 3px solid var(--accent); }
+.pf-ai-steps {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.pf-ai-step {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+  transition: all 0.3s ease;
+}
+.pf-ai-step.active { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+.pf-ai-step.done { color: var(--green); border-color: var(--green); background: var(--green-bg); }
+.pf-step-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background 0.3s ease;
+}
+.pf-ai-step.active .pf-step-dot { background: var(--accent); animation: pf-pulse 1s infinite; }
+.pf-ai-step.done .pf-step-dot { background: var(--green); }
+@keyframes pf-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+.pf-ai-body {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-primary);
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+.pf-ai-body h4 { font-size: 14px; font-weight: 700; margin: 16px 0 8px; }
+.pf-ai-body table { width: 100%; border-collapse: collapse; margin: 8px 0 16px; }
+.pf-ai-body th, .pf-ai-body td {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--border-light);
+}
+.pf-ai-body th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  font-size: 10px;
+}
+.pf-ai-body ul { padding-left: 18px; margin: 6px 0; }
+.pf-ai-body li { margin-bottom: 4px; }
+
+/* Badge amber */
+.badge-amber { background: var(--amber-bg); color: var(--amber); }
+.fill-red { background: var(--red); }
+
+/* DQ distribution */
 .dq-distribution { display: flex; flex-direction: column; gap: 12px; }
 .dq-dist-row {
   display: grid;
