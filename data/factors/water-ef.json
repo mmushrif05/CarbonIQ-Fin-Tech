@@ -1,0 +1,13 @@
+{
+  "table": "water-ef",
+  "description": "B7 operational water supply and wastewater treatment factors",
+  "unit": "kgCO2e/m3",
+  "rows": {
+    "supply":     { "value": 0.149, "tier": "Global", "reference": "DEFRA (UK) water supply factor - interim", "gap": "No Sri Lankan water-supply carbon factor exists. SL value (grid mix, pumping heads, desalination) to be researched - differentiator for the national factor database." },
+    "wastewater": { "value": 0.171, "tier": "Global", "reference": "DEFRA (UK) wastewater treatment factor - interim", "gap": "No Sri Lankan wastewater-treatment carbon factor exists." }
+  },
+  "benchmarks": {
+    "occupantDensity_m2_per_person": { "value": 11, "tier": "Global", "reference": "Typical office/institutional occupancy benchmark" },
+    "waterUse_L_per_person_day":     { "value": 50, "tier": "Global", "reference": "Typical non-domestic water use benchmark" }
+  }
+}

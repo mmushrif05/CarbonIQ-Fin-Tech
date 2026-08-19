@@ -37,6 +37,7 @@ const agentRouter         = require('./agent');
 const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
+const pcafPartCRouter     = require('./pcaf-partc');
 
 const router = Router();
 
@@ -56,6 +57,17 @@ router.get('/', (_req, res) => {
       score: 'GET /v1/projects/:projectId/score',
       taxonomy: 'GET /v1/projects/:projectId/taxonomy',
       pcaf: 'GET /v1/projects/:projectId/pcaf',
+      pcafPartC: {
+        note:    'Insurance-associated emissions. Separate scope from /v1/projects/:id/pcaf, which serves A1-A3 financed emissions for lending.',
+        assess:  'POST /v1/pcaf/part-c/assess — insurance-associated emissions (A4/A5 + B1/B4/B7)',
+        form:    'POST /v1/pcaf/part-c/form',
+        report:  'POST /v1/pcaf/part-c/report — pdf | docx | json',
+        factors: 'GET /v1/pcaf/part-c/factors',
+        options: 'GET /v1/pcaf/part-c/options',
+        runs:    'GET /v1/pcaf/part-c/runs',
+        agentIntake: 'POST /v1/pcaf/part-c/agent/intake',
+        agentMap:    'POST /v1/pcaf/part-c/agent/map',
+      },
       covenant: 'POST /v1/projects/:projectId/covenant',
       monitoring: {
         submit: 'POST /v1/projects/:id/monitoring',
@@ -109,5 +121,6 @@ router.use('/agent', agentRouter);
 router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
+router.use('/pcaf/part-c', pcafPartCRouter);
 
 module.exports = router;

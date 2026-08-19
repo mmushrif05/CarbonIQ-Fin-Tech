@@ -1,0 +1,181 @@
+/* ============================================================
+   PCAF Part C — Insurance-Associated Emissions
+   Visually distinct from the lending PCAF page so the two
+   scopes are never confused for one another.
+   ============================================================ */
+
+.partc { display: flex; flex-direction: column; gap: 18px; }
+
+.partc-banner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border-radius: 10px;
+  background: linear-gradient(90deg, #0f766e0f, #0f766e03);
+  border: 1px solid #0f766e33; border-left: 4px solid #0f766e;
+}
+.partc-banner-badge {
+  background: #0f766e; color: #fff; font-weight: 700; font-size: 11px;
+  letter-spacing: .06em; padding: 5px 10px; border-radius: 5px; white-space: nowrap;
+}
+.partc-banner strong { display: block; font-size: 14px; color: var(--text, #0f172a); }
+.partc-banner span   { font-size: 12px; color: var(--text-muted, #64748b); }
+
+.partc-card {
+  background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px; padding: 18px;
+}
+.partc-card-head { margin-bottom: 14px; }
+.partc-card-head h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 5px; font-size: 15px; }
+.partc-card-head p  { margin: 0; font-size: 12.5px; color: var(--text-muted, #64748b); line-height: 1.5; }
+.partc-step {
+  width: 22px; height: 22px; border-radius: 50%; background: #0f766e; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+
+.partc-textarea {
+  width: 100%; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px; line-height: 1.6; padding: 12px; border-radius: 8px;
+  border: 1px solid var(--border, #e2e8f0); background: var(--bg-subtle, #f8fafc);
+  resize: vertical;
+}
+
+.partc-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px; margin-top: 10px;
+}
+.partc-grid label {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 12px; font-weight: 500; color: var(--text-muted, #64748b);
+}
+.partc-grid input, .partc-grid select {
+  padding: 8px 10px; border-radius: 6px; font-size: 13px;
+  border: 1px solid var(--border, #e2e8f0); background: var(--surface, #fff);
+  color: var(--text, #0f172a);
+}
+
+.partc-actions { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.partc-actions-main { padding: 4px 2px; }
+.partc-hint { font-size: 12px; color: var(--text-muted, #64748b); }
+
+.partc-gate {
+  margin-top: 12px; padding: 10px 12px; border-radius: 7px;
+  background: var(--bg-subtle, #f8fafc); font-size: 12.5px; line-height: 1.5;
+  border-left: 3px solid #94a3b8;
+}
+.partc-gate-on  { color: #0f766e; font-weight: 600; }
+.partc-gate-off { color: #b45309; font-weight: 600; }
+
+.partc-optional { margin-top: 14px; }
+.partc-optional summary {
+  cursor: pointer; font-size: 12.5px; font-weight: 600; padding: 7px 0;
+  color: var(--text, #0f172a);
+}
+.partc-optional summary em { font-weight: 400; color: var(--text-muted, #64748b); }
+
+.partc-check {
+  display: flex; align-items: center; gap: 8px; margin-top: 14px;
+  font-size: 12.5px; color: var(--text, #0f172a);
+}
+.partc-check em { color: var(--text-muted, #64748b); font-style: normal; }
+
+/* ── Tables ────────────────────────────────────────────── */
+.partc-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
+.partc-table th {
+  text-align: left; padding: 7px 8px; font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: .04em;
+  color: var(--text-muted, #64748b); border-bottom: 1px solid var(--border, #e2e8f0);
+}
+.partc-table td { padding: 7px 8px; border-bottom: 1px solid var(--border-subtle, #f1f5f9); }
+.partc-table td.num  { text-align: right; font-variant-numeric: tabular-nums; }
+.partc-table td.mono { font-family: ui-monospace, Menlo, monospace; font-size: 10.5px; color: var(--text-muted, #64748b); }
+.partc-table tr.total td { font-weight: 700; }
+.partc-table input { width: 76px; padding: 4px 6px; border-radius: 5px; border: 1px solid var(--border, #e2e8f0); font-size: 12px; }
+
+.partc-conf { font-size: 10px; padding: 1px 6px; border-radius: 9px; margin-left: 6px; }
+.partc-conf-high   { background: #dcfce7; color: #166534; }
+.partc-conf-medium { background: #fef3c7; color: #92400e; }
+.partc-conf-low    { background: #fee2e2; color: #991b1b; }
+
+.pill { font-size: 10px; padding: 2px 8px; border-radius: 9px; white-space: nowrap; }
+.pill.in  { background: #ccfbf1; color: #0f766e; }
+.pill.out { background: #e2e8f0; color: #475569; }
+
+/* ── Result ────────────────────────────────────────────── */
+.partc-result { display: flex; flex-direction: column; gap: 18px; }
+
+.partc-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
+.partc-figure {
+  background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 4px;
+}
+.partc-figure-primary { border-color: #0f766e; border-width: 2px; background: #0f766e08; }
+.partc-figure-label { font-size: 11px; color: var(--text-muted, #64748b); line-height: 1.4; }
+.partc-figure-label em { font-style: normal; color: #0f766e; }
+.partc-figure-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text, #0f172a); }
+.partc-figure-unit  { font-size: 11px; color: var(--text-muted, #64748b); }
+
+.partc-scope-warning {
+  margin: -8px 0 0; font-size: 12px; color: #b45309; font-style: italic;
+}
+
+.partc-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.partc-panel {
+  background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0);
+  border-radius: 10px; padding: 16px;
+}
+.partc-panel h4 { margin: 0 0 4px; font-size: 13px; }
+
+.partc-bar {
+  display: inline-block; width: 70px; height: 5px; border-radius: 3px;
+  background: var(--border, #e2e8f0); margin-right: 7px; vertical-align: middle;
+}
+.partc-bar span { display: block; height: 100%; border-radius: 3px; background: #0f766e; }
+
+/* ── Registers: separate tabs, off the main screen ─────── */
+.partc-registers {
+  background: var(--surface, #fff); border: 1px solid var(--border, #e2e8f0); border-radius: 10px;
+}
+.partc-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--border, #e2e8f0); padding: 6px 6px 0; }
+.partc-tab {
+  background: none; border: none; padding: 9px 14px; cursor: pointer;
+  font-size: 12.5px; font-weight: 500; color: var(--text-muted, #64748b);
+  border-bottom: 2px solid transparent;
+}
+.partc-tab.active { color: #0f766e; border-bottom-color: #0f766e; font-weight: 600; }
+.partc-tab span {
+  background: var(--border, #e2e8f0); border-radius: 9px; padding: 1px 7px;
+  font-size: 10.5px; margin-left: 5px;
+}
+.partc-tab.active span { background: #ccfbf1; color: #0f766e; }
+.partc-tab-body { padding: 16px; max-height: 460px; overflow-y: auto; }
+
+.partc-entry {
+  padding: 9px 12px; border-radius: 6px; margin-bottom: 8px;
+  background: var(--bg-subtle, #f8fafc); border-left: 3px solid #94a3b8;
+}
+.partc-entry p { margin: 4px 0 0; font-size: 12px; line-height: 1.55; color: var(--text-muted, #475569); }
+.partc-entry strong { font-size: 11.5px; }
+.partc-sev {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: .05em;
+  padding: 1px 6px; border-radius: 4px; margin-right: 7px; font-weight: 700;
+}
+.partc-sev-material { border-left-color: #dc2626; }
+.partc-sev-material .partc-sev { background: #fee2e2; color: #991b1b; }
+.partc-sev-notable  { border-left-color: #d97706; }
+.partc-sev-notable  .partc-sev { background: #fef3c7; color: #92400e; }
+.partc-sev-info     { border-left-color: #94a3b8; }
+.partc-sev-info     .partc-sev { background: #e2e8f0; color: #475569; }
+
+.partc-disclosure {
+  background: #0f766e08; border: 1px solid #0f766e33; border-radius: 10px; padding: 16px;
+}
+.partc-disclosure h4 { margin: 0 0 7px; font-size: 13px; }
+.partc-disclosure p  { margin: 0; font-size: 12.5px; line-height: 1.65; color: var(--text, #0f172a); }
+.partc-dq { margin-top: 10px; font-size: 12px; color: var(--text-muted, #64748b); }
+
+.partc-annex {
+  border: 1px dashed var(--border, #cbd5e1); border-radius: 10px; padding: 16px;
+  background: var(--bg-subtle, #f8fafc);
+}
+.partc-annex h4 { margin: 0 0 4px; font-size: 13px; }
+.partc-annex-warning { margin: 0 0 8px; font-size: 11.5px; color: #b45309; font-style: italic; }

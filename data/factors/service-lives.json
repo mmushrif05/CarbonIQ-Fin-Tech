@@ -1,0 +1,22 @@
+{
+  "table": "service-lives",
+  "description": "Component service lives for B4 replacement counting (years)",
+  "unit": "years",
+  "tier": "Global",
+  "reference": "CIBSE Guide M / RICS-BCIS component life data",
+  "defaultLife": 60,
+  "rows": {
+    "Structure":        { "value": 60 },
+    "Aluminium":        { "value": 35 },
+    "Timber joinery":   { "value": 30 },
+    "Ceramic tile":     { "value": 20 },
+    "PVC pipework":     { "value": 40 },
+    "MS grills":        { "value": 30 },
+    "Coatings/paint":   { "value": 7  },
+    "Carpet":           { "value": 8  },
+    "Sealant":          { "value": 6  },
+    "HVAC/chiller":     { "value": 20, "note": "MVP B4 uses this life only. Workbook demo used 8 yr - override via hvacServiceLifeYears." },
+    "Boiler":           { "value": 15 },
+    "Windows (glazing)":{ "value": 30 }
+  }
+}

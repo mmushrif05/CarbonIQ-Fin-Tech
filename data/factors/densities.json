@@ -1,0 +1,25 @@
+{
+  "table": "densities",
+  "description": "Material densities for volumetric BOQ units (kg/m3)",
+  "unit": "kg/m3",
+  "rows": {
+    "steel":            { "value": 7850, "tier": "Global",   "reference": "Std engineering refs (The Constructor; Engineering Discoveries; Gray QS)" },
+    "aluminium":        { "value": 2700, "tier": "Global",   "reference": "Std engineering refs (The Constructor; Engineering Discoveries; Gray QS)" },
+    "copper":           { "value": 8960, "tier": "Global",   "reference": "Std engineering refs (The Constructor; Engineering Discoveries; Gray QS)" },
+    "cast_iron":        { "value": 7200, "tier": "Global",   "reference": "Std engineering refs (The Constructor; Engineering Discoveries; Gray QS)" },
+    "concrete_normal":  { "value": 2400, "tier": "Regional", "reference": "Local batching; std engineering refs", "gap": "Confirm Sri Lankan mix design" },
+    "rubble_masonry":   { "value": 2300, "tier": "Local",    "reference": "Std engineering refs (2300-2400 range)", "gap": "Confirm Sri Lankan stone density" },
+    "granite":          { "value": 2650, "tier": "Global",   "reference": "Std engineering refs (2600-2700 range)" },
+    "marble":           { "value": 2700, "tier": "Global",   "reference": "Std engineering refs" },
+    "ceramic_tile":     { "value": 2400, "tier": "Global",   "reference": "Std engineering refs (2300-2500 range)" },
+    "glass":            { "value": 2500, "tier": "Global",   "reference": "Std engineering refs" },
+    "asphalt":          { "value": 2300, "tier": "Regional", "reference": "Std engineering refs (2200-2450 range)", "gap": "Confirm local mix" },
+    "cement":           { "value": 1450, "tier": "Global",   "reference": "Std engineering refs (1440-1500 range)" },
+    "block":            { "value": 1900, "tier": "Local",    "reference": "Std engineering refs (1600-2000 range)", "gap": "Sri Lankan block density varies" },
+    "brickwork":        { "value": 1900, "tier": "Local",    "reference": "Std engineering refs (1600-2000 range)", "gap": "Sri Lankan brick density varies" },
+    "sand":             { "value": 1600, "tier": "Regional", "reference": "Std engineering refs" },
+    "aggregate":        { "value": 1550, "tier": "Regional", "reference": "Std engineering refs (1500-1600 range)" },
+    "pvc":              { "value": 1400, "tier": "Global",   "reference": "Std engineering refs" },
+    "timber":           { "value": 600,  "tier": "Local",    "reference": "Std engineering refs (300-900 range, ~600)", "gap": "Sri Lankan species density required" }
+  }
+}

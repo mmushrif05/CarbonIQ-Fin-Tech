@@ -1,0 +1,15 @@
+{
+  "table": "beyond-pcaf-defaults",
+  "description": "Beyond-PCAF whole-life allowances (B2/B5/B8). VOLUNTARY ANNEX - never enters the PCAF roll-up.",
+  "rows": {
+    "referenceStudyPeriod_years": { "value": 60, "unit": "years", "tier": "Global", "reference": "RICS Whole Life Carbon Assessment for the Built Environment, 2nd ed - 60-yr reference study period" },
+    "b2Maintenance_kgCO2e_m2":    { "value": 10, "unit": "kgCO2e/m2 GIA", "tier": "Global",
+      "reference": "GLA 'Whole Life-Cycle Carbon Assessments Guidance' (London Plan) - design-stage maintenance figure of 10 kgCO2e/m2 GIA covering all element categories (alternatively 1% of A1-A5, whichever greater). Method 1 (per-m2 allowance) adopted." },
+    "b5Refurbishment_kgCO2e_m2":  { "value": 30, "unit": "kgCO2e/m2 GIA", "tier": "Global",
+      "reference": "INDICATIVE allowance - Method 1 (per-m2). HONESTY FLAG: B5 has no single strong standard source (unlike B2's GLA-backed 10). B5 is discretionary and often omitted in practice.",
+      "gap": "Defensible upgrade is Method 2 (% of upfront A1-A5), which activates with the embodied layer (PR-02b)." },
+    "b8Unregulated":              { "value": 0, "unit": "kgCO2e", "tier": "n/a", "disabled": true,
+      "reference": "DISABLED. B8 is NOT a module in ISO 21930:2017 or EN 15978 for buildings (those run B1-B7 only). B8 'user utilization of infrastructure' comes from EN 15804 / infrastructure standards. For a building it has no defined module and no robust factor; unregulated/plug loads belong in B6. Disabled to avoid false precision and double-counting with B6.",
+      "activation": "Real only for user-carrying infrastructure (road/rail): B8 = traffic x vehicle EF x years. Manual entry only." }
+  }
+}

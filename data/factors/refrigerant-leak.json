@@ -1,0 +1,18 @@
+{
+  "table": "refrigerant-leak",
+  "description": "Annual operational refrigerant leak rates by equipment type (B1)",
+  "unit": "fraction/year",
+  "tier": "Global",
+  "reference": "IPCC 2019 Refinement, Table 7.9 - default annual operational emission factors (mid of range)",
+  "defaultRate": 0.05,
+  "rows": {
+    "Domestic refrigeration":             { "value": 0.01, "range": "~0.5-1%" },
+    "Stationary AC (split/unitary)":      { "value": 0.05, "range": "~1-15% (comfort cooling); mid ~5%" },
+    "Heat pumps":                         { "value": 0.05, "range": "~1-15%; mid ~5%" },
+    "Chillers (large HVAC)":              { "value": 0.05, "range": "~2-15%; office ~2%, mid ~5%" },
+    "Commercial refrigeration":           { "value": 0.15, "range": "~10-35%; mid ~15%" },
+    "Industrial process refrigeration":   { "value": 0.12, "range": "~10-25%; mid ~12%" },
+    "Cold storage / warehouse":           { "value": 0.10, "range": "~8-15%" },
+    "Mobile / transport refrigeration":   { "value": 0.15, "range": "~15-25%" }
+  }
+}

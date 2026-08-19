@@ -1,0 +1,13 @@
+{
+  "table": "b1-b4-defaults",
+  "description": "B1 refrigerant charge basis and B4 replacement constants",
+  "rows": {
+    "chargeBenchmark_kg_per_m2": { "value": 0.03, "unit": "kg/m2", "tier": "Global", "clientVisible": false,
+      "reference": "LITERATURE ASSUMPTION - not a formal standard.",
+      "gap": "Refrigerant charge scales with cooling capacity (kW), not floor area. Charge priority: actual kg > capacity_kW x ~0.3 kg/kW (CIBSE TM65) > this per-m2 screen. Update when HVAC design is available." },
+    "chargePerKW_kg":            { "value": 0.30, "unit": "kg/kW", "tier": "Global", "clientVisible": false, "reference": "CIBSE TM65 - refrigerant charge per kW cooling capacity" },
+    "hvacServiceLife_years":     { "value": 20,   "unit": "years", "tier": "Global", "clientVisible": false, "reference": "CIBSE Guide M / RICS-BCIS - HVAC/chiller service life" },
+    "eolLossRate":               { "value": 0.15, "unit": "fraction", "tier": "Global", "clientVisible": false, "reference": "IPCC - end-of-life refrigerant loss at equipment replacement (~15%)" },
+    "deMinimisThreshold":        { "value": 0.05, "unit": "fraction", "tier": "Global", "clientVisible": false, "reference": "GHG Protocol / US EPA Corporate Climate Leadership - 5% de-minimis. INFO ONLY: nothing is auto-excluded." }
+  }
+}

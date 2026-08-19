@@ -12,7 +12,8 @@ const PAGE_META = {
   'ai-agents':   { title: 'AI Agents',           subtitle: '8-stage green loan lifecycle agents — Coach · Originate · Screen · Underwrite · Triage · Covenants · Monitor · Portfolio' },
   'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
-  'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
+  'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution (A1-A3, lending)' },
+  'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — A4+A5 construction is the PCAF figure; B1/B4/B7 use-stage reported separately' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
@@ -44,6 +45,10 @@ const DYNAMIC_PAGES = {
   'carbon-pricing': {
     src:  'pages/carbon-pricing.html',
     init: () => typeof CarbonPricingPage !== 'undefined' && CarbonPricingPage.init(),
+  },
+  'pcaf-partc': {
+    src:  'pages/pcaf-partc.html',
+    init: () => typeof PCAFPartCPage !== 'undefined' && PCAFPartCPage.init(),
   },
 };
 

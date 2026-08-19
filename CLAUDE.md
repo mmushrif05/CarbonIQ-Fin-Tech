@@ -47,8 +47,11 @@ docker-compose -f docker/docker-compose.yml up
 server.js                   Express entry point + /health endpoint
 config/                     env config, business constants, CORS policy
 middleware/                 auth (JWT + API key), rate limiting, audit logging, validation
-routes/v1/                  8 REST endpoints (score, assess, projects, pcaf, taxonomy, covenant, portfolio, webhook)
+routes/v1/                  REST endpoints (score, assess, projects, pcaf, pcaf-partc, taxonomy, covenant, portfolio, webhook)
 services/                   Business logic: score engine, PCAF formatter, taxonomy, covenant, portfolio, agents
+services/pcaf-partc/        PCAF Part C engine — insurance-associated emissions (pure, deterministic)
+services/agents/partc/      Part C agents: intake, mapping, form builder, disclosure
+data/factors/               Part C seed factor tables (versioned JSON, every row carries tier + reference)
 bridge/                     Firebase + CarbonIQ core engine bridge (READ-ONLY)
 models/                     Data models: api-key, covenant, webhook, taxonomy
 schemas/                    Joi validation schemas for all request bodies
@@ -69,7 +72,11 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `GET/POST` | `/v1/projects` | List projects / create project |
 | `POST` | `/v1/score` | Carbon Finance Score (CRS 0–100) |
 | `GET` | `/v1/taxonomy` | EU/ASEAN/HK taxonomy alignment check |
-| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output |
+| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output (A1-A3, lending) |
+| `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions (A4+A5, B1/B4/B7) |
+| `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
+| `POST` | `/v1/pcaf/part-c/report` | Disclosure report — PDF, Word or JSON |
+| `GET` | `/v1/pcaf/part-c/factors` | Factor store transparency (tier + source per row) |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
 | `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
@@ -154,6 +161,27 @@ This app uses the Anthropic Claude API (`@anthropic-ai/sdk`) with the following 
 - **Taxonomy Alignment** — EU (2024), ASEAN (v3), HK (2024) regulatory eligibility screening; `services/taxonomy.js`
 - **Pareto 80%** — The core engine pre-calculates the top 20% of materials driving 80% of emissions; this API reads those results
 - **Carbon Bridge** — `bridge/` is strictly READ-ONLY from the CarbonIQ core (Carbon-Management repo); never write to core engine data through this API
+- **PCAF Part C (IAE)** — insurance-associated emissions for construction policies; `services/pcaf-partc/`. Entirely separate from `services/pcaf.js` (A1-A3 financed emissions for lending). The two scopes must never merge.
+
+### PCAF Part C scope discipline
+
+Three tiers, enforced structurally rather than by convention:
+
+| Tier | Modules | Where it appears |
+|---|---|---|
+| **Mandatory** | A4 + A5 | `result.rollup.construction` — **the PCAF figure** |
+| **Optional** | B1 + B4 + B7 | `result.rollup.useStage` — separate line, policy-gated, never summed with construction |
+| **Beyond-PCAF** | B2 + B5 + B8 | `result.beyondPcafAnnex` — voluntary annex, never in the PCAF figure |
+
+`services/pcaf-partc/rollup.js` deliberately does not import `beyond-pcaf.js`, so tier 3 cannot reach the roll-up through the module graph. A test asserts this.
+
+**Policy gate:** CAR/EAR → `use_stage_years = 0` → B1/B4/B7 are zero by scope rule (PCAF Part C v2 §5.3), not by omission. IDI/Property run the use stage over the cover period. A client-entered cover period applies *within* the gate and can never override it.
+
+**Provenance:** every engine function returns a traced value — the figure plus its equation, inputs, factors (each with a data-quality tier and named source) and assumptions. The three registers (assumptions, data gaps, audit trail) and the data-quality score are derived from that tree, so they cannot contradict the arithmetic.
+
+**Language guard:** output claims PCAF *conformance*, never endorsement. `containsForbiddenLanguage()` blocks any report containing "PCAF approved/endorsed/certified"; a test enforces it.
+
+**Division of labour:** Claude classifies, extracts, maps BOQ lines and writes narrative. The engine does every arithmetic operation. An LLM must never compute a figure that reaches a regulatory disclosure.
 
 ---
 
