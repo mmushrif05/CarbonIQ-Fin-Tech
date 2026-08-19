@@ -77,6 +77,14 @@ const PCAFPartCPage = (() => {
   let distances  = {};
   let demolition = [];
 
+  /** Point the segmented control at a value and mirror it into the select. */
+  function setPolicyType(value) {
+    $('partcPolicyType').value = value;
+    document.querySelectorAll('#partcPolicySeg button').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.value === value)));
+    applyGate();
+  }
+
   // ── Policy gate: show or hide the use-stage card ──────────
   function applyGate() {
     const type = $('partcPolicyType').value;
@@ -86,6 +94,28 @@ const PCAFPartCPage = (() => {
     $('partcGateNote').innerHTML = hasUseStage
       ? `<span class="partc-gate-on">Use stage applies.</span> B1, B4 and B7 will be computed over the cover period and reported as a separate line.`
       : `<span class="partc-gate-off">Construction cover only.</span> A ${type} policy has no use stage, so B1, B4 and B7 are zero by scope rule — not by omission.`;
+
+    document.querySelectorAll('#partcPolicySeg button').forEach(b =>
+      b.setAttribute('aria-selected', String(b.dataset.value === type)));
+    refreshProgress();
+  }
+
+  /**
+   * Mark each step done once it has what it needs. Quiet progress feedback —
+   * the user can see how far along they are without being nagged.
+   */
+  function refreshProgress() {
+    const cards = document.querySelectorAll('.partc .partc-card');
+    const done = [
+      () => !!($('partcPolicyText').value.trim() || $('partcPolicyFile').files[0]),
+      () => materials.length > 0,
+      () => Number($('partcPremium').value) > 0 && Number($('partcProjectCost').value) > 0,
+      () => Number($('partcGifa').value) > 0,
+      () => $('partcUseStageCard').style.display === 'none' || !!$('partcRefrigerant').value
+    ];
+    cards.forEach((card, i) => {
+      if (i < done.length) card.classList.toggle('is-done', !!done[i]());
+    });
   }
 
   // ── Populate dropdowns from the factor store ──────────────
@@ -139,6 +169,7 @@ const PCAFPartCPage = (() => {
     $('partcGifa').value        = 1000;
     renderMaterials();
     $('partcMapStatus').textContent = `${materials.length} materials loaded from the worked example.`;
+    refreshProgress();
   }
 
   // ── Read the policy document with the intake agent ────────
@@ -199,6 +230,7 @@ const PCAFPartCPage = (() => {
       demolition = parsed.demolitionItems || [];
       distances  = {};
       renderMaterials();
+      refreshProgress();
       $('partcMapStatus').textContent =
         `${materials.length} materials mapped, ${demolition.length} demolition items found.` +
         (parsed.summary?.lowConfidenceCount ? ` ${parsed.summary.lowConfidenceCount} need review.` : '');
@@ -255,6 +287,7 @@ const PCAFPartCPage = (() => {
       if (!res.ok) throw new Error(data.message || 'Assessment failed');
       lastResult = data;
       render(data);
+      $('partcResult').scrollIntoView({ behavior: 'smooth', block: 'start' });
       $('partcRunStatus').textContent = `Done — run ${data.runId}`;
       $('partcPdfBtn').disabled = false;
       $('partcDocxBtn').disabled = false;
@@ -272,19 +305,22 @@ const PCAFPartCPage = (() => {
 
     $('partcModules').innerHTML = `
       <table class="partc-table"><tbody>
-        <tr><td>A4 Transport</td><td class="num">${fmt(d.modules.a4)}</td><td class="pill in">PCAF figure</td></tr>
+        <tr><td>A4 Transport</td><td class="num">${fmt(d.modules.a4)}</td><td><span class="pill in">PCAF figure</span></td></tr>
         ${d.modules.a5Breakdown.map(b =>
-          `<tr><td>${b.module} ${b.label.replace(/^A5\.\d\s*/, '')}</td><td class="num">${fmt(b.value)}</td><td class="pill in">PCAF figure</td></tr>`).join('')}
-        <tr class="total"><td>A5 total</td><td class="num">${fmt(d.modules.a5)}</td><td class="pill in">PCAF figure</td></tr>
-        <tr><td>B1 Refrigerant</td><td class="num">${fmt(d.modules.b1)}</td><td class="pill out">separate</td></tr>
-        <tr><td>B4 Replacement (HVAC)</td><td class="num">${fmt(d.modules.b4)}</td><td class="pill out">separate</td></tr>
-        <tr><td>B7 Operational water</td><td class="num">${fmt(d.modules.b7)}</td><td class="pill out">separate</td></tr>
+          `<tr><td>${b.module} ${b.label.replace(/^A5\.\d\s*/, '')}</td><td class="num">${fmt(b.value)}</td><td><span class="pill in">PCAF figure</span></td></tr>`).join('')}
+        <tr class="total"><td>A5 total</td><td class="num">${fmt(d.modules.a5)}</td><td><span class="pill in">PCAF figure</span></td></tr>
+        <tr><td>B1 Refrigerant</td><td class="num">${fmt(d.modules.b1)}</td><td><span class="pill out">separate</span></td></tr>
+        <tr><td>B4 Replacement (HVAC)</td><td class="num">${fmt(d.modules.b4)}</td><td><span class="pill out">separate</span></td></tr>
+        <tr><td>B7 Operational water</td><td class="num">${fmt(d.modules.b7)}</td><td><span class="pill out">separate</span></td></tr>
       </tbody></table>`;
 
     $('partcDrivers').innerHTML = `
       <table class="partc-table"><tbody>${d.sensitivity.moduleContributions.map(m => `
         <tr><td>${m.module}</td><td class="num">${fmt(m.value)}</td>
-        <td><div class="partc-bar"><span style="width:${Math.min(100, m.sharePct)}%"></span></div>${m.sharePct.toFixed(1)}%</td></tr>`).join('')}
+        <td class="partc-share">
+          <div class="partc-bar"><span data-w="${Math.min(100, m.sharePct)}"></span></div>
+          <span class="partc-share-pct">${m.sharePct.toFixed(1)}%</span>
+        </td></tr>`).join('')}
       </tbody></table>`;
 
     $('partcPareto').innerHTML = d.paretoVitalFew.length
@@ -292,6 +328,10 @@ const PCAFPartCPage = (() => {
           `<tr><td>${v.name}</td><td class="num">${fmt(v.value)}</td><td class="num">${(v.contributionPct * 100).toFixed(1)}%</td></tr>`).join('')}
         </tbody></table>`
       : '<p class="partc-hint">No materials assessed.</p>';
+
+    // Grow the bars from zero on the next frame so the transition is visible.
+    requestAnimationFrame(() => document.querySelectorAll('.partc-bar span')
+      .forEach(el => { el.style.width = `${el.dataset.w}%`; }));
 
     $('partcBadgeA').textContent = d.registers.badges.assumptions;
     $('partcBadgeB').textContent = d.registers.badges.dataGaps;
@@ -431,7 +471,12 @@ const PCAFPartCPage = (() => {
   function init() {
     loadOptions();
     applyGate();
+    document.querySelectorAll('#partcPolicySeg button').forEach(b =>
+      b.addEventListener('click', () => setPolicyType(b.dataset.value)));
     $('partcPolicyType').addEventListener('change', applyGate);
+    ['partcPremium', 'partcProjectCost', 'partcGifa', 'partcPolicyText']
+      .forEach(id => $(id).addEventListener('input', refreshProgress));
+    $('partcPolicyFile').addEventListener('change', refreshProgress);
     $('partcDemoBtn').addEventListener('click', loadDemo);
     $('partcIntakeBtn').addEventListener('click', readPolicy);
     $('partcMapBtn').addEventListener('click', mapBoq);

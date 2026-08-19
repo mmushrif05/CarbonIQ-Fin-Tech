@@ -22,7 +22,7 @@
     <div class="partc-upload">
       <label class="partc-file">
         <input type="file" id="partcPolicyFile" accept="application/pdf">
-        <span>Choose a PDF…</span>
+        <span>Choose a PDF</span>
       </label>
       <span class="partc-hint" id="partcPolicyFileName">or paste the text below</span>
     </div>
@@ -43,7 +43,7 @@
     <div class="partc-upload">
       <label class="partc-file">
         <input type="file" id="partcBoqFile" accept="application/pdf">
-        <span>Choose a PDF…</span>
+        <span>Choose a PDF</span>
       </label>
       <span class="partc-hint" id="partcBoqFileName">or paste the BOQ below</span>
     </div>
@@ -63,18 +63,26 @@
       <h3><span class="partc-step">3</span> Policy</h3>
       <p>Policy type sets the scope. CAR and EAR cover construction only — the use-stage sections disappear.</p>
     </header>
+
+    <div class="partc-segmented" id="partcPolicySeg" role="tablist" aria-label="Policy type">
+      <button type="button" role="tab" data-value="CAR"      aria-selected="true">CAR</button>
+      <button type="button" role="tab" data-value="EAR"      aria-selected="false">EAR</button>
+      <button type="button" role="tab" data-value="IDI"      aria-selected="false">IDI</button>
+      <button type="button" role="tab" data-value="Property" aria-selected="false">Property</button>
+    </div>
+    <!-- Kept in the DOM (visually hidden) so form semantics and every existing
+         read of partcPolicyType.value continue to work unchanged. -->
+    <select id="partcPolicyType" hidden aria-hidden="true" tabindex="-1">
+      <option value="CAR">CAR — Contractors' All Risks</option>
+      <option value="EAR">EAR — Erection All Risks</option>
+      <option value="IDI">IDI — Inherent Defects / Decennial</option>
+      <option value="Property">Property</option>
+    </select>
+
     <div class="partc-grid">
-      <label>Policy type
-        <select id="partcPolicyType">
-          <option value="CAR">CAR — Contractors' All Risks</option>
-          <option value="EAR">EAR — Erection All Risks</option>
-          <option value="IDI">IDI — Inherent Defects / Decennial</option>
-          <option value="Property">Property</option>
-        </select>
-      </label>
-      <label>Years of cover <input type="number" id="partcYears" value="10" min="0"></label>
-      <label>Premium <input type="number" id="partcPremium" step="0.01" placeholder="24448.16"></label>
-      <label>Total project cost <input type="number" id="partcProjectCost" step="0.01" placeholder="6499442"></label>
+      <label>Years of cover <input type="number" id="partcYears" value="10" min="0" inputmode="numeric"></label>
+      <label>Premium <input type="number" id="partcPremium" step="0.01" placeholder="24448.16" inputmode="decimal"></label>
+      <label>Total project cost <input type="number" id="partcProjectCost" step="0.01" placeholder="6499442" inputmode="decimal"></label>
     </div>
     <div class="partc-gate" id="partcGateNote"></div>
   </section>
@@ -86,18 +94,18 @@
       <p>Diesel and grid emission factors are applied automatically and are not shown — they are hidden constants carrying their own source and tier.</p>
     </header>
     <div class="partc-grid">
-      <label>Project GIA (m²) <input type="number" id="partcGifa" placeholder="1000"></label>
-      <label>Demolition transport (km) <input type="number" id="partcDemoKm" value="100"></label>
-      <label>Waste disposal (km) <input type="number" id="partcWasteKm" value="40"></label>
+      <label>Project GIA (m²) <input type="number" id="partcGifa" inputmode="numeric" placeholder="1000"></label>
+      <label>Demolition transport (km) <input type="number" id="partcDemoKm" inputmode="numeric" value="100"></label>
+      <label>Waste disposal (km) <input type="number" id="partcWasteKm" inputmode="numeric" value="40"></label>
     </div>
 
     <details class="partc-optional">
       <summary>Site data from a previous project <em>(optional — replaces the RICS default)</em></summary>
       <div class="partc-grid">
-        <label>Previous area (m²) <input type="number" id="partcPrevArea"></label>
-        <label>Site fuel (L) <input type="number" id="partcPrevFuel"></label>
-        <label>Electricity (kWh) <input type="number" id="partcPrevElec"></label>
-        <label>Duration (months) <input type="number" id="partcPrevMonths"></label>
+        <label>Previous area (m²) <input type="number" id="partcPrevArea" inputmode="numeric"></label>
+        <label>Site fuel (L) <input type="number" id="partcPrevFuel" inputmode="numeric"></label>
+        <label>Electricity (kWh) <input type="number" id="partcPrevElec" inputmode="numeric"></label>
+        <label>Duration (months) <input type="number" id="partcPrevMonths" inputmode="numeric"></label>
       </div>
     </details>
 
@@ -114,8 +122,8 @@
     <div class="partc-grid">
       <label>Equipment type <select id="partcEquipment"></select></label>
       <label>Refrigerant <select id="partcRefrigerant"></select></label>
-      <label>Refrigerant charge (kg) <input type="number" id="partcCharge" step="0.1" placeholder="blank → estimate from area"></label>
-      <label>Occupants <input type="number" id="partcOccupants" placeholder="blank → derive from area"></label>
+      <label>Refrigerant charge (kg) <input type="number" id="partcCharge" inputmode="decimal" step="0.1" placeholder="blank → estimate from area"></label>
+      <label>Occupants <input type="number" id="partcOccupants" inputmode="numeric" placeholder="blank → derive from area"></label>
     </div>
     <label class="partc-check"><input type="checkbox" id="partcWlca"> Include Beyond-PCAF whole-life annex (B2/B5/B8)
       <em>— voluntary, delivered as a separate annex, never part of the PCAF figure</em></label>
