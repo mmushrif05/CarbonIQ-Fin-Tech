@@ -65,8 +65,11 @@ router.get('/', (_req, res) => {
         factors: 'GET /v1/pcaf/part-c/factors',
         options: 'GET /v1/pcaf/part-c/options',
         runs:    'GET /v1/pcaf/part-c/runs',
+        start:   'POST /v1/pcaf/part-c/runs/start — begin a run, pause for client input',
+        resume:  'POST /v1/pcaf/part-c/runs/:runId/resume — supply answers, compute',
         agentIntake: 'POST /v1/pcaf/part-c/agent/intake',
-        agentMap:    'POST /v1/pcaf/part-c/agent/map',
+        agentMap:      'POST /v1/pcaf/part-c/agent/map',
+        agentDisclose: 'POST /v1/pcaf/part-c/agent/disclose',
       },
       covenant: 'POST /v1/projects/:projectId/covenant',
       monitoring: {

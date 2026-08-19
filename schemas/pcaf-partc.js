@@ -120,6 +120,63 @@ const reportRequestSchema = assessRequestSchema.keys({
   }).default({})
 });
 
+const startRunRequestSchema = Joi.object({
+  projectName: Joi.string().trim().max(200).optional(),
+  policy:      Joi.object({
+    policyType: Joi.string().valid(...POLICY_TYPES).optional()
+  }).unknown(true).default({}),
+  materials:       Joi.array().items(materialSchema).default([]),
+  demolitionItems: Joi.array().items(materialSchema).default([]),
+  prefill:         Joi.object().unknown(true).default({}),
+  context: Joi.object({
+    region:      Joi.string().trim().max(100).default('Sri Lanka'),
+    projectType: Joi.string().trim().max(100).optional()
+  }).default({})
+});
+
+const resumeRunRequestSchema = Joi.object({
+  answers: Joi.object({
+    policyType:   Joi.string().valid(...POLICY_TYPES).optional(),
+    yearsOfCover: Joi.number().min(0).max(100).optional(),
+    gifa_m2:      Joi.number().min(0).optional(),
+    demolitionKm:    Joi.number().min(0).optional(),
+    wasteDisposalKm: Joi.number().min(0).optional(),
+    demolitionMass_t: Joi.number().min(0).optional(),
+    distances: Joi.object().pattern(Joi.string(), Joi.object({
+      road_km: Joi.number().min(0).optional(), sea_km: Joi.number().min(0).optional(),
+      rail_km: Joi.number().min(0).optional(),
+      road: Joi.number().min(0).optional(), sea: Joi.number().min(0).optional(),
+      rail: Joi.number().min(0).optional()
+    })).default({}),
+    previousProject: Joi.object({
+      area_m2: Joi.number().min(0).optional(), fuel_L: Joi.number().min(0).optional(),
+      electricity_kWh: Joi.number().min(0).optional(), durationMonths: Joi.number().min(0).optional()
+    }).allow(null).optional(),
+    equipmentType: Joi.string().trim().max(120).optional(),
+    refrigerant:   Joi.string().trim().max(60).optional(),
+    chargeKg:      Joi.number().min(0).optional(),
+    capacityKW:    Joi.number().min(0).optional(),
+    hvacServiceLifeYears: Joi.number().min(1).max(100).optional(),
+    occupants:       Joi.number().min(0).optional(),
+    annualVolume_m3: Joi.number().min(0).optional(),
+    b2Allowance: Joi.number().min(0).optional(),
+    b5Allowance: Joi.number().min(0).optional(),
+    b8Manual:    Joi.number().min(0).optional(),
+    evUsedOnSite: Joi.boolean().default(false)
+  }).unknown(true).required(),
+  overrides: Joi.object().pattern(Joi.string(), Joi.object({
+    value: Joi.number().required(),
+    tier: Joi.string().valid('Local', 'Regional', 'Global').optional(),
+    reference: Joi.string().max(500).optional()
+  })).default({}),
+  hasEPD: Joi.boolean().default(false)
+});
+
+const discloseRequestSchema = assessRequestSchema.keys({
+  policySummary: Joi.string().max(2000).optional(),
+  note: Joi.string().max(2000).optional()
+});
+
 const mappingRequestSchema = Joi.object({
   boqContent: Joi.string().max(500000).required(),
   boqFormat:  Joi.string().valid('text', 'csv', 'json', 'markdown').default('text'),
@@ -135,5 +192,6 @@ const intakeRequestSchema = Joi.object({
 module.exports = {
   assessRequestSchema, formRequestSchema, reportRequestSchema,
   mappingRequestSchema, intakeRequestSchema,
+  startRunRequestSchema, resumeRunRequestSchema, discloseRequestSchema,
   materialSchema, policySchema
 };
