@@ -36,6 +36,7 @@ const { buildRegisters }  = require('../../services/partc-registers');
 const { buildForm, formAnswersToEngineInput } = require('../../services/agents/partc/form');
 const runStore            = require('../../services/partc-run-store');
 const factors             = require('../../services/pcaf-partc/factors');
+const { conformanceMatrix } = require('../../services/pcaf-partc/conformance');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
@@ -53,6 +54,26 @@ const {
 const intakeAgent     = require('../../services/agents/partc/intake');
 const mappingAgent    = require('../../services/agents/partc/mapping');
 const disclosureAgent = require('../../services/agents/partc/disclosure');
+const { readDocument } = require('../../services/agents/partc/documents');
+const config           = require('../../config');
+
+/**
+ * The agent endpoints need a Claude API key; the engine endpoints never do.
+ * Say so plainly rather than surfacing a generic failure — the deterministic
+ * half of the product still works without one, and the caller should be told
+ * exactly that.
+ */
+function requireAI(_req, res, next) {
+  if (config.anthropicApiKey) return next();
+  return res.status(503).json({
+    error: 'AI_UNAVAILABLE',
+    message: 'ANTHROPIC_API_KEY is not configured, so document reading, classification and BOQ mapping are unavailable.',
+    remedy: 'Set ANTHROPIC_API_KEY, or supply the policy fields and mapped materials directly — the calculation engine is deterministic and needs no API key.',
+    unaffected: ['POST /v1/pcaf/part-c/assess', 'POST /v1/pcaf/part-c/runs/start',
+                 'POST /v1/pcaf/part-c/runs/:runId/resume', 'POST /v1/pcaf/part-c/report',
+                 'GET /v1/pcaf/part-c/factors', 'GET /v1/pcaf/part-c/conformance']
+  });
+}
 
 const router = Router();
 
@@ -107,6 +128,16 @@ function _toEngineInput(body) {
 // ---------------------------------------------------------------------------
 router.get('/options', apiKeyAuth, defaultLimiter, (_req, res) => {
   res.json({ options: factors.options() });
+});
+
+// ---------------------------------------------------------------------------
+// GET /conformance — what this engine claims, where it lives, what proves it
+//
+// Published so a reviewer can check the claim rather than take it on trust:
+// every rule names the code that enforces it and the test that proves it.
+// ---------------------------------------------------------------------------
+router.get('/conformance', apiKeyAuth, defaultLimiter, (_req, res) => {
+  res.json(conformanceMatrix());
 });
 
 // ---------------------------------------------------------------------------
@@ -360,43 +391,63 @@ router.get('/runs/:runId', apiKeyAuth, defaultLimiter, async (req, res, next) =>
 // Every emissions figure still comes from the deterministic engine.
 // ---------------------------------------------------------------------------
 
-router.post('/agent/intake', apiKeyAuth, agentLimiter,
+router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: intakeRequestSchema }),
   async (req, res, next) => {
     try {
+      const doc = await readDocument({
+        text: req.body.documentText, pdfBase64: req.body.pdfBase64,
+        fileId: req.body.fileId, hint: req.body.pageHint
+      });
+
       const run = await runAgent({
         agentType: 'partc-intake',
         systemPrompt: intakeAgent.SYSTEM_PROMPT,
         toolDefinitions: intakeAgent.TOOL_DEFINITIONS,
         toolFunctions: intakeAgent.TOOL_FUNCTIONS,
-        userMessage: intakeAgent.buildUserMessage(req.body),
+        userMessage: intakeAgent.buildUserMessage({
+          documentText: doc.text,
+          documentNote: req.body.documentNote,
+          projectName:  req.body.projectName
+        }),
         orgId: req.apiKey.orgId,
-        metadata: { projectName: req.body.projectName || null, stage: 'intake' }
+        metadata: { projectName: req.body.projectName || null, stage: 'intake', documentSource: doc.source }
       });
       res.json({ runId: run.runId, status: run.status, result: run.result,
+                 documentSource: doc.source, documentChars: doc.text.length,
                  steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
     } catch (err) { next(err); }
   });
 
-router.post('/agent/map', apiKeyAuth, agentLimiter,
+router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: mappingRequestSchema }),
   async (req, res, next) => {
     try {
+      const doc = await readDocument({
+        text: req.body.boqContent, pdfBase64: req.body.pdfBase64,
+        fileId: req.body.fileId, hint: req.body.pageHint
+      });
+
       const run = await runAgent({
         agentType: 'partc-mapping',
         systemPrompt: mappingAgent.SYSTEM_PROMPT,
         toolDefinitions: mappingAgent.TOOL_DEFINITIONS,
         toolFunctions: mappingAgent.TOOL_FUNCTIONS,
-        userMessage: mappingAgent.buildUserMessage(req.body),
+        userMessage: mappingAgent.buildUserMessage({
+          boqContent:  doc.text,
+          boqFormat:   doc.source === 'text' ? (req.body.boqFormat || 'text') : 'transcribed PDF',
+          projectName: req.body.projectName
+        }),
         orgId: req.apiKey.orgId,
-        metadata: { projectName: req.body.projectName || null, stage: 'mapping' }
+        metadata: { projectName: req.body.projectName || null, stage: 'mapping', documentSource: doc.source }
       });
       res.json({ runId: run.runId, status: run.status, result: run.result,
+                 documentSource: doc.source, documentChars: doc.text.length,
                  steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
     } catch (err) { next(err); }
   });
 
-router.post('/agent/disclose', apiKeyAuth, agentLimiter,
+router.post('/agent/disclose', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: discloseRequestSchema }),
   async (req, res, next) => {
     try {

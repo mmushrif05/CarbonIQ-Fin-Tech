@@ -77,6 +77,9 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
 | `POST` | `/v1/pcaf/part-c/report` | Disclosure report — PDF, Word or JSON |
 | `GET` | `/v1/pcaf/part-c/factors` | Factor store transparency (tier + source per row) |
+| `GET` | `/v1/pcaf/part-c/conformance` | Conformance matrix — rule → implementation → proving test |
+| `POST` | `/v1/pcaf/part-c/runs/start` | Begin a run, pause for client input |
+| `POST` | `/v1/pcaf/part-c/runs/:id/resume` | Supply answers, compute, complete |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
 | `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
@@ -182,6 +185,8 @@ Three tiers, enforced structurally rather than by convention:
 **Language guard:** output claims PCAF *conformance*, never endorsement. `containsForbiddenLanguage()` blocks any report containing "PCAF approved/endorsed/certified"; a test enforces it.
 
 **Division of labour:** Claude classifies, extracts, maps BOQ lines and writes narrative. The engine does every arithmetic operation. An LLM must never compute a figure that reaches a regulatory disclosure.
+
+**Conformance evidence:** `services/pcaf-partc/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 
 ---
 

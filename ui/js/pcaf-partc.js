@@ -14,6 +14,21 @@ const PCAFPartCPage = (() => {
   let lastResult  = null;
 
   const $  = id => document.getElementById(id);
+
+  /** Read a File as base64, without the data: prefix the API doesn't want. */
+  const toBase64 = file => new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload  = () => resolve(String(r.result).split(',')[1]);
+    r.onerror = () => reject(new Error('Could not read the file.'));
+    r.readAsDataURL(file);
+  });
+
+  /** Agents return prose around their JSON; pull the object out. */
+  function extractJson(text) {
+    const m = String(text || '').match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('The agent returned no structured result');
+    return JSON.parse(m[0]);
+  }
   const fmt = (n, d = 2) => Number(n || 0).toLocaleString('en-US',
     { minimumFractionDigits: d, maximumFractionDigits: d });
 
@@ -126,22 +141,59 @@ const PCAFPartCPage = (() => {
     $('partcMapStatus').textContent = `${materials.length} materials loaded from the worked example.`;
   }
 
-  // ── Map an arbitrary BOQ using the mapping agent ──────────
-  async function mapBoq() {
-    const content = $('partcBoq').value.trim();
-    if (!content) { Toast.show('Paste a BOQ first.', 'warn'); return; }
-    $('partcMapStatus').textContent = 'Mapping with agent…';
+  // ── Read the policy document with the intake agent ────────
+  // Classification decides the whole scope, so this runs before anything else.
+  async function readPolicy() {
+    const file = $('partcPolicyFile').files[0];
+    const text = $('partcPolicyText').value.trim();
+    if (!file && !text) { Toast.show('Upload a policy PDF or paste the text.', 'warn'); return; }
+
+    $('partcIntakeStatus').textContent = file ? 'Reading the PDF…' : 'Reading with agent…';
     try {
-      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/agent/map', {
-        method: 'POST',
-        body: JSON.stringify({ boqContent: content, boqFormat: 'text' })
+      const body = file ? { pdfBase64: await toBase64(file) } : { documentText: text };
+      const res  = await window.CARBONIQ_fetch('/v1/pcaf/part-c/agent/intake', {
+        method: 'POST', body: JSON.stringify(body)
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Mapping failed');
+      if (!res.ok) throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || 'Intake failed');
 
-      const match = String(data.result || '').match(/\{[\s\S]*\}/);
-      if (!match) throw new Error('Agent returned no structured mapping');
-      const parsed = JSON.parse(match[0]);
+      const parsed = extractJson(data.result);
+      const p = parsed.policy || {};
+
+      if (p.policyType) { $('partcPolicyType').value = p.policyType; applyGate(); }
+      if (p.premium     > 0) $('partcPremium').value     = p.premium;
+      if (p.projectCost > 0) $('partcProjectCost').value = p.projectCost;
+      if (p.gifa_m2     > 0) $('partcGifa').value        = p.gifa_m2;
+      if (p.yearsOfCover > 0) $('partcYears').value      = p.yearsOfCover;
+
+      const missing = (parsed.extraction && parsed.extraction.missingFields) || [];
+      const flags   = (parsed.extraction && parsed.extraction.flags) || [];
+      $('partcIntakeStatus').textContent =
+        `Read as ${p.policyType || 'unclassified'}` +
+        (missing.length ? ` · ${missing.length} field(s) not found` : '') +
+        (flags.length   ? ` · ${flags.length} flagged for review`   : '');
+    } catch (err) {
+      $('partcIntakeStatus').textContent = `Intake unavailable — ${err.message}`;
+    }
+  }
+
+  // ── Map an arbitrary BOQ using the mapping agent ──────────
+  async function mapBoq() {
+    const file    = $('partcBoqFile').files[0];
+    const content = $('partcBoq').value.trim();
+    if (!file && !content) { Toast.show('Upload a BOQ PDF or paste one first.', 'warn'); return; }
+    $('partcMapStatus').textContent = file ? 'Reading the PDF and mapping…' : 'Mapping with agent…';
+    try {
+      const body = file
+        ? { pdfBase64: await toBase64(file) }
+        : { boqContent: content, boqFormat: 'text' };
+      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/agent/map', {
+        method: 'POST', body: JSON.stringify(body)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || 'Mapping failed');
+
+      const parsed = extractJson(data.result);
 
       materials  = (parsed.materials || []).map((m, i) => ({ ...m, id: m.id || `m${i}` }));
       demolition = parsed.demolitionItems || [];
@@ -151,7 +203,8 @@ const PCAFPartCPage = (() => {
         `${materials.length} materials mapped, ${demolition.length} demolition items found.` +
         (parsed.summary?.lowConfidenceCount ? ` ${parsed.summary.lowConfidenceCount} need review.` : '');
     } catch (err) {
-      $('partcMapStatus').textContent = `Mapping unavailable: ${err.message}. Use the worked example to explore the engine.`;
+      $('partcMapStatus').textContent =
+        `Mapping unavailable — ${err.message} Use "Load worked example" to explore the engine meanwhile.`;
     }
   }
 
@@ -287,6 +340,71 @@ const PCAFPartCPage = (() => {
     }
   }
 
+  // ── Assessment history, with resume for parked runs ───────
+  async function loadRuns() {
+    $('partcRunsStatus').textContent = 'Loading…';
+    try {
+      const res  = await window.CARBONIQ_fetch('/v1/pcaf/part-c/runs?limit=15');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Could not load runs');
+      const runs = data.runs || [];
+
+      $('partcRuns').innerHTML = runs.length === 0
+        ? '<p class="partc-hint">No assessments yet.</p>'
+        : `<table class="partc-table">
+             <thead><tr><th>Run</th><th>Project</th><th>Status</th><th>Construction</th><th></th></tr></thead>
+             <tbody>${runs.map(r => `
+               <tr>
+                 <td class="mono">${r.runId}</td>
+                 <td>${r.projectName || '—'}</td>
+                 <td><span class="partc-status partc-status-${r.status}">${String(r.status).replace(/_/g, ' ')}</span></td>
+                 <td class="num">${r.result ? fmt(r.result.construction_kgCO2e) : '—'}</td>
+                 <td>${r.status === 'awaiting_inputs'
+                       ? `<button class="btn btn-ghost partc-resume" data-run="${r.runId}">Resume</button>`
+                       : ''}</td>
+               </tr>`).join('')}
+             </tbody></table>`;
+
+      $('partcRuns').querySelectorAll('.partc-resume').forEach(b =>
+        b.addEventListener('click', () => resumeRun(b.dataset.run)));
+
+      $('partcRunsStatus').textContent =
+        `${runs.length} run(s)` +
+        (runs.some(r => r.status === 'awaiting_inputs') ? ' — some are waiting on client input.' : '');
+    } catch (err) {
+      $('partcRunsStatus').textContent = `Unavailable: ${err.message}`;
+    }
+  }
+
+  /** Pick a parked run back up using whatever is currently on the form. */
+  async function resumeRun(runId) {
+    $('partcRunsStatus').textContent = `Resuming ${runId}…`;
+    try {
+      const p = buildPayload();
+      const answers = {
+        policyType: p.policy.policyType, yearsOfCover: p.policy.yearsOfCover,
+        gifa_m2: p.siteInputs.gifa_m2,
+        demolitionKm: p.siteInputs.demolitionKm, wasteDisposalKm: p.siteInputs.wasteDisposalKm,
+        previousProject: p.siteInputs.previousProject,
+        distances: Object.fromEntries(Object.entries(p.distances).map(([k, d]) =>
+          [k, { road_km: d.road || 0, sea_km: d.sea || 0, rail_km: d.rail || 0 }])),
+        ...p.useStage, evUsedOnSite: p.options.evUsedOnSite
+      };
+      const res  = await window.CARBONIQ_fetch(`/v1/pcaf/part-c/runs/${runId}/resume`, {
+        method: 'POST', body: JSON.stringify({ answers })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Resume failed');
+      lastPayload = p; lastResult = data;
+      render(data);
+      $('partcRunsStatus').textContent = `Resumed ${runId} — assessment complete.`;
+      $('partcPdfBtn').disabled = false; $('partcDocxBtn').disabled = false;
+      loadRuns();
+    } catch (err) {
+      $('partcRunsStatus').textContent = `Resume failed: ${err.message}`;
+    }
+  }
+
   async function download(format) {
     if (!lastPayload) return;
     const btn = format === 'pdf' ? $('partcPdfBtn') : $('partcDocxBtn');
@@ -315,12 +433,21 @@ const PCAFPartCPage = (() => {
     applyGate();
     $('partcPolicyType').addEventListener('change', applyGate);
     $('partcDemoBtn').addEventListener('click', loadDemo);
+    $('partcIntakeBtn').addEventListener('click', readPolicy);
     $('partcMapBtn').addEventListener('click', mapBoq);
+    $('partcRunsBtn').addEventListener('click', loadRuns);
+    $('partcPolicyFile').addEventListener('change', e =>
+      $('partcPolicyFileName').textContent = e.target.files[0]
+        ? e.target.files[0].name : 'or paste the text below');
+    $('partcBoqFile').addEventListener('change', e =>
+      $('partcBoqFileName').textContent = e.target.files[0]
+        ? e.target.files[0].name : 'or paste the BOQ below');
     $('partcRunBtn').addEventListener('click', run);
     $('partcPdfBtn').addEventListener('click', () => download('pdf'));
     $('partcDocxBtn').addEventListener('click', () => download('docx'));
     document.querySelectorAll('.partc-tab').forEach(t =>
       t.addEventListener('click', () => showRegister(t.dataset.reg)));
+    loadRuns();
   }
 
   return { init };

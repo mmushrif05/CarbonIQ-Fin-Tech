@@ -177,17 +177,29 @@ const discloseRequestSchema = assessRequestSchema.keys({
   note: Joi.string().max(2000).optional()
 });
 
-const mappingRequestSchema = Joi.object({
-  boqContent: Joi.string().max(500000).required(),
-  boqFormat:  Joi.string().valid('text', 'csv', 'json', 'markdown').default('text'),
-  projectName: Joi.string().trim().max(200).optional()
-});
+// A document may arrive as pasted text, an inline PDF, or a Files API id.
+// At least one is required; the reader picks the cheapest available path.
+const _documentSources = schema => schema
+  .or('boqContent', 'documentText', 'pdfBase64', 'fileId')
+  .messages({ 'object.missing': 'Supply the document as pasted text, pdfBase64, or a fileId from POST /v1/extract/upload.' });
 
-const intakeRequestSchema = Joi.object({
-  documentText: Joi.string().max(500000).required(),
+const mappingRequestSchema = _documentSources(Joi.object({
+  boqContent:  Joi.string().max(500000).optional(),
+  boqFormat:   Joi.string().valid('text', 'csv', 'json', 'markdown').default('text'),
+  pdfBase64:   Joi.string().optional(),
+  fileId:      Joi.string().pattern(/^file_/).optional(),
+  pageHint:    Joi.string().max(500).optional(),
+  projectName: Joi.string().trim().max(200).optional()
+}));
+
+const intakeRequestSchema = _documentSources(Joi.object({
+  documentText: Joi.string().max(500000).optional(),
   documentNote: Joi.string().max(2000).optional(),
+  pdfBase64:    Joi.string().optional(),
+  fileId:       Joi.string().pattern(/^file_/).optional(),
+  pageHint:     Joi.string().max(500).optional(),
   projectName:  Joi.string().trim().max(200).optional()
-});
+}));
 
 module.exports = {
   assessRequestSchema, formRequestSchema, reportRequestSchema,

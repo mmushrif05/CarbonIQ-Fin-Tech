@@ -179,3 +179,26 @@
 }
 .partc-annex h4 { margin: 0 0 4px; font-size: 13px; }
 .partc-annex-warning { margin: 0 0 8px; font-size: 11.5px; color: #b45309; font-style: italic; }
+
+/* ── Document upload ───────────────────────────────────── */
+.partc-upload { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; flex-wrap: wrap; }
+.partc-file { position: relative; overflow: hidden; display: inline-block; }
+.partc-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.partc-file span {
+  display: inline-block; padding: 7px 13px; border-radius: 6px; font-size: 12.5px; font-weight: 500;
+  border: 1px dashed var(--border, #cbd5e1); background: var(--bg-subtle, #f8fafc);
+  color: var(--text, #0f172a); cursor: pointer;
+}
+.partc-file:hover span { border-color: #0f766e; color: #0f766e; }
+
+/* ── Run status pills ──────────────────────────────────── */
+.partc-status {
+  font-size: 10.5px; padding: 2px 8px; border-radius: 9px; white-space: nowrap;
+  text-transform: capitalize;
+}
+.partc-status-awaiting_inputs { background: #fef3c7; color: #92400e; }
+.partc-status-completed       { background: #dcfce7; color: #166534; }
+.partc-status-failed          { background: #fee2e2; color: #991b1b; }
+.partc-status-created,
+.partc-status-ingesting,
+.partc-status-computing       { background: #e2e8f0; color: #475569; }
