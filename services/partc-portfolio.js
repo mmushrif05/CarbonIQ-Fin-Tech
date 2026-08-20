@@ -25,6 +25,7 @@
 'use strict';
 
 const registry    = require('./partc-registry');
+const { splitStageTotals, SCOPE_OF } = require('./pcaf-partc/ghg-scopes');
 const assessments = require('./partc-assessments');
 
 /** The best data-quality score a physical-activity assessment can reach. */
@@ -33,6 +34,43 @@ const BEST_ACHIEVABLE_SCORE = 2;   // Option 2a — primary emission factors
 function _round(n, dp = 2) {
   const f = Math.pow(10, dp);
   return Math.round((Number(n) || 0) * f) / f;
+}
+
+/** A number from the book, or zero when the policy has since been removed. */
+const _policyNum = (policy, field) => (policy ? Number(policy[field]) || 0 : 0);
+
+/** One GHG-scope score from a locked assessment, null where it was never recorded. */
+function _scopeScore(assessment, line, scope) {
+  const g = assessment.dqScoring && assessment.dqScoring.ghgScopes;
+  if (!g || !g[line] || !g[line][scope]) return null;
+  return g[line][scope].weighted;
+}
+
+/**
+ * The disclosed data-quality score: premium-weighted across policies.
+ *
+ * PCAF Part C asks for the score an insurer discloses to be weighted by
+ * outstanding premium, not by emissions. The two answer different questions
+ * and are kept apart everywhere: premium weighting says how well evidenced
+ * the book the insurer actually wrote is, emission weighting says which
+ * module to go and fix. Blending them would produce a number that answers
+ * neither.
+ *
+ * A policy carrying no score for this scope is excluded from the weighting
+ * rather than counted as zero, which would report a book better evidenced
+ * than it is; the count of what was excluded travels with the score.
+ */
+function _premiumWeighted(rows, field) {
+  const scored = rows.filter(r => r[field] !== null && r[field] !== undefined && r.premium > 0);
+  const premium = scored.reduce((n, r) => n + r.premium, 0);
+  return {
+    weighted: premium > 0
+      ? _round(scored.reduce((n, r) => n + r.premium * r[field], 0) / premium, 1)
+      : null,
+    premiumWeighted_total: _round(premium),
+    policiesScored: scored.length,
+    policiesWithoutScore: rows.length - scored.length
+  };
 }
 
 /**
@@ -47,6 +85,11 @@ async function rollUp(orgId, reportingYear) {
   const policies = await registry.listPolicies(orgId, { reportingYear: year });
   const all      = await assessments.listAssessments(orgId, { reportingYear: year });
   const locked   = all.filter(a => a.status === assessments.STATUS.LOCKED);
+
+  /* Premium, project cost and floor area come from the book rather than the
+     assessment, so a policy repriced after its assessment was locked weights
+     on what it is now. The emissions stay as locked — those are the figure. */
+  const policyById = new Map(policies.map(p => [p.policyId, p]));
 
   const rows = locked.map(a => ({
     assessmentId: a.assessmentId,
@@ -64,6 +107,20 @@ async function rollUp(orgId, reportingYear) {
     perM2:               a.summary.perM2Factor_kgCO2e_m2,
     dataQualityOption:   a.dataQuality.option,
     dataQualityScore:    a.dataQuality.score,
+    // The rubric score is a different measure from the PCAF option score
+    // and is carried beside it, never folded into it.
+    dqConstruction:      a.dqScoring ? a.dqScoring.construction.weighted : null,
+    dqUseStage:          a.dqScoring && a.dqScoring.useStage.applies
+      ? a.dqScoring.useStage.weighted : null,
+    /* The insured's scopes, carried separately as the checklist requires and
+       never blended with each other or with the option score above. */
+    dqScope1and2: _scopeScore(a, 'construction', 'scope1and2'),
+    dqScope3:     _scopeScore(a, 'construction', 'scope3'),
+    dqUseStageScope1and2: _scopeScore(a, 'useStage', 'scope1and2'),
+    dqUseStageScope3:     _scopeScore(a, 'useStage', 'scope3'),
+    premium:     _policyNum(policyById.get(a.policyId), 'premium'),
+    projectCost: _policyNum(policyById.get(a.policyId), 'projectCost'),
+    gifa_m2:     _policyNum(policyById.get(a.policyId), 'gifa_m2'),
     isRestatement:       !!(a.restatement && a.restatement.isRestatement),
     lockedAt:            a.lockedAt
   })).sort((x, y) => y.construction_kgCO2e - x.construction_kgCO2e);
@@ -79,6 +136,110 @@ async function rollUp(orgId, reportingYear) {
   const simpleDQ = rows.length
     ? _round(rows.reduce((n, r) => n + r.dataQualityScore, 0) / rows.length)
     : null;
+
+  /* The rubric score across the book, weighted by construction emissions on
+     the same rule as the option score. Rows locked before the rubric existed
+     carry none, so they are excluded from the weighting rather than counted
+     as zero — which would report a book cleaner than it is. */
+  const rubricRows = rows.filter(r => r.dqConstruction !== null);
+  const rubricEmissions = rubricRows.reduce((n, r) => n + r.construction_kgCO2e, 0);
+  const weightedRubric = rubricEmissions > 0
+    ? _round(rubricRows.reduce((n, r) => n + r.construction_kgCO2e * r.dqConstruction, 0) / rubricEmissions)
+    : null;
+
+  /* The insured's scope 1 and 2 combined, and its scope 3, across the book.
+     Stage totals are summed from the locked assessments and split by the
+     same map a single run uses, so the annual figure and the assessment
+     behind it can never state a different scope 1 and 2 for the same
+     emissions. */
+  const stageTotals = { A4: 0, 'A5.1': 0, 'A5.2': 0, 'A5.3': 0, B1: 0, B4: 0, B7: 0 };
+  for (const a of locked) {
+    const mv = a.moduleValues || {};
+    stageTotals.A4 += Number(mv.a4) || 0;
+    for (const sub of (mv.a5Breakdown || [])) {
+      if (stageTotals[sub.module] !== undefined) stageTotals[sub.module] += Number(sub.value) || 0;
+    }
+    stageTotals.B1 += Number(mv.b1) || 0;
+    stageTotals.B4 += Number(mv.b4) || 0;
+    stageTotals.B7 += Number(mv.b7) || 0;
+  }
+  const ghgScopes = splitStageTotals(stageTotals, useStage > 0);
+
+  /* What basis the book's assessments actually used for each input, so the
+     disclosure can show the evidence behind its score rather than only the
+     score. Counted rather than sampled: naming one assessment's basis as if
+     it were the book's would be a different claim. */
+  const basisIndex = new Map();
+  for (const a of locked) {
+    for (const i of ((a.dqScoring && a.dqScoring.inputs) || [])) {
+      if (!basisIndex.has(i.input)) {
+        basisIndex.set(i.input, {
+          input: i.input, stage: i.stage, ghgScope: i.ghgScope || SCOPE_OF[i.stage] || null,
+          assessments: 0, bases: new Map(), scores: []
+        });
+      }
+      const row = basisIndex.get(i.input);
+      row.assessments += 1;
+      row.scores.push(i.score);
+      const key = `${i.basis}::${i.source}`;
+      row.bases.set(key, (row.bases.get(key) || 0) + 1);
+    }
+  }
+  const dqInputBasis = [...basisIndex.values()].map(r => {
+    const top = [...r.bases.entries()].sort((a, b) => b[1] - a[1])[0];
+    const [basis, source] = String(top ? top[0] : '::').split('::');
+    return {
+      input: r.input, stage: r.stage, ghgScope: r.ghgScope,
+      assessments: r.assessments,
+      predominantBasis: basis || 'not recorded',
+      source: source || 'not recorded',
+      basesInUse: r.bases.size,
+      scoreLow: Math.min(...r.scores), scoreHigh: Math.max(...r.scores)
+    };
+  });
+
+  /* The disclosed scores. Premium-weighted, and the insured's scope 3 kept
+     apart from its scope 1 and 2, both as the Part C checklist requires. */
+  const disclosed = {
+    overall:    _premiumWeighted(rows, 'dqConstruction'),
+    scope1and2: _premiumWeighted(rows, 'dqScope1and2'),
+    scope3:     _premiumWeighted(rows, 'dqScope3'),
+    useStage: {
+      scope1and2: _premiumWeighted(rows, 'dqUseStageScope1and2'),
+      scope3:     _premiumWeighted(rows, 'dqUseStageScope3')
+    }
+  };
+
+  /* Line of business, because the checklist asks for the aggregate broken
+     down that way. Each line keeps its own premium-weighted score: a line
+     written thinly against poor data should not be flattered by a large,
+     well-evidenced one somewhere else in the book. */
+  const lobIndex = new Map();
+  for (const r of rows) {
+    const key = r.lineType || 'Not stated';
+    if (!lobIndex.has(key)) lobIndex.set(key, []);
+    lobIndex.get(key).push(r);
+  }
+  const byLineOfBusiness = [...lobIndex.entries()].map(([lineOfBusiness, rs]) => ({
+    lineOfBusiness,
+    policies: rs.length,
+    premium: _round(rs.reduce((n, r) => n + r.premium, 0)),
+    construction_kgCO2e: _round(rs.reduce((n, r) => n + r.construction_kgCO2e, 0)),
+    construction_tCO2e:  _round(rs.reduce((n, r) => n + r.construction_kgCO2e, 0) / 1000, 4),
+    useStage_kgCO2e:     _round(rs.reduce((n, r) => n + r.useStage_kgCO2e, 0)),
+    insurerIAE_tCO2e:    _round(rs.reduce((n, r) => n + r.insurerIAE_tCO2e, 0), 4),
+    useStageShare_tCO2e: _round(rs.reduce((n, r) => n + (r.useStageShare_tCO2e || 0), 0), 4),
+    dataQuality: _premiumWeighted(rs, 'dqConstruction').weighted
+  })).sort((a, b) => b.construction_kgCO2e - a.construction_kgCO2e);
+
+  /* Economic emission intensity, the recommendation at p.101. Reported per
+     million of premium and per million of insured project cost: premium is
+     what the insurer earns, project cost is what it stands behind, and a
+     book can move sharply on one while barely moving on the other. */
+  const premiumTotal = rows.reduce((n, r) => n + r.premium, 0);
+  const costTotal    = rows.reduce((n, r) => n + r.projectCost, 0);
+  const areaTotal    = rows.reduce((n, r) => n + r.gifa_m2, 0);
+  const perMillion = (t, base) => base > 0 ? _round((t / (base / 1e6)), 4) : null;
 
   const assessedPolicyIds = new Set(locked.map(a => a.policyId));
   const unassessed = policies.filter(p => !assessedPolicyIds.has(p.policyId));
@@ -109,10 +270,42 @@ async function rollUp(orgId, reportingYear) {
     },
     scopeNote: 'Construction and use-stage are reported as separate lines and are never summed. The voluntary whole-life annex (B2/B5/B8) is excluded entirely.',
 
+    byLineOfBusiness,
+
+    /* The insured's GHG scopes across the book — the cut the Part C
+       checklist asks for, alongside the lifecycle cut above. */
+    ghgScopes,
+
+    /* Section 8 of a Part C disclosure: economic emission intensity. */
+    intensity: {
+      currency: settings.currency,
+      premiumTotal: _round(premiumTotal),
+      projectCostTotal: _round(costTotal),
+      insuredArea_m2: _round(areaTotal),
+      constructionPerMillionPremium_tCO2e: perMillion(construction / 1000, premiumTotal),
+      iaePerMillionPremium_tCO2e:          perMillion(iae, premiumTotal),
+      constructionPerMillionCost_tCO2e:    perMillion(construction / 1000, costTotal),
+      constructionPerM2_kgCO2e:            areaTotal > 0 ? _round(construction / areaTotal) : null,
+      basis: `tCO2e per million ${settings.currency} of premium and of insured project cost, and kgCO2e per m2 of insured floor area. Reported for the construction line; the use-stage line is never added into it.`
+    },
+
     dataQuality: {
+      /* The disclosed figure. PCAF Part C asks for the score to be weighted
+         by outstanding premium, so that is what leads here; the
+         emission-weighted score below it is the internal diagnostic and is
+         labelled as one. */
+      disclosed,
+      disclosedBasis: 'Premium-weighted across the policies in this reporting year — sum(policy premium x policy score) / sum(policy premium). This is the score PCAF Part C requires an insurer to disclose.',
+      scopeSplitNote: 'The insured party\'s scope 3 score is reported separately from its scope 1 and 2 score, and the two are never blended. Every figure in this disclosure remains the re/insurer\'s own scope 3.',
+      diagnosticLabel: 'Emission-weighted — internal diagnostic, not the disclosed score.',
+      inputBasis: dqInputBasis,
+
       weighted: weightedDQ,
       simpleAverage: simpleDQ,
-      basis: 'Weighted by construction emissions, as PCAF requires.',
+      basis: 'Weighted by construction emissions — the internal diagnostic, not the disclosed score.',
+      weightedRubric,
+      rubricAssessments: rubricRows.length,
+      rubricBasis: 'The input rubric (1 best, 5 worst) rolled up per assessment, then weighted by construction emissions. A separate measure from the PCAF option score above, and never blended with it.',
       note: weightedDQ !== null && simpleDQ !== null && weightedDQ !== simpleDQ
         ? `The weighted score (${weightedDQ}) differs from a simple average (${simpleDQ}) because the book is not evenly sized — the largest assessments carry the position.`
         : null

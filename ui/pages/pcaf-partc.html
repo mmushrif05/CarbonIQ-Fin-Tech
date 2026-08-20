@@ -136,6 +136,14 @@
     <span class="partc-hint" id="partcRunStatus"></span>
   </div>
 
+  <!-- The score the disclosure would carry, recomputed by the engine as the
+       form is edited. Supplying an actual moves it while you watch. -->
+  <div class="partc-dqlive" id="partcDqLive" hidden>
+    <span class="partc-dqlive-label">Data quality if disclosed now</span>
+    <span class="partc-dqlive-scores" id="partcDqLiveScores"></span>
+    <span class="partc-dqlive-hint" id="partcDqLiveHint"></span>
+  </div>
+
   <!-- ── Result ──────────────────────────────────────────── -->
   <div id="partcResult" class="partc-result" style="display:none">
 
@@ -144,11 +152,13 @@
         <span class="partc-figure-label">Construction (A4 + A5) — the PCAF figure</span>
         <span class="partc-figure-value" id="partcConstruction">—</span>
         <span class="partc-figure-unit">kgCO₂e</span>
+        <span class="partc-figure-dq" id="partcDqConstruction"></span>
       </div>
       <div class="partc-figure">
         <span class="partc-figure-label">Use-stage (B1 + B4 + B7) — separate line</span>
         <span class="partc-figure-value" id="partcUseStage">—</span>
         <span class="partc-figure-unit">kgCO₂e</span>
+        <span class="partc-figure-dq" id="partcDqUseStage"></span>
       </div>
       <div class="partc-figure">
         <span class="partc-figure-label">Insurer's IAE</span>
@@ -175,6 +185,10 @@
       <div class="partc-panel">
         <h4>A4 Pareto — the vital few</h4>
         <div id="partcPareto"></div>
+      </div>
+      <div class="partc-panel partc-panel-wide">
+        <h4>Data quality — where each score comes from</h4>
+        <div id="partcDqPanel"></div>
       </div>
     </div>
 

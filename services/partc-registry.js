@@ -18,6 +18,8 @@ const crypto = require('crypto');
 const store  = require('./partc-store');
 const { hasUseStage } = require('./pcaf-partc/policy-gate');
 
+const { RECALCULATION_TRIGGERS } = require('../schemas/partc-registry');
+
 const CLIENTS  = 'clients';
 const PROJECTS = 'projects';
 const SETTINGS = 'settings';
@@ -36,7 +38,15 @@ const DEFAULT_SETTINGS = {
   region: 'Sri Lanka',
   premiumBasis: 'gross',
   restatementThresholdPct: 5,
-  reportingYearConvention: 'inception'
+  reportingYearConvention: 'inception',
+  /* A disclosure must state its recalculation protocol and its significance
+     threshold, so both carry a default rather than being absent until an
+     insurer thinks to set them. The base year is deliberately null until
+     stated: inventing one would be a claim about history. */
+  baseYear: null,
+  significanceThresholdPct: 5,
+  recalculationTriggers: RECALCULATION_TRIGGERS,
+  recalculationPolicy: ''
 };
 
 async function getSettings(orgId) {

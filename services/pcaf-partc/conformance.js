@@ -214,11 +214,85 @@ const RULES = [
     status: 'implemented'
   },
   {
+    id: 'C-DQ-07',
+    clause: 'PCAF — a figure is disclosed with its score',
+    rule: 'Each reported scope carries an emission-weighted data quality score built from the evidence behind each input, and the construction and use-stage scores are reported separately and never blended.',
+    implementation: 'services/pcaf-partc/dq-scoring.js — per-input scores follow the evidence the run actually used, module_score is the mean of its inputs, and each scope score is sum(module emissions x module score) / sum(module emissions). The scoring reads a finished result and computes no figure of its own.',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a emission-weighted roll-up \u203a the weighted score is \u03a3(emissions \u00d7 score) \u00f7 \u03a3(emissions), not a flat average',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DQ-08',
+    clause: 'PCAF — the scope rule reaches the score',
+    rule: 'Where the policy gate closes the use stage, the use-stage score reports as not applicable by scope rule rather than as a score of zero or a measurement of nothing.',
+    implementation: 'services/pcaf-partc/dq-scoring.js — useStage.applies follows policy.useStageYears; gated inputs are marked not evaluated and cite the gate rather than reporting a zero-valued basis',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a the scope rule reaches the score \u203a a gated use-stage input says it was not evaluated, not that it measured zero',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DQ-09',
+    clause: 'PCAF — the disclosure statement is generated, not written',
+    rule: 'The disclosure statement is produced from the execution: standard, section, both figures, the PCAF option, both scores and the limitations the run actually carries.',
+    implementation: 'services/pcaf-partc/dq-scoring.js disclosureStatement() — every clause is read from the result, and limitations are named from the inputs that scored 4 or worse, so a supplied actual removes its own limitation',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a the generated disclosure statement \u203a a supplied actual removes its limitation from the statement',
+    status: 'implemented'
+  },
+  {
     id: 'C-DQ-06',
     clause: 'Reproducibility',
     rule: 'The same inputs produce the same disclosure.',
     implementation: 'services/pcaf-partc/ is pure and deterministic: no network, no clock in any calculation, no LLM in any arithmetic path. Claude classifies, extracts and writes; the engine computes.',
     test: 'tests/pcaf-partc-e2e.test.js › reproducibility › the same inputs produce an identical disclosure',
+    status: 'implemented'
+  },
+
+  // ---- Reporting requirements (Part C ch.6) ------------------------------
+  {
+    id: 'C-RPT-01',
+    clause: 'Part C ch.6, ABSOLUTE EMISSIONS (pp.104-105)',
+    rule: 'The insured\u2019s scope 1 and 2 are reported combined as the absolute figure, with the insured\u2019s scope 3 reported separately from them.',
+    implementation: 'services/pcaf-partc/ghg-scopes.js maps each lifecycle stage to a GHG scope once; the emissions split and the data-quality split both read that map, so the two cuts cannot disagree. The report renders both in section 4.',
+    test: 'tests/partc-report-standard.test.js \u203a The insured GHG scope split \u203a reconciles exactly to the construction figure it is split from',
+    status: 'implemented'
+  },
+  {
+    id: 'C-RPT-02',
+    clause: 'Part C ch.6, DATA AND DATA QUALITY (p.106)',
+    rule: 'The disclosed data-quality score is weighted by outstanding premium, and the emission-weighted score is never presented as the disclosed figure.',
+    implementation: 'services/partc-portfolio.js _premiumWeighted() produces the disclosed score; the emission-weighted score survives beside it carrying the label "internal diagnostic, not the disclosed score". A policy with no score is excluded from the weighting rather than counted as zero.',
+    test: 'tests/partc-portfolio.test.js \u203a Portfolio \u2014 the disclosed data-quality score \u203a the disclosed score is premium-weighted and says so',
+    status: 'implemented'
+  },
+  {
+    id: 'C-RPT-03',
+    clause: 'Part C ch.6, RECALCULATION (p.99)',
+    rule: 'A base-year recalculation protocol and a significance threshold are stated by the reporting entity and printed in every report.',
+    implementation: 'schemas/partc-registry.js holds baseYear, significanceThresholdPct and recalculationTriggers on the entity\u2019s settings, defaulted to the GHG Protocol Scope 3 triggers; section 7 of every report prints them, and says plainly when no base year has been set rather than implying one.',
+    test: 'tests/partc-report-output.test.js \u203a Part C report \u2014 the PDF is readable \u203a the recalculation protocol and the significance threshold are present',
+    status: 'implemented'
+  },
+  {
+    id: 'C-RPT-04',
+    clause: 'Part C ch.6',
+    rule: 'The report answers every disclosure requirement of Chapter 6, or states a justification for each it does not.',
+    implementation: 'services/partc-checklist.js completes the checklist from the same facts the sections render, so an item cannot answer Yes to something the document does not contain; anything but Yes carries its reason, and the completed checklist is the final annex of both documents.',
+    test: 'tests/partc-report-standard.test.js \u203a The completed disclosure checklist \u203a it cannot claim what the report does not contain',
+    status: 'implemented'
+  },
+  {
+    id: 'C-RPT-05',
+    clause: 'Part C ch.6, GASES AND UNITS (pp.103, 61)',
+    rule: 'The seven Kyoto Protocol gases are accounted for, and the GWP basis names its time horizon and IPCC assessment report.',
+    implementation: 'services/partc-report-standard.js KYOTO_GASES names all seven with where each arises in a construction value chain; section 3 states the 100-year horizon and IPCC AR5, and discloses the AR4/AR5 difference for R-410A rather than reconciling it silently.',
+    test: 'tests/partc-report-output.test.js \u203a Part C report \u2014 the PDF is readable \u203a the seven Kyoto gases and the GWP basis are named',
+    status: 'implemented'
+  },
+  {
+    id: 'C-RPT-06',
+    clause: 'Part C ch.6, ABSOLUTE EMISSIONS (pp.104-105)',
+    rule: 'Financed emissions and insurance-associated emissions are reported separately and never combined.',
+    implementation: 'No code path sums the two: financed emissions are produced by services/pcaf.js for lending and have no import path into the Part C engine. Section 4 of every report states the separation explicitly.',
+    test: 'tests/partc-report-standard.test.js \u203a The section model \u203a states that financed emissions are never combined with these',
     status: 'implemented'
   },
 

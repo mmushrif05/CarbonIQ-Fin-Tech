@@ -263,3 +263,78 @@ describe('Portfolio API', () => {
     expect(res.body.portfolio.rows).toHaveLength(0);
   });
 });
+
+/* ── The disclosed score, and the insured's GHG scopes ──────────────────────
+   PCAF Part C requires the disclosed data-quality score to be weighted by
+   outstanding premium, not by emissions. The two are different measures and
+   both must survive: premium weighting says how well evidenced the book the
+   insurer actually wrote is; emission weighting says which module to fix. */
+describe('Portfolio — the disclosed data-quality score', () => {
+  test('the disclosed score is premium-weighted and says so', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+
+    expect(r.dataQuality.disclosed.overall.weighted).not.toBeNull();
+    expect(r.dataQuality.disclosedBasis).toMatch(/premium/i);
+    expect(r.dataQuality.disclosed.overall.premiumWeighted_total).toBeGreaterThan(0);
+    expect(r.dataQuality.disclosed.overall.policiesScored).toBe(1);
+  });
+
+  test('the emission-weighted score survives, labelled as the diagnostic it is', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    expect(r.dataQuality.weightedRubric).not.toBeNull();
+    expect(r.dataQuality.diagnosticLabel).toMatch(/not the disclosed score/i);
+    expect(r.dataQuality.basis).toMatch(/internal diagnostic/i);
+  });
+
+  test('the insured scope 3 score is reported apart from its scope 1 and 2', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    const d = r.dataQuality.disclosed;
+    expect(d.scope1and2.weighted).not.toBeNull();
+    expect(d.scope3.weighted).not.toBeNull();
+    expect(d.scope1and2.weighted).not.toBe(d.scope3.weighted);
+    expect(r.dataQuality.scopeSplitNote).toMatch(/never blended/i);
+  });
+
+  test('a policy carrying no score is excluded from the weighting, not counted as zero', async () => {
+    const locked = await lockOn('Negombo');
+    // A row locked before the rubric existed carries no score.
+    const stored = await A.getAssessment(ORG, locked.assessmentId);
+    stored.dqScoring = null;
+    await store.put('partc-assessments', ORG, stored.assessmentId, stored);
+
+    const r = await P.rollUp(ORG, 2026);
+    expect(r.dataQuality.disclosed.overall.weighted).toBeNull();
+    expect(r.dataQuality.disclosed.overall.policiesWithoutScore).toBe(1);
+  });
+});
+
+describe('Portfolio — the insured GHG scope split and intensity', () => {
+  test('the scope split reconciles to the construction total', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    const g = r.ghgScopes.construction;
+    expect(g.scope1and2.kgCO2e + g.scope3.kgCO2e).toBeCloseTo(r.construction.total_kgCO2e, 1);
+    expect(g.scope1and2.kgCO2e).toBeGreaterThan(0);
+  });
+
+  test('economic intensity is reported per million of premium and of project cost', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    expect(r.intensity.constructionPerMillionPremium_tCO2e).toBeGreaterThan(0);
+    expect(r.intensity.constructionPerMillionCost_tCO2e).toBeGreaterThan(0);
+    expect(r.intensity.basis).toMatch(/use-stage line is never added into it/i);
+  });
+
+  test('emissions are aggregated by line of business, each with its own score', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    expect(r.byLineOfBusiness.length).toBeGreaterThan(0);
+    for (const l of r.byLineOfBusiness) {
+      expect(l.lineOfBusiness).toBeTruthy();
+      expect(l.construction_kgCO2e).toBeGreaterThan(0);
+    }
+  });
+});

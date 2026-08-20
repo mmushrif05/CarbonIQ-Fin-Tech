@@ -67,14 +67,73 @@ const PartCBook = (() => {
     } catch (_) { /* offline */ }
   }
 
+  /* The reporting entity's own settings.
+     A Part C disclosure has to state its base year, the threshold at which
+     that base year is recalculated, and the circumstances that trigger a
+     recalculation. Those are requirements of the standard rather than
+     preferences, so they are editable here and printed in every report. */
+  let settingsCache = null;
+
   async function loadSettings() {
     try {
       const { settings } = await call('/settings');
+      settingsCache = settings;
       currency = settings.currency || 'LKR';
       say('bookInsurer', settings.insurerName || 'Insurance book');
       $('bookSubtitle').textContent =
         `FY${settings.reportingYear} · ${currency} · ${settings.premiumBasis} premium · restates at ${settings.restatementThresholdPct}%`;
+      renderSettings(settings);
     } catch (_) { /* defaults stand */ }
+  }
+
+  function renderSettings(s) {
+    const el = $('bookSettingsSummary');
+    if (!el) return;
+    el.innerHTML = `<table class="partc-table"><tbody>
+      <tr><td>Base year</td><td class="num">${s.baseYear ? esc(s.baseYear) : '<em>not stated</em>'}</td></tr>
+      <tr><td>Significance threshold — triggers a base-year recalculation</td><td class="num">${s.significanceThresholdPct}%</td></tr>
+      <tr><td>Restatement threshold — makes a new version a restatement</td><td class="num">${s.restatementThresholdPct}%</td></tr>
+      <tr><td>Recalculation triggers</td><td class="num">${(s.recalculationTriggers || []).length}</td></tr>
+      </tbody></table>
+      ${s.baseYear ? '' : '<p class="partc-hint">A disclosure states its base year. Until one is set, every report says so rather than implying the current year.</p>'}`;
+
+    if ($('setInsurerName')) {
+      $('setInsurerName').value = s.insurerName || '';
+      $('setReportingYear').value = s.reportingYear || '';
+      $('setCurrency').value = s.currency || 'LKR';
+      $('setPremiumBasis').value = s.premiumBasis || 'gross';
+      $('setBaseYear').value = s.baseYear || '';
+      $('setSignificancePct').value = s.significanceThresholdPct;
+      $('setRestatementPct').value = s.restatementThresholdPct;
+      $('setTriggers').value = (s.recalculationTriggers || []).join('\n');
+      $('setPolicy').value = s.recalculationPolicy || '';
+    }
+  }
+
+  async function saveSettings(e) {
+    e.preventDefault();
+    say('bookSettingsStatus', 'Saving…');
+    const baseYear = Number($('setBaseYear').value);
+    const body = {
+      ...settingsCache,
+      insurerName: $('setInsurerName').value.trim() || 'Unnamed insurer',
+      reportingYear: Number($('setReportingYear').value) || new Date().getFullYear(),
+      currency: ($('setCurrency').value || 'LKR').trim().toUpperCase(),
+      premiumBasis: $('setPremiumBasis').value,
+      baseYear: baseYear > 0 ? baseYear : null,
+      significanceThresholdPct: Number($('setSignificancePct').value) || 0,
+      restatementThresholdPct: Number($('setRestatementPct').value) || 0,
+      recalculationTriggers: $('setTriggers').value.split('\n').map(t => t.trim()).filter(Boolean),
+      recalculationPolicy: $('setPolicy').value.trim()
+    };
+    delete body.id; delete body.orgId; delete body.updatedAt;
+    try {
+      await call('/settings', { method: 'PUT', body: JSON.stringify(body) });
+      say('bookSettingsStatus', 'Saved.');
+      $('bookSettingsForm').hidden = true;
+      $('bookSettingsToggle').setAttribute('aria-expanded', 'false');
+      await loadSettings();
+    } catch (err) { say('bookSettingsStatus', err.message); }
   }
 
   // ── Clients ───────────────────────────────────────────────
@@ -573,6 +632,20 @@ const PartCBook = (() => {
     on('bookClientCancel', 'click', () => { $('bookClientForm').hidden = true; });
     on('bookClientForm', 'submit', saveClient);
     on('bookSeedBtn', 'click', seedDemo);
+
+    on('bookSettingsToggle', 'click', () => {
+      const form = $('bookSettingsForm');
+      form.hidden = !form.hidden;
+      $('bookSettingsToggle').setAttribute('aria-expanded', String(!form.hidden));
+      $('bookSettingsToggle').textContent = form.hidden ? 'Edit' : 'Close';
+    });
+    on('bookSettingsCancel', 'click', () => {
+      $('bookSettingsForm').hidden = true;
+      $('bookSettingsToggle').setAttribute('aria-expanded', 'false');
+      $('bookSettingsToggle').textContent = 'Edit';
+      if (settingsCache) renderSettings(settingsCache);
+    });
+    on('bookSettingsForm', 'submit', saveSettings);
 
     $('bookNewProjectBtn').addEventListener('click', () => {
       addingPolicyToProject = null;

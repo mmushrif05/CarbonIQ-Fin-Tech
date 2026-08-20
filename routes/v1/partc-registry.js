@@ -31,6 +31,7 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 const registry = require('../../services/partc-registry');
 const store    = require('../../services/partc-store');
 const { seedDemoBook } = require('../../services/partc-demo-data');
+const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const boq = require('../../services/partc-boq');
 const assessments = require('../../services/partc-assessments');
 const portfolio   = require('../../services/partc-portfolio');
@@ -386,15 +387,10 @@ router.get('/disclosure/:year', apiKeyAuth, defaultLimiter, handle(async (req, r
   if (format === 'json') return res.json({ disclosure: d });
 
   if (format === 'docx') {
-    const buffer = await disclosure.buildDisclosureDOCX(d);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.setHeader('Content-Disposition', `attachment; filename="${stem}.docx"`);
-    return res.send(buffer);
+    return sendDocx(res, await disclosure.buildDisclosureDOCX(d), `${stem}.docx`, 'annual disclosure');
   }
 
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', `attachment; filename="${stem}.pdf"`);
-  disclosure.buildDisclosurePDF(d).pipe(res);
+  return sendPdf(res, disclosure.buildDisclosurePDF(d), `${stem}.pdf`, 'annual disclosure');
 }));
 
 // ---------------------------------------------------------------------------

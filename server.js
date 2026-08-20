@@ -64,11 +64,26 @@ app.use(express.static(path.join(__dirname, 'ui')));
 // ---------------------------------------------------------------------------
 
 // Health check — no auth required
+/*
+ * Health, and which build is answering.
+ *
+ * "The fix did not work" and "the fix has not been deployed" look identical
+ * from a browser, and the second is far more common. Netlify sets COMMIT_REF
+ * and DEPLOY_ID on every build, so the running commit is reported here: one
+ * request settles which of the two it is, without guessing.
+ */
 app.get('/health', (_req, res) => {
+  const commit = process.env.COMMIT_REF || process.env.GIT_COMMIT || null;
   res.json({
     status: 'ok',
     service: 'carboniq-fintech',
     version: config.version,
+    build: {
+      commit: commit ? String(commit).slice(0, 12) : 'unknown (not a Netlify build)',
+      branch: process.env.BRANCH || process.env.HEAD || null,
+      deployId: process.env.DEPLOY_ID || null,
+      context: process.env.CONTEXT || process.env.NODE_ENV || null
+    },
     timestamp: new Date().toISOString()
   });
 });

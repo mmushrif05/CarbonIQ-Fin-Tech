@@ -13,7 +13,27 @@
 const serverless = require('serverless-http');
 const app = require('../../server');
 
-const handler = serverless(app);
+/**
+ * Response types that must survive as bytes.
+ *
+ * Without this list serverless-http hands the body back as a UTF-8 string.
+ * Every byte above 127 is then re-encoded as a multi-byte sequence — a 34KB
+ * PDF arrived as 63KB of mangled text, which downloads but will not open,
+ * so a report looked empty. Naming the binary types makes the adapter
+ * base64-encode the body and set isBase64Encoded, and the bytes arrive
+ * exactly as written.
+ */
+const BINARY_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/octet-stream',
+  'application/zip',
+  'image/*',
+  'font/*'
+];
+
+const handler = serverless(app, { binary: BINARY_TYPES });
 
 exports.handler = async (event, context) => {
   // Netlify may provide rawPath instead of path depending on invocation method.

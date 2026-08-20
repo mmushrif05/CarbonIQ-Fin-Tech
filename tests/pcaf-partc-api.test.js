@@ -135,3 +135,50 @@ describe('Part C API — form and reports', () => {
     expect(res.body.report.result.scopeWarning).toMatch(/never summed/i);
   });
 });
+
+describe('Part C API — the data-quality score travels with the figure', () => {
+  test('POST /assess returns the scoring and the generated statement', async () => {
+    const res = await auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody());
+    expect(res.status).toBe(200);
+    expect(res.body.dqScoring).toBeTruthy();
+    expect(res.body.dqScoring.construction.weighted).toBeGreaterThan(0);
+    expect(res.body.dqScoring.rubric).toHaveLength(5);
+    expect(res.body.dqStatement).toMatch(/in conformance with PCAF/i);
+    expect(res.body.dqStatement).not.toMatch(/PCAF (approved|endorsed|certified)/i);
+  });
+
+  test('a construction-only policy reports the use stage as out of scope, not as a score', () => {
+    return auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody())
+      .then(res => {
+        expect(res.body.dqScoring.useStage.applies).toBe(false);
+        expect(res.body.dqScoring.useStage.weighted).toBeNull();
+        expect(res.body.dqScoring.useStage.notApplicableNote).toMatch(/scope rule/i);
+      });
+  });
+
+  test('POST /dq-preview scores without persisting anything', async () => {
+    const res = await auth(request(app).post('/v1/pcaf/part-c/dq-preview')).send(assessBody());
+    expect(res.status).toBe(200);
+    expect(res.body.dqScoring.construction.weighted).toBeGreaterThan(0);
+    expect(res.body.summary.construction_kgCO2e).toBeGreaterThan(0);
+    expect(res.body.runId).toBeUndefined();
+  });
+
+  test('the preview moves when an actual is supplied, so the form can show it', async () => {
+    const idi = { ...fx.POLICY_IDI };
+    const before = await auth(request(app).post('/v1/pcaf/part-c/dq-preview'))
+      .send(assessBody({ policy: idi, useStage: fx.USE_STAGE }));
+    const after = await auth(request(app).post('/v1/pcaf/part-c/dq-preview'))
+      .send(assessBody({ policy: idi, useStage: { ...fx.USE_STAGE, chargeKg: 12 } }));
+
+    expect(before.status).toBe(200);
+    expect(after.status).toBe(200);
+    expect(after.body.dqScoring.byModule.B1)
+      .toBeLessThan(before.body.dqScoring.byModule.B1);
+  });
+
+  test('the preview requires a key like every other endpoint', async () => {
+    const res = await request(app).post('/v1/pcaf/part-c/dq-preview').send(assessBody());
+    expect([401, 403]).toContain(res.status);
+  });
+});

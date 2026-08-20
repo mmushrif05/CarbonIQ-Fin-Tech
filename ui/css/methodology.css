@@ -301,6 +301,102 @@
 .dq-3 { background: rgba(94,234,212,.20); } .dq-4 { background: rgba(245,158,11,.15); }
 .dq-5 { background: rgba(245,158,11,.24); }
 
+/* ── 8b · Data quality scoring ────────────────────────────────────────────
+   One palette drives the badges, the stacked bar and the rubric, so a
+   colour means the same thing everywhere on the page: teal is evidence,
+   amber is assumption. The bar is the point of the section — it shows
+   which module the weighted score is coming from before any number is
+   read. */
+.mth { --sc1: #0f766e; --sc2: #0d9488; --sc3: #14b8a6; --sc4: #d97706; --sc5: #b45309; }
+
+.dq-badge { display: inline-flex; align-items: baseline; gap: 3px; white-space: nowrap;
+  flex: 0 0 auto; width: max-content; max-width: none;
+  padding: 4px 13px; border-radius: 999px; font-size: 17px; font-weight: 700;
+  letter-spacing: -.02em; line-height: 1.15; color: #fff; }
+.dq-badge b { font-weight: 700; }
+.dq-badge i { font-style: normal; font-size: 10.5px; font-weight: 600; opacity: .8; }
+.dq-badge.is-sm { font-size: 12px; padding: 2px 9px; font-weight: 680; }
+.sc-1 { background: var(--sc1); } .sc-2 { background: var(--sc2); }
+.sc-3 { background: var(--sc3); } .sc-4 { background: var(--sc4); }
+.sc-5 { background: var(--sc5); }
+.sc-na { background: transparent; color: var(--ink3); border: 1px dashed var(--line); font-weight: 600; }
+
+/* Two head cards: never a figure without its score. */
+.dq-heads { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px,1fr));
+  gap: 12px; margin-bottom: 20px; }
+.dq-head { border: 1px solid var(--line); border-radius: 12px; padding: 15px 17px;
+  background: var(--surface); }
+.dq-head.is-na { border-style: dashed; background: var(--raised); }
+.dq-head-label { margin: 0 0 6px; font-size: 11px; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--ink3); }
+.dq-head-fig { margin: 0 0 9px; font-size: 30px; font-weight: 700; letter-spacing: -.03em;
+  line-height: 1.05; }
+.dq-head-fig span { font-size: 13px; font-weight: 600; color: var(--ink3); margin-left: 5px;
+  letter-spacing: 0; }
+.dq-head { display: flex; flex-direction: column; align-items: flex-start; }
+.dq-head > * { max-width: 100%; }
+.dq-head.is-na .dq-head-fig { color: var(--ink3); }
+.dq-head .mth-cap { margin: 8px 0 0; }
+.dq-improve { margin: 9px 0 0; padding: 8px 11px; border-radius: 8px;
+  background: var(--brand-soft); font-size: 12px; line-height: 1.45; }
+.dq-improve b { color: var(--brand); margin-right: 5px; white-space: nowrap; }
+.dq-improve.is-done { background: var(--raised); color: var(--ink2); }
+.dq-improve.is-done b { color: var(--ink3); text-transform: uppercase;
+  font-size: 10px; letter-spacing: .06em; }
+
+/* Weighting: the bar first, its table underneath for the audit trail. */
+.dq-weight { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px,1fr));
+  row-gap: 22px; column-gap: 28px; align-items: start; }
+/* Two panels rather than two columns of one table: side by side without a
+   boundary, the left table's last column and the right table's first read
+   as one row of five headings. */
+.dq-wblock { min-width: 0; border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; background: var(--surface); }
+.dq-wblock.is-na { align-self: start; border-style: dashed; background: var(--raised); }
+.dq-wtitle { margin: 0 0 8px; font-size: 12.5px; font-weight: 620; }
+.dq-bar { display: flex; gap: 2px; height: 46px; margin-bottom: 10px;
+  border-radius: 8px; overflow: hidden; }
+.dq-seg { display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 0; overflow: hidden; color: #fff; cursor: help; }
+.dq-seg b { font-size: 11.5px; }
+.dq-seg i { font-style: normal; font-size: 9.5px; opacity: .85; }
+/* A segment too narrow to hold a label keeps its colour and its tooltip; the
+   key underneath names every band, so nothing is lost to a clipped word. */
+.dq-barkey { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: -4px 0 12px;
+  font-size: 11px; color: var(--ink3); }
+.dq-barkey span { display: inline-flex; align-items: center; gap: 5px; }
+.dq-key { width: 9px; height: 9px; border-radius: 3px; flex: none; }
+.dq-key.sc-1 { background: var(--sc1); } .dq-key.sc-2 { background: var(--sc2); }
+.dq-key.sc-3 { background: var(--sc3); } .dq-key.sc-4 { background: var(--sc4); }
+.dq-key.sc-5 { background: var(--sc5); }
+/* The panel is narrower than a nowrap header row, so these headings wrap
+   rather than pushing the last column past the card edge. */
+.dq-wtable { font-size: 12px; table-layout: fixed; width: 100%; }
+.dq-wtable th { white-space: normal; padding-inline: 5px; }
+.dq-wtable td { padding-inline: 5px; }
+.dq-wtable th:first-child, .dq-wtable td:first-child { width: 24%; }
+.dq-wtable .is-total td { border-bottom: 0; font-weight: 620; }
+.dq-itable td { font-size: 12px; }
+.dq-itable tr.is-na td { color: var(--ink3); }
+.dq-share { display: block; font-size: 9.5px; color: var(--ink3); margin-top: 2px; }
+
+/* Rubric: five rows, colour-anchored to the same scale as the badges. */
+.dq-rubric { display: grid; gap: 5px; }
+.dq-rub { display: grid; grid-template-columns: 40px minmax(120px, 200px) 1fr;
+  gap: 12px; align-items: baseline; padding: 8px 11px; border-radius: 9px;
+  background: var(--raised); font-size: 12.5px; }
+.dq-rub b { font-weight: 620; }
+.dq-rub span:last-child { color: var(--ink2); }
+
+.dq-statement { margin: 0; padding: 14px 18px; border-left: 3px solid var(--brand);
+  background: var(--brand-soft); border-radius: 0 10px 10px 0;
+  font-size: 13.5px; line-height: 1.62; }
+
+@media (max-width: 640px) {
+  .dq-rub { grid-template-columns: 34px 1fr; }
+  .dq-rub span:last-child { grid-column: 2; }
+}
+
 /* ── 9 · Conformance grid ─────────────────────────────────── */
 .mth-confhead { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin-bottom: 14px; }
 .conf-count { font-size: 26px; font-weight: 700; margin: 0; letter-spacing: -.02em; }
@@ -391,6 +487,10 @@
   }
   :root:not([data-theme="light"]) .mth .lane-1 .scope-bar { color: #042f2e; }
   :root:not([data-theme="light"]) .mth .tier-regional { color: #0f172a; }
+  :root:not([data-theme="light"]) .mth { --sc1: #0d9488; --sc2: #14b8a6; --sc3: #2dd4bf;
+    --sc4: #d97706; --sc5: #b45309; }
+  :root:not([data-theme="light"]) .mth .sc-3,
+  :root:not([data-theme="light"]) .mth .dq-seg.sc-3 { color: #042f2e; }
 }
 :root[data-theme="dark"] .mth {
   --ink: #e2e8f0; --ink2: #94a3b8; --ink3: #64748b;
@@ -400,6 +500,10 @@
 }
 :root[data-theme="dark"] .mth .lane-1 .scope-bar { color: #042f2e; }
 :root[data-theme="dark"] .mth .tier-regional { color: #0f172a; }
+:root[data-theme="dark"] .mth { --sc1: #0d9488; --sc2: #14b8a6; --sc3: #2dd4bf;
+  --sc4: #d97706; --sc5: #b45309; }
+:root[data-theme="dark"] .mth .sc-3 { color: #042f2e; }
+:root[data-theme="dark"] .mth .dq-seg.sc-3 { color: #042f2e; }
 
 /* ── Print ────────────────────────────────────────────────── */
 @media print {

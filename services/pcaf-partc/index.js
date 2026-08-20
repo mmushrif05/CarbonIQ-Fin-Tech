@@ -28,6 +28,7 @@ const { b7Water }           = require('./b7-water');
 const { beyondPcafAnnex }   = require('./beyond-pcaf');
 const { rollup }            = require('./rollup');
 const { assessDataQuality, disclosureNote } = require('./data-quality');
+const { scoreRun, disclosureStatement } = require('./dq-scoring');
 const sensitivity           = require('./sensitivity');
 const { runChecks }         = require('./checks');
 const { collectAssumptions, collectFactors } = require('./provenance');
@@ -136,7 +137,7 @@ function runPartC(input = {}) {
     factorAvailable: opts.evUsedOnSite ? factors.vehicleEF('EV') : null
   };
 
-  return {
+  const result = {
     standard: 'PCAF Global GHG Accounting and Reporting Standard — Part C (insurance-associated emissions)',
     scopeModel: {
       mandatory:  'A4 + A5 (construction) — the PCAF figure',
@@ -168,6 +169,15 @@ function runPartC(input = {}) {
     tree: pcafTree,
     generatedAt: new Date().toISOString()
   };
+
+  /* Data-quality scoring is computed over the finished result rather than
+     threaded through the calculation, so it can report on a figure and can
+     never change one. PCAF requires a score beside any disclosed number, so
+     it is attached here and every consumer receives it. */
+  result.dqScoring = scoreRun(result);
+  result.dqDisclosureStatement = disclosureStatement(result, result.dqScoring);
+
+  return result;
 }
 
 module.exports = { runPartC };

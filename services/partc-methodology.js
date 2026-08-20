@@ -277,6 +277,12 @@ function buildMethodology(opts = {}) {
     },
 
     // 5 ───────────────────────────────────────────────────────────────
+    // PCAF requires a score beside any disclosed figure, so the scoring the
+    // engine produced for the reference run travels with the method that
+    // produced it.
+    dqScoring: result.dqScoring || null,
+    dqStatement: result.dqDisclosureStatement || null,
+
     dataQuality: {
       options: Object.entries(OPTION_SCORES).map(([option, score]) => ({
         option, score, label: OPTION_LABELS[option] || null
@@ -476,15 +482,31 @@ function _scenarios() {
       b7: _round(r.modules.b7.value),
       useStage: _round(r.summary.useStage_kgCO2e),
       insurerIAE: r.summary.insurerIAE_tCO2e,
-      attributionFactor: r.summary.attributionFactor
+      attributionFactor: r.summary.attributionFactor,
+      _result: r
     };
   };
 
-  const policies = ['CAR', 'EAR', 'IDI', 'Property'].map(t => run(t));
+  /* The four policy types carry their own data-quality scoring, so the
+     score the page shows always belongs to the run the page is showing.
+     The 45-year curve does not: its scores are the IDI scores throughout,
+     and 45 copies of the same tables would be payload for nothing. */
+  const policies = ['CAR', 'EAR', 'IDI', 'Property'].map(t => {
+    const row = run(t);
+    const r = row._result;
+    delete row._result;
+    row.dq = r.dqScoring || null;
+    row.dqStatement = r.dqDisclosureStatement || null;
+    return row;
+  });
 
   const MAX_YEARS = 45;
   const curve = [];
-  for (let y = 1; y <= MAX_YEARS; y++) curve.push({ years: y, ...run('IDI', y) });
+  for (let y = 1; y <= MAX_YEARS; y++) {
+    const row = run('IDI', y);
+    delete row._result;
+    curve.push({ years: y, ...row });
+  }
 
   // Where B4 steps: the years at which the cover first outlives the plant.
   const steps = [];
@@ -509,4 +531,15 @@ function _scenarios() {
   };
 }
 
-module.exports = { buildMethodology, MODULE_ORDER };
+/**
+ * Every factor row in the store, with its tier and named source.
+ *
+ * The annual disclosure needs the same register the methodology publishes;
+ * exporting the harvest keeps one implementation rather than a second that
+ * could disagree about what the store contains.
+ */
+function allFactorRows() {
+  return factorStore.allRows ? factorStore.allRows() : _harvestFactorRows();
+}
+
+module.exports = { buildMethodology, allFactorRows, MODULE_ORDER };

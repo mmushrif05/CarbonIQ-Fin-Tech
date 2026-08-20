@@ -9,6 +9,7 @@
  *   POST /v1/pcaf/part-c/assess    run the full assessment
  *   POST /v1/pcaf/part-c/form      build the pre-filled, policy-gated client form
  *   POST /v1/pcaf/part-c/report    PDF, Word or JSON disclosure report
+ *   POST /v1/pcaf/part-c/dq-preview  data-quality scoring alone, nothing persisted
  *   GET  /v1/pcaf/part-c/factors   factor store transparency
  *   GET  /v1/pcaf/part-c/options   dropdown option lists for the form
  *   GET  /v1/pcaf/part-c/runs      list persisted runs
@@ -40,6 +41,8 @@ const { conformanceMatrix } = require('../../services/pcaf-partc/conformance');
 const { buildMethodology } = require('../../services/partc-methodology');
 const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/partc-methodology-doc');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
+const partcRegistry = require('../../services/partc-registry');
+const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
 const {
@@ -103,6 +106,10 @@ function _shapeResult(result, registers, extra = {}) {
     },
     deMinimis:   result.deMinimis,
     dataQuality: result.dataQuality,
+    // PCAF requires a score beside any disclosed figure, so the scoring
+    // travels with the figures rather than being fetched separately.
+    dqScoring:  result.dqScoring || null,
+    dqStatement: result.dqDisclosureStatement || null,
     disclosureNote: result.disclosureNote,
     sensitivity: result.sensitivity,
     vehicle:     result.vehicle,
@@ -157,15 +164,12 @@ router.get('/methodology', apiKeyAuth, defaultLimiter, async (req, res, next) =>
     if (format === 'json') return res.json({ methodology });
 
     if (format === 'docx') {
-      const buffer = await buildMethodologyDOCX(methodology);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.docx"');
-      return res.send(buffer);
+      return sendDocx(res, await buildMethodologyDOCX(methodology),
+        'pcaf-part-c-methodology.docx', 'methodology statement');
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.pdf"');
-    buildMethodologyPDF(methodology).pipe(res);
+    return sendPdf(res, buildMethodologyPDF(methodology),
+      'pcaf-part-c-methodology.pdf', 'methodology statement');
   } catch (err) { next(err); }
 });
 
@@ -249,6 +253,31 @@ router.post('/assess', apiKeyAuth, defaultLimiter,
   });
 
 // ---------------------------------------------------------------------------
+// POST /dq-preview — the data-quality scoring alone, nothing persisted
+//
+// The intake form has to show the score move the moment a client supplies an
+// actual, and the score is an engine output, not something the browser may
+// infer. The engine costs well under a millisecond, so the form asks it
+// rather than guessing, and the answer on screen is the answer that would be
+// disclosed.
+// ---------------------------------------------------------------------------
+router.post('/dq-preview', apiKeyAuth, defaultLimiter,
+  validate({ body: assessRequestSchema }),
+  (req, res, next) => {
+    try {
+      const result = runPartC(_toEngineInput(req.body));
+      res.json({
+        dqScoring:   result.dqScoring || null,
+        dqStatement: result.dqDisclosureStatement || null,
+        summary: {
+          construction_kgCO2e: result.summary.construction_kgCO2e,
+          useStage_kgCO2e:     result.summary.useStage_kgCO2e
+        }
+      });
+    } catch (err) { next(err); }
+  });
+
+// ---------------------------------------------------------------------------
 // POST /report — PDF, Word or JSON
 // ---------------------------------------------------------------------------
 router.post('/report', apiKeyAuth, defaultLimiter,
@@ -257,9 +286,27 @@ router.post('/report', apiKeyAuth, defaultLimiter,
     try {
       const result    = runPartC(_toEngineInput(req.body));
       const registers = buildRegisters(result);
+      /* The reporting entity's own settings — base year, significance
+         threshold, recalculation protocol, currency. A Part C disclosure
+         must state them, and they belong to the entity rather than to the
+         request, so the report reads them from the book. */
+      const settings  = await partcRegistry.getSettings(req.apiKey.orgId).catch(() => ({}));
       const report    = buildPartCReport({
-        result, registers, memo: req.body.memo,
-        meta: { projectName: req.body.projectName, ...req.body.meta },
+        result, registers, settings, memo: req.body.memo,
+        meta: {
+          projectName: req.body.projectName,
+          insurer: settings.insurerName || null,
+          reportingYear: settings.reportingYear,
+          currency: settings.currency,
+          /* The economics the report needs for attribution, per-policy detail
+             and intensity are already in the request as the engine's inputs;
+             carrying them into the meta means an intensity section that is
+             real rather than "not available". */
+          premium:     (req.body.policy || {}).premium,
+          projectCost: (req.body.policy || {}).projectCost,
+          gifa_m2:     (req.body.siteInputs || {}).gifa_m2,
+          ...req.body.meta
+        },
         includeWlcaAnnex: req.body.includeWlcaAnnex
       });
 
@@ -269,15 +316,12 @@ router.post('/report', apiKeyAuth, defaultLimiter,
       if (req.body.format === 'json') return res.json({ report });
 
       if (req.body.format === 'docx') {
-        const buffer = await buildPartCDOCX(report);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="${safeName}-pcaf-part-c.docx"`);
-        return res.send(buffer);
+        return sendDocx(res, await buildPartCDOCX(report),
+          `${safeName}-pcaf-part-c.docx`, 'assessment report');
       }
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${safeName}-pcaf-part-c.pdf"`);
-      buildPartCPDF(report).pipe(res);
+      return sendPdf(res, buildPartCPDF(report),
+        `${safeName}-pcaf-part-c.pdf`, 'assessment report');
     } catch (err) { next(err); }
   });
 
