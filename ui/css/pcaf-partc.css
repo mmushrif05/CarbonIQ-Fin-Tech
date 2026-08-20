@@ -577,3 +577,20 @@
 .partc-crumb:hover { text-decoration: underline; }
 .partc-crumb:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg); }
 .partc-crumb-current { font-size: 13.5px; font-weight: 500; color: var(--p-label-2); }
+
+/* ── Reporting year ──────────────────────────────────────── */
+.partc-year {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 500; color: var(--p-label);
+}
+.partc-year select {
+  padding: 9px 12px; border-radius: 10px; border: none; min-height: 44px;
+  background: var(--p-fill); color: var(--p-label);
+  font-family: inherit; font-size: 15px; font-weight: 590;
+}
+.partc-year select:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg), 0 0 0 1.5px var(--p-accent);
+}
+.partc-portfolio .partc-panels { margin-top: 4px; }
+.partc-portfolio .partc-table td .partc-hint { font-size: 11.5px; }
+#pfRows, #pfGaps, #pfCoverage, #pfStates { overflow-x: auto; -webkit-overflow-scrolling: touch; }

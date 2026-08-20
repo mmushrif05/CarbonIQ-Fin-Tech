@@ -30,6 +30,7 @@ const store    = require('../../services/partc-store');
 const { seedDemoBook } = require('../../services/partc-demo-data');
 const boq = require('../../services/partc-boq');
 const assessments = require('../../services/partc-assessments');
+const portfolio   = require('../../services/partc-portfolio');
 
 const {
   settingsSchema, clientSchema, clientUpdateSchema,
@@ -315,9 +316,27 @@ router.delete('/assessments/:assessmentId', apiKeyAuth, defaultLimiter, handle(a
   res.json(await assessments.deleteAssessment(req.apiKey.orgId, req.params.assessmentId));
 }));
 
-/** What the book looks like for a reporting year — the shape W5 rolls up. */
+/** Quick per-year counts. The full position is /portfolio/:year. */
 router.get('/periods/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
   res.json({ period: await assessments.yearSummary(req.apiKey.orgId, req.params.year) });
+}));
+
+// ---------------------------------------------------------------------------
+// Portfolio — what the insurer discloses for a reporting year
+// ---------------------------------------------------------------------------
+
+router.get('/portfolio/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ portfolio: await portfolio.rollUp(req.apiKey.orgId, req.params.year) });
+}));
+
+/** What to fix first, ranked by how much of the disclosed figure it moves. */
+router.get('/portfolio/:year/dq-plan', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ plan: await portfolio.improvementPlan(req.apiKey.orgId, req.params.year) });
+}));
+
+/** Which emission factors to localise first, across the whole book. */
+router.get('/portfolio/:year/factor-gaps', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ gaps: await portfolio.factorGapPriority(req.apiKey.orgId, req.params.year) });
 }));
 
 // ---------------------------------------------------------------------------

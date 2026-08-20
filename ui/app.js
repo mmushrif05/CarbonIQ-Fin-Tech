@@ -14,6 +14,7 @@ const PAGE_META = {
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution (A1-A3, lending)' },
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
+  'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
@@ -55,6 +56,13 @@ const DYNAMIC_PAGES = {
     src:  'pages/partc-book.html',
     init: () => typeof PartCBook !== 'undefined' && PartCBook.init(),
   },
+  'partc-portfolio': {
+    src:     'pages/partc-portfolio.html',
+    init:    () => typeof PartCPortfolio !== 'undefined' && PartCPortfolio.init(),
+    // The reporting-year position changes whenever an assessment is locked on
+    // another screen, so this page re-reads the period on every return visit.
+    refresh: () => typeof PartCPortfolio !== 'undefined' && PartCPortfolio.refresh(),
+  },
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -85,9 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const target = document.getElementById('page-' + pageId);
     if (!target) return;
 
-    // Lazy-load dynamic pages on first visit
-    if (DYNAMIC_PAGES[pageId] && !target.dataset.loaded) {
+    // Lazy-load dynamic pages on first visit; on later visits give the page a
+    // chance to re-read anything that may have moved while it was hidden.
+    const firstVisit = !target.dataset.loaded;
+    if (DYNAMIC_PAGES[pageId] && firstVisit) {
       await _loadPageFragment(target, pageId);
+    } else if (DYNAMIC_PAGES[pageId] && DYNAMIC_PAGES[pageId].refresh) {
+      try { await DYNAMIC_PAGES[pageId].refresh(); } catch (_) { /* page reports its own errors */ }
     }
 
     // Dashboard & Portfolio share live data from the same module
