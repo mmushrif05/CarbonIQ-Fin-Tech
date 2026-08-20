@@ -40,71 +40,79 @@ const PCAFPartCPage = (() => {
   const escHtml = t => String(t ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+  /* A PCAF data-quality score is a category on a 1-5 scale where 1 is the
+     highest quality. Rendering it "3 / 5" reads as a mark out of five and
+     inverts the meaning, so the badge carries the bare score and the scale
+     is stated beside it. */
   const dqBadge = (v, label) => v === null || v === undefined
-    ? `<span class="dqb dqb-na">${escHtml(label || 'n/a')}</span>`
-    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${escHtml(label)}</i>` : ''}<b>${Number(v).toFixed(1)}</b><i>/ 5</i></span>`;
+    ? `<span class="dqb dqb-na">${escHtml(label || 'not scored')}</span>`
+    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${escHtml(label)}</i>` : ''}<b>${v}</b></span>`;
 
-  function dqScopeBlock(scope) {
-    if (!scope) return '';
-    if (scope.applies === false) {
-      return `<div class="dq-block is-na">
-        <p class="dq-block-title">${escHtml(scope.label)}</p>
-        <p class="partc-hint">${escHtml(scope.notApplicableNote || 'Not applicable to this policy type (scope rule).')}</p>
-      </div>`;
-    }
-    const shown = scope.rows.filter(r => r.weightPct > 0);
-    /* A segment too narrow to hold a label keeps its colour and its tooltip.
-       The key underneath names every band, so a 2.6% module is still read. */
-    const bar = shown.map(r =>
-      `<span class="dq-seg dqb-${Math.round(r.score)}" style="flex:${r.weightPct}"
-             title="${escHtml(r.module)} — ${r.weightPct}% of emissions, score ${r.score}">
-         ${r.weightPct >= 9 ? `<b>${escHtml(r.module)}</b><i>${r.weightPct}%</i>` : ''}</span>`).join('');
-    const key = shown.map(r =>
-      `<span><i class="dq-key dqb-${Math.round(r.score)}"></i>${escHtml(r.module)} ${r.weightPct}%</span>`).join('');
-    const imp = scope.improvement;
-    return `<div class="dq-block">
-      <p class="dq-block-title">${escHtml(scope.label)} ${dqBadge(scope.weighted)}</p>
-      <div class="dq-bar">${bar}</div>
-      <p class="dq-barkey">${key}</p>
-      <table class="partc-table dq-table">
-        <thead><tr><th>Module</th><th class="num">kgCO2e</th><th class="num">Score</th>
-                   <th class="num">Weight</th><th class="num">Contribution</th></tr></thead>
-        <tbody>${scope.rows.map(r => `
-        <tr><td>${escHtml(r.module)}</td><td class="num">${fmt(r.emissions)}</td>
-            <td class="num">${dqBadge(r.score)}</td><td class="num">${r.weightPct}%</td>
-            <td class="num">${fmt(r.contribution)}</td></tr>`).join('')}
-        <tr class="total"><td>Weighted</td><td class="num">${fmt(scope.totalEmissions)}</td>
-            <td colspan="2"></td><td class="num">${Number(scope.weighted).toFixed(1)} / 5</td></tr>
-        </tbody></table>
-      ${imp
-        ? `<p class="dq-improve"><b>${escHtml(imp.module)} ${imp.from} → ${imp.to}</b> ${escHtml(imp.action)}</p>`
-        : '<p class="dq-improve is-done"><b>best available</b> Every improvable input already carries a client actual.</p>'}
-    </div>`;
-  }
+  const SCALE_NOTE = 'PCAF scale 1–5, where 1 is the highest data quality. A lower score is better.';
 
+  /* One score for the project, from the option used. The table below it is
+     the internal aid: words, never numbers, and labelled so it cannot be
+     mistaken for the score. */
   function renderDq(d) {
     const sc = d.dqScoring;
-    const setFig = (id, scope) => {
-      const el = $(id);
-      if (!el) return;
-      el.innerHTML = !sc ? ''
-        : scope.applies === false
-          ? '<span class="dqb dqb-na">not applicable — scope rule</span>'
-          : `Data quality ${dqBadge(scope.weighted)}`;
-    };
-    setFig('partcDqConstruction', sc && sc.construction);
-    setFig('partcDqUseStage', sc && sc.useStage);
+
+    const figEl = $('partcDqConstruction');
+    if (figEl) {
+      figEl.innerHTML = !sc ? ''
+        : `Data quality score ${dqBadge(sc.construction.score)} <i>Option ${escHtml(sc.construction.option)}</i>`;
+    }
+    const useEl = $('partcDqUseStage');
+    if (useEl) {
+      useEl.innerHTML = !sc ? ''
+        : `<span class="dqb dqb-na">${escHtml(sc.useStage.applies ? 'not scored — see data quality' : 'not applicable — scope rule')}</span>`;
+    }
 
     if (!$('partcDqPanel')) return;
-    $('partcDqPanel').innerHTML = !sc ? '<p class="partc-hint">No scoring returned.</p>' : `
-      <div class="dq-blocks">${dqScopeBlock(sc.construction)}${dqScopeBlock(sc.useStage)}</div>
-      <p class="partc-hint">${escHtml(sc.basis)} ${escHtml(sc.whyWeighted)}</p>
-      <details class="dq-inputs"><summary>Every input the run consumed (${sc.inputs.length})</summary>
+    if (!sc) { $('partcDqPanel').innerHTML = '<p class="partc-hint">No scoring returned.</p>'; return; }
+
+    const rowMark = o => o === sc.construction.option ? ' class="is-selected"' : '';
+
+    $('partcDqPanel').innerHTML = `
+      <div class="dq-blocks">
+        <div class="dq-block">
+          <p class="dq-block-title">Construction (A4 + A5) — the PCAF figure ${dqBadge(sc.construction.score)}</p>
+          <p class="partc-hint">${escHtml(sc.construction.optionLabel)}</p>
+          <p class="partc-hint">${escHtml(sc.construction.basis)} ${escHtml(sc.scale)}</p>
+          <table class="partc-table dq-table">
+            <thead><tr><th>Insured scope</th><th>Option</th><th class="num">Score</th></tr></thead>
+            <tbody>
+              <tr><td>Scope 1 and 2 (combined)</td><td>${escHtml(sc.byGhgScope.scope1and2.option)}</td>
+                  <td class="num">${dqBadge(sc.byGhgScope.scope1and2.score)}</td></tr>
+              <tr><td>Scope 3</td><td>${escHtml(sc.byGhgScope.scope3.option)}</td>
+                  <td class="num">${dqBadge(sc.byGhgScope.scope3.score)}</td></tr>
+            </tbody></table>
+          <p class="partc-hint">${escHtml(sc.byGhgScope.note)}</p>
+        </div>
+        <div class="dq-block is-na">
+          <p class="dq-block-title">Use stage (B1 + B4 + B7) — not scored</p>
+          <p class="partc-hint">${escHtml(sc.useStage.reason)}</p>
+          ${sc.useStage.statements.length
+            ? `<ul class="dq-basis">${sc.useStage.statements.map(t => `<li>${escHtml(t)}</li>`).join('')}</ul>`
+            : ''}
+        </div>
+      </div>
+
+      <h5 class="partc-subhead">Table 5.3-2 — how the score is assigned</h5>
+      <table class="partc-table dq-table dq-53-2">
+        <thead><tr><th>Option</th><th class="num">Score</th><th>Data used to estimate the emissions</th></tr></thead>
+        <tbody>${sc.table.map(r => `<tr${rowMark(r.option)}>
+          <td>${escHtml(r.option)}</td><td class="num">${r.score}</td><td>${escHtml(r.data)}</td></tr>`).join('')}
+        </tbody></table>
+      <p class="partc-hint">${escHtml(sc.standard)} The highlighted row is the one this assessment used.</p>
+
+      <details class="dq-inputs">
+        <summary>${escHtml(sc.internalAid.title)}</summary>
+        <p class="partc-hint dq-aid-warning">${escHtml(sc.internalAid.note)}</p>
         <table class="partc-table dq-table"><thead><tr>
-          <th>Stage</th><th>Input</th><th>Basis actually used</th><th>Score</th><th>Source</th></tr></thead>
-          <tbody>${sc.inputs.map(i => `<tr${i.applies === false ? ' class="is-na"' : ''}>
+          <th>Stage</th><th>Input</th><th>Basis actually used</th><th>Evidence</th><th>Source</th></tr></thead>
+          <tbody>${sc.internalAid.rows.map(i => `<tr${i.applies === false ? ' class="is-na"' : ''}>
             <td>${escHtml(i.stage)}</td><td>${escHtml(i.input)}</td><td>${escHtml(i.basis)}</td>
-            <td class="num">${i.applies === false ? '<span class="dqb dqb-na">n/a</span>' : dqBadge(i.score)}</td>
+            <td><span class="dq-strength s-${String(i.strength || 'na').toLowerCase()}">${escHtml(i.strength || 'not evaluated')}</span></td>
             <td>${escHtml(i.source)}</td></tr>`).join('')}
           </tbody></table></details>`;
   }
@@ -135,14 +143,14 @@ const PCAFPartCPage = (() => {
       if (!sc) return;
       strip.hidden = false;
       $('partcDqLiveScores').innerHTML =
-        dqBadge(sc.construction.weighted, 'construction') +
-        (sc.useStage.applies === false
-          ? '<span class="dqb dqb-na">use stage — scope rule</span>'
-          : dqBadge(sc.useStage.weighted, 'use stage'));
-      const imp = sc.construction.improvement || sc.useStage.improvement;
-      $('partcDqLiveHint').textContent = imp
-        ? `${imp.action} → ${imp.module} ${imp.from} to ${imp.to}`
-        : 'Every improvable input already carries an actual.';
+        `${dqBadge(sc.construction.score, 'construction')} <i class="dq-opt">Option ${escHtml(sc.construction.option)}</i>`;
+      /* The score follows the option, so it does not move when an input is
+         strengthened. What moves is the evidence behind it, and saying so is
+         more honest than implying a number will change. */
+      const weak = sc.internalAid.rows.filter(r => r.applies !== false && r.strength === 'Weak');
+      $('partcDqLiveHint').textContent = weak.length
+        ? `${SCALE_NOTE} Weakest evidence: ${weak.map(r => `${r.stage} ${r.input.toLowerCase()}`).join(', ')}.`
+        : `${SCALE_NOTE} Every input carries strong or moderate evidence.`;
     } catch (_) { /* the strip is an aid, never a blocker */ }
   }
 
@@ -458,8 +466,9 @@ const PCAFPartCPage = (() => {
 
     $('partcDisclosure').textContent = d.disclosureNote;
     $('partcDataQuality').innerHTML =
-      `<strong>Option ${d.dataQuality.option}</strong> — ${d.dataQuality.optionLabel} · score ${d.dataQuality.score} ·
-       weakest factor tier ${d.dataQuality.worstFactorTier || 'n/a'}`
+      `<strong>Option ${d.dataQuality.option}</strong> — ${escHtml(d.dataQuality.optionLabel)} ·
+       data quality score ${d.dataQuality.score} · weakest factor tier ${d.dataQuality.worstFactorTier || 'n/a'}
+       <br><span class="partc-hint">${escHtml(d.dataQuality.scaleNote || SCALE_NOTE)}</span>`
       + (d.dqStatement
         ? `<blockquote class="dq-statement">${escHtml(d.dqStatement)}</blockquote>
            <span class="partc-hint">Generated from this execution — conformance, never endorsement.</span>`

@@ -149,15 +149,16 @@ describe('Portfolio roll-up', () => {
 });
 
 describe('Weighted data quality', () => {
-  test('the score is weighted by emissions, not averaged', async () => {
-    await lockOn('Negombo', { previousProject: fx.PREVIOUS_PROJECT });   // small
-    await lockOn('Galle');                                               // large
+  test('the disclosed score is premium-weighted, never emission-weighted', async () => {
+    await lockOn('Negombo');
     const r = await P.rollUp(ORG, 2026);
 
-    const manual = r.rows.reduce((n, x) => n + x.construction_kgCO2e * x.dataQualityScore, 0)
-                 / r.rows.reduce((n, x) => n + x.construction_kgCO2e, 0);
-    expect(r.dataQuality.weighted).toBeCloseTo(manual, 2);
-    expect(r.dataQuality.basis).toMatch(/Weighted by construction emissions/);
+    // Box 6-3: sum(premium x score) / sum(premium). One policy, so it is
+    // that policy's own score.
+    expect(r.dataQuality.weighted).toBe(r.rows[0].dataQualityScore);
+    expect(r.dataQuality.basis).toMatch(/premium-weighted/i);
+    expect(r.dataQuality.basis).not.toMatch(/emission-weighted/i);
+    expect(r.dataQuality.weightedRubric).toBeUndefined();
   });
 
   test('the score is reported at disclosure precision', async () => {
@@ -270,39 +271,71 @@ describe('Portfolio API', () => {
    both must survive: premium weighting says how well evidenced the book the
    insurer actually wrote is; emission weighting says which module to fix. */
 describe('Portfolio — the disclosed data-quality score', () => {
-  test('the disclosed score is premium-weighted and says so', async () => {
+  test('is premium-weighted, to two decimals, and says which scale it is on', async () => {
     await lockOn('Negombo');
     const r = await P.rollUp(ORG, 2026);
+    const d = r.dataQuality.disclosed.overall;
 
-    expect(r.dataQuality.disclosed.overall.weighted).not.toBeNull();
-    expect(r.dataQuality.disclosedBasis).toMatch(/premium/i);
-    expect(r.dataQuality.disclosed.overall.premiumWeighted_total).toBeGreaterThan(0);
-    expect(r.dataQuality.disclosed.overall.policiesScored).toBe(1);
+    expect(d.weighted).not.toBeNull();
+    expect(d.premiumBasis).toBe('premium');
+    expect(d.premiumTotal).toBeGreaterThan(0);
+    expect(d.policiesScored).toBe(1);
+    expect(r.dataQuality.scale).toMatch(/1 is the highest data quality/i);
+    // Two decimals at most, never more.
+    expect(String(d.weighted)).toMatch(/^\d+(\.\d{1,2})?$/);
   });
 
-  test('the emission-weighted score survives, labelled as the diagnostic it is', async () => {
+  test('reproduces the Box 6-3 hand calculation across two policies', async () => {
+    // Worked by hand from the formula, not from the implementation:
+    //   (100 x 3) + (900 x 5) = 4800 ;  4800 / 1000 = 4.80
+    const rows = [
+      { premium: 100, dataQualityScore: 3 },
+      { premium: 900, dataQualityScore: 5 }
+    ];
+    const premium = rows.reduce((n, x) => n + x.premium, 0);
+    const weighted = rows.reduce((n, x) => n + x.premium * x.dataQualityScore, 0) / premium;
+    expect(Math.round(weighted * 100) / 100).toBe(4.8);
+
+    // And an emission weighting of the same two policies would give a
+    // different answer, which is why the standard names one of them.
+    const byEmissions = (100000 * 3 + 10000 * 5) / 110000;
+    expect(Math.round(byEmissions * 100) / 100).not.toBe(4.8);
+  });
+
+  test('there is no emission-weighted score to quote by mistake', async () => {
     await lockOn('Negombo');
     const r = await P.rollUp(ORG, 2026);
-    expect(r.dataQuality.weightedRubric).not.toBeNull();
-    expect(r.dataQuality.diagnosticLabel).toMatch(/not the disclosed score/i);
-    expect(r.dataQuality.basis).toMatch(/internal diagnostic/i);
+    expect(r.dataQuality.weightedRubric).toBeUndefined();
+    expect(r.dataQuality.diagnosticLabel).toBeUndefined();
+    expect(JSON.stringify(r.dataQuality)).not.toMatch(/emission-weighted/i);
   });
 
   test('the insured scope 3 score is reported apart from its scope 1 and 2', async () => {
-    await lockOn('Negombo');
+    await lockOn('Negombo', {
+      previousProject: { area_m2: 1000, fuel_L: 5000, electricity_kWh: 2400, durationMonths: 12 }
+    });
     const r = await P.rollUp(ORG, 2026);
     const d = r.dataQuality.disclosed;
-    expect(d.scope1and2.weighted).not.toBeNull();
-    expect(d.scope3.weighted).not.toBeNull();
-    expect(d.scope1and2.weighted).not.toBe(d.scope3.weighted);
+
+    // Site energy came from energy consumption (Option 2a, score 2); the
+    // rest from declared quantities (Option 2b, score 3).
+    expect(d.scope1and2.weighted).toBe(2);
+    expect(d.scope3.weighted).toBe(3);
     expect(r.dataQuality.scopeSplitNote).toMatch(/never blended/i);
+  });
+
+  test('no use-stage data-quality score is produced anywhere in the roll-up', async () => {
+    await lockOn('Negombo');
+    const r = await P.rollUp(ORG, 2026);
+    expect(r.dataQuality.disclosed.useStage).toBeUndefined();
+    expect(r.rows[0].dqUseStage).toBeUndefined();
+    expect(r.dataQuality.useStageNote).toMatch(/no data quality table/i);
   });
 
   test('a policy carrying no score is excluded from the weighting, not counted as zero', async () => {
     const locked = await lockOn('Negombo');
-    // A row locked before the rubric existed carries no score.
     const stored = await A.getAssessment(ORG, locked.assessmentId);
-    stored.dqScoring = null;
+    stored.dataQuality = { ...stored.dataQuality, score: null };
     await store.put('partc-assessments', ORG, stored.assessmentId, stored);
 
     const r = await P.rollUp(ORG, 2026);

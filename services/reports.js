@@ -232,7 +232,7 @@ function _tcfdReport(meta, p) {
         metrics: [
           { metric: 'Total financed emissions', value: `${p.totalEmissions_tCO2e.toLocaleString()} tCO2e`, period: meta.reportingPeriod },
           { metric: 'Carbon intensity', value: `${(p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(1)} tCO2e / $M`, period: meta.reportingPeriod },
-          { metric: 'Weighted PCAF data quality score', value: `${p.weightedDQ} / 5`, period: meta.reportingPeriod },
+          { metric: 'Weighted PCAF data quality score (1 = highest quality, 5 = lowest)', value: `${Number(p.weightedDQ).toFixed(2)}`, period: meta.reportingPeriod },
           { metric: 'Portfolio taxonomy alignment (Green)', value: `${p.taxonomyDist ? Math.round((p.taxonomyDist.green / p.totalProjects) * 100) : 42}%`, period: meta.reportingPeriod },
         ],
         targets: [

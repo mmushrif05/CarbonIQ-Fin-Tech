@@ -285,7 +285,7 @@ function buildUserMessage(paramsOrBody, tierResultOverride) {
     `- External Verification Status: ${verificationStatus || 'none'}`,
     ``,
     `**PCAF Data:**`,
-    `- PCAF Data Quality Score: ${pcafDataQualityScore !== undefined ? `${pcafDataQualityScore}/5` : 'Not provided'} (1=Audited, 2=Verified, 3=Estimated, 4=Proxy, 5=Unknown)`,
+    `- PCAF Data Quality Score: ${pcafDataQualityScore !== undefined ? String(pcafDataQualityScore) : 'Not provided'} on the PCAF 1-5 scale, where 1 is the highest data quality and 5 the lowest`,
     `- PCAF Financed Emissions: ${pcafFinancedEmissions_tCO2e !== undefined ? `${pcafFinancedEmissions_tCO2e} tCO2e` : 'Not provided'}`,
     ``,
     `**Taxonomy Alignment Results:**`,

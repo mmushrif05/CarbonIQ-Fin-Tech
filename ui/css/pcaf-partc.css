@@ -464,6 +464,16 @@
 .dq-improve.is-done { color: var(--p-label-2); }
 .dq-improve.is-done b { color: var(--p-label-3); text-transform: uppercase;
   font-size: 10px; letter-spacing: .06em; }
+.dq-53-2 tr.is-selected { background: var(--p-accent-bg); }
+.dq-53-2 tr.is-selected td { font-weight: 620; }
+.dq-strength { font-size: 11px; font-weight: 620; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.dq-strength.s-strong   { background: rgba(52,199,89,.16); color: #248a3d; }
+.dq-strength.s-moderate { background: var(--p-fill); color: var(--p-label-2); }
+.dq-strength.s-weak     { background: rgba(255,149,0,.18); color: #a25400; }
+.dq-strength.s-na       { background: transparent; color: var(--p-label-3); }
+.dq-aid-warning { border-left: 3px solid var(--ios-orange); padding: 8px 0 8px 12px; margin: 10px 0; }
+.dq-basis { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--p-label-2); }
+.dq-opt { font-style: normal; font-size: 11px; color: var(--p-label-2); margin-left: 6px; }
 .dq-inputs { margin-top: 14px; }
 .dq-inputs summary { cursor: pointer; font-size: 12.5px; font-weight: 590; color: var(--p-accent); }
 .dq-inputs > table { margin-top: 10px; }

@@ -39,11 +39,13 @@ function _round(n, dp = 2) {
 /** A number from the book, or zero when the policy has since been removed. */
 const _policyNum = (policy, field) => (policy ? Number(policy[field]) || 0 : 0);
 
+/** Two decimals, as a disclosed weighted score is printed. */
+const _dp2 = n => (n === null || n === undefined) ? null : Math.round(Number(n) * 100) / 100;
+
 /** One GHG-scope score from a locked assessment, null where it was never recorded. */
-function _scopeScore(assessment, line, scope) {
-  const g = assessment.dqScoring && assessment.dqScoring.ghgScopes;
-  if (!g || !g[line] || !g[line][scope]) return null;
-  return g[line][scope].weighted;
+function _scopeScore(assessment, scope) {
+  const g = assessment.dqScoring && assessment.dqScoring.byGhgScope;
+  return (g && g[scope] && typeof g[scope].score === 'number') ? g[scope].score : null;
 }
 
 /**
@@ -60,18 +62,22 @@ function _scopeScore(assessment, line, scope) {
  * rather than counted as zero, which would report a book better evidenced
  * than it is; the count of what was excluded travels with the score.
  */
-function _premiumWeighted(rows, field) {
-  const scored = rows.filter(r => r[field] !== null && r[field] !== undefined && r.premium > 0);
-  const premium = scored.reduce((n, r) => n + r.premium, 0);
+function _premiumWeighted(rows, field, { premiumField = 'premium' } = {}) {
+  const scored = rows.filter(r =>
+    r[field] !== null && r[field] !== undefined && _num(r[premiumField]) > 0);
+  const premium = scored.reduce((n, r) => n + _num(r[premiumField]), 0);
   return {
     weighted: premium > 0
-      ? _round(scored.reduce((n, r) => n + r.premium * r[field], 0) / premium, 1)
+      ? _dp2(scored.reduce((n, r) => n + _num(r[premiumField]) * r[field], 0) / premium)
       : null,
-    premiumWeighted_total: _round(premium),
+    premiumBasis: premiumField === 'cededPremium' ? 'ceded premium (treaty)' : 'premium',
+    premiumTotal: _round(premium),
     policiesScored: scored.length,
     policiesWithoutScore: rows.length - scored.length
   };
 }
+
+const _num = v => Number(v) || 0;
 
 /**
  * The full reporting-year position.
@@ -105,19 +111,12 @@ async function rollUp(orgId, reportingYear) {
     insurerIAE_tCO2e:    a.summary.insurerIAE_tCO2e,
     useStageShare_tCO2e: a.summary.useStageInsurerShare_tCO2e,
     perM2:               a.summary.perM2Factor_kgCO2e_m2,
+    /* One score per project, assigned by the option used (Table 5.3-2).
+       There is no use-stage score: PCAF publishes no table for it. */
     dataQualityOption:   a.dataQuality.option,
     dataQualityScore:    a.dataQuality.score,
-    // The rubric score is a different measure from the PCAF option score
-    // and is carried beside it, never folded into it.
-    dqConstruction:      a.dqScoring ? a.dqScoring.construction.weighted : null,
-    dqUseStage:          a.dqScoring && a.dqScoring.useStage.applies
-      ? a.dqScoring.useStage.weighted : null,
-    /* The insured's scopes, carried separately as the checklist requires and
-       never blended with each other or with the option score above. */
-    dqScope1and2: _scopeScore(a, 'construction', 'scope1and2'),
-    dqScope3:     _scopeScore(a, 'construction', 'scope3'),
-    dqUseStageScope1and2: _scopeScore(a, 'useStage', 'scope1and2'),
-    dqUseStageScope3:     _scopeScore(a, 'useStage', 'scope3'),
+    dqScope1and2: _scopeScore(a, 'scope1and2'),
+    dqScope3:     _scopeScore(a, 'scope3'),
     premium:     _policyNum(policyById.get(a.policyId), 'premium'),
     projectCost: _policyNum(policyById.get(a.policyId), 'projectCost'),
     gifa_m2:     _policyNum(policyById.get(a.policyId), 'gifa_m2'),
@@ -130,21 +129,13 @@ async function rollUp(orgId, reportingYear) {
   const iae          = rows.reduce((n, r) => n + r.insurerIAE_tCO2e, 0);
   const useStageIAE  = rows.reduce((n, r) => n + (r.useStageShare_tCO2e || 0), 0);
 
-  const weightedDQ = construction > 0
-    ? _round(rows.reduce((n, r) => n + r.construction_kgCO2e * r.dataQualityScore, 0) / construction)
-    : null;
+  /* A simple average is kept only to show how far the premium weighting
+     moves the position; it is never the disclosed figure. There is no
+     emission-weighted score: PCAF weights by premium (Box 6-3), and a
+     second weighting reported beside it would invite the wrong one being
+     quoted. */
   const simpleDQ = rows.length
-    ? _round(rows.reduce((n, r) => n + r.dataQualityScore, 0) / rows.length)
-    : null;
-
-  /* The rubric score across the book, weighted by construction emissions on
-     the same rule as the option score. Rows locked before the rubric existed
-     carry none, so they are excluded from the weighting rather than counted
-     as zero — which would report a book cleaner than it is. */
-  const rubricRows = rows.filter(r => r.dqConstruction !== null);
-  const rubricEmissions = rubricRows.reduce((n, r) => n + r.construction_kgCO2e, 0);
-  const weightedRubric = rubricEmissions > 0
-    ? _round(rubricRows.reduce((n, r) => n + r.construction_kgCO2e * r.dqConstruction, 0) / rubricEmissions)
+    ? _dp2(rows.reduce((n, r) => n + r.dataQualityScore, 0) / rows.length)
     : null;
 
   /* The insured's scope 1 and 2 combined, and its scope 3, across the book.
@@ -165,49 +156,54 @@ async function rollUp(orgId, reportingYear) {
   }
   const ghgScopes = splitStageTotals(stageTotals, useStage > 0);
 
-  /* What basis the book's assessments actually used for each input, so the
-     disclosure can show the evidence behind its score rather than only the
-     score. Counted rather than sampled: naming one assessment's basis as if
-     it were the book's would be a different claim. */
+  /* What basis the book's assessments actually used for each input.
+     An internal transparency aid, in words: it says where evidence is thin
+     so effort can be aimed, and it carries no number precisely so it cannot
+     be mistaken for, averaged into, or exported as the PCAF score. */
   const basisIndex = new Map();
   for (const a of locked) {
-    for (const i of ((a.dqScoring && a.dqScoring.inputs) || [])) {
-      if (!basisIndex.has(i.input)) {
-        basisIndex.set(i.input, {
-          input: i.input, stage: i.stage, ghgScope: i.ghgScope || SCOPE_OF[i.stage] || null,
-          assessments: 0, bases: new Map(), scores: []
+    const aid = a.dqScoring && a.dqScoring.internalAid;
+    for (const i of ((aid && aid.rows) || [])) {
+      if (i.applies === false) continue;
+      const key = `${i.stage}::${i.input}`;
+      if (!basisIndex.has(key)) {
+        basisIndex.set(key, {
+          stage: i.stage, input: i.input, ghgScope: i.ghgScope, line: i.line,
+          assessments: 0, bases: new Map(), strengths: new Map()
         });
       }
-      const row = basisIndex.get(i.input);
+      const row = basisIndex.get(key);
       row.assessments += 1;
-      row.scores.push(i.score);
-      const key = `${i.basis}::${i.source}`;
-      row.bases.set(key, (row.bases.get(key) || 0) + 1);
+      row.bases.set(`${i.basis}::${i.source}`, (row.bases.get(`${i.basis}::${i.source}`) || 0) + 1);
+      row.strengths.set(i.strength, (row.strengths.get(i.strength) || 0) + 1);
     }
   }
   const dqInputBasis = [...basisIndex.values()].map(r => {
     const top = [...r.bases.entries()].sort((a, b) => b[1] - a[1])[0];
     const [basis, source] = String(top ? top[0] : '::').split('::');
+    const strongest = [...r.strengths.entries()].sort((a, b) => b[1] - a[1])[0];
     return {
-      input: r.input, stage: r.stage, ghgScope: r.ghgScope,
+      stage: r.stage, input: r.input, ghgScope: r.ghgScope, line: r.line,
       assessments: r.assessments,
       predominantBasis: basis || 'not recorded',
       source: source || 'not recorded',
       basesInUse: r.bases.size,
-      scoreLow: Math.min(...r.scores), scoreHigh: Math.max(...r.scores)
+      strength: strongest ? strongest[0] : null,
+      strengthsInUse: [...r.strengths.keys()].filter(Boolean)
     };
   });
 
   /* The disclosed scores. Premium-weighted, and the insured's scope 3 kept
      apart from its scope 1 and 2, both as the Part C checklist requires. */
   const disclosed = {
-    overall:    _premiumWeighted(rows, 'dqConstruction'),
+    overall:    _premiumWeighted(rows, 'dataQualityScore'),
     scope1and2: _premiumWeighted(rows, 'dqScope1and2'),
     scope3:     _premiumWeighted(rows, 'dqScope3'),
-    useStage: {
-      scope1and2: _premiumWeighted(rows, 'dqUseStageScope1and2'),
-      scope3:     _premiumWeighted(rows, 'dqUseStageScope3')
-    }
+    /* Treaty reinsurance weights by ceded premium instead (Box 6-4, p.108).
+       Reported only where the book actually carries ceded premium. */
+    ceded: rows.some(r => _num(r.cededPremium) > 0)
+      ? _premiumWeighted(rows, 'dataQualityScore', { premiumField: 'cededPremium' })
+      : null
   };
 
   /* Line of business, because the checklist asks for the aggregate broken
@@ -229,7 +225,7 @@ async function rollUp(orgId, reportingYear) {
     useStage_kgCO2e:     _round(rs.reduce((n, r) => n + r.useStage_kgCO2e, 0)),
     insurerIAE_tCO2e:    _round(rs.reduce((n, r) => n + r.insurerIAE_tCO2e, 0), 4),
     useStageShare_tCO2e: _round(rs.reduce((n, r) => n + (r.useStageShare_tCO2e || 0), 0), 4),
-    dataQuality: _premiumWeighted(rs, 'dqConstruction').weighted
+    dataQuality: _premiumWeighted(rs, 'dataQualityScore').weighted
   })).sort((a, b) => b.construction_kgCO2e - a.construction_kgCO2e);
 
   /* Economic emission intensity, the recommendation at p.101. Reported per
@@ -295,20 +291,17 @@ async function rollUp(orgId, reportingYear) {
          emission-weighted score below it is the internal diagnostic and is
          labelled as one. */
       disclosed,
-      disclosedBasis: 'Premium-weighted across the policies in this reporting year — sum(policy premium x policy score) / sum(policy premium). This is the score PCAF Part C requires an insurer to disclose.',
-      scopeSplitNote: 'The insured party\'s scope 3 score is reported separately from its scope 1 and 2 score, and the two are never blended. Every figure in this disclosure remains the re/insurer\'s own scope 3.',
-      diagnosticLabel: 'Emission-weighted — internal diagnostic, not the disclosed score.',
-      inputBasis: dqInputBasis,
-
-      weighted: weightedDQ,
+      weighted: disclosed.overall.weighted,
+      scale: 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest. A lower weighted score is better.',
+      basis: 'Premium-weighted across the policies in this reporting year: sum(premium x score) / sum(premium), per Box 6-3 (p.107). Each policy carries one score, assigned by the option used to estimate its emissions (Table 5.3-2).',
+      scopeSplitNote: 'The insured party\'s scope 3 score is reported separately from its scope 1 and 2 score, as Chapter 6 (p.106) requires, and the two are never blended. Every figure in this disclosure remains the re/insurer\'s own scope 3.',
+      useStageNote: 'No data-quality score is reported for the optional use-stage line. PCAF publishes no data quality table for lifetime emissions on project insurance, so its basis is described qualitatively instead.',
       simpleAverage: simpleDQ,
-      basis: 'Weighted by construction emissions — the internal diagnostic, not the disclosed score.',
-      weightedRubric,
-      rubricAssessments: rubricRows.length,
-      rubricBasis: 'The input rubric (1 best, 5 worst) rolled up per assessment, then weighted by construction emissions. A separate measure from the PCAF option score above, and never blended with it.',
-      note: weightedDQ !== null && simpleDQ !== null && weightedDQ !== simpleDQ
-        ? `The weighted score (${weightedDQ}) differs from a simple average (${simpleDQ}) because the book is not evenly sized — the largest assessments carry the position.`
-        : null
+      simpleAverageNote: simpleDQ !== null && disclosed.overall.weighted !== null
+        && simpleDQ !== disclosed.overall.weighted
+        ? `The premium-weighted score (${disclosed.overall.weighted}) differs from a simple average (${simpleDQ}) because the book is not evenly written — the larger premiums carry the disclosed position.`
+        : null,
+      inputBasis: dqInputBasis
     },
 
     coverage: {
