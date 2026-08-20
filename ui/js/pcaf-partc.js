@@ -295,6 +295,64 @@ const PCAFPartCPage = (() => {
     scheduleDqPreview();
   }
 
+  /* Whether the agents can run at all.
+     
+     Checked once when the page opens, and again whenever an agent call fails
+     with an AI-layer reason, so the answer on screen is never older than the
+     last thing that went wrong. The buttons stay enabled either way: a user
+     is entitled to try, and a clear failure is more useful than a control
+     that does nothing for an unexplained reason. */
+  async function refreshAiStatus() {
+    const el = $('partcAiStatus');
+    if (!el) return;
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/agent/health');
+      const data = await res.json();
+      const ai = data.ai || {};
+      if (ai.usable) { el.hidden = true; el.innerHTML = ''; return; }
+
+      el.hidden = false;
+      el.innerHTML = `
+        <div class="partc-gate">
+          <span class="partc-gate-off">Agents unavailable</span>
+          ${escHtml(ai.detail || 'The AI layer is not configured.')}
+          ${ai.remedy ? `<br><span class="partc-hint">${escHtml(ai.remedy)}</span>` : ''}
+          <br><span class="partc-hint">The calculation engine, the reports and the disclosure do not use the AI layer and are unaffected — paste or load a BOQ and run the assessment as normal.</span>
+        </div>`;
+    } catch (_) { /* the strip is a diagnostic, never a blocker */ }
+  }
+
+  /* When an agent call fails.
+     
+     The old behaviour set a status line and left whatever was in the table
+     alone — which, after "Load worked example", meant the demo rows stayed
+     on screen under a failure message. That reads as "it mapped, and the
+     result never changes", which is precisely the wrong conclusion. So a
+     failure clears what it could not produce and says what went wrong, what
+     to do, and what still works without the AI layer. */
+  function agentFailure(el, err, { clears = null } = {}) {
+    const d = err && err.detail ? err.detail : {};
+    const cause = d.message || err.message || 'The agent call failed.';
+    const remedy = d.remedy ? `<br><span class="partc-hint">${escHtml(d.remedy)}</span>` : '';
+    const diag = d.diagnose
+      ? `<br><span class="partc-hint">Diagnose: <code>${escHtml(d.diagnose)}</code></span>` : '';
+
+    if (clears) { clears(); }
+
+    el.innerHTML = `<span class="partc-agent-fail"><b>Not mapped.</b> ${escHtml(cause)}</span>${remedy}${diag}`;
+    if (d.error === 'AI_UNAVAILABLE') refreshAiStatus();
+  }
+
+  /** Read a JSON error body so the remedy the server sent is not thrown away. */
+  async function readError(res, fallback) {
+    let body = {};
+    try { body = await res.json(); } catch (_) { /* not JSON */ }
+    const err = new Error(body.message || fallback || `Request failed (${res.status})`);
+    err.detail = body;
+    err.status = res.status;
+    return err;
+  }
+
   // ── Read the policy document with the intake agent ────────
   // Classification decides the whole scope, so this runs before anything else.
   async function readPolicy() {
@@ -308,8 +366,8 @@ const PCAFPartCPage = (() => {
       const res  = await window.CARBONIQ_fetch('/v1/pcaf/part-c/agent/intake', {
         method: 'POST', body: JSON.stringify(body)
       });
+      if (!res.ok) throw await readError(res, 'Intake failed');
       const data = await res.json();
-      if (!res.ok) throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || 'Intake failed');
 
       const parsed = extractJson(data.result);
       const p = parsed.policy || {};
@@ -327,7 +385,9 @@ const PCAFPartCPage = (() => {
         (missing.length ? ` · ${missing.length} field(s) not found` : '') +
         (flags.length   ? ` · ${flags.length} flagged for review`   : '');
     } catch (err) {
-      $('partcIntakeStatus').textContent = `Intake unavailable — ${err.message}`;
+      agentFailure($('partcIntakeStatus'), err);
+      $('partcIntakeStatus').innerHTML = $('partcIntakeStatus').innerHTML
+        .replace('<b>Not mapped.</b>', '<b>Not read.</b>');
     }
   }
 
@@ -344,8 +404,8 @@ const PCAFPartCPage = (() => {
       const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/agent/map', {
         method: 'POST', body: JSON.stringify(body)
       });
+      if (!res.ok) throw await readError(res, 'Mapping failed');
       const data = await res.json();
-      if (!res.ok) throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || 'Mapping failed');
 
       const parsed = extractJson(data.result);
 
@@ -359,8 +419,14 @@ const PCAFPartCPage = (() => {
         `${materials.length} materials mapped, ${demolition.length} demolition items found.` +
         (parsed.summary?.lowConfidenceCount ? ` ${parsed.summary.lowConfidenceCount} need review.` : '');
     } catch (err) {
-      $('partcMapStatus').textContent =
-        `Mapping unavailable — ${err.message} Use "Load worked example" to explore the engine meanwhile.`;
+      agentFailure($('partcMapStatus'), err, {
+        clears: () => {
+          /* Nothing on screen may look like the result of this document. */
+          materials = []; demolition = []; distances = {};
+          renderMaterials();
+          refreshProgress();
+        }
+      });
     }
   }
 
@@ -637,6 +703,7 @@ const PCAFPartCPage = (() => {
     document.querySelectorAll('.partc-tab').forEach(t =>
       t.addEventListener('click', () => showRegister(t.dataset.reg)));
     loadRuns();
+    refreshAiStatus();
   }
 
   return { init };

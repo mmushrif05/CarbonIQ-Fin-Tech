@@ -474,6 +474,11 @@
 .dq-aid-warning { border-left: 3px solid var(--ios-orange); padding: 8px 0 8px 12px; margin: 10px 0; }
 .dq-basis { margin: 8px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.6; color: var(--p-label-2); }
 .dq-opt { font-style: normal; font-size: 11px; color: var(--p-label-2); margin-left: 6px; }
+/* An agent that cannot run says so where it would have shown a result. */
+.partc-ai-status { margin: 0 0 16px; }
+.partc-agent-fail { color: var(--ios-red); font-weight: 560; }
+.partc-agent-fail b { font-weight: 680; }
+
 .dq-inputs { margin-top: 14px; }
 .dq-inputs summary { cursor: pointer; font-size: 12.5px; font-weight: 590; color: var(--p-accent); }
 .dq-inputs > table { margin-top: 10px; }

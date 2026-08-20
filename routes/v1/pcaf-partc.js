@@ -43,6 +43,7 @@ const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/pa
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
 const partcRegistry = require('../../services/partc-registry');
 const { sendPdf, sendDocx } = require('../../services/pdf-response');
+const requireAI = require('../../middleware/require-ai');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
 const {
@@ -68,18 +69,6 @@ const config           = require('../../config');
  * half of the product still works without one, and the caller should be told
  * exactly that.
  */
-function requireAI(_req, res, next) {
-  if (config.anthropicApiKey) return next();
-  return res.status(503).json({
-    error: 'AI_UNAVAILABLE',
-    message: 'ANTHROPIC_API_KEY is not configured, so document reading, classification and BOQ mapping are unavailable.',
-    remedy: 'Set ANTHROPIC_API_KEY, or supply the policy fields and mapped materials directly — the calculation engine is deterministic and needs no API key.',
-    unaffected: ['POST /v1/pcaf/part-c/assess', 'POST /v1/pcaf/part-c/runs/start',
-                 'POST /v1/pcaf/part-c/runs/:runId/resume', 'POST /v1/pcaf/part-c/report',
-                 'GET /v1/pcaf/part-c/factors', 'GET /v1/pcaf/part-c/conformance',
-                 'GET /v1/pcaf/part-c/methodology']
-  });
-}
 
 const router = Router();
 
