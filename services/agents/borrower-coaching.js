@@ -52,6 +52,7 @@ function assessApplicationCompleteness(body) {
       name:   'boqContent',
       value:  hasBOQData,
       weight: 25,
+      group:  'carbonEvidence',
       label:  'Bill of Quantities (BOQ)',
       impact: 'Critical: upgrades PCAF data quality from Score 4 (benchmark) to Score 2–3 (verified). Without this, the bank cannot confirm a green label.'
     },
@@ -59,6 +60,7 @@ function assessApplicationCompleteness(body) {
       name:   'buildingType',
       value:  buildingType,
       weight: 15,
+      group:  'projectBasics',
       label:  'Building Type',
       impact: 'Required for carbon benchmarking and taxonomy screening. Without this, no carbon estimate is possible.'
     },
@@ -66,6 +68,7 @@ function assessApplicationCompleteness(body) {
       name:   'buildingArea_m2',
       value:  buildingArea_m2,
       weight: 15,
+      group:  'projectBasics',
       label:  'Gross Floor Area (m²)',
       impact: 'Required for carbon intensity calculation (kgCO2e/m²) — the primary metric tested against taxonomy thresholds.'
     },
@@ -73,6 +76,7 @@ function assessApplicationCompleteness(body) {
       name:   'loanAmount',
       value:  loanAmount,
       weight: 10,
+      group:  'financials',
       label:  'Loan Amount',
       impact: 'Required for PCAF financed emissions attribution. The bank cannot calculate its regulatory carbon disclosure without this.'
     },
@@ -80,6 +84,7 @@ function assessApplicationCompleteness(body) {
       name:   'projectValue',
       value:  projectValue,
       weight: 10,
+      group:  'financials',
       label:  'Total Project Value',
       impact: 'Required to calculate the PCAF attribution factor (loan ÷ project value). Directly affects the bank\'s financed emissions figure.'
     },
@@ -87,6 +92,7 @@ function assessApplicationCompleteness(body) {
       name:   'targetCertification',
       value:  targetCertification,
       weight: 10,
+      group:  'commitments',
       label:  'Target Green Certification',
       impact: 'Worth up to 15 points on the Carbon Finance Score and determines the loan pricing ratchet structure.'
     },
@@ -94,6 +100,7 @@ function assessApplicationCompleteness(body) {
       name:   'reductionTarget',
       value:  reductionTarget,
       weight: 5,
+      group:  'commitments',
       label:  'Carbon Reduction Target (%)',
       impact: 'Required for green covenant calibration. Defines the KPI thresholds tracked during construction.'
     },
@@ -101,6 +108,7 @@ function assessApplicationCompleteness(body) {
       name:   'region',
       value:  region && region !== '',
       weight: 5,
+      group:  'projectBasics',
       label:  'Project Region',
       impact: 'Used for regional carbon benchmarks, carbon tax exposure (e.g., Singapore SGD 45/tCO2e in 2026), and applicable taxonomy selection.'
     },
@@ -108,6 +116,8 @@ function assessApplicationCompleteness(body) {
       name:   'hasLCA',
       value:  hasLCA,
       weight: 3,
+      group:  'carbonEvidence',
+      optional: true,
       label:  'Life Cycle Assessment (LCA)',
       impact: 'Required for EU Taxonomy alignment and Hong Kong GCF dark green (BEAM Plus Platinum) classification.'
     },
@@ -115,30 +125,67 @@ function assessApplicationCompleteness(body) {
       name:   'verificationStatus',
       value:  verificationStatus && verificationStatus !== 'none',
       weight: 2,
+      group:  'commitments',
+      optional: true,
       label:  'External Verification Status',
       impact: 'Third-party verification achieves PCAF Score 1 (Audited) and adds 10–15 points to the Carbon Finance Score.'
     }
   ];
 
-  const totalWeight   = fields.reduce((sum, f) => sum + f.weight, 0);
-  const completed     = [];
-  const missing       = [];
+  // Completeness is measured over what the borrower must supply.
+  //
+  // A life-cycle assessment and third-party verification are enhancements:
+  // they raise the Carbon Finance Score, but a borrower who has not
+  // commissioned them has not left the application incomplete — they have
+  // answered, and the answer is "not yet". Counting those against the
+  // borrower told a fully-prepared applicant they were still missing
+  // something and left the bar unreachable, which is the opposite of what a
+  // coaching score is for. They are reported separately as opportunities.
+  const required    = fields.filter(f => !f.optional);
+  const enhancers   = fields.filter(f => f.optional);
+  const totalWeight = required.reduce((sum, f) => sum + f.weight, 0);
+
+  const completed = [];
+  const missing   = [];
+  const available = [];
   let   completedWeight = 0;
 
-  for (const field of fields) {
-    const hasValue = field.value !== null && field.value !== undefined && field.value !== '' && field.value !== false;
-    if (hasValue) {
+  const supplied = f =>
+    f.value !== null && f.value !== undefined && f.value !== '' && f.value !== false;
+
+  for (const field of required) {
+    if (supplied(field)) {
       completedWeight += field.weight;
-      completed.push({ label: field.label, weight: field.weight });
+      completed.push({ label: field.label, weight: field.weight, group: field.group });
     } else {
-      missing.push({ label: field.label, weight: field.weight, impact: field.impact });
+      missing.push({ label: field.label, weight: field.weight, impact: field.impact, group: field.group });
     }
   }
 
-  // Sort missing fields by weight descending — highest-impact items first
+  for (const field of enhancers) {
+    if (supplied(field)) completed.push({ label: field.label, weight: field.weight, group: field.group });
+    else available.push({ label: field.label, weight: field.weight, impact: field.impact, group: field.group });
+  }
+
+  // Highest-impact items first, so the borrower is told what matters most.
   missing.sort((a, b) => b.weight - a.weight);
+  available.sort((a, b) => b.weight - a.weight);
 
   const completionPct = Math.round((completedWeight / totalWeight) * 100);
+
+  // Where the score came from, grouped the way a borrower thinks about their
+  // application rather than field by field.
+  const breakdown = {};
+  for (const field of fields) {
+    const g = field.group;
+    breakdown[g] = breakdown[g] || { earned: 0, possible: 0, fields: [] };
+    if (!field.optional) breakdown[g].possible += field.weight;
+    if (supplied(field) && !field.optional) breakdown[g].earned += field.weight;
+    breakdown[g].fields.push({
+      label: field.label, weight: field.weight,
+      supplied: supplied(field), optional: !!field.optional
+    });
+  }
 
   let statusLabel;
   if (completionPct < 30)       statusLabel = 'Just Getting Started';
@@ -149,8 +196,10 @@ function assessApplicationCompleteness(body) {
   return {
     completionPct,
     statusLabel,
+    breakdown,
     completedFields:      completed,
     missingFields:        missing,
+    enhancements:         available,
     readyForScreening:    !!(buildingType && buildingArea_m2),
     readyForUnderwriting: !!(buildingType && buildingArea_m2 && hasBOQData),
     readyForDecision:     !!(buildingType && buildingArea_m2 && hasBOQData && loanAmount && projectValue)
@@ -158,15 +207,19 @@ function assessApplicationCompleteness(body) {
 }
 
 /**
- * Compatibility alias used by the origination flow.
- * Returns { score, breakdown, missingFields } shape.
+ * The { score, breakdown, missingFields } view used by the origination flow.
+ *
+ * An earlier version documented `breakdown` and did not return it, so a
+ * caller reading the doc comment got `undefined` at runtime.
  */
 function assessCompleteness(data) {
   const result = assessApplicationCompleteness(data);
   return {
-    score:        result.completionPct,
-    statusLabel:  result.statusLabel,
+    score:         result.completionPct,
+    statusLabel:   result.statusLabel,
+    breakdown:     result.breakdown,
     missingFields: result.missingFields.map(f => f.label),
+    enhancements:  result.enhancements.map(f => f.label),
     readyForScreening:    result.readyForScreening,
     readyForUnderwriting: result.readyForUnderwriting,
     readyForDecision:     result.readyForDecision
