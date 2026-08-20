@@ -39,6 +39,7 @@ const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
 const pcafPartCRouter     = require('./pcaf-partc');
 const partcRegistryRouter = require('./partc-registry');
+const ndcSdgRouter        = require('./ndc-sdg');
 
 const router = Router();
 
@@ -131,7 +132,13 @@ router.get('/', (_req, res) => {
         pipelines:    'GET /v1/supervisor/pipelines',
         resume:       'POST /v1/supervisor/pipeline/:pipelineId/resume',
         templates:    'GET /v1/supervisor/templates',
-      }
+      },
+      ndcSdg: {
+        assess:            'POST /v1/ndc-sdg/assess',
+        certificate:       'POST /v1/ndc-sdg/certificate',
+        verifyCertificate: 'POST /v1/ndc-sdg/certificate/verify',
+        framework:         'GET /v1/ndc-sdg/framework',
+      },
     },
     documentation: 'https://carboniq.online/docs/api'
   });
@@ -154,5 +161,6 @@ router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
 router.use('/pcaf/part-c', pcafPartCRouter);
 router.use('/partc', partcRegistryRouter);
+router.use('/ndc-sdg', ndcSdgRouter);
 
 module.exports = router;

@@ -766,6 +766,86 @@ npm run lint:fix   # ESLint auto-fix
 
 ---
 
+## 13. Sri Lanka Green Finance Taxonomy (SLGFT)
+
+> Branch: `claude/srilanka-taxonomy`
+
+### Overview
+
+CarbonIQ supports the **Sri Lanka Green Finance Taxonomy (SLGFT v2024)**, regulated by the
+Central Bank of Sri Lanka (CBSL). This is the 5th taxonomy framework alongside ASEAN, EU, HK, and SG.
+
+Implemented as a dedicated feature branch for DFCC Bank — Sri Lanka's first green bond issuer.
+
+### Framework Details
+
+| Field             | Value                                  |
+|-------------------|----------------------------------------|
+| Regulator         | Central Bank of Sri Lanka (CBSL)       |
+| Version           | SLGFT v2024                            |
+| SLSIC Sectors     | 13 sectors (A–M)                       |
+| Env. Objectives   | M · A · P · E                          |
+| Carbon Tax        | Voluntary (SLCCE); proposed post-2027  |
+
+### Environmental Objectives
+
+| Code | Label                                     |
+|------|-------------------------------------------|
+| M    | Climate Change Mitigation                 |
+| A    | Climate Change Adaptation                 |
+| P    | Pollution Prevention & Control            |
+| E    | Ecological Conservation & Resource Efficiency |
+
+### Embodied Carbon Thresholds (Construction, kgCO2e/m²)
+
+| Tier         | Threshold      |
+|--------------|----------------|
+| Green        | ≤ 600          |
+| Transition   | ≤ 900          |
+| Not Aligned  | > 900          |
+
+### Key Construction Activities
+
+| Activity Code | Label                               | Eligibility  |
+|---------------|-------------------------------------|--------------|
+| M1.1          | Green Buildings — New Construction  | Threshold    |
+| M1.2          | Green Buildings — Renovation        | Direct       |
+| M4.1          | Solar PV — Electricity Generation   | Direct       |
+| M4.2          | Concentrated Solar Power (CSP)      | Direct       |
+| M4.3          | Wind Energy                         | Direct       |
+| A2.1          | Flood-Resilient Construction        | Direct       |
+| A2.2          | Climate-Resilient Buildings         | Threshold    |
+| E1.1          | Coastal & Marine Resource Protection| Direct       |
+
+### NDC & SDG Alignment (Claude AI-powered)
+
+The `POST /v1/ndc-sdg/assess` endpoint uses **Claude claude-sonnet-4-6** with prompt caching to:
+
+1. Assess NDC alignment tier (Strong / Moderate / Partial / Not Aligned)
+2. Estimate % contribution to Sri Lanka's 4.5% unconditional NDC target
+3. Identify relevant SDGs (from the 6 key SDGs: 7, 9, 11, 13, 14, 15)
+4. Perform DNSH check across all 4 environmental objectives
+5. Generate bankability narrative for the lending officer
+6. Provide concrete recommendations
+
+**NDC Targets (Sri Lanka)**:
+- Unconditional: 4.5% GHG reduction by 2030 vs BAU
+- Conditional: 14.5% GHG reduction by 2030 (with international support)
+- Net Zero: 2050
+
+### Frontend Integration
+
+- **New Project Wizard** — Step 1 shows SLSIC sector dropdown + activity code when region = LK
+- **Taxonomy Checker** — 5th framework card (full-width) with NDC, SDG pills, DNSH checklist
+- **NDC & SDG page** — Dedicated page (`/ndc-sdg`) with AI analysis form and interactive results
+
+### Carbon Pricing (Sri Lanka)
+
+No formal carbon tax. Voluntary SLCCE market operational.
+Trajectory: LKR 500/tCO2e proposed floor (2027) → LKR 1,500/tCO2e NDC alignment (2030).
+
+---
+
 *Last updated: March 2026*
-*Version: 0.1.0*
+*Version: 0.2.0 — Sri Lanka SLGFT (Steps 1–4)*
 *License: Apache-2.0*

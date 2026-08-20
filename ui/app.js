@@ -21,6 +21,7 @@ const PAGE_META = {
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
+  'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'AI-powered National Determined Contribution & SDG alignment for Sri Lanka Green Finance Taxonomy' },
 };
 
 /**
@@ -62,6 +63,10 @@ const DYNAMIC_PAGES = {
     // The reporting-year position changes whenever an assessment is locked on
     // another screen, so this page re-reads the period on every return visit.
     refresh: () => typeof PartCPortfolio !== 'undefined' && PartCPortfolio.refresh(),
+  },
+  'ndc-sdg': {
+    src:  'pages/ndc-sdg.html',
+    init: () => typeof NdcSdgPage !== 'undefined' && NdcSdgPage.init(),
   },
 };
 

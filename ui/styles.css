@@ -1457,3 +1457,381 @@ body {
 .taxonomy-fill-red  { background: var(--red) !important; }
 .taxonomy-transition { border-color: var(--amber); }
 .taxonomy-transition .taxonomy-region { color: var(--amber); }
+
+/* ============================================================
+   Sri Lanka Green Finance Taxonomy (SLGFT) — Step 2
+   ============================================================ */
+.slgft-controls {
+  margin-top: -8px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.slgft-tag {
+  font-size: 9.5px;
+  font-weight: 600;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.slgft-activity-result {
+  font-size: 12.5px;
+  padding: 8px 12px;
+  background: var(--accent-light);
+  border-radius: var(--radius-xs);
+  border: 1px solid #bfdbfe;
+  color: var(--text-primary);
+  align-self: flex-end;
+  margin-bottom: 2px;
+  line-height: 1.6;
+}
+.slgft-card {
+  margin-top: 16px;
+  grid-column: 1 / -1;  /* full width in grid */
+}
+.taxonomy-lk-placeholder {
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+.slgft-subtitle {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin: -4px 0 10px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+}
+.slgft-activity-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+}
+.slgft-code {
+  font-family: monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+.slgft-activity-name { font-size: 13px; font-weight: 500; flex: 1; }
+.slgft-obj {
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.slgft-ndc {
+  margin: 14px 0 10px;
+  padding: 12px;
+  background: #ecfdf5;
+  border-radius: var(--radius-xs);
+  border: 1px solid #a7f3d0;
+}
+.slgft-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+  cursor: pointer;
+}
+.slgft-ndc-text {
+  font-size: 12.5px;
+  color: #065f46;
+  margin-bottom: 8px;
+}
+.slgft-sdg-row { display: flex; flex-wrap: wrap; gap: 5px; }
+.slgft-sdg-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+  border-radius: 12px;
+  padding: 2px 8px;
+}
+.slgft-dnsh {
+  margin-top: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 8px 12px;
+}
+.slgft-dnsh-list {
+  margin: 6px 0 2px 16px;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.9;
+}
+
+/* ============================================================
+   NDC & SDG Alignment Page
+   ============================================================ */
+
+/* Hero */
+.ndc-page { padding: 0 0 40px; }
+.ndc-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.ndc-hero-text h2 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+.ndc-hero-text p  { color: var(--text-secondary); font-size: 14px; max-width: 560px; }
+.ndc-hero-badges  { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ndc-framework-badge {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.ndc-ai-badge {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+/* NDC targets strip */
+.ndc-targets-strip {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.ndc-target-item {
+  flex: 1;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.ndc-target-item:last-child { border-right: none; }
+.ndc-target-label  { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ndc-target-value  { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+
+/* Form card */
+.ndc-form-card {
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.ndc-section-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.ndc-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.ndc-checkboxes { display: flex; flex-direction: column; gap: 8px; }
+.ndc-checkbox-label { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.ndc-checkbox-label input { cursor: pointer; }
+
+/* Intensity bar */
+.ndc-intensity-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  flex-wrap: wrap;
+}
+.ndc-intensity-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.ndc-intensity-value { font-size: 14px; font-weight: 700; }
+
+/* Results grid */
+.ndc-result-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+@media (max-width: 768px) { .ndc-result-grid { grid-template-columns: 1fr; } }
+
+.ndc-result-card {
+  background: var(--card-bg, var(--bg));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.ndc-sdg-card { margin-bottom: 16px; }
+.ndc-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.ndc-card-header h3 { font-size: 14px; font-weight: 700; }
+
+/* NDC contribution bar */
+.ndc-contribution-bar {
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.ndc-contribution-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #16a34a);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+.ndc-contribution-label { font-size: 12px; color: var(--text-tertiary); margin-bottom: 10px; }
+.ndc-explanation { font-size: 13.5px; color: var(--text-primary); line-height: 1.6; margin-bottom: 10px; }
+.ndc-key-drivers { margin-top: 8px; }
+.ndc-drivers-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
+.ndc-driver-item { font-size: 13px; color: var(--text-secondary); padding: 3px 0; }
+
+/* Bankability */
+.ndc-narrative { font-size: 13.5px; color: var(--text-primary); line-height: 1.7; margin-bottom: 12px; font-style: italic; }
+.ndc-confidence { display: flex; align-items: center; gap: 6px; }
+
+/* SDG grid */
+.ndc-sdg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.ndc-sdg-item {
+  padding: 12px;
+  border-radius: var(--radius-xs);
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+.ndc-sdg-high   { background: #f0fdf4; }
+.ndc-sdg-medium { background: #fffbeb; }
+.ndc-sdg-low    { background: #f8fafc; }
+.ndc-sdg-num    { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.ndc-sdg-label  { font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ndc-sdg-relevance { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--text-tertiary); margin-bottom: 4px; }
+.ndc-sdg-rationale { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+/* DNSH */
+.ndc-dnsh-checks { display: flex; flex-direction: column; gap: 10px; }
+.ndc-dnsh-row { padding: 8px 12px; border-radius: var(--radius-xs); background: #f8fafc; }
+
+/* Recommendations */
+.ndc-recommendations { padding-left: 20px; }
+.ndc-recommendations li { font-size: 13.5px; color: var(--text-primary); margin-bottom: 8px; line-height: 1.6; }
+
+/* Framework panel */
+.ndc-framework-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 13px; line-height: 1.8; }
+.ndc-framework-body .data-table td, .ndc-framework-body .data-table th { font-size: 12px; }
+
+/* ============================================================
+   New Project Wizard — Sri Lanka SLGFT fields
+   ============================================================ */
+
+.slgft-wizard-fields {
+  margin-top: 16px;
+  padding: 16px;
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+}
+.slgft-wizard-header {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 14px;
+}
+
+/* Review panel — full-width Sri Lanka section */
+.review-section-full {
+  grid-column: 1 / -1;
+}
+.slgft-review-section {
+  background: #f0fdf4;
+  border: 1px solid #a7f3d0;
+}
+.badge-blue {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+/* ============================================================
+   SLGFT Certificate Display
+   ============================================================ */
+
+.ndc-cert-card { border-left: 3px solid #10b981; }
+
+.ndc-cert-display {
+  border: 1px solid #a7f3d0;
+  border-radius: var(--radius);
+  padding: 18px;
+  background: #f0fdf4;
+}
+.ndc-cert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+.ndc-cert-title { font-size: 14px; font-weight: 700; color: #065f46; }
+.ndc-cert-id    { font-size: 11px; color: var(--text-tertiary); font-family: monospace; margin-top: 2px; }
+
+.ndc-cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.ndc-cert-grid > div { display: flex; flex-direction: column; gap: 2px; }
+.ndc-cert-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); }
+.ndc-cert-description {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  padding: 10px;
+  background: white;
+  border-radius: var(--radius-xs);
+  border: 1px solid #a7f3d0;
+  margin-bottom: 10px;
+}
+.ndc-cert-hash {
+  padding: 8px 10px;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   Reports — SLGFT card styling
+   ============================================================ */
+
+.rpt-card-lk {
+  border-left: 3px solid #10b981;
+}

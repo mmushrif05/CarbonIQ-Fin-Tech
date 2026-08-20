@@ -220,6 +220,43 @@ Every API key belongs to the insurer's own organisation — there is no client-f
 
 ---
 
+---
+
+## Sri Lanka Green Finance Taxonomy (SLGFT)
+
+The Sri Lanka work is on `main` as of the merge of `claude/srilanka-taxonomy`.
+
+**Key facts**
+- Regulator: Central Bank of Sri Lanka (CBSL). Version SLGFT v2024.
+- 13 SLSIC sectors (A–M), 4 environmental objectives (M/A/P/E).
+- Activity code format: `{Objective}{MacroSector}.{Activity}` — e.g. `M1.1`.
+
+**Embodied carbon thresholds (construction)**
+
+| Band | Threshold |
+|---|---|
+| Green | ≤ 600 kgCO2e/m² |
+| Transition | ≤ 900 kgCO2e/m² |
+| Not aligned | > 900 kgCO2e/m² |
+
+**NDC targets** — unconditional 4.5% GHG reduction by 2030 against BAU; conditional 14.5% with international support; net zero 2050. Key SDGs: 7, 9, 11, 13, 14, 15.
+
+**Where it lives**
+- `services/ndc-sdg.js` — Claude-powered NDC/SDG alignment analysis
+- `services/certificate.js` — Green Loan Certificate with a SHA-256 audit hash, and its verifier
+- `services/taxonomy.js` — `checkSriLanka()` and `checkAllTaxonomies()`
+- `routes/v1/ndc-sdg.js` — assess, certificate, certificate/verify, framework
+- `ui/pages/ndc-sdg.html` · `ui/js/ndc-sdg.js` — the NDC/SDG screen
+
+**Two Sri Lanka report types, deliberately kept apart.** `slgft-cbsl` is the CBSL Direction 05 / SLFRS S2 disclosure; `slgft` is the fuller taxonomy report carrying NDC contribution, SDG alignment, DNSH and SLCCE carbon-pricing exposure. They were built in parallel on two branches and answer different asks, so both ids remain addressable — folding one into the other would silently change what an existing caller receives.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/v1/ndc-sdg/assess` | NDC and SDG alignment for a project |
+| `POST` | `/v1/ndc-sdg/certificate` | Generate an SLGFT Green Loan Certificate |
+| `POST` | `/v1/ndc-sdg/certificate/verify` | Verify a certificate against its audit hash |
+| `GET`  | `/v1/ndc-sdg/framework` | SLGFT framework metadata |
+
 ## Code Conventions
 
 - **Validation:** All request bodies are validated via Joi schemas in `schemas/` before reaching route handlers; use `middleware/validate.js`

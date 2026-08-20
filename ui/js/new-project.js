@@ -120,6 +120,43 @@ const NewProject = (() => {
     if (last) last.querySelector('input')?.focus();
   }
 
+  // ── Region change: toggle LK fields ──────────────────────
+  function onRegionChange(region) {
+    const lkFields = $$('np-lk-fields');
+    if (lkFields) lkFields.style.display = region === 'LK' ? 'block' : 'none';
+  }
+
+  // ── Activity code lookup ──────────────────────────────────
+  const ACTIVITY_LOOKUP = {
+    'M1.1': { label: 'Green Buildings — New Construction', eligibility: 'threshold', note: 'Threshold: ≤600 kgCO2e/m²', objective: 'Climate Change Mitigation' },
+    'M1.2': { label: 'Green Buildings — Renovation',       eligibility: 'direct',    note: '≥30% energy performance improvement required', objective: 'Climate Change Mitigation' },
+    'M4.1': { label: 'Solar PV — Electricity Generation',  eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
+    'M4.2': { label: 'Concentrated Solar Power (CSP)',      eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
+    'M4.3': { label: 'Wind Energy',                        eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
+    'M6.1': { label: 'Clean Transportation Infrastructure', eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
+    'A2.1': { label: 'Flood-Resilient Construction',        eligibility: 'direct',    note: 'Directly eligible', objective: 'Climate Change Adaptation' },
+    'A2.2': { label: 'Climate-Resilient Buildings',         eligibility: 'threshold', note: 'Climate risk assessment required', objective: 'Climate Change Adaptation' },
+    'E1.1': { label: 'Coastal & Marine Resource Protection',eligibility: 'direct',    note: 'Directly eligible', objective: 'Ecological Conservation' },
+    'E3.1': { label: 'Sustainable Land Use & Biodiversity', eligibility: 'direct',    note: 'Directly eligible', objective: 'Ecological Conservation' },
+  };
+
+  function lookupActivity(code) {
+    const el = $$('np-activity-desc');
+    if (!el) return;
+    const upper = (code || '').trim().toUpperCase();
+    const match = ACTIVITY_LOOKUP[upper];
+    if (match) {
+      const badge = match.eligibility === 'direct'
+        ? '<span class="slgft-code" style="background:var(--blue-50,#eff6ff);color:var(--blue-600,#2563eb)">Direct Eligibility</span>'
+        : '<span class="slgft-code" style="background:var(--green-50,#f0fdf4);color:var(--green-600,#16a34a)">Threshold-Based</span>';
+      el.style.display = 'block';
+      el.innerHTML = `${badge} <strong>${match.label}</strong> — ${match.objective}<br><small style="color:var(--text-tertiary)">${match.note}</small>`;
+    } else {
+      el.style.display = upper.length > 1 ? 'block' : 'none';
+      if (upper.length > 1) el.innerHTML = `<span style="color:var(--text-tertiary);font-size:13px">No matching activity for "${upper}". Try M1.1, M4.1, A2.1, etc.</span>`;
+    }
+  }
+
   // ── Step 1 → Step 2 validation ────────────────────────────
   function nextFromStep1() {
     const name = $$('np-proj-name')?.value?.trim();
@@ -142,13 +179,15 @@ const NewProject = (() => {
 
   // ── Step 4: Review & Score ────────────────────────────────
   function _runReview() {
-    const name      = $$('np-proj-name')?.value?.trim() || 'New Project';
-    const type      = $$('np-proj-type')?.value || 'Commercial';
-    const region    = $$('np-proj-region')?.value || 'SG';
-    const area      = parseFloat($$('np-proj-area')?.value || 0);
-    const outstanding = parseFloat($$('np-outstanding')?.value || 50) * 1e6;
-    const equity      = parseFloat($$('np-equity')?.value || 80) * 1e6;
-    const debt        = parseFloat($$('np-debt')?.value || 120) * 1e6;
+    const name         = $$('np-proj-name')?.value?.trim() || 'New Project';
+    const type         = $$('np-proj-type')?.value || 'Commercial';
+    const region       = $$('np-proj-region')?.value || 'SG';
+    const area         = parseFloat($$('np-proj-area')?.value || 0);
+    const slsicSector  = $$('np-slsic-sector')?.value || '';
+    const activityCode = ($$('np-activity-code')?.value || '').trim().toUpperCase();
+    const outstanding  = parseFloat($$('np-outstanding')?.value || 50) * 1e6;
+    const equity       = parseFloat($$('np-equity')?.value || 80) * 1e6;
+    const debt         = parseFloat($$('np-debt')?.value || 120) * 1e6;
 
     const totalKgCO2e = _materials.reduce((s, m) => s + _kgCO2e(m), 0);
     const totalTCO2e  = totalKgCO2e / 1000;
@@ -156,11 +195,44 @@ const NewProject = (() => {
     const attribution = outstanding / (equity + debt);
     const financed    = Math.round(totalTCO2e * attribution);
 
-    // Taxonomy quick-check (SG: 1000 kgCO2e/m2 threshold for construction)
+    // Taxonomy quick-checks
     const SG_THRESHOLD = 1000;
-    const EU_THRESHOLD = 450; // operational (approximate for mixed)
+    const EU_THRESHOLD = 450;
     const sgAligned = area > 0 && (totalKgCO2e / area) < SG_THRESHOLD;
-    const euAligned = area > 0 && (totalKgCO2e / area) < EU_THRESHOLD * 2; // embodied proxy
+    const euAligned = area > 0 && (totalKgCO2e / area) < EU_THRESHOLD * 2;
+
+    // Sri Lanka SLGFT quick-check
+    let lkSection = '';
+    if (region === 'LK') {
+      const intVal = area > 0 ? (totalKgCO2e / area) : null;
+      const actMatch = ACTIVITY_LOOKUP[activityCode];
+      let lkTier, lkBadge;
+      if (actMatch && actMatch.eligibility === 'direct') {
+        lkTier = 'Directly Eligible'; lkBadge = 'badge-blue';
+      } else if (intVal !== null && intVal <= 600) {
+        lkTier = 'Green — Aligned';  lkBadge = 'badge-green';
+      } else if (intVal !== null && intVal <= 900) {
+        lkTier = 'Transition';        lkBadge = 'badge-amber';
+      } else {
+        lkTier = intVal === null ? 'Pending (no area)' : 'Not Aligned'; lkBadge = 'badge-red';
+      }
+      const actDesc = actMatch ? ` — ${actMatch.label}` : '';
+      lkSection = `
+        <div class="review-section review-section-full slgft-review-section">
+          <h4>🇱🇰 Sri Lanka Green Finance Taxonomy (SLGFT)</h4>
+          <div class="review-row"><span>SLGFT Tier</span><strong><span class="kpi-badge ${lkBadge}">${lkTier}</span></strong></div>
+          ${slsicSector ? `<div class="review-row"><span>SLSIC Sector</span><strong>Sector ${slsicSector}</strong></div>` : ''}
+          ${activityCode ? `<div class="review-row"><span>Activity Code</span><strong>${activityCode}${actDesc}</strong></div>` : ''}
+          ${intVal !== null ? `<div class="review-row"><span>Intensity</span><strong>${intVal.toFixed(1)} kgCO2e/m² <span style="color:var(--text-tertiary);font-weight:400">(threshold: ≤600 green, ≤900 transition)</span></strong></div>` : ''}
+          <div class="review-row"><span>NDC Contribution</span><strong>4.5% unconditional / 14.5% conditional GHG reduction by 2030</strong></div>
+          <div class="review-row"><span>Key SDGs</span><strong>SDG 7 · 9 · 11 · 13 · 14 · 15</strong></div>
+          <div style="margin-top:8px">
+            <button class="btn btn-ghost btn-sm" onclick="navigateTo('ndc-sdg')" style="font-size:12px">
+              Run AI NDC/SDG Analysis →
+            </button>
+          </div>
+        </div>`;
+    }
 
     const panel = $$('np-review-body');
     if (!panel) return;
@@ -170,7 +242,7 @@ const NewProject = (() => {
           <h4>Project Summary</h4>
           <div class="review-row"><span>Name</span><strong>${name}</strong></div>
           <div class="review-row"><span>Type</span><strong>${type}</strong></div>
-          <div class="review-row"><span>Region</span><strong>${region}</strong></div>
+          <div class="review-row"><span>Region</span><strong>${region}${region === 'LK' ? ' 🇱🇰' : ''}</strong></div>
           <div class="review-row"><span>Floor Area</span><strong>${area ? _fmtN(area)+' m²' : '—'}</strong></div>
         </div>
         <div class="review-section">
@@ -196,6 +268,7 @@ const NewProject = (() => {
             <strong><span class="kpi-badge ${euAligned?'badge-green':'badge-amber'}">${euAligned?'Likely Aligned':'Review Needed'}</span></strong>
           </div>
         </div>
+        ${lkSection}
       </div>
       <div class="review-actions">
         <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(3)">← Back</button>
@@ -220,13 +293,19 @@ const NewProject = (() => {
       `${m.name}: ${m.qty} ${m.unit} (${m.category})`
     ).join('\n');
 
+    const region       = $$('np-proj-region')?.value || 'SG';
+    const slsicSector  = $$('np-slsic-sector')?.value || undefined;
+    const activityCode = ($$('np-activity-code')?.value || '').trim().toUpperCase() || undefined;
+
     const projectPayload = {
       name,
       projectId:    $$('np-proj-id')?.value?.trim() || '',
       type:         $$('np-proj-type')?.value || 'Commercial',
-      region:       $$('np-proj-region')?.value || 'SG',
+      region,
       phase:        $$('np-proj-phase')?.value || 'Construction',
       floorArea_m2: parseFloat($$('np-proj-area')?.value || 0),
+      ...(slsicSector  && { slsicSector }),
+      ...(activityCode && { activityCode }),
       materials:    _materials.map(m => ({ name: m.name, category: m.category, qty: m.qty, unit: m.unit })),
       loan: {
         outstanding: parseFloat($$('np-outstanding')?.value || 0) * 1e6,
@@ -300,5 +379,5 @@ const NewProject = (() => {
   }
 
   return { init, goTo, nextFromStep1, nextFromStep3, addMaterial, submitProject,
-           _updateMat, _removeMat };
+           onRegionChange, lookupActivity, _updateMat, _removeMat };
 })();
