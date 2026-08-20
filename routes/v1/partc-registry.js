@@ -12,6 +12,9 @@
  *   GET      /v1/partc/policies                     flattened book, filterable by year
  *   GET      /v1/partc/projects/:projectId/policies/:policyId/context
  *   GET      /v1/partc/storage                      what this deployment can persist
+ *   GET      /v1/partc/portfolio/:year/comparatives  this year against last
+ *   GET      /v1/partc/portfolio/:year/restatements  what has been restated
+ *   GET      /v1/partc/disclosure/:year              annual disclosure — JSON, PDF or Word
  *
  * Storage honesty: on a serverless runtime with no Firebase configured, every
  * write is refused with a 503 rather than accepted and lost. GET /storage
@@ -31,6 +34,8 @@ const { seedDemoBook } = require('../../services/partc-demo-data');
 const boq = require('../../services/partc-boq');
 const assessments = require('../../services/partc-assessments');
 const portfolio   = require('../../services/partc-portfolio');
+const comparatives = require('../../services/partc-comparatives');
+const disclosure   = require('../../services/partc-disclosure');
 
 const {
   settingsSchema, clientSchema, clientUpdateSchema,
@@ -337,6 +342,59 @@ router.get('/portfolio/:year/dq-plan', apiKeyAuth, defaultLimiter, handle(async 
 /** Which emission factors to localise first, across the whole book. */
 router.get('/portfolio/:year/factor-gaps', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
   res.json({ gaps: await portfolio.factorGapPriority(req.apiKey.orgId, req.params.year) });
+}));
+
+/**
+ * This year against last year, with the prior figure stated on both bases
+ * where it has since been restated.
+ */
+router.get('/portfolio/:year/comparatives', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ comparatives: await comparatives.compare(req.apiKey.orgId, req.params.year) });
+}));
+
+/** Every restatement recorded against a reporting year. */
+router.get('/portfolio/:year/restatements', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ restatements: await comparatives.restatementsFor(req.apiKey.orgId, req.params.year) });
+}));
+
+// ---------------------------------------------------------------------------
+// The annual disclosure — the document the insurer publishes
+//
+// Built from locked assessments only. Refused with a 409 when the year holds
+// none, because an empty disclosure would read as a position of zero rather
+// than as no position at all.
+// ---------------------------------------------------------------------------
+router.get('/disclosure/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const orgId  = req.apiKey.orgId;
+  const year   = req.params.year;
+  const format = String(req.query.format || 'json').toLowerCase();
+
+  if (!['json', 'pdf', 'docx'].includes(format)) {
+    return res.status(400).json({
+      error: 'UNSUPPORTED_FORMAT',
+      message: `Format "${format}" is not supported.`,
+      remedy: 'Use format=json, format=pdf or format=docx.'
+    });
+  }
+
+  const d = await disclosure.buildAnnualDisclosure(orgId, year, {
+    includeAuditTrail: req.query.auditTrail !== 'false'
+  });
+
+  const stem = `${String(d.meta.insurer || 'insurer').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}-iae-fy${d.meta.reportingYear}`;
+
+  if (format === 'json') return res.json({ disclosure: d });
+
+  if (format === 'docx') {
+    const buffer = await disclosure.buildDisclosureDOCX(d);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    res.setHeader('Content-Disposition', `attachment; filename="${stem}.docx"`);
+    return res.send(buffer);
+  }
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${stem}.pdf"`);
+  disclosure.buildDisclosurePDF(d).pipe(res);
 }));
 
 // ---------------------------------------------------------------------------

@@ -17,6 +17,8 @@
         <select id="pfYear"></select>
       </label>
       <button class="btn btn-secondary" id="pfRefresh">Refresh</button>
+      <button class="btn btn-primary" id="pfDiscPdfBtn">Annual disclosure — PDF</button>
+      <button class="btn btn-secondary" id="pfDiscDocxBtn">Word</button>
       <span class="partc-hint" id="pfStatus"></span>
     </div>
   </section>
@@ -63,6 +65,22 @@
         <p id="pfAggregationNote"></p>
       </header>
       <div id="pfRows"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Year on year</h3>
+        <p id="pfCompareNote"></p>
+      </header>
+      <div id="pfCompare"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Restatements</h3>
+        <p>A figure already disclosed can only change through a restatement, which carries the reason recorded when it was locked.</p>
+      </header>
+      <div id="pfRestatements"></div>
     </section>
 
     <section class="partc-card">

@@ -220,6 +220,56 @@ const RULES = [
     implementation: 'services/pcaf-partc/ is pure and deterministic: no network, no clock in any calculation, no LLM in any arithmetic path. Claude classifies, extracts and writes; the engine computes.',
     test: 'tests/pcaf-partc-e2e.test.js › reproducibility › the same inputs produce an identical disclosure',
     status: 'implemented'
+  },
+
+  // ---- Annual disclosure -------------------------------------------------
+  {
+    id: 'C-DISC-01',
+    clause: 'Part C v2 §6 — reporting',
+    rule: 'The reported position shall state the coverage it rests on. A total drawn from part of the book shall not be presented as the whole book.',
+    implementation: 'services/partc-disclosure.js — coverage.statement names assessed and in-force policy counts in section 3, and every unassessed policy is listed by name',
+    test: 'tests/partc-disclosure.test.js › What the disclosure states plainly › coverage is stated as a fraction of the book, not left to be inferred',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DISC-02',
+    clause: 'Part C v2 §6 — reporting',
+    rule: 'A disclosure shall report a position it holds. A reporting year with no locked assessment is not a position of zero.',
+    implementation: 'services/partc-disclosure.js — buildAnnualDisclosure throws NOTHING_TO_DISCLOSE (409) when the year holds no locked assessment',
+    test: 'tests/partc-disclosure.test.js › What the disclosure refuses to do › a year with no locked assessment is refused, not reported as zero',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DISC-03',
+    clause: 'Part C v2 §6 — reporting',
+    rule: 'Every disclosed figure shall be traceable to the assessment, bill of quantities and lock behind it.',
+    implementation: 'services/partc-disclosure.js — Annex C records assessment id, version, BOQ revision, lock time and locking organisation for every row in section 5',
+    test: 'tests/partc-disclosure.test.js › What the disclosure states plainly › every disclosed figure traces to an assessment, a BOQ revision and a lock',
+    status: 'implemented'
+  },
+  {
+    id: 'C-REST-01',
+    clause: 'Part C v2 §6 — restatement',
+    rule: 'Where a previously reported figure has changed, both the figure as previously reported and the figure as restated shall be disclosed, with the reason.',
+    implementation: 'services/partc-comparatives.js — restatementsFor() reports asPreviouslyReported/asRestated per policy with the reason recorded at lock time; compare() carries both bases into the following year',
+    test: 'tests/partc-comparatives.test.js › Restatement register › a locked version that moves the figure materially is disclosed on both bases',
+    status: 'implemented'
+  },
+  {
+    id: 'C-REST-02',
+    clause: 'Part C v2 §6 — restatement',
+    rule: 'Only a figure that has entered a disclosure can be restated. An unapproved calculation does not change a reported position.',
+    implementation: 'services/partc-comparatives.js — the register reads locked assessments only, so a draft that would move the figure has not moved it',
+    test: 'tests/partc-comparatives.test.js › Restatement register › a draft that would move the figure has not moved it',
+    status: 'implemented'
+  },
+  {
+    id: 'C-REST-03',
+    clause: 'Comparability',
+    rule: 'A movement between annual totals shall not be presented as a change in performance where the underwritten book itself changed.',
+    implementation: 'services/partc-comparatives.js — a policy is reported in its inception year, so each year covers different policies; compare() states this with the movement and reports intensity (kgCO2e/m² insured) and emissions-weighted data quality as the comparable measures',
+    test: 'tests/partc-comparatives.test.js › Prior-year comparison › a movement in the total is never described as a performance change',
+    status: 'implemented'
   }
 ];
 

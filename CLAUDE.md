@@ -89,6 +89,10 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `GET/POST` | `/v1/partc/assessments` | Assessments bound to policy, BOQ revision and year |
 | `POST` | `/v1/partc/assessments/:id/status` | Lifecycle — draft, under review, locked |
 | `GET` | `/v1/partc/periods/:year` | Locked totals, coverage, emissions-weighted data quality |
+| `GET` | `/v1/partc/portfolio/:year` | The reporting-year position, with the DQ improvement plan and factor gaps |
+| `GET` | `/v1/partc/portfolio/:year/comparatives` | This year against last, on a basis that survives a change of book |
+| `GET` | `/v1/partc/portfolio/:year/restatements` | As previously reported vs as restated, with the reason |
+| `GET` | `/v1/partc/disclosure/:year` | The annual disclosure — JSON, PDF or Word |
 | `GET` | `/v1/partc/storage` | What this deployment can actually persist |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
@@ -205,6 +209,10 @@ Three tiers, enforced structurally rather than by convention:
 **Restatement:** comparing two revisions holds every non-BOQ input constant, so the movement is attributable to the BOQ alone. A movement reaching the settings threshold (default 5%) requires restating a locked assessment. Because A5.2 site energy is typically 90%+ of the construction figure, material quantity changes move the total very little — the comparison therefore explains *why* the figure moved as it did, rather than leaving a user wondering whether their variation order registered.
 
 **Assessments (`services/partc-assessments.js`):** one calculation bound to a policy, a BOQ revision and a reporting year — the binding is what lets a figure in an annual disclosure be traced to the bill of quantities behind it. Lifecycle is `draft → under_review → locked`; only a locked assessment enters the disclosure, and a locked assessment is never edited, only superseded by a new version. Where a new version moves a locked figure by at least the settings threshold it is a **restatement** and a reason is required. Locking one version automatically supersedes the previously locked one, so a policy-year never has two.
+
+**The annual disclosure (`services/partc-disclosure.js`):** the document published for a reporting year, built from locked assessments only. A year holding none is **refused with a 409** rather than rendered as a position of zero — an empty disclosure would read as "we insured nothing carbon-intensive", which is a different claim from "we have not measured yet". Coverage sits in section 3, not an annex, because a total drawn from a fifth of the book means something different from one drawn from all of it. Annex C records the assessment, version, BOQ revision and lock behind every row in the per-policy table, so a reader can follow any disclosed number back to the bill of quantities.
+
+**Comparatives (`services/partc-comparatives.js`):** because a policy's reporting year is its inception year, each year covers a *different set of policies* — two annual totals are measurements of two different books, not two measurements of one thing. Presenting their difference as a reduction would be false. The movement is therefore reported as fact alongside the note that it is not on its own a change in performance, and **intensity (kgCO2e/m² insured)** and the emissions-weighted data-quality score are given as the measures that survive a change of book. Where a prior year has been restated, the comparative is carried on **both** bases — as previously reported and as restated — with the reason recorded at lock time.
 
 Every API key belongs to the insurer's own organisation — there is no client-facing login — so "only the insurer locks" holds by construction rather than by a role check; the organisation is recorded on the lock either way. Period totals weight data quality by emissions, as PCAF requires, so a small weak policy cannot drag the reported position beyond its share.
 

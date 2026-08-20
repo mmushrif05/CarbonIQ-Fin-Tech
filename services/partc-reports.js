@@ -18,14 +18,10 @@
 'use strict';
 
 const PDFDocument = require('pdfkit');
-const {
-  Document, Packer, Paragraph, TextRun, HeadingLevel,
-  Table, TableRow, TableCell, WidthType, AlignmentType, BorderStyle
-} = require('docx');
+const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
 
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
-
-const N = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
+const { N, _p, _h, _table } = require('./partc-docgen');
 
 // ---------------------------------------------------------------------------
 // Structured report object
@@ -249,28 +245,6 @@ function buildPartCPDF(report) {
 // ---------------------------------------------------------------------------
 // Word
 // ---------------------------------------------------------------------------
-
-const _p    = (text, opts = {}) => new Paragraph({ children: [new TextRun({ text: String(text), ...opts })], spacing: { after: 80 }, ...(opts.paraOpts || {}) });
-const _h    = (text, level) => new Paragraph({ text: String(text), heading: level, spacing: { before: 240, after: 120 } });
-const _cell = (text, bold = false) => new TableCell({
-  children: [new Paragraph({ children: [new TextRun({ text: String(text), bold, size: 18 })] })],
-  margins: { top: 60, bottom: 60, left: 80, right: 80 }
-});
-const _table = (header, rows) => new Table({
-  width: { size: 100, type: WidthType.PERCENTAGE },
-  borders: {
-    top:    { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    left:   { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    right:  { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
-    insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' }
-  },
-  rows: [
-    new TableRow({ children: header.map(h => _cell(h, true)) }),
-    ...rows.map(r => new TableRow({ children: r.map(c => _cell(c)) }))
-  ]
-});
 
 /**
  * @returns {Promise<Buffer>} .docx buffer
