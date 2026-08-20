@@ -176,6 +176,10 @@ async function createAssessment(orgId, input) {
       b1: result.modules.b1.value, b4: result.modules.b4.value, b7: result.modules.b7.value
     },
     dataQuality:    result.dataQuality,
+    // The score is locked with the figure. Recomputing it later from a
+    // changed factor store would report a quality the disclosure never had.
+    dqScoring:      result.dqScoring || null,
+    dqStatement:    result.dqDisclosureStatement || null,
     disclosureNote: result.disclosureNote,
     registerBadges: registers.badges,
     limitations:    registers.assumptions.limitations.map(l => ({ severity: l.severity, message: l.message })),

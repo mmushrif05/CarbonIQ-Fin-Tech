@@ -214,6 +214,30 @@ const RULES = [
     status: 'implemented'
   },
   {
+    id: 'C-DQ-07',
+    clause: 'PCAF — a figure is disclosed with its score',
+    rule: 'Each reported scope carries an emission-weighted data quality score built from the evidence behind each input, and the construction and use-stage scores are reported separately and never blended.',
+    implementation: 'services/pcaf-partc/dq-scoring.js — per-input scores follow the evidence the run actually used, module_score is the mean of its inputs, and each scope score is sum(module emissions x module score) / sum(module emissions). The scoring reads a finished result and computes no figure of its own.',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a emission-weighted roll-up \u203a the weighted score is \u03a3(emissions \u00d7 score) \u00f7 \u03a3(emissions), not a flat average',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DQ-08',
+    clause: 'PCAF — the scope rule reaches the score',
+    rule: 'Where the policy gate closes the use stage, the use-stage score reports as not applicable by scope rule rather than as a score of zero or a measurement of nothing.',
+    implementation: 'services/pcaf-partc/dq-scoring.js — useStage.applies follows policy.useStageYears; gated inputs are marked not evaluated and cite the gate rather than reporting a zero-valued basis',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a the scope rule reaches the score \u203a a gated use-stage input says it was not evaluated, not that it measured zero',
+    status: 'implemented'
+  },
+  {
+    id: 'C-DQ-09',
+    clause: 'PCAF — the disclosure statement is generated, not written',
+    rule: 'The disclosure statement is produced from the execution: standard, section, both figures, the PCAF option, both scores and the limitations the run actually carries.',
+    implementation: 'services/pcaf-partc/dq-scoring.js disclosureStatement() — every clause is read from the result, and limitations are named from the inputs that scored 4 or worse, so a supplied actual removes its own limitation',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a the generated disclosure statement \u203a a supplied actual removes its limitation from the statement',
+    status: 'implemented'
+  },
+  {
     id: 'C-DQ-06',
     clause: 'Reproducibility',
     rule: 'The same inputs produce the same disclosure.',

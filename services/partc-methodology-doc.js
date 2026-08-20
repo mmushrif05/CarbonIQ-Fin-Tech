@@ -15,7 +15,7 @@
 const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
 
-const { N, pdfWriter, _p, _h, _table } = require('./partc-docgen');
+const { N, pdfWriter, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
 
 const _inputs = o => Object.entries(o || {})
@@ -39,6 +39,7 @@ function _guard(m) {
 function buildMethodologyPDF(m) {
   _guard(m);
   const doc = new PDFDocument({ margin: 56, size: 'A4', compress: true });
+  winAnsiSafe(doc);
   const { H, P, KV, NOTE, WARN } = pdfWriter(doc);
 
   doc.fontSize(20).fillColor('#0f172a').font('Helvetica-Bold').text(m.title);

@@ -64,6 +64,11 @@ async function rollUp(orgId, reportingYear) {
     perM2:               a.summary.perM2Factor_kgCO2e_m2,
     dataQualityOption:   a.dataQuality.option,
     dataQualityScore:    a.dataQuality.score,
+    // The rubric score is a different measure from the PCAF option score
+    // and is carried beside it, never folded into it.
+    dqConstruction:      a.dqScoring ? a.dqScoring.construction.weighted : null,
+    dqUseStage:          a.dqScoring && a.dqScoring.useStage.applies
+      ? a.dqScoring.useStage.weighted : null,
     isRestatement:       !!(a.restatement && a.restatement.isRestatement),
     lockedAt:            a.lockedAt
   })).sort((x, y) => y.construction_kgCO2e - x.construction_kgCO2e);
@@ -78,6 +83,16 @@ async function rollUp(orgId, reportingYear) {
     : null;
   const simpleDQ = rows.length
     ? _round(rows.reduce((n, r) => n + r.dataQualityScore, 0) / rows.length)
+    : null;
+
+  /* The rubric score across the book, weighted by construction emissions on
+     the same rule as the option score. Rows locked before the rubric existed
+     carry none, so they are excluded from the weighting rather than counted
+     as zero — which would report a book cleaner than it is. */
+  const rubricRows = rows.filter(r => r.dqConstruction !== null);
+  const rubricEmissions = rubricRows.reduce((n, r) => n + r.construction_kgCO2e, 0);
+  const weightedRubric = rubricEmissions > 0
+    ? _round(rubricRows.reduce((n, r) => n + r.construction_kgCO2e * r.dqConstruction, 0) / rubricEmissions)
     : null;
 
   const assessedPolicyIds = new Set(locked.map(a => a.policyId));
@@ -113,6 +128,9 @@ async function rollUp(orgId, reportingYear) {
       weighted: weightedDQ,
       simpleAverage: simpleDQ,
       basis: 'Weighted by construction emissions, as PCAF requires.',
+      weightedRubric,
+      rubricAssessments: rubricRows.length,
+      rubricBasis: 'The input rubric (1 best, 5 worst) rolled up per assessment, then weighted by construction emissions. A separate measure from the PCAF option score above, and never blended with it.',
       note: weightedDQ !== null && simpleDQ !== null && weightedDQ !== simpleDQ
         ? `The weighted score (${weightedDQ}) differs from a simple average (${simpleDQ}) because the book is not evenly sized — the largest assessments carry the position.`
         : null

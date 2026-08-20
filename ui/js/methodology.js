@@ -65,7 +65,7 @@ const MethodologyPage = (() => {
     drawChart(); drawCurveTable();
     drawChain();
     buildFactorControls(); drawDonut(); drawFactors();
-    drawLimits(); drawQuality(); drawConformance(); drawLabour();
+    drawLimits(); drawDqScoring(); drawQuality(); drawConformance(); drawLabour();
     buildToc();
     wireCitation();
   }
@@ -79,7 +79,7 @@ const MethodologyPage = (() => {
     $('mthPolicySeg').querySelectorAll('.mth-seg-btn').forEach(b =>
       b.addEventListener('click', () => {
         _policy = b.dataset.policy;
-        buildPolicySeg(); drawScope(); drawGate();
+        buildPolicySeg(); drawScope(); drawGate(); drawDqScoring(); drawFactors();
       }));
   }
 
@@ -390,6 +390,23 @@ const MethodologyPage = (() => {
       + `<p class="mth-cap">${esc(_d.factorStore.localisationNote || _d.factorStore.note)}</p>`);
   }
 
+  /* A factor is only interesting to a reviewer if they can see what it moves.
+     The cell names the module score this row feeds and the share of the
+     scope's emissions that module carries, so a Global-tier default sitting
+     under 97% of the figure reads differently from one under 2.6%. */
+  function factorScoreCell(module) {
+    const { s } = dqData();
+    if (!s) return '<span class="dq-badge sc-na is-sm">—</span>';
+    const code = String(module || '').split('.')[0];
+    const score = s.byModule[code];
+    if (score === undefined) return '<span class="dq-badge sc-na is-sm">outside</span>';
+    const scope = [s.construction, s.useStage].find(x => x.rows.some(r => r.module === code));
+    const row = scope && scope.rows.find(r => r.module === code);
+    const share = scope && scope.applies !== false && row && row.weightPct > 0
+      ? ` <small class="dq-share">${row.weightPct}% of scope</small>` : '';
+    return `${scoreBadge(score, true)}${share}`;
+  }
+
   function drawFactors() {
     const q = (($('mthFactorFilter') || {}).value || '').toLowerCase().trim();
     let rows = _d.factorStore.rows;
@@ -401,12 +418,13 @@ const MethodologyPage = (() => {
     setHtml('mthFactors', rows.length === 0 ? '<p class="mth-cap">No factor matched.</p>' : `
       <div class="mth-scroll"><table class="mth-table">
         <thead><tr><th scope="col">Factor</th><th scope="col">Value</th><th scope="col">Module</th>
-                   <th scope="col">Tier</th><th scope="col">Source</th></tr></thead>
+                   <th scope="col">Tier</th><th scope="col">Feeds score</th><th scope="col">Source</th></tr></thead>
         <tbody>${rows.map(r => `
           <tr><td class="mono">${esc(r.key)}</td>
               <td class="num">${esc(r.value)} <small>${esc(r.unit || '')}</small></td>
               <td>${esc(r.module)}</td>
               <td><span class="badge ${TIER_CLASS[r.tier] || ''}">${esc(r.tier)}</span></td>
+              <td class="num">${factorScoreCell(r.module)}</td>
               <td class="ig-src">${esc(r.reference || '—')}</td></tr>`).join('')}
         </tbody></table></div>`);
   }
@@ -439,6 +457,107 @@ const MethodologyPage = (() => {
         b.closest('.tile').classList.toggle('is-expanded', !open);
         b.textContent = open ? 'more' : 'less';
       }));
+  }
+
+  /* ══ 7 · Data quality ═══════════════════════════════════════
+
+     PCAF requires a score beside any disclosed figure, so the two scores
+     lead the section and every figure on the page carries one. The
+     weighting is drawn rather than tabulated first: a stacked bar shows at
+     a glance which module the score is actually coming from, which is the
+     thing a reviewer wants to know and the thing a column of numbers
+     hides. */
+
+  const scoreBadge = (v, small) => v === null || v === undefined
+    ? `<span class="dq-badge sc-na${small ? ' is-sm' : ''}">n/a</span>`
+    : `<span class="dq-badge sc-${Math.round(v)}${small ? ' is-sm' : ''}"><b>${Number(v).toFixed(1)}</b>${small ? '' : '<i>/ 5</i>'}</span>`;
+
+  const dqData = () => {
+    const sc = scenarioFor(_policy);
+    return { s: (sc && sc.dq) || _d.dqScoring, t: (sc && sc.dqStatement) || _d.dqStatement };
+  };
+
+  function dqHeadCard(scope, tonnes, note) {
+    const na = scope.applies === false;
+    const imp = scope.improvement;
+    return `
+      <article class="dq-head${na ? ' is-na' : ''}">
+        <p class="dq-head-label">${esc(scope.label)}</p>
+        <p class="dq-head-fig">${na ? '—' : fmt(tonnes, 3)}<span> tCO2e</span></p>
+        ${scoreBadge(na ? null : scope.weighted)}
+        <p class="mth-cap">${esc(na ? (scope.notApplicableNote || note || '') : `Weighted over ${fmt(scope.totalEmissions)} kgCO2e.`)}</p>
+        ${na ? '' : imp
+          ? `<p class="dq-improve"><b>${esc(imp.module)} ${imp.from} → ${imp.to}</b> ${esc(imp.action)}</p>`
+          : '<p class="dq-improve is-done"><b>best available</b> Every improvable input already carries a client actual.</p>'}
+      </article>`;
+  }
+
+  function dqBar(scope) {
+    if (scope.applies === false || !scope.totalEmissions) return '';
+    return `<div class="dq-bar" role="img" aria-label="Emission share by module">${
+      scope.rows.filter(r => r.weightPct > 0).map(r => `
+        <span class="dq-seg sc-${Math.round(r.score)}" style="flex:${r.weightPct}"
+              title="${esc(r.module)} — ${r.weightPct}% of emissions, score ${r.score}">
+          ${r.weightPct >= 9 ? `<b>${esc(r.module)}</b><i>${r.weightPct}%</i>` : ''}</span>`).join('')}
+      </div>
+      <p class="dq-barkey">${scope.rows.filter(r => r.weightPct > 0)
+        .map(r => `<span><i class="dq-key sc-${Math.round(r.score)}"></i>${esc(r.module)} ${r.weightPct}%</span>`).join('')}</p>`;
+  }
+
+  function dqWeightTable(scope) {
+    if (scope.applies === false) return '';
+    return `<table class="mth-table dq-wtable">
+      <thead><tr><th>Module</th><th>kgCO2e</th><th>Score</th><th>Weight</th><th>Contributes</th></tr></thead>
+      <tbody>${scope.rows.map(r => `<tr>
+        <td class="mono">${esc(r.module)}</td>
+        <td class="num">${fmt(r.emissions, 2)}</td>
+        <td class="num">${scoreBadge(r.score, true)}</td>
+        <td class="num">${r.weightPct}%</td>
+        <td class="num">${fmt(r.contribution, 2)}</td></tr>`).join('')}
+        <tr class="is-total"><td>Weighted</td><td class="num">${fmt(scope.totalEmissions, 2)}</td>
+        <td colspan="2"></td><td class="num"><b>${scope.weighted === null ? '—' : `${Number(scope.weighted).toFixed(1)} / 5`}</b></td></tr>
+      </tbody></table>`;
+  }
+
+  function drawDqScoring() {
+    const { s, t } = dqData();
+    if (!s) return;
+    const sc = scenarioFor(_policy);
+
+    setHtml('mthDqHeads',
+      dqHeadCard(s.construction, (sc ? sc.construction : s.construction.totalEmissions) / 1000) +
+      dqHeadCard(s.useStage, (sc ? sc.useStage : s.useStage.totalEmissions) / 1000));
+
+    setHtml('mthDqWeight', [s.construction, s.useStage].map(scope => `
+      <div class="dq-wblock${scope.applies === false ? ' is-na' : ''}">
+        <p class="dq-wtitle">${esc(scope.label)}</p>
+        ${scope.applies === false
+          ? `<p class="mth-cap">${esc(scope.notApplicableNote || '')}</p>`
+          : dqBar(scope) + dqWeightTable(scope)}
+      </div>`).join(''));
+
+    say('mthDqWhy', s.whyWeighted);
+
+    setHtml('mthDqRubric', `<div class="dq-rubric">${s.rubric.map(r => `
+      <div class="dq-rub sc-${r.score}">
+        <span class="dq-badge sc-${r.score} is-sm"><b>${r.score}</b></span>
+        <b>${esc(r.meaning)}</b>
+        <span>${esc(r.evidence)}</span>
+      </div>`).join('')}</div>
+      <p class="mth-cap">${esc(s.scale)} ${esc(s.basis)}</p>`);
+
+    setHtml('mthDqInputs', `<table class="mth-table dq-itable">
+      <thead><tr><th>Module</th><th>Input</th><th>Basis actually used</th><th>Score</th><th>Source</th><th>Tier</th></tr></thead>
+      <tbody>${s.inputs.map(i => `<tr class="${i.applies === false ? 'is-na' : ''}">
+        <td class="mono">${esc(i.stage)}</td>
+        <td class="mono">${esc(i.input)}</td>
+        <td>${esc(i.basis)}</td>
+        <td class="num">${i.applies === false ? '<span class="dq-badge sc-na is-sm">n/a</span>' : scoreBadge(i.score, true)}</td>
+        <td>${esc(i.source)}</td>
+        <td><span class="badge ${TIER_CLASS[i.tier] || ''}">${esc(i.tier)}</span></td>
+      </tr>`).join('')}</tbody></table>`);
+
+    say('mthDqStatement', t || '');
   }
 
   function drawQuality() {

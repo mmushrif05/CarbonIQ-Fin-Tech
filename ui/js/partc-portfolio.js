@@ -19,6 +19,13 @@ const PartCPortfolio = (() => {
 
   let currency = 'LKR';
 
+  /* No figure without its score. The badge shares the palette and the class
+     names used on the assessment screen, so a colour means the same thing
+     wherever a reader meets it. */
+  const dqBadge = (v, label) => v === null || v === undefined
+    ? `<span class="dqb dqb-na">${esc(label || 'n/a')}</span>`
+    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${esc(label)}</i>` : ''}<b>${Number(v).toFixed(1)}</b>/5</span>`;
+
   async function call(path) {
     const res = await window.CARBONIQ_fetch('/v1/partc' + path);
     let data = {};
@@ -88,6 +95,17 @@ const PartCPortfolio = (() => {
     say('pfDqBasis', p.dataQuality.simpleAverage === null
       ? 'by emissions'
       : `by emissions · simple avg ${p.dataQuality.simpleAverage}`);
+    const rubric = p.dataQuality.weightedRubric;
+    setHtml('pfDqConstruction', rubric === null || rubric === undefined
+      ? '<span class="dqb dqb-na">no rubric score locked</span>'
+      : `Input rubric ${dqBadge(rubric)}`);
+    const useRows = p.rows.filter(r => r.dqUseStage !== null && r.dqUseStage !== undefined);
+    setHtml('pfDqUseStage', useRows.length === 0
+      ? '<span class="dqb dqb-na">no use-stage cover in this year</span>'
+      : `Input rubric ${dqBadge(
+        Math.round((useRows.reduce((n, r) => n + (r.useStage_kgCO2e * r.dqUseStage), 0)
+          / (useRows.reduce((n, r) => n + r.useStage_kgCO2e, 0) || 1)) * 10) / 10)}`);
+
     say('pfScopeNote', p.scopeNote);
     say('pfAggregationNote', p.aggregationNote);
 
@@ -126,7 +144,9 @@ const PartCPortfolio = (() => {
                <td class="num">${r.shareOfConstructionPct}%</td>
                <td class="num">${r.attributionFactor.toFixed(6)}</td>
                <td class="num">${fmt(r.insurerIAE_tCO2e, 4)}</td>
-               <td class="num">${esc(r.dataQualityOption)} · ${r.dataQualityScore}</td>
+               <td class="num">${esc(r.dataQualityOption)} · ${r.dataQualityScore}
+                   ${r.dqConstruction === null || r.dqConstruction === undefined ? ''
+                     : '<br>' + dqBadge(r.dqConstruction)}</td>
              </tr>`).join('')}
            </tbody></table>`);
 

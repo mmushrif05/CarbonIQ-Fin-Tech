@@ -9,6 +9,7 @@
  *   POST /v1/pcaf/part-c/assess    run the full assessment
  *   POST /v1/pcaf/part-c/form      build the pre-filled, policy-gated client form
  *   POST /v1/pcaf/part-c/report    PDF, Word or JSON disclosure report
+ *   POST /v1/pcaf/part-c/dq-preview  data-quality scoring alone, nothing persisted
  *   GET  /v1/pcaf/part-c/factors   factor store transparency
  *   GET  /v1/pcaf/part-c/options   dropdown option lists for the form
  *   GET  /v1/pcaf/part-c/runs      list persisted runs
@@ -103,6 +104,10 @@ function _shapeResult(result, registers, extra = {}) {
     },
     deMinimis:   result.deMinimis,
     dataQuality: result.dataQuality,
+    // PCAF requires a score beside any disclosed figure, so the scoring
+    // travels with the figures rather than being fetched separately.
+    dqScoring:  result.dqScoring || null,
+    dqStatement: result.dqDisclosureStatement || null,
     disclosureNote: result.disclosureNote,
     sensitivity: result.sensitivity,
     vehicle:     result.vehicle,
@@ -245,6 +250,31 @@ router.post('/assess', apiKeyAuth, defaultLimiter,
         projectName: req.body.projectName || null,
         learnings: learnings ? learnings.counts : null
       }));
+    } catch (err) { next(err); }
+  });
+
+// ---------------------------------------------------------------------------
+// POST /dq-preview — the data-quality scoring alone, nothing persisted
+//
+// The intake form has to show the score move the moment a client supplies an
+// actual, and the score is an engine output, not something the browser may
+// infer. The engine costs well under a millisecond, so the form asks it
+// rather than guessing, and the answer on screen is the answer that would be
+// disclosed.
+// ---------------------------------------------------------------------------
+router.post('/dq-preview', apiKeyAuth, defaultLimiter,
+  validate({ body: assessRequestSchema }),
+  (req, res, next) => {
+    try {
+      const result = runPartC(_toEngineInput(req.body));
+      res.json({
+        dqScoring:   result.dqScoring || null,
+        dqStatement: result.dqDisclosureStatement || null,
+        summary: {
+          construction_kgCO2e: result.summary.construction_kgCO2e,
+          useStage_kgCO2e:     result.summary.useStage_kgCO2e
+        }
+      });
     } catch (err) { next(err); }
   });
 

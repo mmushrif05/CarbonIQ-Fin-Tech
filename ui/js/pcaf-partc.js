@@ -32,6 +32,120 @@ const PCAFPartCPage = (() => {
   const fmt = (n, d = 2) => Number(n || 0).toLocaleString('en-US',
     { minimumFractionDigits: d, maximumFractionDigits: d });
 
+  /* ── Data quality ───────────────────────────────────────────
+     PCAF asks for a score beside any disclosed figure, so no figure on
+     this screen is written without one. The badge colour carries the
+     reading before the number is read: teal is evidence, amber is
+     assumption. */
+  const escHtml = t => String(t ?? '').replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  const dqBadge = (v, label) => v === null || v === undefined
+    ? `<span class="dqb dqb-na">${escHtml(label || 'n/a')}</span>`
+    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${escHtml(label)}</i>` : ''}<b>${Number(v).toFixed(1)}</b><i>/ 5</i></span>`;
+
+  function dqScopeBlock(scope) {
+    if (!scope) return '';
+    if (scope.applies === false) {
+      return `<div class="dq-block is-na">
+        <p class="dq-block-title">${escHtml(scope.label)}</p>
+        <p class="partc-hint">${escHtml(scope.notApplicableNote || 'Not applicable to this policy type (scope rule).')}</p>
+      </div>`;
+    }
+    const shown = scope.rows.filter(r => r.weightPct > 0);
+    /* A segment too narrow to hold a label keeps its colour and its tooltip.
+       The key underneath names every band, so a 2.6% module is still read. */
+    const bar = shown.map(r =>
+      `<span class="dq-seg dqb-${Math.round(r.score)}" style="flex:${r.weightPct}"
+             title="${escHtml(r.module)} — ${r.weightPct}% of emissions, score ${r.score}">
+         ${r.weightPct >= 9 ? `<b>${escHtml(r.module)}</b><i>${r.weightPct}%</i>` : ''}</span>`).join('');
+    const key = shown.map(r =>
+      `<span><i class="dq-key dqb-${Math.round(r.score)}"></i>${escHtml(r.module)} ${r.weightPct}%</span>`).join('');
+    const imp = scope.improvement;
+    return `<div class="dq-block">
+      <p class="dq-block-title">${escHtml(scope.label)} ${dqBadge(scope.weighted)}</p>
+      <div class="dq-bar">${bar}</div>
+      <p class="dq-barkey">${key}</p>
+      <table class="partc-table dq-table">
+        <thead><tr><th>Module</th><th class="num">kgCO2e</th><th class="num">Score</th>
+                   <th class="num">Weight</th><th class="num">Contribution</th></tr></thead>
+        <tbody>${scope.rows.map(r => `
+        <tr><td>${escHtml(r.module)}</td><td class="num">${fmt(r.emissions)}</td>
+            <td class="num">${dqBadge(r.score)}</td><td class="num">${r.weightPct}%</td>
+            <td class="num">${fmt(r.contribution)}</td></tr>`).join('')}
+        <tr class="total"><td>Weighted</td><td class="num">${fmt(scope.totalEmissions)}</td>
+            <td colspan="2"></td><td class="num">${Number(scope.weighted).toFixed(1)} / 5</td></tr>
+        </tbody></table>
+      ${imp
+        ? `<p class="dq-improve"><b>${escHtml(imp.module)} ${imp.from} → ${imp.to}</b> ${escHtml(imp.action)}</p>`
+        : '<p class="dq-improve is-done"><b>best available</b> Every improvable input already carries a client actual.</p>'}
+    </div>`;
+  }
+
+  function renderDq(d) {
+    const sc = d.dqScoring;
+    const setFig = (id, scope) => {
+      const el = $(id);
+      if (!el) return;
+      el.innerHTML = !sc ? ''
+        : scope.applies === false
+          ? '<span class="dqb dqb-na">not applicable — scope rule</span>'
+          : `Data quality ${dqBadge(scope.weighted)}`;
+    };
+    setFig('partcDqConstruction', sc && sc.construction);
+    setFig('partcDqUseStage', sc && sc.useStage);
+
+    if (!$('partcDqPanel')) return;
+    $('partcDqPanel').innerHTML = !sc ? '<p class="partc-hint">No scoring returned.</p>' : `
+      <div class="dq-blocks">${dqScopeBlock(sc.construction)}${dqScopeBlock(sc.useStage)}</div>
+      <p class="partc-hint">${escHtml(sc.basis)} ${escHtml(sc.whyWeighted)}</p>
+      <details class="dq-inputs"><summary>Every input the run consumed (${sc.inputs.length})</summary>
+        <table class="partc-table dq-table"><thead><tr>
+          <th>Stage</th><th>Input</th><th>Basis actually used</th><th>Score</th><th>Source</th></tr></thead>
+          <tbody>${sc.inputs.map(i => `<tr${i.applies === false ? ' class="is-na"' : ''}>
+            <td>${escHtml(i.stage)}</td><td>${escHtml(i.input)}</td><td>${escHtml(i.basis)}</td>
+            <td class="num">${i.applies === false ? '<span class="dqb dqb-na">n/a</span>' : dqBadge(i.score)}</td>
+            <td>${escHtml(i.source)}</td></tr>`).join('')}
+          </tbody></table></details>`;
+  }
+
+  /* The live strip: the engine is asked for the score as the form is edited,
+     so entering an actual moves the number on screen straight away. The
+     browser never derives the score itself — it would then be showing one
+     thing and disclosing another. */
+  let _dqTimer = null;
+  let _dqSeq = 0;
+
+  function scheduleDqPreview() {
+    clearTimeout(_dqTimer);
+    _dqTimer = setTimeout(runDqPreview, 400);
+  }
+
+  async function runDqPreview() {
+    const strip = $('partcDqLive');
+    if (!strip || !Number($('partcGifa').value)) return;
+    const seq = ++_dqSeq;
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/dq-preview', {
+        method: 'POST', body: JSON.stringify(buildPayload())
+      });
+      const data = await res.json();
+      if (!res.ok || seq !== _dqSeq) return;
+      const sc = data.dqScoring;
+      if (!sc) return;
+      strip.hidden = false;
+      $('partcDqLiveScores').innerHTML =
+        dqBadge(sc.construction.weighted, 'construction') +
+        (sc.useStage.applies === false
+          ? '<span class="dqb dqb-na">use stage — scope rule</span>'
+          : dqBadge(sc.useStage.weighted, 'use stage'));
+      const imp = sc.construction.improvement || sc.useStage.improvement;
+      $('partcDqLiveHint').textContent = imp
+        ? `${imp.action} → ${imp.module} ${imp.from} to ${imp.to}`
+        : 'Every improvable input already carries an actual.';
+    } catch (_) { /* the strip is an aid, never a blocker */ }
+  }
+
   // ── Worked example — the Fisheries reference project ──────
   const DEMO_BOQ = [
     'Providing and laying 1:2:4 cement concrete in foundations and floors ...... 18.65 m3',
@@ -170,6 +284,7 @@ const PCAFPartCPage = (() => {
     renderMaterials();
     $('partcMapStatus').textContent = `${materials.length} materials loaded from the worked example.`;
     refreshProgress();
+    scheduleDqPreview();
   }
 
   // ── Read the policy document with the intake agent ────────
@@ -231,6 +346,7 @@ const PCAFPartCPage = (() => {
       distances  = {};
       renderMaterials();
       refreshProgress();
+      scheduleDqPreview();
       $('partcMapStatus').textContent =
         `${materials.length} materials mapped, ${demolition.length} demolition items found.` +
         (parsed.summary?.lowConfidenceCount ? ` ${parsed.summary.lowConfidenceCount} need review.` : '');
@@ -338,10 +454,16 @@ const PCAFPartCPage = (() => {
     $('partcBadgeC').textContent = d.registers.badges.auditTrail;
     showRegister('assumptions');
 
+    renderDq(d);
+
     $('partcDisclosure').textContent = d.disclosureNote;
     $('partcDataQuality').innerHTML =
       `<strong>Option ${d.dataQuality.option}</strong> — ${d.dataQuality.optionLabel} · score ${d.dataQuality.score} ·
-       weakest factor tier ${d.dataQuality.worstFactorTier || 'n/a'}`;
+       weakest factor tier ${d.dataQuality.worstFactorTier || 'n/a'}`
+      + (d.dqStatement
+        ? `<blockquote class="dq-statement">${escHtml(d.dqStatement)}</blockquote>
+           <span class="partc-hint">Generated from this execution — conformance, never endorsement.</span>`
+        : '');
 
     const annexD = $('partcAnnexD');
     if (d.beyondPcafAnnex.total > 0) {
@@ -487,6 +609,19 @@ const PCAFPartCPage = (() => {
     $('partcBoqFile').addEventListener('change', e =>
       $('partcBoqFileName').textContent = e.target.files[0]
         ? e.target.files[0].name : 'or paste the BOQ below');
+    /* The live score strip. Any field that can change what the engine reads
+       re-asks it, so supplying an actual moves the score while the form is
+       still open rather than only after a run. */
+    ['partcPolicyType', 'partcYears', 'partcPremium', 'partcProjectCost', 'partcGifa',
+     'partcDemoKm', 'partcWasteKm', 'partcPrevArea', 'partcPrevFuel', 'partcPrevElec',
+     'partcPrevMonths', 'partcEquipment', 'partcRefrigerant', 'partcCharge',
+     'partcOccupants', 'partcEv'].forEach(id => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener('input', scheduleDqPreview);
+      el.addEventListener('change', scheduleDqPreview);
+    });
+
     $('partcRunBtn').addEventListener('click', run);
     $('partcPdfBtn').addEventListener('click', () => download('pdf'));
     $('partcDocxBtn').addEventListener('click', () => download('docx'));

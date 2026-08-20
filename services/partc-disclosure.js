@@ -33,7 +33,7 @@
 const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
 
-const { N, pdfWriter, _p, _h, _table } = require('./partc-docgen');
+const { N, pdfWriter, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
 const { conformanceMatrix, STANDARD } = require('./pcaf-partc/conformance');
 
@@ -168,7 +168,17 @@ async function buildAnnualDisclosure(orgId, reportingYear, opts = {}) {
     },
 
     // 5 ─────────────────────────────────────────────────────────────────
-    policies: roll.rows,
+    // Every disclosed row carries the score it was locked with — PCAF does
+    // not admit a figure without one.
+    policies: roll.rows.map(r => {
+      const a = locked.find(x => x.assessmentId === r.assessmentId);
+      const sc = a && a.dqScoring;
+      return {
+        ...r,
+        dqConstruction: sc ? sc.construction.weighted : null,
+        dqUseStage: sc ? (sc.useStage.applies ? sc.useStage.weighted : 'n/a — scope rule') : null
+      };
+    }),
 
     // 6 ─────────────────────────────────────────────────────────────────
     restatements: comp.restatements,
@@ -261,6 +271,7 @@ async function buildAnnualDisclosure(orgId, reportingYear, opts = {}) {
 
 function buildDisclosurePDF(d) {
   const doc = new PDFDocument({ margin: 56, size: 'A4', compress: true });
+  winAnsiSafe(doc);
   const { H, P, KV, NOTE, WARN } = pdfWriter(doc);
 
   // Cover
