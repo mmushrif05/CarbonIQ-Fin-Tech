@@ -8,7 +8,13 @@
    ============================================================ */
 
 .mth {
-  --read: 820px;
+  /* Two measures: the reading column, and the wider column diagrams fill.
+     Both are plain lengths stepped by breakpoint rather than percentages —
+     a percentage inside a custom property resolves against whatever element
+     finally uses it, so the same --wide meant three different widths in
+     three places and the diagram ended up narrower than the prose. */
+  --wide: 1080px;
+  --read: 900px;
   --ink: #0f172a; --ink2: #475569; --ink3: #64748b;
   --line: #e2e8f0; --surface: #fff; --raised: #f8fafc;
   --brand: #0d9488; --brand2: #5eead4; --brand-soft: rgba(13,148,136,.10);
@@ -34,7 +40,19 @@
 .mth-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .mth-status { font-size: 12px; color: var(--ink3); }
 
-.mth-layout { display: grid; grid-template-columns: 200px minmax(0,1fr); gap: 44px; }
+/* The page is centred, not pinned left.
+   The content column is sized for the widest diagram, and the reading
+   column is centred inside it. A diagram then breaks out equally on both
+   sides while staying within its own column — an earlier version bled past
+   the 40px gutter and sat on top of the sticky contents list, which made
+   the left edge of every diagram swallow clicks meant for the buttons
+   underneath it. */
+.mth-layout {
+  display: grid; grid-template-columns: 190px minmax(0, var(--wide));
+  gap: 40px;
+  max-width: calc(190px + 40px + var(--wide));
+  margin-inline: auto;
+}
 .mth-toc { position: sticky; top: 22px; align-self: start; font-size: 13px; }
 .mth-toc-title { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink3); margin: 0 0 8px; }
 .mth-toc ol { list-style: none; margin: 0; padding: 0; }
@@ -43,10 +61,10 @@
 .mth-toc a span { color: var(--ink3); font-size: 11.5px; }
 .mth-toc a.is-current { color: var(--brand); border-left-color: var(--brand); font-weight: 620; }
 .mth-toc-mobile, .mth-toc-select { display: none; }
-.mth-main { max-width: var(--read); min-width: 0; }
+.mth-main { max-width: var(--read); min-width: 0; margin-inline: auto; }
 
-/* Diagrams break wider than the reading column. */
-.mth-wide { width: min(1040px, calc(100vw - 320px)); max-width: none; }
+/* Break out to the edges of the content column, never past them. */
+.mth-wide { margin-inline: calc((var(--read) - var(--wide)) / 2); }
 
 .mth-section { padding-bottom: 52px; scroll-margin-top: 22px; }
 .mth-section + .mth-section { border-top: 1px solid var(--line); padding-top: 40px; }
@@ -72,30 +90,52 @@
 .mth-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 14px 0 6px; }
 
 /* ── 1 · Scope lanes ──────────────────────────────────────── */
-.scope-lanes { display: flex; flex-direction: column; gap: 9px; }
-.scope-lane { transition: opacity 180ms ease; }
-.scope-lane.is-off { opacity: .42; }
-.scope-lane-head { display: flex; gap: 10px; align-items: baseline; margin-bottom: 4px; }
-.scope-lane-name { font-size: 12px; font-weight: 650; }
-.scope-lane-mods { font-size: 11.5px; color: var(--ink3); }
-.scope-track { height: 38px; border-radius: 9px; background: var(--raised); position: relative; overflow: hidden; }
-.scope-bar { height: 100%; border-radius: 9px; display: flex; align-items: center; padding: 0 12px;
-  font-size: 12.5px; font-weight: 620; white-space: nowrap;
-  transition: width 190ms ease, margin-left 190ms ease; overflow: hidden; }
-.lane-1 .scope-bar { background: var(--brand); color: #fff; }
-.lane-2 .scope-bar { background: var(--brand-soft); color: var(--brand); border: 1px solid var(--brand); }
-.lane-3 .scope-bar { background: transparent; color: var(--ink3); border: 1px dashed var(--line); }
-.scope-lane.is-off .scope-bar span { opacity: 0; }
-.lane-2.is-off .scope-track::after {
-  content: 'use_stage_years = 0'; position: absolute; inset: 0;
-  display: flex; align-items: center; padding-left: 12px;
-  font-family: ui-monospace, Menlo, monospace; font-size: 12px; color: var(--ink3);
-}
-.scope-break { display: flex; align-items: center; gap: 10px; margin: 12px 0 4px;
-  font-size: 10.5px; text-transform: uppercase; letter-spacing: .09em; color: var(--ink3); }
+/* ── 1 · Tier cards ───────────────────────────────────────────
+   The result is the largest thing on the card, the modules sit as a mono
+   chip beside the tier name, and a slim strip shows when the tier applies.
+   Two live tiers share the width; tier 3 sits alone under the break so the
+   detachment is structural rather than described. */
+.tierset { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; }
+.tierset-out { grid-template-columns: minmax(0, 1fr); }
+
+.tk { border-radius: 13px; padding: 16px 18px 14px; transition: opacity 180ms ease; }
+.tk header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 9px; margin-bottom: 10px; }
+.tk-tier { font-size: 12px; font-weight: 680; letter-spacing: .01em; }
+.tk-mods { font-size: 11.5px; padding: 2px 8px; border-radius: 5px;
+  background: rgba(255,255,255,.22); }
+.tk-val { font-size: 30px; font-weight: 700; letter-spacing: -.025em; margin: 0; line-height: 1.05; }
+.tk-val small { display: block; font-size: 11px; font-weight: 400; letter-spacing: 0; opacity: .75; margin-top: 3px; }
+.tk-role { font-size: 12.5px; margin: 9px 0 12px; }
+.tk-phase { height: 6px; border-radius: 3px; background: rgba(255,255,255,.22); overflow: hidden; }
+.tk-phase span { display: block; height: 100%; border-radius: 3px; background: currentColor; opacity: .75;
+  transition: width 190ms ease, margin-left 190ms ease; }
+.tk-phase.is-none { background: transparent; border-top: 1px dashed currentColor; opacity: .35; height: 1px; }
+
+.tk-1 { background: var(--brand); color: #fff; }
+.tk-2 { background: var(--brand-soft); color: var(--brand); border: 1px solid var(--brand); }
+.tk-2 .tk-mods, .tk-2 .tk-phase { background: rgba(13,148,136,.16); }
+.tk-2 .tk-role { color: var(--ink2); }
+.tk-3 { background: transparent; color: var(--ink3); border: 1px dashed var(--line); }
+.tk-3 .tk-mods, .tk-3 .tk-phase { background: var(--raised); }
+.tk.is-off { opacity: .62; }
+.tk-2.is-off { border-style: dashed; }
+
+.phasekey { display: flex; justify-content: space-between; margin-top: 7px;
+  font-size: 10px; color: var(--ink3); }
+
+/* The break is the argument made visible: tier 3 is the other side of it. */
+.scope-break { display: flex; align-items: center; gap: 12px; margin: 18px 0 10px;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: var(--ink3); }
 .scope-break::before, .scope-break::after { content: ''; flex: 1; border-top: 1px dashed var(--line); }
-.scope-axis { display: flex; justify-content: space-between; margin-top: 8px;
-  font-size: 10.5px; color: var(--ink3); }
+
+/* Tier 3 is one compact row, not a card with room it cannot fill. */
+.tk-3 { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center;
+  gap: 12px; padding: 11px 16px; }
+.tk-3 header { margin: 0; }
+.tk-3 .tk-val { font-size: 14px; font-weight: 600; }
+.tk-3 .tk-val small { display: inline; margin-left: 5px; font-size: 11px; }
+.tk-3 .tk-role { margin: 0; text-align: right; font-size: 12px; }
+.tk-3 .tk-phase { display: none; }
 
 .mth-cite-chip { border: 1px solid var(--line); background: none; color: var(--brand);
   border-radius: 6px; padding: 1px 7px; font-size: 11px; cursor: pointer; font-family: inherit; }
@@ -105,7 +145,9 @@
 
 /* ── 2 · Gate flow ────────────────────────────────────────── */
 .mth-gatewrap { margin-top: 26px; }
-.gate-flow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gate-flow { display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 16px 18px; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface); width: fit-content; max-width: 100%; }
 .gate-node { border: 1px solid var(--line); border-radius: 9px; padding: 8px 13px; background: var(--surface); }
 .gate-node small { display: block; font-size: 9.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--ink3); }
 .gate-node b { font-size: 16px; }
@@ -132,13 +174,20 @@
 .mth-try-out b { color: var(--brand); }
 
 /* ── 3 · Diff ─────────────────────────────────────────────── */
-.mth-diff { display: flex; flex-direction: column; gap: 3px; }
-.diff-row { display: grid; grid-template-columns: 1fr minmax(180px, 300px) 1fr; align-items: center;
-  gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--line); }
+.mth-diff { display: flex; flex-direction: column; gap: 2px; max-width: 940px; margin-inline: auto; }
+.diff-row { display: grid; grid-template-columns: minmax(0,1fr) 300px minmax(0,1fr);
+  align-items: center; gap: 14px; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .diff-side { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .diff-l { justify-content: flex-end; }
 .diff-l b, .diff-r b { font-weight: 650; }
-.diff-bar { height: 12px; border-radius: 3px; background: var(--brand); min-width: 2px; }
+/* A zero still needs a mark at the axis, or the row reads as missing data
+   rather than as a measured nought. */
+.diff-bar { height: 13px; border-radius: 3px; background: var(--brand); min-width: 2px; }
+.diff-bar.is-zero { width: 3px !important; background: var(--ink3); opacity: .45; border-radius: 1px; }
+/* No margin-inline:auto here: on a column-flex child it shrink-wraps the
+   element to its content instead of stretching, which collapsed the two
+   labels into one centred run. The parent is already centred. */
+.diff-legend { width: 100%; }
 .diff-l .diff-bar { background: var(--ink3); }
 .diff-row.is-same .diff-bar { background: var(--ink3); opacity: .5; }
 .diff-mid { display: flex; align-items: center; justify-content: center; gap: 7px; text-align: center; }
@@ -304,9 +353,21 @@
 }
 
 /* ── Narrow ───────────────────────────────────────────────── */
+/* Step both measures down together, so the diagram column always fits
+   beside the contents list and never needs a bleed it has no room for.
+   The shell's own sidebar takes roughly 240px, which these allow for. */
+@media (max-width: 1580px) { .mth { --wide: 940px; --read: 860px; } }
+@media (max-width: 1440px) { .mth { --wide: 820px; --read: 780px; } }
+@media (max-width: 1320px) { .mth { --wide: 720px; --read: 700px; } }
+@media (max-width: 1200px) { .mth { --wide: 640px; --read: 640px; } }
+
 @media (max-width: 1180px) { .mth-wide { width: 100%; } }
 @media (max-width: 900px) {
-  .mth-layout { grid-template-columns: 1fr; gap: 18px; }
+  /* No contents column to leave room for, so the diagram column is the
+     full width and nothing breaks out. */
+  .mth-layout { grid-template-columns: 1fr; gap: 18px; max-width: none; }
+  .mth-main { max-width: none; }
+  .mth-wide { margin-inline: 0; }
   .mth-toc { position: static; }
   .mth-toc ol, .mth-toc-title { display: none; }
   .mth-toc-mobile { display: block; font-size: 10.5px; text-transform: uppercase;

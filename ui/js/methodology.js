@@ -83,42 +83,47 @@ const MethodologyPage = (() => {
       }));
   }
 
-  /* The lanes are the argument: tier 2 collapses to nothing on a
-     construction policy, and tier 3 sits the other side of a gap. */
+  /* Three cards, not three long tracks.
+
+     A timeline forces most of the canvas to be empty, because construction
+     is a short phase against a decade of cover — and emptiness is not the
+     message. The message is the three magnitudes and which of them may
+     enter the figure, so the result is the largest type on each card and a
+     slim strip underneath carries the timing. Tier 3 is detached below the
+     break because it cannot enter at all. */
   function drawScope() {
     const sc = scenarioFor(_policy);
     const live = sc.gateYears > 0;
-    const usePct = live ? Math.min(72, 22 + sc.gateYears * 1.1) : 0;
-    const conPct = 28;
+
+    const cards = [
+      { tier: 'Tier 1 · Mandatory', mods: 'A4 + A5', cls: 'tk-1', on: true,
+        value: fmt(sc.construction, 2), unit: 'kgCO₂e', role: 'This is the PCAF figure',
+        from: 0, to: 28 },
+      { tier: 'Tier 2 · Optional', mods: 'B1 + B4 + B7', cls: 'tk-2', on: live,
+        value: live ? fmt(sc.useStage, 2) : '0.00', unit: 'kgCO₂e',
+        role: live ? `Separate line, over ${sc.gateYears} y of cover` : 'use_stage_years = 0 — by scope rule',
+        from: 28, to: live ? 100 : 28 },
+      { tier: 'Tier 3 · Beyond PCAF', mods: 'B2 + B5 + B8', cls: 'tk-3', on: false,
+        value: '—', unit: 'voluntary annex', role: 'Never enters the figure', from: 0, to: 0 }
+    ];
+
+    const card = c => `
+      <article class="tk ${c.cls}${c.on ? '' : ' is-off'}">
+        <header><span class="tk-tier">${esc(c.tier)}</span>
+          <span class="mono tk-mods">${esc(c.mods)}</span></header>
+        <p class="tk-val">${esc(c.value)}<small>${esc(c.unit)}</small></p>
+        <p class="tk-role">${esc(c.role)}</p>
+        ${c.to > c.from ? `<div class="tk-phase" aria-hidden="true">
+          <span style="margin-left:${c.from}%;width:${c.to - c.from}%"></span></div>`
+        : '<div class="tk-phase is-none" aria-hidden="true"></div>'}
+      </article>`;
 
     setHtml('mthScope', `
-      <div class="scope-lanes">
-        ${lane('Tier 1 · Mandatory', 'A4 + A5', 'lane-1', 0, conPct, true,
-               fmt(sc.construction) + ' kgCO₂e')}
-        ${lane('Tier 2 · Optional', 'B1 + B4 + B7', 'lane-2', conPct, usePct, live,
-               live ? fmt(sc.useStage) + ' kgCO₂e' : 'use_stage_years = 0')}
-        <div class="scope-break"><span>excluded from the PCAF figure</span></div>
-        ${lane('Tier 3 · Beyond PCAF', 'B2 + B5 + B8', 'lane-3', 0, 100, false, 'voluntary annex')}
-      </div>
-      <div class="scope-axis">
-        <span>Construction begins</span><span>Practical completion</span>
-        <span>${live ? sc.gateYears + ' y use stage' : 'no use stage'}</span><span>End of cover</span>
-      </div>`);
-
-    function lane(name, mods, cls, offset, width, active, value) {
-      return `
-        <div class="scope-lane ${cls}${active ? '' : ' is-off'}">
-          <div class="scope-lane-head">
-            <span class="scope-lane-name">${esc(name)}</span>
-            <span class="mono scope-lane-mods">${esc(mods)}</span>
-          </div>
-          <div class="scope-track">
-            <div class="scope-bar" style="margin-left:${offset}%;width:${width}%">
-              <span>${esc(value)}</span>
-            </div>
-          </div>
-        </div>`;
-    }
+      <div class="tierset">${cards.slice(0, 2).map(card).join('')}</div>
+      <div class="phasekey"><span>Construction begins</span>
+        <span>Practical completion</span><span>End of cover</span></div>
+      <div class="scope-break"><span>excluded from the PCAF figure</span></div>
+      <div class="tierset tierset-out">${card(cards[2])}</div>`);
   }
 
   function drawGate() {
@@ -161,7 +166,8 @@ const MethodologyPage = (() => {
       const w = v => `${(Math.abs(v) / max) * 100}%`;
       return `
         <div class="diff-row${r.identical ? ' is-same' : ''}">
-          <div class="diff-side diff-l"><span class="diff-bar" style="width:${w(r.CAR)}"></span>
+          <div class="diff-side diff-l">
+            <span class="diff-bar${r.CAR === 0 ? ' is-zero' : ''}" style="width:${w(r.CAR)}"></span>
             <b>${fmt(r.CAR, r.CAR && Math.abs(r.CAR) < 1 ? 6 : 2)}</b></div>
           <div class="diff-mid">
             <span class="diff-label">${esc(r.measure)}</span>
@@ -170,7 +176,7 @@ const MethodologyPage = (() => {
             <span class="badge ${r.identical ? 'badge-same' : 'badge-diff'}">${r.identical ? 'identical' : 'differs'}</span>
           </div>
           <div class="diff-side diff-r"><b>${fmt(r.IDI, r.IDI && Math.abs(r.IDI) < 1 ? 6 : 2)}</b>
-            <span class="diff-bar" style="width:${w(r.IDI)}"></span></div>
+            <span class="diff-bar${r.IDI === 0 ? ' is-zero' : ''}" style="width:${w(r.IDI)}"></span></div>
         </div>`;
     }).join('')
     + `<div class="diff-legend"><span>CAR — construction cover</span><span>IDI — cover into occupation</span></div>`);
