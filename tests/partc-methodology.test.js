@@ -116,6 +116,73 @@ describe('What the methodology must state', () => {
   });
 });
 
+describe('The policy gate is demonstrated, not asserted', () => {
+  const gate = () => buildMethodology().policyGate;
+
+  test('construction is identical under CAR and IDI, and says why', () => {
+    const row = gate().rows.find(r => /Construction/.test(r.measure));
+    expect(row.identical).toBe(true);
+    // The point: identical here is the correct answer, and the document
+    // must say so rather than leave a reader to suspect a fault.
+    expect(row.note).toMatch(/do not change with the policy/);
+  });
+
+  test('the use stage is what the cover type actually decides', () => {
+    const row = gate().rows.find(r => /Use stage total/.test(r.measure));
+    expect(row.CAR).toBe(0);
+    expect(row.IDI).toBeGreaterThan(0);
+    expect(row.identical).toBe(false);
+  });
+
+  test('B1 and B7 are zero under CAR by rule', () => {
+    const g = gate();
+    for (const m of ['B1 refrigerant', 'B7 operational water']) {
+      const row = g.rows.find(r => r.measure.startsWith(m));
+      expect(row.CAR).toBe(0);
+      expect(row.IDI).toBeGreaterThan(0);
+    }
+  });
+
+  test('B4 zero on a ten-year cover is explained, not left bare', () => {
+    const row = gate().rows.find(r => /B4/.test(r.measure));
+    expect(row.CAR).toBe(0);
+    expect(row.IDI).toBe(0);
+    expect(row.note).toMatch(/service life exceeds the ten-year cover/);
+  });
+
+  test('a cover period entered against a CAR policy is refused by the gate', () => {
+    const o = gate().overrideTest;
+    expect(o.useStageYears).toBe(0);
+    expect(o.useStage_kgCO2e).toBe(0);
+    expect(o.conclusion).toMatch(/scope rule and not a preference/);
+  });
+
+  test('the use stage accrues with the cover period', () => {
+    const rows = gate().coverSensitivity;
+    for (const r of rows) expect(r.gateYears).toBe(r.yearsOfCover);
+    for (let i = 1; i < rows.length; i++) {
+      expect(rows[i].b1).toBeGreaterThan(rows[i - 1].b1);
+      expect(rows[i].b7).toBeGreaterThan(rows[i - 1].b7);
+      expect(rows[i].useStage).toBeGreaterThan(rows[i - 1].useStage);
+    }
+  });
+
+  test('B4 steps in only once the cover outlives the plant', () => {
+    const rows = gate().coverSensitivity;
+    const at = y => rows.find(r => r.yearsOfCover === y);
+    // A 20-year HVAC life: no replacement inside 20 years, one inside 25.
+    expect(at(20).b4).toBe(0);
+    expect(at(25).b4).toBeGreaterThan(0);
+    expect(at(45).b4).toBeCloseTo(at(25).b4 * 2, 0);
+  });
+
+  test('the attribution factor being identical is explained by the design', () => {
+    const row = gate().rows.find(r => /Attribution/.test(r.measure));
+    expect(row.identical).toBe(true);
+    expect(row.note).toMatch(/same premium and project cost/);
+  });
+});
+
 describe('Both document formats', () => {
   test('PDF renders', async () => {
     const chunks = [];

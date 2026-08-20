@@ -95,7 +95,46 @@ const MethodologyPage = (() => {
         </details>
       </div>`).join(''));
 
-    // 3 — worked example
+    /* 3 — the gate, demonstrated.
+       A use stage of zero on a construction policy tells a reviewer nothing
+       on its own: they cannot see whether the rule ran or the module is
+       missing. Running the same project under both cover types, and showing
+       both, is the difference between asserting the rule and proving it. */
+    const g = m.policyGate;
+    say('mthGateDesign', g.design);
+    setHtml('mthGate', `
+      <table class="partc-table">
+        <thead><tr><th>Measure</th><th>CAR (construction cover)</th><th>IDI (cover into occupation)</th><th></th></tr></thead>
+        <tbody>${g.rows.map(r => `
+          <tr>
+            <td>${esc(r.measure)}${r.note ? `<div class="mth-src">${esc(r.note)}</div>` : ''}</td>
+            <td class="num">${typeof r.CAR === 'number' ? fmt(r.CAR, r.CAR < 1 && r.CAR > 0 ? 6 : 2) : esc(r.CAR)}</td>
+            <td class="num">${typeof r.IDI === 'number' ? fmt(r.IDI, r.IDI < 1 && r.IDI > 0 ? 6 : 2) : esc(r.IDI)}</td>
+            <td>${r.identical ? '<span class="pill mth-same">identical</span>' : '<span class="pill mth-differs">differs</span>'}</td>
+          </tr>`).join('')}
+        </tbody></table>`);
+
+    setHtml('mthGateOverride', `
+      <p>${esc(g.overrideTest.description)}</p>
+      <table class="partc-table"><tbody>
+        <tr><td>Use-stage years the gate admits</td><td class="num">${g.overrideTest.useStageYears}</td></tr>
+        <tr class="total"><td>Use stage computed</td><td class="num">${fmt(g.overrideTest.useStage_kgCO2e)} kgCO₂e</td></tr>
+      </tbody></table>
+      <p class="partc-scope-warning">${esc(g.overrideTest.conclusion)}</p>`);
+
+    setHtml('mthGateSens', `
+      <table class="partc-table">
+        <thead><tr><th>Cover entered</th><th>Gate admits</th><th>B1</th><th>B4</th><th>B7</th><th>Use stage</th></tr></thead>
+        <tbody>${g.coverSensitivity.map(c => `
+          <tr><td class="num">${c.yearsOfCover} y</td><td class="num">${c.gateYears} y</td>
+              <td class="num">${fmt(c.b1)}</td>
+              <td class="num${c.b4 > 0 ? ' mth-step' : ''}">${fmt(c.b4)}</td>
+              <td class="num">${fmt(c.b7)}</td>
+              <td class="num">${fmt(c.useStage)}</td></tr>`).join('')}
+        </tbody></table>`);
+    say('mthGateSensNote', g.sensitivityNote);
+
+    // 4 — worked example
     say('mthWorkedNote', m.workedExample.note);
     setHtml('mthWorked', `
       <table class="partc-table"><tbody>

@@ -720,3 +720,13 @@
   .mth-tier-global   { background: rgba(148, 163, 184, 0.18); color: #94a3b8; }
   .mth-fallback      { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
 }
+
+/* Gate demonstration: identical is a finding, not a defect. */
+.mth-same    { background: rgba(100, 116, 139, 0.14); color: #475569; }
+.mth-differs { background: rgba(16, 185, 129, 0.14); color: #047857; }
+.mth-step    { font-weight: 700; }
+
+@media (prefers-color-scheme: dark) {
+  .mth-same    { background: rgba(148, 163, 184, 0.18); color: #94a3b8; }
+  .mth-differs { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+}

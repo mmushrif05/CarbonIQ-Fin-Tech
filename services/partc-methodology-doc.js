@@ -76,7 +76,31 @@ function buildMethodologyPDF(m) {
        .text(`   ${c.stepCount} traced step${c.stepCount === 1 ? '' : 's'} — see Annex A`);
   });
 
-  H('3. Worked example');
+  H('3. The policy gate, demonstrated');
+  P(m.policyGate.design);
+  doc.moveDown(0.4);
+  m.policyGate.rows.forEach(r => {
+    const fmtv = v => typeof v === 'number' ? (v < 1 && v > 0 ? v.toFixed(6) : N(v)) : String(v);
+    doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold')
+       .text(`${r.measure}:  CAR ${fmtv(r.CAR)}   |   IDI ${fmtv(r.IDI)}${r.identical ? '   (identical)' : ''}`);
+    if (r.note) doc.fontSize(8).fillColor('#64748b').font('Helvetica').text(`   ${r.note}`);
+    doc.moveDown(0.2);
+  });
+  doc.moveDown(0.3);
+  doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text('Can a client buy a use stage onto a construction policy?');
+  P(m.policyGate.overrideTest.description);
+  KV('Use-stage years the gate admits', String(m.policyGate.overrideTest.useStageYears));
+  KV('Use stage computed', `${N(m.policyGate.overrideTest.useStage_kgCO2e)} kgCO2e`);
+  WARN(m.policyGate.overrideTest.conclusion);
+  doc.moveDown(0.4);
+  doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text('How the use stage responds to the cover period');
+  P('cover   gate      B1        B4        B7    use stage', 9);
+  m.policyGate.coverSensitivity.forEach(c => P(
+    `${String(c.yearsOfCover).padStart(4)}y  ${String(c.gateYears).padStart(4)}y  ${N(c.b1).padStart(9)} ${N(c.b4).padStart(9)} ${N(c.b7).padStart(9)} ${N(c.useStage).padStart(10)}`, 8.5));
+  doc.moveDown(0.2);
+  NOTE(m.policyGate.sensitivityNote);
+
+  H('4. Worked example');
   P(m.workedExample.note);
   doc.moveDown(0.3);
   KV('Construction (A4 + A5)', `${N(m.workedExample.construction_kgCO2e)} kgCO2e`);
@@ -88,7 +112,7 @@ function buildMethodologyPDF(m) {
   WARN(m.workedExample.scopeWarning);
 
   doc.addPage();
-  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text('4. Emission factors');
+  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text('5. Emission factors');
   doc.moveDown(0.3);
   NOTE(m.factorStore.note);
   doc.moveDown(0.3);
@@ -103,7 +127,7 @@ function buildMethodologyPDF(m) {
     if (r.reference) doc.fontSize(8).fillColor('#64748b').font('Helvetica').text(`   ${r.reference}`);
   });
 
-  H('5. Data quality');
+  H('6. Data quality');
   P(`PCAF option to score, ${m.dataQuality.scale}`);
   m.dataQuality.options.forEach(o => P(`   ${o.option} → ${o.score}   ${o.label || ''}`, 9));
   doc.moveDown(0.3);
@@ -112,7 +136,7 @@ function buildMethodologyPDF(m) {
   P(m.dataQuality.whyWeighted);
   P(m.dataQuality.tierRule);
 
-  H('6. Conformance');
+  H('7. Conformance');
   P(m.conformance.statement);
   doc.moveDown(0.2);
   WARN(m.conformance.disclaimer);
@@ -127,7 +151,7 @@ function buildMethodologyPDF(m) {
     doc.moveDown(0.2);
   });
 
-  H('7. Limits, and what is not claimed');
+  H('8. Limits, and what is not claimed');
   m.limits.forEach(l => {
     doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text(l.area);
     P(l.limit);
@@ -135,7 +159,7 @@ function buildMethodologyPDF(m) {
     doc.moveDown(0.2);
   });
 
-  H('8. Division of labour');
+  H('9. Division of labour');
   KV('The engine', m.divisionOfLabour.engine);
   KV('The language model', m.divisionOfLabour.model);
   doc.moveDown(0.2);
@@ -197,7 +221,27 @@ async function buildMethodologyDOCX(m) {
     c.push(_p(`${x.module} — ${x.narrative}`));
   });
 
-  c.push(_h('3. Worked example', HeadingLevel.HEADING_1));
+  c.push(_h('3. The policy gate, demonstrated', HeadingLevel.HEADING_1));
+  c.push(_p(m.policyGate.design));
+  c.push(_table(['Measure', 'CAR (construction cover)', 'IDI (cover into occupation)', ''],
+    m.policyGate.rows.map(r => {
+      const f = v => typeof v === 'number' ? (v < 1 && v > 0 ? v.toFixed(6) : N(v)) : String(v);
+      return [r.measure + (r.note ? ` — ${r.note}` : ''), f(r.CAR), f(r.IDI), r.identical ? 'identical' : 'differs'];
+    })));
+  c.push(_h('Can a client buy a use stage onto a construction policy?', HeadingLevel.HEADING_2));
+  c.push(_p(m.policyGate.overrideTest.description));
+  c.push(_table(['Measure', 'Value'], [
+    ['Use-stage years the gate admits', String(m.policyGate.overrideTest.useStageYears)],
+    ['Use stage computed', `${N(m.policyGate.overrideTest.useStage_kgCO2e)} kgCO2e`]
+  ]));
+  c.push(_p(m.policyGate.overrideTest.conclusion, { bold: true, color: 'B45309' }));
+  c.push(_h('How the use stage responds to the cover period', HeadingLevel.HEADING_2));
+  c.push(_table(['Cover entered', 'Gate admits', 'B1', 'B4', 'B7', 'Use stage'],
+    m.policyGate.coverSensitivity.map(x => [`${x.yearsOfCover} y`, `${x.gateYears} y`,
+      N(x.b1), N(x.b4), N(x.b7), N(x.useStage)])));
+  c.push(_p(m.policyGate.sensitivityNote, { italics: true }));
+
+  c.push(_h('4. Worked example', HeadingLevel.HEADING_1));
   c.push(_p(m.workedExample.note, { italics: true }));
   c.push(_table(['Measure', 'Value'], [
     ['Construction (A4 + A5)', `${N(m.workedExample.construction_kgCO2e)} kgCO2e`],
@@ -208,30 +252,30 @@ async function buildMethodologyDOCX(m) {
   ]));
   c.push(_p(m.workedExample.scopeWarning, { italics: true, color: 'B45309' }));
 
-  c.push(new Paragraph({ text: '4. Emission factors', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
+  c.push(new Paragraph({ text: '5. Emission factors', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
   c.push(_p(m.factorStore.note, { italics: true }));
   if (m.factorStore.localisationNote) c.push(_p(m.factorStore.localisationNote, { color: 'B45309' }));
   c.push(_table(['Factor', 'Value', 'Unit', 'Tier', 'Source'],
     m.factorStore.rows.map(r => [r.key, String(r.value), r.unit || '', r.tier, r.reference || '—'])));
 
-  c.push(_h('5. Data quality', HeadingLevel.HEADING_1));
+  c.push(_h('6. Data quality', HeadingLevel.HEADING_1));
   c.push(_table(['Option', 'Score', 'Meaning'],
     m.dataQuality.options.map(o => [o.option, String(o.score), o.label || ''])));
   c.push(_p(m.dataQuality.aggregation, { bold: true }));
   c.push(_p(m.dataQuality.whyWeighted));
   c.push(_p(m.dataQuality.tierRule));
 
-  c.push(new Paragraph({ text: '6. Conformance', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
+  c.push(new Paragraph({ text: '7. Conformance', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
   c.push(_p(m.conformance.statement, { bold: true }));
   c.push(_p(m.conformance.disclaimer, { italics: true, color: 'B45309' }));
   c.push(_p(m.conformance.antiRot, { italics: true }));
   c.push(_table(['ID', 'Clause', 'Rule', 'Enforced in', 'Proven by'],
     m.conformance.rules.map(r => [r.id, r.clause, r.rule, r.implementation, r.provingTest])));
 
-  c.push(_h('7. Limits, and what is not claimed', HeadingLevel.HEADING_1));
+  c.push(_h('8. Limits, and what is not claimed', HeadingLevel.HEADING_1));
   c.push(_table(['Area', 'Limit', 'Effect'], m.limits.map(l => [l.area, l.limit, l.effect])));
 
-  c.push(_h('8. Division of labour', HeadingLevel.HEADING_1));
+  c.push(_h('9. Division of labour', HeadingLevel.HEADING_1));
   c.push(_table(['Performed by', 'Responsibility'], [
     ['The calculation engine', m.divisionOfLabour.engine],
     ['The language model', m.divisionOfLabour.model]
