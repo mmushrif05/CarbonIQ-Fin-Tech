@@ -233,6 +233,63 @@ describe('The factor evidence is complete', () => {
   });
 });
 
+describe('The interactive controls read engine executions', () => {
+  const sc = () => buildMethodology().scenarios;
+
+  test('every policy type the selector offers is a real execution', () => {
+    const s = sc();
+    expect(s.policies.map(p => p.policyType)).toEqual(['CAR', 'EAR', 'IDI', 'Property']);
+    for (const p of s.policies) expect(typeof p.construction).toBe('number');
+  });
+
+  test('construction-only cover admits no use stage; cover into occupation does', () => {
+    const by = Object.fromEntries(sc().policies.map(p => [p.policyType, p]));
+    expect(by.CAR.gateYears).toBe(0);
+    expect(by.EAR.gateYears).toBe(0);
+    expect(by.IDI.gateYears).toBeGreaterThan(0);
+    expect(by.Property.gateYears).toBeGreaterThan(0);
+    expect(by.CAR.useStage).toBe(0);
+    expect(by.IDI.useStage).toBeGreaterThan(0);
+  });
+
+  test('the slider curve is one execution per year, not an interpolation', () => {
+    const s = sc();
+    expect(s.curve).toHaveLength(s.maxYears);
+    s.curve.forEach((c, i) => {
+      expect(c.years).toBe(i + 1);
+      expect(c.gateYears).toBe(c.years);
+    });
+    expect(s.executions).toBe(s.policies.length + s.curve.length);
+  });
+
+  test('B1 and B7 accrue every year across the whole curve', () => {
+    const c = sc().curve;
+    for (let i = 1; i < c.length; i++) {
+      expect(c[i].b1).toBeGreaterThan(c[i - 1].b1);
+      expect(c[i].b7).toBeGreaterThan(c[i - 1].b7);
+    }
+  });
+
+  test('B4 steps are located at the years the engine actually stepped', () => {
+    const s = sc();
+    expect(s.b4Steps.length).toBeGreaterThanOrEqual(1);
+    for (const step of s.b4Steps) {
+      const at = s.curve.find(c => c.years === step.years);
+      const before = s.curve.find(c => c.years === step.years - 1);
+      // A marker must sit on a real discontinuity, never a decorative one.
+      expect(at.b4).toBeGreaterThan(before.b4);
+      expect(at.b4).toBe(step.to);
+      expect(before.b4).toBe(step.from);
+    }
+  });
+
+  test('construction never moves with the cover period', () => {
+    const c = sc().curve;
+    const first = c[0].construction;
+    for (const p of c) expect(p.construction).toBe(first);
+  });
+});
+
 describe('Both document formats', () => {
   test('PDF renders', async () => {
     const chunks = [];

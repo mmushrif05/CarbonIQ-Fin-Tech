@@ -1,10 +1,10 @@
 /* ============================================================
-   CarbonIQ — Methodology & Evidence
+   CarbonIQ — Methodology & Evidence (visual build)
 
-   Renders what the engine reports about itself. Every figure,
-   equation, factor and count comes from a live execution over
-   the API — nothing is written into the page by hand, so the
-   page cannot describe a method the engine does not run.
+   The reasoning is carried by diagrams; prose survives only as
+   a caption. Every value, curve and scenario is an engine
+   execution delivered by the API — the controls read computed
+   answers, they never interpolate a stored array.
    ============================================================ */
 
 const MethodologyPage = (() => {
@@ -12,384 +12,534 @@ const MethodologyPage = (() => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const fmt = (n, d = 2) => Number(n || 0).toLocaleString('en-US',
+  const fmt = (n, d = 0) => Number(n || 0).toLocaleString('en-US',
     { minimumFractionDigits: d, maximumFractionDigits: d });
-  const num = v => typeof v === 'number' ? fmt(v, v !== 0 && Math.abs(v) < 1 ? 6 : 2) : esc(v);
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   const TIER_CLASS = { Local: 'tier-local', Regional: 'tier-regional', Global: 'tier-global' };
   const SECTIONS = [
-    ['sec-scope', 'Scope & boundary'],
-    ['sec-chain', 'The calculation chain'],
-    ['sec-factors', 'Factors & sources'],
-    ['sec-limits', 'Limits & open items'],
-    ['sec-quality', 'Data quality'],
-    ['sec-conformance', 'Conformance'],
-    ['sec-labour', 'Division of labour']
+    ['sec-scope','Scope & boundary'], ['sec-compare','Same building, different cover'],
+    ['sec-sensitivity','Cover length'], ['sec-chain','Calculation chain'],
+    ['sec-factors','Factors & sources'], ['sec-limits','Limits & roadmap'],
+    ['sec-quality','Data quality'], ['sec-conformance','Conformance'],
+    ['sec-labour','Division of labour']
   ];
 
-  let _data = null;
-  let _tierFilter = 'all';
+  let _d = null;                 // the methodology payload
+  let _policy = 'CAR';
+  let _years = 10;
+  let _tier = 'all';
+  let _mod = 'all';
 
-  // ── Data ───────────────────────────────────────────────────
+  const scenarioFor = t => _d.scenarios.policies.find(p => p.policyType === t) || _d.scenarios.policies[0];
+  const curveAt = y => _d.scenarios.curve.find(c => c.years === y) || _d.scenarios.curve[0];
+  const hasUseStage = t => scenarioFor(t).gateYears > 0;
+
+  // ── Load ───────────────────────────────────────────────────
   async function load() {
     say('mthStatus', 'Reading the engine…');
     try {
       const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/methodology');
-      let d = {};
-      try { d = await res.json(); } catch (_) { /* empty */ }
+      let d = {}; try { d = await res.json(); } catch (_) { /* empty */ }
       if (!res.ok) throw new Error([d.message, d.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
-      _data = d.methodology;
-      render(_data);
+      _d = d.methodology;
+      render();
       $('mthBody').hidden = false;
-      say('mthStatus', 'Generated from a live execution.');
-    } catch (err) {
-      say('mthStatus', err.message);
+      say('mthStatus', `${_d.scenarios.executions} executions`);
+    } catch (err) { say('mthStatus', err.message); }
+  }
+
+  function render() {
+    setHtml('mthChips', [
+      [_d.provenance.auditSteps, 'traced steps'],
+      [_d.factorStore.rowCount, 'factors'],
+      [_d.conformance.summary.total, 'rules asserted'],
+      [_d.openItems.total, 'open items']
+    ].map(([n, l]) => `<span class="mth-chip"><b>${n}</b> ${esc(l)}</span>`).join(''));
+
+    buildPolicySeg();
+    drawScope(); drawGate(); drawDiff();
+    drawChart(); drawCurveTable();
+    drawChain();
+    buildFactorControls(); drawDonut(); drawFactors();
+    drawLimits(); drawQuality(); drawConformance(); drawLabour();
+    buildToc();
+    wireCitation();
+  }
+
+  // ══ 1 · Scope timeline ═════════════════════════════════════
+  function buildPolicySeg() {
+    setHtml('mthPolicySeg', _d.scenarios.policies.map(p => `
+      <button type="button" class="mth-seg-btn${p.policyType === _policy ? ' is-on' : ''}"
+              data-policy="${esc(p.policyType)}" aria-pressed="${p.policyType === _policy}">
+        ${esc(p.policyType)}</button>`).join(''));
+    $('mthPolicySeg').querySelectorAll('.mth-seg-btn').forEach(b =>
+      b.addEventListener('click', () => {
+        _policy = b.dataset.policy;
+        buildPolicySeg(); drawScope(); drawGate();
+      }));
+  }
+
+  /* The lanes are the argument: tier 2 collapses to nothing on a
+     construction policy, and tier 3 sits the other side of a gap. */
+  function drawScope() {
+    const sc = scenarioFor(_policy);
+    const live = sc.gateYears > 0;
+    const usePct = live ? Math.min(72, 22 + sc.gateYears * 1.1) : 0;
+    const conPct = 28;
+
+    setHtml('mthScope', `
+      <div class="scope-lanes">
+        ${lane('Tier 1 · Mandatory', 'A4 + A5', 'lane-1', 0, conPct, true,
+               fmt(sc.construction) + ' kgCO₂e')}
+        ${lane('Tier 2 · Optional', 'B1 + B4 + B7', 'lane-2', conPct, usePct, live,
+               live ? fmt(sc.useStage) + ' kgCO₂e' : 'use_stage_years = 0')}
+        <div class="scope-break"><span>excluded from the PCAF figure</span></div>
+        ${lane('Tier 3 · Beyond PCAF', 'B2 + B5 + B8', 'lane-3', 0, 100, false, 'voluntary annex')}
+      </div>
+      <div class="scope-axis">
+        <span>Construction begins</span><span>Practical completion</span>
+        <span>${live ? sc.gateYears + ' y use stage' : 'no use stage'}</span><span>End of cover</span>
+      </div>`);
+
+    function lane(name, mods, cls, offset, width, active, value) {
+      return `
+        <div class="scope-lane ${cls}${active ? '' : ' is-off'}">
+          <div class="scope-lane-head">
+            <span class="scope-lane-name">${esc(name)}</span>
+            <span class="mono scope-lane-mods">${esc(mods)}</span>
+          </div>
+          <div class="scope-track">
+            <div class="scope-bar" style="margin-left:${offset}%;width:${width}%">
+              <span>${esc(value)}</span>
+            </div>
+          </div>
+        </div>`;
     }
   }
 
-  // ── Render ─────────────────────────────────────────────────
-  function render(m) {
-    setHtml('mthChips', [
-      [m.provenance.auditSteps, 'traced steps'],
-      [m.factorStore.rowCount, 'factors'],
-      [m.factorStore.tables, 'factor tables'],
-      [m.conformance.summary.total, 'conformance rules'],
-      [m.openItems.total, 'open items']
-    ].map(([n, l]) => `<span class="mth-chip"><b>${n}</b> ${esc(l)}</span>`).join(''));
-
-    say('mthProvClaim', m.provenance.claim);
-    say('mthProvWhy', m.provenance.why);
-
-    renderScope(m);
-    renderGate(m.policyGate);
-    renderChain(m.calculationChain);
-    renderWorked(m.workedExample);
-    renderFactors(m);
-    renderLimits(m);
-    renderQuality(m.dataQuality);
-    renderConformance(m.conformance);
-    renderLabour(m.divisionOfLabour);
-    buildToc();
-  }
-
-  /* The tier diagram carries the argument of the whole page, so it is drawn
-     rather than tabulated: tier 3 sits below a dashed boundary because it
-     genuinely cannot reach the reported figure. */
-  function renderScope(m) {
-    const cls = ['tier-1', 'tier-2', 'tier-3'];
-    setHtml('mthTiers', m.scope.tiers.map((t, i) => `
-      ${i === 2 ? '<div class="mth-tier-break" aria-hidden="true"><span>excluded from the PCAF figure</span></div>' : ''}
-      <div class="mth-tier ${cls[i]}">
-        <div class="mth-tier-label">
-          <span class="mth-tier-name">${esc(t.tier)}</span>
-          <span class="mth-tier-mods">${esc(t.modules)}</span>
+  function drawGate() {
+    const sc = scenarioFor(_policy);
+    const open = sc.gateYears > 0;
+    setHtml('mthGateFlow', `
+      <div class="gate-flow${open ? ' is-open' : ' is-shut'}">
+        <div class="gate-node"><small>policy</small><b>${esc(_policy)}</b></div>
+        <div class="gate-wire" aria-hidden="true"></div>
+        <div class="gate-valve" title="${esc(_d.scope.policyGate.override)}"
+             role="img" aria-label="${open ? 'Gate open' : 'Gate closed'}">
+          <span class="gate-lever"></span>
         </div>
-        <p>${esc(t.treatment)}</p>
-      </div>`).join(''));
-
-    say('mthScopeExclusion', m.scope.exclusion);
-    say('mthGateRule', m.scope.policyGate.rule);
-    say('mthGateConsequence', m.scope.policyGate.consequence);
-    say('mthGateOverrideRule', m.scope.policyGate.override);
-    setHtml('mthGuarantee', `<strong>Structural guarantee</strong><p>${esc(m.scope.structuralEnforcement)}</p>`);
-    say('mthGateCite', `${m.standard} — §5.3.`);
+        <div class="gate-wire" aria-hidden="true"></div>
+        <div class="gate-node gate-years"><small>use_stage_years</small><b>${sc.gateYears}</b></div>
+        <div class="gate-fan" aria-hidden="true"></div>
+        <div class="gate-mods">
+          ${['b1','b4','b7'].map(k => `
+            <span class="gate-mod${open && sc[k] > 0 ? ' is-live' : ''}">
+              <i>${k.toUpperCase()}</i>${fmt(sc[k], 2)}</span>`).join('')}
+        </div>
+      </div>`);
+    say('mthGateCap', _d.scope.policyGate.consequence);
+    tryYears();
   }
 
-  function renderGate(g) {
-    say('mthGateDesign', g.design);
-    setHtml('mthGate', `
-      <table class="mth-table">
-        <thead><tr><th scope="col">Measure</th><th scope="col">CAR — construction cover</th>
-                   <th scope="col">IDI — cover into occupation</th><th scope="col"></th></tr></thead>
-        <tbody>${g.rows.map(r => `
-          <tr>
-            <td>${esc(r.measure)}${r.note ? `<span class="mth-src">${esc(r.note)}</span>` : ''}</td>
-            <td class="num">${num(r.CAR)}</td>
-            <td class="num">${num(r.IDI)}</td>
-            <td>${r.identical ? '<span class="badge badge-same">identical</span>'
-                              : '<span class="badge badge-diff">differs</span>'}</td>
-          </tr>`).join('')}
-        </tbody></table>`);
-
-    setHtml('mthGateOverride', `
-      <p>${esc(g.overrideTest.description)}</p>
-      <table class="mth-table mth-mini"><tbody>
-        <tr><td>Use-stage years the gate admits</td><td class="num">${g.overrideTest.useStageYears}</td></tr>
-        <tr><td>Use stage computed</td><td class="num">${fmt(g.overrideTest.useStage_kgCO2e)} kgCO₂e</td></tr>
-      </tbody></table>
-      <p class="mth-feature">${esc(g.overrideTest.conclusion)}</p>`);
-
-    setHtml('mthGateSens', `
-      <table class="mth-table">
-        <thead><tr><th scope="col">Cover entered</th><th scope="col">Gate admits</th>
-                   <th scope="col">B1</th><th scope="col">B4</th><th scope="col">B7</th>
-                   <th scope="col">Use stage</th></tr></thead>
-        <tbody>${g.coverSensitivity.map(c => `
-          <tr><td class="num">${c.yearsOfCover} y</td><td class="num">${c.gateYears} y</td>
-              <td class="num">${fmt(c.b1)}</td>
-              <td class="num${c.b4 > 0 ? ' mth-step' : ''}">${fmt(c.b4)}</td>
-              <td class="num">${fmt(c.b7)}</td>
-              <td class="num">${fmt(c.useStage)}</td></tr>`).join('')}
-        </tbody></table>`);
-    say('mthGateSensNote', g.sensitivityNote);
+  function tryYears() {
+    const el = $('mthTryYears'); if (!el) return;
+    const entered = Number(el.value) || 0;
+    const admits = hasUseStage(_policy) ? entered : 0;
+    setHtml('mthTryOut', `→ gate admits <b>${admits}</b> y`
+      + (hasUseStage(_policy) ? '' : ' <span class="mth-mini-note">entered value recorded, not applied</span>'));
   }
 
-  /* Module cards. Bodies render lazily on first open: the full trace is 58
-     rows of tables and building them all up front costs a visible pause on
-     a phone for content most readers never expand. */
-  function renderChain(chain) {
-    setHtml('mthChain', chain.map((c, i) => `
+  // ══ 2 · CAR vs IDI diff ════════════════════════════════════
+  function drawDiff() {
+    const rows = _d.policyGate.rows.filter(r => typeof r.CAR === 'number' && typeof r.IDI === 'number');
+    setHtml('mthDiff', rows.map((r, i) => {
+      const max = Math.max(Math.abs(r.CAR), Math.abs(r.IDI)) || 1;
+      const w = v => `${(Math.abs(v) / max) * 100}%`;
+      return `
+        <div class="diff-row${r.identical ? ' is-same' : ''}">
+          <div class="diff-side diff-l"><span class="diff-bar" style="width:${w(r.CAR)}"></span>
+            <b>${fmt(r.CAR, r.CAR && Math.abs(r.CAR) < 1 ? 6 : 2)}</b></div>
+          <div class="diff-mid">
+            <span class="diff-label">${esc(r.measure)}</span>
+            ${r.note ? `<button type="button" class="diff-info" title="${esc(r.note)}"
+                        aria-label="${esc(r.note)}">i</button>` : ''}
+            <span class="badge ${r.identical ? 'badge-same' : 'badge-diff'}">${r.identical ? 'identical' : 'differs'}</span>
+          </div>
+          <div class="diff-side diff-r"><b>${fmt(r.IDI, r.IDI && Math.abs(r.IDI) < 1 ? 6 : 2)}</b>
+            <span class="diff-bar" style="width:${w(r.IDI)}"></span></div>
+        </div>`;
+    }).join('')
+    + `<div class="diff-legend"><span>CAR — construction cover</span><span>IDI — cover into occupation</span></div>`);
+  }
+
+  // ══ 3 · Sensitivity chart ══════════════════════════════════
+  /* Hand-drawn SVG rather than a chart library: three stacked series and a
+     few annotations do not justify a dependency, and this way the step
+     markers sit exactly on the years the engine actually stepped at. */
+  function drawChart() {
+    const c = _d.scenarios.curve;
+    const W = 720, H = 260, P = { l: 54, r: 16, t: 16, b: 30 };
+    const maxY = Math.max(...c.map(p => p.useStage)) * 1.06 || 1;
+    const maxX = _d.scenarios.maxYears;
+    const x = y => P.l + ((y - 1) / (maxX - 1)) * (W - P.l - P.r);
+    const y = v => H - P.b - (v / maxY) * (H - P.t - P.b);
+
+    const band = (lo, hi) => c.map(p => `${x(p.years)},${y(hi(p))}`).join(' ')
+      + ' ' + c.slice().reverse().map(p => `${x(p.years)},${y(lo(p))}`).join(' ');
+
+    const b1 = p => p.b1;
+    const b1b7 = p => p.b1 + p.b7;
+    const all = p => p.useStage;
+
+    const ticks = [0, 0.25, 0.5, 0.75, 1].map(f => {
+      const v = maxY * f;
+      return `<line x1="${P.l}" y1="${y(v)}" x2="${W - P.r}" y2="${y(v)}" class="ch-grid"/>
+              <text x="${P.l - 8}" y="${y(v) + 4}" class="ch-ylab">${fmt(v)}</text>`;
+    }).join('');
+
+    const xticks = [1, 10, 20, 30, 45].map(t =>
+      `<text x="${x(t)}" y="${H - 8}" class="ch-xlab">${t}y</text>`).join('');
+
+    const steps = _d.scenarios.b4Steps.map(s => `
+      <g class="ch-step">
+        <line x1="${x(s.years)}" y1="${P.t}" x2="${x(s.years)}" y2="${H - P.b}"/>
+        <circle cx="${x(s.years)}" cy="${y(curveAt(s.years).useStage)}" r="4"/>
+        <text x="${x(s.years) + 6}" y="${P.t + 12}">${s.years}y · B4 enters</text>
+      </g>`).join('');
+
+    setHtml('mthChart', `
+      <svg viewBox="0 0 ${W} ${H}" class="ch" role="img"
+           aria-label="Use-stage emissions against cover period, with B4 step points">
+        ${ticks}
+        <polygon class="ch-b1" points="${band(() => 0, b1)}"/>
+        <polygon class="ch-b7" points="${band(b1, b1b7)}"/>
+        <polygon class="ch-b4" points="${band(b1b7, all)}"/>
+        <polyline class="ch-total" points="${c.map(p => `${x(p.years)},${y(all(p))}`).join(' ')}"/>
+        ${steps}
+        <line class="ch-cursor" id="chCursor" x1="${x(_years)}" y1="${P.t}" x2="${x(_years)}" y2="${H - P.b}"/>
+        ${xticks}
+      </svg>
+      <div class="ch-key">
+        <span><i class="k-b1"></i>B1 refrigerant</span>
+        <span><i class="k-b7"></i>B7 water</span>
+        <span><i class="k-b4"></i>B4 replacement</span>
+      </div>`);
+
+    $('mthChart').dataset.x1 = x(1);
+    $('mthChart').dataset.xn = x(maxX);
+    updateReadout();
+  }
+
+  function updateReadout() {
+    const p = curveAt(_years);
+    say('mthYearsOut', `${_years} y`);
+    const sl = $('mthYears'); if (sl && Number(sl.value) !== _years) sl.value = _years;
+
+    const cur = $('chCursor');
+    if (cur) {
+      const x1 = Number($('mthChart').dataset.x1), xn = Number($('mthChart').dataset.xn);
+      const px = x1 + ((_years - 1) / (_d.scenarios.maxYears - 1)) * (xn - x1);
+      cur.setAttribute('x1', px); cur.setAttribute('x2', px);
+    }
+
+    setHtml('mthReadout', `
+      <p class="ro-year">${_years} <small>years of cover</small></p>
+      <dl class="ro-list">
+        <div><dt>B1 refrigerant</dt><dd>${fmt(p.b1, 2)}</dd></div>
+        <div><dt>B7 water</dt><dd>${fmt(p.b7, 2)}</dd></div>
+        <div><dt>B4 replacement</dt><dd class="${p.b4 > 0 ? 'is-step' : ''}">${fmt(p.b4, 2)}</dd></div>
+        <div class="ro-total"><dt>Use stage</dt><dd>${fmt(p.useStage, 2)}</dd></div>
+      </dl>
+      <p class="mth-prov">● engine · execution ${_years} of ${_d.scenarios.curve.length}</p>`);
+  }
+
+  function drawCurveTable() {
+    setHtml('mthCurveTable', `
+      <table class="mth-table">
+        <thead><tr><th scope="col">Cover</th><th scope="col">Gate</th><th scope="col">B1</th>
+                   <th scope="col">B4</th><th scope="col">B7</th><th scope="col">Use stage</th></tr></thead>
+        <tbody>${_d.scenarios.curve.map(c => `
+          <tr><td class="num">${c.years} y</td><td class="num">${c.gateYears} y</td>
+              <td class="num">${fmt(c.b1, 2)}</td>
+              <td class="num${c.b4 > 0 ? ' mth-step' : ''}">${fmt(c.b4, 2)}</td>
+              <td class="num">${fmt(c.b7, 2)}</td><td class="num">${fmt(c.useStage, 2)}</td></tr>`).join('')}
+        </tbody></table>`);
+  }
+
+  // ══ 4 · The chain ══════════════════════════════════════════
+  function drawChain() {
+    const total = Math.max(..._d.calculationChain.map(c => Math.abs(c.value || 0))) || 1;
+    setHtml('mthChain', _d.calculationChain.map((c, i) => `
       <article class="mth-card" data-mod="${i}">
-        <h3>
-          <button type="button" class="mth-card-btn" aria-expanded="false" aria-controls="modbody-${i}">
-            <span class="mth-chev" aria-hidden="true"></span>
-            <span class="mono mth-code">${esc(c.module)}</span>
-            <span class="mth-card-title">${esc(firstSentence(c.narrative) || 'Calculation step')}</span>
-            <span class="mth-card-val">${c.value !== null ? `${fmt(c.value)} <small>${esc(c.unit || '')}</small>` : ''}</span>
-          </button>
-        </h3>
-        ${c.equations.map(e => `
-          <div class="mth-eqrow">
-            <pre class="mth-eq">${esc(e)}</pre>
-            <button type="button" class="mth-copy" data-copy="${esc(e)}" aria-label="Copy equation">copy</button>
-          </div>`).join('')}
-        <p class="mth-traced"><span class="dot" aria-hidden="true"></span>traced from execution · ${c.stepCount} step${c.stepCount === 1 ? '' : 's'}</p>
-        <div class="mth-card-body" id="modbody-${i}" hidden></div>
+        <h3><button type="button" class="mth-card-btn" aria-expanded="false" aria-controls="mb-${i}">
+          <span class="mth-chev" aria-hidden="true"></span>
+          <span class="mono mth-code">${esc(c.module)}</span>
+          <span class="mth-share" aria-hidden="true">
+            <span style="width:${(Math.abs(c.value || 0) / total) * 100}%"></span></span>
+          <span class="mth-card-val">${c.value !== null ? fmt(c.value, 2) : '—'}
+            <small>${esc(c.unit || '')}</small></span>
+        </button></h3>
+        <div class="mth-card-body" id="mb-${i}" hidden></div>
       </article>`).join(''));
 
-    $('mthChain').querySelectorAll('.mth-card-btn').forEach(btn => {
-      btn.addEventListener('click', () => toggleModule(btn, chain));
-    });
-    $('mthChain').querySelectorAll('.mth-copy').forEach(b => {
-      b.addEventListener('click', async () => {
-        try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'copied'; }
-        catch (_) { b.textContent = 'select it'; }
-        setTimeout(() => { b.textContent = 'copy'; }, 1600);
-      });
-    });
+    $('mthChain').querySelectorAll('.mth-card-btn').forEach(b =>
+      b.addEventListener('click', () => toggleModule(b)));
   }
 
-  function toggleModule(btn, chain) {
+  function toggleModule(btn) {
     const card = btn.closest('.mth-card');
     const body = card.querySelector('.mth-card-body');
     const open = btn.getAttribute('aria-expanded') === 'true';
 
     if (!open && !body.dataset.rendered) {
-      const c = chain[Number(card.dataset.mod)];
+      const c = _d.calculationChain[Number(card.dataset.mod)];
+      const facs = [];
+      c.steps.forEach(s => s.factors.forEach(f => {
+        if (!facs.some(x => x.key === f.key)) facs.push(f);
+      }));
       body.innerHTML = `
-        ${c.narrative ? `<p class="mth-narr">${esc(c.narrative)}</p>` : ''}
-        <div class="mth-scroll">
-        <table class="mth-table">
-          <thead><tr><th scope="col">#</th><th scope="col">Quantity</th><th scope="col">Inputs used</th>
-                     <th scope="col">Result</th><th scope="col">Factor &amp; source</th></tr></thead>
-          <tbody>${c.steps.map(s => `
-            <tr>
-              <td class="num">${s.step}</td>
-              <td>${esc(s.label)}</td>
-              <td class="mono mth-inputs">${esc(Object.entries(s.inputs || {}).map(([k, v]) => `${k}=${v}`).join(', ')) || '—'}</td>
-              <td class="num">${fmt(s.value)} <small>${esc(s.unit || '')}</small></td>
-              <td>${s.factors.length ? s.factors.map(f => `
-                    <div class="mth-fac"><span class="mono">${esc(f.key)}</span> = ${esc(f.value)} ${esc(f.unit || '')}
-                    <span class="badge ${TIER_CLASS[f.tier] || ''}">${esc(f.tier)}</span>
-                    ${f.fallback ? '<span class="badge badge-fallback">fallback</span>' : ''}
-                    ${f.reference ? `<span class="mth-src">${esc(f.reference)}</span>` : ''}</div>`).join('') : '—'}</td>
-            </tr>`).join('')}
-          </tbody></table></div>`;
+        <p class="mth-cap">${esc(c.narrative || '')}</p>
+        ${c.equations.map(e => `<div class="eq">${tokenise(e)}</div>`).join('')}
+        <div class="trace-ribbon"><span>inputs</span><i></i><span>equation</span><i></i><span>result</span></div>
+        ${facs.length ? `<div class="inputgrid">${facs.map(f => `
+          <div class="ig-cell">
+            <span class="mono ig-key">${esc(f.key)}</span>
+            <span class="ig-val">${esc(f.value)} <small>${esc(f.unit || '')}</small></span>
+            <span class="badge ${TIER_CLASS[f.tier] || ''}">${esc(f.tier)}</span>
+            <span class="ig-src">${esc(f.reference || '—')}</span>
+          </div>`).join('')}</div>` : ''}
+        <details class="mth-data"><summary>${c.stepCount} traced steps</summary>
+          <div class="mth-scroll"><table class="mth-table">
+            <thead><tr><th scope="col">#</th><th scope="col">Quantity</th><th scope="col">Inputs</th>
+                       <th scope="col">Result</th></tr></thead>
+            <tbody>${c.steps.map(s => `
+              <tr><td class="num">${s.step}</td><td>${esc(s.label)}</td>
+                  <td class="mono ig-src">${esc(Object.entries(s.inputs || {}).map(([k, v]) => `${k}=${v}`).join(', ')) || '—'}</td>
+                  <td class="num">${fmt(s.value, 2)}</td></tr>`).join('')}
+            </tbody></table></div></details>`;
       body.dataset.rendered = '1';
     }
-
     btn.setAttribute('aria-expanded', String(!open));
     body.hidden = open;
     card.classList.toggle('is-open', !open);
   }
 
-  function renderWorked(w) {
-    say('mthWorkedNote', w.note);
-    setHtml('mthWorked', `
-      <table class="mth-table mth-mini"><tbody>
-        <tr><td>Construction A4 + A5 — the PCAF figure</td><td class="num">${fmt(w.construction_kgCO2e)} kgCO₂e</td></tr>
-        <tr><td>Use stage B1 + B4 + B7 — separate line</td><td class="num">${fmt(w.useStage_kgCO2e)} kgCO₂e</td></tr>
-        <tr><td>Attribution factor</td><td class="num">${w.attributionFactor.toFixed(6)}</td></tr>
-        <tr class="is-total"><td>Insurer's attributed share</td><td class="num">${w.insurerIAE_tCO2e.toFixed(4)} tCO₂e</td></tr>
-        <tr><td>Per-m² construction factor</td><td class="num">${fmt(w.perM2Factor_kgCO2e_m2)} kgCO₂e/m²</td></tr>
-      </tbody></table>
-      <p class="mth-feature">${esc(w.scopeWarning)}</p>`);
+  /* Colour each term of the equation so the formula reads as parts rather
+     than as a string of characters. */
+  /* One pass, one replacer. Chained .replace() calls corrupted the markup:
+     the operator class contains "/", so a later pass rewrote the closing
+     </em> of a token inserted by an earlier one. */
+  const TOKENS = /(EF_\w+|\bEF\b)|(\b(?:mass_t|quantity|GIFA|charge_kg|gwp|volume|premium|projectCost|emissions|score)\b|\b\w*_(?:km|years|t|L|kWh|m2|kg|rate|life)\b)|([×÷*+=−-]|(?<![a-zA-Z0-9_])\/(?![a-zA-Z0-9_]))/g;
+
+  function tokenise(eq) {
+    return esc(eq).replace(TOKENS, (m, factor, input, op) => {
+      if (factor) return `<em class="t-factor">${m}</em>`;
+      if (input)  return `<em class="t-input">${m}</em>`;
+      if (op)     return `<em class="t-op">${m}</em>`;
+      return m;
+    });
   }
 
-  function renderFactors(m) {
-    say('mthFactorNote', m.factorStore.note);
-    const tiers = ['all', ...Object.keys(m.factorStore.byTier).sort()];
+  // ══ 5 · Factors ════════════════════════════════════════════
+  function buildFactorControls() {
+    const tiers = ['all', ...Object.keys(_d.factorStore.byTier).sort()];
     setHtml('mthTierSeg', tiers.map(t => `
-      <button type="button" class="mth-seg-btn${t === _tierFilter ? ' is-on' : ''}" data-tier="${esc(t)}"
-              aria-pressed="${t === _tierFilter}">
-        ${t === 'all' ? 'All' : esc(t)}${t !== 'all' ? ` <b>${m.factorStore.byTier[t]}</b>` : ''}
-      </button>`).join(''));
+      <button type="button" class="mth-seg-btn${t === _tier ? ' is-on' : ''}" data-tier="${esc(t)}"
+        aria-pressed="${t === _tier}">${t === 'all' ? 'All tiers' : esc(t)}${t !== 'all' ? ` <b>${_d.factorStore.byTier[t]}</b>` : ''}</button>`).join(''));
     $('mthTierSeg').querySelectorAll('.mth-seg-btn').forEach(b =>
-      b.addEventListener('click', () => { _tierFilter = b.dataset.tier; renderFactors(_data); }));
-    drawFactorTable();
+      b.addEventListener('click', () => { _tier = b.dataset.tier; buildFactorControls(); drawFactors(); }));
+
+    const mods = ['all', ...[...new Set(_d.factorStore.rows.map(r => r.module))].sort()];
+    setHtml('mthModSeg', mods.map(m => `
+      <button type="button" class="mth-seg-btn${m === _mod ? ' is-on' : ''}" data-mod="${esc(m)}"
+        aria-pressed="${m === _mod}">${m === 'all' ? 'All modules' : esc(m)}</button>`).join(''));
+    $('mthModSeg').querySelectorAll('.mth-seg-btn').forEach(b =>
+      b.addEventListener('click', () => { _mod = b.dataset.mod; buildFactorControls(); drawFactors(); }));
   }
 
-  function drawFactorTable() {
+  function drawDonut() {
+    const by = _d.factorStore.byTier;
+    const total = Object.values(by).reduce((a, b) => a + b, 0) || 1;
+    const order = ['Local', 'Regional', 'Global', 'n/a'].filter(t => by[t]);
+    let acc = 0;
+    const R = 52, C = 2 * Math.PI * R;
+    const arcs = order.map(t => {
+      const frac = by[t] / total;
+      const seg = `<circle class="dn dn-${t.toLowerCase().replace('/', '')}" r="${R}" cx="70" cy="70"
+        stroke-dasharray="${frac * C} ${C}" stroke-dashoffset="${-acc * C}"/>`;
+      acc += frac;
+      return seg;
+    }).join('');
+    setHtml('mthDonut', `
+      <svg viewBox="0 0 140 140" role="img" aria-label="Factor mix by data-quality tier">
+        ${arcs}<text x="70" y="66" class="dn-num">${total}</text>
+        <text x="70" y="84" class="dn-lab">factors</text></svg>`);
+    setHtml('mthMixKey', order.map(t =>
+      `<span class="mixkey"><i class="dn-k dn-${t.toLowerCase().replace('/', '')}"></i>
+        <b>${by[t]}</b> ${esc(t)}</span>`).join('')
+      + `<p class="mth-cap">${esc(_d.factorStore.localisationNote || _d.factorStore.note)}</p>`);
+  }
+
+  function drawFactors() {
     const q = (($('mthFactorFilter') || {}).value || '').toLowerCase().trim();
-    let rows = _data.factorStore.rows;
-    if (_tierFilter !== 'all') rows = rows.filter(r => r.tier === _tierFilter);
-    if (q) rows = rows.filter(r =>
-      String(r.key).toLowerCase().includes(q) ||
-      String(r.reference || '').toLowerCase().includes(q) ||
-      String(r.table).toLowerCase().includes(q));
+    let rows = _d.factorStore.rows;
+    if (_tier !== 'all') rows = rows.filter(r => r.tier === _tier);
+    if (_mod !== 'all') rows = rows.filter(r => r.module === _mod);
+    if (q) rows = rows.filter(r => `${r.key} ${r.reference || ''} ${r.table}`.toLowerCase().includes(q));
 
-    say('mthFactorCount', `${rows.length} of ${_data.factorStore.rowCount} factors shown`);
-
-    // Grouped by the module each table feeds, so a reviewer can read the
-    // evidence in the same order as the calculation chain.
-    const groups = new Map();
-    for (const r of rows) {
-      if (!groups.has(r.module)) groups.set(r.module, []);
-      groups.get(r.module).push(r);
-    }
-
-    setHtml('mthFactors', rows.length === 0
-      ? '<p class="mth-hint">No factor matched.</p>'
-      : [...groups.entries()].map(([mod, rs]) => `
-          <h3 class="mth-grouphead">${esc(mod)} <small>${rs.length}</small></h3>
-          <div class="mth-scroll">
-          <table class="mth-table">
-            <thead><tr><th scope="col">Factor</th><th scope="col">Value</th>
-                       <th scope="col">Tier</th><th scope="col">Source</th></tr></thead>
-            <tbody>${rs.map(r => `
-              <tr><td class="mono">${esc(r.key)}<span class="mth-src">${esc(r.table)}</span></td>
-                  <td class="num">${esc(r.value)} <small>${esc(r.unit || '')}</small></td>
-                  <td><span class="badge ${TIER_CLASS[r.tier] || ''}">${esc(r.tier)}</span></td>
-                  <td>${esc(r.reference || '—')}</td></tr>`).join('')}
-            </tbody></table></div>`).join(''));
+    say('mthFactorCount', `${rows.length} of ${_d.factorStore.rowCount} factors`);
+    setHtml('mthFactors', rows.length === 0 ? '<p class="mth-cap">No factor matched.</p>' : `
+      <div class="mth-scroll"><table class="mth-table">
+        <thead><tr><th scope="col">Factor</th><th scope="col">Value</th><th scope="col">Module</th>
+                   <th scope="col">Tier</th><th scope="col">Source</th></tr></thead>
+        <tbody>${rows.map(r => `
+          <tr><td class="mono">${esc(r.key)}</td>
+              <td class="num">${esc(r.value)} <small>${esc(r.unit || '')}</small></td>
+              <td>${esc(r.module)}</td>
+              <td><span class="badge ${TIER_CLASS[r.tier] || ''}">${esc(r.tier)}</span></td>
+              <td class="ig-src">${esc(r.reference || '—')}</td></tr>`).join('')}
+        </tbody></table></div>`);
   }
 
-  function renderLimits(m) {
-    setHtml('mthLimits', m.limits.map(l => `
-      <article class="mth-limit">
-        <h3>${esc(l.area)}</h3>
-        <p class="mth-limit-what">${esc(l.limit)}</p>
-        <p class="mth-hint">${esc(l.effect)}</p>
+  // ══ 6-9 ════════════════════════════════════════════════════
+  function drawLimits() {
+    const chip = o => /Sri Lanka|placeholder/i.test(o.why) ? 'SL factor gap'
+      : /DISABLED/i.test(o.why) ? 'no defined module'
+      : /LITERATURE|INDICATIVE/i.test(o.why) ? 'awaiting standard'
+      : /interim/i.test(o.why) ? 'interim factor' : 'pending design data';
+
+    /* Tiles clamp to two lines and expand in place. The full text is always
+       in the DOM — it is disclosed progressively, never truncated away. */
+    setHtml('mthLimits', [
+      ..._d.limits.map(l => ({ head: l.area, what: l.limit, why: l.effect, chip: 'scope' })),
+      ..._d.openItems.entries.map(o => ({ head: o.module, what: o.item, why: o.resolution, chip: chip(o) }))
+    ].map(t => `
+      <article class="tile">
+        <div class="tile-head"><span class="badge badge-mod">${esc(t.head)}</span>
+          <span class="tile-chip">${esc(t.chip)}</span></div>
+        <p class="tile-what clamp2">${esc(t.what)}</p>
+        <p class="mth-cap clamp2">${esc(t.why)}</p>
+        <button type="button" class="tile-more" aria-expanded="false">more</button>
       </article>`).join(''));
 
-    setHtml('mthOpenItems', m.openItems.entries.map(o => `
-      <article class="mth-open">
-        <div class="mth-open-head">
-          <span class="badge badge-mod">${esc(o.module)}</span>
-          <span class="mono">${esc(o.item)}</span>
-        </div>
-        <p class="mth-hint"><b>Why it is a limit.</b> ${esc(o.why)}</p>
-        <p class="mth-hint"><b>Intended resolution.</b> ${esc(o.resolution)}</p>
-      </article>`).join(''));
+    $('mthLimits').querySelectorAll('.tile-more').forEach(b =>
+      b.addEventListener('click', () => {
+        const open = b.getAttribute('aria-expanded') === 'true';
+        b.setAttribute('aria-expanded', String(!open));
+        b.closest('.tile').classList.toggle('is-expanded', !open);
+        b.textContent = open ? 'more' : 'less';
+      }));
   }
 
-  function renderQuality(dq) {
+  function drawQuality() {
+    const opts = _d.dataQuality.options;
     setHtml('mthDq', `
-      <div class="mth-scroll">
-      <table class="mth-table">
-        <thead><tr><th scope="col">PCAF option</th><th scope="col">Score</th><th scope="col">Meaning</th></tr></thead>
-        <tbody>${dq.options.map(o => `
-          <tr><td class="mono">${esc(o.option)}</td><td class="num">${o.score}</td>
-              <td>${esc(o.label || '')}</td></tr>`).join('')}
-        </tbody></table></div>
-      <p class="mth-hint">${esc(dq.scale)}</p>
-      <h3>Across a book</h3>
-      <pre class="mth-eq">${esc(dq.aggregation)}</pre>
-      <p>${esc(dq.whyWeighted)}</p>
-      <p class="mth-hint">${esc(dq.tierRule)}</p>`);
+      <div class="dq-scale">${opts.map(o => `
+        <div class="dq-step dq-${o.score}" title="${esc(o.label || '')}">
+          <b>${esc(o.option)}</b><span>${o.score}</span></div>`).join('')}</div>
+      <p class="mth-cap">${esc(_d.dataQuality.scale)} — hover a step for its meaning.</p>
+      <div class="eq">${tokenise(_d.dataQuality.aggregation)}</div>
+      <p class="mth-cap">${esc(_d.dataQuality.whyWeighted)}</p>`);
   }
 
-  function renderConformance(c) {
-    say('mthConfLede', c.statement);
-    setHtml('mthConfAntiRot', `<strong>The claim cannot rot</strong><p>${esc(c.antiRot)}</p>`);
+  function drawConformance() {
+    const c = _d.conformance;
+    setHtml('mthConfHead', `
+      <p class="conf-count"><b>${c.summary.implemented || 0}</b> / ${c.summary.total} asserted</p>
+      <article class="conf-feature">
+        <span class="badge badge-pass">structural</span>
+        <p>${esc(_d.scope.structuralEnforcement)}</p>
+      </article>`);
+    setHtml('mthConfGrid', c.rules.map((r, i) => `
+      <button type="button" class="conf-dot ${r.status === 'implemented' ? 'is-pass' : 'is-part'}"
+              data-rule="${i}" aria-label="${esc(r.id)}: ${esc(r.rule)}">
+        <span class="mono">${esc(r.id.replace(/^C-/, ''))}</span></button>`).join(''));
+    $('mthConfGrid').querySelectorAll('.conf-dot').forEach(b => {
+      const show = () => {
+        const r = c.rules[Number(b.dataset.rule)];
+        setHtml('mthRulePop', `<b class="mono">${esc(r.id)}</b> <span>${esc(r.clause)}</span>
+          <p>${esc(r.rule)}</p>
+          <p class="ig-src">Enforced in ${esc(r.implementation)}</p>
+          <p class="ig-src">Proven by ${esc(r.provingTest)}</p>`);
+        $('mthRulePop').hidden = false;
+      };
+      b.addEventListener('mouseenter', show);
+      b.addEventListener('focus', show);
+      b.addEventListener('click', show);
+    });
     say('mthConfDisclaimer', c.disclaimer);
-    setHtml('mthConformance', c.rules.map(r => `
-      <article class="mth-rule">
-        <div class="mth-rule-head">
-          <span class="mth-tick ${r.status === 'implemented' ? 'is-pass' : 'is-part'}" aria-hidden="true"></span>
-          <span class="mono mth-code">${esc(r.id)}</span>
-          <span class="mth-rule-clause">${esc(r.clause)}</span>
-          <span class="badge ${r.status === 'implemented' ? 'badge-pass' : 'badge-part'}">${esc(r.status)}</span>
-        </div>
-        <p>${esc(r.rule)}</p>
-        <p class="mth-src"><b>Enforced in</b> ${esc(r.implementation)}</p>
-        <p class="mth-src"><b>Proven by</b> ${esc(r.provingTest)}</p>
-      </article>`).join(''));
   }
 
-  function renderLabour(d) {
+  function drawLabour() {
+    const d = _d.divisionOfLabour;
     setHtml('mthLabour', `
-      <div class="mth-labour">
-        <article><h3>The calculation engine</h3><p>${esc(d.engine)}</p></article>
-        <article><h3>The language model</h3><p>${esc(d.model)}</p></article>
-      </div>
-      <p class="mth-feature">${esc(d.rule)}</p>`);
+      <article class="lab lab-engine"><h3>Engine</h3><p class="mth-cap clamp2">${esc(d.engine)}</p>
+        <button type="button" class="tile-more" aria-expanded="false">more</button></article>
+      <article class="lab lab-model"><h3>Language model</h3><p class="mth-cap clamp2">${esc(d.model)}</p>
+        <button type="button" class="tile-more" aria-expanded="false">more</button></article>
+      <p class="lab-rule">${esc(d.rule)}</p>`);
+
+    $('mthLabour').querySelectorAll('.tile-more').forEach(b =>
+      b.addEventListener('click', () => {
+        const open = b.getAttribute('aria-expanded') === 'true';
+        b.setAttribute('aria-expanded', String(!open));
+        b.closest('.lab').classList.toggle('is-expanded', !open);
+        b.textContent = open ? 'more' : 'less';
+      }));
   }
 
-  // ── Contents, scroll-spy and progress ──────────────────────
+  function wireCitation() {
+    on('mthCiteChip', 'click', () => {
+      const pop = $('mthCitePop'), chip = $('mthCiteChip');
+      const open = pop.hidden;
+      setHtml('mthCitePop', `<b>${esc(_d.standard)} — §5.3</b>
+        <p>${esc(_d.scope.policyGate.rule)}</p>
+        <p>${esc(_d.scope.exclusion)}</p>
+        <p class="ig-src">The scope rule as implemented. Quoted clause text is not reproduced here.</p>`);
+      pop.hidden = !open;
+      chip.setAttribute('aria-expanded', String(open));
+    });
+  }
+
+  // ── Contents, progress, theme ──────────────────────────────
   function buildToc() {
     const present = SECTIONS.filter(([id]) => $(id));
-    setHtml('mthTocList', present.map(([id, label], i) =>
-      `<li><a href="#${id}" data-sec="${id}"><span>${i + 1}</span>${esc(label)}</a></li>`).join(''));
-    setHtml('mthTocSelect', present.map(([id, label], i) =>
-      `<option value="${id}">${i + 1}. ${esc(label)}</option>`).join(''));
-
+    setHtml('mthTocList', present.map(([id, l], i) =>
+      `<li><a href="#${id}" data-sec="${id}"><span>${i + 1}</span>${esc(l)}</a></li>`).join(''));
+    setHtml('mthTocSelect', present.map(([id, l], i) =>
+      `<option value="${id}">${i + 1}. ${esc(l)}</option>`).join(''));
     on('mthTocSelect', 'change', e => {
       const el = $(e.target.value);
       if (el) el.scrollIntoView({ behavior: motionOK() ? 'smooth' : 'auto', block: 'start' });
     });
-
     if ('IntersectionObserver' in window) {
-      const spy = new IntersectionObserver(entries => {
-        entries.forEach(en => {
-          if (!en.isIntersecting) return;
-          document.querySelectorAll('#mthTocList a').forEach(a =>
-            a.classList.toggle('is-current', a.dataset.sec === en.target.id));
-          const sel = $('mthTocSelect');
-          if (sel && sel.value !== en.target.id) sel.value = en.target.id;
-        });
-      }, { rootMargin: '-20% 0px -70% 0px' });
+      const spy = new IntersectionObserver(es => es.forEach(en => {
+        if (!en.isIntersecting) return;
+        document.querySelectorAll('#mthTocList a').forEach(a =>
+          a.classList.toggle('is-current', a.dataset.sec === en.target.id));
+        const sel = $('mthTocSelect');
+        if (sel && sel.value !== en.target.id) sel.value = en.target.id;
+      }), { rootMargin: '-20% 0px -70% 0px' });
       present.forEach(([id]) => spy.observe($(id)));
-    }
-
-    // Reveal on scroll-in, unless the reader has asked for less motion.
-    if (motionOK() && 'IntersectionObserver' in window) {
-      const reveal = new IntersectionObserver((entries, obs) => {
-        entries.forEach(en => {
-          if (!en.isIntersecting) return;
-          en.target.classList.add('is-in');
-          obs.unobserve(en.target);
-        });
-      }, { rootMargin: '0px 0px -8% 0px' });
-      document.querySelectorAll('.mth-section').forEach(s => { s.classList.add('will-reveal'); reveal.observe(s); });
     }
   }
 
-  const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* Which element scrolls depends on the shell: in this app the document
-     scrolls, but a shell that gives its main column its own overflow would
-     scroll that instead. Resolve it at read time and take whichever is
-     actually scrollable, rather than assuming one and reporting 0%. */
   function _scroller() {
     const main = document.querySelector('.main');
     if (main && main.scrollHeight > main.clientHeight + 2) return main;
     return document.scrollingElement || document.documentElement;
   }
-
   function trackProgress() {
-    const bar = $('mthProgress');
-    if (!bar) return;
+    const bar = $('mthProgress'); if (!bar) return;
     const update = () => {
       const el = _scroller();
       const max = el.scrollHeight - el.clientHeight;
       bar.style.width = `${max > 0 ? Math.min(100, Math.max(0, (el.scrollTop / max) * 100)) : 0}%`;
     };
-    // Listen on both: a document scroll surfaces on window, a container
-    // scroll only on the container itself.
     window.addEventListener('scroll', update, { passive: true });
     const main = document.querySelector('.main');
     if (main) main.addEventListener('scroll', update, { passive: true });
@@ -397,70 +547,51 @@ const MethodologyPage = (() => {
     update();
   }
 
-  // ── Theme ──────────────────────────────────────────────────
   const THEME_KEY = 'carboniq_theme';
-  function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
-    try { localStorage.setItem(THEME_KEY, t); } catch (_) { /* private mode */ }
-  }
   function initTheme() {
-    let t = null;
-    try { t = localStorage.getItem(THEME_KEY); } catch (_) { /* private mode */ }
+    let t = null; try { t = localStorage.getItem(THEME_KEY); } catch (_) { /* private */ }
     if (t) document.documentElement.setAttribute('data-theme', t);
     on('mthTheme', 'click', () => {
       const cur = document.documentElement.getAttribute('data-theme')
         || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-      applyTheme(cur === 'dark' ? 'light' : 'dark');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* private */ }
     });
   }
 
-  // ── Downloads ──────────────────────────────────────────────
-  /* Streamed as a blob: the request carries the API key in a header, so a
-     plain link would arrive unauthenticated. */
   async function download(format) {
-    say('mthStatus', 'Building the methodology statement…');
+    say('mthStatus', 'Building the statement…');
     try {
       const res = await window.CARBONIQ_fetch(`/v1/pcaf/part-c/methodology?format=${format}`);
-      if (!res.ok) {
-        let d = {}; try { d = await res.json(); } catch (_) { /* empty */ }
-        throw new Error(d.message || `Request failed (${res.status})`);
-      }
+      if (!res.ok) { let d = {}; try { d = await res.json(); } catch (_) { /* empty */ }
+        throw new Error(d.message || `Request failed (${res.status})`); }
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a');
       a.href = url; a.download = `pcaf-part-c-methodology.${format}`;
-      document.body.appendChild(a); a.click(); a.remove();
-      URL.revokeObjectURL(url);
-      say('mthStatus', 'Methodology statement downloaded.');
-    } catch (err) {
-      say('mthStatus', err.message);
-    }
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      say('mthStatus', 'Downloaded.');
+    } catch (err) { say('mthStatus', err.message); }
   }
 
-  /* Module bodies render on first open, so a print of an untouched page
-     would emit empty cards. Render them all before the print dialog opens. */
   function renderAllForPrint() {
-    if (!_data) return;
-    document.querySelectorAll('#mthChain .mth-card-btn').forEach(btn => {
-      if (btn.getAttribute('aria-expanded') !== 'true') toggleModule(btn, _data.calculationChain);
+    if (!_d) return;
+    document.querySelectorAll('#mthChain .mth-card-btn').forEach(b => {
+      if (b.getAttribute('aria-expanded') !== 'true') toggleModule(b);
     });
   }
 
   async function init() {
-    initTheme();
-    trackProgress();
+    initTheme(); trackProgress();
     window.addEventListener('beforeprint', renderAllForPrint);
-    if (window.matchMedia) {
-      const mq = window.matchMedia('print');
-      if (mq.addEventListener) mq.addEventListener('change', e => { if (e.matches) renderAllForPrint(); });
-    }
     on('mthRefresh', 'click', load);
     on('mthPdfBtn', 'click', () => download('pdf'));
     on('mthDocxBtn', 'click', () => download('docx'));
-    on('mthFactorFilter', 'input', () => _data && drawFactorTable());
+    on('mthFactorFilter', 'input', () => _d && drawFactors());
+    on('mthYears', 'input', e => { _years = Number(e.target.value); updateReadout(); });
+    on('mthTryYears', 'input', () => _d && tryYears());
     await load();
   }
-
-  const firstSentence = t => t ? String(t).split(/(?<=\.)\s/)[0] : '';
 
   return { init, refresh: load, renderAllForPrint };
 })();

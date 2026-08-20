@@ -247,6 +247,8 @@ function buildMethodology(opts = {}) {
 
     policyGate: _gateDemonstration(),
 
+    scenarios: _scenarios(),
+
     workedExample: {
       note: 'The reference project below is the case the acceptance tests check independently, so the worked figures can be verified against a source outside this system.',
       project: result.policy ? {
@@ -445,6 +447,66 @@ function _openItems(rows) {
   ];
 
   return { total: fromFactors.length + scope.length, entries: [...fromFactors, ...scope] };
+}
+
+
+/**
+ * Every state the interactive controls can show, each an engine execution.
+ *
+ * The page lets a reviewer switch policy type and drag a cover period. Those
+ * controls must move real computed figures, not interpolate a stored curve,
+ * or the promise that nothing is transcribed stops being true. The engine
+ * costs about 0.6ms a run, so the whole space is computed up front: four
+ * policy types and every cover year from 1 to 45, 49 executions in roughly
+ * 40ms. The control then reads an answer the engine actually produced.
+ */
+function _scenarios() {
+  const fixture = require('../tests/fixtures/fisheries');
+
+  const run = (policyType, yearsOfCover) => {
+    const base = /IDI|PROPERTY/i.test(policyType) ? fixture.idiInput() : fixture.workbookInput();
+    base.policy = { ...base.policy, policyType, ...(yearsOfCover ? { yearsOfCover } : {}) };
+    const r = runPartC(base);
+    return {
+      policyType,
+      gateYears: r.policy.useStageYears,
+      construction: _round(r.summary.construction_kgCO2e),
+      b1: _round(r.modules.b1.value),
+      b4: _round(r.modules.b4.value),
+      b7: _round(r.modules.b7.value),
+      useStage: _round(r.summary.useStage_kgCO2e),
+      insurerIAE: r.summary.insurerIAE_tCO2e,
+      attributionFactor: r.summary.attributionFactor
+    };
+  };
+
+  const policies = ['CAR', 'EAR', 'IDI', 'Property'].map(t => run(t));
+
+  const MAX_YEARS = 45;
+  const curve = [];
+  for (let y = 1; y <= MAX_YEARS; y++) curve.push({ years: y, ...run('IDI', y) });
+
+  // Where B4 steps: the years at which the cover first outlives the plant.
+  const steps = [];
+  for (let i = 1; i < curve.length; i++) {
+    if (curve[i].b4 > curve[i - 1].b4) {
+      steps.push({
+        years: curve[i].years,
+        from: curve[i - 1].b4,
+        to: curve[i].b4,
+        label: 'HVAC service life exceeded — replacement enters the cover'
+      });
+    }
+  }
+
+  return {
+    note: 'Each row below is a separate execution of the engine, not a stored curve. The controls read computed answers.',
+    executions: policies.length + curve.length,
+    policies,
+    maxYears: MAX_YEARS,
+    curve,
+    b4Steps: steps
+  };
 }
 
 module.exports = { buildMethodology, MODULE_ORDER };

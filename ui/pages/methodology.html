@@ -1,41 +1,26 @@
-<!-- Methodology & Evidence.
-     Every figure, equation, factor and count on this page is pulled from a
-     live execution of the engine. Nothing here is hardcoded, so the page
-     cannot drift from the code it describes. -->
+<!-- Methodology & Evidence — visual build.
+     Every value, curve and scenario comes from a live engine execution.
+     Prose is capped at a caption; the reasoning is carried by the visuals. -->
 
 <div class="mth" id="mthRoot">
-
   <div class="mth-progress" aria-hidden="true"><div class="mth-progress-bar" id="mthProgress"></div></div>
 
-  <!-- ── Header strip ─────────────────────────────────────────────── -->
   <header class="mth-hero">
-    <div class="mth-hero-main">
+    <div>
       <h1>Methodology &amp; Evidence</h1>
-      <p class="mth-sub">How every figure is calculated — scope, equations, factors, sources and limits.</p>
-
+      <p class="mth-sub">Scope, equations, factors, sources and limits — generated from a live execution.</p>
       <div class="mth-chips" id="mthChips" role="status" aria-live="polite"></div>
-
-      <div class="mth-hero-actions">
-        <button class="btn btn-primary" id="mthPdfBtn">Methodology Statement — PDF</button>
-        <button class="btn btn-secondary" id="mthDocxBtn">Word</button>
-        <button class="btn btn-secondary" id="mthRefresh">Refresh</button>
-        <button class="btn btn-secondary mth-theme" id="mthTheme" aria-label="Toggle light and dark">Theme</button>
-        <span class="mth-status" id="mthStatus"></span>
-      </div>
     </div>
-
-    <aside class="mth-provenance" id="mthProvenance">
-      <div class="mth-prov-icon" aria-hidden="true">⚙︎</div>
-      <div>
-        <strong id="mthProvClaim"></strong>
-        <p id="mthProvWhy"></p>
-      </div>
-    </aside>
+    <div class="mth-hero-actions">
+      <button class="btn btn-primary" id="mthPdfBtn">Statement — PDF</button>
+      <button class="btn btn-secondary" id="mthDocxBtn">Word</button>
+      <button class="btn btn-secondary" id="mthRefresh">Refresh</button>
+      <button class="btn btn-secondary" id="mthTheme" aria-label="Toggle light and dark">◐</button>
+      <span class="mth-status" id="mthStatus"></span>
+    </div>
   </header>
 
   <div class="mth-layout">
-
-    <!-- ── Sticky contents ────────────────────────────────────────── -->
     <nav class="mth-toc" id="mthToc" aria-label="On this page">
       <p class="mth-toc-title">On this page</p>
       <label class="mth-toc-mobile" for="mthTocSelect">Jump to section</label>
@@ -43,98 +28,128 @@
       <ol id="mthTocList"></ol>
     </nav>
 
-    <!-- ── Body ───────────────────────────────────────────────────── -->
     <main class="mth-main" id="mthBody" hidden>
 
+      <!-- 1 ─ Scope, as a diagram ─────────────────────────────────── -->
       <section class="mth-section" id="sec-scope" aria-labelledby="h-scope">
         <p class="mth-num">Section 1</p>
         <h2 id="h-scope">Scope &amp; boundary</h2>
-        <p class="mth-lede">Three tiers, kept apart by construction rather than by convention. What may enter the reported figure is decided here, before any arithmetic.</p>
 
-        <div class="mth-tiers" id="mthTiers"></div>
-        <p class="mth-note" id="mthScopeExclusion"></p>
+        <div class="mth-wide">
+          <div class="mth-ctrlbar">
+            <div class="mth-seg" id="mthPolicySeg" role="group" aria-label="Policy type"></div>
+            <span class="mth-prov" title="Computed by the engine, not stored">● engine</span>
+          </div>
 
-        <div class="mth-panel">
-          <h3>The policy gate</h3>
-          <p id="mthGateRule"></p>
-          <p class="mth-feature" id="mthGateConsequence"></p>
-          <p class="mth-hint" id="mthGateOverrideRule"></p>
-          <div class="mth-guarantee" id="mthGuarantee"></div>
-          <p class="mth-cite" id="mthGateCite"></p>
+          <div class="mth-scope" id="mthScope"></div>
+          <p class="mth-cap">Cover type decides which lanes exist — a scope rule, not a preference.
+            <button type="button" class="mth-cite-chip" id="mthCiteChip" aria-expanded="false">§5.3</button>
+          </p>
+          <div class="mth-popover" id="mthCitePop" hidden></div>
         </div>
 
-        <div class="mth-panel">
-          <h3>The gate, demonstrated</h3>
-          <p class="mth-hint" id="mthGateDesign"></p>
-          <div class="mth-scroll" id="mthGate"></div>
-
-          <h4>Can a client buy a use stage onto a construction policy?</h4>
-          <div id="mthGateOverride"></div>
-
-          <h4>How the use stage responds to the cover period</h4>
-          <div class="mth-scroll" id="mthGateSens"></div>
-          <p class="mth-hint" id="mthGateSensNote"></p>
+        <div class="mth-wide mth-gatewrap">
+          <h3>The gate</h3>
+          <div class="mth-gate" id="mthGateFlow"></div>
+          <p class="mth-cap" id="mthGateCap"></p>
+          <div class="mth-try">
+            <label for="mthTryYears">Try a cover period on this policy</label>
+            <input type="number" id="mthTryYears" min="0" max="60" value="25" inputmode="numeric">
+            <span class="mth-try-out" id="mthTryOut"></span>
+          </div>
         </div>
       </section>
 
-      <section class="mth-section" id="sec-chain" aria-labelledby="h-chain">
+      <!-- 2 ─ CAR vs IDI, as a diff ───────────────────────────────── -->
+      <section class="mth-section" id="sec-compare" aria-labelledby="h-compare">
         <p class="mth-num">Section 2</p>
-        <h2 id="h-chain">The calculation chain</h2>
-        <p class="mth-lede">Each equation below was read out of an execution of the engine, in the order a project passes through it. Expand a module to follow every step.</p>
-        <div id="mthChain"></div>
-
-        <div class="mth-panel mth-result">
-          <h3>The worked example</h3>
-          <p class="mth-hint" id="mthWorkedNote"></p>
-          <div id="mthWorked"></div>
-        </div>
+        <h2 id="h-compare">Same building, different cover</h2>
+        <p class="mth-lede">The construction figure cannot move; the use stage can.</p>
+        <div class="mth-wide"><div class="mth-diff" id="mthDiff"></div></div>
       </section>
 
-      <section class="mth-section" id="sec-factors" aria-labelledby="h-factors">
+      <!-- 3 ─ Sensitivity, as a chart ─────────────────────────────── -->
+      <section class="mth-section" id="sec-sensitivity" aria-labelledby="h-sens">
         <p class="mth-num">Section 3</p>
-        <h2 id="h-factors">Factors &amp; sources</h2>
-        <p class="mth-lede" id="mthFactorNote"></p>
+        <h2 id="h-sens">How cover length drives the use stage</h2>
 
-        <div class="mth-filters">
-          <input type="search" id="mthFactorFilter" class="mth-input"
-                 placeholder="Search factor or source…" aria-label="Search factors">
-          <div class="mth-seg" id="mthTierSeg" role="group" aria-label="Filter by data-quality tier"></div>
+        <div class="mth-wide">
+          <div class="mth-chartwrap">
+            <div class="mth-chart" id="mthChart"></div>
+            <aside class="mth-readout" id="mthReadout"></aside>
+          </div>
+          <div class="mth-sliderrow">
+            <label for="mthYears" class="mth-slider-label">Cover period</label>
+            <input type="range" id="mthYears" min="1" max="45" value="10" class="mth-slider"
+                   aria-describedby="mthReadout">
+            <output id="mthYearsOut" for="mthYears"></output>
+          </div>
+          <p class="mth-cap">B1 and B7 accrue every year; B4 stays at zero until the cover outlives the plant.</p>
+          <details class="mth-data"><summary>Show data</summary><div class="mth-scroll" id="mthCurveTable"></div></details>
         </div>
-        <p class="mth-hint" id="mthFactorCount" role="status" aria-live="polite"></p>
-        <div id="mthFactors"></div>
       </section>
 
-      <section class="mth-section" id="sec-limits" aria-labelledby="h-limits">
+      <!-- 4 ─ The chain ───────────────────────────────────────────── -->
+      <section class="mth-section" id="sec-chain" aria-labelledby="h-chain">
         <p class="mth-num">Section 4</p>
-        <h2 id="h-limits">Limits &amp; open items</h2>
-        <p class="mth-lede">Declared, because a submission that names no limits reads as unexamined. Each is a piece of work with an intended resolution, not a caveat.</p>
-        <div id="mthLimits"></div>
-        <h3 class="mth-openhead">Open research items</h3>
-        <p class="mth-hint">Read from the factor store itself, so this list shortens on its own as interim factors are replaced.</p>
-        <div id="mthOpenItems"></div>
+        <h2 id="h-chain">The calculation chain</h2>
+        <p class="mth-lede">Expand a module to see equation, inputs and sources.</p>
+        <div id="mthChain"></div>
       </section>
 
-      <section class="mth-section" id="sec-quality" aria-labelledby="h-quality">
+      <!-- 5 ─ Factors ─────────────────────────────────────────────── -->
+      <section class="mth-section" id="sec-factors" aria-labelledby="h-factors">
         <p class="mth-num">Section 5</p>
-        <h2 id="h-quality">Data quality</h2>
-        <p class="mth-lede">How a score is assigned to one assessment, and how scores combine across a book.</p>
-        <div id="mthDq"></div>
+        <h2 id="h-factors">Factors &amp; sources</h2>
+
+        <div class="mth-wide">
+          <div class="mth-mix">
+            <div class="mth-donut" id="mthDonut"></div>
+            <div class="mth-mixkey" id="mthMixKey"></div>
+          </div>
+          <div class="mth-filters">
+            <input type="search" id="mthFactorFilter" class="mth-input" placeholder="Search factor or source…"
+                   aria-label="Search factors">
+            <div class="mth-seg" id="mthTierSeg" role="group" aria-label="Filter by tier"></div>
+            <div class="mth-seg" id="mthModSeg" role="group" aria-label="Filter by module"></div>
+          </div>
+          <p class="mth-cap" id="mthFactorCount" role="status" aria-live="polite"></p>
+          <div id="mthFactors"></div>
+        </div>
       </section>
 
-      <section class="mth-section" id="sec-conformance" aria-labelledby="h-conf">
+      <!-- 6 ─ Limits ──────────────────────────────────────────────── -->
+      <section class="mth-section" id="sec-limits" aria-labelledby="h-limits">
         <p class="mth-num">Section 6</p>
-        <h2 id="h-conf">Conformance</h2>
-        <p class="mth-lede" id="mthConfLede"></p>
-        <div class="mth-guarantee" id="mthConfAntiRot"></div>
-        <p class="mth-disclaimer" id="mthConfDisclaimer"></p>
-        <div id="mthConformance"></div>
+        <h2 id="h-limits">Limits &amp; roadmap</h2>
+        <p class="mth-lede">Declared work, not caveats. Each item names its resolution.</p>
+        <div class="mth-wide"><div class="mth-tiles" id="mthLimits"></div></div>
       </section>
 
-      <section class="mth-section" id="sec-labour" aria-labelledby="h-labour">
+      <!-- 7 ─ Data quality ────────────────────────────────────────── -->
+      <section class="mth-section" id="sec-quality" aria-labelledby="h-quality">
         <p class="mth-num">Section 7</p>
+        <h2 id="h-quality">Data quality</h2>
+        <div class="mth-wide"><div id="mthDq"></div></div>
+      </section>
+
+      <!-- 8 ─ Conformance ─────────────────────────────────────────── -->
+      <section class="mth-section" id="sec-conformance" aria-labelledby="h-conf">
+        <p class="mth-num">Section 8</p>
+        <h2 id="h-conf">Conformance</h2>
+        <div class="mth-wide">
+          <div class="mth-confhead" id="mthConfHead"></div>
+          <div class="mth-confgrid" id="mthConfGrid"></div>
+          <div class="mth-popover mth-rulepop" id="mthRulePop" hidden></div>
+          <p class="mth-cap mth-disclaimer" id="mthConfDisclaimer"></p>
+        </div>
+      </section>
+
+      <!-- 9 ─ Division of labour ──────────────────────────────────── -->
+      <section class="mth-section" id="sec-labour" aria-labelledby="h-labour">
+        <p class="mth-num">Section 9</p>
         <h2 id="h-labour">Division of labour</h2>
-        <p class="mth-lede">Which decisions are made by arithmetic and which by a language model.</p>
-        <div id="mthLabour"></div>
+        <div class="mth-wide"><div class="mth-labour" id="mthLabour"></div></div>
       </section>
 
     </main>
