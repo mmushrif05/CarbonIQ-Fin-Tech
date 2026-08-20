@@ -22,7 +22,8 @@
     "key:list": "node scripts/create-api-key.js list",
     "key:revoke": "node scripts/create-api-key.js revoke",
     "key:register-ui": "node scripts/register-ui-key.js",
-    "docs:conformance": "node scripts/generate-conformance-doc.js"
+    "docs:conformance": "node scripts/generate-conformance-doc.js",
+    "setup:seed-partc": "node scripts/seed-partc-demo.js"
   },
   "keywords": [
     "carbon",

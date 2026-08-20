@@ -1,0 +1,112 @@
+<!-- PCAF Part C — the insurer's book.
+     Organisation → Client → Project (policies inline) → Assessment.
+     Flat by design: no broker, reinsurer or class-of-business level. -->
+
+<div class="partc partc-book">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">Book</div>
+    <div>
+      <strong id="bookInsurer">Insurance book</strong>
+      <span id="bookSubtitle">Clients, projects and the policies written against them</span>
+    </div>
+  </div>
+
+  <div id="bookStorageNotice"></div>
+
+  <!-- ── Clients ─────────────────────────────────────────── -->
+  <section class="partc-card" id="bookClientsCard">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">1</span> Clients</h3>
+      <p>The insured parties. Each holds the projects you have written cover against.</p>
+    </header>
+    <div class="partc-actions">
+      <button class="btn btn-primary" id="bookNewClientBtn">New client</button>
+      <button class="btn btn-ghost" id="bookSeedBtn">Load demo book</button>
+      <span class="partc-hint" id="bookClientsStatus"></span>
+    </div>
+    <div id="bookClients"></div>
+
+    <form class="partc-inline-form" id="bookClientForm" hidden>
+      <div class="partc-grid">
+        <label>Client name <input type="text" id="bookClientName" placeholder="Department of Fisheries"></label>
+        <label>Sector <input type="text" id="bookClientSector" placeholder="Government — fisheries"></label>
+        <label>Country <input type="text" id="bookClientCountry" value="Sri Lanka"></label>
+        <label>Contact <input type="text" id="bookClientContact" placeholder="Projects Unit"></label>
+      </div>
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit">Save client</button>
+        <button class="btn btn-ghost" type="button" id="bookClientCancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ── Projects ────────────────────────────────────────── -->
+  <section class="partc-card" id="bookProjectsCard" hidden>
+    <header class="partc-card-head">
+      <h3><span class="partc-step">2</span> Projects — <span id="bookProjectsFor"></span></h3>
+      <p>The physical asset. Floor area and project cost are captured once here and reused by every policy and every assessment.</p>
+    </header>
+    <div class="partc-actions">
+      <button class="btn btn-primary" id="bookNewProjectBtn">New project</button>
+      <button class="btn btn-ghost" id="bookBackToClients">All clients</button>
+      <span class="partc-hint" id="bookProjectsStatus"></span>
+    </div>
+    <div id="bookProjects"></div>
+
+    <form class="partc-inline-form" id="bookProjectForm" hidden>
+      <div class="partc-grid">
+        <label>Project name <input type="text" id="bookProjName" placeholder="Negombo Fisheries Complex"></label>
+        <label>Type
+          <select id="bookProjType">
+            <option value="building">Building</option>
+            <option value="road">Road</option>
+            <option value="linear">Linear</option>
+            <option value="structure">Structure</option>
+            <option value="plant">Plant</option>
+          </select>
+        </label>
+        <label>GIA (m²) <input type="number" id="bookProjGifa" inputmode="numeric" placeholder="1000"></label>
+        <label>Total project cost <input type="number" id="bookProjCost" inputmode="decimal" placeholder="6499442"></label>
+        <label>Location <input type="text" id="bookProjLocation" placeholder="Negombo, Western Province"></label>
+      </div>
+
+      <h5 class="partc-subhead">First policy</h5>
+      <p class="partc-hint">Policy type sets the scope of every assessment against it.</p>
+      <div class="partc-segmented" id="bookPolicySeg" role="tablist" aria-label="Policy type">
+        <button type="button" role="tab" data-value="CAR" aria-selected="true">CAR</button>
+        <button type="button" role="tab" data-value="EAR" aria-selected="false">EAR</button>
+        <button type="button" role="tab" data-value="IDI" aria-selected="false">IDI</button>
+        <button type="button" role="tab" data-value="Property" aria-selected="false">Property</button>
+      </div>
+      <div class="partc-grid">
+        <label>Policy reference <input type="text" id="bookPolRef" placeholder="CAR-2026-0041"></label>
+        <label>Premium <input type="number" id="bookPolPremium" inputmode="decimal" placeholder="24448.16"></label>
+        <label>Reinsurance ceded <input type="number" id="bookPolCeded" inputmode="decimal" value="0"></label>
+        <label>Inception <input type="date" id="bookPolInception"></label>
+        <label>Expiry <input type="date" id="bookPolExpiry"></label>
+        <label id="bookPolYearsRow">Years of cover <input type="number" id="bookPolYears" inputmode="numeric" value="10"></label>
+      </div>
+      <div class="partc-gate" id="bookPolicyGate"></div>
+
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit">Save project</button>
+        <button class="btn btn-ghost" type="button" id="bookProjectCancel">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ── Project detail ──────────────────────────────────── -->
+  <section class="partc-card" id="bookProjectDetail" hidden>
+    <header class="partc-card-head">
+      <h3><span class="partc-step">3</span> <span id="bookDetailName"></span></h3>
+      <p id="bookDetailMeta"></p>
+    </header>
+    <div class="partc-actions">
+      <button class="btn btn-ghost" id="bookBackToProjects">Back to projects</button>
+      <button class="btn btn-secondary" id="bookAddPolicyBtn">Add another policy</button>
+      <span class="partc-hint" id="bookDetailStatus"></span>
+    </div>
+    <div id="bookPolicies"></div>
+  </section>
+</div>

@@ -13,6 +13,7 @@ const PAGE_META = {
   'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution (A1-A3, lending)' },
+  'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
@@ -49,6 +50,10 @@ const DYNAMIC_PAGES = {
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',
     init: () => typeof PCAFPartCPage !== 'undefined' && PCAFPartCPage.init(),
+  },
+  'partc-book': {
+    src:  'pages/partc-book.html',
+    init: () => typeof PartCBook !== 'undefined' && PartCBook.init(),
   },
 };
 

@@ -345,6 +345,37 @@ async function listPartCBenchmarks(orgId, limit = 500) {
   return val ? Object.values(val) : [];
 }
 
+// ---------------------------------------------------------------------------
+// PCAF Part C registry — generic collection storage
+// ---------------------------------------------------------------------------
+
+async function savePartCRecord(collection, orgId, id, record) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).set(record);
+}
+
+async function getPartCRecord(collection, orgId, id) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).once('value');
+  return snapshot.val();
+}
+
+async function listPartCRecords(collection, orgId, limit = 200) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/partc/${orgId}/${collection}`).limitToLast(limit).once('value');
+  const val = snapshot.val();
+  return val ? Object.values(val) : [];
+}
+
+async function deletePartCRecord(collection, orgId, id) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).remove();
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -367,6 +398,10 @@ module.exports = {
   listMonitoringEntries,
   submitHumanReview,
   savePipelineRun,
+  savePartCRecord,
+  getPartCRecord,
+  listPartCRecords,
+  deletePartCRecord,
   savePartCRun,
   updatePartCRun,
   getPartCRun,

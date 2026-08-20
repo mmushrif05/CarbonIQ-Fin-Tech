@@ -80,6 +80,11 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `GET` | `/v1/pcaf/part-c/conformance` | Conformance matrix — rule → implementation → proving test |
 | `POST` | `/v1/pcaf/part-c/runs/start` | Begin a run, pause for client input |
 | `POST` | `/v1/pcaf/part-c/runs/:id/resume` | Supply answers, compute, complete |
+| `GET/PUT` | `/v1/partc/settings` | Insurer settings — reporting year, premium basis, restatement threshold |
+| `GET/POST` | `/v1/partc/clients` | Insured parties |
+| `GET/POST` | `/v1/partc/projects` | Projects with their policies inline |
+| `GET` | `/v1/partc/policies` | Flattened book, filterable by reporting year |
+| `GET` | `/v1/partc/storage` | What this deployment can actually persist |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
 | `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
@@ -185,6 +190,10 @@ Three tiers, enforced structurally rather than by convention:
 **Language guard:** output claims PCAF *conformance*, never endorsement. `containsForbiddenLanguage()` blocks any report containing "PCAF approved/endorsed/certified"; a test enforces it.
 
 **Division of labour:** Claude classifies, extracts, maps BOQ lines and writes narrative. The engine does every arithmetic operation. An LLM must never compute a figure that reaches a regulatory disclosure.
+
+**The insurer's book (`services/partc-registry.js`):** organisation → client → project, deliberately flat — no broker, reinsurer or class-of-business level. Policies live on the project because one building typically carries CAR through construction and then IDI for ten years. The reporting year of a policy is its **inception year**. Cover basis is project-specific only; annual/blanket is deferred.
+
+**Storage honesty (`services/partc-store.js`):** Firebase is the real store. Without it there is an in-process fallback for local development, but in a serverless runtime (Netlify) that fallback cannot work, so writes are **refused with a 503** rather than accepted and lost. `GET /v1/partc/storage` reports the active mode.
 
 **Conformance evidence:** `services/pcaf-partc/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 

@@ -522,3 +522,16 @@
 @media (prefers-contrast: more) {
   .partc { --p-label-2: rgba(60,60,67,.85); --p-separator: rgba(60,60,67,.5); }
 }
+
+/* ── Book: inline forms and sub-headings ─────────────────── */
+.partc-inline-form {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 0.5px solid var(--p-separator);
+}
+.partc-subhead {
+  margin: 20px 0 4px; font-size: 15px; font-weight: 620;
+  letter-spacing: -0.012em; color: var(--p-label);
+}
+.partc-book .partc-entry .partc-actions { margin-top: 12px; }
+.partc-book .pill { margin-left: 8px; }
+.partc-book .partc-table td:last-child { text-align: right; }

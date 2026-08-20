@@ -38,6 +38,7 @@ const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
 const pcafPartCRouter     = require('./pcaf-partc');
+const partcRegistryRouter = require('./partc-registry');
 
 const router = Router();
 
@@ -71,6 +72,14 @@ router.get('/', (_req, res) => {
         agentIntake: 'POST /v1/pcaf/part-c/agent/intake',
         agentMap:      'POST /v1/pcaf/part-c/agent/map',
         agentDisclose: 'POST /v1/pcaf/part-c/agent/disclose',
+      },
+      partcRegistry: {
+        note:     'Insurer book: settings, clients, projects and the policies written against them.',
+        settings: 'GET/PUT /v1/partc/settings',
+        clients:  'GET/POST /v1/partc/clients',
+        projects: 'GET/POST /v1/partc/projects',
+        policies: 'GET /v1/partc/policies — flattened book, filter by reportingYear',
+        storage:  'GET /v1/partc/storage — what this deployment can persist',
       },
       covenant: 'POST /v1/projects/:projectId/covenant',
       monitoring: {
@@ -126,5 +135,6 @@ router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
 router.use('/pcaf/part-c', pcafPartCRouter);
+router.use('/partc', partcRegistryRouter);
 
 module.exports = router;
