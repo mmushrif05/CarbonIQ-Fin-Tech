@@ -78,11 +78,47 @@ const Dashboard = (() => {
       if (!data.cfsDistribution) data.cfsDistribution = data.taxonomyDistribution || DEMO.cfsDistribution;
       if (!data.regulatoryReadiness) data.regulatoryReadiness = DEMO.regulatoryReadiness;
       _cache = data;
+      _cache._demoFallback = null;
       return data;
-    } catch (_e) {
-      _cache = { ...DEMO };
+    } catch (err) {
+      // Fall back to the bundled sample figures so the screen still renders,
+      // but say so. Substituting them silently made a dead API look like a
+      // working app showing unchanging numbers — there was no way to tell a
+      // real portfolio that happens to be flat from a backend answering 401.
+      _cache = { ...DEMO, _demoFallback: { reason: err.message } };
       return _cache;
     }
+  }
+
+  /**
+   * Say plainly, on the page, that these are sample figures.
+   *
+   * Placed at the top of the dashboard rather than in a toast, because a
+   * toast disappears and the wrong numbers stay on screen afterwards.
+   */
+  function _renderDemoBanner(data) {
+    const host = document.getElementById('page-dashboard');
+    if (!host) return;
+
+    const existing = document.getElementById('dash-demo-banner');
+    if (!data || !data._demoFallback) { if (existing) existing.remove(); return; }
+
+    const reason = String(data._demoFallback.reason || '');
+    const is401 = /\b401\b/.test(reason);
+    const is503 = /\b503\b/.test(reason);
+    const advice = is401
+      ? 'The API rejected the dashboard key. Set UI_API_KEY in your Netlify environment variables, or enter a valid key under Settings.'
+      : is503
+        ? 'The API is reachable but the feature or its database is not configured. Check FF_PORTFOLIO_AGGREGATION and the Firebase variables in your deployment environment.'
+        : 'The dashboard could not reach the API.';
+
+    const el = existing || document.createElement('div');
+    el.id = 'dash-demo-banner';
+    el.className = 'dash-demo-banner';
+    el.innerHTML =
+      '<strong>Showing sample data — not your portfolio.</strong>' +
+      '<span>' + advice + ' (' + reason.replace(/[<>&]/g, '') + ')</span>';
+    if (!existing) host.insertBefore(el, host.firstChild);
   }
 
   // ── Number formatters ─────────────────────────────────────
@@ -560,6 +596,7 @@ const Dashboard = (() => {
     if (_initialized) return;
     _initialized = true;
     const data = await _fetchData();
+    _renderDemoBanner(data);
     _renderDashboard(data);
     _renderPortfolio(data);
   }
@@ -572,6 +609,7 @@ const Dashboard = (() => {
     if (dl) dl.style.display = 'flex';
     if (pl) pl.style.display = 'flex';
     const data = await _fetchData();
+    _renderDemoBanner(data);
     _renderDashboard(data);
     _renderPortfolio(data);
   }

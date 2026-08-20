@@ -64,6 +64,17 @@
   LOG_LEVEL = "info"
   LOG_VERBOSE = "false"
 
+# A deploy preview must behave like production, or it cannot be used to
+# review a change. Previously only NODE_ENV and FINTECH_API_ENABLED were set
+# here, so every FF_ flag fell back to unset — which reads as false — and
+# Portfolio, Taxonomy and Covenant answered 503 FEATURE_DISABLED on every
+# preview while working fine in production. A reviewer had no way to tell
+# that from a broken branch.
 [context.deploy-preview.environment]
   NODE_ENV = "staging"
   FINTECH_API_ENABLED = "true"
+  FF_COVENANT_ENGINE = "true"
+  FF_PORTFOLIO_AGGREGATION = "true"
+  FF_TAXONOMY_CHECKER = "true"
+  FF_CERTIFICATE_GENERATION = "false"
+  FF_INSURANCE_OUTPUT = "false"

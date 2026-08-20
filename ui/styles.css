@@ -1835,3 +1835,32 @@ body {
 .rpt-card-lk {
   border-left: 3px solid #10b981;
 }
+
+/* ── "Showing sample data" banner ─────────────────────────────────────────
+   Deliberately loud. A dashboard that quietly substitutes canned figures
+   when the API is unreachable is indistinguishable from a working one, so
+   this has to be the first thing read on the page. */
+.dash-demo-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border: 1px solid #f59e0b;
+  border-left-width: 4px;
+  border-radius: 8px;
+  background: #fffbeb;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.dash-demo-banner strong { font-weight: 680; font-size: 13.5px; }
+.dash-demo-banner span   { opacity: 0.85; }
+
+@media (prefers-color-scheme: dark) {
+  .dash-demo-banner {
+    background: rgba(245, 158, 11, 0.10);
+    border-color: rgba(245, 158, 11, 0.55);
+    color: #fbbf24;
+  }
+}
