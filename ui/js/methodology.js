@@ -1,13 +1,10 @@
 /* ============================================================
-   CarbonIQ — Methodology and Evidence
+   CarbonIQ — Methodology & Evidence
 
-   Renders what the engine reports about itself: the scope rule
-   applied, every equation executed, every factor consulted with
-   its tier and source, how data quality is scored, which rules
-   are claimed and what proves each one, and the limits.
-
-   Nothing here is written into the page by hand. If the engine
-   stops executing an equation, it stops appearing.
+   Renders what the engine reports about itself. Every figure,
+   equation, factor and count comes from a live execution over
+   the API — nothing is written into the page by hand, so the
+   page cannot describe a method the engine does not run.
    ============================================================ */
 
 const MethodologyPage = (() => {
@@ -17,114 +14,119 @@ const MethodologyPage = (() => {
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const fmt = (n, d = 2) => Number(n || 0).toLocaleString('en-US',
     { minimumFractionDigits: d, maximumFractionDigits: d });
+  const num = v => typeof v === 'number' ? fmt(v, v !== 0 && Math.abs(v) < 1 ? 6 : 2) : esc(v);
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
 
+  const TIER_CLASS = { Local: 'tier-local', Regional: 'tier-regional', Global: 'tier-global' };
+  const SECTIONS = [
+    ['sec-scope', 'Scope & boundary'],
+    ['sec-chain', 'The calculation chain'],
+    ['sec-factors', 'Factors & sources'],
+    ['sec-limits', 'Limits & open items'],
+    ['sec-quality', 'Data quality'],
+    ['sec-conformance', 'Conformance'],
+    ['sec-labour', 'Division of labour']
+  ];
+
   let _data = null;
+  let _tierFilter = 'all';
 
-  const TIER_CLASS = { Local: 'mth-tier-local', Regional: 'mth-tier-regional', Global: 'mth-tier-global' };
-
+  // ── Data ───────────────────────────────────────────────────
   async function load() {
-    say('mthStatus', 'Loading…');
+    say('mthStatus', 'Reading the engine…');
     try {
       const res = await window.CARBONIQ_fetch('/v1/pcaf/part-c/methodology');
-      let data = {};
-      try { data = await res.json(); } catch (_) { /* empty */ }
-      if (!res.ok) throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
-      _data = data.methodology;
+      let d = {};
+      try { d = await res.json(); } catch (_) { /* empty */ }
+      if (!res.ok) throw new Error([d.message, d.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      _data = d.methodology;
       render(_data);
       $('mthBody').hidden = false;
-      say('mthStatus', `${_data.provenance.auditSteps} traced steps · ${_data.factorStore.rowCount} factors · ${_data.conformance.summary.total} conformance rules`);
+      say('mthStatus', 'Generated from a live execution.');
     } catch (err) {
       say('mthStatus', err.message);
     }
   }
 
+  // ── Render ─────────────────────────────────────────────────
   function render(m) {
-    say('mthTitle', m.title);
-    say('mthStandard', m.standard);
-    say('mthClaim', m.provenance.claim);
-    say('mthWhy', m.provenance.why);
+    setHtml('mthChips', [
+      [m.provenance.auditSteps, 'traced steps'],
+      [m.factorStore.rowCount, 'factors'],
+      [m.factorStore.tables, 'factor tables'],
+      [m.conformance.summary.total, 'conformance rules'],
+      [m.openItems.total, 'open items']
+    ].map(([n, l]) => `<span class="mth-chip"><b>${n}</b> ${esc(l)}</span>`).join(''));
 
-    // 1 — scope
-    setHtml('mthScope', `
-      <table class="partc-table">
-        <thead><tr><th>Tier</th><th>Modules</th><th>Treatment</th></tr></thead>
-        <tbody>${m.scope.tiers.map(t => `
-          <tr><td><span class="pill">${esc(t.tier)}</span></td>
-              <td class="mono">${esc(t.modules)}</td><td>${esc(t.treatment)}</td></tr>`).join('')}
-        </tbody></table>
-      <p class="partc-hint">${esc(m.scope.exclusion)}</p>
-      <h4 class="mth-sub">Policy gate</h4>
-      <p>${esc(m.scope.policyGate.rule)}</p>
-      <p>${esc(m.scope.policyGate.consequence)}</p>
-      <p class="partc-hint">${esc(m.scope.policyGate.override)}</p>
-      <p class="partc-scope-warning">${esc(m.scope.structuralEnforcement)}</p>`);
+    say('mthProvClaim', m.provenance.claim);
+    say('mthProvWhy', m.provenance.why);
 
-    /* 2 — the chain.
-       The equation and what the module does are the summary, so they stay
-       on the page. Only the step-by-step trace collapses: a reader should
-       be able to read the whole method without clicking anything, and
-       expand a module only to challenge a specific number. */
-    setHtml('mthChain', m.calculationChain.map(c => `
-      <div class="mth-module">
-        <div class="mth-head">
-          <span class="mth-mod">${esc(c.module)}</span>
-          ${c.value !== null ? `<span class="mth-val">${fmt(c.value)} ${esc(c.unit || '')}</span>` : ''}
+    renderScope(m);
+    renderGate(m.policyGate);
+    renderChain(m.calculationChain);
+    renderWorked(m.workedExample);
+    renderFactors(m);
+    renderLimits(m);
+    renderQuality(m.dataQuality);
+    renderConformance(m.conformance);
+    renderLabour(m.divisionOfLabour);
+    buildToc();
+  }
+
+  /* The tier diagram carries the argument of the whole page, so it is drawn
+     rather than tabulated: tier 3 sits below a dashed boundary because it
+     genuinely cannot reach the reported figure. */
+  function renderScope(m) {
+    const cls = ['tier-1', 'tier-2', 'tier-3'];
+    setHtml('mthTiers', m.scope.tiers.map((t, i) => `
+      ${i === 2 ? '<div class="mth-tier-break" aria-hidden="true"><span>excluded from the PCAF figure</span></div>' : ''}
+      <div class="mth-tier ${cls[i]}">
+        <div class="mth-tier-label">
+          <span class="mth-tier-name">${esc(t.tier)}</span>
+          <span class="mth-tier-mods">${esc(t.modules)}</span>
         </div>
-        ${c.narrative ? `<p class="mth-narr">${esc(c.narrative)}</p>` : ''}
-        ${c.equations.map(e => `<pre class="mth-eq">${esc(e)}</pre>`).join('')}
-        <details class="mth-detail">
-        <summary>Show the ${c.stepCount} traced step${c.stepCount === 1 ? '' : 's'}</summary>
-        <table class="partc-table mth-trace">
-          <thead><tr><th>#</th><th>Quantity</th><th>Inputs used</th><th>Result</th><th>Factor and source</th></tr></thead>
-          <tbody>${c.steps.map(s => `
-            <tr>
-              <td class="num">${s.step}</td>
-              <td>${esc(s.label)}</td>
-              <td class="mono mth-inputs">${esc(Object.entries(s.inputs || {}).map(([k, v]) => `${k}=${v}`).join(', ')) || '—'}</td>
-              <td class="num">${fmt(s.value)} ${esc(s.unit || '')}</td>
-              <td>${s.factors.length ? s.factors.map(f => `
-                    <div class="mth-fac"><span class="mono">${esc(f.key)}</span> = ${esc(f.value)} ${esc(f.unit || '')}
-                    <span class="pill ${TIER_CLASS[f.tier] || ''}">${esc(f.tier)}</span>
-                    ${f.fallback ? '<span class="pill mth-fallback">fallback</span>' : ''}
-                    ${f.reference ? `<div class="mth-src">${esc(f.reference)}</div>` : ''}</div>`).join('') : '—'}</td>
-            </tr>`).join('')}
-          </tbody></table>
-        </details>
+        <p>${esc(t.treatment)}</p>
       </div>`).join(''));
 
-    /* 3 — the gate, demonstrated.
-       A use stage of zero on a construction policy tells a reviewer nothing
-       on its own: they cannot see whether the rule ran or the module is
-       missing. Running the same project under both cover types, and showing
-       both, is the difference between asserting the rule and proving it. */
-    const g = m.policyGate;
+    say('mthScopeExclusion', m.scope.exclusion);
+    say('mthGateRule', m.scope.policyGate.rule);
+    say('mthGateConsequence', m.scope.policyGate.consequence);
+    say('mthGateOverrideRule', m.scope.policyGate.override);
+    setHtml('mthGuarantee', `<strong>Structural guarantee</strong><p>${esc(m.scope.structuralEnforcement)}</p>`);
+    say('mthGateCite', `${m.standard} — §5.3.`);
+  }
+
+  function renderGate(g) {
     say('mthGateDesign', g.design);
     setHtml('mthGate', `
-      <table class="partc-table">
-        <thead><tr><th>Measure</th><th>CAR (construction cover)</th><th>IDI (cover into occupation)</th><th></th></tr></thead>
+      <table class="mth-table">
+        <thead><tr><th scope="col">Measure</th><th scope="col">CAR — construction cover</th>
+                   <th scope="col">IDI — cover into occupation</th><th scope="col"></th></tr></thead>
         <tbody>${g.rows.map(r => `
           <tr>
-            <td>${esc(r.measure)}${r.note ? `<div class="mth-src">${esc(r.note)}</div>` : ''}</td>
-            <td class="num">${typeof r.CAR === 'number' ? fmt(r.CAR, r.CAR < 1 && r.CAR > 0 ? 6 : 2) : esc(r.CAR)}</td>
-            <td class="num">${typeof r.IDI === 'number' ? fmt(r.IDI, r.IDI < 1 && r.IDI > 0 ? 6 : 2) : esc(r.IDI)}</td>
-            <td>${r.identical ? '<span class="pill mth-same">identical</span>' : '<span class="pill mth-differs">differs</span>'}</td>
+            <td>${esc(r.measure)}${r.note ? `<span class="mth-src">${esc(r.note)}</span>` : ''}</td>
+            <td class="num">${num(r.CAR)}</td>
+            <td class="num">${num(r.IDI)}</td>
+            <td>${r.identical ? '<span class="badge badge-same">identical</span>'
+                              : '<span class="badge badge-diff">differs</span>'}</td>
           </tr>`).join('')}
         </tbody></table>`);
 
     setHtml('mthGateOverride', `
       <p>${esc(g.overrideTest.description)}</p>
-      <table class="partc-table"><tbody>
+      <table class="mth-table mth-mini"><tbody>
         <tr><td>Use-stage years the gate admits</td><td class="num">${g.overrideTest.useStageYears}</td></tr>
-        <tr class="total"><td>Use stage computed</td><td class="num">${fmt(g.overrideTest.useStage_kgCO2e)} kgCO₂e</td></tr>
+        <tr><td>Use stage computed</td><td class="num">${fmt(g.overrideTest.useStage_kgCO2e)} kgCO₂e</td></tr>
       </tbody></table>
-      <p class="partc-scope-warning">${esc(g.overrideTest.conclusion)}</p>`);
+      <p class="mth-feature">${esc(g.overrideTest.conclusion)}</p>`);
 
     setHtml('mthGateSens', `
-      <table class="partc-table">
-        <thead><tr><th>Cover entered</th><th>Gate admits</th><th>B1</th><th>B4</th><th>B7</th><th>Use stage</th></tr></thead>
+      <table class="mth-table">
+        <thead><tr><th scope="col">Cover entered</th><th scope="col">Gate admits</th>
+                   <th scope="col">B1</th><th scope="col">B4</th><th scope="col">B7</th>
+                   <th scope="col">Use stage</th></tr></thead>
         <tbody>${g.coverSensitivity.map(c => `
           <tr><td class="num">${c.yearsOfCover} y</td><td class="num">${c.gateYears} y</td>
               <td class="num">${fmt(c.b1)}</td>
@@ -133,94 +135,290 @@ const MethodologyPage = (() => {
               <td class="num">${fmt(c.useStage)}</td></tr>`).join('')}
         </tbody></table>`);
     say('mthGateSensNote', g.sensitivityNote);
+  }
 
-    // 4 — worked example
-    say('mthWorkedNote', m.workedExample.note);
+  /* Module cards. Bodies render lazily on first open: the full trace is 58
+     rows of tables and building them all up front costs a visible pause on
+     a phone for content most readers never expand. */
+  function renderChain(chain) {
+    setHtml('mthChain', chain.map((c, i) => `
+      <article class="mth-card" data-mod="${i}">
+        <h3>
+          <button type="button" class="mth-card-btn" aria-expanded="false" aria-controls="modbody-${i}">
+            <span class="mth-chev" aria-hidden="true"></span>
+            <span class="mono mth-code">${esc(c.module)}</span>
+            <span class="mth-card-title">${esc(firstSentence(c.narrative) || 'Calculation step')}</span>
+            <span class="mth-card-val">${c.value !== null ? `${fmt(c.value)} <small>${esc(c.unit || '')}</small>` : ''}</span>
+          </button>
+        </h3>
+        ${c.equations.map(e => `
+          <div class="mth-eqrow">
+            <pre class="mth-eq">${esc(e)}</pre>
+            <button type="button" class="mth-copy" data-copy="${esc(e)}" aria-label="Copy equation">copy</button>
+          </div>`).join('')}
+        <p class="mth-traced"><span class="dot" aria-hidden="true"></span>traced from execution · ${c.stepCount} step${c.stepCount === 1 ? '' : 's'}</p>
+        <div class="mth-card-body" id="modbody-${i}" hidden></div>
+      </article>`).join(''));
+
+    $('mthChain').querySelectorAll('.mth-card-btn').forEach(btn => {
+      btn.addEventListener('click', () => toggleModule(btn, chain));
+    });
+    $('mthChain').querySelectorAll('.mth-copy').forEach(b => {
+      b.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'copied'; }
+        catch (_) { b.textContent = 'select it'; }
+        setTimeout(() => { b.textContent = 'copy'; }, 1600);
+      });
+    });
+  }
+
+  function toggleModule(btn, chain) {
+    const card = btn.closest('.mth-card');
+    const body = card.querySelector('.mth-card-body');
+    const open = btn.getAttribute('aria-expanded') === 'true';
+
+    if (!open && !body.dataset.rendered) {
+      const c = chain[Number(card.dataset.mod)];
+      body.innerHTML = `
+        ${c.narrative ? `<p class="mth-narr">${esc(c.narrative)}</p>` : ''}
+        <div class="mth-scroll">
+        <table class="mth-table">
+          <thead><tr><th scope="col">#</th><th scope="col">Quantity</th><th scope="col">Inputs used</th>
+                     <th scope="col">Result</th><th scope="col">Factor &amp; source</th></tr></thead>
+          <tbody>${c.steps.map(s => `
+            <tr>
+              <td class="num">${s.step}</td>
+              <td>${esc(s.label)}</td>
+              <td class="mono mth-inputs">${esc(Object.entries(s.inputs || {}).map(([k, v]) => `${k}=${v}`).join(', ')) || '—'}</td>
+              <td class="num">${fmt(s.value)} <small>${esc(s.unit || '')}</small></td>
+              <td>${s.factors.length ? s.factors.map(f => `
+                    <div class="mth-fac"><span class="mono">${esc(f.key)}</span> = ${esc(f.value)} ${esc(f.unit || '')}
+                    <span class="badge ${TIER_CLASS[f.tier] || ''}">${esc(f.tier)}</span>
+                    ${f.fallback ? '<span class="badge badge-fallback">fallback</span>' : ''}
+                    ${f.reference ? `<span class="mth-src">${esc(f.reference)}</span>` : ''}</div>`).join('') : '—'}</td>
+            </tr>`).join('')}
+          </tbody></table></div>`;
+      body.dataset.rendered = '1';
+    }
+
+    btn.setAttribute('aria-expanded', String(!open));
+    body.hidden = open;
+    card.classList.toggle('is-open', !open);
+  }
+
+  function renderWorked(w) {
+    say('mthWorkedNote', w.note);
     setHtml('mthWorked', `
-      <table class="partc-table"><tbody>
-        <tr><td>Construction (A4 + A5) — the PCAF figure</td><td class="num">${fmt(m.workedExample.construction_kgCO2e)} kgCO₂e</td></tr>
-        <tr><td>Use stage (B1 + B4 + B7) — separate line</td><td class="num">${fmt(m.workedExample.useStage_kgCO2e)} kgCO₂e</td></tr>
-        <tr><td>Attribution factor</td><td class="num">${m.workedExample.attributionFactor.toFixed(6)}</td></tr>
-        <tr class="total"><td>Insurer's attributed share</td><td class="num">${m.workedExample.insurerIAE_tCO2e.toFixed(4)} tCO₂e</td></tr>
-        <tr><td>Per-m² construction factor</td><td class="num">${fmt(m.workedExample.perM2Factor_kgCO2e_m2)} kgCO₂e/m²</td></tr>
+      <table class="mth-table mth-mini"><tbody>
+        <tr><td>Construction A4 + A5 — the PCAF figure</td><td class="num">${fmt(w.construction_kgCO2e)} kgCO₂e</td></tr>
+        <tr><td>Use stage B1 + B4 + B7 — separate line</td><td class="num">${fmt(w.useStage_kgCO2e)} kgCO₂e</td></tr>
+        <tr><td>Attribution factor</td><td class="num">${w.attributionFactor.toFixed(6)}</td></tr>
+        <tr class="is-total"><td>Insurer's attributed share</td><td class="num">${w.insurerIAE_tCO2e.toFixed(4)} tCO₂e</td></tr>
+        <tr><td>Per-m² construction factor</td><td class="num">${fmt(w.perM2Factor_kgCO2e_m2)} kgCO₂e/m²</td></tr>
       </tbody></table>
-      <p class="partc-scope-warning">${esc(m.workedExample.scopeWarning)}</p>`);
+      <p class="mth-feature">${esc(w.scopeWarning)}</p>`);
+  }
 
-    // 4 — factors
+  function renderFactors(m) {
     say('mthFactorNote', m.factorStore.note);
-    renderFactors(m.factorStore.rows);
-
-    // 5 — data quality
-    setHtml('mthDq', `
-      <table class="partc-table">
-        <thead><tr><th>PCAF option</th><th>Score</th><th>Meaning</th></tr></thead>
-        <tbody>${m.dataQuality.options.map(o => `
-          <tr><td class="mono">${esc(o.option)}</td><td class="num">${o.score}</td><td>${esc(o.label || '')}</td></tr>`).join('')}
-        </tbody></table>
-      <p class="partc-hint">${esc(m.dataQuality.scale)}</p>
-      <h4 class="mth-sub">Aggregating across a book</h4>
-      <pre class="mth-eq">${esc(m.dataQuality.aggregation)}</pre>
-      <p>${esc(m.dataQuality.whyWeighted)}</p>
-      <p class="partc-hint">${esc(m.dataQuality.tierRule)}</p>`);
-
-    // 6 — conformance
-    say('mthConfNote', m.conformance.antiRot);
-    setHtml('mthConformance', `
-      <p>${esc(m.conformance.statement)}</p>
-      <p class="partc-scope-warning">${esc(m.conformance.disclaimer)}</p>
-      <table class="partc-table">
-        <thead><tr><th>ID</th><th>Clause</th><th>Rule</th><th>Enforced in</th><th>Proven by</th></tr></thead>
-        <tbody>${m.conformance.rules.map(r => `
-          <tr><td class="mono">${esc(r.id)}</td><td>${esc(r.clause)}</td><td>${esc(r.rule)}</td>
-              <td class="mono mth-src">${esc(r.implementation)}</td>
-              <td class="mono mth-src">${esc(r.provingTest)}</td></tr>`).join('')}
-        </tbody></table>`);
-
-    // 7 — limits
-    setHtml('mthLimits', m.limits.map(l => `
-      <div class="mth-limit">
-        <strong>${esc(l.area)}</strong>
-        <p>${esc(l.limit)}</p>
-        <p class="partc-hint">${esc(l.effect)}</p>
-      </div>`).join(''));
-
-    // 8 — division of labour
-    setHtml('mthLabour', `
-      <table class="partc-table">
-        <thead><tr><th>Performed by</th><th>Responsibility</th></tr></thead>
-        <tbody>
-          <tr><td>The calculation engine</td><td>${esc(m.divisionOfLabour.engine)}</td></tr>
-          <tr><td>The language model</td><td>${esc(m.divisionOfLabour.model)}</td></tr>
-        </tbody></table>
-      <p class="partc-scope-warning">${esc(m.divisionOfLabour.rule)}</p>`);
+    const tiers = ['all', ...Object.keys(m.factorStore.byTier).sort()];
+    setHtml('mthTierSeg', tiers.map(t => `
+      <button type="button" class="mth-seg-btn${t === _tierFilter ? ' is-on' : ''}" data-tier="${esc(t)}"
+              aria-pressed="${t === _tierFilter}">
+        ${t === 'all' ? 'All' : esc(t)}${t !== 'all' ? ` <b>${m.factorStore.byTier[t]}</b>` : ''}
+      </button>`).join(''));
+    $('mthTierSeg').querySelectorAll('.mth-seg-btn').forEach(b =>
+      b.addEventListener('click', () => { _tierFilter = b.dataset.tier; renderFactors(_data); }));
+    drawFactorTable();
   }
 
-  function renderFactors(rows) {
-    say('mthFactorCount', `${rows.length} factor${rows.length === 1 ? '' : 's'} shown`);
+  function drawFactorTable() {
+    const q = (($('mthFactorFilter') || {}).value || '').toLowerCase().trim();
+    let rows = _data.factorStore.rows;
+    if (_tierFilter !== 'all') rows = rows.filter(r => r.tier === _tierFilter);
+    if (q) rows = rows.filter(r =>
+      String(r.key).toLowerCase().includes(q) ||
+      String(r.reference || '').toLowerCase().includes(q) ||
+      String(r.table).toLowerCase().includes(q));
+
+    say('mthFactorCount', `${rows.length} of ${_data.factorStore.rowCount} factors shown`);
+
+    // Grouped by the module each table feeds, so a reviewer can read the
+    // evidence in the same order as the calculation chain.
+    const groups = new Map();
+    for (const r of rows) {
+      if (!groups.has(r.module)) groups.set(r.module, []);
+      groups.get(r.module).push(r);
+    }
+
     setHtml('mthFactors', rows.length === 0
-      ? '<p class="partc-hint">No factors matched.</p>'
-      : `<table class="partc-table">
-           <thead><tr><th>Factor</th><th>Value</th><th>Tier</th><th>Source</th></tr></thead>
-           <tbody>${rows.map(r => `
-             <tr><td class="mono">${esc(r.key)}</td>
-                 <td class="num">${esc(r.value)} ${esc(r.unit || '')}</td>
-                 <td><span class="pill ${TIER_CLASS[r.tier] || ''}">${esc(r.tier)}</span></td>
-                 <td class="mth-src">${esc(r.reference || '—')}</td></tr>`).join('')}
-           </tbody></table>`);
+      ? '<p class="mth-hint">No factor matched.</p>'
+      : [...groups.entries()].map(([mod, rs]) => `
+          <h3 class="mth-grouphead">${esc(mod)} <small>${rs.length}</small></h3>
+          <div class="mth-scroll">
+          <table class="mth-table">
+            <thead><tr><th scope="col">Factor</th><th scope="col">Value</th>
+                       <th scope="col">Tier</th><th scope="col">Source</th></tr></thead>
+            <tbody>${rs.map(r => `
+              <tr><td class="mono">${esc(r.key)}<span class="mth-src">${esc(r.table)}</span></td>
+                  <td class="num">${esc(r.value)} <small>${esc(r.unit || '')}</small></td>
+                  <td><span class="badge ${TIER_CLASS[r.tier] || ''}">${esc(r.tier)}</span></td>
+                  <td>${esc(r.reference || '—')}</td></tr>`).join('')}
+            </tbody></table></div>`).join(''));
   }
 
-  function filterFactors() {
-    if (!_data) return;
-    const q = ($('mthFactorFilter').value || '').toLowerCase().trim();
-    const rows = !q ? _data.factorStore.rows : _data.factorStore.rows.filter(r =>
-      String(r.key).toLowerCase().includes(q) || String(r.reference || '').toLowerCase().includes(q));
-    renderFactors(rows);
+  function renderLimits(m) {
+    setHtml('mthLimits', m.limits.map(l => `
+      <article class="mth-limit">
+        <h3>${esc(l.area)}</h3>
+        <p class="mth-limit-what">${esc(l.limit)}</p>
+        <p class="mth-hint">${esc(l.effect)}</p>
+      </article>`).join(''));
+
+    setHtml('mthOpenItems', m.openItems.entries.map(o => `
+      <article class="mth-open">
+        <div class="mth-open-head">
+          <span class="badge badge-mod">${esc(o.module)}</span>
+          <span class="mono">${esc(o.item)}</span>
+        </div>
+        <p class="mth-hint"><b>Why it is a limit.</b> ${esc(o.why)}</p>
+        <p class="mth-hint"><b>Intended resolution.</b> ${esc(o.resolution)}</p>
+      </article>`).join(''));
   }
 
-  /* Streamed as a blob rather than opened in a tab: the request carries the
-     API key in a header, so a plain link would arrive unauthenticated. */
+  function renderQuality(dq) {
+    setHtml('mthDq', `
+      <div class="mth-scroll">
+      <table class="mth-table">
+        <thead><tr><th scope="col">PCAF option</th><th scope="col">Score</th><th scope="col">Meaning</th></tr></thead>
+        <tbody>${dq.options.map(o => `
+          <tr><td class="mono">${esc(o.option)}</td><td class="num">${o.score}</td>
+              <td>${esc(o.label || '')}</td></tr>`).join('')}
+        </tbody></table></div>
+      <p class="mth-hint">${esc(dq.scale)}</p>
+      <h3>Across a book</h3>
+      <pre class="mth-eq">${esc(dq.aggregation)}</pre>
+      <p>${esc(dq.whyWeighted)}</p>
+      <p class="mth-hint">${esc(dq.tierRule)}</p>`);
+  }
+
+  function renderConformance(c) {
+    say('mthConfLede', c.statement);
+    setHtml('mthConfAntiRot', `<strong>The claim cannot rot</strong><p>${esc(c.antiRot)}</p>`);
+    say('mthConfDisclaimer', c.disclaimer);
+    setHtml('mthConformance', c.rules.map(r => `
+      <article class="mth-rule">
+        <div class="mth-rule-head">
+          <span class="mth-tick ${r.status === 'implemented' ? 'is-pass' : 'is-part'}" aria-hidden="true"></span>
+          <span class="mono mth-code">${esc(r.id)}</span>
+          <span class="mth-rule-clause">${esc(r.clause)}</span>
+          <span class="badge ${r.status === 'implemented' ? 'badge-pass' : 'badge-part'}">${esc(r.status)}</span>
+        </div>
+        <p>${esc(r.rule)}</p>
+        <p class="mth-src"><b>Enforced in</b> ${esc(r.implementation)}</p>
+        <p class="mth-src"><b>Proven by</b> ${esc(r.provingTest)}</p>
+      </article>`).join(''));
+  }
+
+  function renderLabour(d) {
+    setHtml('mthLabour', `
+      <div class="mth-labour">
+        <article><h3>The calculation engine</h3><p>${esc(d.engine)}</p></article>
+        <article><h3>The language model</h3><p>${esc(d.model)}</p></article>
+      </div>
+      <p class="mth-feature">${esc(d.rule)}</p>`);
+  }
+
+  // ── Contents, scroll-spy and progress ──────────────────────
+  function buildToc() {
+    const present = SECTIONS.filter(([id]) => $(id));
+    setHtml('mthTocList', present.map(([id, label], i) =>
+      `<li><a href="#${id}" data-sec="${id}"><span>${i + 1}</span>${esc(label)}</a></li>`).join(''));
+    setHtml('mthTocSelect', present.map(([id, label], i) =>
+      `<option value="${id}">${i + 1}. ${esc(label)}</option>`).join(''));
+
+    on('mthTocSelect', 'change', e => {
+      const el = $(e.target.value);
+      if (el) el.scrollIntoView({ behavior: motionOK() ? 'smooth' : 'auto', block: 'start' });
+    });
+
+    if ('IntersectionObserver' in window) {
+      const spy = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+          if (!en.isIntersecting) return;
+          document.querySelectorAll('#mthTocList a').forEach(a =>
+            a.classList.toggle('is-current', a.dataset.sec === en.target.id));
+          const sel = $('mthTocSelect');
+          if (sel && sel.value !== en.target.id) sel.value = en.target.id;
+        });
+      }, { rootMargin: '-20% 0px -70% 0px' });
+      present.forEach(([id]) => spy.observe($(id)));
+    }
+
+    // Reveal on scroll-in, unless the reader has asked for less motion.
+    if (motionOK() && 'IntersectionObserver' in window) {
+      const reveal = new IntersectionObserver((entries, obs) => {
+        entries.forEach(en => {
+          if (!en.isIntersecting) return;
+          en.target.classList.add('is-in');
+          obs.unobserve(en.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      document.querySelectorAll('.mth-section').forEach(s => { s.classList.add('will-reveal'); reveal.observe(s); });
+    }
+  }
+
+  const motionOK = () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* Which element scrolls depends on the shell: in this app the document
+     scrolls, but a shell that gives its main column its own overflow would
+     scroll that instead. Resolve it at read time and take whichever is
+     actually scrollable, rather than assuming one and reporting 0%. */
+  function _scroller() {
+    const main = document.querySelector('.main');
+    if (main && main.scrollHeight > main.clientHeight + 2) return main;
+    return document.scrollingElement || document.documentElement;
+  }
+
+  function trackProgress() {
+    const bar = $('mthProgress');
+    if (!bar) return;
+    const update = () => {
+      const el = _scroller();
+      const max = el.scrollHeight - el.clientHeight;
+      bar.style.width = `${max > 0 ? Math.min(100, Math.max(0, (el.scrollTop / max) * 100)) : 0}%`;
+    };
+    // Listen on both: a document scroll surfaces on window, a container
+    // scroll only on the container itself.
+    window.addEventListener('scroll', update, { passive: true });
+    const main = document.querySelector('.main');
+    if (main) main.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  }
+
+  // ── Theme ──────────────────────────────────────────────────
+  const THEME_KEY = 'carboniq_theme';
+  function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    try { localStorage.setItem(THEME_KEY, t); } catch (_) { /* private mode */ }
+  }
+  function initTheme() {
+    let t = null;
+    try { t = localStorage.getItem(THEME_KEY); } catch (_) { /* private mode */ }
+    if (t) document.documentElement.setAttribute('data-theme', t);
+    on('mthTheme', 'click', () => {
+      const cur = document.documentElement.getAttribute('data-theme')
+        || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      applyTheme(cur === 'dark' ? 'light' : 'dark');
+    });
+  }
+
+  // ── Downloads ──────────────────────────────────────────────
+  /* Streamed as a blob: the request carries the API key in a header, so a
+     plain link would arrive unauthenticated. */
   async function download(format) {
-    say('mthStatus', `Building the methodology statement…`);
+    say('mthStatus', 'Building the methodology statement…');
     try {
       const res = await window.CARBONIQ_fetch(`/v1/pcaf/part-c/methodology?format=${format}`);
       if (!res.ok) {
@@ -238,13 +436,31 @@ const MethodologyPage = (() => {
     }
   }
 
+  /* Module bodies render on first open, so a print of an untouched page
+     would emit empty cards. Render them all before the print dialog opens. */
+  function renderAllForPrint() {
+    if (!_data) return;
+    document.querySelectorAll('#mthChain .mth-card-btn').forEach(btn => {
+      if (btn.getAttribute('aria-expanded') !== 'true') toggleModule(btn, _data.calculationChain);
+    });
+  }
+
   async function init() {
+    initTheme();
+    trackProgress();
+    window.addEventListener('beforeprint', renderAllForPrint);
+    if (window.matchMedia) {
+      const mq = window.matchMedia('print');
+      if (mq.addEventListener) mq.addEventListener('change', e => { if (e.matches) renderAllForPrint(); });
+    }
     on('mthRefresh', 'click', load);
     on('mthPdfBtn', 'click', () => download('pdf'));
     on('mthDocxBtn', 'click', () => download('docx'));
-    on('mthFactorFilter', 'input', filterFactors);
+    on('mthFactorFilter', 'input', () => _data && drawFactorTable());
     await load();
   }
 
-  return { init };
+  const firstSentence = t => t ? String(t).split(/(?<=\.)\s/)[0] : '';
+
+  return { init, refresh: load, renderAllForPrint };
 })();

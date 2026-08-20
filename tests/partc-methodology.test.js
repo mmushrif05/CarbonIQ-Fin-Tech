@@ -183,6 +183,56 @@ describe('The policy gate is demonstrated, not asserted', () => {
   });
 });
 
+describe('The factor evidence is complete', () => {
+  const fs = require('fs');
+  const path = require('path');
+
+  test('every factor table in the store appears in the evidence', () => {
+    const dir = path.join(__dirname, '..', 'data', 'factors');
+    const onDisk = fs.readdirSync(dir).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''));
+    const shown = new Set(buildMethodology().factorStore.rows.map(r => r.table));
+    // A table whose rows inherit tier and reference from the table header
+    // was previously skipped entirely, taking the IPCC GWPs and the RICS
+    // waste rates out of the evidence without anything failing.
+    for (const t of onDisk) expect(shown.has(t)).toBe(true);
+    expect(shown.size).toBe(onDisk.length);
+  });
+
+  test('rows inherit the tier and source declared on their table', () => {
+    const rows = buildMethodology().factorStore.rows;
+    const gwp = rows.find(r => r.key.includes('R-410A'));
+    expect(gwp).toBeDefined();
+    expect(gwp.value).toBe(1924);
+    expect(gwp.tier).toBe('Global');
+    expect(gwp.reference).toMatch(/IPCC AR5/);
+
+    const waste = rows.find(r => r.table === 'waste-rates-rics-t18' && r.reference);
+    expect(waste.reference).toMatch(/RICS/);
+  });
+
+  test('every row carries a tier and a value', () => {
+    for (const r of buildMethodology().factorStore.rows) {
+      expect(r.tier).toBeTruthy();
+      expect(r.value).toBeDefined();
+      expect(r.table).toBeTruthy();
+    }
+  });
+
+  test('open research items are read from the store, not listed by hand', () => {
+    const { openItems } = buildMethodology();
+    expect(openItems.total).toBeGreaterThan(4);
+    const text = JSON.stringify(openItems.entries);
+    // Each of these is an honesty flag written into the factor data itself.
+    expect(text).toMatch(/Sri Lanka grid placeholder/);
+    expect(text).toMatch(/LITERATURE ASSUMPTION/);
+    expect(text).toMatch(/DISABLED/);
+    for (const e of openItems.entries) {
+      expect(e.why).toBeTruthy();
+      expect(e.resolution).toBeTruthy();
+    }
+  });
+});
+
 describe('Both document formats', () => {
   test('PDF renders', async () => {
     const chunks = [];

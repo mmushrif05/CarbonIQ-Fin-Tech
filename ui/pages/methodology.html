@@ -1,101 +1,142 @@
-<!-- Methodology and Evidence.
-     Everything on this page is generated from an execution of the engine,
-     so the method described is provably the method that runs. -->
+<!-- Methodology & Evidence.
+     Every figure, equation, factor and count on this page is pulled from a
+     live execution of the engine. Nothing here is hardcoded, so the page
+     cannot drift from the code it describes. -->
 
-<div class="partc partc-method">
+<div class="mth" id="mthRoot">
 
-  <div class="partc-banner">
-    <div class="partc-banner-badge">M</div>
-    <div>
-      <strong id="mthTitle">Methodology and Evidence</strong>
-      <span id="mthStandard">Loading…</span>
-    </div>
-  </div>
+  <div class="mth-progress" aria-hidden="true"><div class="mth-progress-bar" id="mthProgress"></div></div>
 
-  <section class="partc-card">
-    <div class="partc-actions">
-      <button class="btn btn-primary" id="mthPdfBtn">Methodology Statement — PDF</button>
-      <button class="btn btn-secondary" id="mthDocxBtn">Word</button>
-      <button class="btn btn-secondary" id="mthRefresh">Refresh</button>
-      <span class="partc-hint" id="mthStatus"></span>
-    </div>
-    <p class="mth-claim" id="mthClaim"></p>
-    <p class="partc-hint" id="mthWhy"></p>
-  </section>
+  <!-- ── Header strip ─────────────────────────────────────────────── -->
+  <header class="mth-hero">
+    <div class="mth-hero-main">
+      <h1>Methodology &amp; Evidence</h1>
+      <p class="mth-sub">How every figure is calculated — scope, equations, factors, sources and limits.</p>
 
-  <div id="mthBody" hidden>
+      <div class="mth-chips" id="mthChips" role="status" aria-live="polite"></div>
 
-    <section class="partc-card">
-      <header class="partc-card-head"><h3>1. Scope and boundary</h3></header>
-      <div id="mthScope"></div>
-    </section>
-
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>2. The calculation chain</h3>
-        <p>Each equation below was read out of an execution of the engine, in the order a project passes through it. Expand a module to follow every step.</p>
-      </header>
-      <div id="mthChain"></div>
-    </section>
-
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>3. The policy gate, demonstrated</h3>
-        <p id="mthGateDesign"></p>
-      </header>
-      <div id="mthGate"></div>
-      <h4 class="mth-sub">Can a client buy a use stage onto a construction policy?</h4>
-      <div id="mthGateOverride"></div>
-      <h4 class="mth-sub">How the use stage responds to the cover period</h4>
-      <div id="mthGateSens"></div>
-      <p class="partc-hint" id="mthGateSensNote"></p>
-    </section>
-
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>4. Worked example</h3>
-        <p id="mthWorkedNote"></p>
-      </header>
-      <div id="mthWorked"></div>
-    </section>
-
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>5. Emission factors</h3>
-        <p id="mthFactorNote"></p>
-      </header>
-      <div class="partc-actions">
-        <input type="search" id="mthFactorFilter" placeholder="Filter by factor key or source…" class="mth-filter">
-        <span class="partc-hint" id="mthFactorCount"></span>
+      <div class="mth-hero-actions">
+        <button class="btn btn-primary" id="mthPdfBtn">Methodology Statement — PDF</button>
+        <button class="btn btn-secondary" id="mthDocxBtn">Word</button>
+        <button class="btn btn-secondary" id="mthRefresh">Refresh</button>
+        <button class="btn btn-secondary mth-theme" id="mthTheme" aria-label="Toggle light and dark">Theme</button>
+        <span class="mth-status" id="mthStatus"></span>
       </div>
-      <div id="mthFactors"></div>
-    </section>
+    </div>
 
-    <section class="partc-card">
-      <header class="partc-card-head"><h3>6. Data quality</h3></header>
-      <div id="mthDq"></div>
-    </section>
+    <aside class="mth-provenance" id="mthProvenance">
+      <div class="mth-prov-icon" aria-hidden="true">⚙︎</div>
+      <div>
+        <strong id="mthProvClaim"></strong>
+        <p id="mthProvWhy"></p>
+      </div>
+    </aside>
+  </header>
 
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>7. Conformance</h3>
-        <p id="mthConfNote"></p>
-      </header>
-      <div id="mthConformance"></div>
-    </section>
+  <div class="mth-layout">
 
-    <section class="partc-card">
-      <header class="partc-card-head">
-        <h3>8. Limits, and what is not claimed</h3>
-        <p>Stated openly. A submission with no declared limits reads as unexamined.</p>
-      </header>
-      <div id="mthLimits"></div>
-    </section>
+    <!-- ── Sticky contents ────────────────────────────────────────── -->
+    <nav class="mth-toc" id="mthToc" aria-label="On this page">
+      <p class="mth-toc-title">On this page</p>
+      <label class="mth-toc-mobile" for="mthTocSelect">Jump to section</label>
+      <select id="mthTocSelect" class="mth-toc-select"></select>
+      <ol id="mthTocList"></ol>
+    </nav>
 
-    <section class="partc-card">
-      <header class="partc-card-head"><h3>9. Division of labour</h3></header>
-      <div id="mthLabour"></div>
-    </section>
+    <!-- ── Body ───────────────────────────────────────────────────── -->
+    <main class="mth-main" id="mthBody" hidden>
 
+      <section class="mth-section" id="sec-scope" aria-labelledby="h-scope">
+        <p class="mth-num">Section 1</p>
+        <h2 id="h-scope">Scope &amp; boundary</h2>
+        <p class="mth-lede">Three tiers, kept apart by construction rather than by convention. What may enter the reported figure is decided here, before any arithmetic.</p>
+
+        <div class="mth-tiers" id="mthTiers"></div>
+        <p class="mth-note" id="mthScopeExclusion"></p>
+
+        <div class="mth-panel">
+          <h3>The policy gate</h3>
+          <p id="mthGateRule"></p>
+          <p class="mth-feature" id="mthGateConsequence"></p>
+          <p class="mth-hint" id="mthGateOverrideRule"></p>
+          <div class="mth-guarantee" id="mthGuarantee"></div>
+          <p class="mth-cite" id="mthGateCite"></p>
+        </div>
+
+        <div class="mth-panel">
+          <h3>The gate, demonstrated</h3>
+          <p class="mth-hint" id="mthGateDesign"></p>
+          <div class="mth-scroll" id="mthGate"></div>
+
+          <h4>Can a client buy a use stage onto a construction policy?</h4>
+          <div id="mthGateOverride"></div>
+
+          <h4>How the use stage responds to the cover period</h4>
+          <div class="mth-scroll" id="mthGateSens"></div>
+          <p class="mth-hint" id="mthGateSensNote"></p>
+        </div>
+      </section>
+
+      <section class="mth-section" id="sec-chain" aria-labelledby="h-chain">
+        <p class="mth-num">Section 2</p>
+        <h2 id="h-chain">The calculation chain</h2>
+        <p class="mth-lede">Each equation below was read out of an execution of the engine, in the order a project passes through it. Expand a module to follow every step.</p>
+        <div id="mthChain"></div>
+
+        <div class="mth-panel mth-result">
+          <h3>The worked example</h3>
+          <p class="mth-hint" id="mthWorkedNote"></p>
+          <div id="mthWorked"></div>
+        </div>
+      </section>
+
+      <section class="mth-section" id="sec-factors" aria-labelledby="h-factors">
+        <p class="mth-num">Section 3</p>
+        <h2 id="h-factors">Factors &amp; sources</h2>
+        <p class="mth-lede" id="mthFactorNote"></p>
+
+        <div class="mth-filters">
+          <input type="search" id="mthFactorFilter" class="mth-input"
+                 placeholder="Search factor or source…" aria-label="Search factors">
+          <div class="mth-seg" id="mthTierSeg" role="group" aria-label="Filter by data-quality tier"></div>
+        </div>
+        <p class="mth-hint" id="mthFactorCount" role="status" aria-live="polite"></p>
+        <div id="mthFactors"></div>
+      </section>
+
+      <section class="mth-section" id="sec-limits" aria-labelledby="h-limits">
+        <p class="mth-num">Section 4</p>
+        <h2 id="h-limits">Limits &amp; open items</h2>
+        <p class="mth-lede">Declared, because a submission that names no limits reads as unexamined. Each is a piece of work with an intended resolution, not a caveat.</p>
+        <div id="mthLimits"></div>
+        <h3 class="mth-openhead">Open research items</h3>
+        <p class="mth-hint">Read from the factor store itself, so this list shortens on its own as interim factors are replaced.</p>
+        <div id="mthOpenItems"></div>
+      </section>
+
+      <section class="mth-section" id="sec-quality" aria-labelledby="h-quality">
+        <p class="mth-num">Section 5</p>
+        <h2 id="h-quality">Data quality</h2>
+        <p class="mth-lede">How a score is assigned to one assessment, and how scores combine across a book.</p>
+        <div id="mthDq"></div>
+      </section>
+
+      <section class="mth-section" id="sec-conformance" aria-labelledby="h-conf">
+        <p class="mth-num">Section 6</p>
+        <h2 id="h-conf">Conformance</h2>
+        <p class="mth-lede" id="mthConfLede"></p>
+        <div class="mth-guarantee" id="mthConfAntiRot"></div>
+        <p class="mth-disclaimer" id="mthConfDisclaimer"></p>
+        <div id="mthConformance"></div>
+      </section>
+
+      <section class="mth-section" id="sec-labour" aria-labelledby="h-labour">
+        <p class="mth-num">Section 7</p>
+        <h2 id="h-labour">Division of labour</h2>
+        <p class="mth-lede">Which decisions are made by arithmetic and which by a language model.</p>
+        <div id="mthLabour"></div>
+      </section>
+
+    </main>
   </div>
 </div>
