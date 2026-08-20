@@ -37,6 +37,8 @@ const agentRouter         = require('./agent');
 const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
+const pcafPartCRouter     = require('./pcaf-partc');
+const partcRegistryRouter = require('./partc-registry');
 
 const router = Router();
 
@@ -56,6 +58,40 @@ router.get('/', (_req, res) => {
       score: 'GET /v1/projects/:projectId/score',
       taxonomy: 'GET /v1/projects/:projectId/taxonomy',
       pcaf: 'GET /v1/projects/:projectId/pcaf',
+      pcafPartC: {
+        note:    'Insurance-associated emissions. Separate scope from /v1/projects/:id/pcaf, which serves A1-A3 financed emissions for lending.',
+        assess:  'POST /v1/pcaf/part-c/assess — insurance-associated emissions (A4/A5 + B1/B4/B7)',
+        form:    'POST /v1/pcaf/part-c/form',
+        report:  'POST /v1/pcaf/part-c/report — pdf | docx | json',
+        factors:     'GET /v1/pcaf/part-c/factors',
+        conformance: 'GET /v1/pcaf/part-c/conformance — rule, implementation and proving test',
+        options: 'GET /v1/pcaf/part-c/options',
+        runs:    'GET /v1/pcaf/part-c/runs',
+        start:   'POST /v1/pcaf/part-c/runs/start — begin a run, pause for client input',
+        resume:  'POST /v1/pcaf/part-c/runs/:runId/resume — supply answers, compute',
+        agentIntake: 'POST /v1/pcaf/part-c/agent/intake',
+        agentMap:      'POST /v1/pcaf/part-c/agent/map',
+        agentDisclose: 'POST /v1/pcaf/part-c/agent/disclose',
+      },
+      partcRegistry: {
+        note:     'Insurer book: settings, clients, projects and the policies written against them.',
+        settings: 'GET/PUT /v1/partc/settings',
+        clients:  'GET/POST /v1/partc/clients',
+        projects: 'GET/POST /v1/partc/projects',
+        policies: 'GET /v1/partc/policies — flattened book, filter by reportingYear',
+        boq:      'GET/POST /v1/partc/projects/:projectId/boq — BOQ revisions',
+        boqDiff:  'POST /v1/partc/projects/:projectId/boq/compare — line diff, emissions delta, restatement check',
+        assessments: 'GET/POST /v1/partc/assessments — bound to policy, BOQ revision and year',
+        lifecycle:   'POST /v1/partc/assessments/:id/status — draft | under_review | locked',
+        period:      'GET /v1/partc/periods/:year — locked totals, coverage, weighted data quality',
+        portfolio:   'GET /v1/partc/portfolio/:year — the reporting-year position',
+        dqPlan:      'GET /v1/partc/portfolio/:year/dq-plan — ranked improvement actions',
+        factorGaps:  'GET /v1/partc/portfolio/:year/factor-gaps — which factors to localise first',
+        comparatives: 'GET /v1/partc/portfolio/:year/comparatives — this year against last, on a comparable basis',
+        restatements: 'GET /v1/partc/portfolio/:year/restatements — as previously reported vs as restated',
+        disclosure:   'GET /v1/partc/disclosure/:year?format=json|pdf|docx — the annual disclosure',
+        storage:  'GET /v1/partc/storage — what this deployment can persist',
+      },
       covenant: 'POST /v1/projects/:projectId/covenant',
       monitoring: {
         submit: 'POST /v1/projects/:id/monitoring',
@@ -72,8 +108,15 @@ router.get('/', (_req, res) => {
         rates:     'GET /v1/carbon-pricing/rates',
       },
       agent: {
-        coach:     'POST /v1/agent/coach    — AI Borrower Coaching (Stage 2: +32% completion rate)',
-        triage:    'POST /v1/agent/triage   — Tiered Decision Framework (70-85% auto / 10-20% AI / 5-10% manual)',
+        // Each value is the route alone. A description belongs in `notes`
+        // beside it: consumers read these strings as addresses, and appending
+        // prose to one changes the address.
+        notes: {
+          coach:  'AI Borrower Coaching — guides an incomplete application towards a submittable one.',
+          triage: 'Tiered Decision Framework — expected distribution 70-85% automated, 10-20% AI-assisted, 5-10% manual.',
+        },
+        coach:     'POST /v1/agent/coach',
+        triage:    'POST /v1/agent/triage',
         screen:    'POST /v1/agent/screen',
         underwrite:'POST /v1/agent/underwrite',
         covenants: 'POST /v1/agent/covenants',
@@ -109,5 +152,7 @@ router.use('/agent', agentRouter);
 router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
+router.use('/pcaf/part-c', pcafPartCRouter);
+router.use('/partc', partcRegistryRouter);
 
 module.exports = router;

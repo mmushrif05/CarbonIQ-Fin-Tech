@@ -1,0 +1,18 @@
+{
+  "table": "refrigerant-gwp",
+  "description": "Refrigerant global warming potentials, 100-year basis",
+  "unit": "kgCO2e/kg",
+  "tier": "Global",
+  "reference": "IPCC AR5, 100-year GWP. Note AR4 gives R-410A = 2088 - basis fixed to AR5 and disclosed.",
+  "rows": {
+    "R-410A":          { "value": 1924 },
+    "R-32":            { "value": 675  },
+    "R-134a":          { "value": 1300 },
+    "R-407C":          { "value": 1700 },
+    "R-22":            { "value": 1760 },
+    "R-404A":          { "value": 3943 },
+    "R-1234yf":        { "value": 1    },
+    "R-290 (propane)": { "value": 3    },
+    "CO2 (R-744)":     { "value": 1    }
+  }
+}

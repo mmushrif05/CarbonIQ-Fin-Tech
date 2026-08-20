@@ -1,0 +1,11 @@
+{
+  "table": "a5-defaults",
+  "description": "A5 construction-stage defaults and hidden constants",
+  "rows": {
+    "demolitionTransport_km":   { "value": 100,  "unit": "km",            "tier": "Global", "reference": "Project assumption - client-editable default", "clientVisible": true },
+    "wasteDisposal_km":         { "value": 40,   "unit": "km",            "tier": "Global", "reference": "Project assumption - client-editable default", "clientVisible": true },
+    "dieselEF":                 { "value": 2.68, "unit": "kgCO2e/L",      "tier": "Global", "reference": "DEFRA-aligned diesel combustion factor", "clientVisible": false },
+    "gridEF":                   { "value": 0.53, "unit": "kgCO2e/kWh",    "tier": "Global", "reference": "Sri Lanka grid placeholder", "clientVisible": false, "gap": "Sri Lankan grid emission factor to be confirmed with CEB" },
+    "ricsSiteEnergy_kgCO2e_m2": { "value": 40,   "unit": "kgCO2e/m2",     "tier": "Global", "reference": "RICS WLCA 2nd ed - default construction site energy allowance", "clientVisible": false, "gap": "Sri Lankan construction site-energy per m2 not defined. This constant drives ~97% of the disclosure on the default path - highest-priority SL research item." }
+  }
+}

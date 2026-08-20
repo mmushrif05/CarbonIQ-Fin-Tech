@@ -80,17 +80,16 @@ app.use('/v1', v1Router);
 // Error Handling
 // ---------------------------------------------------------------------------
 
-// SPA fallback — any non-API GET request that wasn't matched by express.static
-// returns index.html so client-side routing works in local dev.
-app.get('*', (req, res, next) => {
-  // Don't intercept API-prefixed or health routes — let them fall to 404
-  if (req.path.startsWith('/v1') || req.path === '/health') {
-    return next();
-  }
-  res.sendFile(path.join(__dirname, 'ui', 'index.html'));
-});
+// No catch-all HTML fallback.
+//
+// The dashboard navigates by data-page attribute and never touches the URL
+// path — there is no client-side router to rescue — so a catch-all that
+// returned index.html for every unmatched path did nothing for the UI and
+// answered 200 to requests for endpoints that do not exist. express.static
+// above already serves index.html at '/' along with every asset, so an
+// unmatched path is genuinely not found and says so.
 
-// 404 handler (API routes only)
+// 404 handler
 app.use((_req, res) => {
   res.status(404).json({
     error: 'NOT_FOUND',

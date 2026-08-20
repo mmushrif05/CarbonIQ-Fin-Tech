@@ -445,7 +445,16 @@ const borrowerCoachingRequestSchema = Joi.object({
   // Free-text borrower questions answered at the end of the coaching report
   borrowerQuestions: Joi.string().max(2000).optional()
     .description('Specific questions from the borrower — answered in the coaching report')
-});
+})
+  // Every field is individually optional, because coaching an incomplete
+  // application is the point of this endpoint. But a request naming neither a
+  // building type nor a floor area describes no building at all: there is
+  // nothing to benchmark, nothing to coach towards, and an AI call would be
+  // spent producing generic advice. One of the two anchors the rest.
+  .or('buildingType', 'buildingArea_m2')
+  .messages({
+    'object.missing': 'Provide at least a buildingType or a buildingArea_m2 so the coaching has a project to work from.'
+  });
 
 // ---------------------------------------------------------------------------
 // Decision Triage — POST /v1/agent/triage

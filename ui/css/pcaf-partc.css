@@ -1,0 +1,620 @@
+/* ============================================================
+   PCAF Part C — Insurance-Associated Emissions
+   ------------------------------------------------------------
+   iOS-flavoured design system, scoped entirely under .partc so
+   no other page in the dashboard is affected.
+
+   Follows Apple HIG where it earns its keep:
+     · SF typography scale, large titles, tight tracking
+     · Grouped inset lists (Settings-style) for form fields
+     · Segmented controls for mutually exclusive choices
+     · Switches rather than checkboxes
+     · 44px minimum tap targets
+     · Frosted, sticky action bar
+     · Full dark-mode palette via prefers-color-scheme
+     · 17px inputs on mobile so iOS never zooms on focus
+   ============================================================ */
+
+.partc {
+  --ios-blue:   #0a84ff;
+  --ios-teal:   #0d9488;
+  --ios-green:  #34c759;
+  --ios-orange: #ff9500;
+  --ios-red:    #ff3b30;
+
+  --p-bg:        #f2f2f7;
+  --p-card:      #ffffff;
+  --p-card-2:    #f2f2f7;
+  --p-fill:      rgba(120, 120, 128, 0.12);
+  --p-fill-soft: rgba(120, 120, 128, 0.06);
+  --p-label:     #1c1c1e;
+  --p-label-2:   rgba(60, 60, 67, 0.62);
+  --p-label-3:   rgba(60, 60, 67, 0.35);
+  --p-separator: rgba(60, 60, 67, 0.18);
+  --p-accent:    var(--ios-teal);
+  --p-accent-bg: rgba(13, 148, 136, 0.10);
+  --p-shadow:    0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.06);
+  --p-radius:    18px;
+  --p-radius-sm: 12px;
+  --p-ease:      cubic-bezier(.32, .72, 0, 1);
+
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display',
+               'Inter', 'Segoe UI', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  color: var(--p-label);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-bottom: 96px;                 /* clearance for the sticky action bar */
+  max-width: 940px;
+  margin: 0 auto;
+}
+
+@media (prefers-color-scheme: dark) {
+  .partc {
+    --p-bg:        #000000;
+    --p-card:      #1c1c1e;
+    --p-card-2:    #2c2c2e;
+    --p-fill:      rgba(120, 120, 128, 0.24);
+    --p-fill-soft: rgba(120, 120, 128, 0.14);
+    --p-label:     #ffffff;
+    --p-label-2:   rgba(235, 235, 245, 0.62);
+    --p-label-3:   rgba(235, 235, 245, 0.32);
+    --p-separator: rgba(84, 84, 88, 0.55);
+    --p-accent:    #2dd4bf;
+    --p-accent-bg: rgba(45, 212, 191, 0.14);
+    --p-shadow:    0 1px 2px rgba(0,0,0,.4);
+  }
+}
+
+/* ── Large title header ─────────────────────────────────── */
+.partc-banner {
+  display: flex; align-items: center; gap: 14px;
+  padding: 4px 2px 0;
+}
+.partc-banner-badge {
+  background: var(--p-accent); color: #fff;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+  align-self: flex-start; margin-top: 6px;
+}
+.partc-banner strong {
+  display: block; font-size: 28px; font-weight: 700;
+  letter-spacing: -0.022em; line-height: 1.15; color: var(--p-label);
+}
+.partc-banner span {
+  display: block; font-size: 14px; line-height: 1.4;
+  color: var(--p-label-2); margin-top: 3px;
+}
+
+/* ── Cards ───────────────────────────────────────────────── */
+.partc-card {
+  background: var(--p-card);
+  border: none;
+  border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow);
+  padding: 20px;
+}
+.partc-card-head { margin-bottom: 16px; }
+.partc-card-head h3 {
+  display: flex; align-items: center; gap: 11px;
+  margin: 0 0 6px; font-size: 19px; font-weight: 650;
+  letter-spacing: -0.014em; color: var(--p-label);
+}
+.partc-card-head p {
+  margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--p-label-2);
+}
+.partc-step {
+  width: 27px; height: 27px; border-radius: 50%;
+  background: var(--p-accent); color: #fff;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; flex-shrink: 0;
+}
+/* a step that has been satisfied */
+.partc-card.is-done .partc-step { background: var(--ios-green); }
+.partc-card.is-done .partc-step::after { content: '✓'; font-size: 14px; }
+.partc-card.is-done .partc-step { font-size: 0; }
+
+/* The hidden attribute must beat any display rule a class sets, or an
+   element carrying both (a .partc-grid row with [hidden]) stays visible. */
+.partc [hidden] { display: none !important; }
+
+/* ── Grouped inset list (iOS Settings style) ─────────────── */
+.partc-grid {
+  display: flex; flex-direction: column;
+  background: var(--p-card-2);
+  border-radius: var(--p-radius-sm);
+  overflow: hidden;
+  margin-top: 12px;
+}
+.partc-grid label {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 14px; padding: 12px 15px; min-height: 46px;
+  font-size: 15px; font-weight: 400; color: var(--p-label);
+  border-bottom: 0.5px solid var(--p-separator);
+}
+.partc-grid label:last-child { border-bottom: none; }
+.partc-grid input,
+.partc-grid select {
+  flex: 0 1 190px; min-width: 0;
+  padding: 7px 11px; border-radius: 9px; font-size: 15px;
+  text-align: right; font-variant-numeric: tabular-nums;
+  border: none; background: var(--p-fill); color: var(--p-label);
+  font-family: inherit;
+  transition: box-shadow 160ms var(--p-ease), background 160ms var(--p-ease);
+}
+.partc-grid select { text-align: left; }
+.partc-grid input::placeholder { color: var(--p-label-3); }
+.partc-grid input:focus-visible,
+.partc-grid select:focus-visible,
+.partc-textarea:focus-visible {
+  outline: none; background: var(--p-card);
+  box-shadow: 0 0 0 3px var(--p-accent-bg), 0 0 0 1.5px var(--p-accent);
+}
+
+/* ── Textarea ────────────────────────────────────────────── */
+.partc-textarea {
+  width: 100%; box-sizing: border-box;
+  font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px; line-height: 1.65; padding: 14px;
+  border-radius: var(--p-radius-sm); border: none;
+  background: var(--p-card-2); color: var(--p-label);
+  resize: vertical;
+  transition: box-shadow 160ms var(--p-ease);
+}
+.partc-textarea::placeholder { color: var(--p-label-3); }
+
+/* ── Buttons: iOS pill, with tap feedback ────────────────── */
+.partc .btn,
+.partc-actions .btn {
+  border-radius: 999px; font-weight: 590; font-size: 15px;
+  padding: 11px 20px; min-height: 44px; border: none; cursor: pointer;
+  font-family: inherit; letter-spacing: -0.01em;
+  transition: transform 140ms var(--p-ease), opacity 140ms var(--p-ease),
+              background 140ms var(--p-ease);
+}
+.partc .btn:active:not(:disabled) { transform: scale(.965); }
+.partc .btn:disabled { opacity: .38; cursor: not-allowed; }
+.partc .btn-primary   { background: var(--p-accent); color: #fff; }
+.partc .btn-secondary { background: var(--p-fill); color: var(--p-accent); }
+.partc .btn-ghost     { background: transparent; color: var(--p-accent); padding-inline: 12px; }
+.partc .btn:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--p-accent-bg); }
+
+.partc-actions {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 14px; flex-wrap: wrap;
+}
+.partc-hint { font-size: 13px; line-height: 1.45; color: var(--p-label-2); }
+
+/* ── Sticky frosted action bar ───────────────────────────── */
+.partc-actions-main {
+  position: sticky; bottom: 0; z-index: 20;
+  margin: 4px -8px 0; padding: 12px 16px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  background: color-mix(in srgb, var(--p-card) 82%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-radius: var(--p-radius);
+  box-shadow: 0 -1px 0 var(--p-separator), var(--p-shadow);
+}
+
+/* ── Segmented control ───────────────────────────────────── */
+.partc-segmented {
+  display: flex; gap: 2px; padding: 2px;
+  background: var(--p-fill); border-radius: 10px;
+  margin-top: 12px;
+}
+.partc-segmented button {
+  flex: 1; padding: 8px 10px; min-height: 36px;
+  border: none; border-radius: 8px; cursor: pointer;
+  background: transparent; color: var(--p-label);
+  font-family: inherit; font-size: 13.5px; font-weight: 500;
+  letter-spacing: -0.01em; white-space: nowrap;
+  transition: background 180ms var(--p-ease), box-shadow 180ms var(--p-ease),
+              transform 140ms var(--p-ease), font-weight 120ms linear;
+}
+.partc-segmented button:active { transform: scale(.97); }
+.partc-segmented button[aria-selected="true"] {
+  background: var(--p-card); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 0 0 0.5px rgba(0,0,0,.04);
+}
+.partc-segmented button:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg); }
+
+/* ── Switches (replaces checkbox appearance) ─────────────── */
+.partc-check {
+  display: flex; align-items: center; gap: 12px;
+  margin-top: 16px; padding: 10px 2px; min-height: 44px;
+  font-size: 15px; color: var(--p-label); cursor: pointer;
+}
+.partc-check em { color: var(--p-label-2); font-style: normal; font-size: 13.5px; }
+.partc-check input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  flex-shrink: 0; width: 51px; height: 31px; border-radius: 999px;
+  background: var(--p-fill); position: relative; cursor: pointer; margin: 0;
+  transition: background 260ms var(--p-ease);
+}
+.partc-check input[type="checkbox"]::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 27px; height: 27px; border-radius: 50%; background: #fff;
+  box-shadow: 0 2px 4px rgba(0,0,0,.2);
+  transition: transform 260ms var(--p-ease);
+}
+.partc-check input[type="checkbox"]:checked { background: var(--ios-green); }
+.partc-check input[type="checkbox"]:checked::after { transform: translateX(20px); }
+.partc-check input[type="checkbox"]:focus-visible { outline: none; box-shadow: 0 0 0 4px var(--p-accent-bg); }
+
+/* ── Policy gate callout ─────────────────────────────────── */
+.partc-gate {
+  margin-top: 14px; padding: 13px 15px; border-radius: var(--p-radius-sm);
+  background: var(--p-card-2); font-size: 13.5px; line-height: 1.55;
+  color: var(--p-label-2);
+}
+.partc-gate-on  { color: var(--p-accent); font-weight: 600; }
+.partc-gate-off { color: var(--ios-orange); font-weight: 600; }
+
+/* ── Disclosure / optional block ─────────────────────────── */
+.partc-optional { margin-top: 14px; }
+.partc-optional summary {
+  cursor: pointer; font-size: 15px; font-weight: 500; padding: 11px 2px;
+  min-height: 44px; display: flex; align-items: center; gap: 6px;
+  color: var(--p-accent); list-style: none;
+}
+.partc-optional summary::-webkit-details-marker { display: none; }
+.partc-optional summary::before {
+  content: '›'; display: inline-block; font-size: 20px; line-height: 1;
+  transition: transform 240ms var(--p-ease); color: var(--p-label-3);
+}
+.partc-optional[open] summary::before { transform: rotate(90deg); }
+.partc-optional summary em { font-weight: 400; color: var(--p-label-2); font-style: normal; font-size: 13.5px; }
+
+/* ── File upload ─────────────────────────────────────────── */
+.partc-upload { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.partc-file { position: relative; overflow: hidden; display: inline-block; }
+.partc-file input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.partc-file span {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 11px 18px; min-height: 44px; border-radius: 999px;
+  font-size: 15px; font-weight: 500; background: var(--p-fill);
+  color: var(--p-accent); cursor: pointer;
+  transition: background 160ms var(--p-ease), transform 140ms var(--p-ease);
+}
+.partc-file span::before { content: '􀈕'; font-size: 0; }
+.partc-file:hover span { background: var(--p-accent-bg); }
+.partc-file:active span { transform: scale(.97); }
+
+/* ── Tables ──────────────────────────────────────────────── */
+.partc-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+.partc-table th {
+  text-align: left; padding: 9px 10px; font-weight: 590; font-size: 11.5px;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--p-label-2);
+  border-bottom: 0.5px solid var(--p-separator);
+}
+.partc-table td {
+  padding: 11px 10px; border-bottom: 0.5px solid var(--p-separator);
+  color: var(--p-label);
+}
+.partc-table tr:last-child td { border-bottom: none; }
+.partc-table td.num  { text-align: right; font-variant-numeric: tabular-nums; }
+.partc-table td.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 11.5px; color: var(--p-label-2);
+}
+.partc-table tr.total td { font-weight: 680; }
+.partc-table input {
+  width: 84px; padding: 7px 10px; border-radius: 9px; border: none;
+  background: var(--p-fill); color: var(--p-label);
+  font-size: 14px; text-align: right; font-variant-numeric: tabular-nums;
+  font-family: inherit;
+}
+.partc-table input:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg), 0 0 0 1.5px var(--p-accent);
+}
+/* Module breakdown: fixed layout so the label column yields and the status
+   pill is never clipped by the panel edge. */
+#partcModules .partc-table { table-layout: fixed; width: 100%; }
+#partcModules td:nth-child(1) { width: auto; }   /* wraps at spaces, never mid-word */
+#partcModules td:nth-child(2) { width: 88px; }
+#partcModules td:nth-child(3) { width: 86px; text-align: right; }
+#partcModules td { padding-inline: 6px; }
+#partcModules .pill { font-size: 10px; padding: 2px 7px; }
+
+/* Every table lives in its own horizontal scroller, so a wide data table
+   never drags the page past the viewport. */
+.partc-materials,
+.partc-panel > div,
+.partc-tab-body,
+#partcRuns {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.partc-materials { margin: 0 -4px; padding: 0 4px; }
+
+/* ── Pills and chips ─────────────────────────────────────── */
+.partc-conf, .pill, .partc-status {
+  display: inline-block; align-self: center;
+  font-size: 11px; font-weight: 590; line-height: 1.45;
+  padding: 3px 9px; border-radius: 999px;
+  white-space: nowrap; letter-spacing: -0.005em;
+}
+.partc-conf { margin-left: 7px; }
+.partc-conf-high   { background: rgba(52,199,89,.16);  color: #248a3d; }
+.partc-conf-medium { background: rgba(255,149,0,.16);  color: #a25400; }
+.partc-conf-low    { background: rgba(255,59,48,.16);  color: #b3251d; }
+.pill.in  { background: var(--p-accent-bg); color: var(--p-accent); }
+.pill.out { background: var(--p-fill);      color: var(--p-label-2); }
+.partc-status { text-transform: capitalize; }
+.partc-status-awaiting_inputs { background: rgba(255,149,0,.16); color: #a25400; }
+.partc-status-completed       { background: rgba(52,199,89,.16); color: #248a3d; }
+.partc-status-failed          { background: rgba(255,59,48,.16); color: #b3251d; }
+.partc-status-created, .partc-status-ingesting, .partc-status-computing {
+  background: var(--p-fill); color: var(--p-label-2);
+}
+@media (prefers-color-scheme: dark) {
+  .partc-conf-high, .partc-status-completed { color: #30d158; }
+  .partc-conf-medium, .partc-status-awaiting_inputs { color: #ff9f0a; }
+  .partc-conf-low, .partc-status-failed { color: #ff453a; }
+}
+
+/* ── Result: big-number cards ────────────────────────────── */
+.partc-result { display: flex; flex-direction: column; gap: 22px; }
+.partc-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.partc-figure {
+  background: var(--p-card); border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow); padding: 18px 20px;
+  display: flex; flex-direction: column; gap: 5px;
+}
+.partc-figure-primary {
+  background: linear-gradient(150deg, var(--p-accent), color-mix(in srgb, var(--p-accent) 76%, #000));
+  color: #fff;
+}
+.partc-figure-label { font-size: 12.5px; line-height: 1.4; color: var(--p-label-2); }
+.partc-figure-label em { font-style: normal; color: var(--p-accent); }
+.partc-figure-primary .partc-figure-label,
+.partc-figure-primary .partc-figure-unit { color: rgba(255,255,255,.82); }
+.partc-figure-primary .partc-figure-label em { color: #fff; }
+.partc-figure-value {
+  font-size: 32px; font-weight: 700; letter-spacing: -0.028em;
+  font-variant-numeric: tabular-nums; line-height: 1.05; color: var(--p-label);
+}
+.partc-figure-primary .partc-figure-value { color: #fff; }
+.partc-figure-unit { font-size: 12.5px; color: var(--p-label-2); }
+
+.partc-scope-warning {
+  margin: -10px 2px 0; font-size: 13px; line-height: 1.5;
+  color: var(--ios-orange); font-weight: 500;
+}
+
+.partc-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
+/* Module breakdown holds three columns; the other two hold two. */
+@media (min-width: 1080px) {
+  .partc-panels { grid-template-columns: 1.3fr 1fr 1fr; }
+}
+.partc-panel {
+  background: var(--p-card); border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow); padding: 18px 20px;
+}
+.partc-panel h4 {
+  margin: 0 0 2px; font-size: 16px; font-weight: 620; letter-spacing: -0.012em;
+}
+
+/* Bar and percentage stay on one line whatever the panel width. */
+.partc-share { white-space: nowrap; }
+.partc-share > .partc-bar { display: inline-block; vertical-align: middle; }
+.partc-share-pct {
+  display: inline-block; min-width: 44px; text-align: right;
+  font-variant-numeric: tabular-nums; vertical-align: middle;
+}
+.partc-bar {
+  width: 56px; height: 6px; border-radius: 999px;
+  background: var(--p-fill); margin-right: 9px; overflow: hidden;
+}
+.partc-bar span {
+  display: block; height: 100%; border-radius: 999px; background: var(--p-accent);
+  transition: width 600ms var(--p-ease);
+}
+
+/* ── Registers ───────────────────────────────────────────── */
+.partc-registers {
+  background: var(--p-card); border-radius: var(--p-radius);
+  box-shadow: var(--p-shadow); overflow: hidden;
+}
+.partc-tabs {
+  display: flex; gap: 2px; padding: 10px; margin: 4px;
+  background: var(--p-fill); border-radius: 12px;
+}
+.partc-tab {
+  flex: 1; padding: 9px 8px; min-height: 40px;
+  border: none; border-radius: 9px; cursor: pointer; background: transparent;
+  font-family: inherit; font-size: 13.5px; font-weight: 500;
+  color: var(--p-label); letter-spacing: -0.01em; white-space: nowrap;
+  transition: background 180ms var(--p-ease), box-shadow 180ms var(--p-ease), transform 140ms var(--p-ease);
+}
+.partc-tab:active { transform: scale(.97); }
+.partc-tab.active {
+  background: var(--p-card); font-weight: 620;
+  box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 0 0 0.5px rgba(0,0,0,.04);
+}
+.partc-tab:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg); }
+.partc-tab span {
+  background: var(--p-fill); border-radius: 999px; padding: 2px 7px;
+  font-size: 11px; margin-left: 6px; font-variant-numeric: tabular-nums;
+}
+.partc-tab.active span { background: var(--p-accent-bg); color: var(--p-accent); }
+.partc-tab-body { padding: 6px 18px 18px; max-height: 480px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.partc-tab-body h5 { margin: 16px 0 4px; font-size: 14px; font-weight: 620; }
+
+.partc-entry {
+  padding: 13px 15px; border-radius: var(--p-radius-sm); margin-bottom: 9px;
+  background: var(--p-card-2); border-left: 3px solid var(--p-label-3);
+}
+.partc-entry p { margin: 5px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--p-label-2); }
+.partc-entry strong { font-size: 13px; font-weight: 620; }
+.partc-sev {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 5px; margin-right: 8px; font-weight: 700;
+}
+.partc-sev-material { border-left-color: var(--ios-red); }
+.partc-sev-material .partc-sev { background: rgba(255,59,48,.16); color: #b3251d; }
+.partc-sev-notable  { border-left-color: var(--ios-orange); }
+.partc-sev-notable  .partc-sev { background: rgba(255,149,0,.16); color: #a25400; }
+.partc-sev-info     { border-left-color: var(--p-label-3); }
+.partc-sev-info     .partc-sev { background: var(--p-fill); color: var(--p-label-2); }
+@media (prefers-color-scheme: dark) {
+  .partc-sev-material .partc-sev { color: #ff453a; }
+  .partc-sev-notable  .partc-sev { color: #ff9f0a; }
+}
+
+/* ── Disclosure statement ────────────────────────────────── */
+.partc-disclosure {
+  background: var(--p-accent-bg); border-radius: var(--p-radius); padding: 20px;
+}
+.partc-disclosure h4 { margin: 0 0 8px; font-size: 16px; font-weight: 620; }
+.partc-disclosure p  { margin: 0; font-size: 14px; line-height: 1.65; color: var(--p-label); }
+.partc-dq { margin-top: 12px; font-size: 13px; color: var(--p-label-2); }
+
+.partc-annex {
+  border: 1.5px dashed var(--p-separator); border-radius: var(--p-radius);
+  padding: 20px; background: transparent;
+}
+.partc-annex h4 { margin: 0 0 4px; font-size: 16px; font-weight: 620; }
+.partc-annex-warning { margin: 0 0 10px; font-size: 12.5px; color: var(--ios-orange); font-weight: 500; }
+
+/* ── Phone ───────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .partc { gap: 16px; padding-bottom: 110px; }
+  .partc-card, .partc-panel, .partc-figure, .partc-disclosure, .partc-annex { padding: 16px; border-radius: 16px; }
+  .partc-banner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .partc-banner strong { font-size: 26px; }
+  .partc-figures { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .partc-figure-value { font-size: 26px; }
+  .partc-panels { grid-template-columns: 1fr; }
+
+  /* iOS zooms any input below 16px on focus — never let it. */
+  .partc-grid input, .partc-grid select, .partc-table input, .partc-textarea { font-size: 17px; }
+  .partc-grid label { flex-wrap: wrap; }
+  .partc-grid input, .partc-grid select { flex-basis: 100%; text-align: left; }
+
+  /* Three stacked full-width buttons ate roughly a third of the screen.
+     Primary action full width, the two exports share the row below. */
+  .partc-actions-main {
+    margin-inline: -12px; border-radius: 0;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center;
+  }
+  .partc-actions-main .btn { width: 100%; margin: 0; }
+  .partc-actions-main #partcRunBtn { grid-column: 1 / -1; }
+  .partc-actions-main .partc-hint {
+    grid-column: 1 / -1; text-align: center; font-size: 12px;
+    margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .partc-tabs { flex-wrap: wrap; }
+  .partc-tab { flex: 1 1 30%; font-size: 12.5px; }
+
+  /* Keep the module and driver tables readable without a horizontal scroll. */
+  .partc-panel .partc-table { font-size: 13px; }
+  .partc-panel .partc-table td { padding: 9px 6px; vertical-align: middle; }
+  .partc-panel .partc-table td:first-child { hyphens: auto; }
+  .partc-panel .pill { font-size: 10px; padding: 2px 7px; }
+}
+
+/* ── Motion and contrast preferences ─────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .partc *, .partc *::before, .partc *::after {
+    transition-duration: 1ms !important; animation-duration: 1ms !important;
+  }
+}
+@media (prefers-contrast: more) {
+  .partc { --p-label-2: rgba(60,60,67,.85); --p-separator: rgba(60,60,67,.5); }
+}
+
+/* ── Book: inline forms and sub-headings ─────────────────── */
+.partc-inline-form {
+  margin-top: 16px; padding-top: 16px;
+  border-top: 0.5px solid var(--p-separator);
+}
+.partc-subhead {
+  margin: 20px 0 4px; font-size: 15px; font-weight: 620;
+  letter-spacing: -0.012em; color: var(--p-label);
+}
+.partc-book .partc-entry .partc-actions { margin-top: 12px; }
+.partc-book .pill { margin-left: 8px; }
+.partc-book .partc-table td:last-child { text-align: right; }
+
+/* ── BOQ diff ────────────────────────────────────────────── */
+.partc-diff { margin-top: 20px; padding-top: 18px; border-top: 0.5px solid var(--p-separator); }
+.partc-diff-figures { margin-bottom: 14px; }
+.partc-figure-ok     { box-shadow: inset 0 0 0 2px var(--ios-green), var(--p-shadow); }
+.partc-figure-breach { box-shadow: inset 0 0 0 2px var(--ios-red),   var(--p-shadow); }
+.partc-figure-ok     .partc-figure-value { color: #248a3d; }
+.partc-figure-breach .partc-figure-value { color: #b3251d; }
+@media (prefers-color-scheme: dark) {
+  .partc-figure-ok     .partc-figure-value { color: #30d158; }
+  .partc-figure-breach .partc-figure-value { color: #ff453a; }
+}
+
+/* ── Assessment status ───────────────────────────────────── */
+.partc-status-under_review { background: rgba(10,132,255,.16); color: #0a68d0; }
+.partc-status-locked       { background: rgba(52,199,89,.16);  color: #248a3d; }
+.partc-status-superseded   { background: var(--p-fill);        color: var(--p-label-2); }
+.partc-status-draft        { background: rgba(255,149,0,.16);  color: #a25400; }
+@media (prefers-color-scheme: dark) {
+  .partc-status-under_review { color: #64d2ff; }
+  .partc-status-locked       { color: #30d158; }
+  .partc-status-draft        { color: #ff9f0a; }
+}
+.partc-book .partc-entry strong + .partc-status { margin-left: 8px; }
+
+/* ── Breadcrumbs ─────────────────────────────────────────── */
+.partc-crumbs {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; font-size: 13.5px; color: var(--p-label-3);
+}
+.partc-crumb {
+  background: none; border: none; padding: 4px 2px; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 500; color: var(--p-accent);
+  border-radius: 6px;
+}
+.partc-crumb:hover { text-decoration: underline; }
+.partc-crumb:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg); }
+.partc-crumb-current { font-size: 13.5px; font-weight: 500; color: var(--p-label-2); }
+
+/* ── Reporting year ──────────────────────────────────────── */
+.partc-year {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 500; color: var(--p-label);
+}
+.partc-year select {
+  padding: 9px 12px; border-radius: 10px; border: none; min-height: 44px;
+  background: var(--p-fill); color: var(--p-label);
+  font-family: inherit; font-size: 15px; font-weight: 590;
+}
+.partc-year select:focus-visible {
+  outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg), 0 0 0 1.5px var(--p-accent);
+}
+.partc-portfolio .partc-panels { margin-top: 4px; }
+.partc-portfolio .partc-table td .partc-hint { font-size: 11.5px; }
+#pfRows, #pfGaps, #pfCoverage, #pfStates { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Year-on-year movement ────────────────────────────────────────────────
+   A movement is coloured to be readable at a glance, but never green for
+   "down": a smaller total can simply mean fewer projects were written, and
+   the disclosure must not colour that as an improvement. Direction only. */
+.pf-move {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 620;
+  font-size: 0.86em;
+  background: var(--partc-chip-bg, rgba(100, 116, 139, 0.12));
+  color: var(--partc-chip-fg, #475569);
+}
+.pf-move-up   { background: rgba(180, 83, 9, 0.13);  color: #b45309; }
+.pf-move-down { background: rgba(30, 64, 175, 0.12); color: #1e40af; }
+.pf-move-unchanged { background: rgba(100, 116, 139, 0.12); color: #475569; }
+
+@media (prefers-color-scheme: dark) {
+  .pf-move-up   { background: rgba(251, 191, 36, 0.16); color: #fbbf24; }
+  .pf-move-down { background: rgba(96, 165, 250, 0.16); color: #60a5fa; }
+  .pf-move-unchanged { background: rgba(148, 163, 184, 0.16); color: #94a3b8; }
+}

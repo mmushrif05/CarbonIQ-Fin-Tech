@@ -285,6 +285,97 @@ async function listPipelineRuns(orgId, limit = 20) {
   return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
+// ---------------------------------------------------------------------------
+// PCAF Part C Persistence (runs, learnings, per-m2 benchmark library)
+// ---------------------------------------------------------------------------
+
+async function savePartCRun(orgId, run) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partcRuns/${orgId}/${run.runId}`).set(run);
+}
+
+async function updatePartCRun(orgId, runId, updates) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partcRuns/${orgId}/${runId}`).update(updates);
+}
+
+async function getPartCRun(orgId, runId) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/partcRuns/${orgId}/${runId}`).once('value');
+  return snapshot.val();
+}
+
+async function listPartCRuns(orgId, limit = 20) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/partcRuns/${orgId}`)
+    .orderByChild('createdAt')
+    .limitToLast(limit)
+    .once('value');
+  const val = snapshot.val();
+  if (!val) return [];
+  return Object.values(val).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+}
+
+async function savePartCLearnings(orgId, runId, records) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partcLearnings/${orgId}/${runId}`).set(records);
+  if (records && records.perM2Factor) {
+    await db.ref(`fintech/partcBenchmarks/${orgId}/${runId}`).set(records.perM2Factor);
+  }
+}
+
+async function listPartCLearnings(orgId, limit = 200) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/partcLearnings/${orgId}`).limitToLast(limit).once('value');
+  const val = snapshot.val();
+  return val ? Object.values(val) : [];
+}
+
+async function listPartCBenchmarks(orgId, limit = 500) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/partcBenchmarks/${orgId}`).limitToLast(limit).once('value');
+  const val = snapshot.val();
+  return val ? Object.values(val) : [];
+}
+
+// ---------------------------------------------------------------------------
+// PCAF Part C registry — generic collection storage
+// ---------------------------------------------------------------------------
+
+async function savePartCRecord(collection, orgId, id, record) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).set(record);
+}
+
+async function getPartCRecord(collection, orgId, id) {
+  const db = getDatabase();
+  if (!db) return null;
+  const snapshot = await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).once('value');
+  return snapshot.val();
+}
+
+async function listPartCRecords(collection, orgId, limit = 200) {
+  const db = getDatabase();
+  if (!db) return [];
+  const snapshot = await db.ref(`fintech/partc/${orgId}/${collection}`).limitToLast(limit).once('value');
+  const val = snapshot.val();
+  return val ? Object.values(val) : [];
+}
+
+async function deletePartCRecord(collection, orgId, id) {
+  const db = getDatabase();
+  if (!db) return;
+  await db.ref(`fintech/partc/${orgId}/${collection}/${id}`).remove();
+}
+
 module.exports = {
   initFirebase,
   getFirebaseAdmin,
@@ -307,6 +398,17 @@ module.exports = {
   listMonitoringEntries,
   submitHumanReview,
   savePipelineRun,
+  savePartCRecord,
+  getPartCRecord,
+  listPartCRecords,
+  deletePartCRecord,
+  savePartCRun,
+  updatePartCRun,
+  getPartCRun,
+  listPartCRuns,
+  savePartCLearnings,
+  listPartCLearnings,
+  listPartCBenchmarks,
   updatePipelineRun,
   getPipelineRun,
   listPipelineRuns

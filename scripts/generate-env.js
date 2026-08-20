@@ -52,6 +52,11 @@ WEBHOOK_SIGNING_SECRET=${webhookSecret}
 # Use this key in the frontend settings during local development
 DEV_API_KEY=${devApiKey}
 
+# Dashboard key. The bundled UI ships with this exact key as its default, so
+# leaving it as-is lets the dashboard talk to the API immediately after setup.
+# In production set it in Netlify to a value of your own.
+UI_API_KEY=ck_test_00000000000000000000000000000000
+
 # -----------------------------------------------------------------------
 # Server Configuration
 # -----------------------------------------------------------------------

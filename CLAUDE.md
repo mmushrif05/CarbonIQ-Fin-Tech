@@ -47,8 +47,11 @@ docker-compose -f docker/docker-compose.yml up
 server.js                   Express entry point + /health endpoint
 config/                     env config, business constants, CORS policy
 middleware/                 auth (JWT + API key), rate limiting, audit logging, validation
-routes/v1/                  8 REST endpoints (score, assess, projects, pcaf, taxonomy, covenant, portfolio, webhook)
+routes/v1/                  REST endpoints (score, assess, projects, pcaf, pcaf-partc, taxonomy, covenant, portfolio, webhook)
 services/                   Business logic: score engine, PCAF formatter, taxonomy, covenant, portfolio, agents
+services/pcaf-partc/        PCAF Part C engine — insurance-associated emissions (pure, deterministic)
+services/agents/partc/      Part C agents: intake, mapping, form builder, disclosure
+data/factors/               Part C seed factor tables (versioned JSON, every row carries tier + reference)
 bridge/                     Firebase + CarbonIQ core engine bridge (READ-ONLY)
 models/                     Data models: api-key, covenant, webhook, taxonomy
 schemas/                    Joi validation schemas for all request bodies
@@ -69,7 +72,28 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `GET/POST` | `/v1/projects` | List projects / create project |
 | `POST` | `/v1/score` | Carbon Finance Score (CRS 0–100) |
 | `GET` | `/v1/taxonomy` | EU/ASEAN/HK taxonomy alignment check |
-| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output |
+| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output (A1-A3, lending) |
+| `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions (A4+A5, B1/B4/B7) |
+| `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
+| `POST` | `/v1/pcaf/part-c/report` | Disclosure report — PDF, Word or JSON |
+| `GET` | `/v1/pcaf/part-c/factors` | Factor store transparency (tier + source per row) |
+| `GET` | `/v1/pcaf/part-c/conformance` | Conformance matrix — rule → implementation → proving test |
+| `POST` | `/v1/pcaf/part-c/runs/start` | Begin a run, pause for client input |
+| `POST` | `/v1/pcaf/part-c/runs/:id/resume` | Supply answers, compute, complete |
+| `GET/PUT` | `/v1/partc/settings` | Insurer settings — reporting year, premium basis, restatement threshold |
+| `GET/POST` | `/v1/partc/clients` | Insured parties |
+| `GET/POST` | `/v1/partc/projects` | Projects with their policies inline |
+| `GET` | `/v1/partc/policies` | Flattened book, filterable by reporting year |
+| `GET/POST` | `/v1/partc/projects/:id/boq` | BOQ revisions (R1 tender → R2 variation → R3 as-built) |
+| `POST` | `/v1/partc/projects/:id/boq/compare` | Line diff, emissions delta, restatement check |
+| `GET/POST` | `/v1/partc/assessments` | Assessments bound to policy, BOQ revision and year |
+| `POST` | `/v1/partc/assessments/:id/status` | Lifecycle — draft, under review, locked |
+| `GET` | `/v1/partc/periods/:year` | Locked totals, coverage, emissions-weighted data quality |
+| `GET` | `/v1/partc/portfolio/:year` | The reporting-year position, with the DQ improvement plan and factor gaps |
+| `GET` | `/v1/partc/portfolio/:year/comparatives` | This year against last, on a basis that survives a change of book |
+| `GET` | `/v1/partc/portfolio/:year/restatements` | As previously reported vs as restated, with the reason |
+| `GET` | `/v1/partc/disclosure/:year` | The annual disclosure — JSON, PDF or Word |
+| `GET` | `/v1/partc/storage` | What this deployment can actually persist |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
 | `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
@@ -154,6 +178,45 @@ This app uses the Anthropic Claude API (`@anthropic-ai/sdk`) with the following 
 - **Taxonomy Alignment** — EU (2024), ASEAN (v3), HK (2024) regulatory eligibility screening; `services/taxonomy.js`
 - **Pareto 80%** — The core engine pre-calculates the top 20% of materials driving 80% of emissions; this API reads those results
 - **Carbon Bridge** — `bridge/` is strictly READ-ONLY from the CarbonIQ core (Carbon-Management repo); never write to core engine data through this API
+- **PCAF Part C (IAE)** — insurance-associated emissions for construction policies; `services/pcaf-partc/`. Entirely separate from `services/pcaf.js` (A1-A3 financed emissions for lending). The two scopes must never merge.
+
+### PCAF Part C scope discipline
+
+Three tiers, enforced structurally rather than by convention:
+
+| Tier | Modules | Where it appears |
+|---|---|---|
+| **Mandatory** | A4 + A5 | `result.rollup.construction` — **the PCAF figure** |
+| **Optional** | B1 + B4 + B7 | `result.rollup.useStage` — separate line, policy-gated, never summed with construction |
+| **Beyond-PCAF** | B2 + B5 + B8 | `result.beyondPcafAnnex` — voluntary annex, never in the PCAF figure |
+
+`services/pcaf-partc/rollup.js` deliberately does not import `beyond-pcaf.js`, so tier 3 cannot reach the roll-up through the module graph. A test asserts this.
+
+**Policy gate:** CAR/EAR → `use_stage_years = 0` → B1/B4/B7 are zero by scope rule (PCAF Part C v2 §5.3), not by omission. IDI/Property run the use stage over the cover period. A client-entered cover period applies *within* the gate and can never override it.
+
+**Provenance:** every engine function returns a traced value — the figure plus its equation, inputs, factors (each with a data-quality tier and named source) and assumptions. The three registers (assumptions, data gaps, audit trail) and the data-quality score are derived from that tree, so they cannot contradict the arithmetic.
+
+**Language guard:** output claims PCAF *conformance*, never endorsement. `containsForbiddenLanguage()` blocks any report containing "PCAF approved/endorsed/certified"; a test enforces it.
+
+**Division of labour:** Claude classifies, extracts, maps BOQ lines and writes narrative. The engine does every arithmetic operation. An LLM must never compute a figure that reaches a regulatory disclosure.
+
+**The insurer's book (`services/partc-registry.js`):** organisation → client → project, deliberately flat — no broker, reinsurer or class-of-business level. Policies live on the project because one building typically carries CAR through construction and then IDI for ten years. The reporting year of a policy is its **inception year**. Cover basis is project-specific only; annual/blanket is deferred.
+
+**Storage honesty (`services/partc-store.js`):** Firebase is the real store. Without it there is an in-process fallback for local development, but in a serverless runtime (Netlify) that fallback cannot work, so writes are **refused with a 503** rather than accepted and lost. `GET /v1/partc/storage` reports the active mode.
+
+**BOQ revisions (`services/partc-boq.js`):** a bill of quantities is never final, so each project holds a series of revisions and an assessment binds to exactly one. A revision inherits the previous revision's factor mappings, stable ids and haul distances, so only genuinely new lines need review. Match keys deliberately **ignore the quantity** — a revision exists because quantities changed, so keying on raw text would mean a line never matched its own earlier self. Matching is exact after normalisation rather than fuzzy: binding the wrong factor to the wrong material would corrupt a disclosure silently, so unmatched lines are flagged for review instead.
+
+**Restatement:** comparing two revisions holds every non-BOQ input constant, so the movement is attributable to the BOQ alone. A movement reaching the settings threshold (default 5%) requires restating a locked assessment. Because A5.2 site energy is typically 90%+ of the construction figure, material quantity changes move the total very little — the comparison therefore explains *why* the figure moved as it did, rather than leaving a user wondering whether their variation order registered.
+
+**Assessments (`services/partc-assessments.js`):** one calculation bound to a policy, a BOQ revision and a reporting year — the binding is what lets a figure in an annual disclosure be traced to the bill of quantities behind it. Lifecycle is `draft → under_review → locked`; only a locked assessment enters the disclosure, and a locked assessment is never edited, only superseded by a new version. Where a new version moves a locked figure by at least the settings threshold it is a **restatement** and a reason is required. Locking one version automatically supersedes the previously locked one, so a policy-year never has two.
+
+**The annual disclosure (`services/partc-disclosure.js`):** the document published for a reporting year, built from locked assessments only. A year holding none is **refused with a 409** rather than rendered as a position of zero — an empty disclosure would read as "we insured nothing carbon-intensive", which is a different claim from "we have not measured yet". Coverage sits in section 3, not an annex, because a total drawn from a fifth of the book means something different from one drawn from all of it. Annex C records the assessment, version, BOQ revision and lock behind every row in the per-policy table, so a reader can follow any disclosed number back to the bill of quantities.
+
+**Comparatives (`services/partc-comparatives.js`):** because a policy's reporting year is its inception year, each year covers a *different set of policies* — two annual totals are measurements of two different books, not two measurements of one thing. Presenting their difference as a reduction would be false. The movement is therefore reported as fact alongside the note that it is not on its own a change in performance, and **intensity (kgCO2e/m² insured)** and the emissions-weighted data-quality score are given as the measures that survive a change of book. Where a prior year has been restated, the comparative is carried on **both** bases — as previously reported and as restated — with the reason recorded at lock time.
+
+Every API key belongs to the insurer's own organisation — there is no client-facing login — so "only the insurer locks" holds by construction rather than by a role check; the organisation is recorded on the lock either way. Period totals weight data quality by emissions, as PCAF requires, so a small weak policy cannot drag the reported position beyond its share.
+
+**Conformance evidence:** `services/pcaf-partc/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 
 ---
 

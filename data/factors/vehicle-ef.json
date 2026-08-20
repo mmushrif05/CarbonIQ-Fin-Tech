@@ -1,0 +1,13 @@
+{
+  "table": "vehicle-ef",
+  "description": "Site/project vehicle emission factors. INFORMATIONAL ONLY in MVP - captured, never added to any total (avoids double counting with A5.2 site energy).",
+  "unit": "gCO2e/km",
+  "tier": "Global",
+  "rows": {
+    "EV":     { "value": 90,  "reference": "Global avg well-to-wheel: China real-world 88.5, Turkiye WTW 89.1 gCO2/km. Grid-dependent." },
+    "Petrol": { "value": 180, "reference": "Indicative WTW passenger car" },
+    "Diesel": { "value": 165, "reference": "Indicative WTW passenger car" },
+    "Hybrid": { "value": 120, "reference": "Indicative WTW HEV" }
+  },
+  "note": "Sri Lanka: an EV on the SL grid ~ 0.53 kgCO2/kWh x ~0.19 kWh/km = ~100 gCO2/km. Swap in when the SL vehicle factor is set."
+}

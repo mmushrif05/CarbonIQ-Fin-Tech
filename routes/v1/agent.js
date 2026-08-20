@@ -604,7 +604,11 @@ router.post('/coach',
         completeness: {
           pct:         completeness.completionPct,
           statusLabel: completeness.statusLabel,
+          breakdown:   completeness.breakdown,
           missing:     completeness.missingFields.map(f => f.label),
+          // Optional strengtheners. They do not count against completeness,
+          // but the borrower should still be told they are available.
+          enhancements: completeness.enhancements.map(f => ({ label: f.label, impact: f.impact })),
           readyForScreening:    completeness.readyForScreening,
           readyForUnderwriting: completeness.readyForUnderwriting,
           readyForDecision:     completeness.readyForDecision
@@ -661,15 +665,10 @@ router.post('/triage',
         return res.status(200).json({
           success:       true,
           agentType:     'decision_triage',
-          tier:          tierResult.tier,
-          tierLabel:     tierResult.tierLabel,
-          verdict:       tierResult.verdict,
-          confidence:    tierResult.confidence,
-          autoDecision:  tierResult.autoDecision,
-          reasons:       tierResult.reasons,
-          conditions:    tierResult.conditions,
-          escalationNote: tierResult.escalationNote,
-          thresholds:    tierResult.thresholds,
+          // Spread the classification rather than re-listing its fields: a
+          // hand-written copy silently dropped track, reason and flags the
+          // moment the engine gained them.
+          ...tierResult,
           aiReview:      null,
           ...(tierResult.tier === DECISION_TIERS.MANUAL && {
             escalation: {

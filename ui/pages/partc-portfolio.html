@@ -1,0 +1,102 @@
+<!-- PCAF Part C — the reporting-year position.
+     Construction and use-stage are always shown as separate lines. -->
+
+<div class="partc partc-portfolio">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">FY</div>
+    <div>
+      <strong id="pfInsurer">Reporting year</strong>
+      <span id="pfSubtitle">Locked assessments, summed per policy</span>
+    </div>
+  </div>
+
+  <section class="partc-card">
+    <div class="partc-actions">
+      <label class="partc-year">Reporting year
+        <select id="pfYear"></select>
+      </label>
+      <button class="btn btn-secondary" id="pfRefresh">Refresh</button>
+      <button class="btn btn-primary" id="pfDiscPdfBtn">Annual disclosure — PDF</button>
+      <button class="btn btn-secondary" id="pfDiscDocxBtn">Word</button>
+      <span class="partc-hint" id="pfStatus"></span>
+    </div>
+  </section>
+
+  <div id="pfBody" hidden>
+    <div class="partc-figures">
+      <div class="partc-figure partc-figure-primary">
+        <span class="partc-figure-label">Construction (A4 + A5) — the PCAF figure</span>
+        <span class="partc-figure-value" id="pfConstruction">—</span>
+        <span class="partc-figure-unit">kgCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Insurer's IAE</span>
+        <span class="partc-figure-value" id="pfIae">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Use-stage — separate line</span>
+        <span class="partc-figure-value" id="pfUseStage">—</span>
+        <span class="partc-figure-unit">kgCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Weighted data quality</span>
+        <span class="partc-figure-value" id="pfDq">—</span>
+        <span class="partc-figure-unit" id="pfDqBasis">by emissions</span>
+      </div>
+    </div>
+    <p class="partc-scope-warning" id="pfScopeNote"></p>
+
+    <div class="partc-panels">
+      <div class="partc-panel">
+        <h4>Coverage</h4>
+        <div id="pfCoverage"></div>
+      </div>
+      <div class="partc-panel">
+        <h4>Assessment states</h4>
+        <div id="pfStates"></div>
+      </div>
+    </div>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Policies in the disclosure</h3>
+        <p id="pfAggregationNote"></p>
+      </header>
+      <div id="pfRows"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Year on year</h3>
+        <p id="pfCompareNote"></p>
+      </header>
+      <div id="pfCompare"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Restatements</h3>
+        <p>A figure already disclosed can only change through a restatement, which carries the reason recorded when it was locked.</p>
+      </header>
+      <div id="pfRestatements"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Data quality improvement plan</h3>
+        <p id="pfPlanNote"></p>
+      </header>
+      <div id="pfPlan"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>Factor gaps — what to localise first</h3>
+        <p>Ranked by the emissions flowing through each factor across every assessment recorded.</p>
+      </header>
+      <div id="pfGaps"></div>
+    </section>
+  </div>
+</div>

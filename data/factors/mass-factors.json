@@ -1,0 +1,14 @@
+{
+  "table": "mass-factors",
+  "description": "Non-volumetric mass factors for BOQ units other than m3",
+  "rows": {
+    "ms_grill":        { "value": 15,   "unit": "kg/m2", "tier": "Global", "reference": "Typical mild-steel grill fabrication weight" },
+    "aluminium_sheet": { "value": 12,   "unit": "kg/m2", "tier": "Global", "reference": "Std engineering refs (~10-25 kg/m2)" },
+    "ceramic_tile":    { "value": 22,   "unit": "kg/m2", "tier": "Global", "reference": "Std engineering refs (~20-25 kg/m2 at 10mm)" },
+    "timber_door":     { "value": 18,   "unit": "kg/m2", "tier": "Global", "reference": "Std engineering refs (~15-20 kg/m2)" },
+    "pvc_110mm":       { "value": 2.5,  "unit": "kg/m",  "tier": "Global", "reference": "Std engineering refs" },
+    "pvc_63mm":        { "value": 1.2,  "unit": "kg/m",  "tier": "Global", "reference": "Std engineering refs" },
+    "glass_per_mm":    { "value": 2.5,  "unit": "kg/m2 per mm", "tier": "Global", "reference": "Std engineering refs" },
+    "steel_mt":        { "value": 1000, "unit": "kg/MT", "tier": "Global", "reference": "Unit conversion (metric tonne to kg)" }
+  }
+}

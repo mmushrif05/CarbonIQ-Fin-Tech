@@ -1,0 +1,217 @@
+<!-- PCAF Part C — Insurance-Associated Emissions.
+     Deliberately separate from the PCAF Calculator page, which serves
+     A1-A3 financed emissions for lending. Different standard section,
+     different scope: the two are never merged. -->
+
+<div class="partc">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">Part C</div>
+    <div>
+      <strong>Insurance-Associated Emissions</strong>
+      <span>A4 + A5 construction (the PCAF figure) · B1/B4/B7 use-stage reported separately · policy-gated</span>
+    </div>
+  </div>
+
+  <!-- ── Step 0: policy document ─────────────────────────── -->
+  <section class="partc-card">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">1</span> Policy document</h3>
+      <p>Drop the policy schedule as a PDF, or paste it. The intake agent classifies the policy — which decides the entire scope of the assessment — and pre-fills the fields below.</p>
+    </header>
+    <div class="partc-upload">
+      <label class="partc-file">
+        <input type="file" id="partcPolicyFile" accept="application/pdf">
+        <span>Choose a PDF</span>
+      </label>
+      <span class="partc-hint" id="partcPolicyFileName">or paste the text below</span>
+    </div>
+    <textarea id="partcPolicyText" class="partc-textarea" rows="4"
+      placeholder="e.g.&#10;Contractors' All Risks policy&#10;Insured: Department of Fisheries&#10;Basic contribution: LKR 24,448.16&#10;Material damage sum insured: LKR 6,499,442"></textarea>
+    <div class="partc-actions">
+      <button class="btn btn-secondary" id="partcIntakeBtn">Read policy with agent</button>
+      <span class="partc-hint" id="partcIntakeStatus"></span>
+    </div>
+  </section>
+
+  <!-- ── Step 2: BOQ ─────────────────────────────────────── -->
+  <section class="partc-card">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">2</span> Bill of quantities</h3>
+      <p>Paste any BOQ — any length, any wording. The mapping agent resolves each line to a material key, density, RICS waste category and service life.</p>
+    </header>
+    <div class="partc-upload">
+      <label class="partc-file">
+        <input type="file" id="partcBoqFile" accept="application/pdf">
+        <span>Choose a PDF</span>
+      </label>
+      <span class="partc-hint" id="partcBoqFileName">or paste the BOQ below</span>
+    </div>
+    <textarea id="partcBoq" class="partc-textarea" rows="7"
+      placeholder="e.g.&#10;Providing and laying 1:2:4 cement concrete in foundations .... 18.65 m3&#10;Rubble masonry in 1:5 cement mortar ......................... 6 m3&#10;Supplying and fixing timber doors and windows ............... 32.3 m2"></textarea>
+    <div class="partc-actions">
+      <button class="btn btn-secondary" id="partcMapBtn">Map BOQ with agent</button>
+      <button class="btn btn-ghost" id="partcDemoBtn">Load worked example</button>
+      <span class="partc-hint" id="partcMapStatus"></span>
+    </div>
+    <div id="partcMaterials" class="partc-materials"></div>
+  </section>
+
+  <!-- ── Step 2: Policy gate ─────────────────────────────── -->
+  <section class="partc-card">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">3</span> Policy</h3>
+      <p>Policy type sets the scope. CAR and EAR cover construction only — the use-stage sections disappear.</p>
+    </header>
+
+    <div class="partc-segmented" id="partcPolicySeg" role="tablist" aria-label="Policy type">
+      <button type="button" role="tab" data-value="CAR"      aria-selected="true">CAR</button>
+      <button type="button" role="tab" data-value="EAR"      aria-selected="false">EAR</button>
+      <button type="button" role="tab" data-value="IDI"      aria-selected="false">IDI</button>
+      <button type="button" role="tab" data-value="Property" aria-selected="false">Property</button>
+    </div>
+    <!-- Kept in the DOM (visually hidden) so form semantics and every existing
+         read of partcPolicyType.value continue to work unchanged. -->
+    <select id="partcPolicyType" hidden aria-hidden="true" tabindex="-1">
+      <option value="CAR">CAR — Contractors' All Risks</option>
+      <option value="EAR">EAR — Erection All Risks</option>
+      <option value="IDI">IDI — Inherent Defects / Decennial</option>
+      <option value="Property">Property</option>
+    </select>
+
+    <div class="partc-grid">
+      <label>Years of cover <input type="number" id="partcYears" value="10" min="0" inputmode="numeric"></label>
+      <label>Premium <input type="number" id="partcPremium" step="0.01" placeholder="24448.16" inputmode="decimal"></label>
+      <label>Total project cost <input type="number" id="partcProjectCost" step="0.01" placeholder="6499442" inputmode="decimal"></label>
+    </div>
+    <div class="partc-gate" id="partcGateNote"></div>
+  </section>
+
+  <!-- ── Step 3: Construction ────────────────────────────── -->
+  <section class="partc-card">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">4</span> Construction stage</h3>
+      <p>Diesel and grid emission factors are applied automatically and are not shown — they are hidden constants carrying their own source and tier.</p>
+    </header>
+    <div class="partc-grid">
+      <label>Project GIA (m²) <input type="number" id="partcGifa" inputmode="numeric" placeholder="1000"></label>
+      <label>Demolition transport (km) <input type="number" id="partcDemoKm" inputmode="numeric" value="100"></label>
+      <label>Waste disposal (km) <input type="number" id="partcWasteKm" inputmode="numeric" value="40"></label>
+    </div>
+
+    <details class="partc-optional">
+      <summary>Site data from a previous project <em>(optional — replaces the RICS default)</em></summary>
+      <div class="partc-grid">
+        <label>Previous area (m²) <input type="number" id="partcPrevArea" inputmode="numeric"></label>
+        <label>Site fuel (L) <input type="number" id="partcPrevFuel" inputmode="numeric"></label>
+        <label>Electricity (kWh) <input type="number" id="partcPrevElec" inputmode="numeric"></label>
+        <label>Duration (months) <input type="number" id="partcPrevMonths" inputmode="numeric"></label>
+      </div>
+    </details>
+
+    <label class="partc-check"><input type="checkbox" id="partcEv"> EV used on site
+      <em>— captured for information only, not calculated into any total</em></label>
+  </section>
+
+  <!-- ── Step 4: Use stage (gated) ───────────────────────── -->
+  <section class="partc-card" id="partcUseStageCard">
+    <header class="partc-card-head">
+      <h3><span class="partc-step">5</span> Use stage</h3>
+      <p>Optional under PCAF Part C §5.3. Computed only when the policy carries a use stage, and always reported as a separate line.</p>
+    </header>
+    <div class="partc-grid">
+      <label>Equipment type <select id="partcEquipment"></select></label>
+      <label>Refrigerant <select id="partcRefrigerant"></select></label>
+      <label>Refrigerant charge (kg) <input type="number" id="partcCharge" inputmode="decimal" step="0.1" placeholder="blank → estimate from area"></label>
+      <label>Occupants <input type="number" id="partcOccupants" inputmode="numeric" placeholder="blank → derive from area"></label>
+    </div>
+    <label class="partc-check"><input type="checkbox" id="partcWlca"> Include Beyond-PCAF whole-life annex (B2/B5/B8)
+      <em>— voluntary, delivered as a separate annex, never part of the PCAF figure</em></label>
+  </section>
+
+  <div class="partc-actions partc-actions-main">
+    <button class="btn btn-primary" id="partcRunBtn">Run assessment</button>
+    <button class="btn btn-secondary" id="partcPdfBtn" disabled>Download PDF</button>
+    <button class="btn btn-secondary" id="partcDocxBtn" disabled>Download Word</button>
+    <span class="partc-hint" id="partcRunStatus"></span>
+  </div>
+
+  <!-- ── Result ──────────────────────────────────────────── -->
+  <div id="partcResult" class="partc-result" style="display:none">
+
+    <div class="partc-figures">
+      <div class="partc-figure partc-figure-primary">
+        <span class="partc-figure-label">Construction (A4 + A5) — the PCAF figure</span>
+        <span class="partc-figure-value" id="partcConstruction">—</span>
+        <span class="partc-figure-unit">kgCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Use-stage (B1 + B4 + B7) — separate line</span>
+        <span class="partc-figure-value" id="partcUseStage">—</span>
+        <span class="partc-figure-unit">kgCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Insurer's IAE</span>
+        <span class="partc-figure-value" id="partcIae">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Per-m² factor <em>(reusable)</em></span>
+        <span class="partc-figure-value" id="partcPerM2">—</span>
+        <span class="partc-figure-unit">kgCO₂e/m²</span>
+      </div>
+    </div>
+    <p class="partc-scope-warning">These two figures are reported as separate lines and are never summed.</p>
+
+    <div class="partc-panels">
+      <div class="partc-panel">
+        <h4>Module breakdown</h4>
+        <div id="partcModules"></div>
+      </div>
+      <div class="partc-panel">
+        <h4>What drives this number</h4>
+        <div id="partcDrivers"></div>
+      </div>
+      <div class="partc-panel">
+        <h4>A4 Pareto — the vital few</h4>
+        <div id="partcPareto"></div>
+      </div>
+    </div>
+
+    <!-- Registers live behind their own tabs: off the main screen,
+         available to whoever needs them. -->
+    <div class="partc-registers">
+      <div class="partc-tabs">
+        <button class="partc-tab active" data-reg="assumptions">Assumptions <span id="partcBadgeA">0</span></button>
+        <button class="partc-tab" data-reg="dataGaps">Data gaps <span id="partcBadgeB">0</span></button>
+        <button class="partc-tab" data-reg="auditTrail">Audit trail <span id="partcBadgeC">0</span></button>
+      </div>
+      <div class="partc-tab-body" id="partcRegisterBody"></div>
+    </div>
+
+    <div class="partc-disclosure">
+      <h4>Disclosure statement</h4>
+      <p id="partcDisclosure"></p>
+      <div class="partc-dq" id="partcDataQuality"></div>
+    </div>
+
+    <div class="partc-annex" id="partcAnnexD" style="display:none">
+      <h4>Beyond-PCAF whole-life annex (voluntary)</h4>
+      <p class="partc-annex-warning">Not part of the PCAF figure. Delivered as a separate annex.</p>
+      <div id="partcAnnexDBody"></div>
+    </div>
+  </div>
+
+  <!-- ── Run history ─────────────────────────────────────── -->
+  <section class="partc-card">
+    <header class="partc-card-head">
+      <h3>Assessment history</h3>
+      <p>Runs waiting on client input can be picked up where they were left.</p>
+    </header>
+    <div class="partc-actions">
+      <button class="btn btn-ghost" id="partcRunsBtn">Refresh</button>
+      <span class="partc-hint" id="partcRunsStatus"></span>
+    </div>
+    <div id="partcRuns"></div>
+  </section>
+</div>
