@@ -148,7 +148,7 @@ const ITEMS = [
   // ── Data and data quality ───────────────────────────────────────────────
   {
     id: 'DQ-1', group: 'Data and data quality', clause: 'Part C ch.6, DATA AND DATA QUALITY (p.106)', duty: SHALL,
-    item: 'A weighted data-quality score is disclosed, weighted by outstanding premium.',
+    item: 'A weighted data-quality score is disclosed, weighted by outstanding premium (Box 6-3).',
     section: 'dataQuality',
     test: f => f.dqPremiumWeighted !== null && f.dqPremiumWeighted !== undefined,
     justify: () => 'No policy in this report carries both a premium and a data-quality score, so a premium-weighted score cannot be formed.'
@@ -162,25 +162,35 @@ const ITEMS = [
   },
   {
     id: 'DQ-3', group: 'Data and data quality', clause: 'Part C ch.6, DATA AND DATA QUALITY (p.106)', duty: SHOULD,
-    item: 'The scoring rubric and the basis actually used for each input are given.',
+    item: 'The scoring table (Table 5.3-2) and the basis actually used for each input are given.',
     section: 'dataQuality',
     /* A per-assessment report lists the basis input by input; an annual
        disclosure has no single set of inputs, so it reports the basis each
        input predominantly took across the book and the range of scores it
        produced. Either satisfies the requirement; neither is a substitute
        for the rubric, which both must carry. */
-    test: f => Array.isArray(f.rubric) && f.rubric.length === 5
-      && ((Array.isArray(f.dqInputs) && f.dqInputs.length > 0)
+    test: f => Array.isArray(f.dqTable) && f.dqTable.length === 6
+      && ((f.dqInternalAid && f.dqInternalAid.rows.length > 0)
         || (Array.isArray(f.dqInputBasis) && f.dqInputBasis.length > 0)),
-    justify: f => Array.isArray(f.rubric) && f.rubric.length === 5
-      ? 'No assessment in this report carries per-input scoring, so the basis behind the score cannot be shown.'
-      : 'The scoring rubric is not present in this report.'
+    justify: f => Array.isArray(f.dqTable) && f.dqTable.length === 6
+      ? 'No assessment in this report records the basis behind each input, so the evidence supporting the score cannot be shown.'
+      : 'Table 5.3-2 is not reproduced in this report.'
   },
   {
     id: 'DQ-4', group: 'Data and data quality', clause: 'Part C ch.6, DATA AND DATA QUALITY (p.106)', duty: SHOULD,
-    item: 'No reported figure appears without its data-quality score.',
+    item: 'The reported construction figure carries its data-quality score and the option behind it.',
     section: 'dataQuality',
-    test: f => f.everyFigureScored === true
+    /* Deliberately not "every figure": the optional use-stage line carries
+       no score because PCAF publishes no table for it, and inventing one to
+       satisfy a checkbox would be the worse failure. */
+    test: f => f.everyFigureScored === true,
+    justify: () => 'The construction figure in this report carries no data-quality score.'
+  },
+  {
+    id: 'DQ-5', group: 'Data and data quality', clause: 'Part C Table 5.3-2 (p.58)', duty: SHALL,
+    item: 'The optional use-stage line is not given a numeric data-quality score, since the standard publishes no table for it; its basis is described instead.',
+    section: 'dataQuality',
+    test: f => !!(f.dqUseStage && f.dqUseStage.scored === false)
   },
 
   // ── Recalculation ───────────────────────────────────────────────────────

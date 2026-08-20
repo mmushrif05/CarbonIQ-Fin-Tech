@@ -167,9 +167,34 @@ describe('Part C report — the PDF is readable', () => {
     expect(text).not.toMatch(/Inventory base year 20\d\d/);
   });
 
-  test('the reported figure carries its data-quality score', () => {
+  test('the reported figure carries its score and the option behind it', () => {
     expect(text).toContain('15.929');
-    expect(text).toMatch(/data quality 3\.3 \/ 5/);
+    expect(text).toMatch(/data quality 3 \(Option 2b\)/);
+    expect(text).toMatch(/1 is the highest data quality/i);
+  });
+
+  test('no data-quality score anywhere is written as a fraction of five', () => {
+    // "3 / 5" reads as a mark out of five and inverts the meaning of a scale
+    // on which 1 is best.
+    expect(text).not.toMatch(/data quality[^.]{0,40}\d\s*\/\s*5/i);
+    expect(text).not.toMatch(/score[^.]{0,20}\d\s*\/\s*5/i);
+  });
+
+  test('the use-stage line is shown as not scored, with the reason', () => {
+    expect(text).toMatch(/not scored/i);
+    expect(text).toMatch(/no data quality table for optional lifetime/i);
+  });
+
+  test('Table 5.3-2 is reproduced with the row this report used marked', () => {
+    expect(text).toMatch(/Table 5\.3-2/);
+    expect(text).toMatch(/Declared construction quantities/i);
+    expect(text).toMatch(/2b\s*</);
+  });
+
+  test('the internal aid is fenced off and cannot be read as a PCAF score', () => {
+    expect(text).toMatch(/Internal transparency aid . not a PCAF data quality score/i);
+    expect(text).toMatch(/must not be quoted as one/i);
+    expect(text).toMatch(/\bStrong\b|\bModerate\b|\bWeak\b/);
   });
 
   test('the completed checklist is annexed and every item is answered', () => {

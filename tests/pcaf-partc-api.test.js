@@ -137,44 +137,68 @@ describe('Part C API — form and reports', () => {
 });
 
 describe('Part C API — the data-quality score travels with the figure', () => {
-  test('POST /assess returns the scoring and the generated statement', async () => {
+  test('POST /assess returns the option, the score and the generated statement', async () => {
     const res = await auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody());
     expect(res.status).toBe(200);
-    expect(res.body.dqScoring).toBeTruthy();
-    expect(res.body.dqScoring.construction.weighted).toBeGreaterThan(0);
-    expect(res.body.dqScoring.rubric).toHaveLength(5);
-    expect(res.body.dqStatement).toMatch(/in conformance with PCAF/i);
+    expect(res.body.dataQuality.option).toBe('2b');
+    expect(res.body.dataQuality.score).toBe(3);
+    expect(res.body.dqScoring.construction.score).toBe(3);
+    expect(res.body.dqScoring.construction.scoreText).toBe('Data quality score: 3 (Option 2b)');
+    expect(res.body.dqScoring.table).toHaveLength(6);
+    expect(res.body.dqStatement).toMatch(/in conformance with/i);
     expect(res.body.dqStatement).not.toMatch(/PCAF (approved|endorsed|certified)/i);
+  });
+
+  test('the response carries no numeric data-quality score for the use stage', async () => {
+    const res = await auth(request(app).post('/v1/pcaf/part-c/assess'))
+      .send(assessBody({ policy: fx.POLICY_IDI, useStage: fx.USE_STAGE }));
+    expect(res.status).toBe(200);
+    const us = res.body.dqScoring.useStage;
+    expect(us.scored).toBe(false);
+    expect(us.reason).toMatch(/no data quality table/i);
+    for (const key of Object.keys(us)) expect(typeof us[key]).not.toBe('number');
   });
 
   test('a construction-only policy reports the use stage as out of scope, not as a score', () => {
     return auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody())
       .then(res => {
         expect(res.body.dqScoring.useStage.applies).toBe(false);
-        expect(res.body.dqScoring.useStage.weighted).toBeNull();
-        expect(res.body.dqScoring.useStage.notApplicableNote).toMatch(/scope rule/i);
+        expect(res.body.dqScoring.useStage.reason).toMatch(/scope rule/i);
       });
+  });
+
+  test('the insured scope 3 score is returned apart from scopes 1 and 2', async () => {
+    const res = await auth(request(app).post('/v1/pcaf/part-c/assess'))
+      .send(assessBody({ policy: fx.POLICY_IDI, useStage: fx.USE_STAGE }));
+    const g = res.body.dqScoring.byGhgScope;
+    expect(g.scope1and2.option).toBe('2a');
+    expect(g.scope1and2.score).toBe(2);
+    expect(g.scope3.option).toBe('2b');
+    expect(g.scope3.score).toBe(3);
   });
 
   test('POST /dq-preview scores without persisting anything', async () => {
     const res = await auth(request(app).post('/v1/pcaf/part-c/dq-preview')).send(assessBody());
     expect(res.status).toBe(200);
-    expect(res.body.dqScoring.construction.weighted).toBeGreaterThan(0);
+    expect(res.body.dqScoring.construction.score).toBe(3);
     expect(res.body.summary.construction_kgCO2e).toBeGreaterThan(0);
     expect(res.body.runId).toBeUndefined();
   });
 
-  test('the preview moves when an actual is supplied, so the form can show it', async () => {
+  test('the preview shows the evidence strengthen when an actual is supplied, while the score holds', async () => {
     const idi = { ...fx.POLICY_IDI };
     const before = await auth(request(app).post('/v1/pcaf/part-c/dq-preview'))
       .send(assessBody({ policy: idi, useStage: fx.USE_STAGE }));
     const after = await auth(request(app).post('/v1/pcaf/part-c/dq-preview'))
       .send(assessBody({ policy: idi, useStage: { ...fx.USE_STAGE, chargeKg: 12 } }));
 
-    expect(before.status).toBe(200);
-    expect(after.status).toBe(200);
-    expect(after.body.dqScoring.byModule.B1)
-      .toBeLessThan(before.body.dqScoring.byModule.B1);
+    const charge = body => body.dqScoring.internalAid.rows
+      .find(r => r.input === 'Refrigerant charge').strength;
+    expect(charge(before.body)).toBe('Weak');
+    expect(charge(after.body)).toBe('Strong');
+    // The PCAF score is a property of the option, so it does not move.
+    expect(after.body.dqScoring.construction.score)
+      .toBe(before.body.dqScoring.construction.score);
   });
 
   test('the preview requires a key like every other endpoint', async () => {

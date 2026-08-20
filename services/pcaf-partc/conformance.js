@@ -215,18 +215,18 @@ const RULES = [
   },
   {
     id: 'C-DQ-07',
-    clause: 'PCAF — a figure is disclosed with its score',
-    rule: 'Each reported scope carries an emission-weighted data quality score built from the evidence behind each input, and the construction and use-stage scores are reported separately and never blended.',
-    implementation: 'services/pcaf-partc/dq-scoring.js — per-input scores follow the evidence the run actually used, module_score is the mean of its inputs, and each scope score is sum(module emissions x module score) / sum(module emissions). The scoring reads a finished result and computes no figure of its own.',
-    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a emission-weighted roll-up \u203a the weighted score is \u03a3(emissions \u00d7 score) \u00f7 \u03a3(emissions), not a flat average',
+    clause: 'Part C Table 5.3-2 (p.58)',
+    rule: 'One data-quality score per project, assigned by which option was used to estimate the emissions. It is not an average across inputs, modules or lifecycle stages.',
+    implementation: 'services/pcaf-partc/data-quality.js maps the six options to their scores and infers the option from the data the run actually consumed, with an explicit override honoured; services/pcaf-partc/dq-scoring.js reports that score and computes no average of its own.',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a The Fisheries run \u203a is Option 2b with score 3 \u2014 a whole number, not an average',
     status: 'implemented'
   },
   {
     id: 'C-DQ-08',
-    clause: 'PCAF — the scope rule reaches the score',
-    rule: 'Where the policy gate closes the use stage, the use-stage score reports as not applicable by scope rule rather than as a score of zero or a measurement of nothing.',
-    implementation: 'services/pcaf-partc/dq-scoring.js — useStage.applies follows policy.useStageYears; gated inputs are marked not evaluated and cite the gate rather than reporting a zero-valued basis',
-    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a the scope rule reaches the score \u203a a gated use-stage input says it was not evaluated, not that it measured zero',
+    clause: 'Part C Table 5.3-2 (p.58); Chapter 6 (p.106)',
+    rule: 'No numeric data-quality score is reported for optional lifetime (use stage) emissions, because the standard publishes no table for them; the basis is described instead.',
+    implementation: 'services/pcaf-partc/dq-scoring.js useStageBasis() returns a reason and a set of qualitative statements and no number at all. Nothing downstream \u2014 API, roll-up, report or UI \u2014 reconstructs one.',
+    test: 'tests/pcaf-partc-dq-scoring.test.js \u203a The use stage is never scored \u203a no numeric use-stage score exists anywhere in the scoring output',
     status: 'implemented'
   },
   {
@@ -258,9 +258,9 @@ const RULES = [
   {
     id: 'C-RPT-02',
     clause: 'Part C ch.6, DATA AND DATA QUALITY (p.106)',
-    rule: 'The disclosed data-quality score is weighted by outstanding premium, and the emission-weighted score is never presented as the disclosed figure.',
-    implementation: 'services/partc-portfolio.js _premiumWeighted() produces the disclosed score; the emission-weighted score survives beside it carrying the label "internal diagnostic, not the disclosed score". A policy with no score is excluded from the weighting rather than counted as zero.',
-    test: 'tests/partc-portfolio.test.js \u203a Portfolio \u2014 the disclosed data-quality score \u203a the disclosed score is premium-weighted and says so',
+    rule: 'The disclosed data-quality score is weighted by outstanding premium (Box 6-3, p.107), reported to two decimals; ceded premium is substituted for treaty reinsurance (Box 6-4, p.108).',
+    implementation: 'services/partc-portfolio.js _premiumWeighted() produces the disclosed score from each policy\u2019s own option score. No emission-weighted score exists to be quoted by mistake. A policy with no score is excluded from the weighting rather than counted as zero.',
+    test: 'tests/partc-portfolio.test.js \u203a Portfolio \u2014 the disclosed data-quality score \u203a is premium-weighted, to two decimals, and says which scale it is on',
     status: 'implemented'
   },
   {

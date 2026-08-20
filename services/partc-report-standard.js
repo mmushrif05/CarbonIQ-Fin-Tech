@@ -30,13 +30,21 @@ const theme = require('./partc-theme');
 const { completeChecklist } = require('./partc-checklist');
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
 const { splitByGhgScope, INSURER_NOTE } = require('./pcaf-partc/ghg-scopes');
-const { RUBRIC } = require('./pcaf-partc/dq-scoring');
+const { TABLE_5_3_2, SCALE_NOTE, TABLE_CITATION } = require('./pcaf-partc/data-quality');
 
 const N  = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const T  = (kg, dp = 3) => (Number(kg || 0) / 1000).toFixed(dp);
 const F4 = n => Number(n || 0).toFixed(4);
 const pct = n => (n === null || n === undefined) ? 'not stated' : `${Number(n).toFixed(1)}%`;
-const score = n => (n === null || n === undefined) ? 'n/a' : `${Number(n).toFixed(1)} / 5`;
+/*
+ * A PCAF data-quality score is a category on a 1-5 scale where 1 is best. It
+ * is never written "3 / 5": that reads as a mark out of five and inverts the
+ * meaning for anyone who has not read the standard. A weighted score across
+ * a book is an average of those categories and is written to two decimals.
+ */
+const score  = n => (n === null || n === undefined) ? 'not scored' : String(n);
+const wscore = n => (n === null || n === undefined) ? 'not scored' : Number(n).toFixed(2);
+const SCALE_QUALIFIER = 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest. A lower score is better.';
 
 const PREPARED_BY = 'Prepared by Datum Solutions (Private) Limited';
 
@@ -153,9 +161,9 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
     });
   }
 
-  const scoreOf = (line, scope) =>
-    dq && dq.ghgScopes && dq.ghgScopes[line] && dq.ghgScopes[line][scope]
-      ? dq.ghgScopes[line][scope].weighted : null;
+  const scopeAt = scope => (dq && dq.byGhgScope && dq.byGhgScope[scope]) || null;
+  const scoreOf  = scope => (scopeAt(scope) || {}).score ?? null;
+  const optionOf = scope => (scopeAt(scope) || {}).option ?? null;
 
   const facts = {
     kind: 'assessment',
@@ -180,7 +188,7 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
       construction_tCO2e: Number(T(s.construction_kgCO2e)),
       useStage_tCO2e: Number(T(s.useStage_kgCO2e)),
       insurerIAE_tCO2e: s.insurerIAE_tCO2e,
-      dataQuality: dq ? dq.construction.weighted : null
+      dataQuality: dq ? dq.construction.score : (result.dataQuality || {}).score
     }],
     coveragePct: 100,
     coverageStatement: `The inventory in this report is a single policy — ${lineType}${meta.policyRef ? ` ${meta.policyRef}` : ''} on ${meta.projectName || 'the project'} — and it is assessed in full. That is not a statement about the share of the insurer's book that has been measured; the annual disclosure reports that.`,
@@ -215,7 +223,7 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
       attributionFactor: s.attributionFactor,
       projectEmissions_kgCO2e: s.construction_kgCO2e,
       attributed_tCO2e: s.insurerIAE_tCO2e,
-      dataQuality: dq ? dq.construction.weighted : null
+      dataQuality: dq ? dq.construction.score : (result.dataQuality || {}).score
     }],
     drivers: result.sensitivity.moduleContributions,
 
@@ -229,21 +237,24 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
 
     // 6
     dq,
-    dqPremiumWeighted: dq ? dq.construction.weighted : null,
-    dqPremiumWeightedBasis: 'This report covers one policy, so a premium weighting across policies reduces to that policy\'s own score. Across a book the disclosed score is sum(policy premium x policy score) / sum(policy premium), and the annual disclosure reports it on that basis.',
-    dqScope1and2: scoreOf('construction', 'scope1and2'),
-    dqScope3: scoreOf('construction', 'scope3'),
-    dqUseStageScope1and2: scoreOf('useStage', 'scope1and2'),
-    dqUseStageScope3: scoreOf('useStage', 'scope3'),
-    dqEmissionWeighted: dq ? dq.construction.weighted : null,
-    dqDiagnosticLabel: dq ? dq.weighting.internal : null,
-    rubric: dq ? dq.rubric : [],
-    dqInputs: dq ? dq.inputs : [],
+    /* One score for the project, from the option used (Table 5.3-2). */
+    dqOption: dq ? dq.construction.option : (result.dataQuality || {}).option,
+    dqOptionLabel: dq ? dq.construction.optionLabel : (result.dataQuality || {}).optionLabel,
+    dqScore: dq ? dq.construction.score : (result.dataQuality || {}).score,
+    dqScale: SCALE_QUALIFIER,
+    dqTable: dq ? dq.table : [],
+    dqTableCitation: dq ? dq.standard : null,
+    dqPremiumWeighted: dq ? dq.singlePolicyWeighted : null,
+    dqPremiumWeightedBasis: 'This report covers one policy, so the premium-weighted score of Box 6-3 reduces to that policy\'s own score. Across a book the disclosed score is sum(premium x score) / sum(premium), and the annual disclosure reports it on that basis.',
+    dqScope1and2: scoreOf('scope1and2'),
+    dqScope1and2Option: optionOf('scope1and2'),
+    dqScope3: scoreOf('scope3'),
+    dqScope3Option: optionOf('scope3'),
+    /* No use-stage score exists: PCAF publishes no table for it. */
+    dqUseStage: dq ? dq.useStage : null,
+    dqInternalAid: dq ? dq.internalAid : null,
     dqInputBasis: [],
-    dqModuleWeighting: dq ? dq.construction.rows : [],
-    dqUseStageWeighting: dq && dq.useStage.applies ? dq.useStage.rows : [],
-    everyFigureScored: !!dq && dq.construction.weighted !== null
-      && (!useStageApplies || dq.useStage.weighted !== null),
+    everyFigureScored: !!dq && typeof dq.construction.score === 'number',
     dqStatement: result.dqDisclosureStatement || null,
 
     // 7
@@ -396,22 +407,29 @@ function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equatio
 
     // 6
     dq: null,
+    dqOption: null,
+    dqOptionLabel: null,
+    dqScore: null,
+    dqScale: SCALE_QUALIFIER,
+    dqTable: TABLE_5_3_2,
+    dqTableCitation: TABLE_CITATION,
     dqPremiumWeighted: dqd.overall ? dqd.overall.weighted : null,
-    dqPremiumWeightedBasis: (roll.dataQuality && roll.dataQuality.disclosedBasis) || null,
+    dqPremiumWeightedBasis: (roll.dataQuality && roll.dataQuality.basis) || null,
+    dqCeded: dqd.ceded || null,
     dqScope1and2: dqd.scope1and2 ? dqd.scope1and2.weighted : null,
+    dqScope1and2Option: null,
     dqScope3: dqd.scope3 ? dqd.scope3.weighted : null,
-    dqUseStageScope1and2: dqd.useStage && dqd.useStage.scope1and2 ? dqd.useStage.scope1and2.weighted : null,
-    dqUseStageScope3: dqd.useStage && dqd.useStage.scope3 ? dqd.useStage.scope3.weighted : null,
-    dqEmissionWeighted: roll.dataQuality ? roll.dataQuality.weightedRubric : null,
-    dqDiagnosticLabel: roll.dataQuality ? roll.dataQuality.diagnosticLabel : null,
+    dqScope3Option: null,
+    dqUseStage: {
+      scored: false, applies: useStageApplies,
+      reason: (roll.dataQuality && roll.dataQuality.useStageNote) || null,
+      statements: []
+    },
+    dqInternalAid: null,
     dqPolicyCoverage: dqd.overall || null,
-    rubric: (roll.dataQuality && roll.dataQuality.rubric) || RUBRIC,
-    dqInputs: [],
     dqInputBasis: (roll.dataQuality && roll.dataQuality.inputBasis) || [],
     dqDistribution: disclosure.dataQuality.distribution || [],
     dqImprovement: disclosure.dataQuality.improvement || null,
-    dqModuleWeighting: [],
-    dqUseStageWeighting: [],
     everyFigureScored: dqd.overall ? dqd.overall.weighted !== null : false,
     dqStatement: null,
 
@@ -587,13 +605,16 @@ function buildSections(f) {
       b.figure({
         label: 'Construction (A4 + A5) — the PCAF figure',
         value: T(f.construction_kgCO2e), unit: 'tCO2e',
-        score: `data quality ${score(f.dqPremiumWeighted)}`,
+        score: f.kind === 'annual'
+          ? `data quality ${wscore(f.dqPremiumWeighted)} (premium-weighted)`
+          : `data quality ${score(f.dqScore)} (Option ${f.dqOption})`,
         note: `Attributed to the re/insurer: ${F4(f.insurerIAE_tCO2e)} tCO2e.`
       }),
       f.useStageApplies ? b.figure({
         label: 'Use stage (B1 + B4 + B7) — reported separately',
         value: T(f.useStage_kgCO2e), unit: 'tCO2e',
-        score: `data quality ${score(f.dqUseStageScope1and2 !== null || f.dqUseStageScope3 !== null ? (f.dqUseStageScope1and2 ?? f.dqUseStageScope3) : null)}`,
+        // No score here, by design: PCAF publishes no table for this line.
+        score: 'not scored — see section 6',
         note: `Attributed to the re/insurer: ${F4(f.useStageShare_tCO2e)} tCO2e. Never added to the figure above.`
       }) : b.callout(f.policyGateStatement, 'Use stage'),
 
@@ -668,73 +689,99 @@ function buildSections(f) {
   sections.push({
     id: 'dataQuality', title: 'Data quality',
     blocks: keep([
-      b.h2('The disclosed score'),
-      b.table({
-        head: ['Reported line', 'Insured scope 1 and 2', 'Insured scope 3'],
-        widths: [2.2, 1.7, 1.7], align: ['left', 'right', 'right'],
-        rows: [
-          ['Construction — the PCAF figure', score(f.dqScope1and2), score(f.dqScope3)],
-          ...(f.useStageApplies ? [['Use stage — separate line', score(f.dqUseStageScope1and2), score(f.dqUseStageScope3)]] : [])
-        ]
-      }),
-      b.figure({
-        label: 'Weighted data quality — the disclosed score',
-        value: score(f.dqPremiumWeighted).replace(' / 5', ''), unit: 'of 5 (1 best, 5 worst)',
-        note: 'Premium-weighted, as PCAF Part C requires.'
-      }),
+      b.callout(f.dqScale, 'The scale'),
+
+      f.dqScore !== null && f.dqScore !== undefined ? b.h2('The score, and the option it comes from') : null,
+      f.dqScore !== null && f.dqScore !== undefined ? b.figure({
+        label: 'Data quality score',
+        value: score(f.dqScore), unit: `(Option ${f.dqOption})`,
+        note: f.dqOptionLabel
+      }) : null,
+      f.dqScore !== null && f.dqScore !== undefined
+        ? b.body('PCAF assigns one score per project and decides it by which option was used to estimate the emissions. It is not an average across inputs, modules or lifecycle stages.')
+        : null,
+
+      f.dqPremiumWeighted !== null ? b.h2('The disclosed weighted score') : null,
+      f.dqPremiumWeighted !== null ? b.figure({
+        label: 'Premium-weighted data quality score',
+        value: wscore(f.dqPremiumWeighted), unit: 'on the 1-5 scale',
+        note: 'Box 6-3 (p.107): sum(premium x score) / sum(premium).'
+      }) : null,
       f.dqPremiumWeightedBasis ? b.body(f.dqPremiumWeightedBasis) : null,
+      f.dqCeded && f.dqCeded.weighted !== null ? b.body(
+        `Treaty reinsurance, weighted by ceded premium (Box 6-4, p.108): ${wscore(f.dqCeded.weighted)}.`) : null,
       f.dqPolicyCoverage && f.dqPolicyCoverage.policiesWithoutScore > 0
         ? b.caption(`${f.dqPolicyCoverage.policiesScored} policies carry both a premium and a score and are weighted; ${f.dqPolicyCoverage.policiesWithoutScore} carry no score and are excluded from the weighting rather than counted as zero.`)
         : null,
-      b.callout('The insured party\'s scope 3 score is reported separately from its scope 1 and 2 score. The two are never blended, and neither is blended with the emission-weighted diagnostic below.', 'Scope discipline'),
 
-      b.h2('The rubric'),
-      f.rubric.length ? b.table({
-        head: ['Score', 'Meaning', 'Typical evidence'], widths: [0.6, 1.8, 3.6],
-        align: ['right', 'left', 'left'],
-        rows: f.rubric.map(r => [String(r.score), r.meaning, r.evidence])
-      }) : b.body('Scores run 1 (verified actual) to 5 (global default or literature assumption).'),
+      b.h2('Scope 3 reported separately from scopes 1 and 2'),
+      b.table({
+        head: ['Insured scope', 'Option used', 'Data quality score'],
+        widths: [2.2, 3, 1.4], align: ['left', 'left', 'right'],
+        rows: [
+          ['Scope 1 and 2 (combined)', f.dqScope1and2Option ? `Option ${f.dqScope1and2Option}` : 'per policy',
+            f.kind === 'annual' ? wscore(f.dqScope1and2) : score(f.dqScope1and2)],
+          ['Scope 3', f.dqScope3Option ? `Option ${f.dqScope3Option}` : 'per policy',
+            f.kind === 'annual' ? wscore(f.dqScope3) : score(f.dqScope3)]
+        ]
+      }),
+      b.caption('Chapter 6, p.106 requires the score for scope 3 to be reported separately from the score for scopes 1 and 2. The two rest on different data: site energy on energy consumption, the rest on declared quantities.'),
 
-      !f.dqInputs.length && f.dqInputBasis && f.dqInputBasis.length ? b.h2('The basis actually used, across the book') : null,
-      !f.dqInputs.length && f.dqInputBasis && f.dqInputBasis.length ? b.table({
-        head: ['Stage', 'Input', 'Insured scope', 'Basis predominantly used', 'Score', 'Assessments'],
-        widths: [0.7, 1.4, 1, 3.2, 0.7, 1],
-        align: ['left', 'left', 'left', 'left', 'right', 'right'],
+      b.h2('Optional lifetime (use stage) emissions'),
+      b.callout(
+        (f.dqUseStage && f.dqUseStage.reason)
+          || 'PCAF provides no data quality table for optional lifetime emissions on project insurance, so no score is reported for that line.',
+        'Not scored'),
+      f.dqUseStage && f.dqUseStage.statements && f.dqUseStage.statements.length
+        ? b.bullets(f.dqUseStage.statements) : null,
+
+      b.h2('Table 5.3-2 — how the score is assigned'),
+      f.dqTable && f.dqTable.length ? b.table({
+        head: ['Option', 'Score', 'Data used to estimate the emissions'],
+        widths: [0.7, 0.6, 5], align: ['left', 'right', 'left'],
         zebra: true,
-        rows: f.dqInputBasis.map(i => [
-          i.stage, i.input,
-          i.ghgScope === 'scope1and2' ? 'Scope 1 & 2' : i.ghgScope === 'scope3' ? 'Scope 3' : '—',
-          i.predominantBasis + (i.basesInUse > 1 ? `  (${i.basesInUse} bases in use)` : ''),
-          i.scoreLow === i.scoreHigh ? String(i.scoreLow) : `${i.scoreLow}-${i.scoreHigh}`,
-          String(i.assessments)
+        rows: f.dqTable.map(r => [
+          r.option === f.dqOption ? `${r.option}  <` : r.option,
+          String(r.score), r.data
         ])
       }) : null,
-      f.dqInputs.length ? b.h2('The basis actually used for each input') : null,
-      f.dqInputs.length ? b.table({
-        head: ['Stage', 'Input', 'Insured scope', 'Basis actually used', 'Score', 'Source'],
-        widths: [0.7, 1.4, 1, 3, 0.6, 2],
-        align: ['left', 'left', 'left', 'left', 'right', 'left'],
-        zebra: true,
-        rows: f.dqInputs.map(i => [
-          i.stage, i.input,
-          i.ghgScope === 'scope1and2' ? 'Scope 1 & 2' : i.ghgScope === 'scope3' ? 'Scope 3' : '—',
-          i.basis, i.applies === false ? 'n/a' : String(i.score), i.source
-        ])
-      }) : null,
-
-      f.dqModuleWeighting.length ? b.h2('Emission weighting — the internal diagnostic') : null,
-      f.dqModuleWeighting.length ? b.table({
-        head: ['Module', 'kgCO2e', 'Score', 'Weight', 'Contributes'],
-        widths: [1, 1.5, 0.9, 0.9, 1.2], align: ['left', 'right', 'right', 'right', 'right'],
-        rows: f.dqModuleWeighting.map(r => [r.module, N(r.emissions), String(r.score), `${r.weightPct}%`, String(r.contribution)])
-      }) : null,
-      f.dqDiagnosticLabel ? b.caption(f.dqDiagnosticLabel) : null,
+      f.dqTableCitation ? b.caption(`${f.dqTableCitation}${f.dqOption ? `  The row marked < is the one this report used.` : ''}`) : null,
 
       f.dqDistribution && f.dqDistribution.length ? b.h2('Distribution across the book') : null,
       f.dqDistribution && f.dqDistribution.length ? b.table({
         head: ['Score', 'Option', 'Assessments', 'kgCO2e', 'Share'],
         widths: [0.6, 2.6, 1.1, 1.4, 0.9], align: ['right', 'left', 'right', 'right', 'right'],
         rows: f.dqDistribution.map(d => [String(d.score), d.label, String(d.assessments), N(d.kgCO2e), `${d.sharePct}%`])
+      }) : null,
+
+      /* Fenced off, in words, and labelled on its own heading — so it cannot
+         be read as, or lifted out as, a PCAF score. */
+      (f.dqInternalAid && f.dqInternalAid.rows.length) || (f.dqInputBasis && f.dqInputBasis.length)
+        ? b.h2('Internal transparency aid — not a PCAF data quality score') : null,
+      (f.dqInternalAid && f.dqInternalAid.rows.length) || (f.dqInputBasis && f.dqInputBasis.length)
+        ? b.callout('The table below is not a PCAF data quality score and must not be quoted as one. It records how strong the evidence behind each input is, so effort can be aimed at what is weakest. It is expressed in words, is never averaged, and never enters the score above.', 'Read this first')
+        : null,
+      f.dqInternalAid && f.dqInternalAid.rows.length ? b.table({
+        head: ['Stage', 'Input', 'Insured scope', 'Basis actually used', 'Evidence', 'Source'],
+        widths: [0.7, 1.5, 1, 2.8, 0.9, 2],
+        align: ['left', 'left', 'left', 'left', 'left', 'left'],
+        zebra: true,
+        rows: f.dqInternalAid.rows.map(i => [
+          i.stage, i.input,
+          i.ghgScope === 'scope1and2' ? 'Scope 1 & 2' : i.ghgScope === 'scope3' ? 'Scope 3' : '—',
+          i.basis, i.strength || 'not evaluated', i.source
+        ])
+      }) : null,
+      !f.dqInternalAid && f.dqInputBasis && f.dqInputBasis.length ? b.table({
+        head: ['Stage', 'Input', 'Basis predominantly used', 'Evidence', 'Assessments'],
+        widths: [0.7, 1.5, 3.4, 0.9, 1],
+        align: ['left', 'left', 'left', 'left', 'right'],
+        zebra: true,
+        rows: f.dqInputBasis.map(i => [
+          i.stage, i.input,
+          i.predominantBasis + (i.basesInUse > 1 ? `  (${i.basesInUse} bases in use)` : ''),
+          i.strength || 'not evaluated', String(i.assessments)
+        ])
       }) : null,
 
       f.dqImprovement && f.dqImprovement.actions && f.dqImprovement.actions.length ? b.h2('What would improve it') : null,

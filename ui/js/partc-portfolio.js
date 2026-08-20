@@ -22,9 +22,14 @@ const PartCPortfolio = (() => {
   /* No figure without its score. The badge shares the palette and the class
      names used on the assessment screen, so a colour means the same thing
      wherever a reader meets it. */
-  const dqBadge = (v, label) => v === null || v === undefined
-    ? `<span class="dqb dqb-na">${esc(label || 'n/a')}</span>`
-    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${esc(label)}</i>` : ''}<b>${Number(v).toFixed(1)}</b>/5</span>`;
+  /* A weighted score across a book is an average of category scores and is
+     shown to two decimals; a single policy's score is the whole number the
+     option carries. Neither is ever written as a fraction of five — that
+     reads as a mark out of five and inverts a scale on which 1 is best. */
+  const dqBadge = (v, label, dp = 0) => v === null || v === undefined
+    ? `<span class="dqb dqb-na">${esc(label || 'not scored')}</span>`
+    : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${esc(label)}</i>` : ''}<b>${Number(v).toFixed(dp)}</b></span>`;
+  const dqWeighted = (v, label) => dqBadge(v, label, 2);
 
   async function call(path) {
     const res = await window.CARBONIQ_fetch('/v1/partc' + path);
@@ -91,20 +96,16 @@ const PartCPortfolio = (() => {
     say('pfConstruction', fmt(p.construction.total_kgCO2e, 2));
     say('pfIae', fmt(p.construction.insurerIAE_tCO2e, 4));
     say('pfUseStage', fmt(p.useStage.total_kgCO2e, 2));
-    say('pfDq', p.dataQuality.weighted === null ? '—' : p.dataQuality.weighted);
-    say('pfDqBasis', p.dataQuality.simpleAverage === null
-      ? 'by emissions'
-      : `by emissions · simple avg ${p.dataQuality.simpleAverage}`);
-    const rubric = p.dataQuality.weightedRubric;
-    setHtml('pfDqConstruction', rubric === null || rubric === undefined
-      ? '<span class="dqb dqb-na">no rubric score locked</span>'
-      : `Input rubric ${dqBadge(rubric)}`);
-    const useRows = p.rows.filter(r => r.dqUseStage !== null && r.dqUseStage !== undefined);
-    setHtml('pfDqUseStage', useRows.length === 0
-      ? '<span class="dqb dqb-na">no use-stage cover in this year</span>'
-      : `Input rubric ${dqBadge(
-        Math.round((useRows.reduce((n, r) => n + (r.useStage_kgCO2e * r.dqUseStage), 0)
-          / (useRows.reduce((n, r) => n + r.useStage_kgCO2e, 0) || 1)) * 10) / 10)}`);
+    say('pfDq', p.dataQuality.weighted === null ? '—' : Number(p.dataQuality.weighted).toFixed(2));
+    say('pfDqBasis', p.dataQuality.weighted === null
+      ? 'premium-weighted · 1 is best'
+      : `premium-weighted · 1 is best${p.dataQuality.simpleAverage !== null ? ` · simple avg ${p.dataQuality.simpleAverage}` : ''}`);
+    const d = p.dataQuality.disclosed || {};
+    setHtml('pfDqConstruction', d.overall && d.overall.weighted !== null
+      ? `Premium-weighted ${dqWeighted(d.overall.weighted)}`
+      : '<span class="dqb dqb-na">no score locked</span>');
+    setHtml('pfDqUseStage',
+      '<span class="dqb dqb-na">not scored — no PCAF table for the use stage</span>');
 
     say('pfScopeNote', p.scopeNote);
     say('pfAggregationNote', p.aggregationNote);
@@ -144,9 +145,8 @@ const PartCPortfolio = (() => {
                <td class="num">${r.shareOfConstructionPct}%</td>
                <td class="num">${r.attributionFactor.toFixed(6)}</td>
                <td class="num">${fmt(r.insurerIAE_tCO2e, 4)}</td>
-               <td class="num">${esc(r.dataQualityOption)} · ${r.dataQualityScore}
-                   ${r.dqConstruction === null || r.dqConstruction === undefined ? ''
-                     : '<br>' + dqBadge(r.dqConstruction)}</td>
+               <td class="num">${dqBadge(r.dataQualityScore)}<br>
+                   <span class="partc-hint">Option ${esc(r.dataQualityOption)}</span></td>
              </tr>`).join('')}
            </tbody></table>`);
 

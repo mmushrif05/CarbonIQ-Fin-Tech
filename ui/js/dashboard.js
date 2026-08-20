@@ -146,7 +146,7 @@ const Dashboard = (() => {
     }
 
     const dqVal = $('dash-dq-value');
-    if (dqVal) dqVal.innerHTML = `${d.weightedDQ.toFixed(1)} <span class="kpi-unit">/ 5</span>`;
+    if (dqVal) dqVal.innerHTML = `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best</span>`;
     const dqBadge = $('dash-dq-badge');
     if (dqBadge) {
       const label = d.weightedDQ <= 2.0 ? 'Excellent' : d.weightedDQ <= 3.0 ? 'Good' : 'Fair';
@@ -258,7 +258,7 @@ const Dashboard = (() => {
 
     // KPI 4: Weighted Data Quality
     const wdq = $('pf-wdq');
-    if (wdq) wdq.innerHTML = `${d.weightedDQ.toFixed(1)} <span class="kpi-unit">/ 5</span>`;
+    if (wdq) wdq.innerHTML = `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best</span>`;
     const pfDqBadge = $('pf-dq-badge');
     if (pfDqBadge) {
       const label = d.weightedDQ <= 2.0 ? 'Excellent' : d.weightedDQ <= 3.0 ? 'Good' : 'Fair';
@@ -538,7 +538,7 @@ const Dashboard = (() => {
         <tr><td>Total Financed Emissions</td><td>${_fmtN(d.totalFinancedEmissions_tCO2e)} tCO2e</td><td>PCAF v3 methodology</td></tr>
         <tr><td>Economic Intensity</td><td>${intensityVal} tCO2e/$M</td><td>${parseFloat(intensityVal) < 40 ? 'Below sector avg' : 'Above sector avg'}</td></tr>
         <tr><td>Green Loan Ratio</td><td>${greenPct}%</td><td>${greenPct >= 40 ? 'On target' : 'Below 40% target'}</td></tr>
-        <tr><td>Weighted Data Quality</td><td>${d.weightedDQ.toFixed(1)} / 5</td><td>PCAF DQ Score</td></tr>
+        <tr><td>Weighted Data Quality</td><td>${d.weightedDQ.toFixed(2)}</td><td>PCAF scale 1\u20135, 1 = highest quality</td></tr>
         <tr><td>Portfolio Coverage</td><td>${d.coveragePct}%</td><td>${d.coveragePct >= 80 ? 'Sufficient' : 'Needs improvement'}</td></tr>
       </table>
 

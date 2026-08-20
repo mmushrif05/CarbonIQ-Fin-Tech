@@ -388,6 +388,20 @@
 .dq-rub b { font-weight: 620; }
 .dq-rub span:last-child { color: var(--ink2); }
 
+/* The chosen row of Table 5.3-2, and the words the internal aid speaks in.
+   The aid never carries a number, so it never borrows the score palette. */
+.dq-53-2 tr.is-selected { background: var(--brand-soft); }
+.dq-53-2 tr.is-selected td { font-weight: 620; color: var(--ink); }
+.dq-53-2 tr.is-selected td:first-child::after { content: ' \2190'; color: var(--brand); }
+.dq-strength { font-size: 11px; font-weight: 620; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.dq-strength.s-strong   { background: rgba(13,148,136,.16); color: var(--brand); }
+.dq-strength.s-moderate { background: var(--raised); color: var(--ink2); }
+.dq-strength.s-weak     { background: var(--amber-soft); color: var(--amber); }
+.dq-strength.s-na       { background: transparent; color: var(--ink3); }
+.dq-aid-warning { font-size: 12px; line-height: 1.55; color: var(--ink2);
+  border-left: 3px solid var(--amber); padding: 8px 0 8px 12px; margin: 0 0 12px; }
+.dq-aid-warning b { color: var(--amber); }
+
 .dq-statement { margin: 0; padding: 14px 18px; border-left: 3px solid var(--brand);
   background: var(--brand-soft); border-radius: 0 10px 10px 0;
   font-size: 13.5px; line-height: 1.62; }

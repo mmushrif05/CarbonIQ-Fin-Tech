@@ -106,9 +106,20 @@ function runPartC(input = {}) {
   // --- 7. quality, sensitivity, checks --------------------------------------
   const pcafTree = [attribution, gate, a4, a5, b1, b4, b7];
 
+  /*
+   * One score for the project, decided by which option the estimate was
+   * built from (Table 5.3-2). The inputs below are what the run actually
+   * consumed, so the option is read from the calculation rather than
+   * declared alongside it.
+   */
   const dataQuality = assessDataQuality({
     hasBoq: materials.length > 0,
     hasEPD: !!input.hasEPD,
+    reportedEmissions: input.reportedEmissions || null,
+    projectCost: Number(policy.projectCost) || 0,
+    customerIntensity: !!input.customerIntensity,
+    annualBasis: /annual|blanket/i.test(String(policy.basis || '')),
+    option: input.dataQualityOption || null,
     tree: pcafTree
   });
 
