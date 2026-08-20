@@ -618,3 +618,105 @@
   .pf-move-down { background: rgba(96, 165, 250, 0.16); color: #60a5fa; }
   .pf-move-unchanged { background: rgba(148, 163, 184, 0.16); color: #94a3b8; }
 }
+
+/* ── Methodology and Evidence ─────────────────────────────────────────────
+   The method is the argument here, so it is laid out to be read and
+   challenged: equations in a monospaced block, every factor carrying its
+   tier as a chip, and the full trace one click from the summary. */
+.mth-claim { font-weight: 620; margin: 10px 0 4px; }
+
+.mth-sub { margin: 16px 0 6px; font-size: 13.5px; font-weight: 650; }
+
+.mth-module {
+  border: 1px solid var(--partc-border, #e2e8f0);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+/* The module header and its equation are always on the page. */
+.mth-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px 6px;
+  font-size: 13.5px;
+}
+
+/* Only the step-by-step trace collapses. */
+.mth-detail > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  opacity: 0.8;
+  min-height: 44px;          /* comfortable tap target on a phone */
+}
+.mth-detail > summary::-webkit-details-marker { display: none; }
+.mth-detail > summary::before {
+  content: '▸';
+  font-size: 12px;
+  opacity: 0.55;
+  transition: transform 0.15s ease;
+}
+.mth-detail[open] > summary::before { transform: rotate(90deg); }
+.mth-detail[open] > summary { border-bottom: 1px solid var(--partc-border, #e2e8f0); }
+
+.mth-mod   { font-weight: 700; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.mth-val   { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 620; }
+
+.mth-narr  { padding: 10px 14px 0; margin: 0; font-size: 13px; line-height: 1.6; }
+
+.mth-eq {
+  margin: 8px 14px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: rgba(100, 116, 139, 0.09);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* A wide trace must scroll inside its own box, never drag the page sideways. */
+.mth-trace { margin: 4px 0 12px; }
+.mth-module .partc-table { display: block; overflow-x: auto; max-width: 100%; }
+.mth-inputs { font-size: 11.5px; }
+.mth-fac    { margin-bottom: 5px; }
+.mth-src    { font-size: 11px; opacity: 0.72; line-height: 1.5; }
+
+.mth-tier-local    { background: rgba(16, 185, 129, 0.14); color: #047857; }
+.mth-tier-regional { background: rgba(59, 130, 246, 0.14); color: #1d4ed8; }
+.mth-tier-global   { background: rgba(100, 116, 139, 0.14); color: #475569; }
+.mth-fallback      { background: rgba(245, 158, 11, 0.16); color: #b45309; }
+
+.mth-limit {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--partc-border, #e2e8f0);
+}
+.mth-limit:last-child { border-bottom: none; }
+.mth-limit strong { display: block; margin-bottom: 4px; }
+.mth-limit p { margin: 2px 0; }
+
+.mth-filter {
+  flex: 1 1 220px;
+  min-width: 0;
+  padding: 9px 12px;
+  font-size: 16px;           /* 16px+ stops iOS zooming the page on focus */
+  border: 1px solid var(--partc-border, #e2e8f0);
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mth-eq { background: rgba(148, 163, 184, 0.12); }
+  .mth-tier-local    { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+  .mth-tier-regional { background: rgba(96, 165, 250, 0.18); color: #60a5fa; }
+  .mth-tier-global   { background: rgba(148, 163, 184, 0.18); color: #94a3b8; }
+  .mth-fallback      { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
+}

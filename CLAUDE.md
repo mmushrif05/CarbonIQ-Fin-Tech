@@ -78,6 +78,7 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `POST` | `/v1/pcaf/part-c/report` | Disclosure report — PDF, Word or JSON |
 | `GET` | `/v1/pcaf/part-c/factors` | Factor store transparency (tier + source per row) |
 | `GET` | `/v1/pcaf/part-c/conformance` | Conformance matrix — rule → implementation → proving test |
+| `GET` | `/v1/pcaf/part-c/methodology` | Methodology statement — scope, equations, factors, worked example, limits (JSON, PDF or Word) |
 | `POST` | `/v1/pcaf/part-c/runs/start` | Begin a run, pause for client input |
 | `POST` | `/v1/pcaf/part-c/runs/:id/resume` | Supply answers, compute, complete |
 | `GET/PUT` | `/v1/partc/settings` | Insurer settings — reporting year, premium basis, restatement threshold |
@@ -215,6 +216,10 @@ Three tiers, enforced structurally rather than by convention:
 **Comparatives (`services/partc-comparatives.js`):** because a policy's reporting year is its inception year, each year covers a *different set of policies* — two annual totals are measurements of two different books, not two measurements of one thing. Presenting their difference as a reduction would be false. The movement is therefore reported as fact alongside the note that it is not on its own a change in performance, and **intensity (kgCO2e/m² insured)** and the emissions-weighted data-quality score are given as the measures that survive a change of book. Where a prior year has been restated, the comparative is carried on **both** bases — as previously reported and as restated — with the reason recorded at lock time.
 
 Every API key belongs to the insurer's own organisation — there is no client-facing login — so "only the insurer locks" holds by construction rather than by a role check; the organisation is recorded on the lock either way. Period totals weight data quality by emissions, as PCAF requires, so a small weak policy cannot drag the reported position beyond its share.
+
+**The methodology statement (`services/partc-methodology.js`):** the other half of a disclosure — the scope rule applied, every equation executed, every factor with its tier and named source, how data quality is scored and aggregated, which rules are claimed and what proves each, and the declared limits. Reachable without running an assessment, because a reviewer asked to accept a figure should be able to read the method first.
+
+Every equation, input and factor in it is **extracted from an execution of the engine**, not transcribed alongside it. A hand-written methodology drifts from the code as soon as either changes, and the drift is invisible exactly when it matters — under review. A test asserts that every documented equation appears in the executed trace, so the document cannot describe an equation the engine does not run. On screen the equation and what each module does stay visible; only the step-by-step trace collapses.
 
 **Conformance evidence:** `services/pcaf-partc/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 

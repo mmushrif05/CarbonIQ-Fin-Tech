@@ -37,6 +37,8 @@ const { buildForm, formAnswersToEngineInput } = require('../../services/agents/p
 const runStore            = require('../../services/partc-run-store');
 const factors             = require('../../services/pcaf-partc/factors');
 const { conformanceMatrix } = require('../../services/pcaf-partc/conformance');
+const { buildMethodology } = require('../../services/partc-methodology');
+const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/partc-methodology-doc');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
@@ -71,7 +73,8 @@ function requireAI(_req, res, next) {
     remedy: 'Set ANTHROPIC_API_KEY, or supply the policy fields and mapped materials directly — the calculation engine is deterministic and needs no API key.',
     unaffected: ['POST /v1/pcaf/part-c/assess', 'POST /v1/pcaf/part-c/runs/start',
                  'POST /v1/pcaf/part-c/runs/:runId/resume', 'POST /v1/pcaf/part-c/report',
-                 'GET /v1/pcaf/part-c/factors', 'GET /v1/pcaf/part-c/conformance']
+                 'GET /v1/pcaf/part-c/factors', 'GET /v1/pcaf/part-c/conformance',
+                 'GET /v1/pcaf/part-c/methodology']
   });
 }
 
@@ -131,6 +134,41 @@ router.get('/options', apiKeyAuth, defaultLimiter, (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+/**
+ * GET /methodology — how the calculation works, as JSON, PDF or Word.
+ *
+ * Reachable without running an assessment. A reviewer asked to accept a
+ * figure should be able to read the method that produced it first, and
+ * everything here is extracted from an execution of the engine rather than
+ * written alongside it.
+ */
+router.get('/methodology', apiKeyAuth, defaultLimiter, async (req, res, next) => {
+  try {
+    const format = String(req.query.format || 'json').toLowerCase();
+    if (!['json', 'pdf', 'docx'].includes(format)) {
+      return res.status(400).json({
+        error: 'UNSUPPORTED_FORMAT',
+        message: `Format "${format}" is not supported.`,
+        remedy: 'Use format=json, format=pdf or format=docx.'
+      });
+    }
+
+    const methodology = buildMethodology();
+    if (format === 'json') return res.json({ methodology });
+
+    if (format === 'docx') {
+      const buffer = await buildMethodologyDOCX(methodology);
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+      res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.docx"');
+      return res.send(buffer);
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.pdf"');
+    buildMethodologyPDF(methodology).pipe(res);
+  } catch (err) { next(err); }
+});
+
 // GET /conformance — what this engine claims, where it lives, what proves it
 //
 // Published so a reviewer can check the claim rather than take it on trust:

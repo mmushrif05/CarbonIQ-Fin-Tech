@@ -1,0 +1,88 @@
+<!-- Methodology and Evidence.
+     Everything on this page is generated from an execution of the engine,
+     so the method described is provably the method that runs. -->
+
+<div class="partc partc-method">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">M</div>
+    <div>
+      <strong id="mthTitle">Methodology and Evidence</strong>
+      <span id="mthStandard">Loading…</span>
+    </div>
+  </div>
+
+  <section class="partc-card">
+    <div class="partc-actions">
+      <button class="btn btn-primary" id="mthPdfBtn">Methodology Statement — PDF</button>
+      <button class="btn btn-secondary" id="mthDocxBtn">Word</button>
+      <button class="btn btn-secondary" id="mthRefresh">Refresh</button>
+      <span class="partc-hint" id="mthStatus"></span>
+    </div>
+    <p class="mth-claim" id="mthClaim"></p>
+    <p class="partc-hint" id="mthWhy"></p>
+  </section>
+
+  <div id="mthBody" hidden>
+
+    <section class="partc-card">
+      <header class="partc-card-head"><h3>1. Scope and boundary</h3></header>
+      <div id="mthScope"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>2. The calculation chain</h3>
+        <p>Each equation below was read out of an execution of the engine, in the order a project passes through it. Expand a module to follow every step.</p>
+      </header>
+      <div id="mthChain"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>3. Worked example</h3>
+        <p id="mthWorkedNote"></p>
+      </header>
+      <div id="mthWorked"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>4. Emission factors</h3>
+        <p id="mthFactorNote"></p>
+      </header>
+      <div class="partc-actions">
+        <input type="search" id="mthFactorFilter" placeholder="Filter by factor key or source…" class="mth-filter">
+        <span class="partc-hint" id="mthFactorCount"></span>
+      </div>
+      <div id="mthFactors"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head"><h3>5. Data quality</h3></header>
+      <div id="mthDq"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>6. Conformance</h3>
+        <p id="mthConfNote"></p>
+      </header>
+      <div id="mthConformance"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head">
+        <h3>7. Limits, and what is not claimed</h3>
+        <p>Stated openly. A submission with no declared limits reads as unexamined.</p>
+      </header>
+      <div id="mthLimits"></div>
+    </section>
+
+    <section class="partc-card">
+      <header class="partc-card-head"><h3>8. Division of labour</h3></header>
+      <div id="mthLabour"></div>
+    </section>
+
+  </div>
+</div>

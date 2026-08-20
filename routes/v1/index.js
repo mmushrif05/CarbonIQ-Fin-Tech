@@ -66,6 +66,7 @@ router.get('/', (_req, res) => {
         report:  'POST /v1/pcaf/part-c/report — pdf | docx | json',
         factors:     'GET /v1/pcaf/part-c/factors',
         conformance: 'GET /v1/pcaf/part-c/conformance — rule, implementation and proving test',
+        methodology: 'GET /v1/pcaf/part-c/methodology?format=json|pdf|docx — scope, equations, factors, worked example and limits',
         options: 'GET /v1/pcaf/part-c/options',
         runs:    'GET /v1/pcaf/part-c/runs',
         start:   'POST /v1/pcaf/part-c/runs/start — begin a run, pause for client input',
