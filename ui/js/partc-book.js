@@ -22,6 +22,7 @@ const PartCBook = (() => {
   let policyType = 'CAR';
   let currency = 'LKR';
   let addingPolicyToProject = null;
+  let revisions = [];
 
   const api = (path, opts) => window.CARBONIQ_fetch('/v1/partc' + path, opts);
 
@@ -202,7 +203,187 @@ const PartCBook = (() => {
           catch (err) { $('bookDetailStatus').textContent = err.message; }
         }));
       $('bookDetailStatus').textContent = `${policies.length} polic${policies.length === 1 ? 'y' : 'ies'}`;
+      $('bookBoqCard').hidden = false;
+      await loadRevisions();
     } catch (err) { $('bookProjectsStatus').textContent = err.message; }
+  }
+
+  /**
+   * How a revision got its mappings. "0 inherited" reads like a failure when
+   * in fact the revision simply arrived already mapped, so say that instead.
+   */
+  function mappingLabel(r) {
+    const cf = r.mappingCarryForward;
+    if (!cf.fromRevision) return '<span class="pill out">original</span>';
+    if (cf.inheritedLines === 0) {
+      return cf.needsReview.length
+        ? `<span class="pill out">no match in ${esc(cf.fromRevision)}</span>`
+        : '<span class="pill in">fully mapped</span>';
+    }
+    return `<span class="pill in">${cf.inheritedLines} inherited from ${esc(cf.fromRevision)}</span>`;
+  }
+
+  // ── BOQ revisions ─────────────────────────────────────────
+  async function loadRevisions() {
+    $('bookBoqStatus').textContent = 'Loading…';
+    try {
+      const data = await call(`/projects/${currentProject.projectId}/boq`);
+      revisions = data.revisions || [];
+      $('bookBoqList').innerHTML = revisions.length === 0
+        ? '<p class="partc-hint">No BOQ yet. Add the tender revision to begin.</p>'
+        : `<table class="partc-table">
+             <thead><tr><th>Rev</th><th>Note</th><th>Lines</th><th>Mapping</th><th>Created</th><th></th></tr></thead>
+             <tbody>${revisions.map((r, i) => `
+               <tr>
+                 <td><strong>${esc(r.label)}</strong></td>
+                 <td>${esc(r.note || '—')}</td>
+                 <td class="num">${(r.materials || []).length}</td>
+                 <td>${mappingLabel(r)}
+                     ${r.mappingCarryForward.needsReview.length
+                        ? `<span class="partc-conf partc-conf-medium">${r.mappingCarryForward.needsReview.length} need review</span>` : ''}</td>
+                 <td>${new Date(r.createdAt).toISOString().slice(0, 10)}</td>
+                 <td>${i > 0 ? `<button class="btn btn-ghost book-diff" data-to="${r.revisionId}">Diff vs ${esc(revisions[i-1].label)}</button>` : ''}</td>
+               </tr>`).join('')}
+             </tbody></table>`;
+
+      $('bookBoqList').querySelectorAll('.book-diff').forEach(b =>
+        b.addEventListener('click', () => compareRevisions(b.dataset.to)));
+
+      $('bookDiffBtn').disabled = revisions.length < 2;
+      $('bookBoqStatus').textContent =
+        `${revisions.length} revision(s)` + (revisions.length ? ` · latest ${revisions[revisions.length-1].label}` : '');
+    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+  }
+
+  /** Parse a pasted BOQ into lines. Deliberately simple; the mapping agent
+      handles the hard cases, and known lines inherit their mapping anyway. */
+  function parseBoq(text) {
+    const out = [];
+    for (const raw of String(text || '').split('\n')) {
+      const line = raw.trim();
+      if (!line) continue;
+      const m = line.match(/^(.*?)[\s.]*?([\d,]+(?:\.\d+)?)\s*(m3|m2|m|MT|kg|Nr)\s*$/i);
+      if (!m) continue;
+      const name = m[1].replace(/[.\s]+$/, '').trim();
+      if (!name) continue;
+      out.push({ name, sourceText: line, quantity: Number(m[2].replace(/,/g, '')), unit: m[3] });
+    }
+    return out;
+  }
+
+  async function saveRevision(e) {
+    e.preventDefault();
+    const materials = parseBoq($('bookBoqText').value);
+    if (materials.length === 0) {
+      $('bookBoqStatus').textContent = 'No lines recognised. Each line needs a description, a quantity and a unit (m3, m2, m, MT, kg, Nr).';
+      return;
+    }
+    try {
+      const prev = revisions.length ? revisions[revisions.length - 1] : null;
+      const r = await call(`/projects/${currentProject.projectId}/boq`, {
+        method: 'POST',
+        body: JSON.stringify({
+          note: $('bookBoqNote').value.trim(),
+          materials,
+          // Demolition scope carries forward unless the revision restates it.
+          demolitionItems: prev ? prev.demolitionItems || [] : []
+        })
+      });
+      $('bookBoqForm').hidden = true;
+      $('bookBoqForm').reset();
+      await loadRevisions();
+      $('bookBoqStatus').textContent =
+        `${r.revision.label} saved — ${r.revision.materials.length} lines, ` +
+        `${r.revision.mappingCarryForward.inheritedLines} mapping(s) inherited.`;
+    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+  }
+
+  async function compareRevisions(toRevisionId) {
+    $('bookBoqStatus').textContent = 'Comparing…';
+    try {
+      const { comparison } = await call(`/projects/${currentProject.projectId}/boq/compare`, {
+        method: 'POST',
+        body: JSON.stringify({
+          toRevisionId,
+          siteInputs: { gifa_m2: currentProject.gifa_m2, demolitionKm: 100, wasteDisposalKm: 40 },
+          distances: {}
+        })
+      });
+      renderDiff(comparison);
+      $('bookBoqStatus').textContent = `${comparison.from.label} → ${comparison.to.label}`;
+    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+  }
+
+  function renderDiff(c) {
+    const up = c.emissions.deltaPct >= 0;
+    const sign = v => (v >= 0 ? '+' : '') + fmt(v, 2);
+    const lineRows = [
+      ...c.lines.added.map(l => ['added', l.name, `${l.quantity} ${l.unit}`, '']),
+      ...c.lines.removed.map(l => ['removed', l.name, '', `${l.quantity} ${l.unit}`]),
+      ...c.lines.changed.map(l => {
+        const q = l.fields.find(f => f.field === 'quantity');
+        return ['changed', l.name,
+                q ? `${q.to}` : l.fields.map(f => f.field).join(', '),
+                q ? `${q.from}` : ''];
+      })
+    ];
+
+    $('bookDiff').innerHTML = `
+      <div class="partc-diff">
+        <h5 class="partc-subhead">${esc(c.from.label)} → ${esc(c.to.label)}${c.to.note ? ' · ' + esc(c.to.note) : ''}</h5>
+
+        <div class="partc-figures partc-diff-figures">
+          <div class="partc-figure">
+            <span class="partc-figure-label">Before (${esc(c.from.label)})</span>
+            <span class="partc-figure-value">${fmt(c.emissions.before, 2)}</span>
+            <span class="partc-figure-unit">kgCO₂e</span>
+          </div>
+          <div class="partc-figure">
+            <span class="partc-figure-label">After (${esc(c.to.label)})</span>
+            <span class="partc-figure-value">${fmt(c.emissions.after, 2)}</span>
+            <span class="partc-figure-unit">kgCO₂e</span>
+          </div>
+          <div class="partc-figure ${c.materiality.breaches ? 'partc-figure-breach' : 'partc-figure-ok'}">
+            <span class="partc-figure-label">Movement</span>
+            <span class="partc-figure-value">${up ? '+' : ''}${c.emissions.deltaPct.toFixed(2)}%</span>
+            <span class="partc-figure-unit">${sign(c.emissions.deltaKg)} kgCO₂e</span>
+          </div>
+        </div>
+
+        <div class="partc-gate">
+          <span class="${c.materiality.breaches ? 'partc-gate-off' : 'partc-gate-on'}">
+            ${c.materiality.breaches ? 'Restatement required.' : 'No restatement.'}</span>
+          ${esc(c.materiality.verdict)}
+        </div>
+
+        <div class="partc-entry partc-sev-info">
+          <strong>Why the figure moved as it did</strong>
+          <p>${esc(c.explanation.headline)}<br>${esc(c.explanation.detail)}</p>
+        </div>
+
+        <h5 class="partc-subhead">Lines changed</h5>
+        ${lineRows.length === 0
+          ? '<p class="partc-hint">No line-level changes.</p>'
+          : `<table class="partc-table">
+               <thead><tr><th>Change</th><th>Line</th><th>New</th><th>Was</th></tr></thead>
+               <tbody>${lineRows.map(([kind, name, to, from]) => `
+                 <tr><td><span class="pill ${kind === 'removed' ? 'out' : 'in'}">${kind}</span></td>
+                     <td>${esc(name)}</td><td class="num">${esc(to)}</td><td class="num">${esc(from)}</td></tr>`).join('')}
+               </tbody></table>`}
+        <p class="partc-hint">${c.lines.unchanged} line(s) unchanged.</p>
+
+        <h5 class="partc-subhead">Where the change landed</h5>
+        <table class="partc-table">
+          <thead><tr><th>Module</th><th>Before</th><th>After</th><th>Delta</th><th>Share</th></tr></thead>
+          <tbody>${c.byModule.map(m => `
+            <tr><td>${esc(m.module)} ${esc(m.label)}</td>
+                <td class="num">${fmt(m.before, 2)}</td>
+                <td class="num">${fmt(m.after, 2)}</td>
+                <td class="num">${Math.abs(m.delta) < 0.005 ? '—' : sign(m.delta)}</td>
+                <td class="num">${m.shareOfFigure.toFixed(1)}%</td></tr>`).join('')}
+          </tbody></table>
+      </div>`;
+    $('bookDiff').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   /**
@@ -247,6 +428,8 @@ const PartCBook = (() => {
     $('bookClientsCard').hidden = false;
     $('bookProjectsCard').hidden = true;
     $('bookProjectDetail').hidden = true;
+    $('bookBoqCard').hidden = true;
+    $('bookDiff').innerHTML = '';
   }
 
   function init() {
@@ -267,6 +450,8 @@ const PartCBook = (() => {
     $('bookProjectForm').addEventListener('submit', saveProject);
     $('bookBackToClients').addEventListener('click', showClients);
     $('bookBackToProjects').addEventListener('click', () => {
+      $('bookBoqCard').hidden = true;
+      $('bookDiff').innerHTML = '';
       if (currentClient) openClient(currentClient.clientId); });
 
     $('bookAddPolicyBtn').addEventListener('click', () => {
@@ -274,7 +459,15 @@ const PartCBook = (() => {
       $('bookProjectsCard').hidden = false;
       $('bookProjectForm').hidden = false;
       $('bookProjectDetail').hidden = true;
+      $('bookBoqCard').hidden = true;
     });
+
+    $('bookNewBoqBtn').addEventListener('click', () => {
+      $('bookBoqForm').hidden = !$('bookBoqForm').hidden; });
+    $('bookBoqCancel').addEventListener('click', () => { $('bookBoqForm').hidden = true; });
+    $('bookBoqForm').addEventListener('submit', saveRevision);
+    $('bookDiffBtn').addEventListener('click', () => {
+      if (revisions.length >= 2) compareRevisions(revisions[revisions.length - 1].revisionId); });
 
     document.querySelectorAll('#bookPolicySeg button').forEach(b =>
       b.addEventListener('click', () => setPolicyType(b.dataset.value)));

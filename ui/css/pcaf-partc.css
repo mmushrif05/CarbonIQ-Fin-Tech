@@ -535,3 +535,15 @@
 .partc-book .partc-entry .partc-actions { margin-top: 12px; }
 .partc-book .pill { margin-left: 8px; }
 .partc-book .partc-table td:last-child { text-align: right; }
+
+/* ── BOQ diff ────────────────────────────────────────────── */
+.partc-diff { margin-top: 20px; padding-top: 18px; border-top: 0.5px solid var(--p-separator); }
+.partc-diff-figures { margin-bottom: 14px; }
+.partc-figure-ok     { box-shadow: inset 0 0 0 2px var(--ios-green), var(--p-shadow); }
+.partc-figure-breach { box-shadow: inset 0 0 0 2px var(--ios-red),   var(--p-shadow); }
+.partc-figure-ok     .partc-figure-value { color: #248a3d; }
+.partc-figure-breach .partc-figure-value { color: #b3251d; }
+@media (prefers-color-scheme: dark) {
+  .partc-figure-ok     .partc-figure-value { color: #30d158; }
+  .partc-figure-breach .partc-figure-value { color: #ff453a; }
+}

@@ -15,6 +15,7 @@
 const registry = require('../services/partc-registry');
 const store    = require('../services/partc-store');
 const { seedDemoBook } = require('../services/partc-demo-data');
+const boq      = require('../services/partc-boq');
 
 const orgArg = process.argv.find(a => a.startsWith('--org='));
 const orgId  = orgArg ? orgArg.split('=')[1] : (process.env.DEMO_ORG_ID || 'ui');
@@ -32,7 +33,7 @@ const orgId  = orgArg ? orgArg.split('=')[1] : (process.env.DEMO_ORG_ID || 'ui')
   }
 
   console.log(`\nSeeding Part C demo book into org "${orgId}"…\n`);
-  const result = await seedDemoBook(registry, orgId);
+  const result = await seedDemoBook(registry, orgId, boq);
 
   console.log(`  Insurer   ${result.settings.insurerName} · FY${result.settings.reportingYear} · ${result.settings.currency}`);
   console.log(`  Clients   ${result.summary.clients}`);
@@ -44,5 +45,9 @@ const orgId  = orgArg ? orgArg.split('=')[1] : (process.env.DEMO_ORG_ID || 'ui')
   console.log(`  Policies  ${result.summary.policies} (${result.summary.withUseStage} with a use stage)`);
   console.log(`  Premium   ${result.settings.currency} ${result.summary.totalPremium.toLocaleString()}`);
   console.log(`  Years     ${result.summary.reportingYears.join(', ')}`);
+  if (result.summary.boqRevisions) {
+    console.log(`  BOQ       ${result.summary.boqRevisions} revisions on the reference project`);
+    for (const r of result.boqRevisions) console.log(`              ${r.label} — ${r.note} (${r.materials.length} lines)`);
+  }
   console.log('\nDone.');
 })().catch(err => { console.error('Seed failed:', err.message); process.exit(1); });

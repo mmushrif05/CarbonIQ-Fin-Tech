@@ -109,4 +109,33 @@
     </div>
     <div id="bookPolicies"></div>
   </section>
+
+  <!-- ── BOQ revisions ───────────────────────────────────── -->
+  <section class="partc-card" id="bookBoqCard" hidden>
+    <header class="partc-card-head">
+      <h3><span class="partc-step">4</span> Bill of quantities</h3>
+      <p>A BOQ is never final. Each revision inherits the mappings of the one before it, so only genuinely new lines need review.</p>
+    </header>
+    <div class="partc-actions">
+      <button class="btn btn-primary" id="bookNewBoqBtn">Add revision</button>
+      <button class="btn btn-secondary" id="bookDiffBtn" disabled>Compare latest two</button>
+      <span class="partc-hint" id="bookBoqStatus"></span>
+    </div>
+    <div id="bookBoqList"></div>
+
+    <form class="partc-inline-form" id="bookBoqForm" hidden>
+      <div class="partc-grid">
+        <label>Revision note <input type="text" id="bookBoqNote" placeholder="VO-02 — revised roof structure"></label>
+      </div>
+      <p class="partc-hint">Paste the revised BOQ. Lines already seen keep their mapping automatically.</p>
+      <textarea id="bookBoqText" class="partc-textarea" rows="6"
+        placeholder="Providing and laying 1:2:4 cement concrete in foundations ...... 26.4 m3&#10;Rubble masonry in 1:5 cement mortar ......................... 7.2 m3"></textarea>
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit">Save revision</button>
+        <button class="btn btn-ghost" type="button" id="bookBoqCancel">Cancel</button>
+      </div>
+    </form>
+
+    <div id="bookDiff"></div>
+  </section>
 </div>

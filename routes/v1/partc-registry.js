@@ -28,11 +28,13 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 const registry = require('../../services/partc-registry');
 const store    = require('../../services/partc-store');
 const { seedDemoBook } = require('../../services/partc-demo-data');
+const boq = require('../../services/partc-boq');
 
 const {
   settingsSchema, clientSchema, clientUpdateSchema,
   projectSchema, projectUpdateSchema, policySchema
 } = require('../../schemas/partc-registry');
+const { boqRevisionSchema, compareRequestSchema } = require('../../schemas/partc-boq');
 
 const router = Router();
 
@@ -165,6 +167,104 @@ router.get('/projects/:projectId/policies/:policyId/context', apiKeyAuth, defaul
   }));
 
 // ---------------------------------------------------------------------------
+// BOQ revisions
+//
+// A bill of quantities is never final: tender, then variation orders, then
+// as-built. Each revision inherits the mappings of the one before it, so only
+// genuinely new lines need a human.
+// ---------------------------------------------------------------------------
+
+router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const revisions = await boq.listRevisions(req.apiKey.orgId, req.params.projectId);
+  res.json({
+    revisions,
+    summary: {
+      count: revisions.length,
+      latest: revisions.length ? revisions[revisions.length - 1].label : null,
+      needsReview: revisions.length
+        ? revisions[revisions.length - 1].mappingCarryForward.needsReview.length : 0
+    }
+  });
+}));
+
+router.post('/projects/:projectId/boq', apiKeyAuth, defaultLimiter,
+  validate({ body: boqRevisionSchema }),
+  handle(async (req, res) => {
+    const project = await registry.getProject(req.apiKey.orgId, req.params.projectId);
+    if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${req.params.projectId}.` });
+    const revision = await boq.createRevision(req.apiKey.orgId, req.params.projectId, req.body);
+    res.status(201).json({ revision });
+  }));
+
+router.get('/boq/:revisionId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const revision = await boq.getRevision(req.apiKey.orgId, req.params.revisionId);
+  if (!revision) return res.status(404).json({ error: 'REVISION_NOT_FOUND', message: `No BOQ revision ${req.params.revisionId}.` });
+  res.json({ revision });
+}));
+
+router.delete('/boq/:revisionId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json(await boq.deleteRevision(req.apiKey.orgId, req.params.revisionId));
+}));
+
+/**
+ * Compare two revisions with every non-BOQ input held constant, so the
+ * movement is attributable to the bill of quantities and nothing else.
+ */
+router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
+  validate({ body: compareRequestSchema }),
+  handle(async (req, res) => {
+    const orgId = req.apiKey.orgId;
+    const { projectId } = req.params;
+
+    const project = await registry.getProject(orgId, projectId);
+    if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${projectId}.` });
+
+    const revisions = await boq.listRevisions(orgId, projectId);
+    const to = revisions.find(r => r.revisionId === req.body.toRevisionId);
+    if (!to) return res.status(404).json({ error: 'REVISION_NOT_FOUND', message: `No revision ${req.body.toRevisionId} on this project.` });
+
+    let from;
+    if (req.body.fromRevisionId) {
+      from = revisions.find(r => r.revisionId === req.body.fromRevisionId);
+      if (!from) return res.status(404).json({ error: 'REVISION_NOT_FOUND', message: `No revision ${req.body.fromRevisionId} on this project.` });
+    } else {
+      const idx = revisions.findIndex(r => r.revisionId === to.revisionId);
+      from = idx > 0 ? revisions[idx - 1] : null;
+      if (!from) return res.status(400).json({
+        error: 'NO_PRIOR_REVISION',
+        message: `${to.label} is the first revision on this project, so there is nothing to compare it against.`
+      });
+    }
+
+    const settings = await registry.getSettings(orgId);
+    const policies = project.policies || [];
+    const policy = req.body.policyId
+      ? policies.find(p => p.policyId === req.body.policyId)
+      : policies[0];
+    if (!policy) return res.status(400).json({
+      error: 'NO_POLICY',
+      message: 'This project has no policy, so an attribution factor cannot be applied to the comparison.'
+    });
+
+    const ctx = await registry.buildAssessmentContext(orgId, projectId, policy.policyId);
+
+    const comparison = boq.compareRevisions({
+      from, to,
+      enginePolicy: ctx.enginePolicy,
+      siteInputs: {
+        gifa_m2: req.body.siteInputs.gifa_m2 || project.gifa_m2,
+        demolitionKm: req.body.siteInputs.demolitionKm,
+        wasteDisposalKm: req.body.siteInputs.wasteDisposalKm,
+        previousProject: req.body.siteInputs.previousProject || null
+      },
+      distances: req.body.distances,
+      thresholdPct: settings.restatementThresholdPct
+    });
+
+    res.json({ comparison, policy: { policyId: policy.policyId, lineType: policy.lineType, reportingYear: policy.reportingYear } });
+  }));
+
+// ---------------------------------------------------------------------------
 // The flattened book
 // ---------------------------------------------------------------------------
 router.get('/policies', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
@@ -202,7 +302,7 @@ router.post('/demo/seed', apiKeyAuth, defaultLimiter, handle(async (req, res) =>
       remedy: 'Send { "force": true } to seed anyway, or remove the existing clients first.'
     });
   }
-  const result = await seedDemoBook(registry, orgId);
+  const result = await seedDemoBook(registry, orgId, boq);
   res.status(201).json({
     seeded: result.summary,
     insurer: result.settings.insurerName,

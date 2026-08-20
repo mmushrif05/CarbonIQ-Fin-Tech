@@ -79,6 +79,8 @@ router.get('/', (_req, res) => {
         clients:  'GET/POST /v1/partc/clients',
         projects: 'GET/POST /v1/partc/projects',
         policies: 'GET /v1/partc/policies — flattened book, filter by reportingYear',
+        boq:      'GET/POST /v1/partc/projects/:projectId/boq — BOQ revisions',
+        boqDiff:  'POST /v1/partc/projects/:projectId/boq/compare — line diff, emissions delta, restatement check',
         storage:  'GET /v1/partc/storage — what this deployment can persist',
       },
       covenant: 'POST /v1/projects/:projectId/covenant',

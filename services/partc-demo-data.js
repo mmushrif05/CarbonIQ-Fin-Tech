@@ -15,6 +15,59 @@
 
 'use strict';
 
+const fx = require('../tests/fixtures/fisheries');
+
+/**
+ * Haul distances belong ON the BOQ line, not in a separate map keyed by id.
+ * A revision is a self-contained statement of what is being built and where
+ * it comes from, so a comparison between two revisions needs nothing else to
+ * reproduce A4. Without this, transport silently drops out of the diff.
+ */
+const withDistances = items => items.map(m => ({
+  ...m,
+  distance: fx.DISTANCES[m.id] || {},
+  // The wording a quantity surveyor would actually write, so a client who
+  // re-pastes an amended BOQ matches these lines and inherits their mapping.
+  sourceText: BOQ_DESCRIPTIONS[m.id] || m.name
+}));
+
+const BOQ_DESCRIPTIONS = {
+  concrete:   'Providing and laying 1:2:4 cement concrete in foundations and floors',
+  rubble:     'Rubble masonry in 1:5 cement mortar',
+  timber_dw:  'Supplying and fixing timber doors and windows',
+  tiles:      'Supplying and laying ceramic/porcelain floor tiles',
+  timber_cup: 'Timber cupboards and fitted joinery',
+  ms_grills:  'Mild steel grills to windows',
+  aluminium:  'Aluminium doors and cladding panels',
+  rebar:      'High tensile reinforcement steel (Tor)',
+  pvc110:     'PVC pipe 110mm diameter',
+  pvc63:      'PVC pipe 63mm diameter'
+};
+
+/**
+ * BOQ revisions for the reference project, so the demo can show the thing
+ * that actually happens on site: a bill of quantities that changes.
+ *
+ *   R1  tender
+ *   R2  variation order — more concrete. Moves the figure by well under 1%,
+ *       which is the useful lesson: material quantities barely shift a figure
+ *       that site energy dominates.
+ *   R3  as-built with a corrected fuel log — the change that DOES breach the
+ *       5% threshold and forces a restatement.
+ */
+const BOQ_REVISIONS = [
+  { note: 'Tender BOQ', source: 'seed',
+    materials: withDistances(fx.MATERIALS), demolitionItems: fx.DEMOLITION_ITEMS },
+  { note: 'VO-01 — additional foundation concrete', source: 'seed',
+    materials: withDistances(fx.MATERIALS.map(m => m.id === 'concrete' ? { ...m, quantity: 22.65 } : m)),
+    demolitionItems: fx.DEMOLITION_ITEMS },
+  { note: 'As-built — final quantities', source: 'seed',
+    materials: withDistances(fx.MATERIALS.map(m =>
+      m.id === 'concrete' ? { ...m, quantity: 24.10 } :
+      m.id === 'rubble'   ? { ...m, quantity: 7.20 }  : m)),
+    demolitionItems: fx.DEMOLITION_ITEMS }
+];
+
 const CLIENTS = [
   { key: 'fisheries', name: 'Department of Fisheries', sector: 'Government — fisheries', country: 'Sri Lanka',
     contactName: 'Ministry Projects Unit', notes: 'Coastal infrastructure programme.' },
@@ -89,7 +142,7 @@ const SETTINGS = {
  * Create the whole demo book against a registry instance.
  * @returns {Promise<{settings, clients, projects, summary}>}
  */
-async function seedDemoBook(registry, orgId) {
+async function seedDemoBook(registry, orgId, boqService = null) {
   const settings = await registry.saveSettings(orgId, SETTINGS);
 
   const clientsByKey = {};
@@ -105,18 +158,31 @@ async function seedDemoBook(registry, orgId) {
     projects.push(await registry.createProject(orgId, { ...data, clientId: clientsByKey[clientKey] }));
   }
 
+  // BOQ revisions on the reference project only — the others stand at tender
+  // or, in the weighbridge's case, with no BOQ at all.
+  let boqRevisions = [];
+  if (boqService) {
+    const negombo = projects.find(p => /Negombo/.test(p.name));
+    if (negombo) {
+      for (const rev of BOQ_REVISIONS) {
+        boqRevisions.push(await boqService.createRevision(orgId, negombo.projectId, rev));
+      }
+    }
+  }
+
   const policies = projects.flatMap(p => p.policies || []);
   return {
-    settings, clients, projects,
+    settings, clients, projects, boqRevisions,
     summary: {
       clients: clients.length,
       projects: projects.length,
       policies: policies.length,
       totalPremium: policies.reduce((n, p) => n + Number(p.premium || 0), 0),
       withUseStage: policies.filter(p => p.scope && p.scope.useStageApplies).length,
-      reportingYears: [...new Set(policies.map(p => p.reportingYear))].sort()
+      reportingYears: [...new Set(policies.map(p => p.reportingYear))].sort(),
+      boqRevisions: boqRevisions.length
     }
   };
 }
 
-module.exports = { seedDemoBook, CLIENTS, PROJECTS, SETTINGS };
+module.exports = { seedDemoBook, CLIENTS, PROJECTS, SETTINGS, BOQ_REVISIONS };
