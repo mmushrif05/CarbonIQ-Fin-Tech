@@ -102,8 +102,14 @@
       <h3><span class="partc-step">3</span> <span id="bookDetailName"></span></h3>
       <p id="bookDetailMeta"></p>
     </header>
+    <nav class="partc-crumbs" aria-label="Breadcrumb">
+      <button type="button" class="partc-crumb" id="bookCrumbClients">Clients</button>
+      <span aria-hidden="true">›</span>
+      <button type="button" class="partc-crumb" id="bookCrumbClient"></button>
+      <span aria-hidden="true">›</span>
+      <span class="partc-crumb-current" id="bookCrumbProject"></span>
+    </nav>
     <div class="partc-actions">
-      <button class="btn btn-ghost" id="bookBackToProjects">Back to projects</button>
       <button class="btn btn-secondary" id="bookAddPolicyBtn">Add another policy</button>
       <span class="partc-hint" id="bookDetailStatus"></span>
     </div>
@@ -137,5 +143,42 @@
     </form>
 
     <div id="bookDiff"></div>
+  </section>
+
+  <!-- ── Assessments ─────────────────────────────────────── -->
+  <section class="partc-card" id="bookAssessCard" hidden>
+    <header class="partc-card-head">
+      <h3><span class="partc-step">5</span> Assessments</h3>
+      <p>One calculation bound to a policy, a BOQ revision and a reporting year. Only a locked assessment enters the annual disclosure.</p>
+    </header>
+
+    <form class="partc-inline-form" id="bookAssessForm">
+      <div class="partc-grid">
+        <label>Policy <select id="bookAssessPolicy"></select></label>
+        <label>BOQ revision <select id="bookAssessRev"></select></label>
+        <label>Demolition transport (km) <input type="number" id="bookAssessDemoKm" value="100" inputmode="numeric"></label>
+        <label>Waste disposal (km) <input type="number" id="bookAssessWasteKm" value="40" inputmode="numeric"></label>
+      </div>
+
+      <details class="partc-optional">
+        <summary>Site data from a previous project <em>(optional — replaces the RICS default)</em></summary>
+        <div class="partc-grid">
+          <label>Previous area (m²) <input type="number" id="bookAssessPrevArea" inputmode="numeric"></label>
+          <label>Site fuel (L) <input type="number" id="bookAssessPrevFuel" inputmode="numeric"></label>
+          <label>Electricity (kWh) <input type="number" id="bookAssessPrevElec" inputmode="numeric"></label>
+        </div>
+      </details>
+
+      <div class="partc-grid" id="bookRestateRow" hidden>
+        <label>Restatement reason <input type="text" id="bookRestateReason" placeholder="Why the locked figure is being corrected"></label>
+      </div>
+
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit" id="bookRunAssessBtn">Run assessment</button>
+        <span class="partc-hint" id="bookAssessStatus"></span>
+      </div>
+    </form>
+
+    <div id="bookAssessList"></div>
   </section>
 </div>

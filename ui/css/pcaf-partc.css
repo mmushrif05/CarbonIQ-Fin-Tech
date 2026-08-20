@@ -115,6 +115,10 @@
 .partc-card.is-done .partc-step::after { content: '✓'; font-size: 14px; }
 .partc-card.is-done .partc-step { font-size: 0; }
 
+/* The hidden attribute must beat any display rule a class sets, or an
+   element carrying both (a .partc-grid row with [hidden]) stays visible. */
+.partc [hidden] { display: none !important; }
+
 /* ── Grouped inset list (iOS Settings style) ─────────────── */
 .partc-grid {
   display: flex; flex-direction: column;
@@ -547,3 +551,29 @@
   .partc-figure-ok     .partc-figure-value { color: #30d158; }
   .partc-figure-breach .partc-figure-value { color: #ff453a; }
 }
+
+/* ── Assessment status ───────────────────────────────────── */
+.partc-status-under_review { background: rgba(10,132,255,.16); color: #0a68d0; }
+.partc-status-locked       { background: rgba(52,199,89,.16);  color: #248a3d; }
+.partc-status-superseded   { background: var(--p-fill);        color: var(--p-label-2); }
+.partc-status-draft        { background: rgba(255,149,0,.16);  color: #a25400; }
+@media (prefers-color-scheme: dark) {
+  .partc-status-under_review { color: #64d2ff; }
+  .partc-status-locked       { color: #30d158; }
+  .partc-status-draft        { color: #ff9f0a; }
+}
+.partc-book .partc-entry strong + .partc-status { margin-left: 8px; }
+
+/* ── Breadcrumbs ─────────────────────────────────────────── */
+.partc-crumbs {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px; font-size: 13.5px; color: var(--p-label-3);
+}
+.partc-crumb {
+  background: none; border: none; padding: 4px 2px; cursor: pointer;
+  font-family: inherit; font-size: 13.5px; font-weight: 500; color: var(--p-accent);
+  border-radius: 6px;
+}
+.partc-crumb:hover { text-decoration: underline; }
+.partc-crumb:focus-visible { outline: none; box-shadow: 0 0 0 3px var(--p-accent-bg); }
+.partc-crumb-current { font-size: 13.5px; font-weight: 500; color: var(--p-label-2); }

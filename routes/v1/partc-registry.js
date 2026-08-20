@@ -29,12 +29,14 @@ const registry = require('../../services/partc-registry');
 const store    = require('../../services/partc-store');
 const { seedDemoBook } = require('../../services/partc-demo-data');
 const boq = require('../../services/partc-boq');
+const assessments = require('../../services/partc-assessments');
 
 const {
   settingsSchema, clientSchema, clientUpdateSchema,
   projectSchema, projectUpdateSchema, policySchema
 } = require('../../schemas/partc-registry');
 const { boqRevisionSchema, compareRequestSchema } = require('../../schemas/partc-boq');
+const { createAssessmentSchema, statusChangeSchema } = require('../../schemas/partc-assessment');
 
 const router = Router();
 
@@ -263,6 +265,60 @@ router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
 
     res.json({ comparison, policy: { policyId: policy.policyId, lineType: policy.lineType, reportingYear: policy.reportingYear } });
   }));
+
+// ---------------------------------------------------------------------------
+// Assessments
+//
+// One assessment is one PCAF calculation bound to a policy, a BOQ revision
+// and a reporting year. Only a locked assessment enters the annual
+// disclosure; a locked assessment is never edited, only superseded.
+// ---------------------------------------------------------------------------
+
+router.get('/assessments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const list = await assessments.listAssessments(req.apiKey.orgId, {
+    projectId: req.query.projectId, policyId: req.query.policyId,
+    reportingYear: req.query.reportingYear, status: req.query.status
+  });
+  res.json({
+    assessments: list,
+    summary: {
+      total: list.length,
+      byStatus: list.reduce((acc, a) => { acc[a.status] = (acc[a.status] || 0) + 1; return acc; }, {})
+    }
+  });
+}));
+
+router.post('/assessments', apiKeyAuth, defaultLimiter,
+  validate({ body: createAssessmentSchema }),
+  handle(async (req, res) => {
+    const { assessment, registers } = await assessments.createAssessment(req.apiKey.orgId, req.body);
+    res.status(201).json({ assessment, registers });
+  }));
+
+router.get('/assessments/:assessmentId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const a = await assessments.getAssessment(req.apiKey.orgId, req.params.assessmentId);
+  if (!a) return res.status(404).json({ error: 'ASSESSMENT_NOT_FOUND', message: `No assessment ${req.params.assessmentId}.` });
+  res.json({ assessment: a });
+}));
+
+/** Move through draft → under review → locked. */
+router.post('/assessments/:assessmentId/status', apiKeyAuth, defaultLimiter,
+  validate({ body: statusChangeSchema }),
+  handle(async (req, res) => {
+    const a = await assessments.changeStatus(
+      req.apiKey.orgId, req.params.assessmentId, req.body.status,
+      { note: req.body.note, actor: req.apiKey.orgName || req.apiKey.orgId });
+    res.json({ assessment: a });
+  }));
+
+router.delete('/assessments/:assessmentId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json(await assessments.deleteAssessment(req.apiKey.orgId, req.params.assessmentId));
+}));
+
+/** What the book looks like for a reporting year — the shape W5 rolls up. */
+router.get('/periods/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ period: await assessments.yearSummary(req.apiKey.orgId, req.params.year) });
+}));
 
 // ---------------------------------------------------------------------------
 // The flattened book

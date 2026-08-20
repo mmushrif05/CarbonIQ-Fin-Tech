@@ -86,6 +86,9 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `GET` | `/v1/partc/policies` | Flattened book, filterable by reporting year |
 | `GET/POST` | `/v1/partc/projects/:id/boq` | BOQ revisions (R1 tender → R2 variation → R3 as-built) |
 | `POST` | `/v1/partc/projects/:id/boq/compare` | Line diff, emissions delta, restatement check |
+| `GET/POST` | `/v1/partc/assessments` | Assessments bound to policy, BOQ revision and year |
+| `POST` | `/v1/partc/assessments/:id/status` | Lifecycle — draft, under review, locked |
+| `GET` | `/v1/partc/periods/:year` | Locked totals, coverage, emissions-weighted data quality |
 | `GET` | `/v1/partc/storage` | What this deployment can actually persist |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
@@ -200,6 +203,10 @@ Three tiers, enforced structurally rather than by convention:
 **BOQ revisions (`services/partc-boq.js`):** a bill of quantities is never final, so each project holds a series of revisions and an assessment binds to exactly one. A revision inherits the previous revision's factor mappings, stable ids and haul distances, so only genuinely new lines need review. Match keys deliberately **ignore the quantity** — a revision exists because quantities changed, so keying on raw text would mean a line never matched its own earlier self. Matching is exact after normalisation rather than fuzzy: binding the wrong factor to the wrong material would corrupt a disclosure silently, so unmatched lines are flagged for review instead.
 
 **Restatement:** comparing two revisions holds every non-BOQ input constant, so the movement is attributable to the BOQ alone. A movement reaching the settings threshold (default 5%) requires restating a locked assessment. Because A5.2 site energy is typically 90%+ of the construction figure, material quantity changes move the total very little — the comparison therefore explains *why* the figure moved as it did, rather than leaving a user wondering whether their variation order registered.
+
+**Assessments (`services/partc-assessments.js`):** one calculation bound to a policy, a BOQ revision and a reporting year — the binding is what lets a figure in an annual disclosure be traced to the bill of quantities behind it. Lifecycle is `draft → under_review → locked`; only a locked assessment enters the disclosure, and a locked assessment is never edited, only superseded by a new version. Where a new version moves a locked figure by at least the settings threshold it is a **restatement** and a reason is required. Locking one version automatically supersedes the previously locked one, so a policy-year never has two.
+
+Every API key belongs to the insurer's own organisation — there is no client-facing login — so "only the insurer locks" holds by construction rather than by a role check; the organisation is recorded on the lock either way. Period totals weight data quality by emissions, as PCAF requires, so a small weak policy cannot drag the reported position beyond its share.
 
 **Conformance evidence:** `services/pcaf-partc/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 

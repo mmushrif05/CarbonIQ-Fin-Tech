@@ -16,6 +16,25 @@ const PartCBook = (() => {
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+  /**
+   * Write a status line, tolerating a missing element.
+   *
+   * When the page itself fails to render, every error handler that reached
+   * for a status element threw a second time — and that secondary
+   * "Cannot set properties of null" masked the real cause.
+   */
+  const say = (id, text) => { const el = $(id); if (el) el.textContent = text; };
+  const setHtml = (id, html) => { const el = $(id); if (el) el.innerHTML = html; };
+
+  /**
+   * Bind a listener, tolerating a missing element.
+   *
+   * Wiring straight onto $(id) meant that removing one control from the
+   * markup threw during init and took the ENTIRE page down with it — the
+   * user saw "Page could not be loaded" rather than one absent button.
+   */
+  const on = (id, event, fn) => { const el = $(id); if (el) el.addEventListener(event, fn); };
+
   let clients = [];
   let currentClient = null;
   let currentProject = null;
@@ -23,6 +42,7 @@ const PartCBook = (() => {
   let currency = 'LKR';
   let addingPolicyToProject = null;
   let revisions = [];
+  let assessments = [];
 
   const api = (path, opts) => window.CARBONIQ_fetch('/v1/partc' + path, opts);
 
@@ -51,7 +71,7 @@ const PartCBook = (() => {
     try {
       const { settings } = await call('/settings');
       currency = settings.currency || 'LKR';
-      $('bookInsurer').textContent = settings.insurerName || 'Insurance book';
+      say('bookInsurer', settings.insurerName || 'Insurance book');
       $('bookSubtitle').textContent =
         `FY${settings.reportingYear} · ${currency} · ${settings.premiumBasis} premium · restates at ${settings.restatementThresholdPct}%`;
     } catch (_) { /* defaults stand */ }
@@ -59,7 +79,7 @@ const PartCBook = (() => {
 
   // ── Clients ───────────────────────────────────────────────
   async function loadClients() {
-    $('bookClientsStatus').textContent = 'Loading…';
+    say('bookClientsStatus', 'Loading…');
     try {
       clients = (await call('/clients')).clients || [];
       $('bookClients').innerHTML = clients.length === 0
@@ -73,9 +93,9 @@ const PartCBook = (() => {
              </tbody></table>`;
       $('bookClients').querySelectorAll('.book-open').forEach(b =>
         b.addEventListener('click', () => openClient(b.dataset.id)));
-      $('bookClientsStatus').textContent = `${clients.length} client(s)`;
+      say('bookClientsStatus', `${clients.length} client(s)`);
     } catch (err) {
-      $('bookClientsStatus').textContent = err.message;
+      say('bookClientsStatus', err.message);
     }
   }
 
@@ -92,7 +112,7 @@ const PartCBook = (() => {
       $('bookClientForm').hidden = true;
       $('bookClientForm').reset();
       await loadClients();
-    } catch (err) { $('bookClientsStatus').textContent = err.message; }
+    } catch (err) { say('bookClientsStatus', err.message); }
   }
 
   // ── Projects for a client ─────────────────────────────────
@@ -100,12 +120,12 @@ const PartCBook = (() => {
     try {
       const { client, projects } = await call(`/clients/${clientId}`);
       currentClient = client;
-      $('bookProjectsFor').textContent = client.name;
+      say('bookProjectsFor', client.name);
       $('bookProjectsCard').hidden = false;
       $('bookClientsCard').hidden = true;
       $('bookProjectDetail').hidden = true;
       renderProjects(projects);
-    } catch (err) { $('bookClientsStatus').textContent = err.message; }
+    } catch (err) { say('bookClientsStatus', err.message); }
   }
 
   function renderProjects(projects) {
@@ -122,7 +142,7 @@ const PartCBook = (() => {
            </tbody></table>`;
     $('bookProjects').querySelectorAll('.book-proj').forEach(b =>
       b.addEventListener('click', () => openProject(b.dataset.id)));
-    $('bookProjectsStatus').textContent = `${projects.length} project(s)`;
+    say('bookProjectsStatus', `${projects.length} project(s)`);
   }
 
   function policyPayload() {
@@ -163,7 +183,7 @@ const PartCBook = (() => {
       $('bookProjectForm').hidden = true;
       $('bookProjectForm').reset();
       await openClient(currentClient.clientId);
-    } catch (err) { $('bookProjectsStatus').textContent = err.message; }
+    } catch (err) { say('bookProjectsStatus', err.message); }
   }
 
   // ── One project and its policies ──────────────────────────
@@ -171,10 +191,12 @@ const PartCBook = (() => {
     try {
       const { project } = await call(`/projects/${projectId}`);
       currentProject = project;
-      $('bookDetailName').textContent = project.name;
+      say('bookDetailName', project.name);
       $('bookDetailMeta').textContent =
         `${project.projectType} · ${fmt(project.gifa_m2)} m² · ${currency} ${fmt(project.projectCost)}` +
         (project.location ? ` · ${project.location}` : '');
+      say('bookCrumbClient', currentClient ? currentClient.name : 'Client');
+      say('bookCrumbProject', project.name);
       $('bookProjectDetail').hidden = false;
       $('bookProjectsCard').hidden = true;
 
@@ -200,12 +222,14 @@ const PartCBook = (() => {
         b.addEventListener('click', async () => {
           try { await call(`/projects/${b.dataset.p}/policies/${b.dataset.pol}`, { method: 'DELETE' });
                 await openProject(b.dataset.p); }
-          catch (err) { $('bookDetailStatus').textContent = err.message; }
+          catch (err) { say('bookDetailStatus', err.message); }
         }));
-      $('bookDetailStatus').textContent = `${policies.length} polic${policies.length === 1 ? 'y' : 'ies'}`;
+      say('bookDetailStatus', `${policies.length} polic${policies.length === 1 ? 'y' : 'ies'}`);
       $('bookBoqCard').hidden = false;
+      $('bookAssessCard').hidden = false;
       await loadRevisions();
-    } catch (err) { $('bookProjectsStatus').textContent = err.message; }
+      await loadAssessments();
+    } catch (err) { say('bookProjectsStatus', err.message); }
   }
 
   /**
@@ -225,7 +249,7 @@ const PartCBook = (() => {
 
   // ── BOQ revisions ─────────────────────────────────────────
   async function loadRevisions() {
-    $('bookBoqStatus').textContent = 'Loading…';
+    say('bookBoqStatus', 'Loading…');
     try {
       const data = await call(`/projects/${currentProject.projectId}/boq`);
       revisions = data.revisions || [];
@@ -249,10 +273,18 @@ const PartCBook = (() => {
       $('bookBoqList').querySelectorAll('.book-diff').forEach(b =>
         b.addEventListener('click', () => compareRevisions(b.dataset.to)));
 
+      $('bookAssessRev').innerHTML = revisions.length
+        ? revisions.map((r, i) =>
+            `<option value="${r.revisionId}"${i === revisions.length - 1 ? ' selected' : ''}>${esc(r.label)}${r.note ? ' — ' + esc(r.note) : ''}</option>`).join('')
+        : '<option value="">No BOQ revision yet</option>';
+      $('bookAssessPolicy').innerHTML = (currentProject.policies || []).map(p =>
+        `<option value="${p.policyId}">${esc(p.lineType)}${p.reference ? ' · ' + esc(p.reference) : ''} — FY${p.reportingYear}</option>`).join('');
+      $('bookRunAssessBtn').disabled = revisions.length === 0;
+
       $('bookDiffBtn').disabled = revisions.length < 2;
       $('bookBoqStatus').textContent =
         `${revisions.length} revision(s)` + (revisions.length ? ` · latest ${revisions[revisions.length-1].label}` : '');
-    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+    } catch (err) { say('bookBoqStatus', err.message); }
   }
 
   /** Parse a pasted BOQ into lines. Deliberately simple; the mapping agent
@@ -275,7 +307,7 @@ const PartCBook = (() => {
     e.preventDefault();
     const materials = parseBoq($('bookBoqText').value);
     if (materials.length === 0) {
-      $('bookBoqStatus').textContent = 'No lines recognised. Each line needs a description, a quantity and a unit (m3, m2, m, MT, kg, Nr).';
+      say('bookBoqStatus', 'No lines recognised. Each line needs a description, a quantity and a unit (m3, m2, m, MT, kg, Nr).');
       return;
     }
     try {
@@ -295,11 +327,11 @@ const PartCBook = (() => {
       $('bookBoqStatus').textContent =
         `${r.revision.label} saved — ${r.revision.materials.length} lines, ` +
         `${r.revision.mappingCarryForward.inheritedLines} mapping(s) inherited.`;
-    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+    } catch (err) { say('bookBoqStatus', err.message); }
   }
 
   async function compareRevisions(toRevisionId) {
-    $('bookBoqStatus').textContent = 'Comparing…';
+    say('bookBoqStatus', 'Comparing…');
     try {
       const { comparison } = await call(`/projects/${currentProject.projectId}/boq/compare`, {
         method: 'POST',
@@ -310,8 +342,8 @@ const PartCBook = (() => {
         })
       });
       renderDiff(comparison);
-      $('bookBoqStatus').textContent = `${comparison.from.label} → ${comparison.to.label}`;
-    } catch (err) { $('bookBoqStatus').textContent = err.message; }
+      say('bookBoqStatus', `${comparison.from.label} → ${comparison.to.label}`);
+    } catch (err) { say('bookBoqStatus', err.message); }
   }
 
   function renderDiff(c) {
@@ -398,7 +430,7 @@ const PartCBook = (() => {
         `Context ready — ${context.project.name}, ${context.policy.lineType} FY${context.reportingYear}. Opening the assessment…`;
       const nav = document.querySelector('.nav-item[data-page="pcaf-partc"]');
       if (nav) nav.click();
-    } catch (err) { $('bookDetailStatus').textContent = err.message; }
+    } catch (err) { say('bookDetailStatus', err.message); }
   }
 
   // ── Policy type segmented control ─────────────────────────
@@ -414,14 +446,114 @@ const PartCBook = (() => {
   }
 
   async function seedDemo() {
-    $('bookClientsStatus').textContent = 'Loading demo book…';
+    say('bookClientsStatus', 'Loading demo book…');
     try {
       const r = await call('/demo/seed', { method: 'POST', body: JSON.stringify({ force: true }) });
       await loadSettings();
       await loadClients();
       $('bookClientsStatus').textContent =
         `Demo book loaded — ${r.seeded.clients} clients, ${r.seeded.projects} projects, ${r.seeded.policies} policies.`;
-    } catch (err) { $('bookClientsStatus').textContent = err.message; }
+    } catch (err) { say('bookClientsStatus', err.message); }
+  }
+
+  // ── Assessments ───────────────────────────────────────────
+  const STATUS_LABEL = { draft: 'Draft', under_review: 'Under review', locked: 'Locked', superseded: 'Superseded' };
+  /** The single move offered from each state, so the control is never ambiguous. */
+  const NEXT_ACTION = {
+    draft:        { to: 'under_review', label: 'Submit for review' },
+    under_review: { to: 'locked',       label: 'Lock' }
+  };
+
+  async function loadAssessments() {
+    try {
+      const data = await call(`/assessments?projectId=${currentProject.projectId}`);
+      assessments = data.assessments || [];
+      $('bookAssessList').innerHTML = assessments.length === 0
+        ? '<p class="partc-hint">No assessments yet. Pick a policy and a BOQ revision above.</p>'
+        : assessments.map(a => {
+            const next = NEXT_ACTION[a.status];
+            const rs = a.restatement;
+            return `<div class="partc-entry partc-sev-${a.status === 'draft' ? 'notable' : 'info'}">
+              <strong>${esc(a.lineType)} FY${a.reportingYear} · v${a.version}</strong>
+              <span class="partc-status partc-status-${a.status}">${STATUS_LABEL[a.status] || a.status}</span>
+              <span class="pill in">${esc(a.boqRevisionLabel)}</span>
+              <p>
+                Construction <strong>${fmt(a.summary.construction_kgCO2e, 2)}</strong> kgCO₂e ·
+                IAE <strong>${fmt(a.summary.insurerIAE_tCO2e, 4)}</strong> tCO₂e ·
+                per-m² ${fmt(a.summary.perM2Factor_kgCO2e_m2, 2)} ·
+                DQ option ${esc(a.dataQuality.option)} score ${a.dataQuality.score}
+                ${a.lockedAt ? `<br>Locked ${new Date(a.lockedAt).toISOString().slice(0, 10)} by ${esc(a.lockedBy || 'insurer')}` : ''}
+                ${rs && rs.isRestatement ? `<br><span class="partc-gate-off">Restatement.</span> ${esc(rs.note)}${rs.reason ? ' — ' + esc(rs.reason) : ''}` : ''}
+                ${rs && !rs.isRestatement ? `<br>${esc(rs.note)}` : ''}
+              </p>
+              <div class="partc-actions">
+                ${next ? `<button class="btn btn-secondary book-status" data-id="${a.assessmentId}" data-to="${next.to}">${next.label}</button>` : ''}
+                ${a.status === 'under_review' ? `<button class="btn btn-ghost book-status" data-id="${a.assessmentId}" data-to="draft">Return to draft</button>` : ''}
+                ${a.status !== 'locked' ? `<button class="btn btn-ghost book-delassess" data-id="${a.assessmentId}">Delete</button>` : ''}
+              </div>
+            </div>`;
+          }).join('');
+
+      $('bookAssessList').querySelectorAll('.book-status').forEach(b =>
+        b.addEventListener('click', () => setStatus(b.dataset.id, b.dataset.to)));
+      $('bookAssessList').querySelectorAll('.book-delassess').forEach(b =>
+        b.addEventListener('click', () => removeAssessment(b.dataset.id)));
+
+      // A locked assessment for this policy-year means the next run may restate it.
+      $('bookRestateRow').hidden = !assessments.some(a => a.status === 'locked');
+    } catch (err) { say('bookAssessStatus', err.message); }
+  }
+
+  async function runAssessment(e) {
+    e.preventDefault();
+    const revisionId = $('bookAssessRev').value;
+    const policyId   = $('bookAssessPolicy').value;
+    if (!revisionId) { Toast.show('Add a BOQ revision first.', 'warn'); return; }
+
+    say('bookAssessStatus', 'Computing…');
+    const prevArea = Number($('bookAssessPrevArea').value) || 0;
+    try {
+      const { assessment } = await call('/assessments', {
+        method: 'POST',
+        body: JSON.stringify({
+          projectId: currentProject.projectId, policyId, boqRevisionId: revisionId,
+          siteInputs: {
+            demolitionKm: Number($('bookAssessDemoKm').value) || 0,
+            wasteDisposalKm: Number($('bookAssessWasteKm').value) || 0,
+            previousProject: prevArea > 0 ? {
+              area_m2: prevArea,
+              fuel_L: Number($('bookAssessPrevFuel').value) || 0,
+              electricity_kWh: Number($('bookAssessPrevElec').value) || 0
+            } : null
+          },
+          restatementReason: $('bookRestateReason').value.trim()
+        })
+      });
+      await loadAssessments();
+      $('bookAssessStatus').textContent =
+        `v${assessment.version} created against ${assessment.boqRevisionLabel} — ` +
+        `${fmt(assessment.summary.construction_kgCO2e, 2)} kgCO₂e.`;
+    } catch (err) { say('bookAssessStatus', err.message); }
+  }
+
+  async function setStatus(assessmentId, to) {
+    say('bookAssessStatus', 'Updating…');
+    try {
+      const { assessment } = await call(`/assessments/${assessmentId}/status`, {
+        method: 'POST', body: JSON.stringify({ status: to }) });
+      await loadAssessments();
+      $('bookAssessStatus').textContent =
+        `v${assessment.version} is now ${STATUS_LABEL[assessment.status].toLowerCase()}` +
+        (assessment.lockedBy ? ` — locked by ${assessment.lockedBy}` : '') + '.';
+    } catch (err) { say('bookAssessStatus', err.message); }
+  }
+
+  async function removeAssessment(assessmentId) {
+    try {
+      await call(`/assessments/${assessmentId}`, { method: 'DELETE' });
+      await loadAssessments();
+      say('bookAssessStatus', 'Assessment deleted.');
+    } catch (err) { say('bookAssessStatus', err.message); }
   }
 
   function showClients() {
@@ -429,6 +561,7 @@ const PartCBook = (() => {
     $('bookProjectsCard').hidden = true;
     $('bookProjectDetail').hidden = true;
     $('bookBoqCard').hidden = true;
+    $('bookAssessCard').hidden = true;
     $('bookDiff').innerHTML = '';
   }
 
@@ -437,9 +570,9 @@ const PartCBook = (() => {
 
     $('bookNewClientBtn').addEventListener('click', () => {
       $('bookClientForm').hidden = !$('bookClientForm').hidden; });
-    $('bookClientCancel').addEventListener('click', () => { $('bookClientForm').hidden = true; });
-    $('bookClientForm').addEventListener('submit', saveClient);
-    $('bookSeedBtn').addEventListener('click', seedDemo);
+    on('bookClientCancel', 'click', () => { $('bookClientForm').hidden = true; });
+    on('bookClientForm', 'submit', saveClient);
+    on('bookSeedBtn', 'click', seedDemo);
 
     $('bookNewProjectBtn').addEventListener('click', () => {
       addingPolicyToProject = null;
@@ -447,12 +580,20 @@ const PartCBook = (() => {
     });
     $('bookProjectCancel').addEventListener('click', () => {
       addingPolicyToProject = null; $('bookProjectForm').hidden = true; });
-    $('bookProjectForm').addEventListener('submit', saveProject);
-    $('bookBackToClients').addEventListener('click', showClients);
-    $('bookBackToProjects').addEventListener('click', () => {
+    on('bookProjectForm', 'submit', saveProject);
+    on('bookBackToClients', 'click', showClients);
+    const leaveProject = () => {
       $('bookBoqCard').hidden = true;
-      $('bookDiff').innerHTML = '';
+      $('bookAssessCard').hidden = true;
+      setHtml('bookDiff', '');
+    };
+    on('bookBackToProjects', 'click', () => {
+      leaveProject();
       if (currentClient) openClient(currentClient.clientId); });
+    $('bookCrumbClient').addEventListener('click', () => {
+      leaveProject();
+      if (currentClient) openClient(currentClient.clientId); });
+    on('bookCrumbClients', 'click', () => { leaveProject(); showClients(); });
 
     $('bookAddPolicyBtn').addEventListener('click', () => {
       addingPolicyToProject = currentProject.projectId;
@@ -460,12 +601,14 @@ const PartCBook = (() => {
       $('bookProjectForm').hidden = false;
       $('bookProjectDetail').hidden = true;
       $('bookBoqCard').hidden = true;
+      $('bookAssessCard').hidden = true;
     });
 
     $('bookNewBoqBtn').addEventListener('click', () => {
       $('bookBoqForm').hidden = !$('bookBoqForm').hidden; });
-    $('bookBoqCancel').addEventListener('click', () => { $('bookBoqForm').hidden = true; });
-    $('bookBoqForm').addEventListener('submit', saveRevision);
+    on('bookBoqCancel', 'click', () => { $('bookBoqForm').hidden = true; });
+    on('bookBoqForm', 'submit', saveRevision);
+    on('bookAssessForm', 'submit', runAssessment);
     $('bookDiffBtn').addEventListener('click', () => {
       if (revisions.length >= 2) compareRevisions(revisions[revisions.length - 1].revisionId); });
 
