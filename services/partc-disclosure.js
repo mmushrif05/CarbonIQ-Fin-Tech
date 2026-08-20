@@ -30,14 +30,13 @@
 
 'use strict';
 
-const PDFDocument = require('pdfkit');
-const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
-
-const { N, pdfWriter, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
+const standard = require('./partc-report-standard');
+const methodology = require('./partc-methodology');
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
 const { conformanceMatrix, STANDARD } = require('./pcaf-partc/conformance');
 
 const portfolio    = require('./partc-portfolio');
+const registry     = require('./partc-registry');
 const comparatives = require('./partc-comparatives');
 const assessments  = require('./partc-assessments');
 
@@ -262,298 +261,72 @@ async function buildAnnualDisclosure(orgId, reportingYear, opts = {}) {
     throw new Error(`Disclosure blocked: PCAF endorsement language detected (${offending.join(', ')}). Only conformance language is permitted.`);
   }
 
+  /* What the document renderers need, kept off the JSON. See _model(). */
+  Object.defineProperty(disclosure, '_source', {
+    value: {
+      roll,
+      settings: await registry.getSettings(orgId),
+      factorRows: methodology.allFactorRows(),
+      equations: _moduleEquations()
+    },
+    enumerable: false, writable: false
+  });
+
   return disclosure;
 }
 
 // ---------------------------------------------------------------------------
-// PDF
+// Documents
 // ---------------------------------------------------------------------------
 
-function buildDisclosurePDF(d) {
-  const doc = new PDFDocument({ margin: 56, size: 'A4', compress: true });
-  winAnsiSafe(doc);
-  const { H, P, KV, NOTE, WARN } = pdfWriter(doc);
-
-  // Cover
-  doc.fontSize(20).fillColor('#0f172a').font('Helvetica-Bold').text(d.title);
-  doc.moveDown(0.2);
-  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text(`${d.meta.insurer} — FY${d.meta.reportingYear}`);
-  doc.moveDown(0.3);
-  doc.fontSize(10).fillColor('#64748b').font('Helvetica').text(d.standard);
-  doc.moveDown(1);
-  KV('Report ID', d.meta.reportId);
-  KV('Generated', new Date(d.meta.generatedAt).toISOString().split('T')[0]);
-  KV('Premium basis', d.meta.premiumBasis);
-
-  // 1
-  H('1. Reported position');
-  KV(d.position.construction.label, `${N(d.position.construction.total_kgCO2e)} kgCO2e  (${N(d.position.construction.total_tCO2e)} tCO2e)`);
-  KV("Insurer's attributed share", `${d.position.construction.insurerIAE_tCO2e.toFixed(4)} tCO2e`);
-  KV(d.position.useStage.label, `${N(d.position.useStage.total_kgCO2e)} kgCO2e`);
-  KV("Insurer's use-stage share", `${d.position.useStage.insurerShare_tCO2e.toFixed(4)} tCO2e`);
-  doc.moveDown(0.4);
-  WARN(d.position.scopeNote);
-
-  // 2
-  H('2. Scope and boundary');
-  KV('Mandatory', d.scope.mandatory);
-  KV('Optional', d.scope.optional);
-  doc.moveDown(0.3);
-  P(d.scope.excluded);
-  P(d.scope.policyGate);
-
-  // 3
-  H('3. Coverage');
-  P(d.coverage.statement);
-  if (d.coverage.unassessed.length) {
-    doc.moveDown(0.3);
-    doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text('Policies in force with no locked assessment');
-    d.coverage.unassessed.forEach(u =>
-      P(`${u.reference || u.policyId} · ${u.lineType} · ${u.clientName} — ${u.projectName}`));
-  }
-
-  // 4
-  H('4. Data quality');
-  KV('Emissions-weighted score', `${d.dataQuality.weighted} (1 best, 5 worst)`);
-  KV('Simple average', String(d.dataQuality.simpleAverage));
-  if (d.dataQuality.note) { doc.moveDown(0.2); NOTE(d.dataQuality.note); }
-  doc.moveDown(0.4);
-  d.dataQuality.distribution.forEach(b =>
-    P(`Score ${b.score} — ${b.label}: ${b.assessments} assessment(s), ${_pct(b.sharePct)} of the figure`));
-  if (d.dataQuality.improvement.note) { doc.moveDown(0.3); P(d.dataQuality.improvement.note); }
-  d.dataQuality.improvement.actions.forEach(a => {
-    doc.moveDown(0.2);
-    doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold')
-       .text(`${a.rank}. ${a.projectName} (${_pct(a.sharePct)} of the figure) — score ${a.currentScore} → ${a.achievableScore}`);
-    a.actions.forEach(t => P(`   · ${t}`, 8.5));
-  });
-
-  // 5
-  doc.addPage();
-  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text('5. Per-policy detail');
-  doc.moveDown(0.5);
-  d.policies.forEach(r => {
-    doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold')
-       .text(`${r.policyRef || r.assessmentId} · ${r.lineType} — ${r.clientName} / ${r.projectName}`);
-    doc.fontSize(8.5).fillColor('#334155').font('Helvetica').text(
-      `   Construction ${N(r.construction_kgCO2e)} kgCO2e (${_pct(r.shareOfConstructionPct)})   ` +
-      `AF ${r.attributionFactor.toFixed(6)}   IAE ${r.insurerIAE_tCO2e.toFixed(4)} tCO2e   ` +
-      `DQ ${r.dataQualityScore} (${r.dataQualityOption})   BOQ ${r.boqRevision}   v${r.version}` +
-      (r.isRestatement ? '   [restated]' : ''));
-    doc.moveDown(0.25);
-  });
-
-  // 6
-  H('6. Restatements');
-  P(d.restatements.note);
-  d.restatements.entries.forEach(e => {
-    doc.moveDown(0.3);
-    doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold')
-       .text(`${e.policyRef || e.assessmentId} — ${e.projectName}`);
-    P(`   As previously reported ${N(e.asPreviouslyReported_kgCO2e)} kgCO2e → as restated ${N(e.asRestated_kgCO2e)} kgCO2e (${e.movementPct >= 0 ? '+' : ''}${e.movementPct}%)`);
-    P(`   Reason: ${e.reason || 'not recorded'}`);
-  });
-
-  // 7
-  H(`7. FY${d.priorYear.year} comparative`);
-  if (!d.priorYear.hasPrior) {
-    P(d.priorYear.comparabilityNote);
-  } else {
-    KV('Construction', `FY${d.priorYear.year} ${N(d.priorYear.construction.prior)} → FY${d.meta.reportingYear} ${N(d.priorYear.construction.current)} kgCO2e (${d.priorYear.construction.pct === null ? 'n/a' : `${d.priorYear.construction.pct >= 0 ? '+' : ''}${d.priorYear.construction.pct}%`})`);
-    KV('Insurer IAE', `${d.priorYear.insurerIAE.prior} → ${d.priorYear.insurerIAE.current} tCO2e`);
-    KV('Intensity (kgCO2e/m²)', `${d.priorYear.intensity.prior ?? 'n/a'} → ${d.priorYear.intensity.current ?? 'n/a'}`);
-    KV('Weighted data quality', `${d.priorYear.dataQuality.prior ?? 'n/a'} → ${d.priorYear.dataQuality.current ?? 'n/a'}`);
-    KV('Policies assessed', `${d.priorYear.composition.assessedPolicies.prior} → ${d.priorYear.composition.assessedPolicies.current}`);
-    if (d.restatements.count > 0) {
-      KV(`FY${d.priorYear.year} as previously reported`, `${N(d.restatements.asPreviouslyReported_kgCO2e)} kgCO2e`);
-      KV(`FY${d.priorYear.year} as restated`, `${N(d.restatements.asRestated_kgCO2e)} kgCO2e`);
+/**
+ * The equations behind every figure in this disclosure.
+ *
+ * An annual position is a sum of locked assessments, so it carries no single
+ * traced tree of its own. The equations are therefore taken from the
+ * methodology extraction — itself read out of an execution of the same
+ * engine, at the same version, that produced every figure summed here — and
+ * the document says that rather than presenting them as this run's trace.
+ */
+function _moduleEquations() {
+  const chain = methodology.buildMethodology().calculationChain || [];
+  const out = [];
+  for (const link of chain) {
+    for (const eq of (link.equations || [])) {
+      out.push({ module: link.module || '—', label: link.label || '', equation: eq, value: undefined, factors: [] });
     }
-    doc.moveDown(0.4);
-    WARN(d.priorYear.comparabilityNote);
   }
-
-  // 8
-  H('8. Method');
-  P(d.method.attribution);
-  P(d.method.aggregation);
-  P(d.method.dataQualityBasis);
-  P(d.method.reportingYearBasis);
-  P(d.method.lockBasis);
-
-  // 9
-  H('9. Conformance statement');
-  P(d.conformance.statement);
-  doc.moveDown(0.3);
-  KV('Rules covered', `${d.conformance.summary.total}`);
-
-  // Annexes
-  doc.addPage();
-  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text(`Annex A — ${d.annexes.A.title}`);
-  doc.moveDown(0.3); NOTE(d.annexes.A.note); doc.moveDown(0.5);
-  d.annexes.A.entries.forEach((e, i) => {
-    doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold').text(`${i + 1}. [${e.severity.toUpperCase()}] ×${e.occurrences}`);
-    doc.fontSize(9).fillColor('#334155').font('Helvetica').text(e.message);
-    doc.fontSize(8).fillColor('#64748b').text(`   ${[...new Set(e.projects)].join(', ')}`);
-    doc.moveDown(0.25);
-  });
-
-  doc.addPage();
-  doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text(`Annex B — ${d.annexes.B.title}`);
-  doc.moveDown(0.3); NOTE(d.annexes.B.note); doc.moveDown(0.5);
-  d.annexes.B.entries.forEach(f =>
-    P(`${f.rank}. ${f.factorKey} [${f.tier}] — seen in ${f.occurrences}, average share ${f.avgSharePct.toFixed(1)}%`));
-
-  if (d.annexes.C) {
-    doc.addPage();
-    doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text(`Annex C — ${d.annexes.C.title}`);
-    doc.moveDown(0.3); NOTE(d.annexes.C.note); doc.moveDown(0.5);
-    d.annexes.C.entries.forEach(e => {
-      doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold')
-         .text(`${e.policyRef || e.assessmentId} — ${e.projectName} (v${e.version})`);
-      doc.fontSize(8).fillColor('#475569').font('Helvetica').text(
-        `   ${N(e.construction_kgCO2e)} kgCO2e · BOQ ${e.boqRevision} · DQ ${e.dataQualityOption} · locked ${e.lockedAt ? String(e.lockedAt).split('T')[0] : 'n/a'} by ${e.lockedBy || 'n/a'}`);
-      doc.moveDown(0.2);
-    });
-  }
-
-  doc.end();
-  return doc;
+  return out;
 }
 
-// ---------------------------------------------------------------------------
-// Word
-// ---------------------------------------------------------------------------
+/**
+ * Both formats are drawn by the shared standard renderer, in the order
+ * PCAF's Part C disclosure checklist reads. The per-assessment report uses
+ * the same renderer, so the two documents cannot drift into satisfying
+ * different halves of the same requirement.
+ *
+ * The roll-up and the settings travel with the disclosure on a
+ * non-enumerable property: the renderer needs the premium weighting and the
+ * recalculation protocol, and copying either onto the disclosure would
+ * change what every existing API caller receives.
+ */
+function _model(d) {
+  if (!d._source) {
+    throw new Error('This disclosure was not built by buildAnnualDisclosure(), so the document cannot be rendered from it.');
+  }
+  const { roll, settings, factorRows, equations } = d._source;
+  return standard.buildStandardModel(
+    standard.annualFacts({ disclosure: d, roll, settings, factorRows, equations }));
+}
 
+/** @returns {import('pdfkit')} a streaming A4 document in the house style */
+function buildDisclosurePDF(d) {
+  return standard.renderStandardPDF(_model(d));
+}
+
+/** @returns {Promise<Buffer>} .docx with real named styles */
 async function buildDisclosureDOCX(d) {
-  const c = [];
-
-  c.push(new Paragraph({ text: d.title, heading: HeadingLevel.TITLE, alignment: AlignmentType.LEFT }));
-  c.push(_p(`${d.meta.insurer} — FY${d.meta.reportingYear}`, { bold: true, size: 28 }));
-  c.push(_p(d.standard, { italics: true, color: '64748B' }));
-  c.push(_table(['Field', 'Value'], [
-    ['Insurer', d.meta.insurer],
-    ['Reporting year', `FY${d.meta.reportingYear}`],
-    ['Report ID', d.meta.reportId],
-    ['Premium basis', d.meta.premiumBasis],
-    ['Generated', new Date(d.meta.generatedAt).toISOString().split('T')[0]]
-  ]));
-
-  c.push(_h('1. Reported position', HeadingLevel.HEADING_1));
-  c.push(_table(['Line', 'kgCO2e', 'tCO2e', "Insurer's share (tCO2e)"], [
-    [d.position.construction.label, N(d.position.construction.total_kgCO2e),
-     N(d.position.construction.total_tCO2e), d.position.construction.insurerIAE_tCO2e.toFixed(4)],
-    [d.position.useStage.label, N(d.position.useStage.total_kgCO2e),
-     N(d.position.useStage.total_tCO2e), d.position.useStage.insurerShare_tCO2e.toFixed(4)]
-  ]));
-  c.push(_p(d.position.scopeNote, { italics: true, color: 'B45309' }));
-
-  c.push(_h('2. Scope and boundary', HeadingLevel.HEADING_1));
-  c.push(_table(['Tier', 'Modules'], [
-    ['Mandatory — the PCAF figure', d.scope.mandatory],
-    ['Optional — separate line', d.scope.optional]
-  ]));
-  c.push(_p(d.scope.excluded));
-  c.push(_p(d.scope.policyGate));
-
-  c.push(_h('3. Coverage', HeadingLevel.HEADING_1));
-  c.push(_p(d.coverage.statement, { bold: true }));
-  if (d.coverage.unassessed.length) {
-    c.push(_table(['Policy', 'Line', 'Client', 'Project'],
-      d.coverage.unassessed.map(u => [u.reference || u.policyId, u.lineType, u.clientName, u.projectName])));
-  }
-
-  c.push(_h('4. Data quality', HeadingLevel.HEADING_1));
-  c.push(_table(['Measure', 'Value'], [
-    ['Emissions-weighted score', `${d.dataQuality.weighted} (1 best, 5 worst)`],
-    ['Simple average', String(d.dataQuality.simpleAverage)],
-    ['Basis', d.dataQuality.basis]
-  ]));
-  if (d.dataQuality.note) c.push(_p(d.dataQuality.note, { italics: true }));
-  c.push(_table(['Score', 'Option', 'Assessments', 'Share of figure'],
-    d.dataQuality.distribution.map(b => [String(b.score), b.label, String(b.assessments), _pct(b.sharePct)])));
-  if (d.dataQuality.improvement.note) c.push(_p(d.dataQuality.improvement.note));
-  if (d.dataQuality.improvement.actions.length) {
-    c.push(_table(['#', 'Project', 'Share', 'Score', 'Achievable', 'What would move it'],
-      d.dataQuality.improvement.actions.map(a =>
-        [String(a.rank), a.projectName, _pct(a.sharePct), String(a.currentScore),
-         String(a.achievableScore), a.actions.join(' ')])));
-  }
-
-  c.push(new Paragraph({ text: '5. Per-policy detail', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  c.push(_table(['Policy', 'Line', 'Client / Project', 'Construction kgCO2e', 'Share', 'AF', 'IAE tCO2e', 'DQ', 'BOQ'],
-    d.policies.map(r => [
-      (r.policyRef || r.assessmentId) + (r.isRestatement ? ' (restated)' : ''),
-      r.lineType, `${r.clientName} / ${r.projectName}`,
-      N(r.construction_kgCO2e), _pct(r.shareOfConstructionPct),
-      r.attributionFactor.toFixed(6), r.insurerIAE_tCO2e.toFixed(4),
-      String(r.dataQualityScore), r.boqRevision
-    ])));
-
-  c.push(_h('6. Restatements', HeadingLevel.HEADING_1));
-  c.push(_p(d.restatements.note));
-  if (d.restatements.entries.length) {
-    c.push(_table(['Policy', 'Project', 'As previously reported', 'As restated', 'Movement', 'Reason'],
-      d.restatements.entries.map(e => [
-        e.policyRef || e.assessmentId, e.projectName,
-        N(e.asPreviouslyReported_kgCO2e), N(e.asRestated_kgCO2e),
-        `${e.movementPct >= 0 ? '+' : ''}${e.movementPct}%`, e.reason || 'not recorded'
-      ])));
-  }
-
-  c.push(_h(`7. FY${d.priorYear.year} comparative`, HeadingLevel.HEADING_1));
-  if (!d.priorYear.hasPrior) {
-    c.push(_p(d.priorYear.comparabilityNote));
-  } else {
-    c.push(_table(['Measure', `FY${d.priorYear.year}`, `FY${d.meta.reportingYear}`, 'Movement'], [
-      ['Construction kgCO2e', N(d.priorYear.construction.prior), N(d.priorYear.construction.current),
-       d.priorYear.construction.pct === null ? 'n/a' : `${d.priorYear.construction.pct >= 0 ? '+' : ''}${d.priorYear.construction.pct}%`],
-      ["Insurer's IAE tCO2e", String(d.priorYear.insurerIAE.prior), String(d.priorYear.insurerIAE.current),
-       d.priorYear.insurerIAE.pct === null ? 'n/a' : `${d.priorYear.insurerIAE.pct >= 0 ? '+' : ''}${d.priorYear.insurerIAE.pct}%`],
-      ['Intensity kgCO2e/m²', String(d.priorYear.intensity.prior ?? 'n/a'), String(d.priorYear.intensity.current ?? 'n/a'),
-       d.priorYear.intensity.movementPct === null ? 'n/a' : `${d.priorYear.intensity.movementPct >= 0 ? '+' : ''}${d.priorYear.intensity.movementPct}%`],
-      ['Weighted data quality', String(d.priorYear.dataQuality.prior ?? 'n/a'), String(d.priorYear.dataQuality.current ?? 'n/a'),
-       d.priorYear.dataQuality.movement === null ? 'n/a' : String(d.priorYear.dataQuality.movement)],
-      ['Policies assessed', String(d.priorYear.composition.assessedPolicies.prior), String(d.priorYear.composition.assessedPolicies.current), '—'],
-      ['Insured area m²', N(d.priorYear.composition.insuredArea_m2.prior), N(d.priorYear.composition.insuredArea_m2.current), '—']
-    ]));
-    c.push(_p(d.priorYear.comparabilityNote, { italics: true, color: 'B45309' }));
-  }
-
-  c.push(_h('8. Method', HeadingLevel.HEADING_1));
-  [d.method.attribution, d.method.aggregation, d.method.dataQualityBasis,
-   d.method.reportingYearBasis, d.method.lockBasis].forEach(t => c.push(_p(t)));
-
-  c.push(new Paragraph({ text: '9. Conformance statement', heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  c.push(_p(d.conformance.statement, { bold: true }));
-  c.push(_table(['Clause', 'Rule', 'Enforced in', 'Proven by'],
-    d.conformance.rules.map(r => [r.clause, r.rule, r.implementation, r.provingTest])));
-
-  const A = d.annexes.A;
-  c.push(new Paragraph({ text: `Annex A — ${A.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  c.push(_p(A.note, { italics: true }));
-  c.push(_table(['#', 'Severity', 'Seen on', 'Assumption or limitation', 'Projects'],
-    A.entries.map((e, i) => [String(i + 1), e.severity, String(e.occurrences), e.message,
-      [...new Set(e.projects)].join(', ')])));
-
-  const B = d.annexes.B;
-  c.push(new Paragraph({ text: `Annex B — ${B.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  c.push(_p(B.note, { italics: true }));
-  c.push(B.entries.length
-    ? _table(['Rank', 'Factor', 'Tier', 'Seen in', 'Average share'],
-        B.entries.map(f => [String(f.rank), f.factorKey, f.tier, String(f.occurrences), `${f.avgSharePct.toFixed(1)}%`]))
-    : _p('No factor gaps recorded.'));
-
-  if (d.annexes.C) {
-    const C = d.annexes.C;
-    c.push(new Paragraph({ text: `Annex C — ${C.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-    c.push(_p(C.note, { italics: true }));
-    c.push(_table(['Policy', 'Project', 'v', 'kgCO2e', 'BOQ revision', 'Locked', 'By'],
-      C.entries.map(e => [e.policyRef || e.assessmentId, e.projectName, String(e.version),
-        N(e.construction_kgCO2e), e.boqRevision,
-        e.lockedAt ? String(e.lockedAt).split('T')[0] : 'n/a', e.lockedBy || 'n/a'])));
-  }
-
-  return Packer.toBuffer(new Document({ sections: [{ properties: {}, children: c }] }));
+  return standard.renderStandardDOCX(_model(d));
 }
 
 module.exports = { buildAnnualDisclosure, buildDisclosurePDF, buildDisclosureDOCX };

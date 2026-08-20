@@ -1,27 +1,24 @@
 /**
- * CarbonIQ FinTech — PCAF Part C: Report Builder (PDF and Word)
+ * CarbonIQ FinTech — PCAF Part C: the per-assessment report
  *
- * One structured report object drives both formats, so the PDF and the Word
- * document can never diverge.
+ * Two things come out of here: the structured report object an API caller
+ * receives, and the document a reviewer reads. They are built from the same
+ * execution, and the document is drawn by the shared standard renderer in
+ * partc-report-standard.js — the same one that draws the annual disclosure —
+ * so a requirement satisfied in one document cannot go missing from the
+ * other.
  *
- * Layout, per the agreed requirement that assumptions live separately from
- * the main screen:
- *
- *   Main report   result, scope, what drives the number, A4 Pareto, data
- *                 quality, disclosure statement
- *   Annex A       Assumptions and Limitations Register
- *   Annex B       Data Gap Ledger
- *   Annex C       Audit Trail
- *   Annex D       Beyond-PCAF whole-life annex (only when requested)
+ * Section order follows PCAF's Part C disclosure checklist rather than this
+ * application's convenience: cover, scope and coverage, gases and units,
+ * absolute emissions, methodology, data quality, recalculation, intensity,
+ * limitations, conformance, annexes. The completed checklist is the last
+ * annex, answered from the same facts the sections render.
  */
 
 'use strict';
 
-const PDFDocument = require('pdfkit');
-const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
-
 const { containsForbiddenLanguage } = require('./pcaf-partc/data-quality');
-const { N, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
+const standard = require('./partc-report-standard');
 
 // ---------------------------------------------------------------------------
 // Structured report object
@@ -35,7 +32,7 @@ const { N, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
  * @param {Object} [params.meta]     - { projectName, insurer, insured, orgName, runId }
  * @param {boolean} [params.includeWlcaAnnex]
  */
-function buildPartCReport({ result, registers, memo, meta = {}, includeWlcaAnnex = false }) {
+function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, includeWlcaAnnex = false }) {
   const s = result.summary;
 
   const report = {
@@ -118,348 +115,46 @@ function buildPartCReport({ result, registers, memo, meta = {}, includeWlcaAnnex
     throw new Error(`Report blocked: PCAF endorsement language detected (${offending.join(', ')}). Only conformance language is permitted.`);
   }
 
+  /* What the document renderers need, kept off the JSON. See _model(). */
+  Object.defineProperty(report, '_source', {
+    value: { result, registers, settings, meta, memo: memo || null },
+    enumerable: false, writable: false
+  });
+
   return report;
 }
 
 // ---------------------------------------------------------------------------
-// PDF
-// ---------------------------------------------------------------------------
-
-function buildPartCPDF(report) {
-  const doc = new PDFDocument({ margin: 56, size: 'A4', compress: true });
-
-  winAnsiSafe(doc);
-
-  /* Sections are numbered as they are written rather than by hand: the memo
-     is optional, and a report that skipped from 5 to 7 read as though a
-     section had been withheld. */
-  let _n = 0;
-  const H = (t, size = 13) => doc.moveDown(0.8).fontSize(size)
-    .fillColor('#0f172a').font('Helvetica-Bold').text(`${++_n}. ${t}`);
-  const SUB = t => { doc.moveDown(0.45); doc.fontSize(10).fillColor('#0f172a').font('Helvetica-Bold').text(t); };
-  const P = (t, size = 9.5) => doc.fontSize(size).fillColor('#334155').font('Helvetica').text(t, { align: 'left' });
-  const KV = (k, v) => {
-    doc.fontSize(9.5).fillColor('#64748b').font('Helvetica').text(k, { continued: true });
-    doc.fillColor('#0f172a').font('Helvetica-Bold').text(`   ${v}`);
-  };
-
-  // Cover
-  doc.fontSize(20).fillColor('#0f172a').font('Helvetica-Bold').text(report.title);
-  doc.moveDown(0.3);
-  doc.fontSize(10).fillColor('#64748b').font('Helvetica').text(report.standard);
-  doc.moveDown(1);
-  KV('Project', report.meta.projectName);
-  if (report.meta.insurer) KV('Insurer', report.meta.insurer);
-  if (report.meta.insured) KV('Insured', report.meta.insured);
-  KV('Report ID', report.meta.reportId);
-  KV('Generated', new Date(report.meta.generatedAt).toISOString().split('T')[0]);
-
-  // 1 Result
-  H('Result');
-  const dq = report.dqScoring;
-  const conScore = dq ? `   ·   data quality ${dq.construction.weighted} / 5` : '';
-  const useScore = dq ? (dq.useStage.applies ? `   ·   data quality ${dq.useStage.weighted} / 5`
-                                             : '   ·   not applicable (scope rule)') : '';
-  KV('Construction (A4 + A5) — the PCAF figure', `${N(report.result.construction_kgCO2e)} kgCO2e${conScore}`);
-  KV('Use-stage (B1 + B4 + B7) — separate line', `${N(report.result.useStage_kgCO2e)} kgCO2e${useScore}`);
-  KV('Attribution factor', report.result.attributionFactor.toFixed(6));
-  KV("Insurer's construction IAE", `${report.result.insurerIAE_tCO2e.toFixed(4)} tCO2e${conScore}`);
-  KV('Per-m2 construction factor', `${N(report.result.perM2Factor_kgCO2e_m2)} kgCO2e/m2`);
-  doc.moveDown(0.4);
-  doc.fontSize(8.5).fillColor('#b45309').font('Helvetica-Oblique').text(report.result.scopeWarning);
-
-  // 2 Scope
-  H('Scope applied');
-  KV('Policy type', report.scope.policyType || 'not stated');
-  KV('Use-stage years', String(report.scope.useStageYears));
-  P(report.scope.note);
-
-  // 3 Drivers
-  H('What drives this number');
-  for (const d of report.drivers) {
-    P(`${d.module.padEnd(6)}  ${N(d.value).padStart(12)} kgCO2e   ${d.sharePct.toFixed(1)}%   ${d.label}`);
-  }
-
-  // 4 A4 Pareto
-  H('Material transport (A4) — Pareto vital few');
-  if (report.paretoVitalFew.length === 0) P('No materials assessed.');
-  for (const v of report.paretoVitalFew) {
-    P(`${v.name} — ${N(v.value)} kgCO2e (${(v.contributionPct * 100).toFixed(1)}% of A4)`);
-  }
-
-  /* 5 Data quality — one section, not two.
-     Two measures live here and they are different things: the PCAF option
-     describes the method used, the rubric score describes the evidence
-     behind each input. Split across separate sections they read as a
-     contradiction (3 against 3.3); together, under their own headings,
-     they read as what they are. */
-  H('Data quality');
-  SUB('PCAF option — the method used');
-  KV('Option', `${report.dataQuality.option} — ${report.dataQuality.optionLabel}`);
-  KV('Score', `${report.dataQuality.score} (1 best, 5 worst)`);
-  KV('Weakest factor tier', report.dataQuality.worstFactorTier || 'n/a');
-  P(report.dataQuality.tierNote);
-
-  if (dq) {
-    SUB('Reported scores — the evidence behind the inputs');
-    KV('Construction (A4 + A5)', `${dq.construction.weighted} / 5`);
-    KV('Use stage (B1 + B4 + B7)', dq.useStage.applies
-      ? `${dq.useStage.weighted} / 5`
-      : 'not applicable to this policy type (scope rule)');
-    P(dq.basis, 9);
-    P(dq.whyWeighted, 8.5);
-
-    SUB('Module weighting');
-    const band = (label, w) => {
-      P(label, 9);
-      w.rows.forEach(r => P(`   ${r.module.padEnd(5)} ${N(r.emissions).padStart(12)} kgCO2e   score ${r.score}   ${r.weightPct}%   contributes ${r.contribution}`, 8));
-      P(`   weighted = ${w.weighted} / 5`, 8.5);
-    };
-    band('Construction (A4 + A5)', dq.construction);
-    if (dq.useStage.applies) band('Use stage (B1 + B4 + B7)', dq.useStage);
-    else P(dq.useStage.notApplicableNote, 8.5);
-
-    SUB('Every input the run consumed');
-    dq.inputs.forEach(i => P(
-      `${String(i.stage || i.module).padEnd(6)} ${i.input.padEnd(20)} ${i.applies === false ? 'n/a' : i.score}   ${i.basis}   [${i.source}]`, 8));
-  }
-
-  // 6 Memo
-  if (report.memo) { H('Assessment memo'); P(report.memo, 9); }
-
-  // 7 Disclosure
-  H('Disclosure statement');
-  if (report.dqStatement) {
-    P(report.dqStatement);
-    doc.moveDown(0.35);
-    doc.fontSize(8).fillColor('#64748b').font('Helvetica-Oblique')
-       .text('Generated from this execution. Conformance is claimed; endorsement is not.');
-    doc.moveDown(0.45);
-    SUB('Scope note');
-  }
-  P(report.disclosureNote);
-
-  // Annexes
-  const annexTable = (a, rowsFn) => {
-    if (!a) return;
-    doc.addPage();
-    doc.fontSize(15).fillColor('#0f172a').font('Helvetica-Bold').text(`Annex ${a.annex} — ${a.title}`);
-    doc.moveDown(0.3);
-    if (a.note) doc.fontSize(8.5).fillColor('#64748b').font('Helvetica-Oblique').text(a.note);
-    doc.moveDown(0.5);
-    rowsFn(a);
-  };
-
-  annexTable(report.annexes.A, a => {
-    P(`${a.total} entries — ${a.counts.material} material, ${a.counts.notable} notable, ${a.counts.info} informational.`);
-    doc.moveDown(0.4);
-    a.entries.forEach((e, i) => {
-      doc.fontSize(9).fillColor('#0f172a').font('Helvetica-Bold')
-         .text(`${i + 1}. [${e.severity.toUpperCase()}] ${e.module || e.source}`);
-      doc.fontSize(9).fillColor('#334155').font('Helvetica').text(e.message);
-      doc.moveDown(0.3);
-    });
-  });
-
-  annexTable(report.annexes.B, a => {
-    P(`${a.total} factor gaps — ${a.fallbacks} fallbacks, ${a.globalTier} Global-tier.`);
-    doc.moveDown(0.3);
-    doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text('Research priority (by emissions flowing through each factor)');
-    a.researchPriority.forEach(r => P(`${r.rank}. ${r.factorKey} — ${r.sharePct.toFixed(1)}% — ${r.gap}`));
-    doc.moveDown(0.4);
-    doc.fontSize(9.5).fillColor('#0f172a').font('Helvetica-Bold').text('All gaps');
-    a.entries.forEach(e => P(`${e.factorKey} [${e.tier}] ${N(e.value)} ${e.unit || ''} — ${e.gap}`));
-  });
-
-  annexTable(report.annexes.C, a => {
-    P(`${a.total} traced calculation steps.`);
-    doc.moveDown(0.3);
-    a.entries.forEach(e => {
-      doc.fontSize(8.5).fillColor('#0f172a').font('Helvetica-Bold')
-         .text(`${e.step}. ${e.module} — ${e.label}: ${N(e.value)} ${e.unit}`);
-      doc.fontSize(8).fillColor('#475569').font('Helvetica').text(`   ${e.equation}`);
-      if (e.factors.length) {
-        e.factors.forEach(f => doc.fontSize(7.5).fillColor('#64748b')
-          .text(`   · ${f.key} = ${f.value} [${f.tier}] ${f.reference || ''}`));
-      }
-    });
-  });
-
-  if (report.annexes.D) {
-    annexTable(report.annexes.D, a => {
-      P(`Annex total: ${N(a.total)} kgCO2e`);
-      a.entries.forEach(e => P(`${e.module} — ${e.label}: ${N(e.value)} kgCO2e`));
-    });
-  }
-
-  doc.end();
-  return doc;
-}
-
-// ---------------------------------------------------------------------------
-// Word
+// Documents
 // ---------------------------------------------------------------------------
 
 /**
- * @returns {Promise<Buffer>} .docx buffer
+ * Rebuild the standard model from what the report was made of.
+ *
+ * The execution and its registers travel with the report on a non-enumerable
+ * property, so the document renderers can reach them while the JSON an API
+ * caller receives stays exactly what it always was. Passing them as extra
+ * arguments instead would change a signature every existing caller uses, and
+ * copying them onto the report would double the size of every JSON response.
  */
+function _model(report) {
+  if (!report._source) {
+    throw new Error('This report was not built by buildPartCReport(), so the document cannot be rendered from it.');
+  }
+  const { result, registers, settings, meta, memo } = report._source;
+  const facts = standard.assessmentFacts({ result, registers, settings, meta, memo });
+  if (report.annexes.D) facts.beyondPcafAnnex = report.annexes.D;
+  return standard.buildStandardModel(facts);
+}
+
+/** @returns {import('pdfkit')} a streaming A4 document in the house style */
+function buildPartCPDF(report) {
+  return standard.renderStandardPDF(_model(report));
+}
+
+/** @returns {Promise<Buffer>} .docx with real named styles */
 async function buildPartCDOCX(report) {
-  const children = [];
-
-  children.push(new Paragraph({ text: report.title, heading: HeadingLevel.TITLE, alignment: AlignmentType.LEFT }));
-  children.push(_p(report.standard, { italics: true, color: '64748B' }));
-  children.push(_table(['Field', 'Value'], [
-    ['Project', report.meta.projectName],
-    ...(report.meta.insurer ? [['Insurer', report.meta.insurer]] : []),
-    ...(report.meta.insured ? [['Insured', report.meta.insured]] : []),
-    ['Report ID', report.meta.reportId],
-    ['Generated', new Date(report.meta.generatedAt).toISOString().split('T')[0]]
-  ]));
-
-  const dqw = report.dqScoring;
-
-  /* The Word document numbers its sections as it writes them, for the same
-     reason the PDF does: the memo is optional, and a gap in the numbering
-     reads as a withheld section. */
-  let _n = 0;
-  const SEC = t => _h(`${++_n}. ${t}`, HeadingLevel.HEADING_1);
-
-  children.push(SEC('Result'));
-  children.push(_table(['Metric', 'Value', 'Data quality'], [
-    ['Construction (A4 + A5) — the PCAF figure', `${N(report.result.construction_kgCO2e)} kgCO2e`,
-      dqw ? `${dqw.construction.weighted} / 5` : '—'],
-    ['Use-stage (B1 + B4 + B7) — separate line', `${N(report.result.useStage_kgCO2e)} kgCO2e`,
-      dqw ? (dqw.useStage.applies ? `${dqw.useStage.weighted} / 5` : 'not applicable (scope rule)') : '—'],
-    // Three columns now, so every row carries three cells or the table
-    // renders ragged in Word.
-    ['Attribution factor', report.result.attributionFactor.toFixed(6), ''],
-    ["Insurer's construction IAE", `${report.result.insurerIAE_tCO2e.toFixed(4)} tCO2e`,
-      dqw ? `${dqw.construction.weighted} / 5` : ''],
-    ['Per-m2 construction factor', `${N(report.result.perM2Factor_kgCO2e_m2)} kgCO2e/m2`, '']
-  ]));
-  children.push(_p(report.result.scopeWarning, { italics: true, color: 'B45309' }));
-
-  children.push(SEC('Scope applied'));
-  children.push(_table(['Field', 'Value'], [
-    ['Policy type', report.scope.policyType || 'not stated'],
-    ['Use-stage years', String(report.scope.useStageYears)],
-    ['Mandatory', report.scope.model.mandatory],
-    ['Optional', report.scope.model.optional],
-    ['Beyond-PCAF', report.scope.model.beyondPcaf]
-  ]));
-  children.push(_p(report.scope.note));
-
-  children.push(SEC('What drives this number'));
-  children.push(_table(['Module', 'kgCO2e', 'Share', 'Label'],
-    report.drivers.map(d => [d.module, N(d.value), `${d.sharePct.toFixed(1)}%`, d.label])));
-
-  children.push(SEC('Material transport (A4) — Pareto vital few'));
-  children.push(report.paretoVitalFew.length
-    ? _table(['Material', 'kgCO2e', 'Share of A4'],
-        report.paretoVitalFew.map(v => [v.name, N(v.value), `${(v.contributionPct * 100).toFixed(1)}%`]))
-    : _p('No materials assessed.'));
-
-  /* One data-quality section carrying both measures under their own
-     headings. The PCAF option describes the method; the rubric score
-     describes the evidence behind each input. Reported as two separate
-     sections they read as a contradiction. */
-  children.push(SEC('Data quality'));
-  children.push(_h('The method used — PCAF option', HeadingLevel.HEADING_2));
-  children.push(_table(['Field', 'Value'], [
-    ['Option', `${report.dataQuality.option} — ${report.dataQuality.optionLabel}`],
-    ['Score', `${report.dataQuality.score} (1 best, 5 worst)`],
-    ['Weakest factor tier', report.dataQuality.worstFactorTier || 'n/a'],
-    ['Factors used', String(report.dataQuality.factorsUsed)],
-    ['Factors with gaps', String(report.dataQuality.factorsWithGaps)]
-  ]));
-  children.push(_p(report.dataQuality.tierNote));
-
-  if (dqw) {
-    children.push(_h('The evidence behind the inputs — reported scores', HeadingLevel.HEADING_2));
-    children.push(_table(['Scope', 'Weighted score'], [
-      ['Construction (A4 + A5) — the PCAF figure', `${dqw.construction.weighted} / 5`],
-      ['Use stage (B1 + B4 + B7) — separate line', dqw.useStage.applies
-        ? `${dqw.useStage.weighted} / 5`
-        : 'not applicable to this policy type (scope rule)']
-    ]));
-    children.push(_p(dqw.basis, { italics: true }));
-
-    children.push(_h('The rubric', HeadingLevel.HEADING_2));
-    children.push(_table(['Score', 'Meaning', 'Typical evidence'],
-      dqw.rubric.map(r => [String(r.score), r.meaning, r.evidence])));
-
-    children.push(_h('Module weighting', HeadingLevel.HEADING_2));
-    const band = w => _table(['Module', 'kgCO2e', 'Score', 'Weight', 'Weighted contribution'],
-      w.rows.map(r => [r.module, N(r.emissions), String(r.score), `${r.weightPct}%`, String(r.contribution)]));
-    children.push(_p('Construction (A4 + A5)', { bold: true }));
-    children.push(band(dqw.construction));
-    children.push(_p(`Weighted data quality ${dqw.construction.weighted} of 5.`, { bold: true }));
-    children.push(_p('Use stage (B1 + B4 + B7)', { bold: true }));
-    if (dqw.useStage.applies) {
-      children.push(band(dqw.useStage));
-      children.push(_p(`Weighted data quality ${dqw.useStage.weighted} of 5.`, { bold: true }));
-    } else {
-      children.push(_p(dqw.useStage.notApplicableNote));
-    }
-    children.push(_p(dqw.whyWeighted));
-
-    children.push(_h('Every input the run consumed', HeadingLevel.HEADING_2));
-    children.push(_table(['Module', 'Input', 'Basis actually used', 'Score', 'Source'],
-      dqw.inputs.map(i => [i.stage || i.module, i.input, i.basis,
-        i.applies === false ? 'n/a' : String(i.score), i.source])));
-  }
-
-  if (report.memo) {
-    children.push(SEC('Assessment memo'));
-    for (const line of String(report.memo).split('\n')) children.push(_p(line));
-  }
-
-  children.push(SEC('Disclosure statement'));
-  if (report.dqStatement) {
-    children.push(_p(report.dqStatement, { bold: true }));
-    children.push(_p('Generated from this execution. Conformance is claimed; endorsement is not.',
-      { italics: true, color: '64748B' }));
-    children.push(_h('Scope note', HeadingLevel.HEADING_2));
-  }
-  children.push(_p(report.disclosureNote));
-
-  // Annex A
-  const A = report.annexes.A;
-  children.push(new Paragraph({ text: `Annex A — ${A.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  children.push(_p(`${A.total} entries — ${A.counts.material} material, ${A.counts.notable} notable, ${A.counts.info} informational.`, { italics: true }));
-  children.push(_table(['#', 'Severity', 'Module', 'Assumption or limitation'],
-    A.entries.map((e, i) => [String(i + 1), e.severity, e.module || e.source, e.message])));
-
-  // Annex B
-  const B = report.annexes.B;
-  children.push(new Paragraph({ text: `Annex B — ${B.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  children.push(_p(B.note, { italics: true }));
-  children.push(_h('Research priority', HeadingLevel.HEADING_2));
-  children.push(_table(['Rank', 'Factor', 'Share', 'Gap'],
-    B.researchPriority.map(r => [String(r.rank), r.factorKey, `${r.sharePct.toFixed(1)}%`, r.gap])));
-  children.push(_h('All gaps', HeadingLevel.HEADING_2));
-  children.push(_table(['Factor', 'Value', 'Tier', 'Gap'],
-    B.entries.map(e => [e.factorKey, `${N(e.value)} ${e.unit || ''}`, e.tier, e.gap])));
-
-  // Annex C
-  const C = report.annexes.C;
-  children.push(new Paragraph({ text: `Annex C — ${C.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-  children.push(_p(C.note, { italics: true }));
-  children.push(_table(['Step', 'Module', 'Quantity', 'Equation', 'Value'],
-    C.entries.map(e => [String(e.step), e.module, e.label, e.equation, `${N(e.value)} ${e.unit}`])));
-
-  // Annex D
-  if (report.annexes.D) {
-    const D = report.annexes.D;
-    children.push(new Paragraph({ text: `Annex D — ${D.title}`, heading: HeadingLevel.HEADING_1, pageBreakBefore: true }));
-    children.push(_p(D.note, { italics: true, color: 'B45309' }));
-    children.push(_table(['Module', 'Label', 'kgCO2e'],
-      D.entries.map(e => [e.module, e.label, N(e.value)])));
-    children.push(_p(`Annex total: ${N(D.total)} kgCO2e`, { bold: true }));
-  }
-
-  const doc = new Document({ sections: [{ properties: {}, children }] });
-  return Packer.toBuffer(doc);
+  return standard.renderStandardDOCX(_model(report));
 }
 
 module.exports = { buildPartCReport, buildPartCPDF, buildPartCDOCX };

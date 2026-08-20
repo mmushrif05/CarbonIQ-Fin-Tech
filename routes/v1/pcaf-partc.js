@@ -41,6 +41,7 @@ const { conformanceMatrix } = require('../../services/pcaf-partc/conformance');
 const { buildMethodology } = require('../../services/partc-methodology');
 const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/partc-methodology-doc');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
+const partcRegistry = require('../../services/partc-registry');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
 const {
@@ -287,9 +288,27 @@ router.post('/report', apiKeyAuth, defaultLimiter,
     try {
       const result    = runPartC(_toEngineInput(req.body));
       const registers = buildRegisters(result);
+      /* The reporting entity's own settings — base year, significance
+         threshold, recalculation protocol, currency. A Part C disclosure
+         must state them, and they belong to the entity rather than to the
+         request, so the report reads them from the book. */
+      const settings  = await partcRegistry.getSettings(req.apiKey.orgId).catch(() => ({}));
       const report    = buildPartCReport({
-        result, registers, memo: req.body.memo,
-        meta: { projectName: req.body.projectName, ...req.body.meta },
+        result, registers, settings, memo: req.body.memo,
+        meta: {
+          projectName: req.body.projectName,
+          insurer: settings.insurerName || null,
+          reportingYear: settings.reportingYear,
+          currency: settings.currency,
+          /* The economics the report needs for attribution, per-policy detail
+             and intensity are already in the request as the engine's inputs;
+             carrying them into the meta means an intensity section that is
+             real rather than "not available". */
+          premium:     (req.body.policy || {}).premium,
+          projectCost: (req.body.policy || {}).projectCost,
+          gifa_m2:     (req.body.siteInputs || {}).gifa_m2,
+          ...req.body.meta
+        },
         includeWlcaAnnex: req.body.includeWlcaAnnex
       });
 

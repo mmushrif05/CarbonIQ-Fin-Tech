@@ -16,6 +16,12 @@
   # Increase timeout to 26s (Netlify Pro max) to give the Claude Haiku call
   # enough time even under cold-start conditions. Free plan is capped at 10s.
   timeout = 26
+  # The report faces and the seed factor tables are read from disk at
+  # runtime. nft traces require() calls, not fs.readFileSync of a joined
+  # path, so without naming them here the bundle ships without them: the
+  # factor store would fail and every report would silently fall back to the
+  # built-in PDF fonts.
+  included_files = ["assets/fonts/**", "data/factors/**"]
 
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include

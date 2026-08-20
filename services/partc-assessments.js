@@ -169,6 +169,16 @@ async function createAssessment(orgId, input) {
       useStage:   engineInput.useStage,
       distances:  engineInput.distances
     },
+    /* What the policy was worth when this assessment was made. The roll-up
+       reads premium from the book so a repriced policy weights on what it is
+       now, but a disclosure published years later must still be able to say
+       what it was weighted on at the time. */
+    economics: {
+      currency:    settings.currency,
+      premium:     Number(ctx.enginePolicy.premium) || 0,
+      projectCost: Number(ctx.project.projectCost) || 0,
+      gifa_m2:     Number(ctx.project.gifa_m2) || 0
+    },
     summary:        result.summary,
     moduleValues: {
       a4: result.modules.a4.value, a5: result.modules.a5.value,

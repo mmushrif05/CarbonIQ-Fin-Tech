@@ -531,4 +531,15 @@ function _scenarios() {
   };
 }
 
-module.exports = { buildMethodology, MODULE_ORDER };
+/**
+ * Every factor row in the store, with its tier and named source.
+ *
+ * The annual disclosure needs the same register the methodology publishes;
+ * exporting the harvest keeps one implementation rather than a second that
+ * could disagree about what the store contains.
+ */
+function allFactorRows() {
+  return factorStore.allRows ? factorStore.allRows() : _harvestFactorRows();
+}
+
+module.exports = { buildMethodology, allFactorRows, MODULE_ORDER };

@@ -22,6 +22,20 @@ const WHO_PAYS      = ['OCIP', 'CCIP'];
 
 const isoDate = Joi.string().isoDate();
 
+/*
+ * The default recalculation triggers, taken from the GHG Protocol Corporate
+ * Value Chain (Scope 3) Standard and phrased for an insurance book. An entity
+ * may extend them, but it may not publish a disclosure carrying none: a
+ * recalculation protocol is a "shall" in the Part C checklist.
+ */
+const RECALCULATION_TRIGGERS = [
+  'Structural change to the book — an acquisition, disposal or merger that moves policies into or out of the inventory.',
+  'A change of calculation methodology, or of the emission factors relied on, that materially changes reported emissions.',
+  'A change in the boundary of what is measured — a line of business, module or policy type entering or leaving the inventory.',
+  'Discovery of a material error, or of several errors that are material in aggregate.',
+  'A bill of quantities revision that moves a locked assessment by at least the restatement threshold.'
+];
+
 // ---------------------------------------------------------------------------
 // Settings — one per insurer
 // ---------------------------------------------------------------------------
@@ -36,7 +50,23 @@ const settingsSchema = Joi.object({
   restatementThresholdPct: Joi.number().min(0).max(100).default(5)
     .description('A recomputation moving the figure by at least this much restates a locked assessment'),
   reportingYearConvention: Joi.string().valid('inception').default('inception')
-    .description('The construction figure lands in the year the policy incepts')
+    .description('The construction figure lands in the year the policy incepts'),
+
+  /* Base-year recalculation. PCAF Part C's disclosure checklist (RECALCULATION,
+     p.99) makes a stated recalculation protocol and a stated significance
+     threshold requirements, not recommendations: without them a reader cannot
+     tell whether a moved base year reflects a changed book or a changed method.
+     They belong to the reporting entity, not to any one assessment, so they are
+     held here and printed in every report. */
+  baseYear: Joi.number().integer().min(2000).max(2100).allow(null).default(null)
+    .description('The inventory base year against which progress is measured'),
+  significanceThresholdPct: Joi.number().min(0).max(100).default(5)
+    .description('Cumulative change in base-year emissions that triggers a base-year recalculation, per the GHG Protocol Scope 3 Standard'),
+  recalculationTriggers: Joi.array().items(Joi.string().trim().max(300)).max(20)
+    .default(RECALCULATION_TRIGGERS)
+    .description('The circumstances that trigger recalculation of base-year emissions'),
+  recalculationPolicy: Joi.string().trim().max(2000).allow('').default('')
+    .description('Any additional protocol the entity applies beyond the standard triggers')
 });
 
 // ---------------------------------------------------------------------------
@@ -104,5 +134,5 @@ const projectUpdateSchema = projectSchema
 module.exports = {
   settingsSchema, clientSchema, clientUpdateSchema,
   projectSchema, projectUpdateSchema, policySchema,
-  POLICY_TYPES, PROJECT_TYPES, COVER_BASES, WHO_PAYS
+  POLICY_TYPES, PROJECT_TYPES, COVER_BASES, WHO_PAYS, RECALCULATION_TRIGGERS
 };

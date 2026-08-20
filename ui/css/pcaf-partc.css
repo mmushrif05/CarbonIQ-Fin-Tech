@@ -152,6 +152,16 @@
   box-shadow: 0 0 0 3px var(--p-accent-bg), 0 0 0 1.5px var(--p-accent);
 }
 
+/* A field that needs the full width of the form rather than a right-aligned
+   value column: a multi-line protocol does not read in a 190px box. */
+.partc-full {
+  display: block; margin: 14px 0 0;
+  font-size: 13px; font-weight: 560; color: var(--p-label-2);
+}
+.partc-full em { font-style: normal; font-weight: 400; color: var(--p-label-3); }
+.partc-full > textarea { margin-top: 7px; }
+.partc-grid label small { flex-basis: 100%; text-align: right; font-size: 11px; }
+
 /* ── Textarea ────────────────────────────────────────────── */
 .partc-textarea {
   width: 100%; box-sizing: border-box;

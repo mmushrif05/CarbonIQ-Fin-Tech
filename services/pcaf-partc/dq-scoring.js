@@ -34,6 +34,11 @@ const RUBRIC = [
   { score: 5, meaning: 'Global default or literature assumption', evidence: 'Global-tier proxy with no project or local basis' }
 ];
 
+const {
+  SCOPE_1_2, SCOPE_3, SCOPE_OF, SCOPE_META, INSURER_NOTE,
+  CONSTRUCTION_STAGES, USE_STAGE_STAGES, stageEmissions
+} = require('./ghg-scopes');
+
 const _num = v => Number(v) || 0;
 const _round1 = n => Math.round(n * 10) / 10;
 
@@ -141,6 +146,12 @@ function scoreInputs(result) {
       source: 'DEFRA (UK) — proxy, no Sri Lankan water factor exists', tier: 'Global' }
   ];
 
+  /* The checklist wants the scope 3 data-quality score reported separately
+     from the scope 1 and 2 score, so each input carries the insured's GHG
+     scope from the same map the emissions split reads. Tagging here rather
+     than at the point of use is what stops the two cuts disagreeing. */
+  for (const row of rows) row.ghgScope = SCOPE_OF[row.stage] || null;
+
   return rows;
 }
 
@@ -225,6 +236,55 @@ function _bestImprovement(inputs, emissions, codes) {
 }
 
 /**
+ * Score each lifecycle stage — the mean of the inputs belonging to it.
+ *
+ * The module scores above roll A5.1, A5.2 and A5.3 together because that is
+ * the granularity the reported figure uses. The GHG-scope cut needs them
+ * apart, because site energy is the insured's scope 1 and 2 while the other
+ * two are its scope 3.
+ */
+function scoreStages(inputs) {
+  const byStage = {};
+  for (const st of [...CONSTRUCTION_STAGES, ...USE_STAGE_STAGES]) {
+    const mine = inputs.filter(i => i.stage === st);
+    if (mine.length) byStage[st] = _round1(mine.reduce((n, i) => n + i.score, 0) / mine.length);
+  }
+  return byStage;
+}
+
+/**
+ * Data quality per insured GHG scope, on one reported line.
+ *
+ * Kept per line rather than across the whole inventory: pooling construction
+ * with the use stage would be exactly the blending the scope rule forbids,
+ * and the two lines are never summed anywhere else either.
+ */
+function _ghgScopeLine(stages, byStage, em, applies) {
+  const out = { applies };
+  for (const key of [SCOPE_1_2, SCOPE_3]) {
+    const mine = stages.filter(st => SCOPE_OF[st] === key && byStage[st] !== undefined);
+    const rows = mine.map(st => ({
+      stage: st,
+      score: byStage[st],
+      emissions: Math.round(_num(em[st]) * 100) / 100
+    }));
+    const total = rows.reduce((n, r) => n + r.emissions, 0);
+    for (const r of rows) r.weightPct = total > 0 ? _round1((r.emissions / total) * 100) : 0;
+    out[key] = {
+      ...SCOPE_META[key],
+      rows,
+      totalEmissions: Math.round(total * 100) / 100,
+      weighted: applies && total > 0
+        ? _round1(rows.reduce((n, r) => n + r.emissions * r.score, 0) / total)
+        : null,
+      notApplicableNote: applies ? null
+        : 'Not applicable to this policy type (scope rule) — construction-only cover carries no use stage.'
+    };
+  }
+  return out;
+}
+
+/**
  * Score a finished run.
  *
  * @param {Object} result runPartC() output
@@ -262,6 +322,9 @@ function scoreRun(result) {
     }
   }
 
+  const byStage = scoreStages(inputs);
+  const stageEm = stageEmissions(result);
+
   return {
     rubric: RUBRIC,
     scale: '1 best, 5 worst.',
@@ -283,7 +346,26 @@ function scoreRun(result) {
         : 'Not applicable to this policy type (scope rule) — construction-only cover carries no use stage.',
       improvement: useStageApplies ? _bestImprovement(inputs, emissions, USE_STAGE_MODULES) : null
     },
-    excluded: 'Beyond-PCAF modules (B2, B5, B8) are excluded from both scores, as they are from the reported figures.'
+    excluded: 'Beyond-PCAF modules (B2, B5, B8) are excluded from both scores, as they are from the reported figures.',
+
+    byStage,
+
+    /* The checklist requires the insured's scope 3 score to be reported
+       apart from its scope 1 and 2 score. Both are emission-weighted within
+       this assessment; the score an insurer discloses for a reporting year
+       is premium-weighted across its policies, which is a portfolio
+       operation and lives in the roll-up. */
+    ghgScopes: {
+      construction: _ghgScopeLine(CONSTRUCTION_STAGES, byStage, stageEm, true),
+      useStage: _ghgScopeLine(USE_STAGE_STAGES, byStage, stageEm, useStageApplies),
+      insurerNote: INSURER_NOTE
+    },
+
+    weighting: {
+      internal: 'Emission-weighted within one assessment. This is the diagnostic: it shows which module is dragging the quality and points improvement at the tonnes. It is not the disclosed portfolio score.',
+      disclosed: 'Premium-weighted across the policies in a reporting year — sum(policy premium x policy score) / sum(policy premium) — as PCAF Part C requires for a disclosed data-quality score.',
+      rule: 'The two weightings are never blended, and the emission-weighted score is never presented as the disclosed portfolio figure.'
+    }
   };
 }
 
@@ -342,6 +424,6 @@ function disclosureStatement(result, scoring) {
 }
 
 module.exports = {
-  RUBRIC, scoreRun, scoreInputs, moduleEmissions, disclosureStatement,
+  RUBRIC, scoreRun, scoreInputs, scoreStages, moduleEmissions, disclosureStatement,
   CONSTRUCTION_MODULES, USE_STAGE_MODULES
 };
