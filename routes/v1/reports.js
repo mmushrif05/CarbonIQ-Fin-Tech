@@ -10,6 +10,7 @@ const { Router } = require('express');
 const apiKeyAuth = require('../../middleware/api-key');
 const { reportGenerateSchema } = require('../../schemas/reports');
 const { generateReport, buildPDF } = require('../../services/reports');
+const { sendPdf } = require('../../services/pdf-response');
 
 const router = Router();
 
@@ -36,12 +37,7 @@ router.post('/generate', apiKeyAuth, async (req, res, next) => {
     // Return PDF binary
     if (format === 'pdf') {
       const filename = `CarbonIQ-${type.toUpperCase()}-${period}.pdf`;
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-
-      const pdfStream = buildPDF(report);
-      pdfStream.pipe(res);
-      return; // pdfStream.end() called inside buildPDF
+      return sendPdf(res, buildPDF(report), filename, `${type} report`);
     }
 
     // Return structured JSON

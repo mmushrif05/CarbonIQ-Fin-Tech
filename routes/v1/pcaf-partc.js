@@ -42,6 +42,7 @@ const { buildMethodology } = require('../../services/partc-methodology');
 const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/partc-methodology-doc');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
 const partcRegistry = require('../../services/partc-registry');
+const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
 const {
@@ -163,15 +164,12 @@ router.get('/methodology', apiKeyAuth, defaultLimiter, async (req, res, next) =>
     if (format === 'json') return res.json({ methodology });
 
     if (format === 'docx') {
-      const buffer = await buildMethodologyDOCX(methodology);
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-      res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.docx"');
-      return res.send(buffer);
+      return sendDocx(res, await buildMethodologyDOCX(methodology),
+        'pcaf-part-c-methodology.docx', 'methodology statement');
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'attachment; filename="pcaf-part-c-methodology.pdf"');
-    buildMethodologyPDF(methodology).pipe(res);
+    return sendPdf(res, buildMethodologyPDF(methodology),
+      'pcaf-part-c-methodology.pdf', 'methodology statement');
   } catch (err) { next(err); }
 });
 
@@ -318,15 +316,12 @@ router.post('/report', apiKeyAuth, defaultLimiter,
       if (req.body.format === 'json') return res.json({ report });
 
       if (req.body.format === 'docx') {
-        const buffer = await buildPartCDOCX(report);
-        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-        res.setHeader('Content-Disposition', `attachment; filename="${safeName}-pcaf-part-c.docx"`);
-        return res.send(buffer);
+        return sendDocx(res, await buildPartCDOCX(report),
+          `${safeName}-pcaf-part-c.docx`, 'assessment report');
       }
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename="${safeName}-pcaf-part-c.pdf"`);
-      buildPartCPDF(report).pipe(res);
+      return sendPdf(res, buildPartCPDF(report),
+        `${safeName}-pcaf-part-c.pdf`, 'assessment report');
     } catch (err) { next(err); }
   });
 

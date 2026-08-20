@@ -46,6 +46,21 @@ const PALETTE = {
   zebra:    '#FAFAFA'
 };
 
+/**
+ * Composite a colour over a background at a given alpha, as a solid.
+ *
+ * Used instead of a transparency group so nothing in a generated document
+ * depends on a PDF feature later than the version it declares.
+ */
+function blend(fg, bg, alpha) {
+  const rgb = c => [1, 3, 5].map(i => parseInt(String(c).replace('#', '').substr(i - 1, 2), 16));
+  const [fr, fg_, fb] = rgb(fg);
+  const [br, bg_, bb] = rgb(bg);
+  const mix = (f, b) => Math.round(alpha * f + (1 - alpha) * b);
+  return '#' + [mix(fr, br), mix(fg_, bg_), mix(fb, bb)]
+    .map(v => v.toString(16).padStart(2, '0')).join('');
+}
+
 /** Word wants six hex digits with no hash. */
 const hex = c => String(c).replace('#', '').toUpperCase();
 
@@ -257,7 +272,13 @@ function pcafWriter(doc, meta = {}) {
     doc.save();
     doc.rect(0, 0, w, h).fill(PALETTE.slate);
 
-    doc.save().opacity(0.07).lineWidth(14).strokeColor(PALETTE.white);
+    /* The chevrons are drawn in a pre-blended solid rather than with a
+       constant-alpha graphics state. Transparency is a PDF 1.4 feature, and
+       a file that uses one while declaring an earlier version is malformed —
+       the kind of defect a lenient viewer renders anyway and a strict one
+       refuses. Blending here keeps the watermark and keeps the file valid
+       for any reader. */
+    doc.save().lineWidth(14).strokeColor(blend(PALETTE.white, PALETTE.slate, 0.07));
     for (let i = -2; i < 9; i++) {
       const x = i * 90;
       doc.moveTo(x, h).lineTo(x + 150, h - 250).lineTo(x + 300, h).stroke();
@@ -526,7 +547,13 @@ function pcafDocument() {
     margins: { top: PAGE.margin, bottom: PAGE.margin + 8, left: PAGE.margin, right: PAGE.margin },
     bufferPages: true,
     compress: true,
-    autoFirstPage: true
+    autoFirstPage: true,
+    /* Embedded TrueType subsets with Identity-H encoding are a PDF 1.2
+       feature and pdfkit's default header of 1.3 covers them, but a document
+       must never declare a version older than something it contains. 1.4 is
+       stated so the header stays correct if anything later is ever added,
+       and it is universally supported. */
+    pdfVersion: '1.4'
   });
 }
 
@@ -649,7 +676,7 @@ function wTable(head, rows, opts = {}) {
 }
 
 module.exports = {
-  PALETTE, PAGE, WORD_FONTS, hex, SUBSTITUTE, glyphSafe,
+  PALETTE, PAGE, WORD_FONTS, hex, blend, SUBSTITUTE, glyphSafe,
   registerFonts, loadFonts, pcafWriter, pcafDocument,
   wordStyles, wTitle, wH1, wH2, wH3, wBody, wBullet, wCaption, wCallout, wBand, wCell, wTable
 };

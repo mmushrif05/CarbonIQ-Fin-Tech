@@ -39,6 +39,10 @@ const invoke = body => handler({
 }, {});
 
 describe('Part C report — the serverless adapter returns bytes, not text', () => {
+  let _pdfBody = null;
+  const res_pdf = () => _pdfBody;
+  beforeAll(async () => { _pdfBody = (await invoke(reportBody('pdf'))).body; });
+
   test('a PDF arrives base64-encoded and opens as a PDF', async () => {
     const res = await invoke(reportBody('pdf'));
     expect(res.statusCode).toBe(200);
@@ -55,6 +59,28 @@ describe('Part C report — the serverless adapter returns bytes, not text', () 
     const buf = Buffer.from(res.body, 'base64');
     expect(buf.subarray(0, 2).toString('latin1')).toBe('PK');
     expect(buf.length).toBeGreaterThan(5000);
+  });
+
+  test('the response states its exact length, so a truncated body cannot look complete', async () => {
+    const res = await invoke(reportBody('pdf'));
+    const buf = Buffer.from(res.body, 'base64');
+    expect(res.headers['content-length']).toBe(String(buf.length));
+  });
+
+  test('the response is never cached, so a broken one cannot be served again after a fix', async () => {
+    const res = await invoke(reportBody('pdf'));
+    expect(res.headers['cache-control']).toMatch(/no-store/);
+  });
+
+  test('the declared PDF version covers every feature the file uses', async () => {
+    // Constant alpha, soft masks and transparency groups are PDF 1.4
+    // features. Declaring 1.3 while using one is malformed: lenient viewers
+    // render it, strict ones show a blank page.
+    const raw = Buffer.from(res_pdf(), 'base64').toString('latin1');
+    const version = Number(/^%PDF-(\d\.\d)/.exec(raw)[1]);
+    const usesTransparency = /\/ExtGState|\/SMask|\/ca\s|\/CA\s/.test(raw);
+    if (usesTransparency) expect(version).toBeGreaterThanOrEqual(1.4);
+    expect(version).toBeGreaterThanOrEqual(1.4);
   });
 
   test('JSON is still returned as text', async () => {
