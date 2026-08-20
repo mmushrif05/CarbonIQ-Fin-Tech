@@ -33,6 +33,8 @@
 const { Router }    = require('express');
 const apiKeyAuth    = require('../../middleware/api-key');
 const validate      = require('../../middleware/validate');
+const { authorize } = require('../../middleware/authorization');
+const { PERMISSIONS } = require('../../config/policies');
 const { agentLimiter } = require('../../middleware/rate-limit');
 const { runAgent, runAgentSingleCall } = require('../../bridge/agent');
 const { getAgentRun, listAgentRuns, updateAgentRun, submitHumanReview } = require('../../bridge/firebase');
@@ -71,6 +73,7 @@ const router = Router();
 router.post('/underwrite',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_UNDERWRITE),
   validate({ body: underwritingRequestSchema }),
   async (req, res, next) => {
     try {
@@ -147,6 +150,7 @@ router.post('/underwrite',
 router.post('/originate',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_ORIGINATE),
   validate({ body: originationRequestSchema }),
   async (req, res, next) => {
     try {
@@ -208,6 +212,7 @@ router.post('/originate',
 router.post('/screen',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_SCREEN),
   validate({ body: screeningRequestSchema }),
   async (req, res, next) => {
     try {
@@ -277,6 +282,7 @@ router.post('/screen',
 router.post('/covenants',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_COVENANTS),
   validate({ body: covenantsRequestSchema }),
   async (req, res, next) => {
     try {
@@ -365,6 +371,7 @@ router.post('/covenants',
 
 router.post('/covenants/:runId/review',
   apiKeyAuth,
+  authorize(PERMISSIONS.AGENT_REVIEW),
   validate({ body: covenantReviewSchema }),
   async (req, res, next) => {
     try {
@@ -441,6 +448,7 @@ router.post('/covenants/:runId/review',
 router.post('/monitor',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_MONITOR),
   validate({ body: monitoringRequestSchema }),
   async (req, res, next) => {
     try {
@@ -498,6 +506,7 @@ router.post('/monitor',
 router.post('/portfolio',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_PORTFOLIO),
   validate({ body: portfolioReportRequestSchema }),
   async (req, res, next) => {
     try {
@@ -556,6 +565,7 @@ router.post('/portfolio',
 router.post('/coach',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_COACH),
   validate({ body: borrowerCoachingRequestSchema }),
   async (req, res, next) => {
     try {
@@ -594,7 +604,11 @@ router.post('/coach',
         completeness: {
           pct:         completeness.completionPct,
           statusLabel: completeness.statusLabel,
+          breakdown:   completeness.breakdown,
           missing:     completeness.missingFields.map(f => f.label),
+          // Optional strengtheners. They do not count against completeness,
+          // but the borrower should still be told they are available.
+          enhancements: completeness.enhancements.map(f => ({ label: f.label, impact: f.impact })),
           readyForScreening:    completeness.readyForScreening,
           readyForUnderwriting: completeness.readyForUnderwriting,
           readyForDecision:     completeness.readyForDecision
@@ -627,6 +641,7 @@ router.post('/coach',
 router.post('/triage',
   apiKeyAuth,
   agentLimiter,
+  authorize(PERMISSIONS.AGENT_TRIAGE),
   validate({ body: decisionTriageRequestSchema }),
   async (req, res, next) => {
     try {
@@ -650,15 +665,10 @@ router.post('/triage',
         return res.status(200).json({
           success:       true,
           agentType:     'decision_triage',
-          tier:          tierResult.tier,
-          tierLabel:     tierResult.tierLabel,
-          verdict:       tierResult.verdict,
-          confidence:    tierResult.confidence,
-          autoDecision:  tierResult.autoDecision,
-          reasons:       tierResult.reasons,
-          conditions:    tierResult.conditions,
-          escalationNote: tierResult.escalationNote,
-          thresholds:    tierResult.thresholds,
+          // Spread the classification rather than re-listing its fields: a
+          // hand-written copy silently dropped track, reason and flags the
+          // moment the engine gained them.
+          ...tierResult,
           aiReview:      null,
           ...(tierResult.tier === DECISION_TIERS.MANUAL && {
             escalation: {
@@ -754,6 +764,7 @@ router.post('/triage',
 
 router.get('/runs',
   apiKeyAuth,
+  authorize(PERMISSIONS.RUNS_READ),
   async (req, res, next) => {
     try {
       const orgId = req.apiKey.orgId;
@@ -790,6 +801,7 @@ router.get('/runs',
 
 router.get('/runs/:runId',
   apiKeyAuth,
+  authorize(PERMISSIONS.RUNS_READ),
   async (req, res, next) => {
     try {
       const orgId = req.apiKey.orgId;

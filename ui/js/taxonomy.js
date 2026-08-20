@@ -53,6 +53,17 @@ const Taxonomy = (() => {
       ],
       note: 'EU Taxonomy Climate Delegated Act — embodied carbon proxy for construction',
     },
+    {
+      id: 'sl',
+      label: 'Sri Lanka SLGFT / CBSL',
+      flag: '🇱🇰',
+      tiers: [
+        { label: 'Green (CBSL Compliant)',  max: 520,  cls: 'taxonomy-aligned',    statusCls: 'badge-green',  icon: 'check' },
+        { label: 'Transition',              max: 780,  cls: 'taxonomy-transition', statusCls: 'badge-amber',  icon: 'warn'  },
+        { label: 'Not Aligned',             max: Infinity, cls: 'taxonomy-risk',   statusCls: 'badge-red',    icon: 'cross' },
+      ],
+      note: 'CBSL Direction No. 05/2022 · SLFRS S2 · Sri Lanka Green Finance Taxonomy — construction embodied carbon thresholds',
+    },
   ];
 
   const ICON = {
@@ -69,6 +80,7 @@ const Taxonomy = (() => {
     { id: 'MY-2024-003', name: 'KL Eco Residences',            intensity: 415  },
     { id: 'HK-2024-008', name: 'Kowloon Gateway',              intensity: 620  },
     { id: 'SG-2025-003', name: 'Jurong Data Centre',           intensity: 810  },
+    { id: 'SL-2025-001', name: 'Colombo Green Tower',          intensity: 460  },
   ];
 
   let _projects = null;
@@ -120,10 +132,11 @@ const Taxonomy = (() => {
 
     // Update summary badge
     const aligned = FRAMEWORKS.filter(fw => _classify(fw, intensity).icon === 'check').length;
+    const total = FRAMEWORKS.length;
     const badge = $$('tax-summary-badge');
     if (badge) {
-      badge.textContent = `${aligned} / 4 frameworks aligned`;
-      badge.className = 'kpi-badge ' + (aligned === 4 ? 'badge-green' : aligned >= 2 ? 'badge-amber' : 'badge-red');
+      badge.textContent = `${aligned} / ${total} frameworks aligned`;
+      badge.className = 'kpi-badge ' + (aligned === total ? 'badge-green' : aligned >= 2 ? 'badge-amber' : 'badge-red');
     }
   }
 

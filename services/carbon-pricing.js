@@ -68,6 +68,18 @@ const CARBON_TAX_RATES = {
     ],
     notes: 'No legislated carbon tax. HKEX Core Climate launched 2022 for voluntary credits. Watch HKMA Net-Zero Financial Centre roadmap.',
   },
+  SL: {
+    name: 'Sri Lanka',
+    currency: 'LKR',
+    usdFx: 0.0031,          // ~1 USD = 323 LKR (Apr 2026)
+    current: 0,              // No direct carbon tax yet; CBSL exploring carbon levy
+    trajectory: [
+      { year: 2025, rate: 0,     label: 'No carbon tax (2025)' },
+      { year: 2027, rate: 500,   label: 'CBSL proposed carbon levy (LKR, 2027)' },
+      { year: 2030, rate: 1500,  label: 'Projected rate (LKR, 2030)' },
+    ],
+    notes: 'No legislated carbon tax. CBSL Direction No. 05/2022 mandates green finance classification. SLFRS S2 phased adoption from 2025 creates implicit carbon pricing through disclosure requirements. DFCC Bank green bond (LKR 2.5B) establishes market benchmark.',
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -237,7 +249,7 @@ function _loanPricing(tier, loanAmount, loanTerm) {
 
 function _strandedAssetRisk(tCO2e, buildingArea, projectValue, loanAmount, region, cfsScore) {
   // Taxonomy thresholds (kgCO2e/m²) — from constants
-  const THRESHOLDS = { SG: 480, EU: 400, MY: 500, HK: 480 };
+  const THRESHOLDS = { SG: 480, EU: 400, MY: 500, HK: 480, SL: 520 };
   const threshold   = THRESHOLDS[region] || 480;
 
   let riskLevel = 'low';

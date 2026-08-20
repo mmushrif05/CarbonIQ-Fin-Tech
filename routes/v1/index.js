@@ -34,6 +34,7 @@ const webhookRouter = require('./webhook');
 const extractRouter       = require('./extract');
 const extractUploadRouter = require('./extract-upload');
 const agentRouter         = require('./agent');
+const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
 
@@ -71,8 +72,15 @@ router.get('/', (_req, res) => {
         rates:     'GET /v1/carbon-pricing/rates',
       },
       agent: {
-        coach:     'POST /v1/agent/coach    — AI Borrower Coaching (Stage 2: +32% completion rate)',
-        triage:    'POST /v1/agent/triage   — Tiered Decision Framework (70-85% auto / 10-20% AI / 5-10% manual)',
+        // Each value is the route alone. A description belongs in `notes`
+        // beside it: consumers read these strings as addresses, and appending
+        // prose to one changes the address.
+        notes: {
+          coach:  'AI Borrower Coaching — guides an incomplete application towards a submittable one.',
+          triage: 'Tiered Decision Framework — expected distribution 70-85% automated, 10-20% AI-assisted, 5-10% manual.',
+        },
+        coach:     'POST /v1/agent/coach',
+        triage:    'POST /v1/agent/triage',
         screen:    'POST /v1/agent/screen',
         underwrite:'POST /v1/agent/underwrite',
         covenants: 'POST /v1/agent/covenants',
@@ -80,6 +88,13 @@ router.get('/', (_req, res) => {
         portfolio: 'POST /v1/agent/portfolio',
         runs:      'GET /v1/agent/runs',
         run:       'GET /v1/agent/runs/:runId',
+      },
+      supervisor: {
+        pipeline:     'POST /v1/supervisor/pipeline',
+        pipelineGet:  'GET /v1/supervisor/pipeline/:pipelineId',
+        pipelines:    'GET /v1/supervisor/pipelines',
+        resume:       'POST /v1/supervisor/pipeline/:pipelineId/resume',
+        templates:    'GET /v1/supervisor/templates',
       }
     },
     documentation: 'https://carboniq.online/docs/api'
@@ -98,6 +113,7 @@ router.use('/projects', covenantRouter);
 router.use('/portfolio', portfolioRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
+router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
 

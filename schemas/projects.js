@@ -4,7 +4,7 @@ const createProjectSchema = Joi.object({
   name:         Joi.string().min(2).max(120).required(),
   projectId:    Joi.string().max(40).optional().allow(''),
   type:         Joi.string().valid('Commercial','Residential','Industrial','Mixed-Use','Data Centre','Hospitality').default('Commercial'),
-  region:       Joi.string().valid('SG','MY','HK','EU','TH','US').default('SG'),
+  region:       Joi.string().valid('SG','MY','HK','EU','TH','US','LK').default('SG'),
   phase:        Joi.string().valid('Construction','Operational','Demolition').default('Construction'),
   floorArea_m2: Joi.number().min(0).optional(),
   materials: Joi.array().items(Joi.object({

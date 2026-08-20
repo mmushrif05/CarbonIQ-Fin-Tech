@@ -9,13 +9,14 @@
 const PAGE_META = {
   'dashboard':   { title: 'Dashboard',          subtitle: 'Portfolio carbon overview' },
   'portfolio':   { title: 'Portfolio',           subtitle: 'Aggregated emissions analysis' },
-  'ai-agents':   { title: 'AI Agents',           subtitle: '5-stage green loan lifecycle agents — Screen · Underwrite · Covenants · Monitor · Portfolio' },
+  'ai-agents':   { title: 'AI Agents',           subtitle: '8-stage green loan lifecycle agents — Coach · Originate · Screen · Underwrite · Triage · Covenants · Monitor · Portfolio' },
   'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
-  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 disclosure reports' },
+  'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
+  'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
 };
 
@@ -36,6 +37,10 @@ const DYNAMIC_PAGES = {
     src:  'pages/reports.html',
     init: () => typeof ReportsPage !== 'undefined' && ReportsPage.init(),
   },
+  'pipeline': {
+    src:  'pages/pipeline.html',
+    init: () => typeof PipelinePage !== 'undefined' && PipelinePage.init(),
+  },
   'carbon-pricing': {
     src:  'pages/carbon-pricing.html',
     init: () => typeof CarbonPricingPage !== 'undefined' && CarbonPricingPage.init(),
@@ -43,12 +48,22 @@ const DYNAMIC_PAGES = {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  // ── Enforce authentication on load ────────────────────────
+  if (typeof Auth !== 'undefined') {
+    Auth.enforceAuth();
+  }
+
   const navItems  = document.querySelectorAll('.nav-item');
   const pageTitle    = document.getElementById('pageTitle');
   const pageSubtitle = document.getElementById('pageSubtitle');
 
   // ── Navigate to a page ──────────────────────────────────────
   async function navigateTo(pageId) {
+    // Role-based access check
+    if (typeof Auth !== 'undefined' && !Auth.canAccessPage(pageId)) {
+      Toast.error('Access denied — your role does not have permission to view this page.');
+      return;
+    }
     // Update active nav state
     navItems.forEach((n) => n.classList.remove('active'));
     const activeNav = document.querySelector(`.nav-item[data-page="${pageId}"]`);

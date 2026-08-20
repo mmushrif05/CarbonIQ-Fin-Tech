@@ -17,6 +17,8 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 
+const path = require('path');
+
 const config = require('./config');
 const corsConfig = require('./config/cors');
 const errorHandler = require('./middleware/error-handler');
@@ -51,6 +53,13 @@ if (config.env !== 'test') {
 app.use(audit);
 
 // ---------------------------------------------------------------------------
+// Static UI — serves the ui/ directory for local development.
+// In production (Netlify), the publish directory handles this.
+// ---------------------------------------------------------------------------
+
+app.use(express.static(path.join(__dirname, 'ui')));
+
+// ---------------------------------------------------------------------------
 // Routes
 // ---------------------------------------------------------------------------
 
@@ -70,6 +79,15 @@ app.use('/v1', v1Router);
 // ---------------------------------------------------------------------------
 // Error Handling
 // ---------------------------------------------------------------------------
+
+// No catch-all HTML fallback.
+//
+// The dashboard navigates by data-page attribute and never touches the URL
+// path — there is no client-side router to rescue — so a catch-all that
+// returned index.html for every unmatched path did nothing for the UI and
+// answered 200 to requests for endpoints that do not exist. express.static
+// above already serves index.html at '/' along with every asset, so an
+// unmatched path is genuinely not found and says so.
 
 // 404 handler
 app.use((_req, res) => {
@@ -92,6 +110,7 @@ if (require.main === module) {
   app.listen(port, () => {
     console.log(`CarbonIQ FinTech API running on port ${port}`);
     console.log(`Environment: ${config.env}`);
+    console.log(`Dashboard: http://localhost:${port}`);
     console.log(`Health check: http://localhost:${port}/health`);
     console.log(`API v1: http://localhost:${port}/v1`);
 

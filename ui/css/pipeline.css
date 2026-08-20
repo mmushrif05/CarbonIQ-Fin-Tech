@@ -1,0 +1,364 @@
+/* ============================================================
+   CarbonIQ — Pipeline / Supervisor Styles
+   ============================================================ */
+
+.pipe-layout {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  gap: 24px;
+  padding: 0 0 40px;
+  min-height: 500px;
+}
+
+.pipe-form-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.pipe-results-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow-sm);
+  min-height: 400px;
+}
+
+.pipe-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.pipe-section-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.pipe-divider {
+  height: 1px;
+  background: var(--border-light);
+  margin: 24px 0;
+}
+
+.pipe-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* ── Template Cards ────────────────────────────────────────── */
+.pipe-template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pipe-template-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+
+.pipe-template-card:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+.pipe-template-card.selected {
+  border-color: var(--green);
+  background: var(--green-bg);
+}
+
+.pipe-template-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.pipe-template-card.selected .pipe-template-icon {
+  background: var(--green);
+  color: white;
+}
+
+.pipe-template-content { flex: 1; }
+
+.pipe-template-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 3px;
+}
+
+.pipe-template-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.pipe-template-stages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.pipe-stage-chip {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text-secondary);
+}
+
+.pipe-stage-arrow {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
+.pipe-template-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.pipe-template-card.selected .pipe-template-check {
+  background: var(--green);
+  border-color: var(--green);
+  color: white;
+}
+
+/* ── Run Button ────────────────────────────────────────────── */
+.pipe-actions {
+  margin-top: 24px;
+}
+
+.pipe-run-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ── Idle State ────────────────────────────────────────────── */
+.pipe-idle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pipe-idle-icon { margin-bottom: 16px; }
+
+/* ── Status Pills ──────────────────────────────────────────── */
+.pipe-status-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pipe-status-running { background: #eff6ff; color: #1e40af; }
+.pipe-status-completed { background: #ecfdf5; color: #065f46; }
+.pipe-status-failed { background: #fef2f2; color: #991b1b; }
+.pipe-status-paused { background: #fffbeb; color: #92400e; }
+.pipe-status-pending { background: var(--bg); color: var(--text-tertiary); }
+
+/* ── Progress Tracker ──────────────────────────────────────── */
+.pipe-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.pipe-progress-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.pipe-stage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pipe-stage-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+
+.pipe-stage-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+
+.pipe-stage-icon {
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.pipe-stage-info { flex: 1; }
+
+.pipe-stage-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pipe-stage-status {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.pipe-stage-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+  display: none;
+}
+
+.pipe-stage-card.pipe-stage-running .pipe-stage-spinner { display: block; }
+.pipe-stage-card.pipe-stage-running { border-color: var(--accent); background: var(--accent-light); }
+.pipe-stage-card.pipe-stage-running .pipe-stage-num { background: var(--accent); color: white; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Results ───────────────────────────────────────────────── */
+.pipe-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.pipe-results-header h3 { font-size: 15px; font-weight: 600; }
+
+.pipe-result-stage {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.pipe-result-completed { border-color: var(--green); background: var(--green-bg); }
+.pipe-result-failed { border-color: var(--red); background: var(--red-bg); }
+.pipe-result-paused { border-color: var(--amber); background: var(--amber-bg); }
+
+.pipe-result-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.pipe-result-completed .pipe-result-num { background: var(--green); color: white; }
+.pipe-result-failed .pipe-result-num { background: var(--red); color: white; }
+.pipe-result-paused .pipe-result-num { background: var(--amber); color: white; }
+
+.pipe-result-info { flex: 1; }
+.pipe-result-label { font-size: 13px; font-weight: 600; }
+.pipe-result-status { font-size: 11px; color: var(--text-secondary); }
+.pipe-result-runid { font-size: 10px; color: var(--text-tertiary); font-family: monospace; }
+
+.pipe-result-icon { flex-shrink: 0; }
+.pipe-icon-check { color: var(--green); }
+.pipe-icon-cross { color: var(--red); }
+.pipe-icon-pause { color: var(--amber); }
+
+.pipe-paused-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--amber-bg);
+  border: 1px solid var(--amber);
+  font-size: 12px;
+  color: #92400e;
+  margin-top: 16px;
+}
+
+.pipe-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--red-bg);
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+/* ── History ───────────────────────────────────────────────── */
+.pipe-history {
+  margin-top: 24px;
+}
+
+@media (max-width: 860px) {
+  .pipe-layout {
+    grid-template-columns: 1fr;
+  }
+}

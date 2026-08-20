@@ -47,7 +47,8 @@ const underwritingRequestSchema = Joi.object({
 
   certificationLevel: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification level'),
 });
 
@@ -75,7 +76,8 @@ const screeningRequestSchema = Joi.object({
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification if known'),
 
   investorJurisdiction: Joi.string().max(200).optional()
@@ -129,7 +131,8 @@ const covenantsRequestSchema = Joi.object({
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification level'),
 });
 
@@ -189,7 +192,8 @@ const monitoringRequestSchema = Joi.object({
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification level'),
 
   verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')
@@ -238,7 +242,8 @@ const portfolioAssetItemSchema = Joi.object({
 
   certificationLevel: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Achieved or target certification'),
 
   verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')
@@ -312,7 +317,8 @@ const originationRequestSchema = Joi.object({
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Borrower-stated target green certification'),
 
   investorJurisdiction: Joi.string().max(200).optional()
@@ -415,7 +421,8 @@ const borrowerCoachingRequestSchema = Joi.object({
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification level'),
 
   reductionTarget: Joi.number().min(0).max(100).optional()
@@ -438,7 +445,16 @@ const borrowerCoachingRequestSchema = Joi.object({
   // Free-text borrower questions answered at the end of the coaching report
   borrowerQuestions: Joi.string().max(2000).optional()
     .description('Specific questions from the borrower — answered in the coaching report')
-});
+})
+  // Every field is individually optional, because coaching an incomplete
+  // application is the point of this endpoint. But a request naming neither a
+  // building type nor a floor area describes no building at all: there is
+  // nothing to benchmark, nothing to coach towards, and an AI call would be
+  // spent producing generic advice. One of the two anchors the rest.
+  .or('buildingType', 'buildingArea_m2')
+  .messages({
+    'object.missing': 'Provide at least a buildingType or a buildingArea_m2 so the coaching has a project to work from.'
+  });
 
 // ---------------------------------------------------------------------------
 // Decision Triage — POST /v1/agent/triage
@@ -511,12 +527,14 @@ const decisionTriageRequestSchema = Joi.object({
 
   certificationLevel: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Achieved or target green certification level'),
 
   targetCertification: Joi.string().valid(
     'platinum', 'gold', 'silver', 'certified',
-    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready'
+    'gold_plus', 'green_mark', 'super_low_energy', 'zero_carbon_ready',
+    'greensl_platinum', 'greensl_gold'
   ).optional().description('Target green certification level'),
 
   verificationStatus: Joi.string().valid('verified', 'in_review', 'submitted', 'none')

@@ -155,6 +155,38 @@
     <div class="rpt-result" id="rpt-result-ifrs-s2" style="display:none"></div>
   </div>
 
+  <!-- SLGFT CBSL -->
+  <div class="rpt-card" data-type="slgft-cbsl">
+    <div class="rpt-card-top">
+      <div class="rpt-card-icon rpt-icon-green">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <path d="M11 3l7 4v8l-7 4-7-4V7l7-4z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+          <path d="M11 9v4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          <circle cx="11" cy="15" r="0.8" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="rpt-card-badge rpt-badge-new">Sri Lanka</div>
+    </div>
+    <h3 class="rpt-card-title">SLGFT CBSL Disclosure</h3>
+    <p class="rpt-card-standard">CBSL Direction No. 05/2022 · SLFRS S2</p>
+    <p class="rpt-card-desc">Sri Lanka Green Finance Taxonomy disclosure for CBSL regulatory compliance. Covers SLFRS S2 climate reporting, CBSL Direction No. 05 green lending classification, and DFCC-aligned ESG metrics.</p>
+    <div class="rpt-card-covers">
+      <span class="rpt-chip">SLFRS S2</span>
+      <span class="rpt-chip">CBSL Direction 05</span>
+      <span class="rpt-chip">Green Lending</span>
+      <span class="rpt-chip">ESG Classification</span>
+    </div>
+    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('slgft-cbsl')">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Generate Report
+    </button>
+    <div class="rpt-progress" id="rpt-progress-slgft-cbsl" style="display:none">
+      <div class="rpt-spinner"></div>
+      <span>Generating SLGFT CBSL report…</span>
+    </div>
+    <div class="rpt-result" id="rpt-result-slgft-cbsl" style="display:none"></div>
+  </div>
+
 </div>
 
 <!-- ── History Table ───────────────────────────────────────── -->
@@ -186,7 +218,7 @@ const ReportsPage = (() => {
   const history = [];
 
   function _typeLabel(type) {
-    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures' }[type] || type;
+    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures', 'slgft-cbsl': 'SLGFT CBSL Disclosure' }[type] || type;
   }
 
   async function generate(type) {

@@ -1,0 +1,323 @@
+/* ============================================================
+   CarbonIQ — Login & Stakeholder Selection Styles
+   ============================================================ */
+
+/* ── Login Screen ──────────────────────────────────────────── */
+.login-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1d1d1f 0%, #2a2a2c 50%, #1d1d1f 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+}
+
+.login-container {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 24px;
+}
+
+/* ── Header ────────────────────────────────────────────────── */
+.login-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.login-brand-icon {
+  color: #10b981;
+}
+
+.login-brand-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: #f5f5f7;
+  letter-spacing: -0.5px;
+}
+
+.login-tagline {
+  font-size: 15px;
+  color: #8e8e93;
+  font-weight: 400;
+}
+
+/* ── Form Card ─────────────────────────────────────────────── */
+.login-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 36px;
+  backdrop-filter: blur(20px);
+}
+
+.login-card h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin-bottom: 6px;
+}
+
+.login-card .login-subtitle {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 28px;
+}
+
+/* ── Form Fields ───────────────────────────────────────────── */
+.login-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.login-form-grid .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.login-form-grid .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.login-form-grid label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #aeaeb2;
+  letter-spacing: 0.3px;
+}
+
+.login-form-grid .login-input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #f5f5f7;
+  font-size: 14px;
+  font-family: var(--font);
+  transition: border-color 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+
+.login-form-grid .login-input::placeholder {
+  color: #6e6e73;
+}
+
+.login-form-grid .login-input:focus {
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* ── Stakeholder Role Grid ─────────────────────────────────── */
+.login-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #8e8e93;
+  margin-bottom: 14px;
+}
+
+.stakeholder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.stakeholder-card {
+  position: relative;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.stakeholder-card:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stakeholder-card.selected {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+}
+
+.stakeholder-card input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.stakeholder-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.stakeholder-avatar svg {
+  width: 20px;
+  height: 20px;
+  color: white;
+}
+
+.stakeholder-card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin-bottom: 4px;
+}
+
+.stakeholder-card-desc {
+  font-size: 11px;
+  color: #6e6e73;
+  line-height: 1.4;
+}
+
+.stakeholder-card-level {
+  font-size: 10px;
+  color: #6e6e73;
+  margin-top: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stakeholder-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.stakeholder-card.selected .stakeholder-check {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.stakeholder-check svg {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.stakeholder-card.selected .stakeholder-check svg {
+  opacity: 1;
+}
+
+/* ── Login Button ──────────────────────────────────────────── */
+.login-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.login-btn {
+  padding: 12px 32px;
+  border-radius: 10px;
+  border: none;
+  background: #10b981;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.login-btn:hover {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+}
+
+.login-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.login-hint {
+  font-size: 12px;
+  color: #6e6e73;
+}
+
+/* ── Login Error ───────────────────────────────────────────── */
+.login-error {
+  color: #ef4444;
+  font-size: 12px;
+  margin-bottom: 12px;
+  display: none;
+}
+
+.login-error.visible {
+  display: block;
+}
+
+/* ── Logout button in sidebar ──────────────────────────────── */
+.logout-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #8e8e93;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .stakeholder-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .login-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .stakeholder-grid {
+    grid-template-columns: 1fr;
+  }
+  .login-container {
+    margin: 0 12px;
+  }
+  .login-card {
+    padding: 24px 18px;
+  }
+}

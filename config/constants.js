@@ -108,6 +108,28 @@ const TAXONOMY_SG = {
   }
 };
 
+const TAXONOMY_SL = {
+  version: 2022,
+  framework: 'CBSL Direction No. 05/2022 + Sri Lanka Green Finance Taxonomy (SLGFT)',
+  criteria: {
+    construction: {
+      maxEmbodiedCarbon_kgCO2e_per_m2_green: 520,
+      maxEmbodiedCarbon_kgCO2e_per_m2_transition: 780,
+      requiresSLFRS_S2: true,
+    }
+  },
+  classifications: {
+    green: { label: 'Green (CBSL Compliant)', maxIntensity: 520 },
+    transition: { label: 'Transition', maxIntensity: 780 },
+    not_aligned: { label: 'Not Aligned', maxIntensity: Infinity },
+  },
+  certifications: {
+    greensl_platinum: { label: 'Green SL Platinum', minReduction: 40 },
+    greensl_gold: { label: 'Green SL Gold', minReduction: 25 },
+  },
+  notes: 'CBSL Direction No. 05/2022 mandates green finance classification for all licensed banks. SLFRS S2 (aligned to IFRS S2) phased adoption from 2025.',
+};
+
 // ---------------------------------------------------------------------------
 // Green Loan Covenant Defaults
 // ---------------------------------------------------------------------------
@@ -160,6 +182,7 @@ module.exports = {
   TAXONOMY_EU,
   TAXONOMY_HK,
   TAXONOMY_SG,
+  TAXONOMY_SL,
   COVENANT_DEFAULTS,
   RATE_LIMITS,
   BUILDING_BENCHMARKS

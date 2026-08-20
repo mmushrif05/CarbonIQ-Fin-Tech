@@ -51,7 +51,15 @@ async function apiKeyAuth(req, res, next) {
   const devKey = process.env.DEV_API_KEY;
   const db = getDatabase();
   if (!db && devKey && apiKey === devKey) {
-    req.apiKey = { orgId: 'dev', orgName: 'Development', projectIds: [], permissions: [], rateLimit: 1000 };
+    // Same permission set as the dashboard key. An empty list here meant the
+    // documented local-development bypass authenticated successfully and then
+    // failed every authorization check with a 403, which reads as a broken
+    // endpoint rather than as a key that grants nothing.
+    req.apiKey = {
+      orgId: 'dev', orgName: 'Development', projectIds: [],
+      permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'],
+      rateLimit: 1000
+    };
     return next();
   }
 
@@ -73,12 +81,13 @@ async function apiKeyAuth(req, res, next) {
       });
     }
 
-    // Attach key metadata to request
+    // Attach key metadata to request — includes optional role for RBAC
     req.apiKey = {
       orgId: keyData.orgId,
       orgName: keyData.orgName,
       projectIds: keyData.projectIds || [],
       permissions: keyData.permissions || [],
+      role: keyData.role || null,
       rateLimit: keyData.rateLimit || config.apiKey.defaultRateLimit
     };
 
