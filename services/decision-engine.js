@@ -51,9 +51,35 @@ const DECISION_VERDICTS = {
   MANUAL_REVIEW: 'manual_review'
 };
 
+// The decision track, which is the vocabulary the API and its consumers use.
+// It is not the same word list as DECISION_VERDICTS: a Tier 2 outcome is an
+// 'ai_review' track carrying an 'ai_recommend' verdict.
+const DECISION_TRACKS = {
+  AUTO_APPROVE:  'auto_approve',
+  AUTO_DECLINE:  'auto_decline',
+  AI_REVIEW:     'ai_review',
+  MANUAL_REVIEW: 'manual_review'
+};
+
+const TRACK_LABELS = {
+  [DECISION_TRACKS.AUTO_APPROVE]:  'Auto-Approve',
+  [DECISION_TRACKS.AUTO_DECLINE]:  'Auto-Decline',
+  [DECISION_TRACKS.AI_REVIEW]:     'AI-Assisted Review',
+  [DECISION_TRACKS.MANUAL_REVIEW]: 'Manual Review'
+};
+
 // Loan thresholds (SGD-equivalent; applied regardless of currency denomination)
 const AUTO_APPROVE_LOAN_LIMIT  = 50_000_000;   // ≤ SGD 50M → eligible for auto-approval
 const MANUAL_REVIEW_LOAN_LIMIT = 100_000_000;  // > SGD 100M → always manual
+
+// EPD coverage at or above which the borrower's own product data is treated as
+// evidence of the green claim in its own right. Below it the claim rests on the
+// score alone, which is not enough to approve without a human or an AI reading.
+const EPD_ADEQUATE_PCT = 20;
+
+// Below this, an application carries too little product evidence for the
+// score to be relied on unaided.
+const EPD_THIN_PCT = 10;
 
 // Expected tier distribution for portfolio analytics
 const TIER_DISTRIBUTION = {
@@ -129,16 +155,54 @@ function classifyDecisionTier({
   loanAmount,
   buildingArea_m2,
   epdCoveragePct,
+  hasBOQ,
+  reductionPct,
+  verificationStatus,
   forceManualReview
 }) {
+  // Derived once, before the guards, because a high-value application is
+  // routed differently depending on whether it is green.
+  const hasCfs          = typeof cfsScore === 'number' && Number.isFinite(cfsScore);
+  const isGreenCFS      = hasCfs && cfsScore >= CFS_THRESHOLDS.green;        // ≥ 70
+  const isTransitionCFS = hasCfs && cfsScore >= CFS_THRESHOLDS.transition && cfsScore < CFS_THRESHOLDS.green;
+  const isBrownCFS      = hasCfs && cfsScore < CFS_THRESHOLDS.transition;    // < 40
+  const epd             = Number(epdCoveragePct) || 0;
+  const epdAdequate     = epd >= EPD_ADEQUATE_PCT;
+  const evidenceThin    = hasBOQ === false && epd < EPD_THIN_PCT;
+
+  const flags = [];
+  if (verificationStatus === 'verified') flags.push('third_party_verified');
+  if (hasBOQ === false)                  flags.push('no_boq');
+  if (epd < EPD_THIN_PCT)                flags.push('low_epd_coverage');
+  if (loanAmount && loanAmount > AUTO_APPROVE_LOAN_LIMIT) flags.push('high_value');
+  if (reductionPct === 0)                flags.push('no_reduction_committed');
+
   // -------------------------------------------------------------------------
   // Guard: forceManualReview override → always Tier 3
   // -------------------------------------------------------------------------
   if (forceManualReview) {
     return _tier3({
+      reason: 'FORCED_MANUAL_REVIEW', flags,
       reasons:       ['Manual review explicitly requested by submitter'],
       conditions:    [],
       escalationNote: 'Escalated by request flag. Assign to green lending officer for full review.'
+    });
+  }
+
+  // -------------------------------------------------------------------------
+  // Guard: no Carbon Finance Score → Tier 3
+  //
+  // An application that has not been scored has not been assessed. Letting a
+  // missing score fall through to the brown-CFS branch would compare `null`
+  // against the threshold and decline the borrower for a measurement nobody
+  // ever took, which is a different thing from failing it.
+  // -------------------------------------------------------------------------
+  if (!hasCfs) {
+    return _tier3({
+      reason: 'NO_CFS_SCORE', flags,
+      reasons: ['No Carbon Finance Score has been calculated — the application has not been assessed, which is not the same as failing the assessment'],
+      conditions: ['Run POST /v1/score to produce a Carbon Finance Score, then re-triage'],
+      escalationNote: 'Unscored application. Use /v1/agent/coach to guide the borrower through the data needed to produce a score.'
     });
   }
 
@@ -147,6 +211,7 @@ function classifyDecisionTier({
   // -------------------------------------------------------------------------
   if (!buildingArea_m2 || buildingArea_m2 < 50) {
     return _tier3({
+      reason: 'MISSING_FLOOR_AREA', flags,
       reasons: ['Gross floor area is missing or implausibly small — carbon intensity cannot be reliably assessed'],
       conditions: ['Borrower must provide verified gross floor area before re-triage'],
       escalationNote: 'Missing critical project data. Use /v1/agent/coach to guide the borrower.'
@@ -154,15 +219,33 @@ function classifyDecisionTier({
   }
 
   // -------------------------------------------------------------------------
-  // Guard: loan > MANUAL_REVIEW_LOAN_LIMIT → always Tier 3
+  // Guard: high-value facility
+  //
+  // Above the manual-review ceiling nothing is decided without a credit
+  // officer. At the ceiling the routing depends on the application: a green
+  // one can still be put to an AI review for a memo, one that is not green
+  // goes straight to a human.
   // -------------------------------------------------------------------------
   if (loanAmount && loanAmount > MANUAL_REVIEW_LOAN_LIMIT) {
     return _tier3({
+      reason: 'HIGH_VALUE_EXCEEDS_LIMIT', flags,
       reasons: [
         `Loan amount (${loanAmount.toLocaleString()}) exceeds the SGD 100M threshold for automated or AI-assisted decision`
       ],
       conditions:    [],
       escalationNote: 'High-value facility. Requires senior credit officer + sustainability team sign-off before proceeding.'
+    });
+  }
+
+  if (loanAmount && loanAmount >= MANUAL_REVIEW_LOAN_LIMIT && !isGreenCFS) {
+    return _tier3({
+      reason: 'HIGH_VALUE_BELOW_GREEN', flags,
+      reasons: [
+        `Loan amount (${loanAmount.toLocaleString()}) is at the SGD 100M manual-review threshold`,
+        `Carbon Finance Score ${cfsScore}/100 is below the Green threshold of ${CFS_THRESHOLDS.green} — a facility of this size is not routed to an AI recommendation on a sub-green score`
+      ],
+      conditions:    [],
+      escalationNote: 'High-value facility below the Green threshold. Requires senior credit officer + sustainability team sign-off.'
     });
   }
 
@@ -182,9 +265,6 @@ function classifyDecisionTier({
   }
 
   const anyAligned      = _anyTaxonomyAligned(taxonomyAlignments);
-  const isGreenCFS      = cfsScore >= CFS_THRESHOLDS.green;        // ≥ 70
-  const isTransitionCFS = cfsScore >= CFS_THRESHOLDS.transition && cfsScore < CFS_THRESHOLDS.green; // 40–69
-  const isBrownCFS      = cfsScore < CFS_THRESHOLDS.transition;    // < 40
   const poorData        = pcafDataQualityScore && pcafDataQualityScore >= 4;
   const goodData        = !pcafDataQualityScore || pcafDataQualityScore <= 3;
   const withinAutoLimit = !loanAmount || loanAmount <= AUTO_APPROVE_LOAN_LIMIT;
@@ -197,6 +277,7 @@ function classifyDecisionTier({
   if (isBrownCFS && !anyAligned) {
     return _tier1({
       verdict: DECISION_VERDICTS.AUTO_DECLINE,
+      reason: 'CLEAR_BROWN', flags,
       reasons: [
         `Carbon Finance Score ${cfsScore}/100 is Brown (<40) — below the minimum green loan threshold`,
         'No taxonomy alignment found across ASEAN v3, EU 2024, HK GCF, or Singapore TSC'
@@ -210,6 +291,7 @@ function classifyDecisionTier({
   if (cfsScore < 30) {
     return _tier1({
       verdict: DECISION_VERDICTS.AUTO_DECLINE,
+      reason: 'CLEAR_BROWN', flags,
       reasons: [
         `Carbon Finance Score ${cfsScore}/100 is critically low — well below the Brown/Transition boundary of 40`
       ],
@@ -222,7 +304,14 @@ function classifyDecisionTier({
   // Tier 1 — Auto-Approve
   // Green CFS + taxonomy aligned + good data + within loan limit
   // -------------------------------------------------------------------------
-  if (isGreenCFS && anyAligned && goodData && withinAutoLimit) {
+  // A green score alone is not enough to approve without a human reading it.
+  // Either a taxonomy confirms the claim, or the borrower's own product data
+  // does — epdCoveragePct was declared and documented on this function but
+  // never actually read, so an application with no EPD evidence at all was
+  // being treated exactly like one with full coverage.
+  const greenEvidence = anyAligned || epdAdequate;
+
+  if (isGreenCFS && greenEvidence && goodData && withinAutoLimit) {
     const conditions = [
       'Green loan covenants required via the Covenant Design workflow before first drawdown',
       'Quarterly carbon KPI reporting obligation applies for the full loan term'
@@ -233,6 +322,7 @@ function classifyDecisionTier({
 
     return _tier1({
       verdict: DECISION_VERDICTS.AUTO_APPROVE,
+      reason: 'CLEAR_GREEN', flags,
       reasons: [
         `Carbon Finance Score ${cfsScore}/100 — Green classification (≥70 threshold met)`,
         'At least one green taxonomy confirmed aligned',
@@ -251,6 +341,7 @@ function classifyDecisionTier({
   // -------------------------------------------------------------------------
   if (isTransitionCFS && poorData) {
     return _tier3({
+      reason: 'BORDERLINE_POOR_DATA', flags,
       reasons: [
         `Carbon Finance Score ${cfsScore}/100 is in the Transition zone (40–69) — borderline eligibility`,
         `PCAF data quality score ${pcafDataQualityScore} — insufficient data for a confident AI-assisted recommendation`
@@ -269,6 +360,25 @@ function classifyDecisionTier({
   const reasons    = [];
   const conditions = [];
   let   confidence = 'medium';
+  let   reasonCode = 'AI_REVIEW';
+
+  // The most specific description of why this case could not be decided
+  // outright, in the order a reviewer would want to hear it.
+  if (isGreenCFS && aboveAutoLimit)        reasonCode = 'HIGH_VALUE_GREEN';
+  else if (isGreenCFS && !greenEvidence)   reasonCode = 'GREEN_LOW_EPD';
+  else if (isTransitionCFS && evidenceThin) reasonCode = 'DATA_POOR_BORDERLINE';
+  else if (isTransitionCFS)                reasonCode = 'TRANSITION_ZONE';
+  else if (isGreenCFS)                     reasonCode = 'GREEN_UNCONFIRMED_TAXONOMY';
+
+  if (isGreenCFS && !greenEvidence) {
+    reasons.push(`Carbon Finance Score ${cfsScore}/100 qualifies as Green, but EPD coverage of ${epd}% is below the ${EPD_ADEQUATE_PCT}% needed to approve on product evidence, and no taxonomy alignment is confirmed`);
+    conditions.push(`Borrower to raise EPD coverage to at least ${EPD_ADEQUATE_PCT}% or confirm a taxonomy alignment`);
+  }
+
+  if (isTransitionCFS && evidenceThin) {
+    reasons.push(`No bill of quantities and EPD coverage of ${epd}% — the score rests on too little product evidence to be relied on unaided at a borderline Carbon Finance Score`);
+    conditions.push('Borrower must submit a bill of quantities so the score can be recomputed on measured quantities');
+  }
 
   if (isTransitionCFS) {
     reasons.push(`Carbon Finance Score ${cfsScore}/100 is in the Transition zone (40–69) — AI analysis needed to assess the pathway to Green classification`);
@@ -305,7 +415,12 @@ function classifyDecisionTier({
     reasons,
     conditions,
     escalationNote: 'AI review memo generated. Loan officer sign-off required before final credit decision.',
-    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+    ..._common({
+      track: DECISION_TRACKS.AI_REVIEW,
+      reason: reasonCode,
+      rationale: reasons[0] || 'Borderline application — AI review memo required before a loan officer decision.',
+      flags
+    })
   };
 }
 
@@ -313,7 +428,27 @@ function classifyDecisionTier({
 // Tier builder helpers
 // ---------------------------------------------------------------------------
 
-function _tier1({ verdict, reasons, conditions, escalationNote }) {
+/**
+ * Fields every classification carries, whichever tier it lands in.
+ *
+ * `reason` is a stable code an integrator can branch on; `rationale` is the
+ * same thing in a sentence, for a human. `reasons` (plural) stays as the full
+ * list. Emitting both means a caller never has to parse prose to learn why a
+ * decision was reached.
+ */
+function _common({ track, reason, rationale, flags }) {
+  return {
+    track,
+    trackLabel:  TRACK_LABELS[track],
+    reason,
+    rationale,
+    flags:       flags || [],
+    classifiedAt: new Date().toISOString(),
+    thresholds:  { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+  };
+}
+
+function _tier1({ verdict, reasons, conditions, escalationNote, reason, rationale, flags }) {
   return {
     tier:          DECISION_TIERS.AUTO,
     tierLabel:     TIER_DISTRIBUTION[DECISION_TIERS.AUTO].label,
@@ -323,11 +458,15 @@ function _tier1({ verdict, reasons, conditions, escalationNote }) {
     reasons,
     conditions,
     escalationNote,
-    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+    ..._common({
+      track: verdict === DECISION_VERDICTS.AUTO_APPROVE
+        ? DECISION_TRACKS.AUTO_APPROVE : DECISION_TRACKS.AUTO_DECLINE,
+      reason, rationale: rationale || reasons[0], flags
+    })
   };
 }
 
-function _tier3({ reasons, conditions, escalationNote }) {
+function _tier3({ reasons, conditions, escalationNote, reason, rationale, flags }) {
   return {
     tier:          DECISION_TIERS.MANUAL,
     tierLabel:     TIER_DISTRIBUTION[DECISION_TIERS.MANUAL].label,
@@ -337,24 +476,24 @@ function _tier3({ reasons, conditions, escalationNote }) {
     reasons,
     conditions,
     escalationNote,
-    thresholds:    { autoApproveLoanLimit: AUTO_APPROVE_LOAN_LIMIT, manualReviewLoanLimit: MANUAL_REVIEW_LOAN_LIMIT }
+    ..._common({
+      track: DECISION_TRACKS.MANUAL_REVIEW,
+      reason, rationale: rationale || reasons[0], flags
+    })
   };
 }
 
 /**
- * Compatibility alias for origin/main's classifyApplication interface.
- * Maps the alternate parameter names to classifyDecisionTier.
+ * The classifyApplication interface, kept as the public name for the same
+ * single classifier.
+ *
+ * It forwards every parameter rather than a chosen subset: an earlier version
+ * listed the fields by hand and silently dropped hasBOQ, reductionPct and
+ * verificationStatus, so evidence a caller had supplied never reached the
+ * decision that was made on it.
  */
-function classifyApplication(params) {
-  return classifyDecisionTier({
-    cfsScore:             params.cfsScore,
-    taxonomyAlignments:   params.taxonomyAlignments,
-    pcafDataQualityScore: params.pcafDataQualityScore,
-    loanAmount:           params.loanAmount,
-    buildingArea_m2:      params.buildingArea_m2,
-    epdCoveragePct:       params.epdCoveragePct,
-    forceManualReview:    params.forceManualReview
-  });
+function classifyApplication(params = {}) {
+  return classifyDecisionTier(params);
 }
 
 // ---------------------------------------------------------------------------
