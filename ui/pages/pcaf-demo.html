@@ -1,0 +1,70 @@
+<!-- PCAF Part C — Live Walkthrough.
+
+     A guided console onto the engine that is already running. Every figure on
+     this page is produced by a live call to /v1/pcaf/part-c/*, never from a
+     stored snapshot: the point of the page is that a visitor can change an
+     input and watch the standard decide the answer.
+
+     Step 3 of the build: the wiring only. This fragment proves the page
+     mounts, authenticates and reaches the engine. The console itself lands in
+     the steps that follow. -->
+
+<div class="pcafdemo">
+
+  <header class="pcafdemo-hero">
+    <div class="pcafdemo-hero-mark">Part C</div>
+    <div class="pcafdemo-hero-text">
+      <h2>Insurance-associated emissions, computed live</h2>
+      <p>
+        Nothing on this page is pre-computed. Every number is returned by the
+        same engine that produces the disclosure &mdash; you can change an
+        input and watch what moves, and what deliberately does not.
+      </p>
+    </div>
+  </header>
+
+  <section class="pcafdemo-card" id="demoConnCard">
+    <div class="pcafdemo-card-head">
+      <h3>Engine connection</h3>
+      <span class="pcafdemo-status" id="demoConnStatus">checking&hellip;</span>
+    </div>
+
+    <p class="pcafdemo-lede" id="demoConnLede">
+      Calling the conformance matrix &mdash; the engine's own record of which
+      rules of PCAF Part C it claims, the file that enforces each one, and the
+      test that proves it.
+    </p>
+
+    <div class="pcafdemo-metrics" id="demoConnMetrics" hidden>
+      <div class="pcafdemo-metric">
+        <span class="pcafdemo-metric-value" id="demoRuleCount">&mdash;</span>
+        <span class="pcafdemo-metric-label">rules claimed</span>
+      </div>
+      <div class="pcafdemo-metric">
+        <span class="pcafdemo-metric-value" id="demoLatency">&mdash;</span>
+        <span class="pcafdemo-metric-label">round trip</span>
+      </div>
+      <div class="pcafdemo-metric">
+        <span class="pcafdemo-metric-value" id="demoHttp">&mdash;</span>
+        <span class="pcafdemo-metric-label">HTTP status</span>
+      </div>
+    </div>
+
+    <!-- Show me the wire. A methodology audience is trained to distrust a
+         dashboard, so every call on this page can be opened to the actual
+         request and the raw response. -->
+    <details class="pcafdemo-wire" id="demoWire" hidden>
+      <summary>Show me the wire</summary>
+      <pre class="pcafdemo-wire-body" id="demoWireBody"></pre>
+    </details>
+
+    <div class="pcafdemo-error" id="demoConnError" hidden></div>
+
+    <div class="pcafdemo-actions">
+      <button class="btn btn-secondary" id="demoRetry">Call again</button>
+    </div>
+  </section>
+
+  <p class="pcafdemo-foot" id="demoFoot"></p>
+
+</div>

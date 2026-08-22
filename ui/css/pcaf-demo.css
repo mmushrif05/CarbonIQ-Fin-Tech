@@ -1,0 +1,212 @@
+/* ============================================================
+   CarbonIQ — PCAF Part C: Live Walkthrough
+
+   Scoped entirely under .pcafdemo so nothing here can reach another
+   page. The palette is sampled from PCAF's own published documents —
+   slate, deep green, sage — so a walkthrough of the standard does not
+   look like a different kind of document beside the standard it cites.
+   ============================================================ */
+
+.pcafdemo {
+  --pd-slate: #3e6180;
+  --pd-green: #4a5f42;
+  --pd-sage:  #c5ccc0;
+  --pd-ink:   #23303c;
+
+  max-width: 1080px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* A hidden element must stay hidden. Several blocks below are laid out with
+   flex or grid, and those declarations win over the `hidden` attribute — which
+   is how an empty red error panel came to be drawn on a successful call. */
+.pcafdemo [hidden] { display: none !important; }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+
+.pcafdemo-hero {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  padding: 26px 28px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--pd-slate) 0%, var(--pd-green) 100%);
+  color: #fff;
+}
+
+.pcafdemo-hero-mark {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pcafdemo-hero-text h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.pcafdemo-hero-text p {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+
+.pcafdemo-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  padding: 22px 24px;
+}
+
+.pcafdemo-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.pcafdemo-card-head h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pcafdemo-lede {
+  margin: 0 0 18px;
+  max-width: 72ch;
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+/* ── Status pill ──────────────────────────────────────────── */
+
+.pcafdemo-status {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--border-light);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pcafdemo-status-ok  { background: var(--green-bg); color: var(--green); }
+.pcafdemo-status-bad { background: var(--red-bg);   color: var(--red); }
+
+/* ── Metrics ──────────────────────────────────────────────── */
+
+.pcafdemo-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.pcafdemo-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--pd-sage);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+}
+
+.pcafdemo-metric-value {
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--pd-ink);
+}
+
+.pcafdemo-metric-label {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+/* ── The wire ─────────────────────────────────────────────── */
+
+.pcafdemo-wire {
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-hover);
+}
+
+.pcafdemo-wire > summary {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--pd-slate);
+  user-select: none;
+}
+
+.pcafdemo-wire[open] > summary { border-bottom: 1px solid var(--border); }
+
+.pcafdemo-wire-body {
+  margin: 0;
+  padding: 14px;
+  max-height: 340px;
+  overflow: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Failure ──────────────────────────────────────────────── */
+
+.pcafdemo-error {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--red);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--red-bg);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.pcafdemo-error strong { color: var(--red); font-weight: 600; }
+.pcafdemo-error span   { color: var(--text-secondary); }
+
+/* ── Footer ───────────────────────────────────────────────── */
+
+.pcafdemo-actions { display: flex; gap: 10px; }
+
+.pcafdemo-foot {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+@media (max-width: 720px) {
+  .pcafdemo-hero { flex-direction: column; gap: 14px; }
+}
