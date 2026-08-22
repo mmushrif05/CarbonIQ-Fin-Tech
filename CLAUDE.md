@@ -326,6 +326,13 @@ npm run test:watch   # Watch mode for TDD
 
 Production deploys as a **Netlify Function** via `netlify/functions/fintech-api.js` (serverless-http adapter wrapping Express).
 
+**Where it lives.** Netlify site `carboniqfintech` (team plan: Pro, so the 26-second
+function timeout in `netlify.toml` is available). The application is served from
+**https://carboniqfintech.netlify.app** — that is the URL to give anyone who needs to
+see it. `carboniq.online` is the *core* platform (the Carbon-Management deployment)
+and no longer answers; nothing in this repo should point at it. The two calls that
+reach the core engine read `CORE_APP_URL`.
+
 - Config: `netlify.toml`
 - All `/v1/*` and `/bank/*` routes redirect to the function
 - CI/CD: `.github/workflows/` pipelines handle automated testing and deployment
