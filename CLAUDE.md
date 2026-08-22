@@ -232,6 +232,16 @@ Every equation, input and factor in it is **extracted from an execution of the e
 
 **The per-input table survives as an internal aid, in words.** Strong, Moderate or Weak — never 1–5 — labelled *"Internal transparency aid — not a PCAF data quality score"*, never averaged, never exported as a score. It responds to whether an actual or a benchmark was used, so it points effort at the weakest evidence; the PCAF score itself does not move when an input is strengthened, because the option has not changed, and the UI says so rather than implying a number will shift.
 
+**A document is never streamed to a response (`services/pdf-response.js`):** it is collected in full, checked to be a well-formed PDF — header, cross-reference pointer, end-of-file marker, plausible length — and sent as a buffer with an explicit `Content-Length` and `Cache-Control: no-store`. Every "the PDF is empty" report this project has had came from the delivery path rather than the drawing, and none of them announced itself: the browser saved a file with the right name and it would not open. A truncated body can no longer look complete, a broken response cannot be re-served from a cache after the cause is fixed, and a document that fails the check becomes a 500 rather than a quiet bad download.
+
+**A file never declares a version older than what it contains.** The cover watermark was drawn with constant alpha — a PDF 1.4 feature — in a file pdfkit headed `%PDF-1.3`. Lenient viewers render that anyway; strict ones (Acrobat) are entitled to refuse it, which reads as a blank page. The watermark is now a pre-blended solid (`partc-theme.js` `blend()`), the document declares 1.4, and a test asserts the declared version covers every feature present.
+
+**`GET /health` reports the running commit.** "The fix did not work" and "the fix has not been deployed" look identical from a browser, and the second is far more common; Netlify's `COMMIT_REF` settles it in one request.
+
+**Downloads are bytes, not text:** `netlify/functions/fintech-api.js` names the binary content types for serverless-http. Without that list Lambda hands the body back as a UTF-8 string, every byte above 127 is re-encoded, and a 34KB PDF arrives as 63KB that downloads but will not open — which reads to a user as an empty file. `services/partc-docgen.js` `winAnsiSafe()` patches each pdfkit document so text outside WinAnsi (Σ, −, →) is transliterated rather than drawn as mojibake; the standard-14 fonts cannot encode it.
+
+**An unavailable agent says why (`services/agents/ai-status.js`, `middleware/require-ai.js`):** the Anthropic SDK's message for a rejected key is `401 terminated`, which names neither the cause nor the fix; reaching the browser as `{"error":"ERROR","message":"401 terminated"}` it reads as an agent that simply did nothing. A key that is absent or does not have the shape of an Anthropic key is now refused **before** the call, in milliseconds, and a call that does fail is classified — `key_rejected`, `forbidden`, `model_unavailable`, `rate_limited`, `overloaded`, `timeout`, `network_blocked` — with the remedy and the list of endpoints that still work without the AI layer. `GET /v1/agent/health` reports the same diagnosis for all nine agents on demand, `?probe=1` proving it with a live one-token call. The failure is also visible on screen rather than only in a response body, and a mapping that fails **clears the table** instead of leaving the demo rows standing — stale rows after a failed upload are what made the agent look static.
+
 **The report standard (`services/partc-report-standard.js`):** every document the application generates — the per-assessment report and the annual disclosure alike — is built from **one content model** in the order PCAF's Part C disclosure checklist reads, and rendered to PDF and Word by **one renderer**. Two templates would let a requirement satisfied in one document go quietly missing from the other.
 
 Section order is the checklist's, not ours: cover · scope and coverage · gases and units · absolute emissions · methodology · data quality · recalculation and significance · emission intensity · limitations · conformance · annexes. Sections are numbered as they are written, so an absent memo never leaves a gap that reads as a withheld section.
@@ -315,6 +325,13 @@ npm run test:watch   # Watch mode for TDD
 ## Deployment
 
 Production deploys as a **Netlify Function** via `netlify/functions/fintech-api.js` (serverless-http adapter wrapping Express).
+
+**Where it lives.** Netlify site `carboniqfintech` (team plan: Pro, so the 26-second
+function timeout in `netlify.toml` is available). The application is served from
+**https://carboniqfintech.netlify.app** — that is the URL to give anyone who needs to
+see it. `carboniq.online` is the *core* platform (the Carbon-Management deployment)
+and no longer answers; nothing in this repo should point at it. The two calls that
+reach the core engine read `CORE_APP_URL`.
 
 - Config: `netlify.toml`
 - All `/v1/*` and `/bank/*` routes redirect to the function

@@ -150,7 +150,7 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
   // Persist initial "running" state so callers can poll for progress
   await saveAgentRun(orgId, run);
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
 
   // Cache breakpoint 2: system prompt (same on every iteration)
   const cachedSystem = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
@@ -334,7 +334,7 @@ async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId,
 
   await saveAgentRun(orgId, run);
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
 
   try {
     // claude-haiku-4-5 is the current alias (date-suffix IDs are deprecated).

@@ -35,6 +35,13 @@ const config = {
   anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
   // Vision model used for PDF BOQ extraction — Opus for complex table layouts
   anthropicVisionModel: process.env.ANTHROPIC_VISION_MODEL || 'claude-opus-4-6',
+  anthropicFastModel: process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5',
+  /* A serverless function is killed at a fixed wall clock (26s on Netlify
+     Pro), so an SDK call must give up before that and say why. Without a
+     ceiling the platform kills the request instead, the browser sees a
+     truncated response, and the screen sits on "working…" for ever. */
+  anthropicTimeoutMs: Number(process.env.ANTHROPIC_TIMEOUT_MS) || 20000,
+  anthropicMaxRetries: Number(process.env.ANTHROPIC_MAX_RETRIES ?? 1),
 
   // --- Security ---
   encryptionKey: process.env.DATA_ENCRYPTION_KEY,

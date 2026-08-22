@@ -51,7 +51,7 @@ async function readDocument({ fileId, pdfBase64, text, hint } = {}) {
     throw new Error('ANTHROPIC_API_KEY is not configured — PDF reading is unavailable. Paste the document text instead.');
   }
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
 
   const documentSource = fileId
     ? { type: 'file', file_id: fileId }

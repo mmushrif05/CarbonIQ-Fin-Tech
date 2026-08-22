@@ -141,7 +141,7 @@ router.get('/', (_req, res) => {
         framework:         'GET /v1/ndc-sdg/framework',
       },
     },
-    documentation: 'https://carboniq.online/docs/api'
+    documentation: 'https://carboniqfintech.netlify.app/docs/api'
   });
 });
 

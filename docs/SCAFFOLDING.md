@@ -10,7 +10,7 @@
 
 ### Why This Structure?
 
-The existing CarbonIQ platform is a **vanilla JS SPA + Netlify Functions + Firebase** stack deployed at `carboniq.online`. It powers the construction-side workflow: BOQ upload → AI classification → emission calculation → 80% Pareto → approval.
+The existing CarbonIQ platform is a **vanilla JS SPA + Netlify Functions + Firebase** stack. It was deployed at `carboniq.online`; that hostname no longer answers, so the two calls into it (`bridge/ai.js`) read `CORE_APP_URL` and refuse with a 503 naming that variable when it is unset, rather than timing out against a dead host. It powers the construction-side workflow: BOQ upload → AI classification → emission calculation → 80% Pareto → approval.
 
 The FinTech layer is a **separate module** (`fintech/`) that:
 - **Wraps** the existing engine (never modifies `data.js`, `tender.js`, or `parse-boq.js`)
@@ -347,7 +347,7 @@ ALLOWED_ORIGINS=...
 
 ```
 ┌─────────────────────────────────────────────┐
-│           carboniq.online (Netlify)          │
+│        core platform (CORE_APP_URL)         │
 │                                              │
 │  Static:  /index.html, /js/*, /css/*         │  ← Existing UI
 │  Static:  /pitch.html, /presentation.html    │  ← Existing decks

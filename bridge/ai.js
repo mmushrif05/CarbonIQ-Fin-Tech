@@ -12,6 +12,31 @@
 const config = require('../config');
 
 /**
+ * Where the CarbonIQ core platform's Netlify functions live.
+ *
+ * These two calls reach the CORE engine (parse-boq, carbon-advisor), which is
+ * a different deployment from this API. The default used to be a hard-coded
+ * production hostname; when that deployment moved, the calls failed against a
+ * host that no longer answers, and the error named the timeout rather than the
+ * cause. There is now no default: an unset CORE_APP_URL is refused with the
+ * variable to set, in the same spirit as the AI-availability check.
+ */
+function coreAppUrl() {
+  if (config.env === 'development') return 'http://localhost:8888';
+
+  const url = process.env.CORE_APP_URL || process.env.APP_URL;
+  if (!url) {
+    const err = new Error(
+      'The CarbonIQ core platform URL is not configured, so the core engine cannot be reached. '
+      + 'Set CORE_APP_URL to the deployment hosting the parse-boq and carbon-advisor functions.');
+    err.statusCode = 503;
+    err.code = 'CORE_APP_URL_NOT_SET';
+    throw err;
+  }
+  return url.replace(/\/+$/, '');
+}
+
+/**
  * Trigger a BOQ assessment via the existing parse-boq Netlify function.
  *
  * @param {string} boqContent - Raw BOQ text content
@@ -19,9 +44,7 @@ const config = require('../config');
  * @returns {Object} AI classification results
  */
 async function triggerBOQAssessment(boqContent, options = {}) {
-  const baseUrl = config.env === 'development'
-    ? 'http://localhost:8888'
-    : process.env.APP_URL || 'https://carboniq.online';
+  const baseUrl = coreAppUrl();
 
   const response = await fetch(`${baseUrl}/.netlify/functions/parse-boq`, {
     method: 'POST',
@@ -50,9 +73,7 @@ async function triggerBOQAssessment(boqContent, options = {}) {
  * @returns {Object} AI-powered reduction recommendations
  */
 async function triggerCarbonAdvisor(projectId, projectData) {
-  const baseUrl = config.env === 'development'
-    ? 'http://localhost:8888'
-    : process.env.APP_URL || 'https://carboniq.online';
+  const baseUrl = coreAppUrl();
 
   const response = await fetch(`${baseUrl}/.netlify/functions/carbon-advisor`, {
     method: 'POST',

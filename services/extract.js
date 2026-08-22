@@ -132,7 +132,7 @@ async function extractMaterials(rawInput, inputFormat = 'text') {
     throw new Error('ANTHROPIC_API_KEY is not configured. AI extraction is unavailable.');
   }
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
 
   const formatLabel = { csv: 'CSV (Bill of Quantities)', json: 'JSON', text: 'raw text' }[inputFormat] || 'raw text';
   const userMessage = `Parse the following ${formatLabel} BOQ data and extract all construction materials:\n\n${rawInput}`;
@@ -178,7 +178,7 @@ async function extractMaterialsFromPdf({ pdfBase64, fileId, pageHint } = {}) {
     throw new Error('extractMaterialsFromPdf requires either pdfBase64 or fileId.');
   }
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey });
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
 
   // Build the document source block
   let documentSource;

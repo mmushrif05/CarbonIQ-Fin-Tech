@@ -37,6 +37,7 @@ const { authorize } = require('../../middleware/authorization');
 const { PERMISSIONS } = require('../../config/policies');
 const { agentLimiter } = require('../../middleware/rate-limit');
 const { runAgent, runAgentSingleCall } = require('../../bridge/agent');
+const aiStatus      = require('../../services/agents/ai-status');
 const { getAgentRun, listAgentRuns, updateAgentRun, submitHumanReview } = require('../../bridge/firebase');
 const { AGENT_STATUS } = require('../../models/agent-run');
 
@@ -69,6 +70,76 @@ const router = Router();
 // Run the Green Loan Underwriting Agent against a BOQ and project details.
 // Returns a full underwriting memo plus the complete tool-call audit trail.
 // ---------------------------------------------------------------------------
+
+/**
+ * GET /v1/agent/health — is the AI layer working, and if not, why?
+ *
+ * "The agent is static" and "the agent is misconfigured" look identical from
+ * a screen, and the second is far more common. This answers which, by name,
+ * for every agent in the product.
+ *
+ * Free by default: shape checks only. `?probe=1` spends one token on a live
+ * call, which is the only way to tell a rejected key from an unavailable
+ * model from a network block.
+ */
+router.get('/health', apiKeyAuth, async (req, res, next) => {
+  try {
+    const live = req.query.probe === '1' || req.query.probe === 'true';
+
+    /* Without a probe the shape is still decisive in two cases: no key at
+       all, and a key that cannot be an Anthropic key. Reporting those as
+       "not probed" would hide the answer the caller came for. */
+    let state;
+    if (live) {
+      state = await aiStatus.probe();
+    } else {
+      const d = aiStatus.describe();
+      state = {
+        ...d,
+        status: !d.configured ? 'not_configured'
+          : !d.keyWellFormed ? 'key_malformed' : 'not_probed',
+        remedy: !d.configured
+          ? 'Set ANTHROPIC_API_KEY in the deployment environment and redeploy — on Netlify an environment variable does not reach a running function until the next deploy.'
+          : !d.keyWellFormed
+            ? 'Copy the key whole from console.anthropic.com — it begins sk-ant- and is around 100 characters — with no quotes and no trailing newline, then redeploy.'
+            : null
+      };
+    }
+
+    const usable = live ? state.ok : (state.configured && state.keyWellFormed);
+    /* A diagnostic that answers "no" is still a successful diagnostic, so
+       the transport status reflects whether the AI layer is usable rather
+       than whether the check ran. */
+    res.status(usable ? 200 : 503).json({
+      ai: {
+        usable,
+        status: state.status,
+        detail: state.detail || state.shapeWarning
+          || (usable ? 'The key is present and well formed. Add ?probe=1 to confirm the API answers.'
+            : 'No Anthropic API key is configured.'),
+        remedy: state.remedy || null,
+        probed: live,
+        latencyMs: state.latencyMs || null,
+        keyConfigured: state.configured,
+        keyWellFormed: state.keyWellFormed,
+        keyPrefix: state.keyPrefix,
+        models: state.models
+      },
+      /* Every agent in the product, so "make sure every agent is active" has
+         a single answer rather than nine separate experiments. */
+      agents: state.agents.map(a => ({
+        ...a,
+        status: usable ? 'live' : 'unavailable',
+        blockedBy: usable ? null : (state.status || 'not_configured')
+      })),
+      deterministic: {
+        note: 'These need no API key and are unaffected by anything above.',
+        endpoints: require('../../middleware/require-ai').UNAFFECTED
+      },
+      checkedAt: new Date().toISOString()
+    });
+  } catch (err) { next(err); }
+});
 
 router.post('/underwrite',
   apiKeyAuth,
