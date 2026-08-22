@@ -1,0 +1,283 @@
+<!-- PCAF Part C — Live Walkthrough.
+
+     A guided console onto the engine that already runs. Two rules govern it:
+
+       Every figure is fetched, never remembered. A call that fails leaves
+       the panel empty with the cause on screen; no stale value is ever
+       dressed as a live one.
+
+       Every call is inspectable. The log drawer holds the request line,
+       status, round trip and raw response for every call the page has made,
+       because a claim a reviewer cannot check is one they are right to
+       discount.
+
+     Nothing here computes an emission figure. The browser formats what the
+     API returns and nothing else. -->
+
+<div class="pcafdemo" id="pdRoot">
+
+  <!-- ── Hero + engine state ──────────────────────────────── -->
+  <header class="pd-hero">
+    <div class="pd-hero-left">
+      <div class="pd-hero-mark">Part C</div>
+      <div>
+        <h2>Insurance-associated emissions, computed live</h2>
+        <p>Change an input and watch what moves &mdash; and what deliberately does not.</p>
+      </div>
+    </div>
+    <div class="pd-hero-right">
+      <div class="pd-engine" id="pdEngine">
+        <span class="pd-engine-dot"></span>
+        <span class="pd-engine-text" id="pdEngineText">connecting&hellip;</span>
+      </div>
+      <button class="pd-chip" id="pdLogBtn" type="button">
+        Call log <span class="pd-chip-count" id="pdLogCount">0</span>
+      </button>
+      <button class="pd-chip" id="pdResetBtn" type="button">Reset</button>
+    </div>
+  </header>
+
+  <!-- ── Stepper ──────────────────────────────────────────── -->
+  <nav class="pd-steps" id="pdSteps" aria-label="Walkthrough steps">
+    <button class="pd-step" data-step="1" type="button"><i>1</i><span>The gap</span></button>
+    <button class="pd-step" data-step="2" type="button"><i>2</i><span>The policy</span></button>
+    <button class="pd-step" data-step="3" type="button"><i>3</i><span>The bill of quantities</span></button>
+    <button class="pd-step" data-step="4" type="button"><i>4</i><span>The figure</span></button>
+    <button class="pd-step" data-step="5" type="button"><i>5</i><span>What moves</span></button>
+    <button class="pd-step" data-step="6" type="button"><i>6</i><span>The disclosure</span></button>
+  </nav>
+
+  <div class="pd-stage">
+
+    <!-- ══ 1 · The gap ═══════════════════════════════════════ -->
+    <section class="pd-panel" data-panel="1">
+      <h3 class="pd-h">A construction project is not a company</h3>
+      <p class="pd-lede">
+        Insurance-associated emissions are normally derived by matching the insured
+        to a company database and reading off a revenue-based proxy. A project
+        under a construction all-risks policy has no company record to match, so
+        that route returns nothing. PCAF Part C &sect;5.3 asks instead for the
+        project's own emissions &mdash; which means building them from the bill of
+        quantities.
+      </p>
+
+      <div class="pd-compare">
+        <div class="pd-compare-card pd-compare-no">
+          <span class="pd-compare-tag">Company matching</span>
+          <p>Resolve the insured to a company identifier, take reported or modelled
+             emissions, apply the attribution factor.</p>
+          <span class="pd-compare-verdict">Cannot see a project</span>
+        </div>
+        <div class="pd-compare-card pd-compare-yes">
+          <span class="pd-compare-tag">Bottom-up project LCA</span>
+          <p>Take the quantities actually being built, the distances they travel and
+             the energy the site burns, and compute A4 and A5 from them.</p>
+          <span class="pd-compare-verdict">Project-specific and auditable</span>
+        </div>
+      </div>
+
+      <div class="pd-scope" id="pdScope">
+        <div class="pd-scope-row pd-scope-1">
+          <span class="pd-scope-tier">Mandatory</span>
+          <span class="pd-scope-mod">A4 + A5</span>
+          <span class="pd-scope-note">Construction &mdash; <strong>this is the PCAF figure</strong></span>
+        </div>
+        <div class="pd-scope-row pd-scope-2">
+          <span class="pd-scope-tier">Optional</span>
+          <span class="pd-scope-mod">B1 + B4 + B7</span>
+          <span class="pd-scope-note">Use stage &mdash; separate line, policy gated, never summed with construction</span>
+        </div>
+        <div class="pd-scope-row pd-scope-3">
+          <span class="pd-scope-tier">Beyond PCAF</span>
+          <span class="pd-scope-mod">B2 + B5 + B8</span>
+          <span class="pd-scope-note">Voluntary annex &mdash; never inside the PCAF figure</span>
+        </div>
+      </div>
+
+      <p class="pd-cite" id="pdStandardCite">&mdash;</p>
+    </section>
+
+    <!-- ══ 2 · The policy ════════════════════════════════════ -->
+    <section class="pd-panel" data-panel="2">
+      <h3 class="pd-h">The policy decides what is in scope</h3>
+      <p class="pd-lede">
+        Change any field and the engine recalculates. The attribution factor is the
+        insurer's slice; the gate below it is a scope rule, not an omission.
+      </p>
+
+      <div class="pd-form">
+        <label class="pd-field">
+          <span>Policy type</span>
+          <select id="pdPolicyType">
+            <option value="CAR">CAR &mdash; Contractors' All Risks</option>
+            <option value="EAR">EAR &mdash; Erection All Risks</option>
+            <option value="IDI">IDI &mdash; Inherent Defects</option>
+            <option value="Property">Property</option>
+          </select>
+        </label>
+        <label class="pd-field">
+          <span>Premium <i>LKR</i></span>
+          <input type="number" id="pdPremium" step="0.01" min="0">
+        </label>
+        <label class="pd-field">
+          <span>Total project cost <i>LKR</i></span>
+          <input type="number" id="pdProjectCost" step="1" min="0">
+        </label>
+        <label class="pd-field">
+          <span>Gross internal floor area <i>m&sup2;</i></span>
+          <input type="number" id="pdGifa" step="1" min="0">
+        </label>
+      </div>
+
+      <div class="pd-readouts">
+        <div class="pd-readout">
+          <span class="pd-readout-label">Attribution factor</span>
+          <span class="pd-readout-value" id="pdAF">&mdash;</span>
+          <span class="pd-readout-sub" id="pdAFEq">&mdash;</span>
+        </div>
+        <div class="pd-readout">
+          <span class="pd-readout-label">Use-stage years</span>
+          <span class="pd-readout-value" id="pdYears">&mdash;</span>
+          <span class="pd-readout-sub" id="pdGate">&mdash;</span>
+        </div>
+      </div>
+
+      <p class="pd-note">
+        The factor is carried unrounded through the whole calculation. Rounding it
+        to four decimals first &mdash; as a spreadsheet naturally would &mdash;
+        moves the disclosed figure by about one per cent.
+      </p>
+    </section>
+
+    <!-- ══ 3 · The bill of quantities ════════════════════════ -->
+    <section class="pd-panel" data-panel="3">
+      <h3 class="pd-h">The bill of quantities</h3>
+      <p class="pd-lede">
+        Ten lines from a real Sri Lankan fisheries complex. Edit any quantity and
+        the figure behind it moves &mdash; every line is priced by the engine, not
+        by this page.
+      </p>
+
+      <div class="pd-tablewrap">
+        <table class="pd-table" id="pdBoq">
+          <thead>
+            <tr><th>Material</th><th class="pd-num">Quantity</th><th>Unit</th><th class="pd-num">Road km</th><th class="pd-num">Sea km</th></tr>
+          </thead>
+          <tbody id="pdBoqBody"></tbody>
+        </table>
+      </div>
+
+      <div class="pd-readouts">
+        <div class="pd-readout">
+          <span class="pd-readout-label">A4 transport to site</span>
+          <span class="pd-readout-value" id="pdA4">&mdash;</span>
+          <span class="pd-readout-sub">kgCO2e</span>
+        </div>
+        <div class="pd-readout">
+          <span class="pd-readout-label">Lines priced</span>
+          <span class="pd-readout-value" id="pdLines">&mdash;</span>
+          <span class="pd-readout-sub" id="pdMass">&mdash;</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ 4 · The figure ════════════════════════════════════ -->
+    <section class="pd-panel" data-panel="4">
+      <h3 class="pd-h">The figure, and everything behind it</h3>
+
+      <div class="pd-headline">
+        <div class="pd-headline-main">
+          <span class="pd-headline-label">Construction A4 + A5 &mdash; the PCAF figure</span>
+          <span class="pd-headline-value" id="pdConstruction">&mdash;</span>
+          <span class="pd-headline-unit">kgCO2e</span>
+        </div>
+        <div class="pd-headline-side">
+          <div class="pd-mini">
+            <span class="pd-mini-label">Insurer's attributed share</span>
+            <span class="pd-mini-value" id="pdIAE">&mdash;</span>
+            <span class="pd-mini-unit">tCO2e</span>
+          </div>
+          <div class="pd-mini">
+            <span class="pd-mini-label">Per m&sup2;</span>
+            <span class="pd-mini-value" id="pdPerM2">&mdash;</span>
+            <span class="pd-mini-unit">kgCO2e/m&sup2;</span>
+          </div>
+          <div class="pd-mini">
+            <span class="pd-mini-label">Use stage (separate line)</span>
+            <span class="pd-mini-value" id="pdUseStage">&mdash;</span>
+            <span class="pd-mini-unit">kgCO2e</span>
+          </div>
+        </div>
+      </div>
+
+      <h4 class="pd-sub">Where it comes from</h4>
+      <div class="pd-bars" id="pdBars"></div>
+
+      <details class="pd-details">
+        <summary>The audit trail &mdash; every step the engine executed</summary>
+        <div class="pd-trail" id="pdTrail"></div>
+      </details>
+    </section>
+
+    <!-- ══ 5 · What moves ════════════════════════════════════ -->
+    <section class="pd-panel" data-panel="5">
+      <h3 class="pd-h">What moves, and what deliberately does not</h3>
+      <p class="pd-lede">
+        Each card runs the engine twice &mdash; once as it stands, once with one
+        thing changed &mdash; and reports both halves of the answer. The second
+        half is the one that is usually missing.
+      </p>
+      <div class="pd-cf" id="pdCf"></div>
+    </section>
+
+    <!-- ══ 6 · The disclosure ════════════════════════════════ -->
+    <section class="pd-panel" data-panel="6">
+      <h3 class="pd-h">Data quality, and the document</h3>
+
+      <div class="pd-dq" id="pdDq"></div>
+
+      <h4 class="pd-sub">Generate the disclosure</h4>
+      <p class="pd-lede">
+        Rendered now, by the same renderer that produces the annual disclosure.
+        Nothing is pre-built.
+      </p>
+      <div class="pd-actions">
+        <button class="btn btn-primary" id="pdPdfBtn" type="button">Report &mdash; PDF</button>
+        <button class="btn btn-secondary" id="pdDocxBtn" type="button">Word</button>
+        <button class="btn btn-secondary" id="pdMethodBtn" type="button">Methodology statement</button>
+        <span class="pd-hint" id="pdDocStatus"></span>
+      </div>
+
+      <h4 class="pd-sub">Where the factors are weakest</h4>
+      <p class="pd-lede">
+        Ranked by how much of this disclosure each one actually carries &mdash; so
+        Sri Lankan factor research can be ordered by evidence rather than intuition.
+      </p>
+      <div class="pd-gaps" id="pdGaps"></div>
+
+      <h4 class="pd-sub">Conformance</h4>
+      <div class="pd-conf" id="pdConf"></div>
+    </section>
+
+  </div>
+
+  <!-- ── Failure surface ──────────────────────────────────── -->
+  <div class="pd-error" id="pdError" hidden></div>
+
+  <!-- ── Step navigation ──────────────────────────────────── -->
+  <footer class="pd-nav">
+    <button class="btn btn-secondary" id="pdBack" type="button">&larr; Back</button>
+    <span class="pd-nav-where" id="pdWhere"></span>
+    <button class="btn btn-primary" id="pdNext" type="button">Next &rarr;</button>
+  </footer>
+
+  <!-- ── Call log drawer ──────────────────────────────────── -->
+  <aside class="pd-log" id="pdLog" hidden>
+    <div class="pd-log-head">
+      <strong>Every call this page has made</strong>
+      <button class="pd-chip" id="pdLogClose" type="button">Close</button>
+    </div>
+    <div class="pd-log-body" id="pdLogBody"></div>
+  </aside>
+
+</div>

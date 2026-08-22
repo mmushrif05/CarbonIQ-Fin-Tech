@@ -17,6 +17,7 @@ const PAGE_META = {
   'methodology': { title: 'Methodology & Evidence', subtitle: 'How every figure is calculated — scope, equations, factors, sources and limits' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
+  'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and watch what moves, and what deliberately does not' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
@@ -53,6 +54,13 @@ const DYNAMIC_PAGES = {
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',
     init: () => typeof PCAFPartCPage !== 'undefined' && PCAFPartCPage.init(),
+  },
+  'pcaf-demo': {
+    src:  'pages/pcaf-demo.html',
+    init: () => typeof PCAFDemoPage !== 'undefined' && PCAFDemoPage.init(),
+    // Every figure is fetched, never remembered, so a return visit re-asks
+    // the engine rather than showing what it said last time.
+    refresh: () => typeof PCAFDemoPage !== 'undefined' && PCAFDemoPage.refresh(),
   },
   'partc-book': {
     src:  'pages/partc-book.html',
