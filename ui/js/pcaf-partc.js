@@ -439,6 +439,15 @@ const PCAFPartCPage = (() => {
       if (!res.ok) throw await readError(res, 'Intake failed');
       const data = await res.json();
 
+      /* Same as mapping: a run can stop for a stated reason and still answer
+         200. Read the reason before attempting to parse a result the run never
+         got as far as producing. */
+      if (data.error) {
+        const err = new Error(data.error);
+        err.detail = { remedy: 'Paste the policy schedule as text, or use a shorter document.' };
+        throw err;
+      }
+
       const parsed = extractJson(data.result);
       const p = parsed.policy || {};
 
@@ -476,6 +485,18 @@ const PCAFPartCPage = (() => {
       });
       if (!res.ok) throw await readError(res, 'Mapping failed');
       const data = await res.json();
+
+      /* A run can stop for a reason and still answer 200 — the agent loop
+         breaks between turns when the request budget runs out, and returns
+         what it has plus why it stopped. Reading data.error first is the
+         difference between showing that reason and failing on a JSON parse
+         of a result that was never produced: the diagnosis exists either way,
+         and discarding it is what made the original failure unreadable. */
+      if (data.error) {
+        const err = new Error(data.error);
+        err.detail = { remedy: 'Paste the bill of quantities as text, or split it into smaller documents.' };
+        throw err;
+      }
 
       const parsed = extractJson(data.result);
 

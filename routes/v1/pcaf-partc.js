@@ -46,7 +46,7 @@ const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const requireAI = require('../../middleware/require-ai');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
-const { Deadline }        = require('../../services/agents/deadline');
+const { forRequest: deadlineFor } = require('../../services/agents/deadline');
 const {
   createPartCRun, addStep, generatePartCRunId, isAwaitingInputs,
   PARTC_STATUS, PARTC_STEP_TYPES
@@ -467,7 +467,7 @@ router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: intakeRequestSchema }),
   async (req, res, next) => {
     try {
-      const clock = new Deadline();
+      const clock = deadlineFor(req);
 
       /* Same reasoning as the mapping route: the policy schedule goes to the
          agent as a document rather than being transcribed first. */
@@ -512,7 +512,7 @@ router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
     try {
       /* One clock for the whole request — a Netlify function is killed at 26s
          and nothing here used to know that. */
-      const clock = new Deadline();
+      const clock = deadlineFor(req);
 
       /* A PDF is handed to the mapping agent directly rather than transcribed
          first. Transcribe-then-map is two sequential model calls, and the
@@ -544,6 +544,7 @@ router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
           : instruction,
         orgId: req.apiKey.orgId,
         deadline: clock,
+        callProfile: mappingAgent.CALL_PROFILE,
         metadata: { projectName: req.body.projectName || null, stage: 'mapping',
                     documentSource: blocks ? 'pdf' : 'text' }
       });

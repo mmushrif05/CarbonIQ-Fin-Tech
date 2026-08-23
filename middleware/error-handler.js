@@ -96,13 +96,22 @@ function errorHandler(err, req, res, _next) {
 
   // Default: use err.code as error identifier when available
   const status = err.status || err.statusCode || 500;
-  res.status(status).json({
+
+  /* The remedy is the half a user can act on. A deadline error that says only
+     "not enough time left" tells someone their upload failed; the same error
+     carrying "paste the text instead" tells them what to do next. It was
+     being set on the error and then dropped here, so it never reached a
+     screen. Never attached to a 500, whose message is deliberately generic. */
+  const body = {
     error: status === 500 ? 'INTERNAL_ERROR' : (err.code || 'ERROR'),
     message: status === 500
       ? 'An unexpected error occurred. Please try again.'
       : err.message,
     requestId: req.requestId
-  });
+  };
+  if (status !== 500 && err.remedy) body.remedy = err.remedy;
+
+  res.status(status).json(body);
 }
 
 module.exports = errorHandler;
