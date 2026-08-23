@@ -84,6 +84,18 @@ app.get('/health', (_req, res) => {
       deployId: process.env.DEPLOY_ID || null,
       context: process.env.CONTEXT || process.env.NODE_ENV || null
     },
+    /* Whether this deployment can actually do its job, as booleans.
+       "The dashboard shows 401" and "the AI does nothing" are both usually a
+       variable that was never set on this context, and neither says so from a
+       browser. Names and yes/no only — never a value. */
+    configured: {
+      uiKey: Boolean(process.env.UI_API_KEY),
+      anthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
+      firebase: Boolean(
+        process.env.FIREBASE_SERVICE_ACCOUNT ||
+        (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
+      )
+    },
     timestamp: new Date().toISOString()
   });
 });
