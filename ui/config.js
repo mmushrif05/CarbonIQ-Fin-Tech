@@ -97,14 +97,24 @@ const Settings = (() => {
   }
 
   function reset() {
-    const DEFAULT_KEY = 'ck_test_00000000000000000000000000000000';
-    window.CARBONIQ_saveConfig('', DEFAULT_KEY);
+    // Reset means "stop overriding", not "write the old literal back". Storing
+    // a key here would win over the one the deployment serves, so a reset would
+    // silently reintroduce the mismatch it is supposed to clear.
+    localStorage.removeItem('carboniq_config');
+    const serverKey = window.CARBONIQ_SERVER_API_KEY || '';
+    window.CARBONIQ_API_BASE = '';
+    window.CARBONIQ_API_KEY  = serverKey;
     const baseEl = document.getElementById('cfg-api-base');
     const keyEl  = document.getElementById('cfg-api-key');
     if (baseEl) baseEl.value = '';
-    if (keyEl)  keyEl.value  = DEFAULT_KEY;
+    if (keyEl)  keyEl.value  = serverKey;
     const msg = document.getElementById('cfg-msg');
-    if (msg) { msg.textContent = 'Reset to defaults.'; msg.style.color = 'var(--text-secondary)'; }
+    if (msg) {
+      msg.textContent = serverKey
+        ? 'Reset — using the key this deployment provides.'
+        : 'Reset. This deployment provides no key; enter one above.';
+      msg.style.color = 'var(--text-secondary)';
+    }
   }
 
   return { open, close, save, reset };
