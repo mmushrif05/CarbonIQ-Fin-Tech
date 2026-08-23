@@ -97,3 +97,38 @@ describe('the repository no longer carries the deployment key', () => {
     expect(servedAt).toBeGreaterThan(staticAt);
   });
 });
+
+describe('GET /health reports whether the deployment is configured', () => {
+  // "The dashboard shows 401" and "the fix is not deployed" look identical
+  // from a browser. These booleans settle it in one request, without ever
+  // putting a value on the wire.
+  const app = require('../server');
+  const originalUi = process.env.UI_API_KEY;
+
+  afterEach(() => {
+    if (originalUi === undefined) delete process.env.UI_API_KEY;
+    else process.env.UI_API_KEY = originalUi;
+  });
+
+  test('says the UI key is present when it is', async () => {
+    process.env.UI_API_KEY = 'ck_test_abcdefghijklmnopqrstuvwxyz123456';
+    const res = await request(app).get('/health').expect(200);
+
+    expect(res.body.configured.uiKey).toBe(true);
+  });
+
+  test('says the UI key is absent when it is', async () => {
+    delete process.env.UI_API_KEY;
+    const res = await request(app).get('/health').expect(200);
+
+    expect(res.body.configured.uiKey).toBe(false);
+  });
+
+  test('never puts a value on the wire', async () => {
+    process.env.UI_API_KEY = 'ck_test_abcdefghijklmnopqrstuvwxyz123456';
+    const res = await request(app).get('/health').expect(200);
+
+    expect(JSON.stringify(res.body)).not.toContain('abcdefghijklmnopqrstuvwxyz123456');
+    Object.values(res.body.configured).forEach(v => expect(typeof v).toBe('boolean'));
+  });
+});
