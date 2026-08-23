@@ -111,6 +111,12 @@ Dual-mode authentication — every request must use one of:
 
 The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric chars) to bypass Firebase key registration for internal calls.
 
+**The deployment hands the browser that key (`routes/v1/ui-config.js`).** It used to be a literal in `ui/config.js`, so changing `UI_API_KEY` in Netlify left the shipped copy behind and the app's own key check rejected its own dashboard — with *"API key is invalid or has been revoked"*, which reads as a revoked key rather than a mismatched one and cost a great deal of time to see. There is now one value: an unauthenticated `GET /v1/ui-config.js` emits what the environment holds, and `index.html` loads it after `config.js`. Drift is not possible, and no per-machine Settings step is needed.
+
+That endpoint carries no auth because it is the request that supplies the credential for every request after it, and it exposes nothing the literal did not — a browser key is readable by whoever loads the page, by construction. What changed is that it is no longer readable by whoever clones a public repository, and rotating it is an environment change rather than a commit. The value is emitted via `JSON.stringify`, so a mis-pasted variable stays inside the string literal instead of becoming executable script; the test proves it by executing the served script. A key typed into Settings is an explicit choice and still wins — which is why `reset()` **removes** the stored override rather than writing the old default back, a reset that would otherwise reintroduce the very mismatch it exists to clear.
+
+**`GET /health` also reports `configured: { uiKey, anthropicKey, firebase }` as booleans.** "The dashboard shows 401" and "the AI does nothing" are almost always a variable never set on this context, and from a browser neither says so — the same reason `/health` reports the running commit. Names and yes/no only; a test asserts no value can reach the wire.
+
 ---
 
 ## Environment Variables
