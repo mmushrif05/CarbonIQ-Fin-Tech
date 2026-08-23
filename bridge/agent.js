@@ -137,10 +137,14 @@ function _accumulateTokens(run, usage) {
  * @param {string}   params.userMessage      - The initial user request / task description
  * @param {string}   params.orgId            - Organisation ID for Firebase scoping
  * @param {Object}   [params.metadata]       - Extra context stored with the run
+ * @param {Object}   [params.callProfile]    - Per-agent cost of a turn: {maxTokens, thinking}.
+ *                                             Omit for the reasoning default (adaptive, 32K).
+ *                                             thinking:null turns thinking off for agents that
+ *                                             classify rather than reason.
  *
  * @returns {Promise<Object>} Completed run record with steps, result, tokensUsed
  */
-async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunctions, userMessage, orgId, metadata, deadline }) {
+async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunctions, userMessage, orgId, metadata, deadline, callProfile }) {
   if (!config.anthropicApiKey) {
     throw new Error('ANTHROPIC_API_KEY is not configured. Agentic AI is unavailable.');
   }
@@ -156,6 +160,11 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
      and therefore no explanation. */
   const clock = deadline || new Deadline();
   const client = new Anthropic({ apiKey: config.anthropicApiKey, ...clock.clientOptions() });
+
+  /* What one turn costs this agent. Undeclared means the reasoning default,
+     so every existing agent behaves exactly as before. */
+  const profile  = callProfile || {};
+  const thinking = profile.thinking === null ? null : (profile.thinking || { type: 'adaptive' });
 
   // Cache breakpoint 2: system prompt (same on every iteration)
   const cachedSystem = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
@@ -197,14 +206,21 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       // Adaptive thinking lets claude-opus-4-6 decide how deeply to reason on
       // complex steps (PCAF attribution, multi-taxonomy analysis, etc.) without
       // a fixed budget_tokens cap.
-      const stream = client.messages.stream({
+      /* Not every agent needs to reason. Underwriting weighs regulation and
+         earns adaptive thinking and a 32,000-token ceiling; mapping classifies
+         BOQ lines against a fixed vocabulary and pays for both in the only
+         resource a 26-second function has none of. An agent may therefore
+         declare what a turn should cost it. */
+      const params = {
         model:      config.anthropicModel,
-        max_tokens: 32000,
-        thinking:   { type: 'adaptive' },
+        max_tokens: Number(profile.maxTokens) || 32000,
         system:     cachedSystem,
         tools:      cachedTools,
         messages:   cachedMessages
-      }, clock.clientOptions());
+      };
+      if (thinking) params.thinking = thinking;
+
+      const stream = client.messages.stream(params, clock.clientOptions());
 
       const response = await stream.finalMessage();
 

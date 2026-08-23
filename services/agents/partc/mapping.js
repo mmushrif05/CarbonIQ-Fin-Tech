@@ -18,9 +18,28 @@
 
 const { TOOL_FUNCTIONS, TOOL_DEFINITIONS } = require('./tools');
 
+/**
+ * The keys are constants, so they are given rather than fetched.
+ *
+ * list_factor_keys takes no arguments and returns the same 1,851 bytes every
+ * time, and both prompts used to open by ordering the model to call it. That
+ * made a round-trip mandatory before any mapping could begin — and on the PDF
+ * path the second turn then carried the whole document in history again. Two
+ * model calls minimum, for data that never changes, inside a 26-second
+ * function. It could not fit, and the platform killed the process rather than
+ * returning an error anyone could read.
+ *
+ * Inlining costs nothing: the system prompt carries a cache breakpoint, so
+ * after the first request this text is read from cache.
+ */
+const FACTOR_CATALOGUE = JSON.stringify(TOOL_FUNCTIONS.list_factor_keys());
+
 const SYSTEM_PROMPT = `You are a quantity surveyor mapping a bill of quantities onto emission-factor keys for a PCAF Part C assessment.
 
-STEP 1 — Call list_factor_keys. Map only onto keys that actually exist in that list. Use lookup_factor when choosing between two candidates and the data-quality tier or source matters.
+THE ONLY KEYS THAT EXIST — map onto these and nothing else:
+${FACTOR_CATALOGUE}
+
+Use lookup_factor only when you are choosing between two candidates from that list and the data-quality tier or named source decides it. It is not needed to discover keys; every key is above.
 
 STEP 2 — For every BOQ line, resolve four things:
   1. quantity and unit (m3, m2, m, MT, kg, Nr) — normalise the unit
@@ -59,17 +78,28 @@ function buildUserMessage({ boqContent, boqFormat, projectName }) {
     boqContent || '(no content supplied)',
     '--- END ---',
     '',
-    'Call list_factor_keys first, then return the JSON mapping. Separate demolition scope from new work.'
+    'Return the JSON mapping. Separate demolition scope from new work.'
   ].join('\n');
 }
 
+/**
+ * Mapping is classification against a fixed vocabulary, not open reasoning.
+ *
+ * Adaptive thinking and a 32,000-token ceiling belong to the agents that weigh
+ * regulation — underwriting, covenant design. Here they buy nothing and cost
+ * the one resource this request has none of: wall clock.
+ */
+const CALL_PROFILE = { maxTokens: 8000, thinking: null };
+
 module.exports = {
   SYSTEM_PROMPT,
-  TOOL_DEFINITIONS: TOOL_DEFINITIONS.filter(t =>
-    ['list_factor_keys', 'lookup_factor'].includes(t.name)),
+  CALL_PROFILE,
+  /* list_factor_keys is deliberately absent: its answer is already in the
+     system prompt, so offering it only invites a round-trip to be told what
+     the model has already read. */
+  TOOL_DEFINITIONS: TOOL_DEFINITIONS.filter(t => t.name === 'lookup_factor'),
   TOOL_FUNCTIONS: {
-    list_factor_keys: TOOL_FUNCTIONS.list_factor_keys,
-    lookup_factor:    TOOL_FUNCTIONS.lookup_factor
+    lookup_factor: TOOL_FUNCTIONS.lookup_factor
   },
   buildUserMessage
 };

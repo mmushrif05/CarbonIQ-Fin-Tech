@@ -33,7 +33,22 @@ const BINARY_TYPES = [
   'font/*'
 ];
 
-const handler = serverless(app, { binary: BINARY_TYPES });
+/**
+ * The platform's clock is attached to every request.
+ *
+ * A function is killed at a fixed wall clock, and that clock starts at
+ * invocation — not when a route handler begins. Everything before the handler
+ * (cold start, Firebase init, parsing an 80KB base64 PDF) is already spent, so
+ * a budget measured from the handler over-promises by exactly that much and
+ * the process is killed while it still believes it has time. A killed process
+ * returns no body, which is the one failure nobody can diagnose from a
+ * browser. `getRemainingTimeInMillis()` is the only honest answer, and it is
+ * free — it just has to be carried through.
+ */
+const handler = serverless(app, {
+  binary: BINARY_TYPES,
+  request(req, _event, context) { req.lambdaContext = context; }
+});
 
 exports.handler = async (event, context) => {
   // Netlify may provide rawPath instead of path depending on invocation method.
