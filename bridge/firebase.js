@@ -14,26 +14,76 @@ const config = require('../config');
 
 let initialized = false;
 
+/**
+ * The service account, from whichever form is configured.
+ *
+ * Two forms are accepted, and the order matters:
+ *
+ *   FIREBASE_PROJECT_ID + FIREBASE_CLIENT_EMAIL + FIREBASE_PRIVATE_KEY
+ *     Preferred. AWS Lambda caps ALL environment variables at 4KB combined,
+ *     and these three are the only fields admin.credential.cert() reads.
+ *
+ *   FIREBASE_SERVICE_ACCOUNT
+ *     The whole account as base64 JSON. Still supported so an existing
+ *     deployment keeps working, but it costs roughly 3KB of a 4KB budget —
+ *     base64 inflates by a third, and it carries seven fields nothing uses.
+ *     A deploy that exceeds the cap fails at UPLOAD, after a green build,
+ *     with nothing wrong in the application to explain it.
+ *
+ * @returns {Object|null} credential for cert(), or null with the reason logged
+ */
+function readCredential() {
+  const { projectId, clientEmail, privateKey, serviceAccount } = config.firebase;
+
+  if (projectId && clientEmail && privateKey) {
+    return {
+      projectId,
+      clientEmail,
+      /* A PEM carries newlines. Some hosts store them literally and some as
+         the two characters backslash-n; normalising both means the same
+         value works whether it was pasted into a form or exported to a
+         shell. */
+      privateKey: privateKey.replace(/\\n/g, '\n')
+    };
+  }
+
+  /* A partial split credential is a misconfiguration, not an absence — say
+     which field is missing rather than falling through to "no credentials". */
+  if (projectId || clientEmail || privateKey) {
+    const missing = [
+      !projectId   && 'FIREBASE_PROJECT_ID',
+      !clientEmail && 'FIREBASE_CLIENT_EMAIL',
+      !privateKey  && 'FIREBASE_PRIVATE_KEY'
+    ].filter(Boolean);
+    console.error(`[Firebase] Incomplete credentials — missing ${missing.join(', ')}. `
+      + 'Set all three, or use FIREBASE_SERVICE_ACCOUNT instead.');
+    return null;
+  }
+
+  if (!serviceAccount) {
+    console.warn('[Firebase] No credentials — API routes requiring Firebase will return 503');
+    return null;
+  }
+
+  try {
+    return JSON.parse(Buffer.from(serviceAccount, 'base64').toString('utf8'));
+  } catch (e) {
+    console.error('[Firebase] FIREBASE_SERVICE_ACCOUNT is not valid base64-encoded JSON:', e.message);
+    console.error('[Firebase] Prefer FIREBASE_PROJECT_ID / FIREBASE_CLIENT_EMAIL / FIREBASE_PRIVATE_KEY — '
+      + 'smaller, and it keeps the function inside the 4KB Lambda environment cap. '
+      + 'Run: node scripts/firebase-env.js <service-account.json>');
+    return null;
+  }
+}
+
 function initFirebase() {
   if (initialized || admin.apps.length > 0) {
     initialized = true;
     return;
   }
 
-  if (!config.firebase.serviceAccount) {
-    // No credentials — run without Firebase (frontend-only or test mode)
-    console.warn('[Firebase] No service account — API routes requiring Firebase will return 503');
-    initialized = true;
-    return;
-  }
-
-  let serviceAccount;
-  try {
-    const decoded = Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8');
-    serviceAccount = JSON.parse(decoded);
-  } catch (e) {
-    console.error('[Firebase] FIREBASE_SERVICE_ACCOUNT is not valid base64-encoded JSON:', e.message);
-    console.error('[Firebase] Hint: encode the service account JSON with: cat key.json | base64 -w 0');
+  const serviceAccount = readCredential();
+  if (!serviceAccount) {
     initialized = true;
     return;
   }

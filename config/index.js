@@ -23,10 +23,22 @@ const config = {
   version: require('../package.json').version,
   apiEnabled: process.env.FINTECH_API_ENABLED !== 'false',
 
-  // --- Firebase (shared with core platform) ---
+  /* --- Firebase (shared with core platform) ---
+   *
+   * Credentials come in either of two forms. The three separate fields are
+   * preferred: AWS Lambda caps ALL environment variables at 4KB combined,
+   * and a base64 service account blob costs about 3KB of that — roughly
+   * eighty per cent of the budget — for three values the SDK actually uses.
+   * Base64 also inflates by a third, so the same secret is a kilobyte
+   * cheaper stored raw. FIREBASE_SERVICE_ACCOUNT is still read as a
+   * fallback so an existing deployment keeps working.
+   */
   firebase: {
     apiKey: process.env.FIREBASE_API_KEY,
     databaseURL: process.env.FIREBASE_DATABASE_URL,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    privateKey: process.env.FIREBASE_PRIVATE_KEY,
     serviceAccount: process.env.FIREBASE_SERVICE_ACCOUNT
   },
 
