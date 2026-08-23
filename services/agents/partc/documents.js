@@ -40,6 +40,32 @@ Do not summarise, interpret, convert units, or compute anything. Transcription o
  * @param {string} [params.hint]       e.g. "policy schedule pages 1-2"
  * @returns {Promise<{text:string, source:string, tokensUsed?:Object}>}
  */
+/**
+ * The document as a content block, for handing straight to an agent.
+ *
+ * Transcribing a PDF and then mapping it is two sequential model calls in one
+ * request. Against a 26-second function ceiling that does not fit, and the
+ * first of the two was the expensive one — a full transcription at 16,000
+ * output tokens, not streamed. Claude reads PDFs natively, so the agent that
+ * maps the bill of quantities can be given the document itself and the
+ * transcription round-trip disappears.
+ *
+ * @returns {Object[]|null} content blocks, or null when there is no document
+ */
+function documentBlocks({ fileId, pdfBase64, text, hint } = {}) {
+  if (text && text.trim()) return null;          // text needs no document block
+  if (!fileId && !pdfBase64) return null;
+
+  const source = fileId
+    ? { type: 'file', file_id: fileId }
+    : { type: 'base64', media_type: 'application/pdf', data: pdfBase64 };
+
+  return [
+    { type: 'document', source },
+    { type: 'text', text: hint ? `Focus on: ${hint}` : 'Read this document.' }
+  ];
+}
+
 async function readDocument({ fileId, pdfBase64, text, hint } = {}) {
   if (text && text.trim()) {
     return { text: text.trim(), source: 'text', tokensUsed: null };
@@ -63,7 +89,7 @@ async function readDocument({ fileId, pdfBase64, text, hint } = {}) {
 
   const params = {
     model:      config.anthropicVisionModel,
-    max_tokens: 16000,
+    max_tokens: 8000,
     system:   [{ type: 'text', text: TRANSCRIBE_PROMPT, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content: [
       { type: 'document', source: documentSource },
@@ -72,9 +98,14 @@ async function readDocument({ fileId, pdfBase64, text, hint } = {}) {
   };
 
   // The Files API source requires the beta header.
-  const response = fileId
-    ? await client.beta.messages.create(params, { headers: { 'anthropic-beta': 'files-api-2025-04-14' } })
-    : await client.messages.create(params);
+  /* Streamed. The SDK's own guidance is that a non-streamed request at this
+     size risks an HTTP timeout, and this one ran at 16,000 output tokens
+     inside a 26-second function — the single largest cause of the PDF path
+     dying with no response body at all. */
+  const stream = fileId
+    ? client.beta.messages.stream(params, { headers: { 'anthropic-beta': 'files-api-2025-04-14' } })
+    : client.messages.stream(params);
+  const response = await stream.finalMessage();
 
   const out = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
 
@@ -88,4 +119,4 @@ async function readDocument({ fileId, pdfBase64, text, hint } = {}) {
   };
 }
 
-module.exports = { readDocument, TRANSCRIBE_PROMPT };
+module.exports = { readDocument, TRANSCRIBE_PROMPT, documentBlocks };

@@ -343,11 +343,81 @@ const PCAFPartCPage = (() => {
     if (d.error === 'AI_UNAVAILABLE') refreshAiStatus();
   }
 
-  /** Read a JSON error body so the remedy the server sent is not thrown away. */
+  /**
+   * Show a chosen file as an attachment, not as a filename in grey text.
+   *
+   * Before this the only evidence a PDF had been selected was its name beside
+   * the button, in the same muted style as the placeholder it replaced — so it
+   * was not obvious the file had attached at all. A chip states the name and
+   * the size and carries its own remove control, so what is about to be sent
+   * is never in doubt.
+   */
+  function wireAttachment(inputId, labelId, emptyText) {
+    const input = $(inputId);
+    const label = $(labelId);
+    if (!input || !label) return;
+
+    const size = b => b < 1024 ? `${b} B`
+      : b < 1048576 ? `${(b / 1024).toFixed(0)} KB` : `${(b / 1048576).toFixed(1)} MB`;
+
+    const render = () => {
+      const file = input.files[0];
+      if (!file) {
+        label.className = 'partc-hint';
+        label.textContent = emptyText;
+        return;
+      }
+      label.className = 'partc-attach';
+      label.innerHTML =
+        '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">'
+        + '<path d="M9.5 1.5H4a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V5l-3.5-3.5z" '
+        + 'fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>'
+        + '<path d="M9.5 1.5V5H13" fill="none" stroke="currentColor" stroke-width="1.3" '
+        + 'stroke-linejoin="round"/></svg>'
+        + `<b>${escHtml(file.name)}</b><span>${size(file.size)}</span>`
+        + '<button type="button" class="partc-attach-x" aria-label="Remove attachment">&times;</button>';
+
+      label.querySelector('.partc-attach-x').addEventListener('click', () => {
+        input.value = '';
+        render();
+        refreshProgress();
+      });
+    };
+
+    input.addEventListener('change', render);
+    render();
+  }
+
+  /**
+   * Read an error response without losing what the server said.
+   *
+   * A serverless function killed at its time limit returns no JSON at all, so
+   * `body.message` was undefined and the caller's fallback — a bare string
+   * like "Mapping failed" — was everything the user saw. That is the least
+   * informative message available for the most diagnosable failure there is.
+   * A response with no body is now named for what it is.
+   */
   async function readError(res, fallback) {
     let body = {};
-    try { body = await res.json(); } catch (_) { /* not JSON */ }
-    const err = new Error(body.message || fallback || `Request failed (${res.status})`);
+    let raw = '';
+    try {
+      raw = await res.text();
+      body = JSON.parse(raw);
+    } catch (_) { /* not JSON — handled below */ }
+
+    let message = body.message;
+    if (!message) {
+      if (res.status === 502 || res.status === 504 || res.status === 500) {
+        message = 'The server stopped before it could answer. A request has about '
+          + '26 seconds on this deployment, and reading a long document can exceed it.';
+        body.remedy = body.remedy
+          || 'Paste the text instead of uploading the PDF, or try a shorter document.';
+      } else if (raw && !raw.trim().startsWith('{')) {
+        message = `The server returned ${res.status} with no details.`;
+      }
+    }
+
+    const err = new Error(message || fallback || `Request failed (${res.status})`);
     err.detail = body;
     err.status = res.status;
     return err;
@@ -678,12 +748,8 @@ const PCAFPartCPage = (() => {
     $('partcIntakeBtn').addEventListener('click', readPolicy);
     $('partcMapBtn').addEventListener('click', mapBoq);
     $('partcRunsBtn').addEventListener('click', loadRuns);
-    $('partcPolicyFile').addEventListener('change', e =>
-      $('partcPolicyFileName').textContent = e.target.files[0]
-        ? e.target.files[0].name : 'or paste the text below');
-    $('partcBoqFile').addEventListener('change', e =>
-      $('partcBoqFileName').textContent = e.target.files[0]
-        ? e.target.files[0].name : 'or paste the BOQ below');
+    wireAttachment('partcPolicyFile', 'partcPolicyFileName', 'or paste the text below');
+    wireAttachment('partcBoqFile',    'partcBoqFileName',    'or paste the BOQ below');
     /* The live score strip. Any field that can change what the engine reads
        re-asks it, so supplying an actual moves the score while the form is
        still open rather than only after a run. */
