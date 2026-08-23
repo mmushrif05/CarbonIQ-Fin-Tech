@@ -6,6 +6,7 @@
  */
 
 const config = require('../config');
+const { captureError } = require('../services/observability');
 
 /**
  * Is this an Anthropic SDK failure?
@@ -83,6 +84,8 @@ function errorHandler(err, req, res, _next) {
           || d.status === 'forbidden' || d.status === 'network_blocked') ? 503
           : (d.httpStatus && d.httpStatus >= 400 && d.httpStatus < 600) ? d.httpStatus : 502;
 
+    captureError(err, req, httpStatus);
+
     return res.status(httpStatus).json({
       error: 'AI_UNAVAILABLE',
       reason: d.status,
@@ -96,12 +99,21 @@ function errorHandler(err, req, res, _next) {
 
   // Default: use err.code as error identifier when available
   const status = err.status || err.statusCode || 500;
+
+  /*
+   * A 500 is the only class this application did not choose. Report it, and
+   * quote the event id back: a screenshot of the response then becomes a
+   * searchable incident rather than the start of a reconstruction.
+   */
+  const eventId = captureError(err, req, status);
+
   res.status(status).json({
     error: status === 500 ? 'INTERNAL_ERROR' : (err.code || 'ERROR'),
     message: status === 500
       ? 'An unexpected error occurred. Please try again.'
       : err.message,
-    requestId: req.requestId
+    requestId: req.requestId,
+    ...(eventId ? { eventId } : {})
   });
 }
 

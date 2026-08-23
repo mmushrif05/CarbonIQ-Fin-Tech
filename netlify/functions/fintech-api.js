@@ -10,6 +10,13 @@
  *   /v1/*    → fintech-api (via netlify.toml redirects)
  */
 
+/*
+ * Error reporting is started BEFORE the app is required, so a failure while
+ * the app itself is loading is still reported. It is a no-op unless
+ * SENTRY_DSN is set.
+ */
+require('../../services/observability').init();
+
 const serverless = require('serverless-http');
 const app = require('../../server');
 

@@ -12,6 +12,9 @@
  * Runs locally via `npm start` or as a Netlify Function via fintech-api.js adapter.
  */
 
+// Started first so a failure anywhere below is reported. No-op without SENTRY_DSN.
+require('./services/observability').init();
+
 const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
