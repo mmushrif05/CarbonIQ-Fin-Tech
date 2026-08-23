@@ -40,6 +40,7 @@ const carbonPricingRouter = require('./carbon-pricing');
 const pcafPartCRouter     = require('./pcaf-partc');
 const partcRegistryRouter = require('./partc-registry');
 const ndcSdgRouter        = require('./ndc-sdg');
+const uiConfigRouter      = require('./ui-config');
 
 const router = Router();
 
@@ -144,6 +145,10 @@ router.get('/', (_req, res) => {
     documentation: 'https://carboniqfintech.netlify.app/docs/api'
   });
 });
+
+// No auth — this is the request that supplies the credential for every
+// request after it, so it cannot itself require one.
+router.use('/', uiConfigRouter);
 
 // Mount route modules
 router.use('/extract', extractUploadRouter);
