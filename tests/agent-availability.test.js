@@ -139,10 +139,14 @@ describe('The agents are wired correctly — proven against a stubbed API', () =
     summary: { lowConfidenceCount: 0 }
   };
 
-  let app, request;
+  let app, request, calls;
 
   beforeAll(() => {
     jest.resetModules();
+    /* Every model round-trip this request makes, in order. The PDF path used
+       to make two — transcribe, then map — and that pair could not fit inside
+       a 26-second function. Recording them is how the regression is caught. */
+    calls = [];
     jest.doMock('@anthropic-ai/sdk', () => {
       const create = jest.fn().mockResolvedValue({
         model: 'claude-sonnet-4-6',
@@ -153,7 +157,9 @@ describe('The agents are wired correctly — proven against a stubbed API', () =
       const Mock = jest.fn().mockImplementation(() => ({
         messages: {
           create,
-          stream: jest.fn().mockReturnValue({
+          stream: jest.fn().mockImplementation(params => {
+            calls.push(params);
+            return {
             finalMessage: () => Promise.resolve({
               model: 'claude-sonnet-4-6',
               stop_reason: 'end_turn',
@@ -161,6 +167,7 @@ describe('The agents are wired correctly — proven against a stubbed API', () =
               usage: { input_tokens: 100, output_tokens: 50 }
             }),
             on: () => {}
+            };
           })
         },
         beta: { messages: { create } }
@@ -187,15 +194,49 @@ describe('The agents are wired correctly — proven against a stubbed API', () =
     expect(res.body.documentSource).toBe('text');
   });
 
-  test('an uploaded PDF is transcribed and then mapped — the path the user takes', async () => {
+  test('an uploaded PDF goes to the mapping agent as a document, in ONE call', async () => {
+    /* This used to transcribe the PDF and then map the transcript: two
+       sequential model calls, the first non-streamed at 16,000 output tokens,
+       inside a function killed at 26 seconds. It did not fit, the process was
+       killed mid-request, and because a killed process returns no body the
+       browser showed the bare fallback string "Mapping failed".
+       Claude reads PDFs natively, so the transcription round-trip is gone. */
+    calls.length = 0;
+    const pdf = Buffer.from('%PDF-1.4 fake').toString('base64');
+
     const res = await request(app).post('/v1/pcaf/part-c/agent/map')
       .set('x-api-key', process.env.UI_API_KEY)
-      .send({ pdfBase64: Buffer.from('%PDF-1.4 fake').toString('base64'), projectName: 'Fisheries' });
+      .send({ pdfBase64: pdf, projectName: 'Fisheries' });
 
     expect(res.status).toBe(200);
-    // documentSource proves the PDF branch ran rather than the text branch.
-    expect(res.body.documentSource).toBe('pdfBase64');
-    expect(res.body.documentChars).toBeGreaterThan(0);
+    expect(res.body.documentSource).toBe('pdf');
+
+    // One round-trip, not two. This is the assertion that guards the fix.
+    expect(calls).toHaveLength(1);
+
+    // The PDF itself reached the model, rather than a transcript of it.
+    const content = calls[0].messages[0].content;
+    expect(Array.isArray(content)).toBe(true);
+    const doc = content.find(b => b.type === 'document');
+    expect(doc).toBeDefined();
+    expect(doc.source).toEqual({ type: 'base64', media_type: 'application/pdf', data: pdf });
+  });
+
+  test('a pasted BOQ still travels as plain text, not as a document block', async () => {
+    calls.length = 0;
+    const res = await request(app).post('/v1/pcaf/part-c/agent/map')
+      .set('x-api-key', process.env.UI_API_KEY)
+      .send({ boqContent: 'Rubble masonry in 1:5 cement mortar .... 6 m3', boqFormat: 'text' });
+
+    expect(res.status).toBe(200);
+    expect(calls).toHaveLength(1);
+
+    /* The cache breakpoint wraps the last user message in blocks to attach
+       cache_control, so even a plain string arrives as an array. What matters
+       is that no document was attached and the text is carried through. */
+    const content = calls[0].messages[0].content;
+    expect(content.some(b => b.type === 'document')).toBe(false);
+    expect(JSON.stringify(content)).toContain('Rubble masonry');
   });
 
   test('the health probe reports the layer live when the API answers', async () => {

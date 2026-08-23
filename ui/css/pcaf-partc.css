@@ -843,3 +843,56 @@
   .mth-same    { background: rgba(148, 163, 184, 0.18); color: #94a3b8; }
   .mth-differs { background: rgba(16, 185, 129, 0.18); color: #34d399; }
 }
+
+/* ── Attachment chip ────────────────────────────────────────────────────
+   A chosen file used to appear as its name in the same muted style as the
+   placeholder it replaced, so it did not read as attached at all. The chip
+   states name and size and carries its own remove control. */
+.partc-attach {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 8px 6px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.partc-attach > svg { flex: 0 0 auto; color: #0f766e; }
+
+.partc-attach > b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 22rem;
+}
+
+.partc-attach > span {
+  flex: 0 0 auto;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.partc-attach-x {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--border-light);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 150ms, color 150ms;
+}
+
+.partc-attach-x:hover { background: #fecaca; color: #b91c1c; }

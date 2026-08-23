@@ -46,6 +46,7 @@ const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const requireAI = require('../../middleware/require-ai');
 const { recordLearnings } = require('../../services/learning-store');
 const { runAgent }        = require('../../bridge/agent');
+const { Deadline }        = require('../../services/agents/deadline');
 const {
   createPartCRun, addStep, generatePartCRunId, isAwaitingInputs,
   PARTC_STATUS, PARTC_STEP_TYPES
@@ -60,7 +61,7 @@ const {
 const intakeAgent     = require('../../services/agents/partc/intake');
 const mappingAgent    = require('../../services/agents/partc/mapping');
 const disclosureAgent = require('../../services/agents/partc/disclosure');
-const { readDocument } = require('../../services/agents/partc/documents');
+const { documentBlocks } = require('../../services/agents/partc/documents');
 const config           = require('../../config');
 
 /**
@@ -466,26 +467,41 @@ router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: intakeRequestSchema }),
   async (req, res, next) => {
     try {
-      const doc = await readDocument({
+      const clock = new Deadline();
+
+      /* Same reasoning as the mapping route: the policy schedule goes to the
+         agent as a document rather than being transcribed first. */
+      const blocks = documentBlocks({
         text: req.body.documentText, pdfBase64: req.body.pdfBase64,
         fileId: req.body.fileId, hint: req.body.pageHint
       });
+
+      const instruction = intakeAgent.buildUserMessage({
+        documentText: blocks ? '(the policy schedule is the attached document)'
+          : (req.body.documentText || ''),
+        documentNote: req.body.documentNote,
+        projectName:  req.body.projectName
+      });
+
+      clock.assertCanStart('read the policy document');
 
       const run = await runAgent({
         agentType: 'partc-intake',
         systemPrompt: intakeAgent.SYSTEM_PROMPT,
         toolDefinitions: intakeAgent.TOOL_DEFINITIONS,
         toolFunctions: intakeAgent.TOOL_FUNCTIONS,
-        userMessage: intakeAgent.buildUserMessage({
-          documentText: doc.text,
-          documentNote: req.body.documentNote,
-          projectName:  req.body.projectName
-        }),
+        userMessage: blocks
+          ? [...blocks, { type: 'text', text: instruction }]
+          : instruction,
         orgId: req.apiKey.orgId,
-        metadata: { projectName: req.body.projectName || null, stage: 'intake', documentSource: doc.source }
+        deadline: clock,
+        metadata: { projectName: req.body.projectName || null, stage: 'intake',
+                    documentSource: blocks ? 'pdf' : 'text' }
       });
+
       res.json({ runId: run.runId, status: run.status, result: run.result,
-                 documentSource: doc.source, documentChars: doc.text.length,
+                 documentSource: blocks ? 'pdf' : 'text',
+                 elapsedMs: clock.elapsed(),
                  steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
     } catch (err) { next(err); }
   });
@@ -494,26 +510,47 @@ router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
   validate({ body: mappingRequestSchema }),
   async (req, res, next) => {
     try {
-      const doc = await readDocument({
+      /* One clock for the whole request — a Netlify function is killed at 26s
+         and nothing here used to know that. */
+      const clock = new Deadline();
+
+      /* A PDF is handed to the mapping agent directly rather than transcribed
+         first. Transcribe-then-map is two sequential model calls, and the
+         first ran non-streamed at 16,000 output tokens; the pair could not fit
+         inside one invocation, so the process was killed and the browser got
+         no body to explain it. Claude reads PDFs natively, so the round-trip
+         is unnecessary. */
+      const blocks = documentBlocks({
         text: req.body.boqContent, pdfBase64: req.body.pdfBase64,
         fileId: req.body.fileId, hint: req.body.pageHint
       });
+
+      const instruction = mappingAgent.buildUserMessage({
+        boqContent:  blocks ? '(the bill of quantities is the attached document)'
+          : (req.body.boqContent || ''),
+        boqFormat:   blocks ? 'PDF document' : (req.body.boqFormat || 'text'),
+        projectName: req.body.projectName
+      });
+
+      clock.assertCanStart('map the bill of quantities');
 
       const run = await runAgent({
         agentType: 'partc-mapping',
         systemPrompt: mappingAgent.SYSTEM_PROMPT,
         toolDefinitions: mappingAgent.TOOL_DEFINITIONS,
         toolFunctions: mappingAgent.TOOL_FUNCTIONS,
-        userMessage: mappingAgent.buildUserMessage({
-          boqContent:  doc.text,
-          boqFormat:   doc.source === 'text' ? (req.body.boqFormat || 'text') : 'transcribed PDF',
-          projectName: req.body.projectName
-        }),
+        userMessage: blocks
+          ? [...blocks, { type: 'text', text: instruction }]
+          : instruction,
         orgId: req.apiKey.orgId,
-        metadata: { projectName: req.body.projectName || null, stage: 'mapping', documentSource: doc.source }
+        deadline: clock,
+        metadata: { projectName: req.body.projectName || null, stage: 'mapping',
+                    documentSource: blocks ? 'pdf' : 'text' }
       });
+
       res.json({ runId: run.runId, status: run.status, result: run.result,
-                 documentSource: doc.source, documentChars: doc.text.length,
+                 documentSource: blocks ? 'pdf' : 'text',
+                 elapsedMs: clock.elapsed(),
                  steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
     } catch (err) { next(err); }
   });

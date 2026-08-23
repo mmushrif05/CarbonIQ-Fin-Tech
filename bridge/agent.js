@@ -36,6 +36,7 @@ const Anthropic = require('@anthropic-ai/sdk');
 const config    = require('../config');
 const { saveAgentRun, updateAgentRun } = require('./firebase');
 const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../models/agent-run');
+const { Deadline } = require('../services/agents/deadline');
 
 // Safety guard: never run more than this many loop iterations per agent run
 const MAX_ITERATIONS = 20;
@@ -139,7 +140,7 @@ function _accumulateTokens(run, usage) {
  *
  * @returns {Promise<Object>} Completed run record with steps, result, tokensUsed
  */
-async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunctions, userMessage, orgId, metadata }) {
+async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunctions, userMessage, orgId, metadata, deadline }) {
   if (!config.anthropicApiKey) {
     throw new Error('ANTHROPIC_API_KEY is not configured. Agentic AI is unavailable.');
   }
@@ -150,7 +151,11 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
   // Persist initial "running" state so callers can poll for progress
   await saveAgentRun(orgId, run);
 
-  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
+  /* One clock for the whole request. Without it each iteration claimed its own
+     20 seconds and the function was killed mid-loop — which returns no body,
+     and therefore no explanation. */
+  const clock = deadline || new Deadline();
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, ...clock.clientOptions() });
 
   // Cache breakpoint 2: system prompt (same on every iteration)
   const cachedSystem = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
@@ -159,6 +164,10 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
   // so this gives the deepest prefix)
   const cachedTools = _withCachedLastTool(toolDefinitions);
 
+  /* A string for most agents, but may be an array of content blocks so a PDF
+     reaches the model directly. Handing the document to the agent that maps it
+     removes an entire transcription round-trip — the thing that made the PDF
+     path unable to fit inside one invocation. */
   const messages = [{ role: 'user', content: userMessage }];
   let iterations = 0;
 
@@ -167,6 +176,15 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
     // Agentic loop
     // -----------------------------------------------------------------------
     while (iterations < MAX_ITERATIONS) {
+      /* Stop before a turn that cannot finish. Breaking here returns the run
+         with what it has and an explanation; being killed by the platform
+         returns neither. */
+      if (!clock.canStart()) {
+        run.error = `Ran out of time after ${iterations} step(s): `
+          + `${Math.round(clock.elapsed() / 1000)}s of the `
+          + `${Math.round(clock.budgetMs / 1000)}s request budget was spent.`;
+        break;
+      }
       iterations++;
 
       // Cache breakpoint 3 (rolling): last user message in current history.
@@ -186,7 +204,7 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
         system:     cachedSystem,
         tools:      cachedTools,
         messages:   cachedMessages
-      });
+      }, clock.clientOptions());
 
       const response = await stream.finalMessage();
 
