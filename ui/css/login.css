@@ -3,21 +3,41 @@
    ============================================================ */
 
 /* ── Login Screen ──────────────────────────────────────────── */
+/**
+ * The sign-in layer scrolls itself.
+ *
+ * `position: fixed; inset: 0` pins this to the viewport and takes it out of
+ * flow, so the page behind it has nothing to scroll. With `align-items:center`
+ * and no overflow, a card taller than the screen was centred — which pushes it
+ * off BOTH ends at once. On a 390x844 phone the card is 1,526px tall, so its
+ * top sat at -341px and the Sign In button at +1,104px: rendered, present in
+ * the DOM, and physically unreachable. The report was "the sign in option is
+ * not shown on mobile", and it was exactly right.
+ *
+ * The layer now scrolls its own content. Centring moves to `margin:auto` on
+ * the child, which centres while the card fits and yields to scrolling when it
+ * does not — unlike `align-items:center`, which clips instead.
+ */
 .login-screen {
   position: fixed;
   inset: 0;
   z-index: 9999;
   background: linear-gradient(135deg, #1d1d1f 0%, #2a2a2c 50%, #1d1d1f 100%);
   display: flex;
-  align-items: center;
   justify-content: center;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   font-family: var(--font);
 }
 
 .login-container {
   width: 100%;
   max-width: 920px;
-  margin: 0 24px;
+  /* Centres when there is room; scrolls rather than clipping when there is not.
+     The safe-area inset keeps the Sign In button clear of a home indicator. */
+  margin: auto 24px;
+  padding: 24px 0 max(24px, env(safe-area-inset-bottom, 0px));
 }
 
 /* ── Header ────────────────────────────────────────────────── */
@@ -315,9 +335,24 @@
     grid-template-columns: 1fr;
   }
   .login-container {
-    margin: 0 12px;
+    margin: auto 12px;
   }
   .login-card {
     padding: 24px 18px;
+  }
+
+  /* Side by side, the button was squeezed until "Sign In" broke across two
+     lines with the hint crowding it. Stacked, the primary action is full
+     width and comfortably above the Apple HIG 44px minimum. */
+  .login-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .login-btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 48px;
+    white-space: nowrap;
   }
 }
