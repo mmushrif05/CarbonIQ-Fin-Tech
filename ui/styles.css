@@ -294,9 +294,21 @@ body {
 /* ============================================================
    Charts
    ============================================================ */
+/**
+ * minmax(0, …) rather than a bare fr.
+ *
+ * A grid track sized `1fr` still has `min-width: auto`, so it refuses to
+ * shrink below its content's intrinsic width. A chart canvas inside one
+ * therefore pushed the track to 357px inside a 302px container — the column
+ * had already collapsed to a single column on mobile and it made no
+ * difference, because the blowout is the minimum, not the count.
+ *
+ * `min-width: 0` on the cards says the same thing from the other side, and is
+ * what lets their contents be narrower than they would like to be.
+ */
 .charts-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 16px;
   margin-bottom: 24px;
 }
@@ -305,6 +317,7 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 20px;
+  min-width: 0;
 }
 .chart-wide { }
 .chart-header {
@@ -419,11 +432,31 @@ body {
 /* ============================================================
    Data Table
    ============================================================ */
+/**
+ * A table too wide for its card scrolls inside it, rather than being cut off.
+ *
+ * `overflow: hidden` clipped it instead, so on a phone the right-hand columns
+ * were simply gone with no way to reach them — and worse, the table still
+ * widened the document, and a mobile browser then widens the layout viewport
+ * to fit overflowing content. That stretched every `position: fixed` element
+ * with it: the top bar measured 401px against a 390px screen. One clipped
+ * table was making the whole shell look broken.
+ *
+ * max-content with a 100% floor keeps the table full width whenever it fits —
+ * so nothing changes on a desktop — and lets it grow and scroll when it does
+ * not.
+ */
 .table-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.data-table {
+  width: max-content;
+  min-width: 100%;
 }
 .table-header {
   display: flex;
@@ -1244,7 +1277,7 @@ body {
   .form-layout { grid-template-columns: 1fr; }
   .results-panel { position: static; }
   .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-  .charts-row { grid-template-columns: 1fr; }
+  .charts-row { grid-template-columns: minmax(0, 1fr); }
   .report-hero { grid-template-columns: 1fr; }
   .taxonomy-grid { grid-template-columns: 1fr; }
 }
