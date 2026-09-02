@@ -32,6 +32,16 @@ const HOURS_PER_YEAR = 8760;
    impossible, and is refused rather than carried into a disclosure. */
 const PV_ABSOLUTE_CEILING = 0.35;
 
+/* And the floor, which the first version of this check was missing.
+   A ceiling with no floor catches the unit error that makes a number too big
+   and waves through the one that makes it too small — and the second is just
+   as common, because MW read as kW and MWh read as GWh both divide by a
+   thousand. Worse, the out-of-band message explained a 0.0% reading away as
+   "not an error — a tracking array, a curtailed connection or an unusual
+   site", which is true at 14% and nonsense at nought. A plant below 1% did not
+   run; the worst-sited array in Norway still averages 8% over a year. */
+const PV_ABSOLUTE_FLOOR = 0.01;
+
 /**
  * Is this much generation achievable from this much plant?
  *
@@ -78,14 +88,42 @@ function capacityFactorCheck({ annualGeneration_MWh, installedCapacity_MW, count
     throw err;
   }
 
+  if (cf < PV_ABSOLUTE_FLOOR) {
+    const expected = ceiling_MWh * band.low;
+    const pct = cf * 100;
+    /* A gap of roughly a thousand is not a bad site, it is a unit. Saying which
+       unit turns a refusal into a correction the operator can act on. */
+    const outBy = cf > 0 ? Math.round(band.low / cf) : null;
+    const thousandish = outBy !== null && outBy >= 300 && outBy <= 3000;
+
+    const err = new Error(
+      `${annualGeneration_MWh.toLocaleString('en-GB')} MWh from ${installedCapacity_MW} MW implies a `
+      + `capacity factor of ${pct >= 0.01 ? pct.toFixed(2) : pct.toPrecision(2)}%. A plant producing `
+      + `that little has not run: ${c.name} sits at ${(band.low * 100).toFixed(0)}-`
+      + `${(band.high * 100).toFixed(0)}%, so this plant should generate around `
+      + `${Math.round(expected).toLocaleString('en-GB')} MWh a year. The figure is refused rather `
+      + 'than carried into a disclosure.');
+    err.statusCode = 422;
+    err.code = 'GENERATION_NOT_PHYSICALLY_POSSIBLE';
+    err.remedy = thousandish
+      ? `The two figures are out by a factor of about ${outBy.toLocaleString('en-GB')}, which is the `
+        + 'signature of a thousands mix-up — capacity entered in kW where the field asks for MW, or '
+        + 'generation entered in GWh where it asks for MWh. Check both.'
+      : `Check the units on both fields. At the bottom of ${c.name}'s band this plant would generate `
+        + `about ${Math.round(expected).toLocaleString('en-GB')} MWh a year.`;
+    throw err;
+  }
+
   if (cf < band.low || cf > band.high) {
     return {
       ...shared,
       status: cf > band.high ? 'above_band' : 'below_band',
+      /* "Not NECESSARILY an error". The check cannot establish innocence, and
+         asserting it is how a reviewer stops reading the sentence. */
       note: `A capacity factor of ${(cf * 100).toFixed(1)}% sits outside the ${(band.low * 100).toFixed(0)}-`
-        + `${(band.high * 100).toFixed(0)}% band indicative for ${c.name}. That is not an error — a `
-        + 'tracking array, a curtailed connection or an unusual site can all put a plant outside the '
-        + 'band — but it should be explained rather than left for a reviewer to notice.',
+        + `${(band.high * 100).toFixed(0)}% band indicative for ${c.name}. That is not necessarily an `
+        + 'error — a tracking array, a curtailed connection or an unusual site can all put a plant '
+        + 'outside the band — but it should be explained rather than left for a reviewer to notice.',
     };
   }
 
@@ -245,4 +283,7 @@ function deriveFromGeneration({
   };
 }
 
-module.exports = { deriveFromGeneration, capacityFactorCheck, HOURS_PER_YEAR, PV_ABSOLUTE_CEILING };
+module.exports = {
+  deriveFromGeneration, capacityFactorCheck, HOURS_PER_YEAR,
+  PV_ABSOLUTE_CEILING, PV_ABSOLUTE_FLOOR,
+};

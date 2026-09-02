@@ -207,6 +207,58 @@ describe('A physically impossible generation figure is refused', () => {
     }
   });
 
+  /* The floor was missing from the first version and a 0.0% reading sailed
+     through carrying the reassurance "That is not an error — a tracking array,
+     a curtailed connection or an unusual site". Reported from the live screen.
+     A ceiling with no floor catches the unit slip that makes a number too big
+     and waves through the one that makes it too small, and both are a factor
+     of a thousand. */
+  test('capacity typed in kW is refused, not explained away', () => {
+    expect(() => run({ ...GEN, installedCapacity_MW: 60000 }))
+      .toThrow(/has not run/);
+    try { run({ ...GEN, installedCapacity_MW: 60000 }); } catch (e) {
+      expect(e.code).toBe('GENERATION_NOT_PHYSICALLY_POSSIBLE');
+      expect(e.statusCode).toBe(422);
+      // The gap is ~1,000, so the remedy names the unit rather than shrugging.
+      expect(e.remedy).toMatch(/thousands mix-up/);
+      expect(e.remedy).toMatch(/kW where the field asks for MW/);
+    }
+  });
+
+  test('generation typed in GWh is refused the same way', () => {
+    try { run({ ...GEN, annualGeneration_MWh: 90.6 }); throw new Error('should have refused'); }
+    catch (e) {
+      expect(e.code).toBe('GENERATION_NOT_PHYSICALLY_POSSIBLE');
+      expect(e.remedy).toMatch(/GWh where it asks for MWh/);
+      // It also says what the plant should have produced, which is the check.
+      expect(e.message).toMatch(/should generate around 84,096 MWh/);
+    }
+  });
+
+  test('the floor is symmetric with the ceiling', () => {
+    const { PV_ABSOLUTE_FLOOR, PV_ABSOLUTE_CEILING } = require('../services/pcaf-parta/generation');
+    expect(PV_ABSOLUTE_FLOOR).toBe(0.01);
+    expect(PV_ABSOLUTE_CEILING).toBe(0.35);
+    // Both ends refuse with the same code, so a consumer handles one case.
+    for (const gen of [500, 283000]) {
+      try { run({ ...GEN, annualGeneration_MWh: gen }); throw new Error('should have refused'); }
+      catch (e) { expect(e.code).toBe('GENERATION_NOT_PHYSICALLY_POSSIBLE'); }
+    }
+  });
+
+  test('a genuinely low but possible figure still passes, with a warning', () => {
+    // 8.6% is poor for Sri Lanka and normal for Norway. Not a unit error.
+    const p = run({ ...GEN, annualGeneration_MWh: 45000 }).generation.plausibility;
+    expect(p.status).toBe('below_band');
+    expect(p.capacityFactorPct).toBe(8.6);
+  });
+
+  test('the out-of-band note does not assert innocence it cannot establish', () => {
+    const p = run({ ...GEN, annualGeneration_MWh: 45000 }).generation.plausibility;
+    expect(p.note).toMatch(/not necessarily an error/);
+    expect(p.note).not.toMatch(/That is not an error/);
+  });
+
   test('without capacity the check does not run, and says so rather than passing', () => {
     const p = run({ annualGeneration_MWh: 90600, country: 'LK' }).generation.plausibility;
     expect(p.ran).toBe(false);
