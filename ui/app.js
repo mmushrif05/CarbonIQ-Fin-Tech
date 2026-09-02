@@ -16,6 +16,7 @@ const PAGE_META = {
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'methodology': { title: 'Methodology & Evidence', subtitle: 'How every figure is calculated — scope, equations, factors, sources and limits' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
+  'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
   'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and watch what moves, and what deliberately does not' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
@@ -50,6 +51,10 @@ const DYNAMIC_PAGES = {
   'carbon-pricing': {
     src:  'pages/carbon-pricing.html',
     init: () => typeof CarbonPricingPage !== 'undefined' && CarbonPricingPage.init(),
+  },
+  'pcaf-parta': {
+    src:  'pages/pcaf-parta.html',
+    init: () => typeof PCAFPartAPage !== 'undefined' && PCAFPartAPage.init(),
   },
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',
