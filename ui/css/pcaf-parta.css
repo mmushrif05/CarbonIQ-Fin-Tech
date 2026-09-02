@@ -1,0 +1,394 @@
+/* ============================================================
+   CarbonIQ — PCAF Part A (financed emissions), manual entry
+   ============================================================
+   The layout carries a rule the engine enforces in code: the Part A
+   inventory and the impact metrics are two containers and never merge.
+   So the impact block does not sit in the same card, does not share a
+   total, and is reached only past a labelled dashed break — the same
+   device Part C uses for its beyond-PCAF tier.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets.
+   The UA stylesheet's [hidden]{display:none} carries almost no specificity, so
+   a single class rule with `display:flex` silently outranks it. That is how the
+   dashed "Not Part A" break stayed on screen for a general-purpose exposure —
+   a divider announcing a section that was correctly not rendered, hanging over
+   nothing. Every toggle on this page is el.hidden, so the guard is stated once
+   here rather than defended rule by rule. */
+.parta [hidden] { display: none !important; }
+
+.parta {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-family: var(--font);
+}
+
+/* ── Banner ─────────────────────────────────────────────────── */
+.parta-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: linear-gradient(120deg, #0b3d2e 0%, #14523d 60%, #0b3d2e 100%);
+  color: #f5f5f7;
+  flex-wrap: wrap;
+}
+.parta-banner-badge {
+  width: 36px; height: 36px;
+  flex: 0 0 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.14);
+  font-weight: 700; font-size: 17px;
+}
+.parta-banner strong { display: block; font-size: 15px; font-weight: 600; }
+.parta-banner span   { font-size: 12px; color: rgba(245,245,247,0.72); }
+.parta-banner-mode {
+  margin-left: auto;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.22);
+  font-size: 11px; letter-spacing: 0.6px; text-transform: uppercase;
+}
+
+/* ── Cards ──────────────────────────────────────────────────── */
+.parta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.parta-card > legend {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 0.7px; text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: 0 8px; margin-left: -8px;
+}
+fieldset.parta-card { border: 1px solid var(--border); }
+.parta-card-head h3 { font-size: 15px; font-weight: 650; margin: 0 0 4px; }
+.parta-card-head p,
+.parta-legend-note {
+  font-size: 12px; line-height: 1.5;
+  color: var(--text-secondary);
+  margin: 6px 0 0;
+}
+.parta-legend-note strong { color: var(--text-primary); font-weight: 650; }
+
+/* ── Presets ────────────────────────────────────────────────── */
+.parta-preset-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.parta-preset {
+  display: flex; flex-direction: column; gap: 3px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  border: 2px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+  font-family: var(--font);
+  min-height: 48px;
+}
+.parta-preset:hover  { border-color: var(--text-tertiary); background: var(--surface-hover); }
+.parta-preset.active { border-color: var(--green); background: var(--green-bg); }
+.parta-preset-name { font-size: 13px; font-weight: 650; color: var(--text-primary); }
+.parta-preset-kind { font-size: 11px; font-weight: 600; color: var(--green); letter-spacing: 0.3px; }
+.parta-preset-note { font-size: 11px; color: var(--text-secondary); line-height: 1.45; }
+.parta-preset-plain.active { border-color: var(--text-tertiary); background: var(--surface-hover); }
+.parta-preset-plain .parta-preset-kind { color: var(--text-secondary); }
+
+/* ── Two-column split ───────────────────────────────────────── */
+.parta-split {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 20px;
+  align-items: start;
+}
+.parta-form,
+.parta-results {
+  display: flex; flex-direction: column; gap: 16px;
+  min-width: 0;   /* a bare fr keeps min-width:auto and refuses to shrink */
+}
+.parta-results { position: sticky; top: 12px; }
+
+/* ── Fields ─────────────────────────────────────────────────── */
+.parta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.parta-field {
+  display: flex; flex-direction: column; gap: 5px;
+  font-size: 12px; font-weight: 600; color: var(--text-secondary);
+  min-width: 0;
+}
+.parta-field-wide { grid-column: 1 / -1; }
+.parta-field input,
+.parta-field select {
+  padding: 9px 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface);
+  font-size: 13px; font-weight: 400;
+  font-family: var(--font);
+  color: var(--text-primary);
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.parta-field input:focus,
+.parta-field select:focus {
+  outline: none;
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.14);
+}
+.parta-field small {
+  font-size: 11px; font-weight: 400; line-height: 1.45;
+  color: var(--text-tertiary);
+}
+.parta-check {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12px; font-weight: 500; color: var(--text-secondary);
+}
+.parta-check input { width: 16px; height: 16px; accent-color: var(--green); }
+.parta-dq-when {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--green);
+  background: var(--green-bg);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  font-size: 12px; line-height: 1.55; color: var(--text-primary);
+}
+.parta-override {
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px dashed var(--amber);
+}
+
+/* ── Refusal ────────────────────────────────────────────────── */
+/* The engine's refusals carry the clause and the remedy, so they are shown
+   at the size of a result rather than as a dismissible toast. */
+.parta-refusal {
+  border: 1px solid var(--red);
+  border-left-width: 4px;
+  border-radius: var(--radius);
+  background: var(--red-bg);
+  padding: 18px 20px;
+}
+.parta-refusal-code {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+.parta-refusal-msg    { font-size: 13px; line-height: 1.6; color: var(--text-primary); margin: 0; }
+.parta-refusal-remedy {
+  font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+  margin: 10px 0 0; padding-top: 10px; border-top: 1px solid rgba(239,68,68,0.25);
+}
+
+.parta-empty {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  padding: 40px 24px;
+  text-align: center;
+  font-size: 13px; line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ── Attribution factor ─────────────────────────────────────── */
+.parta-af { display: flex; flex-direction: column; gap: 6px; }
+.parta-af-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--text-secondary);
+}
+.parta-af-value {
+  font-size: 40px; font-weight: 700; line-height: 1.1;
+  letter-spacing: -1px; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.parta-eq {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--bg);
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+  overflow-x: auto;          /* an equation scrolls itself, never the page */
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.parta-ref { font-size: 11px; color: var(--text-tertiary); margin: 0; line-height: 1.5; }
+.parta-assumption {
+  font-size: 11.5px; line-height: 1.55; margin: 0;
+  padding: 8px 10px; border-radius: var(--radius-xs);
+  background: var(--amber-bg); color: var(--text-primary);
+  border-left: 3px solid var(--amber);
+}
+
+/* ── Figures ────────────────────────────────────────────────── */
+.parta-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.parta-figure {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  min-width: 0;
+}
+.parta-figure-primary {
+  grid-column: 1 / -1;
+  border-color: var(--green);
+  background: var(--green-bg);
+}
+.parta-figure-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.parta-figure-value {
+  font-size: 22px; font-weight: 700; line-height: 1.2;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.parta-figure-primary .parta-figure-value { font-size: 30px; }
+.parta-figure-unit { font-size: 11px; color: var(--text-tertiary); }
+/* An absent figure must not read like a measured nought. */
+.parta-figure-absent { border-style: dashed; background: var(--bg); }
+.parta-figure-absent .parta-figure-value { font-size: 15px; color: var(--text-secondary); font-weight: 600; }
+.parta-absent {
+  margin: 12px 0 0; padding: 10px 12px;
+  border-left: 3px solid var(--text-tertiary);
+  background: var(--bg);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  font-size: 12px; line-height: 1.55; color: var(--text-secondary);
+}
+
+/* Removals sit beside the inventory, never inside it. */
+.parta-sideline {
+  margin-top: 14px; padding: 12px 14px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.parta-sideline-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.parta-sideline-value {
+  display: block; font-size: 18px; font-weight: 700;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.parta-sideline p { margin: 6px 0 0; font-size: 11.5px; line-height: 1.5; color: var(--text-secondary); }
+
+.parta-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  margin-top: 16px; padding-top: 16px;
+  border-top: 1px solid var(--border-light);
+}
+.parta-meta-item { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.parta-meta-label {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  text-transform: uppercase; color: var(--text-secondary);
+}
+.parta-meta-value { font-size: 14px; font-weight: 650; color: var(--text-primary); }
+.parta-meta-item small { font-size: 11px; line-height: 1.5; color: var(--text-tertiary); }
+/* The score is a category with its scale beside it. */
+.parta-dq { color: var(--green); }
+
+/* ── The break ──────────────────────────────────────────────── */
+.parta-break {
+  display: flex; align-items: center; gap: 12px;
+  margin: 4px 2px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.parta-break::before,
+.parta-break::after {
+  content: ''; flex: 1; height: 0;
+  border-top: 2px dashed var(--border);
+}
+
+.parta-impact { border-style: dashed; background: var(--bg); }
+.parta-metric {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-light);
+}
+.parta-metric:last-child { border-bottom: none; }
+.parta-metric-name { font-size: 12px; font-weight: 650; color: var(--text-secondary); }
+.parta-metric-value {
+  font-size: 24px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.parta-metric-value small { font-size: 12px; font-weight: 500; color: var(--text-tertiary); }
+.parta-metric-cf,
+.parta-metric-note { font-size: 11.5px; line-height: 1.55; color: var(--text-secondary); margin: 0; }
+.parta-notcomparable {
+  margin: 14px 0 0; padding: 12px 14px;
+  border-left: 3px solid var(--amber);
+  background: var(--amber-bg);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  font-size: 12px; line-height: 1.6; color: var(--text-primary);
+}
+.parta-noimpact strong { display: block; font-size: 13px; margin-bottom: 5px; }
+.parta-noimpact p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--text-secondary); }
+
+/* ── Trace ──────────────────────────────────────────────────── */
+.parta-trace-row { border-bottom: 1px solid var(--border-light); padding: 4px 0; }
+.parta-trace-row:last-child { border-bottom: none; }
+.parta-trace-row > summary {
+  display: flex; justify-content: space-between; gap: 12px;
+  align-items: baseline;
+  padding: 9px 0; cursor: pointer;
+  font-size: 12.5px; color: var(--text-secondary);
+}
+.parta-trace-row > summary b {
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.parta-trace-row dl {
+  margin: 8px 0 0;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 6px 14px;
+}
+.parta-trace-row dl div { display: flex; justify-content: space-between; gap: 10px; min-width: 0; }
+.parta-trace-row dt { font-size: 11px; color: var(--text-tertiary); word-break: break-word; }
+.parta-trace-row dd {
+  margin: 0; font-size: 11px; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; text-align: right;
+}
+.parta-trace-row .parta-ref { margin-top: 8px; }
+
+.parta-standard {
+  font-size: 11px; line-height: 1.55; color: var(--text-tertiary);
+  margin: 0; padding: 0 2px;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  /* Sticky beside a form is useful; sticky above one on a narrow screen
+     covers the fields being typed into. */
+  .parta-split { grid-template-columns: 1fr; }
+  .parta-results { position: static; }
+}
+
+@media (max-width: 620px) {
+  .parta-card { padding: 16px; }
+  .parta-grid { grid-template-columns: 1fr; }
+  .parta-figures { grid-template-columns: 1fr; }
+  .parta-af-value { font-size: 32px; }
+  .parta-figure-primary .parta-figure-value { font-size: 26px; }
+  .parta-banner-mode { margin-left: 0; }
+  .parta-trace-row > summary { flex-direction: column; gap: 2px; }
+}

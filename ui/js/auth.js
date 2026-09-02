@@ -61,6 +61,7 @@ const Auth = (() => {
     'ai-extract':     40,   // relationship_manager+
     'new-project':    40,   // relationship_manager+
     'pcaf':           60,   // esg_analyst+
+    'pcaf-parta':     60,   // esg_analyst+ — same bar as the other PCAF screens
     'monitoring':     60,   // esg_analyst+
     'pipeline':       60,   // esg_analyst+
     'carbon-pricing': 40,   // relationship_manager+

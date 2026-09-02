@@ -1,0 +1,302 @@
+<!-- PCAF Part A — financed emissions, entered by hand.
+     Two containers, never merged: the Part A inventory, and the impact
+     metrics that rest on optional supplemental guidance. The dashed break
+     between them is structural, not decorative. -->
+
+<div class="parta">
+
+  <div class="parta-banner">
+    <div class="parta-banner-badge">A</div>
+    <div>
+      <strong>Financed emissions — project finance</strong>
+      <span id="paStandard">PCAF Part A, Third Edition (December 2025)</span>
+    </div>
+    <span class="parta-banner-mode" id="paMode">Manual entry</span>
+  </div>
+
+  <section class="parta-card parta-presets">
+    <header class="parta-card-head">
+      <h3>Start from an example, then change anything</h3>
+      <p>Every figure below recomputes as you type. Nothing is stored — this screen
+         calls the engine and shows what it returns.</p>
+    </header>
+    <div class="parta-preset-row">
+      <button type="button" class="parta-preset" data-preset="cement">
+        <span class="parta-preset-name">Cement Company 1</span>
+        <span class="parta-preset-kind">Efficiency retrofit · reduction</span>
+        <span class="parta-preset-note">Kiln electrification against a 2025 base year</span>
+      </button>
+      <button type="button" class="parta-preset" data-preset="solar">
+        <span class="parta-preset-name">Solar Project</span>
+        <span class="parta-preset-kind">Renewable generation · avoidance</span>
+        <span class="parta-preset-note">Displaced grid supply against a counterfactual</span>
+      </button>
+      <button type="button" class="parta-preset parta-preset-plain" data-preset="blank">
+        <span class="parta-preset-name">Empty form</span>
+        <span class="parta-preset-kind">General purpose · neither</span>
+        <span class="parta-preset-note">No reduction or avoidance claim</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="parta-split">
+
+    <!-- ─────────────── Manual entry ─────────────── -->
+    <form class="parta-form" id="paForm" autocomplete="off">
+
+      <fieldset class="parta-card">
+        <legend>1 · The exposure</legend>
+        <div class="parta-grid">
+          <label class="parta-field parta-field-wide">Project name
+            <input type="text" id="pa-projectName" maxlength="200">
+          </label>
+          <label class="parta-field">Counterparty
+            <input type="text" id="pa-counterparty" maxlength="200">
+          </label>
+          <label class="parta-field">Sector
+            <input type="text" id="pa-sector" maxlength="120">
+          </label>
+          <label class="parta-field">Reporting year
+            <input type="number" id="pa-reportingYear" step="1" min="2000" max="2100">
+          </label>
+          <label class="parta-field">Asset class
+            <select id="pa-assetClass"></select>
+            <small id="pa-assetClassNote"></small>
+          </label>
+          <label class="parta-field parta-field-wide">Project type
+            <select id="pa-archetype"></select>
+            <small id="pa-archetypeNote"></small>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="parta-card">
+        <legend>2 · Attribution</legend>
+        <p class="parta-legend-note" id="pa-denominatorNote"></p>
+        <div class="parta-grid">
+          <label class="parta-field">Outstanding amount
+            <input type="number" id="pa-outstandingAmount" step="any" min="0">
+          </label>
+          <label class="parta-field" id="pa-denominatorField">Total project equity plus debt
+            <input type="number" id="pa-totalProjectEquityPlusDebt" step="any" min="0">
+          </label>
+          <label class="parta-field">Currency
+            <input type="text" id="pa-currency" maxlength="10">
+          </label>
+        </div>
+        <!-- Revealed only when the engine refuses a factor above 1. An override
+             is a deliberate act, so the field does not exist until it is needed. -->
+        <div class="parta-override" id="pa-overrideBox" hidden>
+          <label class="parta-field parta-field-wide">Justification for an attribution factor above 1
+            <input type="text" id="pa-attributionOverrideJustification" maxlength="500"
+                   placeholder="Recorded in the report beside the figure">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="parta-card">
+        <legend>3 · The project's emissions</legend>
+        <p class="parta-legend-note">Scope 1 and 2 <strong>shall</strong> be reported.
+           Scope 3 <strong>should</strong> be covered where relevant — left blank it is
+           reported as absent, never as zero.</p>
+        <div class="parta-grid">
+          <label class="parta-field">Project scope 1 (tCO<sub>2</sub>e)
+            <input type="number" id="pa-projectScope1_tCO2e" step="any" min="0">
+          </label>
+          <label class="parta-field">Project scope 2 (tCO<sub>2</sub>e)
+            <input type="number" id="pa-projectScope2_tCO2e" step="any" min="0">
+          </label>
+          <label class="parta-field">Project scope 3 (tCO<sub>2</sub>e)
+            <input type="number" id="pa-projectScope3_tCO2e" step="any" min="0" placeholder="optional">
+          </label>
+          <label class="parta-field">Removals (tCO<sub>2</sub>e)
+            <input type="number" id="pa-removals_tCO2e" step="any" min="0" placeholder="optional">
+            <small>Reported separately — never inside a total.</small>
+          </label>
+          <label class="parta-check parta-field-wide">
+            <input type="checkbox" id="pa-scope3Relevant">
+            <span>Scope 3 is relevant to this project</span>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="parta-card">
+        <legend>4 · Data quality</legend>
+        <p class="parta-legend-note" id="pa-dqTableNote"></p>
+        <label class="parta-field parta-field-wide">Option used to estimate the emissions
+          <select id="pa-dataQualityOption"></select>
+        </label>
+        <p class="parta-dq-when" id="pa-dqWhen"></p>
+      </fieldset>
+
+      <!-- Impact inputs. Which set exists is decided by the project type, not
+           by the user — a retrofit reduces against its own base year, a
+           renewable project avoids against a counterfactual. -->
+      <fieldset class="parta-card parta-impact-inputs" id="pa-reductionBox" hidden>
+        <legend>5 · Expected Emission Reductions</legend>
+        <p class="parta-legend-note">Measured against the project's own base year.
+           Not a Part A figure.</p>
+        <div class="parta-grid">
+          <label class="parta-field">Base year
+            <input type="number" id="pa-reduction-baseYear" step="1">
+          </label>
+          <label class="parta-field">Base year emissions (tCO<sub>2</sub>e)
+            <input type="number" id="pa-reduction-baseYearEmissions_tCO2e" step="any" min="0">
+          </label>
+          <label class="parta-field">Target year
+            <input type="number" id="pa-reduction-targetYear" step="1">
+          </label>
+          <label class="parta-field">Target year emissions (tCO<sub>2</sub>e)
+            <input type="number" id="pa-reduction-targetYearEmissions_tCO2e" step="any" min="0">
+          </label>
+          <label class="parta-field">As at year
+            <input type="number" id="pa-reduction-asOfYear" step="1">
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="parta-card parta-impact-inputs" id="pa-avoidedBox" hidden>
+        <legend>5 · Avoided emissions</legend>
+        <p class="parta-legend-note">Measured against a counterfactual, which is the whole
+           claim — so it is required and travels with the figure. Not a Part A figure.</p>
+        <div class="parta-grid">
+          <label class="parta-field">Avoided this period (tCO<sub>2</sub>e)
+            <input type="number" id="pa-avoided-projectAvoided_tCO2e" step="any" min="0">
+          </label>
+          <label class="parta-field">Expected avoided per year (tCO<sub>2</sub>e)
+            <input type="number" id="pa-avoided-annualAvoided_tCO2e" step="any" min="0">
+            <small>PCAF requires EAE on an annualised basis.</small>
+          </label>
+          <label class="parta-field parta-field-wide">Counterfactual scenario
+            <input type="text" id="pa-avoided-counterfactual" maxlength="500">
+          </label>
+          <label class="parta-field parta-field-wide">Source of the counterfactual
+            <input type="text" id="pa-avoided-counterfactualSource" maxlength="500">
+          </label>
+          <label class="parta-field">Estimation basis
+            <select id="pa-avoided-estimationBasis"></select>
+          </label>
+          <label class="parta-field">Horizon (years)
+            <input type="number" id="pa-avoided-years" step="1" min="1">
+          </label>
+          <label class="parta-field">Avoided-emissions period
+            <input type="text" id="pa-avoided-reportingPeriod" maxlength="20">
+          </label>
+          <label class="parta-field">Counterparty emissions period
+            <input type="text" id="pa-avoided-counterpartyEmissionsPeriod" maxlength="20">
+          </label>
+        </div>
+      </fieldset>
+
+      <div class="parta-card parta-noimpact" id="pa-noImpactBox" hidden>
+        <strong>No reduction or avoidance metrics</strong>
+        <p>General-purpose financing makes no such claim, so this run reports none —
+           rather than reporting zeros, which would read as a measured result.</p>
+      </div>
+    </form>
+
+    <!-- ─────────────── Live result ─────────────── -->
+    <div class="parta-results" id="paResults">
+
+      <div class="parta-refusal" id="paRefusal" hidden>
+        <span class="parta-refusal-code" id="paRefusalCode"></span>
+        <p class="parta-refusal-msg" id="paRefusalMsg"></p>
+        <p class="parta-refusal-remedy" id="paRefusalRemedy" hidden></p>
+      </div>
+
+      <div id="paOutput" hidden>
+
+        <section class="parta-card parta-af">
+          <span class="parta-af-label">Attribution factor</span>
+          <span class="parta-af-value" id="paAf">—</span>
+          <code class="parta-eq" id="paAfEq"></code>
+          <p class="parta-ref" id="paAfRef"></p>
+          <p class="parta-assumption" id="paAfAssumption" hidden></p>
+        </section>
+
+        <section class="parta-card parta-inventory">
+          <header class="parta-card-head">
+            <h3>Part A inventory</h3>
+            <p id="paCategory"></p>
+          </header>
+
+          <div class="parta-figures">
+            <div class="parta-figure parta-figure-primary">
+              <span class="parta-figure-label">Financed scope 1 and 2 — the PCAF figure</span>
+              <span class="parta-figure-value" id="paScope12">—</span>
+              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+            </div>
+            <div class="parta-figure">
+              <span class="parta-figure-label">Financed scope 1</span>
+              <span class="parta-figure-value" id="paScope1">—</span>
+              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+            </div>
+            <div class="parta-figure">
+              <span class="parta-figure-label">Financed scope 2</span>
+              <span class="parta-figure-value" id="paScope2">—</span>
+              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+            </div>
+            <div class="parta-figure" id="paScope3Figure">
+              <span class="parta-figure-label">Financed scope 3</span>
+              <span class="parta-figure-value" id="paScope3">—</span>
+              <span class="parta-figure-unit" id="paScope3Unit">tCO<sub>2</sub>e</span>
+            </div>
+          </div>
+
+          <p class="parta-absent" id="paScope3Absent" hidden></p>
+
+          <div class="parta-sideline" id="paRemovalsBox" hidden>
+            <span class="parta-sideline-label">Removals — reported separately</span>
+            <span class="parta-sideline-value" id="paRemovals">—</span>
+            <p id="paRemovalsNote"></p>
+          </div>
+
+          <div class="parta-meta">
+            <div class="parta-meta-item">
+              <span class="parta-meta-label">Economic emission intensity</span>
+              <span class="parta-meta-value" id="paIntensity">—</span>
+              <small id="paIntensityNote"></small>
+            </div>
+            <div class="parta-meta-item">
+              <span class="parta-meta-label">Data quality</span>
+              <!-- A category with its scale beside it. Never a fraction. -->
+              <span class="parta-meta-value parta-dq" id="paDq">—</span>
+              <small id="paDqScale"></small>
+              <small id="paDqRef"></small>
+            </div>
+          </div>
+        </section>
+
+        <!-- The break. Everything below rests on optional supplemental guidance
+             and is never added to anything above it. -->
+        <div class="parta-break" id="paBreak" hidden>
+          <span>Not Part A · never added to the inventory</span>
+        </div>
+
+        <section class="parta-card parta-impact" id="paImpactBox" hidden>
+          <header class="parta-card-head">
+            <h3 id="paImpactTitle">Impact metrics</h3>
+            <p id="paImpactArchetype"></p>
+          </header>
+          <div id="paMetrics"></div>
+          <p class="parta-notcomparable" id="paNotComparable"></p>
+        </section>
+
+        <section class="parta-card parta-trace">
+          <header class="parta-card-head">
+            <h3>How every figure was reached</h3>
+            <p>The equation executed, the inputs used and the clause it rests on.</p>
+          </header>
+          <div id="paTrace"></div>
+        </section>
+
+        <p class="parta-standard" id="paStandardLine"></p>
+      </div>
+
+      <div class="parta-empty" id="paEmpty">
+        <p>Fill in the exposure and the project's scope 1 and 2 emissions.
+           The result appears here and follows every keystroke.</p>
+      </div>
+    </div>
+  </div>
+</div>
