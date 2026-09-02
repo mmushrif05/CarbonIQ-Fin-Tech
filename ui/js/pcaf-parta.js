@@ -36,7 +36,7 @@ const PCAFPartAPage = (() => {
     ['totalProjectEquityPlusDebt',       'number'],
     ['currency',                         'text'],
     ['attributionOverrideJustification', 'text'],
-    ['dataQualityOption',                'text'],
+    ['dataQualityOverrideJustification', 'text'],
     ['projectScope1_tCO2e',              'number'],
     ['projectScope2_tCO2e',              'number'],
     ['projectScope3_tCO2e',              'number'],
@@ -52,26 +52,24 @@ const PCAFPartAPage = (() => {
     ['asOfYear',                   'number'],
   ];
 
-  const AVOIDED_FIELDS = [
-    ['projectAvoided_tCO2e',           'number'],
-    ['annualAvoided_tCO2e',            'number'],
-    ['counterfactual',                 'text'],
-    ['counterfactualSource',           'text'],
-    ['estimationBasis',                'text'],
-    ['years',                          'number'],
-    ['reportingPeriod',                'text'],
-    ['counterpartyEmissionsPeriod',    'text'],
+  /* The renewable-generation path. Two of these carry the whole assessment;
+     the other three sharpen it. Nothing here is an emissions figure — the
+     scopes, the displacement and the data quality option are all derived. */
+  const GENERATION_FIELDS = [
+    ['annualGeneration_MWh',      'number'],
+    ['country',                   'text'],
+    ['installedCapacity_MW',      'number'],
+    ['auxiliaryConsumption_MWh',  'number'],
+    ['basis',                     'text'],
   ];
 
-  /* Bases offered for avoided emissions. The two PCAF forbids are listed on
-     purpose: a guardrail nobody can see is a guardrail nobody trusts, and
-     choosing one here returns the standard's own refusal. */
-  const ESTIMATION_BASES = [
-    { value: 'physical-activity', label: 'Physical activity data (generation output × displaced factor)' },
-    { value: 'measured',          label: 'Measured / metered output' },
-    { value: 'economic-intensity', label: 'Economic intensity — PCAF prohibits this' },
-    { value: 'input-output',       label: 'Input-output / EEIO model — PCAF prohibits this' },
-  ];
+  /* There is no table of avoided-emissions inputs any more. The counterfactual,
+     its source and its estimation basis used to be typed — which meant the most
+     consequential claim in an avoidance figure rested on free text. They now
+     come out of the grid factor store, so the figure carries a named publisher
+     and vintage, the basis is whatever the store holds for that country, and
+     the estimation basis is physical activity by construction. The two bases
+     PCAF prohibits are unreachable rather than merely discouraged. */
 
   /* Worked examples. Figures are illustrative, but each set is internally
      consistent so the arithmetic on screen can be checked by hand. */
@@ -86,7 +84,7 @@ const PCAFPartAPage = (() => {
       outstandingAmount: 40000000,
       totalProjectEquityPlusDebt: 160000000,
       currency: 'USD',
-      dataQualityOption: '1b',
+      dataQualityOptionChosen: '1b',
       projectScope1_tCO2e: 480000,
       projectScope2_tCO2e: 60000,
       projectScope3_tCO2e: 95000,
@@ -111,22 +109,18 @@ const PCAFPartAPage = (() => {
       outstandingAmount: 12000000,
       totalProjectEquityPlusDebt: 40000000,
       currency: 'USD',
-      dataQualityOption: '2a',
-      projectScope1_tCO2e: 60,
-      projectScope2_tCO2e: 400,
       projectScope3_tCO2e: '',
       scope3Relevant: false,
       removals_tCO2e: '',
       attributionOverrideJustification: '',
-      avoided: {
-        projectAvoided_tCO2e: 44500,
-        annualAvoided_tCO2e: 48000,
-        counterfactual: 'Grid electricity that would otherwise have been supplied from the national system',
-        counterfactualSource: 'CEB Long Term Generation Expansion Plan 2023-2042, published grid emission factor',
-        estimationBasis: 'physical-activity',
-        years: 25,
-        reportingPeriod: '2026',
-        counterpartyEmissionsPeriod: '2026',
+      /* 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's
+         band, and outside Norway's, which is the point of switching country. */
+      generation: {
+        annualGeneration_MWh: 90600,
+        country: 'LK',
+        installedCapacity_MW: 60,
+        auxiliaryConsumption_MWh: '',
+        basis: 'projected',
       },
     },
     blank: {
@@ -139,7 +133,7 @@ const PCAFPartAPage = (() => {
       outstandingAmount: '',
       totalProjectEquityPlusDebt: '',
       currency: 'USD',
-      dataQualityOption: '2b',
+      dataQualityOptionChosen: '2b',
       projectScope1_tCO2e: '',
       projectScope2_tCO2e: '',
       projectScope3_tCO2e: '',
@@ -206,12 +200,33 @@ const PCAFPartAPage = (() => {
     arch.innerHTML = _reference.archetypes
       .map(a => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
 
-    const basis = el('pa-avoided-estimationBasis');
-    basis.innerHTML = ESTIMATION_BASES
-      .map(b => `<option value="${esc(b.value)}">${esc(b.label)}</option>`).join('');
+    const country = el('pa-gen-country');
+    country.innerHTML = (_reference.gridFactors.countries || [])
+      .map(c => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('');
 
     _populateDqOptions();
     _describeAssetClass();
+  }
+
+  /** The country whose factors this run would use. */
+  function _currentCountry() {
+    const code = el('pa-gen-country').value;
+    return (_reference.gridFactors.countries || []).find(c => c.code === code) || null;
+  }
+
+  /* Said before the engine is asked, because the gap in the store is a fact
+     about the country and not about this particular project. */
+  function _describeCountry() {
+    const c = _currentCountry();
+    const note = el('pa-gen-countryNote');
+    if (!c) { note.textContent = ''; return; }
+    const parts = [];
+    if (!c.combinedMargin) parts.push('No combined margin held — the grid average will be substituted for displacement.');
+    else if (c.combinedMargin.flag) parts.push(`Combined margin is ${c.combinedMargin.flag} (${c.combinedMargin.vintage}).`);
+    if (!c.gridAverage) parts.push('No grid average held — the combined margin will be substituted for consumption.');
+    const cf = c.solarCapacityFactor;
+    if (cf) parts.push(`Indicative solar capacity factor ${(cf.low * 100).toFixed(0)}-${(cf.high * 100).toFixed(0)}%.`);
+    note.textContent = parts.join(' ');
   }
 
   function _currentAssetClass() {
@@ -221,18 +236,21 @@ const PCAFPartAPage = (() => {
 
   function _populateDqOptions() {
     const cls = _currentAssetClass();
-    const sel = el('pa-dataQualityOption');
-    const keep = sel.value;
-    sel.innerHTML = cls.dataQualityOptions
+    const html = cls.dataQualityOptions
       .map(o => `<option value="${esc(o.option)}">Option ${esc(o.option)} — score ${esc(o.score)} · ${esc(o.family)}</option>`)
       .join('');
-    if (cls.dataQualityOptions.some(o => o.option === keep)) sel.value = keep;
+    for (const id of ['pa-dataQualityOption', 'pa-dataQualityOptionChosen']) {
+      const sel = el(id);
+      const keep = sel.value;
+      sel.innerHTML = html;
+      if (cls.dataQualityOptions.some(o => o.option === keep)) sel.value = keep;
+    }
     _describeDqOption();
   }
 
   function _describeDqOption() {
     const cls = _currentAssetClass();
-    const row = cls.dataQualityOptions.find(o => o.option === el('pa-dataQualityOption').value);
+    const row = cls.dataQualityOptions.find(o => o.option === el('pa-dataQualityOptionChosen').value);
     el('pa-dqWhen').textContent = row ? row.when : '';
     el('pa-dqTableNote').textContent =
       `${cls.dataQualityTable} for ${cls.label.toLowerCase()}. `
@@ -257,10 +275,21 @@ const PCAFPartAPage = (() => {
     el('pa-archetypeNote').textContent = a.description
       ? `${a.description}${a.comparedAgainst ? ` Measured against ${a.comparedAgainst}.` : ''}`
       : '';
+    /* An avoidance project is assessed from what it generates, so the typed
+       scope boxes are not merely hidden — they are not the input path at all,
+       and the data quality option stops being a choice. */
+    const derives = a.impact === 'avoided';
+    el('pa-generationBox').hidden = !derives;
+    el('pa-emissionsBox').hidden  = derives;
+    el('pa-dqDerived').hidden     = !derives;
+    el('pa-dqChoose').hidden      = derives;
     el('pa-reductionBox').hidden  = a.impact !== 'reduction';
-    el('pa-avoidedBox').hidden    = a.impact !== 'avoided';
     el('pa-noImpactBox').hidden   = Boolean(a.impact);
+    if (derives) _describeCountry();
   }
+
+  /** True when this run derives its emissions rather than being told them. */
+  const _derives = () => !el('pa-generationBox').hidden;
 
   // ── build the request ───────────────────────────────────────
   function collect() {
@@ -286,26 +315,47 @@ const PCAFPartAPage = (() => {
     }
 
     if (a.impact === 'avoided') {
-      const v = {};
-      for (const [name, kind] of AVOIDED_FIELDS) {
-        const got = readField('pa-avoided-' + name, kind);
-        if (got !== undefined) v[name] = got;
+      const g = {};
+      for (const [name, kind] of GENERATION_FIELDS) {
+        const v = readField('pa-gen-' + name, kind);
+        if (v !== undefined) g[name] = v;
       }
-      if (v.projectAvoided_tCO2e !== undefined || v.annualAvoided_tCO2e !== undefined) body.avoided = v;
+      /* Sent once both fields that decide the answer are present. Asking with
+         a country but no generation would draw a validation error while the
+         user is still typing the generation. */
+      if (Number.isFinite(g.annualGeneration_MWh) && g.country) body.generation = g;
+    }
+
+    /* The option is derived unless the claim panel has been deliberately
+       opened. Closed means "use what the evidence supports"; open means a
+       claim is being made, and the engine decides whether it was earned. */
+    if (_derives()) {
+      const claim = el('pa-dqClaim');
+      if (claim && claim.open) {
+        const claimed = readField('pa-dataQualityOption', 'text');
+        if (claimed) body.dataQualityOption = claimed;
+      }
+    } else {
+      const chosen = readField('pa-dataQualityOptionChosen', 'text');
+      if (chosen) body.dataQualityOption = chosen;
     }
 
     return body;
   }
 
-  /* The six fields the engine cannot proceed without. Asking before they are
-     present would answer every keystroke with a validation error. */
+  /* What the engine cannot proceed without. Asking before these are present
+     would answer every keystroke with a validation error. The two paths need
+     different things, which is the whole point of there being two. */
   function _ready(body) {
-    return Boolean(body.projectName)
-      && Number.isFinite(body.outstandingAmount)
-      && Number.isFinite(body.totalProjectEquityPlusDebt)
-      && Boolean(body.dataQualityOption)
-      && Number.isFinite(body.projectScope1_tCO2e)
-      && Number.isFinite(body.projectScope2_tCO2e);
+    if (!body.projectName
+      || !Number.isFinite(body.outstandingAmount)
+      || !Number.isFinite(body.totalProjectEquityPlusDebt)) return false;
+
+    return body.generation
+      ? Number.isFinite(body.generation.annualGeneration_MWh) && Boolean(body.generation.country)
+      : Number.isFinite(body.projectScope1_tCO2e)
+        && Number.isFinite(body.projectScope2_tCO2e)
+        && Boolean(body.dataQualityOption);
   }
 
   // ── ask the engine ──────────────────────────────────────────
@@ -377,6 +427,8 @@ const PCAFPartAPage = (() => {
     assumption.textContent = (af.assumptions || []).join(' ');
     if (af.assumptions && af.assumptions.length) el('pa-overrideBox').hidden = false;
 
+    _renderGeneration(r.generation);
+
     const inv = r.inventory;
     el('paCategory').textContent = inv.category;
     el('paScope12').textContent = fmt(inv.scope1And2.value);
@@ -412,10 +464,95 @@ const PCAFPartAPage = (() => {
     el('paDqScale').textContent = inv.dataQuality.scale;
     el('paDqRef').textContent   = inv.dataQuality.reference;
 
+    /* Where the option was derived, the derivation is shown beside the form
+       control rather than only in the result — the user needs to see why the
+       score is what it is at the moment they might try to change it. */
+    const derivedLabel = el('pa-dqDerivedLabel');
+    const derivedWhy   = el('pa-dqDerivedReason');
+    if (inv.dataQuality.derivationReason) {
+      derivedLabel.textContent = `Option ${inv.dataQuality.derivedOption} — ${inv.dataQuality.label}`;
+      derivedWhy.textContent   = inv.dataQuality.derivationReason;
+    }
+
+    const ovr = el('paDqOverride');
+    ovr.hidden = !inv.dataQuality.overrideJustification;
+    ovr.textContent = inv.dataQuality.overrideJustification
+      ? `Option claimed above the derived ${inv.dataQuality.derivedOption} on the stated `
+        + `justification: ${inv.dataQuality.overrideJustification}`
+      : '';
+
     _renderImpact(r.impact);
     _renderTrace(r);
     el('paStandardLine').textContent = r.standard;
   }
+
+  /**
+   * The grid factor, the physical check and the assumptions.
+   *
+   * All three exist because the emissions were derived rather than typed. A
+   * derived figure has to show its factor — publisher, vintage and basis — or
+   * it is no more accountable than the text box it replaced.
+   */
+  function _renderGeneration(g) {
+    const boxes = ['paGridBox', 'paCheckBox', 'paAssumptionsBox'];
+    if (!g) { boxes.forEach(id => { el(id).hidden = true; }); return; }
+
+    // ── the two factors, and which basis each one is ──
+    el('paGridBox').hidden = false;
+    const d = g.factors.displacement, c = g.factors.consumption;
+    el('paGridCountry').textContent =
+      `${d.country} · generation ${g.basis === 'metered' ? 'metered for the period' : 'projected'}`;
+
+    el('paGridDisplaced').textContent = `${d.value} ${d.unit}`;
+    el('paGridDisplacedBasis').textContent = d.substituted
+      ? `${_basisName(d.basis)} — substituted`
+      : _basisName(d.basis);
+    el('paGridDisplacedBasis').classList.toggle('parta-basis-warn', Boolean(d.substituted));
+
+    el('paGridConsumed').textContent = `${c.value} ${c.unit}`;
+    el('paGridConsumedBasis').textContent = c.substituted
+      ? `${_basisName(c.basis)} — substituted`
+      : _basisName(c.basis);
+    el('paGridConsumedBasis').classList.toggle('parta-basis-warn', Boolean(c.substituted));
+
+    el('paGridSource').textContent = `${d.publisher} — ${d.source} (${d.vintage})`;
+
+    const sub = el('paGridSubstitution');
+    const subNote = d.substitutionNote || c.substitutionNote || '';
+    sub.hidden = !subNote;
+    sub.textContent = subNote;
+
+    const flag = el('paGridFlag');
+    flag.hidden = !d.flagNote;
+    flag.textContent = d.flagNote ? `${_titleCase(d.flag)}: ${d.flagNote}` : '';
+
+    // ── the physical check ──
+    const p = g.plausibility;
+    el('paCheckBox').hidden = false;
+    if (!p.ran) {
+      el('paCheckCf').textContent = 'Not run';
+      el('paCheckBand').textContent = '';
+      el('paCheckEq').textContent = '';
+      el('paCheckNote').textContent = p.reason;
+      el('paCheckBox').className = 'parta-card parta-check';
+    } else {
+      el('paCheckCf').textContent = `${p.capacityFactorPct}%`;
+      el('paCheckBand').textContent =
+        `band ${(p.band.low * 100).toFixed(0)}–${(p.band.high * 100).toFixed(0)}% for ${p.country}`;
+      el('paCheckEq').textContent = p.equation;
+      el('paCheckNote').textContent = p.note;
+      el('paCheckBox').className =
+        'parta-card parta-check ' + (p.status === 'within_band' ? 'parta-check-ok' : 'parta-check-warn');
+    }
+
+    // ── every assumption the derivation made ──
+    const list = g.assumptions || [];
+    el('paAssumptionsBox').hidden = !list.length;
+    el('paAssumptions').innerHTML = list.map(a => `<li>${esc(a)}</li>`).join('');
+  }
+
+  const _basisName = b => (b === 'combinedMargin' ? 'CDM combined margin' : 'Grid average');
+  const _titleCase = s2 => (s2 ? s2.charAt(0).toUpperCase() + s2.slice(1) : '');
 
   function _renderImpact(impact) {
     const has = impact && impact.metrics && impact.metrics.length;
@@ -458,6 +595,11 @@ const PCAFPartAPage = (() => {
     };
 
     push('Attribution factor', r.attribution);
+    if (r.generation) {
+      push('Project scope 1 (derived)', r.generation.projectScope1);
+      push('Project scope 2 (derived)', r.generation.projectScope2);
+      push('Project avoided emissions (derived)', r.generation.projectAvoided);
+    }
     push('Financed scope 1', r.inventory.scope1);
     push('Financed scope 2', r.inventory.scope2);
     push('Financed scope 1 and 2', r.inventory.scope1And2);
@@ -476,14 +618,18 @@ const PCAFPartAPage = (() => {
     for (const [field] of FIELDS) {
       if (Object.prototype.hasOwnProperty.call(p, field)) writeField('pa-' + field, p[field]);
     }
-    for (const [field] of REDUCTION_FIELDS) writeField('pa-reduction-' + field, p.reduction ? p.reduction[field] : '');
-    for (const [field] of AVOIDED_FIELDS)   writeField('pa-avoided-' + field,   p.avoided   ? p.avoided[field]   : '');
+    for (const [field] of REDUCTION_FIELDS)  writeField('pa-reduction-' + field,  p.reduction  ? p.reduction[field]  : '');
+    for (const [field] of GENERATION_FIELDS) writeField('pa-gen-' + field,       p.generation ? p.generation[field] : '');
 
     document.querySelectorAll('.parta-preset').forEach(b =>
       b.classList.toggle('active', b.dataset.preset === name));
 
     _populateDqOptions();
-    writeField('pa-dataQualityOption', p.dataQualityOption);
+    if (p.dataQualityOptionChosen) writeField('pa-dataQualityOptionChosen', p.dataQualityOptionChosen);
+    /* A preset never arrives claiming an option it has not earned, so the
+       claim panel is closed and its justification cleared on every switch. */
+    if (el('pa-dqClaim')) el('pa-dqClaim').open = false;
+    writeField('pa-dataQualityOverrideJustification', '');
     _describeDqOption();
     _describeAssetClass();
     _applyArchetypeGate();
@@ -501,7 +647,11 @@ const PCAFPartAPage = (() => {
       _populateDqOptions(); _describeAssetClass(); schedule();
     });
     el('pa-archetype').addEventListener('change', () => { _applyArchetypeGate(); schedule(); });
-    el('pa-dataQualityOption').addEventListener('change', _describeDqOption);
+    el('pa-dataQualityOptionChosen').addEventListener('change', _describeDqOption);
+    el('pa-gen-country').addEventListener('change', () => { _describeCountry(); schedule(); });
+    /* Opening or closing the claim panel changes what is sent, so it has to
+       re-ask — a <details> toggle is not an input event. */
+    if (el('pa-dqClaim')) el('pa-dqClaim').addEventListener('toggle', schedule);
 
     document.querySelectorAll('.parta-preset').forEach(btn =>
       btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));

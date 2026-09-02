@@ -392,3 +392,85 @@ fieldset.parta-card { border: 1px solid var(--border); }
   .parta-banner-mode { margin-left: 0; }
   .parta-trace-row > summary { flex-direction: column; gap: 2px; }
 }
+
+/* ── Derived, rather than entered ───────────────────────────── */
+/* A derived value has to look different from one someone typed, or the
+   distinction the whole design rests on is invisible on the page. */
+.parta-derived-badge {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 12px; flex-wrap: wrap;
+  font-size: 13.5px; font-weight: 600; color: var(--text-primary);
+}
+.parta-derived-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--green); color: #fff;
+}
+.parta-claim { margin-top: 14px; }
+.parta-claim > summary {
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  color: var(--text-secondary); padding: 6px 0;
+}
+.parta-claim > summary:hover { color: var(--text-primary); }
+.parta-claim > p {
+  font-size: 11.5px; line-height: 1.55; color: var(--text-tertiary); margin: 4px 0 0;
+}
+
+/* ── The grid factor ────────────────────────────────────────── */
+.parta-factors {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px; margin: 14px 0;
+}
+.parta-factor {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 13px 14px; min-width: 0;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.parta-factor-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.parta-factor-value {
+  font-size: 19px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; word-break: break-word;
+}
+.parta-factor-basis {
+  font-size: 11px; color: var(--text-tertiary);
+  font-weight: 500; line-height: 1.4;
+}
+/* A substituted basis is the largest uncertainty in the figure, so it is the
+   one thing on the card that changes colour. */
+.parta-basis-warn { color: var(--amber); font-weight: 600; }
+
+/* ── The physical check ─────────────────────────────────────── */
+.parta-check-figure {
+  display: flex; align-items: baseline; gap: 10px;
+  flex-wrap: wrap; margin: 14px 0 10px;
+}
+.parta-check-value {
+  font-size: 30px; font-weight: 700; line-height: 1;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.parta-check-unit { font-size: 12px; color: var(--text-secondary); }
+.parta-check-band {
+  margin-left: auto; font-size: 11px; color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.parta-check-note {
+  font-size: 12.5px; line-height: 1.55; color: var(--text-secondary); margin: 10px 0 0;
+}
+.parta-check-ok   { border-left: 3px solid var(--green); }
+.parta-check-ok   .parta-check-value { color: var(--green); }
+.parta-check-warn { border-left: 3px solid var(--amber); }
+.parta-check-warn .parta-check-value { color: var(--amber); }
+
+/* ── Assumptions ────────────────────────────────────────────── */
+.parta-assumptions ul { margin: 12px 0 0; padding-left: 20px; }
+.parta-assumptions li {
+  font-size: 12.5px; line-height: 1.55;
+  color: var(--text-secondary); margin-bottom: 9px;
+}
+.parta-assumptions li:last-child { margin-bottom: 0; }
+
+@media (max-width: 620px) {
+  .parta-factors { grid-template-columns: 1fr; }
+  .parta-check-band { margin-left: 0; flex-basis: 100%; }
+}

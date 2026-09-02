@@ -90,11 +90,11 @@ describe('Every field the module reads exists in the fragment', () => {
   });
 
   test('the prefixed field ids cover every field sent to the engine', () => {
-    for (const group of ['FIELDS', 'REDUCTION_FIELDS', 'AVOIDED_FIELDS']) {
+    for (const group of ['FIELDS', 'REDUCTION_FIELDS', 'GENERATION_FIELDS']) {
       const block = moduleSrc.match(new RegExp(`const ${group} = \\[([\\s\\S]*?)\\];`))[1];
       const names = [...block.matchAll(/\['([a-zA-Z0-9_]+)',/g)].map(m => m[1]);
       expect(names.length).toBeGreaterThan(4);
-      const prefix = group === 'FIELDS' ? 'pa-' : group === 'REDUCTION_FIELDS' ? 'pa-reduction-' : 'pa-avoided-';
+      const prefix = group === 'FIELDS' ? 'pa-' : group === 'REDUCTION_FIELDS' ? 'pa-reduction-' : 'pa-gen-';
       const missing = names.filter(n => !page.includes(`id="${prefix}${n}"`));
       expect(missing).toEqual([]);
     }
@@ -124,7 +124,15 @@ describe('The worked examples produce the figures they promise', () => {
      the nested blocks travel under `reduction` and `avoided`. */
   const request = name => {
     const p = { ...PartA.PRESETS[name] };
+    /* Mirrors collect(): the chosen option is sent as dataQualityOption, and
+       a preset that names none leaves the engine to derive it. */
+    if (p.dataQualityOptionChosen) p.dataQualityOption = p.dataQualityOptionChosen;
+    delete p.dataQualityOptionChosen;
     for (const k of Object.keys(p)) if (p[k] === '') delete p[k];
+    if (p.generation) {
+      p.generation = { ...p.generation };
+      for (const k of Object.keys(p.generation)) if (p.generation[k] === '') delete p.generation[k];
+    }
     return p;
   };
 
@@ -147,27 +155,34 @@ describe('The worked examples produce the figures they promise', () => {
     expect(r.impact.metrics.some(m => /avoid/i.test(m.metric))).toBe(false);
   });
 
-  test('Solar Project — avoidance against a counterfactual, annualised', () => {
+  test('Solar Project — emissions derived from generation and a named grid factor', () => {
     const r = parta.assessExposure(request('solar'));
 
     expect(r.attribution.value).toBe(0.3);
-    expect(r.inventory.scope1And2.value).toBe(138);
-    expect(r.inventory.economicIntensity_tCO2e_per_M).toBe(11.5);
+    // Scope 2 is the plant's own auxiliary draw at the Sri Lankan grid average,
+    // not the combined margin — the two factors answer different questions.
+    expect(r.inventory.scope1.value).toBe(0);
+    expect(r.inventory.scope1And2.value).toBe(67.95);
+
+    // Nothing was typed, so the option is earned rather than chosen.
     expect(r.inventory.dataQuality.label).toBe('Data quality score: 2 (Option 2a)');
+    expect(r.inventory.dataQuality.derived).toBe(true);
+
+    // 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's band.
+    expect(r.generation.plausibility.capacityFactorPct).toBe(17.2);
+    expect(r.generation.plausibility.status).toBe('within_band');
 
     // Scope 3 was not marked relevant: absent, never a zero.
     expect(r.inventory.scope3.absent).toBe(true);
     expect(r.inventory.scope3.value).toBeNull();
 
-    const avoided = r.impact.metrics.find(m => m.metric === 'Financed avoided emissions');
-    expect(avoided.figure.value).toBe(13350);
-
+    // A projection reports EAE, annualised, against a counterfactual the
+    // factor store supplied rather than a text box.
     const eae = r.impact.metrics.find(m => /EAE/.test(m.metric));
-    expect(eae.figure.value).toBe(14400);
+    expect(eae.figure.value).toBe(22037.54);
     expect(eae.figure.unit).toBe('tCO2e per year');
+    expect(eae.counterfactualSource).toMatch(/DNA Sri Lanka/);
 
-    // Nothing in the impact block is ever part of the inventory.
-    expect(r.inventory.scope1And2.value).toBe(138);
     expect(r.impact.notComparable).toMatch(/never added to them/);
   });
 
@@ -177,11 +192,17 @@ describe('The worked examples produce the figures they promise', () => {
     expect(PartA.PRESETS.blank.avoided).toBeUndefined();
   });
 
-  test('every preset names an option the engine actually holds', () => {
+  test('every preset that names an option names one the engine holds', () => {
     const held = parta.dataQuality.optionsFor('project-finance').map(o => o.option);
     for (const [name, p] of Object.entries(PartA.PRESETS)) {
-      expect(`${name}:${held.includes(p.dataQualityOption)}`).toBe(`${name}:true`);
+      if (!p.dataQualityOptionChosen) continue;   // derived presets name none
+      expect(`${name}:${held.includes(p.dataQualityOptionChosen)}`).toBe(`${name}:true`);
     }
+  });
+
+  test('the solar preset names no option at all — it has to earn one', () => {
+    expect(PartA.PRESETS.solar.dataQualityOptionChosen).toBeUndefined();
+    expect(PartA.PRESETS.solar.generation.country).toBe('LK');
   });
 });
 
@@ -218,12 +239,15 @@ describe('The page keeps the two containers apart', () => {
     expect(page).toContain('Removals — reported separately');
   });
 
-  test('the prohibited estimation bases are offered so the refusal is visible', () => {
+  test('the prohibited estimation bases are no longer reachable at all', () => {
+    /* They used to be offered so the refusal was visible. Now the estimation
+       basis comes from the factor store rather than a dropdown, so physical
+       activity data is the only basis a generation run can have — a guardrail
+       that cannot be tripped beats one that reports being tripped. */
     const impact = require('../services/pcaf-parta/impact');
-    const offered = [...moduleSrc.matchAll(/\{ value: '([a-z-]+)'/g)].map(m => m[1]);
     for (const banned of impact.PROHIBITED_BASES) {
-      if (banned === 'eeio') continue;   // covered by the input-output entry
-      expect(offered).toContain(banned);
+      expect(page.includes(`value="${banned}"`)).toBe(false);
     }
+    expect(moduleSrc).not.toContain('ESTIMATION_BASES');
   });
 });
