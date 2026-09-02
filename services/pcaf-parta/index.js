@@ -25,7 +25,7 @@
 
 const archetypes  = require('./archetypes');
 const dataQuality = require('./data-quality');
-const gridFactors = require('./grid-factors');
+const countryConfig = require('./country-config');
 const generation  = require('./generation');
 const { attributionFactor } = require('./attribution');
 const { financedEmissions } = require('./emissions');
@@ -98,7 +98,13 @@ function assessExposure(input) {
      the derivation is a property of the technology, not of the loan. */
   let derivedGeneration = null;
   if (generationInput && archetype.impact === 'avoided') {
-    derivedGeneration = generation.deriveFromGeneration(generationInput);
+    derivedGeneration = generation.deriveFromGeneration({
+      ...generationInput,
+      /* The screen's "Generation figure is" dropdown decides which figure
+         drives which — capacity in projected mode, generation in metered. */
+      mode: generationInput.basis === 'metered' ? 'metered' : 'projected',
+      reportingYear,
+    });
   }
 
   const af = attributionFactor({
@@ -140,23 +146,37 @@ function assessExposure(input) {
 
   if (archetype.impact === 'avoided') {
     if (derivedGeneration) {
-      /* The counterfactual comes out of the factor store rather than a text
-         box, so it names a published basis, a publisher and a vintage — and
-         cannot be left blank, which is the failure the refusal exists for.
+      /* No counterfactual, no claim. Where the country has no combined margin
+         the avoided figure is reported absent rather than computed from a
+         basis that measures something else. */
+      if (derivedGeneration.avoided.absent) {
+        impactBlock.absent = derivedGeneration.avoided;
+      } else {
+        const common = {
+          attributionFactor: af.value,
+          counterfactual: derivedGeneration.counterfactual,
+          counterfactualSource: derivedGeneration.counterfactualSource,
+          estimationBasis: 'physical-activity',
+        };
+        impactBlock.metrics.push(derivedGeneration.mode === 'metered'
+          ? impact.avoidedEmissions({ ...common, projectAvoided_tCO2e: derivedGeneration.avoided.value })
+          : impact.expectedAvoidedEmissions({ ...common, annualAvoided_tCO2e: derivedGeneration.avoided.value }));
 
-         Metered generation is a measurement of what happened, so it reports
-         realised avoided emissions. A projection is forward-looking and
-         reports Expected Avoided Emissions, annualised as PCAF requires. */
-      const common = {
-        attributionFactor: af.value,
-        counterfactual: derivedGeneration.counterfactual,
-        counterfactualSource: derivedGeneration.counterfactualSource,
-        estimationBasis: 'physical-activity',
-      };
-
-      impactBlock.metrics.push(generationInput.basis === 'metered'
-        ? impact.avoidedEmissions({ ...common, projectAvoided_tCO2e: derivedGeneration.avoided.value })
-        : impact.expectedAvoidedEmissions({ ...common, annualAvoided_tCO2e: derivedGeneration.avoided.value }));
+        /* Lifetime sits beside the annual figure, never replacing it: it
+           carries degradation and a grid trajectory the annual one does not. */
+        if (derivedGeneration.lifetime) {
+          impactBlock.lifetime = {
+            metric: 'Lifetime avoided emissions, financed',
+            value: +(derivedGeneration.lifetime.value * af.value).toFixed(2),
+            unit: 'tCO2e',
+            years: derivedGeneration.lifetime.years,
+            degradationPct: derivedGeneration.lifetime.degradationPct,
+            trajectory: derivedGeneration.lifetime.trajectory,
+            trajectoryNote: derivedGeneration.lifetime.trajectoryNote,
+            degradationNote: derivedGeneration.lifetime.degradationNote,
+          };
+        }
+      }
     } else if (avoided) {
       if (avoided.projectAvoided_tCO2e !== undefined) {
         impactBlock.metrics.push(impact.avoidedEmissions({ attributionFactor: af.value, ...avoided }));
@@ -181,14 +201,19 @@ function assessExposure(input) {
        than in this file. */
     generation: derivedGeneration ? {
       derived: true,
-      basis: generationInput.basis === 'metered' ? 'metered' : 'projected',
-      annualGeneration_MWh: generationInput.annualGeneration_MWh,
-      installedCapacity_MW: generationInput.installedCapacity_MW ?? null,
+      mode: derivedGeneration.mode,
+      technology: derivedGeneration.technology,
+      technologyId: derivedGeneration.technologyId,
+      country: derivedGeneration.country,
+      countryCode: derivedGeneration.countryCode,
+      annualGeneration: derivedGeneration.generation,
+      installedCapacity_MW: derivedGeneration.installedCapacity_MW,
       plausibility: derivedGeneration.plausibility,
       factors: derivedGeneration.factors,
       projectScope1: derivedGeneration.scope1,
       projectScope2: derivedGeneration.scope2,
       projectAvoided: derivedGeneration.avoided,
+      lifetime: derivedGeneration.lifetime,
       assumptions: derivedGeneration.assumptions,
     } : null,
 
@@ -204,4 +229,4 @@ function assessExposure(input) {
   };
 }
 
-module.exports = { assessExposure, archetypes, dataQuality, gridFactors, generation, STANDARD };
+module.exports = { assessExposure, archetypes, dataQuality, countryConfig, generation, STANDARD };

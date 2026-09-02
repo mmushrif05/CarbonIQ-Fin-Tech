@@ -100,31 +100,53 @@
            derived, it carries its factor's publisher, vintage and basis. -->
       <fieldset class="parta-card" id="pa-generationBox" hidden>
         <legend>3 · Generation and grid</legend>
-        <p class="parta-legend-note">The plant's own scope 1 and 2, the emissions it displaces
-           and the data quality option are all <strong>derived</strong> from these fields and a
-           published grid factor. Nothing here is typed into the result.</p>
+        <p class="parta-legend-note">MW is a rate and MWh is a quantity; every emission factor is
+           per MWh, so nameplate alone can never give tonnes. The capacity factor is the bridge —
+           and which figure drives which depends on whether the plant has run yet.</p>
+
         <div class="parta-grid">
-          <label class="parta-field">Annual generation (MWh)
-            <input type="number" id="pa-gen-annualGeneration_MWh" step="any" min="0">
-          </label>
           <label class="parta-field">Country
             <select id="pa-gen-country"></select>
-            <small id="pa-gen-countryNote"></small>
           </label>
-          <label class="parta-field">Installed capacity (MW)
-            <input type="number" id="pa-gen-installedCapacity_MW" step="any" min="0" placeholder="optional">
-            <small>Enables the physical check on the generation figure.</small>
+          <label class="parta-field">Technology
+            <select id="pa-gen-technology"></select>
           </label>
-          <label class="parta-field">Generation figure is
+          <label class="parta-field parta-field-wide">Generation figure is
             <select id="pa-gen-basis">
-              <option value="projected">Projected — forward-looking</option>
+              <option value="projected">Projected — no meter data yet</option>
               <option value="metered">Metered — actual output for the period</option>
             </select>
-            <small>Projected reports EAE; metered reports realised avoided emissions.</small>
+            <small id="pa-gen-modeNote"></small>
           </label>
-          <label class="parta-field parta-field-wide">Metered auxiliary consumption (MWh)
+        </div>
+
+        <p class="parta-country-note" id="pa-gen-countryNote"></p>
+
+        <div class="parta-grid">
+          <label class="parta-field" id="pa-capacityField">Installed capacity (MW)
+            <input type="number" id="pa-gen-installedCapacity_MW" step="any" min="0">
+            <small id="pa-capacityRole"></small>
+          </label>
+          <label class="parta-field" id="pa-generationField">Annual generation (MWh)
+            <input type="number" id="pa-gen-annualGeneration_MWh" step="any" min="0">
+            <small id="pa-generationRole"></small>
+          </label>
+          <label class="parta-field" id="pa-yieldField">Yield basis
+            <select id="pa-gen-yieldBasis">
+              <option value="P50">P50 — central estimate</option>
+              <option value="P90">P90 — exceeded 9 years in 10</option>
+            </select>
+            <small>A lender should never see a projected figure without knowing which.</small>
+          </label>
+          <label class="parta-field">Metered auxiliary consumption (MWh)
             <input type="number" id="pa-gen-auxiliaryConsumption_MWh" step="any" min="0" placeholder="optional">
             <small>Replaces the assumed parasitic-load rate with a measurement.</small>
+          </label>
+          <label class="parta-field">Lifetime (years)
+            <input type="number" id="pa-gen-lifetimeYears" step="1" min="1" max="60" placeholder="25">
+          </label>
+          <label class="parta-field">Degradation (% per year)
+            <input type="number" id="pa-gen-degradationRatePct" step="0.1" min="0" max="5" placeholder="0.5">
           </label>
         </div>
       </fieldset>
@@ -265,13 +287,14 @@
               <span class="parta-factor-basis" id="paGridConsumedBasis"></span>
             </div>
           </div>
+          <p class="parta-global-flag" id="paGlobalFlag" hidden></p>
           <p class="parta-ref" id="paGridSource"></p>
           <p class="parta-assumption" id="paGridSubstitution" hidden></p>
           <p class="parta-assumption" id="paGridFlag" hidden></p>
         </section>
 
         <!-- The physical check. Runs only where capacity was given. -->
-        <section class="parta-card parta-check" id="paCheckBox" hidden>
+        <section class="parta-card parta-plaus" id="paCheckBox" hidden>
           <header class="parta-card-head">
             <h3>Is this generation physically achievable?</h3>
           </header>
@@ -279,6 +302,10 @@
             <span class="parta-check-value" id="paCheckCf">—</span>
             <span class="parta-check-unit">capacity factor</span>
             <span class="parta-check-band" id="paCheckBand"></span>
+          </div>
+          <div class="parta-yield">
+            <span class="parta-yield-value" id="paSpecificYield">—</span>
+            <span class="parta-yield-unit">kWh/kWp/yr — specific yield</span>
           </div>
           <code class="parta-eq" id="paCheckEq"></code>
           <p class="parta-check-note" id="paCheckNote"></p>
@@ -358,7 +385,13 @@
             <h3 id="paImpactTitle">Impact metrics</h3>
             <p id="paImpactArchetype"></p>
           </header>
+          <p class="parta-absent" id="paImpactAbsent" hidden></p>
           <div id="paMetrics"></div>
+          <div class="parta-lifetime" id="paLifetimeBox" hidden>
+            <span class="parta-lifetime-label" id="paLifetimeLabel">Lifetime, financed</span>
+            <span class="parta-lifetime-value" id="paLifetime">—</span>
+            <p class="parta-lifetime-note" id="paLifetimeNote"></p>
+          </div>
           <p class="parta-notcomparable" id="paNotComparable"></p>
         </section>
 
