@@ -1,0 +1,234 @@
+{
+  "$comment": "Country-dependent numbers for PCAF Part A renewable generation. Keyed by ISO 3166-1 alpha-2. Every value carries year, source and url; no orphan numbers. A missing value is null with a reason, never a borrowed one.",
+  "schema_version": 1,
+  "unit": "tCO2e/MWh",
+  "stale_after_years": 3,
+  "verification_levels": {
+    "primary": "The published document was read and the value taken from it.",
+    "secondary_reported": "The value and its citation come from a description of the primary source, not from reading the primary source. Confirm against the document before the figure supports a disclosure."
+  },
+  "grid_factor_uses": {
+    "combined_margin": "Avoided emissions ONLY — the counterfactual grid a new renewable displaces. CDM Tool 07.",
+    "operating_margin": "Input to the combined margin. Never used alone for either purpose here.",
+    "build_margin": "Input to the combined margin. Never used alone for either purpose here.",
+    "grid_average": "The project's OWN scope 2 parasitic draw ONLY. Never a displacement factor."
+  },
+  "countries": {
+    "LK": {
+      "name": "Sri Lanka",
+      "grid_factors": {
+        "combined_margin": {
+          "value": 0.8108,
+          "unit": "tCO2e/MWh",
+          "year": 2017,
+          "source": "National Grid Emission Factor, calculated with the UNFCCC Tool to calculate the emission factor for an electricity system v02.2.1, against Energy Balance 2017",
+          "url": "http://www.climatechange.lk/DNA/Grid_Emission_Factors.html",
+          "publisher": "DNA Sri Lanka — Climate Change Division, and Sri Lanka Sustainable Energy Authority",
+          "verification": "secondary_reported"
+        },
+        "operating_margin": {
+          "value": 0.9224,
+          "unit": "tCO2e/MWh",
+          "year": 2017,
+          "source": "Operating margin published alongside the combined margin, same calculation",
+          "url": "http://www.climatechange.lk/DNA/Grid_Emission_Factors.html",
+          "publisher": "DNA Sri Lanka / SLSEA",
+          "verification": "secondary_reported"
+        },
+        "build_margin": null,
+        "build_margin_absent_reason": "Not surfaced separately in the published summary held. The combined margin above already incorporates it.",
+        "grid_average": {
+          "value": 0.5,
+          "unit": "tCO2e/MWh",
+          "year": 2023,
+          "source": "Average system emission factor stated in the Long Term Generation Expansion Plan 2023-2042, which projects a fall from about 0.5 to 0.2 kg/kWh by 2042",
+          "url": "https://www.ceb.lk/",
+          "publisher": "Ceylon Electricity Board",
+          "verification": "secondary_reported",
+          "caveat": "Read from planning-document reporting rather than an annual published factor. CEB should confirm the year-specific figure."
+        }
+      },
+      "technologies": {
+        "solar_pv": null,
+        "wind_on": null,
+        "hydro_ror": null
+      },
+      "technologies_absent_reason": "No citable national capacity-factor or specific-yield source could be obtained. See the sourcing gap list."
+    },
+    "SG": {
+      "name": "Singapore",
+      "grid_factors": {
+        "combined_margin": null,
+        "combined_margin_absent_reason": "EMA publishes an operating margin and a build margin but no combined margin, and this store will not weight them itself. Obtain the CM per CDM Tool 07, or the IFI harmonised default, before any avoided-emissions figure is produced.",
+        "operating_margin": null,
+        "operating_margin_absent_reason": "Published by EMA in the data.gov.sg grid emission factor dataset; the disaggregated value was not obtainable here.",
+        "build_margin": null,
+        "build_margin_absent_reason": "Published by EMA in the same dataset; value not obtainable here.",
+        "grid_average": {
+          "value": 0.402,
+          "unit": "tCO2e/MWh",
+          "year": 2024,
+          "source": "Average Grid Emission Factor, average operating margin basis. Fell from 0.412 in 2023 on a higher solar share, lower generator emission intensities, greater use of municipal waste and biomass, and reduced coal.",
+          "url": "https://data.gov.sg/datasets/d_3de362b580b2dd2fd50cc1006d4edd4f/view",
+          "publisher": "Energy Market Authority",
+          "verification": "secondary_reported"
+        }
+      },
+      "technologies": {
+        "solar_pv": null,
+        "wind_on": null,
+        "hydro_ror": null
+      },
+      "technologies_absent_reason": "No citable capacity-factor source obtained. Onshore wind and run-of-river hydro are in any case not materially deployable in Singapore, so those two should probably stay null permanently rather than awaiting data."
+    },
+    "NO": {
+      "name": "Norway",
+      "grid_factors": {
+        "combined_margin": null,
+        "combined_margin_absent_reason": "No CDM combined margin is held. On a hydro-dominated system the displaced factor is very low and highly sensitive to whether the market boundary is Norwegian or Nordic. That is a modelling decision belonging to the reporting entity, not to this store.",
+        "operating_margin": null,
+        "operating_margin_absent_reason": "Not held.",
+        "build_margin": null,
+        "build_margin_absent_reason": "Not held.",
+        "grid_average": {
+          "value": 0.0119,
+          "unit": "tCO2e/MWh",
+          "year": 2024,
+          "source": "Location-based factor for physically delivered electricity (klimadeklarasjon). 15 gCO2e/kWh in 2023 and 19 in 2022, with about 95% of Norwegian consumption covered by renewables in 2023.",
+          "url": "https://www.nve.no/energi/energisystem/energibruk/stroemdeklarasjoner/",
+          "publisher": "Norges vassdrags- og energidirektorat (NVE)",
+          "verification": "secondary_reported",
+          "caveat": "Location-based. A residual-mix or guarantee-of-origin basis gives a materially higher figure; the two answer different questions and the entity must state which it reports on."
+        }
+      },
+      "technologies": {
+        "solar_pv": null,
+        "wind_on": null,
+        "hydro_ror": null
+      },
+      "technologies_absent_reason": "No citable capacity-factor source obtained. Norwegian solar in particular has an extreme seasonal profile, so a single annual band is a weak instrument there regardless."
+    },
+    "UG": {
+      "name": "Uganda",
+      "grid_factors": {
+        "combined_margin": {
+          "value": 0.2055,
+          "unit": "tCO2e/MWh",
+          "year": 2022,
+          "source": "Combined margin for wind and solar power generation project activities. Equals 0.75 x OM + 0.25 x BM, the CDM Tool 07 weighting for intermittent renewables.",
+          "url": "https://cdm.unfccc.int/sunsetcms/storage/contents/stored-file-20220811154530340/ASB0054-2022_PSB0058.pdf",
+          "publisher": "UNFCCC CDM standardized baseline ASB0054-2022, 10 August 2022",
+          "verification": "secondary_reported"
+        },
+        "operating_margin": {
+          "value": 0.274,
+          "unit": "tCO2e/MWh",
+          "year": 2022,
+          "source": "Operating margin, ASB0054-2022",
+          "url": "https://cdm.unfccc.int/sunsetcms/storage/contents/stored-file-20220811154530340/ASB0054-2022_PSB0058.pdf",
+          "publisher": "UNFCCC CDM standardized baseline ASB0054-2022",
+          "verification": "secondary_reported"
+        },
+        "build_margin": {
+          "value": 1e-05,
+          "unit": "tCO2e/MWh",
+          "year": 2022,
+          "source": "Build margin, effectively nil because every unit in the build margin sample was hydro or solar",
+          "url": "https://cdm.unfccc.int/sunsetcms/storage/contents/stored-file-20220811154530340/ASB0054-2022_PSB0058.pdf",
+          "publisher": "UNFCCC CDM standardized baseline ASB0054-2022",
+          "verification": "secondary_reported"
+        },
+        "grid_average": null,
+        "grid_average_absent_reason": "No national average consumption factor is held. A standardized baseline publishes margins for project displacement, which is a different quantity and must not be substituted."
+      },
+      "technologies": {
+        "solar_pv": null,
+        "wind_on": null,
+        "hydro_ror": null
+      },
+      "technologies_absent_reason": "No citable capacity-factor source obtained. See the sourcing gap list."
+    }
+  },
+  "fallback_rule": "Fall back on GEOGRAPHY, never on BASIS. Where a country has no value for a basis, a global default of THE SAME basis may be used, and the data quality option drops because PCAF Table 5.3-1 Option 2a requires emission factors specific to the data. Where no global default of that basis exists, the figure is reported absent. Substituting a grid average for a combined margin would be a basis substitution and is never permitted, at any geography.",
+  "global_defaults": {
+    "note": "Used only when the country entry for the same basis is null. Never silently: every figure resting on one is labelled as a global default, and the data quality option drops from 2a to 2b because the factor is not specific to the data.",
+    "grid_factors": {
+      "grid_average": {
+        "value": 0.473,
+        "unit": "tCO2e/MWh",
+        "year": 2024,
+        "source": "Global power sector emissions intensity, 473 gCO2/kWh in 2024, down 2.3% from 484 in 2023 and from a 2007 peak of 555. Clean power reached 40.9% of the mix.",
+        "url": "https://ember-energy.org/latest-insights/global-electricity-review-2025/global-electricity-trends/",
+        "publisher": "Ember, Global Electricity Review 2025",
+        "verification": "secondary_reported",
+        "scope": "global"
+      },
+      "combined_margin": null,
+      "combined_margin_absent_reason": "No global combined margin is published, and a global grid AVERAGE must not stand in for one: that is a basis substitution, which this store forbids at every geography. A country with no combined margin therefore reports avoided emissions as absent until one is obtained — from the IFI harmonised dataset, the national DNA, or a CDM standardized baseline."
+    },
+    "technologies": {
+      "solar_pv": {
+        "default_cf": 0.174,
+        "band_low": null,
+        "band_high": null,
+        "band_absent_reason": "IRENA publishes a global weighted average, not a spatial band. A plant is therefore compared against the global central value as a ratio, not judged in or out of a band it has no basis for.",
+        "year": 2024,
+        "source": "Global weighted average capacity factor for new utility-scale solar PV, risen from 15% in 2010 to 17.4% in 2024.",
+        "url": "https://www.irena.org/Publications/2025/Jun/Renewable-Power-Generation-Costs-in-2024",
+        "publisher": "IRENA, Renewable Power Generation Costs in 2024",
+        "verification": "secondary_reported",
+        "scope": "global"
+      },
+      "wind_on": {
+        "default_cf": 0.34,
+        "band_low": null,
+        "band_high": null,
+        "band_absent_reason": "Global weighted average, not a spatial band.",
+        "year": 2024,
+        "source": "Global weighted average capacity factor for onshore wind, risen from 27% in 2010 to 34% in 2024.",
+        "url": "https://www.irena.org/Publications/2025/Jun/Renewable-Power-Generation-Costs-in-2024",
+        "publisher": "IRENA, Renewable Power Generation Costs in 2024",
+        "verification": "secondary_reported",
+        "scope": "global"
+      },
+      "hydro_ror": null,
+      "hydro_ror_absent_reason": "No citable global weighted-average capacity factor for run-of-river hydro was obtained. Run-of-river is in any case highly site- and hydrology-specific, so a single global figure would be weak even once sourced."
+    }
+  },
+  "technology_limits": {
+    "note": "Absolute bounds, not bands. A figure outside these is refused rather than warned about, because no plant of that technology operates there. These are engineering limits stated by this store, not measurements, and they are deliberately generous.",
+    "solar_pv": {
+      "floor": 0.01,
+      "ceiling": 0.35,
+      "ceiling_basis": "Tracking arrays on the best desert sites run near 0.30.",
+      "floor_basis": "The worst-sited array still averages about 0.08 over a year."
+    },
+    "wind_on": {
+      "floor": 0.02,
+      "ceiling": 0.65,
+      "ceiling_basis": "The very best onshore sites reach the high 0.50s.",
+      "floor_basis": "Below 2% a turbine has not turned."
+    },
+    "hydro_ror": {
+      "floor": 0.05,
+      "ceiling": 0.95,
+      "ceiling_basis": "Run-of-river on a regulated river can run near baseload.",
+      "floor_basis": "Below 5% the scheme has not operated."
+    }
+  },
+  "yield_basis": {
+    "note": "P50 is the central estimate: the yield expected to be exceeded in half of years. P90 is the conservative bound exceeded in nine years out of ten, and is what a lender usually sizes debt against. A default capacity factor is a central estimate, so it is P50 by nature; selecting P90 without a supplied P90 figure applies the ratio below.",
+    "p90_ratio_of_p50": 0.92,
+    "ratio_basis": "Stated planning assumption, not a measurement. Project-specific P90/P50 ratios come from the energy yield assessment and vary with resource variability. Supply the P90 generation figure directly wherever the assessment gives one.",
+    "verification": "assumption"
+  },
+  "degradation": {
+    "default_rate_pct_per_year": 0.5,
+    "basis": "Typical linear performance warranty for crystalline silicon modules. Editable, and should be replaced with the module warranty for the project.",
+    "verification": "assumption"
+  },
+  "grid_trajectory": {
+    "note": "A declining grid factor over a project's life. Where none is configured for a country the factor is held flat, which is conservative in ONE direction only: it overstates avoided emissions in later years on a decarbonising grid, and understates them on one that is getting dirtier. The card says so.",
+    "countries": {}
+  }
+}

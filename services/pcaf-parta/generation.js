@@ -1,289 +1,403 @@
 /**
- * A renewable generation project, derived from what it generates.
+ * A renewable project, derived from what it generates.
  *
- * The operator supplies two things — how much the plant generates in a year,
- * and where it is. Everything else is derived: the project's own scope 1 and
- * 2, the emissions it displaces, the data quality option, and whether the
- * generation figure is physically achievable at all.
+ * MW is a rate and MWh is a quantity. Every emission factor is per MWh, so a
+ * nameplate figure alone can never produce tonnes — the capacity factor is the
+ * bridge, and which of the two the operator actually holds depends on where
+ * the project is in its life. So there are two modes and they run in opposite
+ * directions:
  *
- * Why this is not a convenience. Typing scope 1 and scope 2 into boxes made
- * them unaccountable — the trace said "Measured" over a number a person had
- * invented, and the data quality option was a dropdown a user could set to the
- * best score PCAF awards with nothing behind it. Deriving them from generation
- * and a named factor means the figure carries the factor's publisher, vintage
- * and basis wherever it goes, and the option is decided by the data actually
- * consumed rather than chosen.
+ *   PROJECTED (ex-ante, no meter)  capacity is primary; generation is derived
+ *                                  as capacity x default CF x 8,760, stays
+ *                                  editable, and reports Expected Avoided
+ *                                  Emissions.
+ *   METERED   (ex-post)            generation is primary and is NEVER
+ *                                  overwritten; capacity is used only for the
+ *                                  plausibility check, and the output is
+ *                                  realised avoided emissions.
  *
- * The scope 2 and the avoided figure deliberately use DIFFERENT factors. What
- * the plant draws off the grid at night is the grid average; what it displaces
- * by generating is the combined margin. Using one for both is the most common
- * error in renewable-project carbon accounting and it is invisible on the page.
+ * Two things are never entangled. The combined margin values what a new
+ * renewable DISPLACES; the grid average values what the plant itself DRAWS.
+ * They live behind separate functions in country-config.js that take no key
+ * argument, so neither can be handed the other's.
+ *
+ * And the data quality option follows the weakest link in the chain that
+ * produced the number, not the best. A generation figure invented from a
+ * default capacity factor is not primary physical activity data however
+ * precisely it is printed.
  */
 
 'use strict';
 
 const { traced } = require('./provenance');
-const grid = require('./grid-factors');
+const cc = require('./country-config');
 
 const HOURS_PER_YEAR = 8760;
+const CONFIG = cc.CONFIG;
 
-/* No photovoltaic plant anywhere reaches this. Tracking arrays in the best
-   desert sites run near 0.30; above 0.35 the input is not optimistic, it is
-   impossible, and is refused rather than carried into a disclosure. */
-const PV_ABSOLUTE_CEILING = 0.35;
+/* ── The data quality ladder ──────────────────────────────────────────────
+   PCAF Table 5.3-1 Option 2a requires primary physical activity data AND an
+   emission factor specific to that data. Lose either and 2a is unavailable —
+   which is the whole reason a global default carries a penalty rather than
+   just a footnote. */
+const DQ_LADDER = {
+  'metered|national':   { option: '2a', why: 'Metered generation is primary physical activity data, and the grid factor is specific to this country.' },
+  'metered|global':     { option: '2b', why: 'Generation is metered, but the grid factor is a global default rather than one specific to this grid. Option 2a requires factors specific to the data, so it is not available.' },
+  'supplied|national':  { option: '2b', why: 'Generation is a project-specific projection rather than metered output, with a country-specific grid factor.' },
+  'supplied|global':    { option: '3a', why: 'Generation is a projection and the grid factor is a global default. Neither input is specific to this project and grid.' },
+  'derived|national':   { option: '3a', why: 'Generation was estimated from a default capacity factor rather than supplied — it is not project data. The grid factor is country-specific.' },
+  'derived|global':     { option: '3b', why: 'Generation was estimated from a default capacity factor and the grid factor is a global default. Nothing in this figure is specific to this project or this grid.' },
+};
 
-/* And the floor, which the first version of this check was missing.
-   A ceiling with no floor catches the unit error that makes a number too big
-   and waves through the one that makes it too small — and the second is just
-   as common, because MW read as kW and MWh read as GWh both divide by a
-   thousand. Worse, the out-of-band message explained a 0.0% reading away as
-   "not an error — a tracking array, a curtailed connection or an unusual
-   site", which is true at 14% and nonsense at nought. A plant below 1% did not
-   run; the worst-sited array in Norway still averages 8% over a year. */
-const PV_ABSOLUTE_FLOOR = 0.01;
+/** Which rung this run has earned. */
+function _resolveOption({ generationSource, factorScope }) {
+  const key = `${generationSource}|${factorScope}`;
+  const rung = DQ_LADDER[key];
+  return {
+    option: rung.option,
+    derived: true,
+    reason: rung.why,
+    generationSource,
+    factorScope,
+    penalised: rung.option !== '2a',
+    ladder: DQ_LADDER,
+  };
+}
 
 /**
- * Is this much generation achievable from this much plant?
+ * Is this generation achievable from this plant, and if not, why not?
  *
- * Runs only where the capacity is given. A capacity factor is the one check
- * available before a project exists: it needs no meter, no operating history
- * and no counterparty cooperation, only physics and the site's latitude.
+ * The diagnosis is the point. "Outside the band" tells an operator a number is
+ * odd; naming the two or three things that actually produce that number tells
+ * them where to look.
  */
-function capacityFactorCheck({ annualGeneration_MWh, installedCapacity_MW, country }) {
+function capacityFactorCheck({ annualGeneration_MWh, installedCapacity_MW, country, technology }) {
+  const tech = cc.technology(country, technology);
+
   if (!Number.isFinite(installedCapacity_MW) || installedCapacity_MW <= 0) {
-    return {
-      ran: false,
-      reason: 'Installed capacity was not supplied, so the generation figure could not be '
-        + 'checked against what the plant can physically produce.',
-    };
+    return { ran: false, reason: 'Installed capacity was not supplied, so the generation figure '
+      + 'could not be checked against what the plant can physically produce.' };
+  }
+  if (tech.absent) {
+    /* Rule: no data, no check. A band borrowed from another country would
+       pass or fail a project against a place it is not in. */
+    return { ran: false, available: false, reason: tech.reason };
   }
 
-  const c = grid.forCountry(country);
-  const band = c.solarCapacityFactor;
+  const limits = cc.limits(technology);
   const ceiling_MWh = installedCapacity_MW * HOURS_PER_YEAR;
   const cf = annualGeneration_MWh / ceiling_MWh;
+  /* MWh per MW is numerically kWh per kWp. Developers read this far more
+     fluently than a capacity factor. */
+  const specificYield = annualGeneration_MWh / installedCapacity_MW;
 
   const shared = {
     ran: true,
+    available: true,
     capacityFactor: +cf.toFixed(4),
     capacityFactorPct: +(cf * 100).toFixed(1),
+    specificYield_kWh_per_kWp: Math.round(specificYield),
     nameplateCeiling_MWh: +ceiling_MWh.toFixed(0),
-    band: { low: band.low, high: band.high, basis: band.basis, flag: band.flag },
     equation: 'capacity factor = annual generation ÷ (installed capacity × 8,760 h)',
-    country: c.name,
+    specificYieldEquation: 'specific yield = annual generation (MWh) ÷ installed capacity (MW), '
+      + 'which is kWh per kWp per year',
+    technology: tech.technology,
+    reference: tech.isGlobalDefault ? 'Global' : tech.country,
+    isGlobalDefault: Boolean(tech.isGlobalDefault),
+    hasBand: Boolean(tech.hasBand),
+    band: tech.hasBand ? { low: tech.band_low, high: tech.band_high } : null,
+    referenceCf: tech.default_cf,
+    source: `${tech.publisher || tech.source} (${tech.year})`,
+    limits,
   };
 
-  if (cf > PV_ABSOLUTE_CEILING) {
+  const fmtPct = v => `${(v * 100).toFixed(1)}%`;
+
+  if (cf > limits.ceiling) {
     const err = new Error(
       `${annualGeneration_MWh.toLocaleString('en-GB')} MWh from ${installedCapacity_MW} MW implies a `
-      + `capacity factor of ${(cf * 100).toFixed(1)}%. No photovoltaic plant achieves that anywhere on `
-      + `earth — the physical ceiling is around ${(PV_ABSOLUTE_CEILING * 100).toFixed(0)}% and `
-      + `${c.name} sits at ${(band.low * 100).toFixed(0)}-${(band.high * 100).toFixed(0)}%. `
-      + 'The claim is refused rather than carried into a disclosure.');
-    err.statusCode = 422;
-    err.code = 'GENERATION_NOT_PHYSICALLY_POSSIBLE';
-    err.remedy = `Check the units — a figure in kWh entered as MWh produces exactly this. At the `
-      + `top of ${c.name}'s band this plant would generate about `
-      + `${Math.round(ceiling_MWh * band.high).toLocaleString('en-GB')} MWh a year.`;
+      + `capacity factor of ${fmtPct(cf)}. No ${tech.technology.toLowerCase()} plant operates above `
+      + `${fmtPct(limits.ceiling)} — ${limits.ceiling_basis} The figure is refused rather than `
+      + 'carried into a disclosure.');
+    err.statusCode = 422; err.code = 'GENERATION_NOT_PHYSICALLY_POSSIBLE';
+    err.remedy = 'Three things produce a figure this high. A DC nameplate entered where the band '
+      + 'assumes AC. Generation covering more than twelve months. Or kWh entered as MWh. '
+      + `At ${fmtPct(shared.referenceCf)} this plant would generate about `
+      + `${Math.round(ceiling_MWh * shared.referenceCf).toLocaleString('en-GB')} MWh a year.`;
     throw err;
   }
 
-  if (cf < PV_ABSOLUTE_FLOOR) {
-    const expected = ceiling_MWh * band.low;
-    const pct = cf * 100;
-    /* A gap of roughly a thousand is not a bad site, it is a unit. Saying which
-       unit turns a refusal into a correction the operator can act on. */
-    const outBy = cf > 0 ? Math.round(band.low / cf) : null;
+  if (cf < limits.floor) {
+    const outBy = cf > 0 ? Math.round(shared.referenceCf / cf) : null;
     const thousandish = outBy !== null && outBy >= 300 && outBy <= 3000;
-
+    const pct = cf * 100;
     const err = new Error(
       `${annualGeneration_MWh.toLocaleString('en-GB')} MWh from ${installedCapacity_MW} MW implies a `
       + `capacity factor of ${pct >= 0.01 ? pct.toFixed(2) : pct.toPrecision(2)}%. A plant producing `
-      + `that little has not run: ${c.name} sits at ${(band.low * 100).toFixed(0)}-`
-      + `${(band.high * 100).toFixed(0)}%, so this plant should generate around `
-      + `${Math.round(expected).toLocaleString('en-GB')} MWh a year. The figure is refused rather `
-      + 'than carried into a disclosure.');
-    err.statusCode = 422;
-    err.code = 'GENERATION_NOT_PHYSICALLY_POSSIBLE';
+      + `that little has not run: below ${fmtPct(limits.floor)}, ${limits.floor_basis} The figure is `
+      + 'refused rather than carried into a disclosure.');
+    err.statusCode = 422; err.code = 'GENERATION_NOT_PHYSICALLY_POSSIBLE';
     err.remedy = thousandish
       ? `The two figures are out by a factor of about ${outBy.toLocaleString('en-GB')}, which is the `
         + 'signature of a thousands mix-up — capacity entered in kW where the field asks for MW, or '
         + 'generation entered in GWh where it asks for MWh. Check both.'
-      : `Check the units on both fields. At the bottom of ${c.name}'s band this plant would generate `
-        + `about ${Math.round(expected).toLocaleString('en-GB')} MWh a year.`;
+      : 'Two things produce a figure this low. A partial year of generation, where the plant was '
+        + 'commissioned mid-year and the figure covers only the months since. Or kWh entered as MWh. '
+        + `A full year at ${fmtPct(shared.referenceCf)} would be about `
+        + `${Math.round(ceiling_MWh * shared.referenceCf).toLocaleString('en-GB')} MWh.`;
     throw err;
   }
 
-  if (cf < band.low || cf > band.high) {
+  /* A global default gives a reference point, not a range. Judging a plant in
+     or out of a band nobody published would be inventing the band. */
+  if (!tech.hasBand) {
+    const ratio = cf / tech.default_cf;
     return {
       ...shared,
-      status: cf > band.high ? 'above_band' : 'below_band',
-      /* "Not NECESSARILY an error". The check cannot establish innocence, and
-         asserting it is how a reviewer stops reading the sentence. */
-      note: `A capacity factor of ${(cf * 100).toFixed(1)}% sits outside the ${(band.low * 100).toFixed(0)}-`
-        + `${(band.high * 100).toFixed(0)}% band indicative for ${c.name}. That is not necessarily an `
-        + 'error — a tracking array, a curtailed connection or an unusual site can all put a plant '
-        + 'outside the band — but it should be explained rather than left for a reviewer to notice.',
+      status: 'no_band',
+      ratioToReference: +ratio.toFixed(2),
+      note: `${fmtPct(cf)} against a global weighted average of ${fmtPct(tech.default_cf)} for `
+        + `${tech.technology.toLowerCase()} — ${ratio.toFixed(2)}× the global figure. `
+        + `${tech.globalDefaultNote} No national band is held for ${cc.forCountry(country).name}, so `
+        + 'this is a reference point rather than a pass or a fail.',
     };
   }
 
-  return {
-    ...shared,
-    status: 'within_band',
-    note: `A capacity factor of ${(cf * 100).toFixed(1)}% is within the `
-      + `${(band.low * 100).toFixed(0)}-${(band.high * 100).toFixed(0)}% band indicative for ${c.name}.`,
-  };
+  if (cf > tech.band_high) {
+    return { ...shared, status: 'above_band',
+      note: `${fmtPct(cf)} sits above the ${fmtPct(tech.band_low)}-${fmtPct(tech.band_high)} band for `
+        + `${tech.technology.toLowerCase()} in ${tech.country}. The usual causes are a DC nameplate `
+        + 'entered where the band assumes AC capacity, or a generation figure covering more than '
+        + 'twelve months. A tracking array on an unusually good site can also do it legitimately — '
+        + 'but it should be explained rather than left for a reviewer to notice.' };
+  }
+
+  if (cf < tech.band_low) {
+    const halfway = cf < tech.band_low / 2;
+    return { ...shared, status: 'below_band',
+      note: `${fmtPct(cf)} sits below the ${fmtPct(tech.band_low)}-${fmtPct(tech.band_high)} band for `
+        + `${tech.technology.toLowerCase()} in ${tech.country}. `
+        + (halfway
+          ? 'At less than half the bottom of the band the most likely cause is a partial year — the '
+            + 'plant commissioned mid-year and the figure covers only the months since. Check also '
+            + 'that the figure is MWh and not kWh.'
+          : 'The usual causes are a partial year of generation, a curtailed grid connection, or a '
+            + 'shaded or otherwise constrained site. Not necessarily an error, but it should be '
+            + 'explained rather than left for a reviewer to notice.') };
+  }
+
+  return { ...shared, status: 'within_band',
+    note: `${fmtPct(cf)} is within the ${fmtPct(tech.band_low)}-${fmtPct(tech.band_high)} band for `
+      + `${tech.technology.toLowerCase()} in ${tech.country}.` };
 }
 
-/** A factor resolved from the store, shaped for the report and the screen. */
-function _factorBlock(f) {
+/** Lifetime avoided emissions, with degradation and an optional grid trajectory. */
+function _lifetime({ annualGeneration_MWh, factorValue, country, years, degradationPct }) {
+  const traj = (CONFIG.grid_trajectory.countries || {})[country] || null;
+  const factorFor = y => {
+    if (!traj) return factorValue;
+    const row = traj.find(r => r.year === y);
+    return row ? row.value : factorValue;
+  };
+
+  const startYear = new Date().getFullYear();
+  let total = 0;
+  for (let i = 0; i < years; i++) {
+    const output = annualGeneration_MWh * Math.pow(1 - degradationPct / 100, i);
+    total += output * factorFor(startYear + i);
+  }
+
   return {
-    value: f.value,
-    unit: 'tCO2e/MWh',
-    basis: f.basis,
-    basisLabel: f.basisLabel,
-    country: f.country,
-    countryCode: f.countryCode,
-    vintage: f.vintage,
-    source: f.source,
-    publisher: f.publisher,
-    url: f.url,
-    flag: f.flag,
-    flagNote: f.flagNote,
-    substituted: f.substituted,
-    substitutionNote: f.substitutionNote,
+    value: +total.toFixed(2),
+    years,
+    degradationPct,
+    trajectory: traj ? 'configured' : 'flat',
+    trajectoryNote: traj
+      ? `A declining grid factor configured for ${country} has been applied year by year.`
+      : 'No grid trajectory is configured for this country, so the factor is held flat for the whole '
+        + 'life. That is conservative in one direction only: on a decarbonising grid it OVERSTATES '
+        + 'avoided emissions in later years, and on one getting dirtier it understates them.',
+    degradationNote: `Output declines ${degradationPct}% a year. ${CONFIG.degradation.basis}`,
   };
 }
 
 /**
- * Derive the project's emissions and its displacement from its generation.
- *
  * @param {Object} p
- * @param {number} p.annualGeneration_MWh
- * @param {string} p.country                two-letter code held in the factor store
- * @param {number} [p.installedCapacity_MW] enables the physical check
- * @param {number} [p.auxiliaryConsumption_MWh] metered; replaces the assumed rate
+ * @param {'projected'|'metered'} p.mode
+ * @param {string} p.country       ISO 3166-1 alpha-2
+ * @param {string} p.technology    solar_pv | wind_on | hydro_ror
+ * @param {number} [p.installedCapacity_MW]
+ * @param {number} [p.annualGeneration_MWh]  required in metered mode
+ * @param {'P50'|'P90'} [p.yieldBasis]
+ * @param {number} [p.degradationRatePct]
+ * @param {number} [p.lifetimeYears]
+ * @param {number} [p.auxiliaryConsumption_MWh]
+ * @param {number} [p.reportingYear]
  */
-function deriveFromGeneration({
-  annualGeneration_MWh, country, installedCapacity_MW, auxiliaryConsumption_MWh,
-}) {
-  if (!Number.isFinite(annualGeneration_MWh) || annualGeneration_MWh <= 0) {
-    const err = new Error('Annual generation must be a positive number of MWh.');
-    err.statusCode = 400; err.code = 'INVALID_GENERATION';
+function deriveFromGeneration(input) {
+  const {
+    mode = 'projected', country, technology = 'solar_pv',
+    installedCapacity_MW, annualGeneration_MWh,
+    yieldBasis = 'P50',
+    degradationRatePct = CONFIG.degradation.default_rate_pct_per_year,
+    lifetimeYears = 25,
+    auxiliaryConsumption_MWh, reportingYear,
+  } = input;
+
+  const assumptions = [];
+  const countryName = cc.forCountry(country).name;
+
+  /* ── Which figure drives which ───────────────────────────────────────── */
+  let generation = annualGeneration_MWh;
+  let generationSource;          // metered | supplied | derived
+  let generationEquation = null;
+
+  if (mode === 'metered') {
+    if (!Number.isFinite(generation) || generation <= 0) {
+      const err = new Error('Metered mode reports what the plant actually produced, so annual '
+        + 'generation is required and is never derived. Enter the metered figure, or switch to '
+        + 'projected to estimate it from capacity.');
+      err.statusCode = 400; err.code = 'METERED_GENERATION_REQUIRED';
+      throw err;
+    }
+    generationSource = 'metered';
+  } else if (Number.isFinite(generation) && generation > 0) {
+    generationSource = 'supplied';
+  } else {
+    const tech = cc.technology(country, technology);
+    if (tech.absent) {
+      const err = new Error(
+        `Annual generation cannot be estimated for ${cc.TECHNOLOGIES[technology].label} in `
+        + `${countryName}: ${tech.reason}`);
+      err.statusCode = 501; err.code = 'CAPACITY_FACTOR_NOT_HELD';
+      err.remedy = 'Enter the annual generation directly, or add a sourced capacity factor for '
+        + 'this country and technology to the config.';
+      throw err;
+    }
+    if (!Number.isFinite(installedCapacity_MW) || installedCapacity_MW <= 0) {
+      const err = new Error('Projected mode derives generation from installed capacity, so '
+        + 'capacity is required.');
+      err.statusCode = 400; err.code = 'CAPACITY_REQUIRED';
+      throw err;
+    }
+    const p50 = installedCapacity_MW * tech.default_cf * HOURS_PER_YEAR;
+    const ratio = yieldBasis === 'P90' ? CONFIG.yield_basis.p90_ratio_of_p50 : 1;
+    generation = +(p50 * ratio).toFixed(2);
+    generationSource = 'derived';
+    generationEquation = `annual generation = installed capacity × capacity factor × 8,760 h`
+      + (yieldBasis === 'P90' ? ` × ${ratio} (P90 ratio)` : '');
+    assumptions.push(`Annual generation was estimated from a ${(tech.default_cf * 100).toFixed(1)}% `
+      + `capacity factor${tech.isGlobalDefault ? ' (global weighted average, not national)' : ''}, `
+      + `not supplied. ${tech.publisher || tech.source} (${tech.year}).`);
+    if (yieldBasis === 'P90') {
+      assumptions.push(`P90 derived from P50 using a ${ratio} ratio. ${CONFIG.yield_basis.ratio_basis}`);
+    }
+  }
+
+  /* ── The two factors, resolved apart ─────────────────────────────────── */
+  const consumption  = cc.consumptionFactor(country);
+  const displacement = cc.displacementFactor(country);
+
+  if (consumption.absent) {
+    const err = new Error(`Scope 2 cannot be computed for ${countryName}: ${consumption.reason}`);
+    err.statusCode = 501; err.code = 'CONSUMPTION_FACTOR_NOT_HELD';
     throw err;
   }
 
-  const plausibility = capacityFactorCheck({ annualGeneration_MWh, installedCapacity_MW, country });
+  const factorScope = (consumption.isGlobalDefault || displacement.isGlobalDefault) ? 'global' : 'national';
 
-  const consumption  = grid.resolve(country, 'consumption');
-  const displacement = grid.resolve(country, 'displacement');
-  const aux = grid.auxiliaryRate();
+  for (const f of [consumption, displacement]) {
+    if (f.absent) continue;
+    if (f.isGlobalDefault) assumptions.push(f.globalDefaultNote);
+    const stale = cc.staleness(f, reportingYear);
+    if (stale.stale) assumptions.push(`${f.key === 'combined_margin' ? 'Displacement' : 'Consumption'} factor: ${stale.note}`);
+    if (f.caveat) assumptions.push(`${f.key === 'combined_margin' ? 'Displacement' : 'Consumption'} factor: ${f.caveat}`);
+  }
 
-  /* Auxiliary draw: metered where it exists, otherwise the store's rate. The
-     difference between the two is the difference between a measurement and an
-     assumption, and the basis says which one this is. */
+  /* ── Auxiliary draw ──────────────────────────────────────────────────── */
   const metered = Number.isFinite(auxiliaryConsumption_MWh) && auxiliaryConsumption_MWh >= 0;
-  const auxMWh = metered
-    ? auxiliaryConsumption_MWh
-    : annualGeneration_MWh * aux.rateOfGrossGeneration;
-
-  const assumptions = [];
+  const auxRate = 0.005;
+  const auxMWh = metered ? auxiliaryConsumption_MWh : generation * auxRate;
   if (!metered) {
-    assumptions.push(`Auxiliary consumption assumed at ${(aux.rateOfGrossGeneration * 100).toFixed(1)}% `
-      + `of gross generation (${Math.round(auxMWh).toLocaleString('en-GB')} MWh). ${aux.note}`);
-  }
-  if (consumption.substituted)  assumptions.push(consumption.substitutionNote);
-  if (displacement.substituted) assumptions.push(displacement.substitutionNote);
-  if (displacement.flagNote)    assumptions.push(`Displacement factor: ${displacement.flagNote}`);
-  if (consumption.flagNote && consumption.source !== displacement.source) {
-    assumptions.push(`Consumption factor: ${consumption.flagNote}`);
+    assumptions.push(`Auxiliary consumption assumed at ${(auxRate * 100).toFixed(1)}% of gross `
+      + `generation (${Math.round(auxMWh).toLocaleString('en-GB')} MWh). Replace with metered `
+      + 'auxiliary consumption where it exists.');
   }
 
-  /* Scope 1 is nil and that is a finding, not a gap. A photovoltaic plant
-     burns nothing to generate. Reported as a derived zero with the reason, so
-     it cannot be read as a scope nobody measured. */
+  /* ── The figures ─────────────────────────────────────────────────────── */
   const scope1 = traced({
-    value: 0,
-    unit: 'tCO2e',
+    value: 0, unit: 'tCO2e',
     equation: 'project scope 1 = 0 — no combustion in the generation process',
-    inputs: { technology: 'photovoltaic generation' },
-    basis: 'Derived from the technology: photovoltaic generation involves no fuel combustion',
+    inputs: { technology: cc.TECHNOLOGIES[technology].label },
+    basis: 'Derived from the technology: this generation involves no fuel combustion',
     reference: 'PCAF Part A Third Edition §5.3, Emission scopes covered',
-    assumptions: ['Standby generation, refrigerant and switchgear SF6 fugitives are not included. '
-      + 'Where the plant holds a diesel standby set or SF6-insulated switchgear, those are scope 1 '
-      + 'and must be added.'],
+    assumptions: ['Standby generation, refrigerant and switchgear SF6 fugitives are excluded. '
+      + 'Where the plant holds a diesel standby set or SF6-insulated switchgear, those are scope 1.'],
   });
 
   const scope2 = traced({
-    value: +(auxMWh * consumption.value).toFixed(2),
-    unit: 'tCO2e',
-    equation: 'project scope 2 = auxiliary consumption × grid emission factor (consumption basis)',
-    inputs: {
-      auxiliaryConsumption_MWh: +auxMWh.toFixed(2),
-      gridFactor_tCO2e_per_MWh: consumption.value,
-      basis: consumption.basisLabel,
-    },
-    basis: metered
-      ? 'Measured from metered auxiliary consumption and a published grid factor'
-      : 'Calculated from generation and a published grid factor, with auxiliary draw assumed',
-    reference: `${consumption.publisher} — ${consumption.source} (${consumption.vintage})`,
-    assumptions: [],
+    value: +(auxMWh * consumption.value).toFixed(2), unit: 'tCO2e',
+    equation: 'project scope 2 = auxiliary consumption × grid average emission factor',
+    inputs: { auxiliaryConsumption_MWh: +auxMWh.toFixed(2),
+      gridAverage_tCO2e_per_MWh: consumption.value, basis: consumption.use },
+    basis: metered ? 'Measured from metered auxiliary consumption and a published grid average'
+      : 'Calculated from generation and a published grid average, with auxiliary draw assumed',
+    reference: `${consumption.publisher} — ${consumption.source} (${consumption.vintage || consumption.year})`,
   });
 
-  const avoided = traced({
-    value: +(annualGeneration_MWh * displacement.value).toFixed(2),
-    unit: 'tCO2e',
-    equation: 'avoided emissions = annual generation × displaced grid emission factor',
-    inputs: {
-      annualGeneration_MWh,
-      displacedFactor_tCO2e_per_MWh: displacement.value,
-      basis: displacement.basisLabel,
-    },
+  const avoided = displacement.absent ? displacement : traced({
+    value: +(generation * displacement.value).toFixed(2), unit: 'tCO2e',
+    equation: 'avoided emissions = annual generation × combined margin emission factor',
+    inputs: { annualGeneration_MWh: generation,
+      combinedMargin_tCO2e_per_MWh: displacement.value, basis: displacement.use },
     basis: 'Calculated against the displaced grid supply named in the factor store',
-    reference: `${displacement.publisher} — ${displacement.source} (${displacement.vintage})`,
-    assumptions: [],
+    reference: `${displacement.publisher} — ${displacement.source} (${displacement.year})`,
   });
 
-  /* The option is decided by the data the run consumed, not chosen from a
-     list. Generation is primary physical activity data and the factor is
-     specific to that data and that grid, which is Option 2a in Table 5.3-1. */
-  const dataQuality = {
-    option: '2a',
-    derived: true,
-    reason: 'Emissions were calculated from primary physical activity data — the plant\'s annual '
-      + 'generation and its auxiliary consumption — with a grid emission factor specific to that '
-      + 'country and named with its publisher and vintage. Table 5.3-1 places that at Option 2a. '
-      + 'The option was derived from the data actually used, not selected.',
-    wouldReach: {
-      betterBy: 'Option 1b requires emissions reported by the project itself; Option 1a requires '
-        + 'those emissions to have been independently verified.',
-      worseBy: 'Absent generation data, an estimate from project revenue and a sector factor would '
-        + 'be Option 3a.',
-    },
-  };
+  const lifetime = displacement.absent ? null : _lifetime({
+    annualGeneration_MWh: generation, factorValue: displacement.value,
+    country, years: lifetimeYears, degradationPct: degradationRatePct,
+  });
+  if (lifetime) assumptions.push(lifetime.trajectoryNote, lifetime.degradationNote);
 
   return {
-    scope1,
-    scope2,
-    avoided,
-    dataQuality,
-    plausibility,
+    mode,
+    technology: cc.TECHNOLOGIES[technology].label,
+    technologyId: technology,
+    country: countryName,
+    countryCode: String(country).toUpperCase(),
+
+    generation: {
+      value: generation, unit: 'MWh',
+      source: generationSource,
+      driver: mode === 'metered' ? 'generation' : 'capacity',
+      derived: generationSource === 'derived',
+      equation: generationEquation,
+      yieldBasis: mode === 'projected' ? yieldBasis : null,
+    },
+    installedCapacity_MW: Number.isFinite(installedCapacity_MW) ? installedCapacity_MW : null,
+
+    scope1, scope2, avoided, lifetime,
+    plausibility: capacityFactorCheck({
+      annualGeneration_MWh: generation, installedCapacity_MW, country, technology }),
+
+    dataQuality: _resolveOption({ generationSource, factorScope }),
+
     factors: {
-      consumption:  _factorBlock(consumption),
-      displacement: _factorBlock(displacement),
-      auxiliaryRate: metered ? null : aux.rateOfGrossGeneration,
+      consumption: { ...consumption },
+      displacement: { ...displacement },
       auxiliaryConsumption_MWh: +auxMWh.toFixed(2),
       auxiliaryMetered: metered,
     },
-    counterfactual: `Grid electricity that would otherwise have been supplied to the `
-      + `${displacement.country} national system, valued on the `
-      + `${displacement.basis === 'combinedMargin' ? 'CDM combined margin' : 'grid average'} basis.`,
-    counterfactualSource: `${displacement.publisher} — ${displacement.source} (${displacement.vintage})`,
-    assumptions,
+
+    counterfactual: displacement.absent ? null
+      : `Grid electricity that would otherwise have been supplied to the ${displacement.country} `
+        + 'system, valued on the CDM combined margin basis.',
+    counterfactualSource: displacement.absent ? null
+      : `${displacement.publisher} — ${displacement.source} (${displacement.year})`,
+
+    assumptions: assumptions.filter(Boolean),
   };
 }
 
-module.exports = {
-  deriveFromGeneration, capacityFactorCheck, HOURS_PER_YEAR,
-  PV_ABSOLUTE_CEILING, PV_ABSOLUTE_FLOOR,
-};
+module.exports = { deriveFromGeneration, capacityFactorCheck, HOURS_PER_YEAR, DQ_LADDER };

@@ -440,7 +440,11 @@ fieldset.parta-card { border: 1px solid var(--border); }
    one thing on the card that changes colour. */
 .parta-basis-warn { color: var(--amber); font-weight: 600; }
 
-/* ── The physical check ─────────────────────────────────────── */
+/* ── The physical check ───────────────────────────────────────
+   Named `parta-plaus`, not `parta-check`: the latter is already the checkbox
+   label above, and a card carrying both picked up its `display:flex` and laid
+   its children out in a row. The overflow that caused was 14px of sideways
+   scroll on a phone, from a rule written for something else entirely. */
 .parta-check-figure {
   display: flex; align-items: baseline; gap: 10px;
   flex-wrap: wrap; margin: 14px 0 10px;
@@ -473,4 +477,60 @@ fieldset.parta-card { border: 1px solid var(--border); }
 @media (max-width: 620px) {
   .parta-factors { grid-template-columns: 1fr; }
   .parta-check-band { margin-left: 0; flex-basis: 100%; }
+}
+
+/* ── Which field is driving ─────────────────────────────────────
+   The mode decides which figure is primary and which is derived from it.
+   A derived value that looks identical to a typed one is how someone comes
+   to believe they entered a number the engine actually invented. */
+.parta-field-primary > input {
+  border-color: var(--green);
+  background: var(--green-bg);
+  font-weight: 600;
+}
+.parta-field-primary > small { color: var(--green); font-weight: 600; }
+
+.parta-country-note {
+  font-size: 12px; line-height: 1.55; color: var(--text-secondary);
+  margin: 12px 0 0;
+}
+.parta-country-note-warn {
+  padding: 10px 12px; border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  border-left: 3px solid var(--amber); background: var(--amber-bg);
+  color: var(--text-primary);
+}
+
+/* ── Specific yield, beside the capacity factor ─────────────────
+   Developers read kWh/kWp far more fluently than a capacity factor. */
+.parta-yield {
+  display: flex; align-items: baseline; gap: 8px;
+  margin: 0 0 10px; flex-wrap: wrap;
+}
+.parta-yield-value {
+  font-size: 18px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.parta-yield-unit { font-size: 11px; color: var(--text-secondary); }
+
+/* ── A global default is a weaker claim, and says so ───────────── */
+.parta-global-flag {
+  margin: 12px 0 0; padding: 10px 12px;
+  border-left: 3px solid var(--amber); background: var(--amber-bg);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+  font-size: 12px; line-height: 1.55; color: var(--text-primary);
+}
+
+/* ── Lifetime, beside the annual figure and never replacing it ── */
+.parta-lifetime {
+  margin-top: 14px; padding: 14px;
+  border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.parta-lifetime-label { font-size: 11px; font-weight: 600; color: var(--text-secondary); }
+.parta-lifetime-value {
+  display: block; font-size: 22px; font-weight: 700;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.parta-lifetime-note {
+  margin: 8px 0 0; font-size: 11.5px; line-height: 1.55; color: var(--text-secondary);
 }

@@ -164,13 +164,18 @@ describe('The worked examples produce the figures they promise', () => {
     expect(r.inventory.scope1.value).toBe(0);
     expect(r.inventory.scope1And2.value).toBe(67.95);
 
-    // Nothing was typed, so the option is earned rather than chosen.
-    expect(r.inventory.dataQuality.label).toBe('Data quality score: 2 (Option 2a)');
+    /* Generation is supplied rather than metered, so the ladder places this at
+       2b: a projection is not primary physical activity data. Only a metered
+       figure with a country-specific factor reaches 2a. */
+    expect(r.inventory.dataQuality.label).toBe('Data quality score: 3 (Option 2b)');
     expect(r.inventory.dataQuality.derived).toBe(true);
 
     // 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's band.
     expect(r.generation.plausibility.capacityFactorPct).toBe(17.2);
-    expect(r.generation.plausibility.status).toBe('within_band');
+    /* No national band is held, so the plant is compared to the global
+       weighted average as a ratio rather than passed or failed. */
+    expect(r.generation.plausibility.status).toBe('no_band');
+    expect(r.generation.plausibility.specificYield_kWh_per_kWp).toBe(1510);
 
     // Scope 3 was not marked relevant: absent, never a zero.
     expect(r.inventory.scope3.absent).toBe(true);

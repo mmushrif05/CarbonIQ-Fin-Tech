@@ -50,12 +50,22 @@ router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res, next) => {
       /* The countries a renewable project can be sited in, each with both
          factor bases and the source behind them. A screen offering a country
          the engine holds no factor for would be offering a refusal. */
-      gridFactors: {
-        unit: parta.gridFactors.STORE.unit,
-        bases: parta.gridFactors.STORE.bases,
-        note: parta.gridFactors.STORE.note,
-        auxiliaryConsumption: parta.gridFactors.auxiliaryRate(),
-        countries: parta.gridFactors.list(),
+      /* Everything country-dependent, so a form cannot offer a country or a
+         technology the engine holds nothing for. */
+      countryConfig: {
+        unit: parta.countryConfig.CONFIG.unit,
+        gridFactorUses: parta.countryConfig.CONFIG.grid_factor_uses,
+        fallbackRule: parta.countryConfig.CONFIG.fallback_rule,
+        staleAfterYears: parta.countryConfig.CONFIG.stale_after_years,
+        verificationLevels: parta.countryConfig.CONFIG.verification_levels,
+        yieldBasis: parta.countryConfig.CONFIG.yield_basis,
+        degradation: parta.countryConfig.CONFIG.degradation,
+        gridTrajectory: parta.countryConfig.CONFIG.grid_trajectory,
+        technologies: parta.countryConfig.TECHNOLOGIES,
+        technologyLimits: parta.countryConfig.CONFIG.technology_limits,
+        globalDefaults: parta.countryConfig.CONFIG.global_defaults,
+        countries: parta.countryConfig.countries(),
+        coverage: parta.countryConfig.coverage(),
       },
       notes: {
         avoidedEmissions: 'Avoided emissions are no longer covered by Part A. From the '

@@ -38,13 +38,20 @@ const avoided = Joi.object({
    optional and unlocks the physical check; metered auxiliary consumption is
    optional and replaces an assumption with a measurement. */
 const generation = Joi.object({
-  annualGeneration_MWh: Joi.number().positive().required(),
   country: Joi.string().length(2).uppercase().required(),
-  installedCapacity_MW: Joi.number().positive().optional(),
-  auxiliaryConsumption_MWh: Joi.number().min(0).optional(),
-  basis: Joi.string().valid('projected', 'metered').default('projected'),
-});
+  technology: Joi.string().valid('solar_pv', 'wind_on', 'hydro_ror').default('solar_pv'),
 
+  /* Which figure drives which. Projected derives generation from capacity;
+     metered takes the generation as given and never overwrites it. */
+  basis: Joi.string().valid('projected', 'metered').default('projected'),
+  installedCapacity_MW: Joi.number().positive().optional(),
+  annualGeneration_MWh: Joi.number().positive().optional(),
+
+  yieldBasis: Joi.string().valid('P50', 'P90').default('P50'),
+  degradationRatePct: Joi.number().min(0).max(5).optional(),
+  lifetimeYears: Joi.number().integer().min(1).max(60).optional(),
+  auxiliaryConsumption_MWh: Joi.number().min(0).optional(),
+});
 const assessRequestSchema = Joi.object({
   projectName: Joi.string().max(200).required(),
   counterparty: Joi.string().max(200).allow('').optional(),

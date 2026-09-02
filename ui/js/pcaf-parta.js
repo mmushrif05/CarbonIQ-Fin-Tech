@@ -56,11 +56,15 @@ const PCAFPartAPage = (() => {
      the other three sharpen it. Nothing here is an emissions figure — the
      scopes, the displacement and the data quality option are all derived. */
   const GENERATION_FIELDS = [
-    ['annualGeneration_MWh',      'number'],
     ['country',                   'text'],
-    ['installedCapacity_MW',      'number'],
-    ['auxiliaryConsumption_MWh',  'number'],
+    ['technology',                'text'],
     ['basis',                     'text'],
+    ['installedCapacity_MW',      'number'],
+    ['annualGeneration_MWh',      'number'],
+    ['yieldBasis',                'text'],
+    ['auxiliaryConsumption_MWh',  'number'],
+    ['lifetimeYears',             'number'],
+    ['degradationRatePct',        'number'],
   ];
 
   /* There is no table of avoided-emissions inputs any more. The counterfactual,
@@ -116,11 +120,15 @@ const PCAFPartAPage = (() => {
       /* 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's
          band, and outside Norway's, which is the point of switching country. */
       generation: {
-        annualGeneration_MWh: 90600,
         country: 'LK',
-        installedCapacity_MW: 60,
-        auxiliaryConsumption_MWh: '',
+        technology: 'solar_pv',
         basis: 'projected',
+        installedCapacity_MW: 60,
+        annualGeneration_MWh: 90600,
+        yieldBasis: 'P50',
+        auxiliaryConsumption_MWh: '',
+        lifetimeYears: 25,
+        degradationRatePct: 0.5,
       },
     },
     blank: {
@@ -200,38 +208,62 @@ const PCAFPartAPage = (() => {
     arch.innerHTML = _reference.archetypes
       .map(a => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join('');
 
-    const country = el('pa-gen-country');
-    country.innerHTML = (_reference.gridFactors.countries || [])
+    const cfg = _reference.countryConfig;
+    el('pa-gen-country').innerHTML = (cfg.countries || [])
       .map(c => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join('');
+    el('pa-gen-technology').innerHTML = Object.values(cfg.technologies || {})
+      .map(t => `<option value="${esc(t.id)}">${esc(t.label)}</option>`).join('');
 
     _populateDqOptions();
     _describeAssetClass();
   }
 
   /** The country whose factors this run would use. */
-  function _currentCountry() {
-    const code = el('pa-gen-country').value;
-    return (_reference.gridFactors.countries || []).find(c => c.code === code) || null;
-  }
-
-  /* Said before the engine is asked, because the gap in the store is a fact
-     about the country and not about this particular project. */
-  function _describeCountry() {
-    const c = _currentCountry();
-    const note = el('pa-gen-countryNote');
-    if (!c) { note.textContent = ''; return; }
-    const parts = [];
-    if (!c.combinedMargin) parts.push('No combined margin held — the grid average will be substituted for displacement.');
-    else if (c.combinedMargin.flag) parts.push(`Combined margin is ${c.combinedMargin.flag} (${c.combinedMargin.vintage}).`);
-    if (!c.gridAverage) parts.push('No grid average held — the combined margin will be substituted for consumption.');
-    const cf = c.solarCapacityFactor;
-    if (cf) parts.push(`Indicative solar capacity factor ${(cf.low * 100).toFixed(0)}-${(cf.high * 100).toFixed(0)}%.`);
-    note.textContent = parts.join(' ');
-  }
-
+  /** The asset class this run uses — its own data-quality table and denominator. */
   function _currentAssetClass() {
     const id = el('pa-assetClass').value;
     return _reference.assetClasses.find(c => c.id === id) || _reference.assetClasses[0];
+  }
+
+  const _cfg = () => _reference.countryConfig;
+
+  function _currentCoverage() {
+    const code = el('pa-gen-country').value;
+    return (_cfg().coverage || []).find(c => c.code === code) || null;
+  }
+
+  /* Said before the engine is asked, because what the store holds is a fact
+     about the country rather than about this particular project. */
+  function _describeCountry() {
+    const c = _currentCoverage();
+    const note = el('pa-gen-countryNote');
+    if (!c) { note.textContent = ''; note.className = 'parta-country-note'; return; }
+    const parts = [];
+    if (!c.canComputeAvoided) {
+      parts.push(`No combined margin is held for ${c.name}, and a grid average must not stand in `
+        + 'for one. Avoided emissions will be reported as absent.');
+    } else if (c.avoidedIsGlobal) {
+      parts.push('Displacement rests on a global default, so the data quality option drops.');
+    }
+    if (c.scope2IsGlobal) {
+      parts.push(`No national grid average is held for ${c.name}, so the global average is used `
+        + 'and the data quality option drops.');
+    }
+    note.textContent = parts.join(' ');
+    note.className = 'parta-country-note' + (parts.length ? ' parta-country-note-warn' : '');
+  }
+
+  /* Which field drives which. The derived one must not look typed. */
+  function _applyModeGate() {
+    const metered = el('pa-gen-basis').value === 'metered';
+    el('pa-gen-modeNote').textContent = metered
+      ? 'Generation is primary and is never overwritten. Capacity is used only for the physical check.'
+      : 'Capacity is primary. Generation is estimated from it and stays editable — type over it and it stops recomputing.';
+    el('pa-yieldField').hidden = metered;
+    el('pa-capacityField').classList.toggle('parta-field-primary', !metered);
+    el('pa-generationField').classList.toggle('parta-field-primary', metered);
+    el('pa-capacityRole').textContent = metered ? 'Plausibility check only.' : 'Drives the generation figure.';
+    el('pa-generationRole').textContent = metered ? 'Metered output for the period.' : 'Derived — edit to override.';
   }
 
   function _populateDqOptions() {
@@ -285,7 +317,7 @@ const PCAFPartAPage = (() => {
     el('pa-dqChoose').hidden      = derives;
     el('pa-reductionBox').hidden  = a.impact !== 'reduction';
     el('pa-noImpactBox').hidden   = Boolean(a.impact);
-    if (derives) _describeCountry();
+    if (derives) { _describeCountry(); _applyModeGate(); }
   }
 
   /** True when this run derives its emissions rather than being told them. */
@@ -497,34 +529,40 @@ const PCAFPartAPage = (() => {
     const boxes = ['paGridBox', 'paCheckBox', 'paAssumptionsBox'];
     if (!g) { boxes.forEach(id => { el(id).hidden = true; }); return; }
 
-    // ── the two factors, and which basis each one is ──
+    // ── the two factors, each labelled with the basis it actually is ──
     el('paGridBox').hidden = false;
     const d = g.factors.displacement, c = g.factors.consumption;
     el('paGridCountry').textContent =
-      `${d.country} · generation ${g.basis === 'metered' ? 'metered for the period' : 'projected'}`;
+      `${g.country} · ${g.technology} · generation ${g.annualGeneration.source}`;
 
-    el('paGridDisplaced').textContent = `${d.value} ${d.unit}`;
-    el('paGridDisplacedBasis').textContent = d.substituted
-      ? `${_basisName(d.basis)} — substituted`
-      : _basisName(d.basis);
-    el('paGridDisplacedBasis').classList.toggle('parta-basis-warn', Boolean(d.substituted));
+    el('paGridDisplaced').textContent = d.absent ? 'Not held' : `${d.value} ${d.unit}`;
+    el('paGridDisplacedBasis').textContent = d.absent
+      ? 'Combined margin — avoided emissions cannot be computed'
+      : `CDM combined margin${d.isGlobalDefault ? ' — global default' : ''}`;
+    el('paGridDisplacedBasis').classList.toggle('parta-basis-warn', Boolean(d.absent || d.isGlobalDefault));
 
     el('paGridConsumed').textContent = `${c.value} ${c.unit}`;
-    el('paGridConsumedBasis').textContent = c.substituted
-      ? `${_basisName(c.basis)} — substituted`
-      : _basisName(c.basis);
-    el('paGridConsumedBasis').classList.toggle('parta-basis-warn', Boolean(c.substituted));
+    el('paGridConsumedBasis').textContent = `Grid average${c.isGlobalDefault ? ' — global default' : ''}`;
+    el('paGridConsumedBasis').classList.toggle('parta-basis-warn', Boolean(c.isGlobalDefault));
 
-    el('paGridSource').textContent = `${d.publisher} — ${d.source} (${d.vintage})`;
+    const cited = d.absent ? c : d;
+    el('paGridSource').textContent = `${cited.publisher} — ${cited.source} (${cited.year})`;
+
+    /* A figure resting on a global default is not wrong, but it is a weaker
+       claim and PCAF scores it lower. Saying so beside the factor is the
+       point of the fallback being allowed at all. */
+    const anyGlobal = d.isGlobalDefault || c.isGlobalDefault;
+    el('paGlobalFlag').hidden = !anyGlobal;
+    el('paGlobalFlag').textContent = anyGlobal
+      ? 'Global default in use — no national factor is held for this basis. The data quality '
+        + 'option drops, because PCAF Option 2a requires a factor specific to the data.'
+      : '';
 
     const sub = el('paGridSubstitution');
-    const subNote = d.substitutionNote || c.substitutionNote || '';
-    sub.hidden = !subNote;
-    sub.textContent = subNote;
+    sub.hidden = !d.absent;
+    sub.textContent = d.absent ? d.reason : '';
 
-    const flag = el('paGridFlag');
-    flag.hidden = !d.flagNote;
-    flag.textContent = d.flagNote ? `${_titleCase(d.flag)}: ${d.flagNote}` : '';
+    el('paGridFlag').hidden = true;
 
     // ── the physical check ──
     const p = g.plausibility;
@@ -532,20 +570,24 @@ const PCAFPartAPage = (() => {
     if (!p.ran) {
       el('paCheckCf').textContent = 'Not run';
       el('paCheckBand').textContent = '';
+      el('paSpecificYield').textContent = '—';
       el('paCheckEq').textContent = '';
       el('paCheckNote').textContent = p.reason;
-      el('paCheckBox').className = 'parta-card parta-check';
+      el('paCheckBox').className = 'parta-card parta-plaus';
     } else {
       el('paCheckCf').textContent = `${p.capacityFactorPct}%`;
-      el('paCheckBand').textContent =
-        `band ${(p.band.low * 100).toFixed(0)}–${(p.band.high * 100).toFixed(0)}% for ${p.country}`;
-      el('paCheckEq').textContent = p.equation;
+      el('paSpecificYield').textContent = p.specificYield_kWh_per_kWp.toLocaleString('en-GB');
+      el('paCheckBand').textContent = p.hasBand
+        ? `band ${(p.band.low * 100).toFixed(0)}–${(p.band.high * 100).toFixed(0)}% · ${p.reference}`
+        : `reference ${(p.referenceCf * 100).toFixed(1)}% · ${p.reference}`;
+      el('paCheckEq').textContent = `${p.equation}\n${p.specificYieldEquation}`;
       el('paCheckNote').textContent = p.note;
-      el('paCheckBox').className =
-        'parta-card parta-check ' + (p.status === 'within_band' ? 'parta-check-ok' : 'parta-check-warn');
+      const tone = p.status === 'within_band' ? ' parta-check-ok'
+        : p.status === 'no_band' ? ''
+          : ' parta-check-warn';
+      el('paCheckBox').className = 'parta-card parta-plaus' + tone;
     }
 
-    // ── every assumption the derivation made ──
     const list = g.assumptions || [];
     el('paAssumptionsBox').hidden = !list.length;
     el('paAssumptions').innerHTML = list.map(a => `<li>${esc(a)}</li>`).join('');
@@ -556,12 +598,21 @@ const PCAFPartAPage = (() => {
 
   function _renderImpact(impact) {
     const has = impact && impact.metrics && impact.metrics.length;
-    el('paBreak').hidden     = !has;
-    el('paImpactBox').hidden = !has;
-    if (!has) return;
+    const absentClaim = impact && impact.absent;
 
-    el('paImpactArchetype').textContent = `${impact.archetype} — reported separately from the inventory above.`;
-    el('paMetrics').innerHTML = impact.metrics.map(m => {
+    el('paBreak').hidden     = !(has || absentClaim);
+    el('paImpactBox').hidden = !(has || absentClaim);
+    if (!has && !absentClaim) return;
+
+    el('paImpactArchetype').textContent =
+      `${impact.archetype} — reported separately from the inventory above.`;
+
+    /* A country with no combined margin reports the claim as absent rather
+       than computing it from a factor that measures something else. */
+    el('paImpactAbsent').hidden = !absentClaim;
+    el('paImpactAbsent').textContent = absentClaim ? impact.absent.reason : '';
+
+    el('paMetrics').innerHTML = !has ? '' : impact.metrics.map(m => {
       const f = m.figure;
       const notes = [m.comparedAgainst ? `Compared against ${esc(m.comparedAgainst)}.` : '',
         esc(m.annualisedNote || ''), esc(m.achievedNote || ''), esc(m.scopeNote || '')]
@@ -577,6 +628,16 @@ const PCAFPartAPage = (() => {
           <p class="parta-ref">${esc(f.reference || '')}</p>
         </div>`;
     }).join('');
+
+    const lt = impact.lifetime;
+    el('paLifetimeBox').hidden = !lt;
+    if (lt) {
+      el('paLifetimeLabel').textContent =
+        `Lifetime, financed — ${lt.years} years at ${lt.degradationPct}% degradation`;
+      el('paLifetime').textContent = `${fmt(lt.value)} tCO2e`;
+      el('paLifetimeNote').textContent = `${lt.trajectoryNote} ${lt.degradationNote}`;
+    }
+
     el('paNotComparable').textContent = impact.notComparable;
   }
 
@@ -598,7 +659,9 @@ const PCAFPartAPage = (() => {
     if (r.generation) {
       push('Project scope 1 (derived)', r.generation.projectScope1);
       push('Project scope 2 (derived)', r.generation.projectScope2);
-      push('Project avoided emissions (derived)', r.generation.projectAvoided);
+      if (!r.generation.projectAvoided.absent) {
+        push('Project avoided emissions (derived)', r.generation.projectAvoided);
+      }
     }
     push('Financed scope 1', r.inventory.scope1);
     push('Financed scope 2', r.inventory.scope2);
@@ -625,6 +688,7 @@ const PCAFPartAPage = (() => {
       b.classList.toggle('active', b.dataset.preset === name));
 
     _populateDqOptions();
+    if (p.generation) { _describeCountry(); _applyModeGate(); }
     if (p.dataQualityOptionChosen) writeField('pa-dataQualityOptionChosen', p.dataQualityOptionChosen);
     /* A preset never arrives claiming an option it has not earned, so the
        claim panel is closed and its justification cleared on every switch. */
@@ -649,6 +713,8 @@ const PCAFPartAPage = (() => {
     el('pa-archetype').addEventListener('change', () => { _applyArchetypeGate(); schedule(); });
     el('pa-dataQualityOptionChosen').addEventListener('change', _describeDqOption);
     el('pa-gen-country').addEventListener('change', () => { _describeCountry(); schedule(); });
+    el('pa-gen-technology').addEventListener('change', schedule);
+    el('pa-gen-basis').addEventListener('change', () => { _applyModeGate(); schedule(); });
     /* Opening or closing the claim panel changes what is sent, so it has to
        re-ask — a <details> toggle is not an input event. */
     if (el('pa-dqClaim')) el('pa-dqClaim').addEventListener('toggle', schedule);
