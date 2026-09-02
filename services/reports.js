@@ -14,6 +14,7 @@
  */
 
 const PDFDocument = require('pdfkit');
+const integrity   = require('./report-integrity');
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -30,37 +31,88 @@ const PDFDocument = require('pdfkit');
  * @param {Object} [opts.slgftData]     - SLGFT-specific data (NDC alignment, SDG, taxonomy dist)
  * @returns {Object} Structured report data
  */
-function generateReport({ type, period, orgName, portfolioData, slgftData }) {
+function generateReport({ type, period, orgName, portfolioData, slgftData, entityDisclosures }) {
+  /* A report built without a portfolio runs on sample figures. That is fine
+     for a demonstration and unacceptable in a document that cites a standard,
+     so the report says which it is on its own face rather than leaving the
+     reader to assume the numbers are theirs. */
+  const isDemo = !portfolioData;
   const portfolio = portfolioData || _demoPortfolio(period);
+  const entity = entityDisclosures || null;
   const meta = {
     generatedAt: new Date().toISOString(),
     reportingPeriod: `FY ${period}`,
     organisation: orgName || 'Your Organisation',
     reportId: `RPT-${type.toUpperCase()}-${period}-${Date.now()}`,
+    dataSource: isDemo ? 'SAMPLE DATA — NOT THIS ORGANISATION\'S PORTFOLIO' : 'Measured portfolio',
+    ...(isDemo ? {
+      sampleDataWarning: 'No portfolio was supplied, so every figure below is '
+        + 'illustrative sample data. This document must not be filed, published or '
+        + 'relied upon as a disclosure.'
+    } : {}),
   };
 
   switch (type) {
-    case 'pcaf':    return _pcafReport(meta, portfolio);
-    case 'gri305':  return _gri305Report(meta, portfolio);
-    case 'tcfd':    return _tcfdReport(meta, portfolio);
-    case 'ifrs-s2':    return _ifrsS2Report(meta, portfolio);
+    case 'pcaf':    return _withGaps(_pcafReport(meta, portfolio, entity));
+    case 'gri305':  return _withGaps(_gri305Report(meta, portfolio, entity));
+    case 'tcfd':    return _withGaps(_tcfdReport(meta, portfolio, entity));
+    case 'ifrs-s2':    return _withGaps(_ifrsS2Report(meta, portfolio, entity));
     // Two Sri Lanka disclosures, kept as separate ids rather than merged.
     // 'slgft-cbsl' is the CBSL Direction 05 / SLFRS S2 disclosure already in
     // use; 'slgft' is the fuller taxonomy report that also carries NDC
     // contribution, SDG alignment, DNSH and carbon-pricing exposure. Folding
     // one id into the other would silently change what an existing caller
     // receives, so both remain addressable.
-    case 'slgft-cbsl': return _slgftCbslReport(meta, portfolio);
-    case 'slgft':      return _slgftReport(meta, portfolio, slgftData || {});
+    case 'slgft-cbsl': return _withGaps(_slgftCbslReport(meta, portfolio, entity));
+    case 'slgft':      return _withGaps(_slgftReport(meta, portfolio, slgftData || {}, entity));
     default:           throw new Error(`Unknown report type: ${type}`);
   }
+}
+
+/**
+ * Attach the report's own list of what it could not state.
+ *
+ * A reader should not have to hunt through the body to discover which
+ * disclosures are missing — and an assurance provider will ask for exactly
+ * this list first. It is derived from the built report, so it cannot claim
+ * completeness the sections do not have.
+ */
+function _withGaps(report) {
+  const gaps = integrity.collectGaps(report);
+
+  /* A checklist item that is not met is a gap too. Without this the summary
+     could report "complete" while the body of the same report carried a
+     failing item — which is the defect this whole module exists to stop. */
+  for (const c of report.complianceChecklist || []) {
+    if (!c.met) {
+      gaps.push({
+        path: 'complianceChecklist',
+        status: integrity.NOT_PROVIDED,
+        what: c.item,
+        standardRef: c.standardRef || null,
+      });
+    }
+  }
+
+  report.gaps = {
+    count: gaps.length,
+    complete: gaps.length === 0,
+    note: gaps.length === 0
+      ? 'Every disclosure in this report is either measured from portfolio data or '
+        + 'supplied by the reporting entity.'
+      : 'The following disclosures are required by the cited standard and are not '
+        + 'present. They are entity-level statements or figures this system does '
+        + 'not measure, and are reported as absent rather than estimated.',
+    items: gaps,
+  };
+  return report;
 }
 
 // ---------------------------------------------------------------------------
 // Report Builders
 // ---------------------------------------------------------------------------
 
-function _pcafReport(meta, p) {
+function _pcafReport(meta, p, entity) {
   return {
     ...meta,
     type: 'pcaf',
@@ -81,15 +133,19 @@ function _pcafReport(meta, p) {
       improvementTarget: `Reduce weighted DQ score to ${Math.max(1, p.weightedDQ - 0.5).toFixed(1)} by next reporting period`,
     },
     yearOnYear: p.yoy,
+    /* Answered from the report rather than asserted. Every item was previously
+       hardcoded met:true — including the Scope 1/2/3 breakdown, which was only
+       "present" because it had been invented. A checklist that cannot fail
+       tells a reader nothing. */
     complianceChecklist: [
-      { item: 'Absolute financed emissions reported',          met: true },
-      { item: 'Physical intensity (tCO2e/m²) reported',       met: true },
-      { item: 'Economic intensity (tCO2e/$M) reported',       met: true },
-      { item: 'Weighted data quality score disclosed',         met: true },
-      { item: 'Portfolio coverage percentage stated',          met: true },
-      { item: 'Scope 1, 2, 3 breakdown included',             met: true },
-      { item: 'Year-on-year fluctuation analysis provided',   met: true },
-      { item: 'Methodology and boundaries documented',        met: true },
+      integrity.checklistItem('Absolute financed emissions reported', p.totalEmissions_tCO2e),
+      integrity.checklistItem('Economic intensity (tCO2e/$M) reported', p.totalPortfolioValue_M),
+      integrity.checklistItem('Weighted data quality score disclosed', p.weightedDQ),
+      integrity.checklistItem('Portfolio coverage percentage stated', p.coverage_pct),
+      integrity.checklistItem('Entity scope 1 and 2 emissions included',
+        _entityScope(entity, 'scope1And2_tCO2e', 'PCAF')),
+      integrity.checklistItem('Year-on-year fluctuation analysis provided', p.yoy),
+      integrity.checklistItem('Methodology and boundaries documented', true),
     ],
     methodology: {
       classificationSystem: 'ECCS 6-step hierarchy',
@@ -101,10 +157,15 @@ function _pcafReport(meta, p) {
   };
 }
 
-function _gri305Report(meta, p) {
-  const s1 = Math.round(p.totalEmissions_tCO2e * 0.08);
-  const s2 = Math.round(p.totalEmissions_tCO2e * 0.14);
-  const s3 = Math.round(p.totalEmissions_tCO2e * 0.78);
+function _gri305Report(meta, p, entity) {
+  /* The scope split used to be the portfolio total multiplied by 0.08, 0.14
+     and 0.78. Those are not measurements. A lender's own scope 1 and 2 are its
+     offices and vehicles — data this system has never been given — and its
+     financed emissions are scope 3 Category 15 in full. So the total is
+     reported where it belongs, and the rest is declared absent. */
+  const s1 = _entityScope(entity, 'scope1_tCO2e', 'GRI 305-1');
+  const s2 = _entityScope(entity, 'scope2_tCO2e', 'GRI 305-2');
+  const s3 = p.totalEmissions_tCO2e;
 
   return {
     ...meta,
@@ -112,36 +173,45 @@ function _gri305Report(meta, p) {
     title: 'GRI 305: Emissions Disclosure',
     standard: 'GRI 305: Emissions 2016 (referenced with GRI 1 Foundation 2021)',
     summary: {
-      totalGHG_tCO2e: p.totalEmissions_tCO2e,
+      totalFinancedEmissions_tCO2e: p.totalEmissions_tCO2e,
       scope1_tCO2e: s1,
       scope2_tCO2e: s2,
-      scope3_tCO2e: s3,
+      scope3Category15_tCO2e: s3,
       ghgIntensity_tCO2e_per_M_invested: (p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(2),
+      boundaryNote: 'This report covers the financed emissions of the construction '
+        + 'lending portfolio. The entity\'s own operational emissions are outside '
+        + 'what this system measures and must be supplied by the entity.',
     },
     disclosures: {
       'GRI 305-1': {
         title: 'Direct (Scope 1) GHG Emissions',
         value_tCO2e: s1,
-        gases: ['CO2', 'CH4', 'N2O'],
-        methodology: 'Emissions from on-site construction equipment and temporary facilities within bank-financed project boundaries.',
-        biogenic_tCO2e: 0,
+        methodology: 'The reporting entity\'s own direct emissions (owned premises, '
+          + 'vehicles, plant). Not derivable from a financed-emissions portfolio.',
       },
       'GRI 305-2': {
         title: 'Energy Indirect (Scope 2) GHG Emissions',
         value_tCO2e: s2,
-        approach: 'Location-based',
-        methodology: 'Grid electricity consumed during construction. National grid emission factors applied per IEA 2024.',
-        marketBased_tCO2e: Math.round(s2 * 0.9),
+        methodology: 'The reporting entity\'s own purchased electricity, heat and steam. '
+          + 'Not derivable from a financed-emissions portfolio.',
       },
       'GRI 305-3': {
         title: 'Other Indirect (Scope 3) GHG Emissions',
         value_tCO2e: s3,
         categories: [
-          { cat: 'Category 1 — Purchased goods & services (embodied carbon)', tCO2e: Math.round(s3 * 0.85) },
-          { cat: 'Category 11 — Use of sold products (financed emissions)', tCO2e: Math.round(s3 * 0.10) },
-          { cat: 'Category 15 — Investments',                                tCO2e: Math.round(s3 * 0.05) },
+          /* For a lender, financed emissions are Category 15 in full. The
+             previous split put 85% into Category 1 and 5% into Category 15,
+             which inverts the single most material line in a bank's
+             inventory. */
+          { cat: 'Category 15 — Investments (financed emissions)', tCO2e: s3 },
         ],
-        methodology: 'Embodied carbon from construction materials per CarbonIQ ECCS 6-step classification + ICE v3.0.',
+        otherCategories: integrity.notMeasured(
+          'Scope 3 categories other than 15',
+          'This system measures financed emissions only. Purchased goods, business '
+          + 'travel and the entity\'s other upstream categories are not held.'),
+        methodology: 'Embodied carbon of financed construction per CarbonIQ ECCS 6-step '
+          + 'classification and ICE v3.0, attributed to the lender by PCAF attribution factor.',
+        dataQuality: p.weightedDQ,
       },
       'GRI 305-4': {
         title: 'GHG Emissions Intensity',
@@ -150,22 +220,47 @@ function _gri305Report(meta, p) {
       },
       'GRI 305-5': {
         title: 'Reduction of GHG Emissions',
-        reductions_tCO2e: p.yoy ? Math.max(0, p.yoy.prev_tCO2e - p.totalEmissions_tCO2e) : 0,
-        initiatives: [
-          'Green loan covenant requirements mandating embodied carbon reduction plans',
-          'Preferential pricing (–15–25 bps) for projects achieving CarbonIQ Score ≥ 70',
-          'Quarterly covenant monitoring with material substitution alerts',
-        ],
+        /* Signed, not floored at zero. Clamping hid every year in which
+           emissions rose, which is the movement a reader most needs to see. */
+        movement_tCO2e: p.yoy
+          ? +(p.yoy.prev_tCO2e - p.totalEmissions_tCO2e).toFixed(1)
+          : integrity.notMeasured('Year-on-year movement',
+              'No prior reporting period is held for comparison.'),
+        movementNote: p.yoy
+          ? 'A positive figure is a reduction against the prior period; a negative '
+            + 'figure is an increase. A movement is not on its own evidence of '
+            + 'performance where the composition of the book has changed.'
+          : null,
+        initiatives: integrity.declared(entity, 'reductionInitiatives',
+          'Reduction initiatives undertaken by the reporting entity', 'GRI 305-5-b'),
       },
     },
     omissions: [
-      { disclosure: 'GRI 305-6', reason: 'Ozone-depleting substance emissions not applicable to project finance lending.' },
-      { disclosure: 'GRI 305-7', reason: 'NOx/SOx data not yet tracked at portfolio level — planned for FY2026.' },
+      { disclosure: 'GRI 305-6', reason: 'Ozone-depleting substances are not measured by this system.' },
+      { disclosure: 'GRI 305-7', reason: 'NOx, SOx and other significant air emissions are not measured by this system.' },
     ],
+    gaps: null,   // filled by _withGaps
   };
 }
 
-function _tcfdReport(meta, p) {
+/**
+ * The lender's own scope 1 or 2, which only the lender can supply.
+ *
+ * These were previously the financed-emissions total multiplied by a constant,
+ * printed under a cited GRI clause.
+ */
+function _entityScope(entity, key, standardRef) {
+  const supplied = entity && entity[key];
+  if (typeof supplied === 'number' && Number.isFinite(supplied)) return supplied;
+  return integrity.notMeasured(key.replace('_tCO2e', ''),
+    'The reporting entity\'s own operational emissions. This system measures '
+    + 'financed emissions and holds no data on the entity\'s premises, vehicles '
+    + `or purchased energy. Required by ${standardRef}.`);
+}
+
+function _tcfdReport(meta, p, entity) {
+  const greenPct = _greenAlignedPct(p);
+
   return {
     ...meta,
     type: 'tcfd',
@@ -173,79 +268,85 @@ function _tcfdReport(meta, p) {
     standard: 'TCFD Recommendations (2017) — Final Report & 2021 Guidance',
     summary: {
       totalExposure_M: p.totalPortfolioValue_M,
-      climateRiskExposure_pct: 34,
-      greenAligned_pct: p.taxonomyDist ? Math.round((p.taxonomyDist.green / p.totalProjects) * 100) : 42,
+      greenAligned_pct: greenPct,
       carbonIntensity_tCO2e_per_M: (p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(2),
+      weightedDataQualityScore: p.weightedDQ,
     },
     pillars: {
+      /* Three of TCFD's four pillars describe what the entity does, not what
+         its portfolio measures. They previously read as specific fact — a
+         quarterly board review, a three-person ESG team reporting to the CRO,
+         a $340M pipeline, 12% of the book in flood zones. None of it was
+         known to this system. */
       governance: {
         title: 'Governance',
-        boardOversight: 'Board Risk Committee reviews climate-related risk quarterly. Climate KPIs included in executive scorecard from FY2025.',
-        managementRole: 'ESG team (3 FTEs) uses CarbonIQ platform for portfolio-level embodied carbon tracking. Reports to Chief Risk Officer.',
-        policies: [
-          'Green Finance Policy (revised FY2025): mandates PCAF v3 reporting for all construction loans > $5M',
-          'Climate Risk Appetite Statement: construction portfolio carbon intensity target of 40 tCO2e/$M by 2030',
-        ],
+        boardOversight: integrity.declared(entity, 'boardOversight',
+          'The board\'s oversight of climate-related risks and opportunities',
+          'TCFD Governance a)'),
+        managementRole: integrity.declared(entity, 'managementRole',
+          'Management\'s role in assessing and managing climate-related risks',
+          'TCFD Governance b)'),
+        policies: integrity.declared(entity, 'climatePolicies',
+          'The climate-related policies the entity has adopted', 'TCFD Governance'),
       },
       strategy: {
         title: 'Strategy',
-        risks: [
-          {
-            horizon: 'Short-term (1–3 years)',
-            type: 'Transition',
-            description: `Tightening embodied carbon regulations (ASEAN Taxonomy v3, EU Taxonomy 2024). Projects below benchmark face stranded-asset risk.`,
-            financialImpact: 'Estimated $42M exposure in below-benchmark projects (9% of portfolio)',
-          },
-          {
-            horizon: 'Medium-term (3–10 years)',
-            type: 'Transition',
-            description: 'Carbon pricing expansion. Singapore carbon tax rises to $50–80/tCO2e by 2030. Increases construction cost and default probability for high-carbon projects.',
-            financialImpact: 'Carbon tax sensitivity: +$1.8M cost per $10/tCO2e price increase across portfolio',
-          },
-          {
-            horizon: 'Long-term (10+ years)',
-            type: 'Physical',
-            description: 'Acute physical risks (flooding, heat stress) impacting collateral value in coastal projects. 12% of portfolio in high flood-risk zones.',
-            financialImpact: 'Collateral impairment estimated at 8–15% for assets in RCP 4.5 high-risk zones',
-          },
-        ],
-        opportunities: [
-          'Green loan origination pipeline: 18 green-certified projects pre-approved, $340M pipeline',
-          'Preferential ECB/HKMA capital treatment for green-aligned assets (RWA reduction incentives)',
-          'First-mover position in APAC construction embodied carbon analytics',
-        ],
-        resilience: '2°C scenario analysis: Portfolio aligned with <400 kgCO2e/m² benchmark for 68% of projects. 1.5°C alignment requires upgrading 23 projects.',
+        risks: integrity.declared(entity, 'climateRisks',
+          'Climate-related risks identified over the short, medium and long term',
+          'TCFD Strategy a)'),
+        opportunities: integrity.declared(entity, 'climateOpportunities',
+          'Climate-related opportunities identified', 'TCFD Strategy a)'),
+        resilience: integrity.declared(entity, 'strategyResilience',
+          'The resilience of the strategy under different climate scenarios, '
+          + 'including a 2°C or lower scenario', 'TCFD Strategy c)'),
       },
       riskManagement: {
         title: 'Risk Management',
-        identificationProcess: 'Every new construction loan application scored by CarbonIQ Carbon Finance Score (0–100). Loans below 40 flagged for enhanced review.',
-        assessmentProcess: 'Quarterly covenant monitoring checks material substitution, carbon budget adherence, and taxonomy alignment.',
-        integration: 'Climate risk integrated into standard credit approval workflow. Carbon Finance Score included in credit memoranda from Q1 2025.',
-        thresholds: [
-          { score: '≥ 70', action: 'Green classification — eligible for green bond refinancing' },
-          { score: '40–69', action: 'Transition — conditional approval with carbon reduction covenant' },
-          { score: '< 40', action: 'Brown — escalation to credit committee required' },
-        ],
+        identificationProcess: integrity.declared(entity, 'riskIdentificationProcess',
+          'The entity\'s processes for identifying and assessing climate-related risks',
+          'TCFD Risk Management a)'),
+        integration: integrity.declared(entity, 'riskIntegration',
+          'How those processes are integrated into overall risk management',
+          'TCFD Risk Management c)'),
+        /* This one the system genuinely does: the score and its bands are
+           what CarbonIQ computes, so it is reported as measured. */
+        portfolioScreening: {
+          basis: 'Measured by this system',
+          method: 'Every construction exposure carries a Carbon Finance Score (0–100) '
+            + 'computed from its assessed embodied carbon.',
+          bands: [
+            { score: '≥ 70', classification: 'Green' },
+            { score: '40–69', classification: 'Transition' },
+            { score: '< 40', classification: 'Brown' },
+          ],
+        },
       },
       metricsTargets: {
         title: 'Metrics & Targets',
         metrics: [
-          { metric: 'Total financed emissions', value: `${p.totalEmissions_tCO2e.toLocaleString()} tCO2e`, period: meta.reportingPeriod },
-          { metric: 'Carbon intensity', value: `${(p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(1)} tCO2e / $M`, period: meta.reportingPeriod },
-          { metric: 'Weighted PCAF data quality score (1 = highest quality, 5 = lowest)', value: `${Number(p.weightedDQ).toFixed(2)}`, period: meta.reportingPeriod },
-          { metric: 'Portfolio taxonomy alignment (Green)', value: `${p.taxonomyDist ? Math.round((p.taxonomyDist.green / p.totalProjects) * 100) : 42}%`, period: meta.reportingPeriod },
+          { metric: 'Total financed emissions', value: `${p.totalEmissions_tCO2e.toLocaleString()} tCO2e`, period: meta.reportingPeriod, basis: 'Measured' },
+          { metric: 'Carbon intensity', value: `${(p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(1)} tCO2e / $M`, period: meta.reportingPeriod, basis: 'Measured' },
+          { metric: 'Weighted PCAF data quality score (1 = highest quality, 5 = lowest)', value: `${Number(p.weightedDQ).toFixed(2)}`, period: meta.reportingPeriod, basis: 'Measured' },
+          { metric: 'Portfolio taxonomy alignment (Green)', value: greenPct === null ? 'Not measured' : `${greenPct}%`, period: meta.reportingPeriod, basis: 'Measured' },
         ],
-        targets: [
-          { target: 'Reduce portfolio carbon intensity by 30% by 2030 (vs 2023 baseline)', status: 'On Track', progress_pct: 18 },
-          { target: 'Achieve PCAF weighted DQ score ≤ 2.0 by 2027', status: 'In Progress', progress_pct: 40 },
-          { target: '50% of new construction loans Green-classified by 2026', status: 'On Track', progress_pct: 62 },
-        ],
+        /* Targets and progress against them belong to the entity. The
+           previous figures — 18%, 40%, 62% "On Track" — were literals. */
+        targets: integrity.declared(entity, 'climateTargets',
+          'The targets the entity uses to manage climate-related risks and '
+          + 'opportunities, and performance against them', 'TCFD Metrics & Targets c)'),
       },
     },
+    gaps: null,   // filled by _withGaps
   };
 }
 
-function _ifrsS2Report(meta, p) {
+/** Green share of the book, or nothing — never a stand-in percentage. */
+function _greenAlignedPct(p) {
+  if (!p.taxonomyDist || !p.totalProjects) return null;
+  return Math.round((p.taxonomyDist.green / p.totalProjects) * 100);
+}
+
+function _ifrsS2Report(meta, p, entity) {
   return {
     ...meta,
     type: 'ifrs-s2',
@@ -253,89 +354,82 @@ function _ifrsS2Report(meta, p) {
     standard: 'IFRS S2 Climate-related Disclosures (ISSB, June 2023) — effective FY2024',
     summary: {
       totalFinancedEmissions_tCO2e: p.totalEmissions_tCO2e,
-      scope1And2_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.22),
-      scope3_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.78),
-      climateRiskExposure_M: Math.round((p.totalPortfolioValue_M || 1000) * 0.34),
+      scope3Category15_tCO2e: p.totalEmissions_tCO2e,
+      weightedDataQualityScore: p.weightedDQ,
+      climateRiskExposure_M: integrity.notMeasured('Climate risk exposure',
+        'Requires the entity\'s own risk classification of its exposures. This '
+        + 'system measures financed emissions, not risk-weighted exposure.'),
     },
     disclosures: {
-      governanceAndStrategy: {
-        paragraph: 'IFRS S2 §6–9',
-        title: 'Governance and Strategy',
-        content: [
-          'Board-level oversight via Risk Committee (quarterly climate risk reviews).',
-          'Management-level: ESG function embedded in credit risk team. CarbonIQ platform deployed for real-time portfolio carbon monitoring.',
-          `Climate-related risks are integrated into the organisation's risk management framework and credit approval process.`,
-        ],
+      /* IFRS S2 §6-9 is a description of how the entity is governed. Software
+         cannot know who sits on a risk committee or how often it meets, and a
+         plausible sentence in that position is a fabricated governance
+         disclosure. It is attributed to the entity or reported absent. */
+      governance: {
+        paragraph: 'IFRS S2 §6',
+        title: 'Governance',
+        boardOversight: integrity.declared(entity, 'boardOversight',
+          'How the board oversees climate-related risks and opportunities', 'IFRS S2 §6(a)'),
+        managementRole: integrity.declared(entity, 'managementRole',
+          'Management\'s role in assessing and managing climate-related risks', 'IFRS S2 §6(b)'),
       },
-      risksAndOpportunities: {
-        paragraph: 'IFRS S2 §10–19',
-        title: 'Climate-related Risks and Opportunities Identified',
-        transitionRisks: [
-          'Policy: ASEAN Taxonomy v3 and PCAF v3 mandates increasing compliance costs.',
-          'Technology: Transition to low-carbon construction materials may affect project economics.',
-          'Market: Investor and borrower preference shifting toward green-certified assets.',
-        ],
-        physicalRisks: [
-          'Acute: Extreme weather events affecting construction timelines and collateral values.',
-          'Chronic: Sea-level rise impacting 12% of portfolio in coastal locations.',
-        ],
-        opportunities: [
-          'Green loan products with preferential pricing (launched Q2 2025).',
-          'Carbon advisory services generating fee income.',
-        ],
+      strategy: {
+        paragraph: 'IFRS S2 §9–13',
+        title: 'Strategy',
+        risksAndOpportunities: integrity.declared(entity, 'climateRisksAndOpportunities',
+          'The climate-related risks and opportunities the entity has identified, '
+          + 'with the time horizons over which each could reasonably be expected to '
+          + 'affect it', 'IFRS S2 §10–12'),
+        businessModelEffects: integrity.declared(entity, 'businessModelEffects',
+          'Current and anticipated effects on the business model and value chain',
+          'IFRS S2 §13'),
       },
       financialEffects: {
-        paragraph: 'IFRS S2 §20–22',
+        paragraph: 'IFRS S2 §15–21',
         title: 'Financial Effects of Climate-related Risks',
-        currentPeriod: {
-          additionalProvisions_M: 1.2,
-          greenLoanRevenue_M: 3.8,
-          carbonRiskAdjustedRWA_M: Math.round((p.totalPortfolioValue_M || 1000) * 0.08),
-        },
-        anticipated: 'Carbon price sensitivity: Each $10/tCO2e increase in Singapore carbon tax increases portfolio-level borrower cost by ~$1.8M annually, increasing PD on high-carbon projects by an estimated 0.3–0.8%.',
+        currentPeriod: integrity.declared(entity, 'financialEffectsCurrentPeriod',
+          'Effects on the entity\'s financial position, performance and cash flows '
+          + 'for the period', 'IFRS S2 §16'),
+        anticipated: integrity.declared(entity, 'financialEffectsAnticipated',
+          'Anticipated effects over the short, medium and long term', 'IFRS S2 §16(b)'),
       },
       climateResilience: {
         paragraph: 'IFRS S2 §22',
         title: 'Climate Resilience Assessment',
-        scenarios: [
-          {
-            scenario: 'Net Zero 2050 (1.5°C, IEA NZE)',
-            portfolioAlignment_pct: 68,
-            actionRequired: 'Upgrade 23 projects to meet <350 kgCO2e/m² threshold by 2027.',
-          },
-          {
-            scenario: 'Delayed Transition (2°C, NGFS)',
-            portfolioAlignment_pct: 82,
-            actionRequired: 'Minor covenant tightening required for 9 projects.',
-          },
-          {
-            scenario: 'Current Policies (3°C+)',
-            portfolioAlignment_pct: 94,
-            actionRequired: 'No immediate action required; long-term physical risk exposure increases.',
-          },
-        ],
+        scenarioAnalysis: integrity.declared(entity, 'scenarioAnalysis',
+          'Climate-related scenario analysis, the scenarios used and the entity\'s '
+          + 'assessment of its resilience under each', 'IFRS S2 §22'),
+        note: 'Scenario alignment is a forward-looking judgement about the entity\'s '
+          + 'strategy under stated assumptions. It is not derivable from a '
+          + 'measured emissions inventory.',
       },
       emissionsData: {
         paragraph: 'IFRS S2 §29',
         title: 'GHG Emissions',
-        scope1_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.08),
-        scope2_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.14),
-        scope3_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.78),
-        scope3Category15_tCO2e: Math.round(p.totalEmissions_tCO2e * 0.78),
-        measurementApproach: 'PCAF v3 (Global GHG Accounting & Reporting Standard, Third Edition, December 2025).',
+        scope1_tCO2e: _entityScope(entity, 'scope1_tCO2e', 'IFRS S2 §29(a)(i)'),
+        scope2_tCO2e: _entityScope(entity, 'scope2_tCO2e', 'IFRS S2 §29(a)(ii)'),
+        scope3Category15_tCO2e: p.totalEmissions_tCO2e,
+        scope3OtherCategories: integrity.notMeasured(
+          'Scope 3 categories other than 15',
+          'This system measures financed emissions only.'),
+        dataQuality: {
+          weightedScore: p.weightedDQ,
+          scale: 'PCAF data quality score: 1 is the highest quality, 5 the lowest.',
+        },
+        measurementApproach: 'PCAF Global GHG Accounting and Reporting Standard, '
+          + 'Third Edition (December 2025), applied to the construction lending portfolio.',
       },
       transitionPlan: {
-        paragraph: 'IFRS S2 §22(e)',
+        paragraph: 'IFRS S2 §14',
         title: 'Transition Plan',
-        committed: true,
-        milestones: [
-          { year: 2025, action: 'Deploy CarbonIQ across 100% of new construction loan originations' },
-          { year: 2026, action: 'Green loan products covering 35% of construction portfolio' },
-          { year: 2027, action: 'Achieve PCAF weighted DQ ≤ 2.0; third-party verification for top 20 projects' },
-          { year: 2030, action: '30% carbon intensity reduction vs 2023 baseline' },
-        ],
+        plan: integrity.declared(entity, 'transitionPlan',
+          'The entity\'s climate-related transition plan, including the targets it '
+          + 'has set and the basis on which they were set', 'IFRS S2 §14'),
+        note: 'A transition plan is a commitment made by the entity. It is not a '
+          + 'property of its portfolio and cannot be asserted on its behalf.',
       },
     },
+    gaps: null,   // filled by _withGaps
   };
 }
 
@@ -343,7 +437,7 @@ function _ifrsS2Report(meta, p) {
 // Sri Lanka Green Finance Taxonomy (SLGFT) Report
 // ---------------------------------------------------------------------------
 
-function _slgftReport(meta, p, slgft) {
+function _slgftReport(meta, p, slgft, entity) {
   // Taxonomy distribution — default to demo data if not supplied
   const taxDist = slgft.taxonomyDistribution || {
     green:      { count: 4,  pct: 40, financed_emissions_tCO2e: 12400 },
@@ -439,14 +533,24 @@ function _slgftReport(meta, p, slgft) {
       sdgMonitoringFramework: 'Aligned with UNDP SDG Impact Standards for Finance',
     },
 
+    /* A Do No Significant Harm assessment is made per activity against
+       evidence. The four objectives were previously fixed verdicts with
+       narrative notes — "3 projects require climate risk assessment
+       documentation", "Biodiversity impact assessments planned for Q3" — that
+       referred to projects and plans this system knows nothing about. */
     dnshCompliance: {
-      status:     slgft.dnshStatus || 'Conditional',
-      objectives: [
-        { code: 'M', label: 'Climate Change Mitigation',       status: 'Compliant',    note: 'All green-classified projects below 600 kgCO2e/m² threshold.' },
-        { code: 'A', label: 'Climate Change Adaptation',       status: 'Conditional',  note: '3 projects require climate risk assessment documentation.' },
-        { code: 'P', label: 'Pollution Prevention & Control',  status: 'Compliant',    note: 'Waste management plans required for all construction loans.' },
-        { code: 'E', label: 'Ecological Conservation',         status: 'In Progress',  note: 'Biodiversity impact assessments planned for Q3.' },
-      ],
+      status: slgft.dnshStatus || integrity.notMeasured('DNSH status',
+        'A Do No Significant Harm assessment is made per activity against '
+        + 'evidence held by the lender. It is not derivable from embodied carbon.'),
+      objectives: (slgft.dnshObjectives && slgft.dnshObjectives.length)
+        ? slgft.dnshObjectives
+        : [
+          { code: 'M', label: 'Climate Change Mitigation' },
+          { code: 'A', label: 'Climate Change Adaptation' },
+          { code: 'P', label: 'Pollution Prevention & Control' },
+          { code: 'E', label: 'Ecological Conservation' },
+        ].map(o => ({ ...o, status: integrity.notMeasured(`DNSH — ${o.label}`,
+          'No assessment against this objective has been supplied for this portfolio.') })),
       guidingPrinciples: [
         'Respect for human rights and labour standards',
         'Transparency in environmental impact reporting',
@@ -580,6 +684,25 @@ function _pdfValue(doc, value, depth) {
   const indent = 56 + depth * 14;
   const width = doc.page.width - indent - 56;
 
+  /* An absent disclosure has to read as absent on the page, not as an object
+     dump. It is set in italic amber so a reader scanning the document can see
+     at a glance which statements the entity still has to make. */
+  if (integrity.isPlaceholder(value)) {
+    const label = value._status === integrity.NOT_PROVIDED
+      ? 'Not provided by the reporting entity'
+      : 'Not measured by this system';
+    const detail = value.requirement || value.metric;
+    const ref = value.standardRef ? ` (${value.standardRef})` : '';
+    doc.fontSize(9).fillColor('#8a5a00').font('Helvetica-Oblique')
+       .text(`${label}${ref} — ${detail}`, indent, doc.y, { width });
+    if (value.reason || value.note) {
+      doc.fontSize(8).fillColor('#6e6e73').font('Helvetica-Oblique')
+         .text(value.reason || value.note, indent, doc.y, { width });
+    }
+    doc.moveDown(0.3);
+    return;
+  }
+
   if (Array.isArray(value)) {
     for (const item of value) {
       if (typeof item === 'object' && item !== null) {
@@ -625,7 +748,7 @@ function _pdfFooterNote(doc, report) {
      );
 }
 
-function _slgftCbslReport(meta, p) {
+function _slgftCbslReport(meta, p, entity) {
   return {
     ...meta,
     type: 'slgft-cbsl',
@@ -641,31 +764,60 @@ function _slgftCbslReport(meta, p) {
     cbslCompliance: {
       directionNo05: {
         title: 'CBSL Direction No. 05 of 2022 — Green Finance Classification',
-        status: 'Compliant',
-        greenLendingRatio_pct: p.taxonomyDist ? Math.round((p.taxonomyDist.green / p.totalProjects) * 100) : 42,
-        transitionLendingRatio_pct: p.taxonomyDist ? Math.round((p.taxonomyDist.transition / p.totalProjects) * 100) : 35,
-        brownLendingRatio_pct: p.taxonomyDist ? Math.round((p.taxonomyDist.brown / p.totalProjects) * 100) : 23,
-        classificationMethodology: 'CarbonIQ Carbon Finance Score (CFS 0–100) applied to all construction loans. CFS ≥ 70 = Green, 40–69 = Transition, < 40 = Brown per SLGFT thresholds.',
+        /* A compliance status is a conclusion a supervisor or an assurance
+           provider reaches. Asserting 'Compliant' in a document addressed to
+           the regulator that decides it is not a disclosure, it is a claim. */
+        status: integrity.notMeasured('Compliance status',
+          'Compliance with Direction No. 05 is determined by the Central Bank, not '
+          + 'by this system. What is reported here is the measured classification '
+          + 'of the book against the taxonomy thresholds.'),
+        greenLendingRatio_pct: _distPct(p, 'green'),
+        transitionLendingRatio_pct: _distPct(p, 'transition'),
+        brownLendingRatio_pct: _distPct(p, 'brown'),
+        classificationMethodology: 'CarbonIQ Carbon Finance Score (0–100) applied to '
+          + 'each construction exposure: 70 and above Green, 40–69 Transition, below 40 Brown.',
+        thresholdCaveat: 'Two Sri Lankan embodied-carbon threshold sets are held in '
+          + 'this system and they disagree (520/780 and 600/900 kgCO2e/m²). The '
+          + 'classification above uses the set named in this report\'s taxonomy '
+          + 'section. Which set applies is a question for CBSL and is not settled here.',
       },
       slfrsS2: {
         title: 'SLFRS S2 Climate-Related Disclosures',
-        adoptionStatus: 'Phase 1 — mandatory for listed entities and licensed banks from FY 2025',
-        climateRisks: [
-          { type: 'Transition', description: 'Embodied carbon regulatory tightening under CBSL green lending mandates', impact: 'Medium', timeframe: '1–3 years' },
-          { type: 'Physical', description: 'Coastal and flood exposure for construction projects in Western and Southern Provinces', impact: 'High', timeframe: '5–10 years' },
-        ],
-        financialEffects: {
-          greenLoanPricingBenefit_bps: -20,
-          carbonTaxExposure_LKR: 0,
-          carbonTaxExposure_note: 'No direct carbon tax in Sri Lanka as of FY 2025. CBSL exploring carbon levy framework.',
+        adoptionStatus: 'SLFRS S2 is being adopted in Sri Lanka on a phased basis. '
+          + 'The entity\'s own phase and effective date should be confirmed with its auditor.',
+        /* SLFRS S2 follows ISSB: four pillars, all four mandatory. Only
+           metrics is derivable here. */
+        governance: integrity.declared(entity, 'boardOversight',
+          'Governance of climate-related risks and opportunities', 'SLFRS S2 §6'),
+        strategy: integrity.declared(entity, 'climateRisksAndOpportunities',
+          'Climate-related risks and opportunities, and their effects on strategy',
+          'SLFRS S2 §9–13'),
+        riskManagement: integrity.declared(entity, 'riskIdentificationProcess',
+          'Processes to identify, assess and manage climate-related risks',
+          'SLFRS S2 §24–26'),
+        metricsAndTargets: {
+          financedEmissions_tCO2e: p.totalEmissions_tCO2e,
+          scope3Category15_tCO2e: p.totalEmissions_tCO2e,
+          weightedDataQualityScore: p.weightedDQ,
+          entityScope1And2: _entityScope(entity, 'scope1And2_tCO2e', 'SLFRS S2 §29(a)'),
+          targets: integrity.declared(entity, 'climateTargets',
+            'Climate-related targets set by the entity and performance against them',
+            'SLFRS S2 §33–37'),
         },
+        financialEffects: integrity.declared(entity, 'financialEffectsCurrentPeriod',
+          'Effects of climate-related risks on financial position and performance',
+          'SLFRS S2 §15–21'),
       },
     },
     taxonomyAlignment: {
-      slgftGreen_pct: p.taxonomyDist ? Math.round((p.taxonomyDist.green / p.totalProjects) * 100) : 42,
+      slgftGreen_pct: _distPct(p, 'green'),
       thresholds: {
         green_max_kgCO2e_m2: 520,
         transition_max_kgCO2e_m2: 780,
+        source: 'TAXONOMY_SL. A second Sri Lankan set (600 / 900 kgCO2e/m²) is also '
+          + 'held in this system for the same regulation. A project between the two '
+          + 'is classified differently depending on which applies, so the set in '
+          + 'force must be confirmed with CBSL before this figure is relied upon.',
       },
     },
     esgMetrics: {
@@ -673,18 +825,25 @@ function _slgftCbslReport(meta, p) {
       weightedDataQualityScore: p.weightedDQ,
       carbonIntensity_tCO2e_per_M: +(p.totalEmissions_tCO2e / (p.totalPortfolioValue_M || 1000)).toFixed(1),
     },
-    dfccBenchmark: {
-      greenBond_LKR_B: 2.5,
-      blueBond_LKR_B: 3.0,
-      gcfAccreditation: true,
-      gcfFundingAccess_USD_M: 250,
-    },
-    targets: [
-      { target: 'Achieve 50% Green-classified construction loans by 2027', status: 'In Progress', progress_pct: 42 },
-      { target: 'Full SLFRS S2 compliance for construction portfolio by FY 2026', status: 'On Track', progress_pct: 65 },
-      { target: 'Reduce portfolio carbon intensity by 25% by 2030 (vs 2024 baseline)', status: 'Early Stage', progress_pct: 12 },
-    ],
+    /* A named bank's bond issuance, accreditation status and funding access
+       are facts about that institution. They were literals here, and would
+       have appeared in any organisation's report. */
+    institutionalContext: integrity.declared(entity, 'institutionalContext',
+      'Green and blue bond issuance, accreditation status and climate funding '
+      + 'access, as stated by the entity'),
+    targets: integrity.declared(entity, 'climateTargets',
+      'Climate-related targets and measured progress against each', 'SLFRS S2 §33–37'),
+    gaps: null,   // filled by _withGaps
   };
+}
+
+/** A share of the book, or nothing. Never a stand-in percentage. */
+function _distPct(p, band) {
+  if (!p.taxonomyDist || !p.totalProjects) {
+    return integrity.notMeasured(`${band} lending ratio`,
+      'No taxonomy classification is held for this portfolio.');
+  }
+  return Math.round((p.taxonomyDist[band] / p.totalProjects) * 100);
 }
 
 // ---------------------------------------------------------------------------

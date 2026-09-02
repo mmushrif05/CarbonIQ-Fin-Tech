@@ -1,0 +1,25 @@
+{
+  "table": "Table 5.3-1",
+  "assetClass": "project-finance",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.3 Project finance",
+  "status": "recommended",
+  "note": "PCAF describes this scorecard as recommended for project finance, and permits an institution to refine or further specify it per project type provided the refined table is disclosed transparently.",
+  "scale": "1 is the highest data quality, 5 the lowest. A score is a category, never a mark out of five.",
+  "options": [
+    { "option": "1a", "score": 1, "family": "Option 1: Reported emissions",
+      "when": "Outstanding amount in the project and total project equity plus debt are known. Verified emissions of the project are available." },
+    { "option": "1b", "score": 2, "family": "Option 1: Reported emissions",
+      "when": "Outstanding amount in the project and total project equity plus debt are known. Unverified emissions reported by the project are available." },
+    { "option": "2a", "score": 2, "family": "Option 2: Physical activity-based emissions",
+      "when": "Outstanding amount and total project equity plus debt are known. Project emissions are not known but are calculated from primary physical activity data (consumption) with emission factors specific to that data. Relevant process emissions are added." },
+    { "option": "2b", "score": 3, "family": "Option 2: Physical activity-based emissions",
+      "when": "Outstanding amount and total project equity plus debt are known. Project emissions are not known. Emissions are calculated from production data with emission factors specific to that data." },
+    { "option": "3a", "score": 4, "family": "Option 3: Economic activity-based emissions",
+      "when": "Outstanding amount, total project equity plus debt, and project revenue are known. Emission factors for the sector per unit of revenue, or from similar projects, are known." },
+    { "option": "3b", "score": 5, "family": "Option 3: Economic activity-based emissions",
+      "when": "Outstanding amount in the project is known. Emission factors for the sector per unit of asset, or economic activity-based emission factors from similar projects, are known." },
+    { "option": "3c", "score": 5, "family": "Option 3: Economic activity-based emissions",
+      "when": "Outstanding amount in the project is known. Emission factors for the sector per unit of revenue and asset turnover ratios for the sector, or from similar projects, are known." }
+  ]
+}

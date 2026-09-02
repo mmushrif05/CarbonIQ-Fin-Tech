@@ -38,6 +38,7 @@ const supervisorRouter    = require('./supervisor');
 const reportsRouter       = require('./reports');
 const carbonPricingRouter = require('./carbon-pricing');
 const pcafPartCRouter     = require('./pcaf-partc');
+const pcafPartARouter     = require('./pcaf-parta');
 const partcRegistryRouter = require('./partc-registry');
 const ndcSdgRouter        = require('./ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
@@ -60,6 +61,11 @@ router.get('/', (_req, res) => {
       score: 'GET /v1/projects/:projectId/score',
       taxonomy: 'GET /v1/projects/:projectId/taxonomy',
       pcaf: 'GET /v1/projects/:projectId/pcaf',
+      pcafPartA: {
+        note:      'Financed emissions — the lender\'s scope 3 Category 15. Separate engine and separate scope from Part C.',
+        reference: 'GET /v1/pcaf/part-a/reference — asset classes, archetypes and the data-quality options for each',
+        assess:    'POST /v1/pcaf/part-a/assess — attribute one exposure and score its data quality',
+      },
       pcafPartC: {
         note:    'Insurance-associated emissions. Separate scope from /v1/projects/:id/pcaf, which serves A1-A3 financed emissions for lending.',
         assess:  'POST /v1/pcaf/part-c/assess — insurance-associated emissions (A4/A5 + B1/B4/B7)',
@@ -166,6 +172,9 @@ router.use('/supervisor', supervisorRouter);
 router.use('/reports', reportsRouter);
 router.use('/carbon-pricing', carbonPricingRouter);
 router.use('/pcaf/part-c', pcafPartCRouter);
+/* Part A is financed emissions for lending; Part C is insurance-associated
+   emissions. Separate mounts, separate engines, never merged. */
+router.use('/pcaf/part-a', pcafPartARouter);
 router.use('/partc', partcRegistryRouter);
 router.use('/ndc-sdg', ndcSdgRouter);
 
