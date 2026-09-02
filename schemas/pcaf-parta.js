@@ -32,6 +32,19 @@ const avoided = Joi.object({
   counterpartyEmissionsPeriod: Joi.alternatives(Joi.number(), Joi.string()).optional(),
 });
 
+/* The renewable-generation path. Two fields carry it — what the plant makes in
+   a year and where it stands — and the engine derives the scopes, the displaced
+   emissions and the data quality option from a named factor. Capacity is
+   optional and unlocks the physical check; metered auxiliary consumption is
+   optional and replaces an assumption with a measurement. */
+const generation = Joi.object({
+  annualGeneration_MWh: Joi.number().positive().required(),
+  country: Joi.string().length(2).uppercase().required(),
+  installedCapacity_MW: Joi.number().positive().optional(),
+  auxiliaryConsumption_MWh: Joi.number().min(0).optional(),
+  basis: Joi.string().valid('projected', 'metered').default('projected'),
+});
+
 const assessRequestSchema = Joi.object({
   projectName: Joi.string().max(200).required(),
   counterparty: Joi.string().max(200).allow('').optional(),
@@ -46,14 +59,16 @@ const assessRequestSchema = Joi.object({
   currency: Joi.string().max(10).default('USD'),
   attributionOverrideJustification: Joi.string().max(500).optional(),
 
-  dataQualityOption: Joi.string().max(4).required(),
+  dataQualityOption: Joi.string().max(4).optional(),
+  dataQualityOverrideJustification: Joi.string().max(500).optional(),
 
-  projectScope1_tCO2e: Joi.number().required(),
-  projectScope2_tCO2e: Joi.number().required(),
+  projectScope1_tCO2e: Joi.number().optional(),
+  projectScope2_tCO2e: Joi.number().optional(),
   projectScope3_tCO2e: Joi.number().optional(),
   scope3Relevant: Joi.boolean().optional(),
   removals_tCO2e: Joi.number().min(0).optional(),
 
+  generation: generation.optional(),
   reduction: reduction.optional(),
   avoided: avoided.optional(),
 });

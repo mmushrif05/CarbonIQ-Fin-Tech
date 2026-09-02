@@ -29,7 +29,7 @@
       <button type="button" class="parta-preset" data-preset="solar">
         <span class="parta-preset-name">Solar Project</span>
         <span class="parta-preset-kind">Renewable generation · avoidance</span>
-        <span class="parta-preset-note">Displaced grid supply against a counterfactual</span>
+        <span class="parta-preset-note">Emissions derived from generation and the grid it displaces</span>
       </button>
       <button type="button" class="parta-preset parta-preset-plain" data-preset="blank">
         <span class="parta-preset-name">Empty form</span>
@@ -94,7 +94,43 @@
         </div>
       </fieldset>
 
-      <fieldset class="parta-card">
+      <!-- ── 3 · Generation path — renewable projects ──────────────────
+           Two fields carry the whole assessment. The scopes below are not
+           typed because a typed emissions figure is accountable to nobody:
+           derived, it carries its factor's publisher, vintage and basis. -->
+      <fieldset class="parta-card" id="pa-generationBox" hidden>
+        <legend>3 · Generation and grid</legend>
+        <p class="parta-legend-note">The plant's own scope 1 and 2, the emissions it displaces
+           and the data quality option are all <strong>derived</strong> from these fields and a
+           published grid factor. Nothing here is typed into the result.</p>
+        <div class="parta-grid">
+          <label class="parta-field">Annual generation (MWh)
+            <input type="number" id="pa-gen-annualGeneration_MWh" step="any" min="0">
+          </label>
+          <label class="parta-field">Country
+            <select id="pa-gen-country"></select>
+            <small id="pa-gen-countryNote"></small>
+          </label>
+          <label class="parta-field">Installed capacity (MW)
+            <input type="number" id="pa-gen-installedCapacity_MW" step="any" min="0" placeholder="optional">
+            <small>Enables the physical check on the generation figure.</small>
+          </label>
+          <label class="parta-field">Generation figure is
+            <select id="pa-gen-basis">
+              <option value="projected">Projected — forward-looking</option>
+              <option value="metered">Metered — actual output for the period</option>
+            </select>
+            <small>Projected reports EAE; metered reports realised avoided emissions.</small>
+          </label>
+          <label class="parta-field parta-field-wide">Metered auxiliary consumption (MWh)
+            <input type="number" id="pa-gen-auxiliaryConsumption_MWh" step="any" min="0" placeholder="optional">
+            <small>Replaces the assumed parasitic-load rate with a measurement.</small>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- ── 3 · Typed scopes — every other archetype ── -->
+      <fieldset class="parta-card" id="pa-emissionsBox">
         <legend>3 · The project's emissions</legend>
         <p class="parta-legend-note">Scope 1 and 2 <strong>shall</strong> be reported.
            Scope 3 <strong>should</strong> be covered where relevant — left blank it is
@@ -106,6 +142,12 @@
           <label class="parta-field">Project scope 2 (tCO<sub>2</sub>e)
             <input type="number" id="pa-projectScope2_tCO2e" step="any" min="0">
           </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="parta-card">
+        <legend>3b · Scope 3 and removals</legend>
+        <div class="parta-grid">
           <label class="parta-field">Project scope 3 (tCO<sub>2</sub>e)
             <input type="number" id="pa-projectScope3_tCO2e" step="any" min="0" placeholder="optional">
           </label>
@@ -123,15 +165,39 @@
       <fieldset class="parta-card">
         <legend>4 · Data quality</legend>
         <p class="parta-legend-note" id="pa-dqTableNote"></p>
-        <label class="parta-field parta-field-wide">Option used to estimate the emissions
-          <select id="pa-dataQualityOption"></select>
-        </label>
-        <p class="parta-dq-when" id="pa-dqWhen"></p>
+
+        <!-- Derived: the option is decided by the data the run consumed. -->
+        <div id="pa-dqDerived" hidden>
+          <div class="parta-derived-badge">
+            <span class="parta-derived-tag">Derived</span>
+            <span id="pa-dqDerivedLabel"></span>
+          </div>
+          <p class="parta-dq-when" id="pa-dqDerivedReason"></p>
+          <details class="parta-claim" id="pa-dqClaim">
+            <summary>Claim a different option</summary>
+            <p>The option follows the evidence. Naming a better one is an override, and the
+               justification is recorded beside the score.</p>
+            <div class="parta-grid">
+              <label class="parta-field">Option claimed
+                <select id="pa-dataQualityOption"></select>
+              </label>
+              <label class="parta-field">Justification
+                <input type="text" id="pa-dataQualityOverrideJustification" maxlength="500"
+                       placeholder="What evidence supports it">
+              </label>
+            </div>
+          </details>
+        </div>
+
+        <!-- Chosen: no derivation path available for this archetype. -->
+        <div id="pa-dqChoose">
+          <label class="parta-field parta-field-wide">Option used to estimate the emissions
+            <select id="pa-dataQualityOptionChosen"></select>
+          </label>
+          <p class="parta-dq-when" id="pa-dqWhen"></p>
+        </div>
       </fieldset>
 
-      <!-- Impact inputs. Which set exists is decided by the project type, not
-           by the user — a retrofit reduces against its own base year, a
-           renewable project avoids against a counterfactual. -->
       <fieldset class="parta-card parta-impact-inputs" id="pa-reductionBox" hidden>
         <legend>5 · Expected Emission Reductions</legend>
         <p class="parta-legend-note">Measured against the project's own base year.
@@ -151,39 +217,6 @@
           </label>
           <label class="parta-field">As at year
             <input type="number" id="pa-reduction-asOfYear" step="1">
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset class="parta-card parta-impact-inputs" id="pa-avoidedBox" hidden>
-        <legend>5 · Avoided emissions</legend>
-        <p class="parta-legend-note">Measured against a counterfactual, which is the whole
-           claim — so it is required and travels with the figure. Not a Part A figure.</p>
-        <div class="parta-grid">
-          <label class="parta-field">Avoided this period (tCO<sub>2</sub>e)
-            <input type="number" id="pa-avoided-projectAvoided_tCO2e" step="any" min="0">
-          </label>
-          <label class="parta-field">Expected avoided per year (tCO<sub>2</sub>e)
-            <input type="number" id="pa-avoided-annualAvoided_tCO2e" step="any" min="0">
-            <small>PCAF requires EAE on an annualised basis.</small>
-          </label>
-          <label class="parta-field parta-field-wide">Counterfactual scenario
-            <input type="text" id="pa-avoided-counterfactual" maxlength="500">
-          </label>
-          <label class="parta-field parta-field-wide">Source of the counterfactual
-            <input type="text" id="pa-avoided-counterfactualSource" maxlength="500">
-          </label>
-          <label class="parta-field">Estimation basis
-            <select id="pa-avoided-estimationBasis"></select>
-          </label>
-          <label class="parta-field">Horizon (years)
-            <input type="number" id="pa-avoided-years" step="1" min="1">
-          </label>
-          <label class="parta-field">Avoided-emissions period
-            <input type="text" id="pa-avoided-reportingPeriod" maxlength="20">
-          </label>
-          <label class="parta-field">Counterparty emissions period
-            <input type="text" id="pa-avoided-counterpartyEmissionsPeriod" maxlength="20">
           </label>
         </div>
       </fieldset>
@@ -212,6 +245,43 @@
           <code class="parta-eq" id="paAfEq"></code>
           <p class="parta-ref" id="paAfRef"></p>
           <p class="parta-assumption" id="paAfAssumption" hidden></p>
+        </section>
+
+        <!-- The grid factor, with everything a reviewer would ask about it. -->
+        <section class="parta-card parta-gridfactor" id="paGridBox" hidden>
+          <header class="parta-card-head">
+            <h3>Grid emission factor</h3>
+            <p id="paGridCountry"></p>
+          </header>
+          <div class="parta-factors">
+            <div class="parta-factor">
+              <span class="parta-factor-label">Displaced by generating</span>
+              <span class="parta-factor-value" id="paGridDisplaced">—</span>
+              <span class="parta-factor-basis" id="paGridDisplacedBasis"></span>
+            </div>
+            <div class="parta-factor">
+              <span class="parta-factor-label">Drawn from the grid</span>
+              <span class="parta-factor-value" id="paGridConsumed">—</span>
+              <span class="parta-factor-basis" id="paGridConsumedBasis"></span>
+            </div>
+          </div>
+          <p class="parta-ref" id="paGridSource"></p>
+          <p class="parta-assumption" id="paGridSubstitution" hidden></p>
+          <p class="parta-assumption" id="paGridFlag" hidden></p>
+        </section>
+
+        <!-- The physical check. Runs only where capacity was given. -->
+        <section class="parta-card parta-check" id="paCheckBox" hidden>
+          <header class="parta-card-head">
+            <h3>Is this generation physically achievable?</h3>
+          </header>
+          <div class="parta-check-figure">
+            <span class="parta-check-value" id="paCheckCf">—</span>
+            <span class="parta-check-unit">capacity factor</span>
+            <span class="parta-check-band" id="paCheckBand"></span>
+          </div>
+          <code class="parta-eq" id="paCheckEq"></code>
+          <p class="parta-check-note" id="paCheckNote"></p>
         </section>
 
         <section class="parta-card parta-inventory">
@@ -265,6 +335,16 @@
               <small id="paDqRef"></small>
             </div>
           </div>
+          <p class="parta-assumption" id="paDqOverride" hidden></p>
+        </section>
+
+        <!-- Everything the derivation assumed, on the page rather than buried. -->
+        <section class="parta-card parta-assumptions" id="paAssumptionsBox" hidden>
+          <header class="parta-card-head">
+            <h3>What the derivation assumed</h3>
+            <p>Each of these is a place the figure could be strengthened by evidence.</p>
+          </header>
+          <ul id="paAssumptions"></ul>
         </section>
 
         <!-- The break. Everything below rests on optional supplemental guidance
@@ -294,8 +374,8 @@
       </div>
 
       <div class="parta-empty" id="paEmpty">
-        <p>Fill in the exposure and the project's scope 1 and 2 emissions.
-           The result appears here and follows every keystroke.</p>
+        <p>Fill in the exposure and either the plant's generation, or the project's
+           scope 1 and 2. The result appears here and follows every keystroke.</p>
       </div>
     </div>
   </div>

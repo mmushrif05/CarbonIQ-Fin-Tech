@@ -189,6 +189,11 @@ function expectedAvoidedEmissions({
       reference: SUPPLEMENT,
       assumptions: [`Counterfactual: ${counterfactual}`, `Source: ${counterfactualSource}`],
     }),
+    /* Carried at the top level as well as inside the figure's assumptions.
+       The counterfactual is the claim, so a consumer rendering this metric
+       must not have to dig into a provenance tree to state it. */
+    counterfactual,
+    counterfactualSource,
     horizonYears: Number.isFinite(years) ? years : null,
     annualisedNote: 'PCAF requires EAE to be calculated on an annualised basis. A '
       + 'lifetime total is a different figure and is not reported here.',

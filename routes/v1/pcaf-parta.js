@@ -47,12 +47,28 @@ router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res, next) => {
         },
       ],
       archetypes: parta.archetypes.list(),
+      /* The countries a renewable project can be sited in, each with both
+         factor bases and the source behind them. A screen offering a country
+         the engine holds no factor for would be offering a refusal. */
+      gridFactors: {
+        unit: parta.gridFactors.STORE.unit,
+        bases: parta.gridFactors.STORE.bases,
+        note: parta.gridFactors.STORE.note,
+        auxiliaryConsumption: parta.gridFactors.auxiliaryRate(),
+        countries: parta.gridFactors.list(),
+      },
       notes: {
         avoidedEmissions: 'Avoided emissions are no longer covered by Part A. From the '
           + 'Third Edition (December 2025) they sit in optional supplemental guidance, and '
           + 'figures resting on it are reported separately from the inventory.',
         dataQuality: 'The option-to-score mapping differs between asset classes, so the '
           + 'options above belong to this asset class alone.',
+        derivedOption: 'Where a renewable project supplies its generation and country, the '
+          + 'data quality option is derived from the data consumed rather than chosen. Naming a '
+          + 'different option is then an override and requires a justification.',
+        factorBasis: 'A grid average is what a consumer draws; a combined margin is what a new '
+          + 'grid-connected renewable displaces. They are not interchangeable, and where the '
+          + 'basis a purpose calls for is not held the substitution is reported rather than hidden.',
       },
     });
   } catch (err) { next(err); }
