@@ -2606,3 +2606,158 @@ select.asm-input {
 }
 input[type="range"].asm-input { width: 100%; accent-color: #5e5ce6; min-height: 28px; }
 .asm-moves { font-size: 11.5px; color: var(--text-secondary); line-height: 1.4; }
+
+/* ══ ADJUST THE BOOK ═══════════════════════════════════════════════════════
+   The drawer that makes every input editable, and the marks that keep an
+   adjusted figure from ever reading as a recorded one.
+
+   An edited input carries a left rule in the scenario indigo — the same hue
+   the basket and the assumptions use, because all three mean the same thing:
+   this is a reader's question, not the book.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.adj-backdrop {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex; justify-content: flex-end;
+}
+/* `[hidden]` is `display: none` from the user-agent sheet, and any class rule
+   that sets `display` beats it — so without this the drawer covers the page
+   from the moment it loads. This project has hit that trap before; it does not
+   announce itself, because the markup says hidden and the screen says
+   otherwise. */
+.adj-backdrop[hidden] { display: none; }
+body.adj-open { overflow: hidden; }
+
+.adj-panel {
+  width: min(680px, 100%); height: 100%;
+  background: var(--surface); border-left: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  box-shadow: -18px 0 48px rgba(15, 23, 42, 0.18);
+}
+
+.adj-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 14px; padding: 20px 22px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.adj-head h2 { margin: 0; font-size: 18px; font-weight: 680; color: var(--text-primary); }
+.adj-sub { margin: 4px 0 0; font-size: 12.5px; color: var(--text-secondary); }
+.adj-close {
+  border: 0; background: transparent; cursor: pointer;
+  font-size: 26px; line-height: 1; color: var(--text-secondary);
+  min-width: 44px; min-height: 44px;
+}
+.adj-close:hover { color: var(--text-primary); }
+
+#adj-explain { margin: 14px 22px 0; }
+
+.adj-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 16px 22px 24px; }
+
+.adj-section { margin-bottom: 26px; }
+.adj-section h3 {
+  margin: 0 0 6px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary);
+}
+.adj-section > .cap-note { margin-bottom: 12px; }
+
+.adj-row {
+  display: grid; grid-template-columns: 1fr auto auto; gap: 14px;
+  align-items: end; padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.adj-row-name {
+  display: flex; flex-direction: column; gap: 2px;
+  font-size: 13.5px; font-weight: 620; color: var(--text-primary);
+}
+.adj-row-id { font-size: 11px; font-weight: 400; color: var(--text-secondary); }
+
+.adj-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.adj-field > span {
+  font-size: 10.5px; font-weight: 650; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-secondary);
+}
+
+.adj-input {
+  min-height: 38px; padding: 0 10px; width: 100%;
+  border: 1px solid var(--border); border-left: 3px solid transparent;
+  border-radius: 7px; background: var(--surface);
+  color: var(--text-primary); font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.adj-input:focus { outline: 2px solid #5e5ce6; outline-offset: 1px; }
+/* The mark. An adjusted value never looks like a recorded one. */
+.adj-input.is-edited {
+  border-left-color: #5e5ce6;
+  background: rgba(94, 92, 230, 0.06);
+  font-weight: 650;
+}
+
+.adj-inv { border-bottom: 1px solid var(--border); }
+.adj-inv > summary {
+  cursor: pointer; list-style: none; min-height: 46px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-size: 13.5px; color: var(--text-primary);
+}
+.adj-inv > summary::-webkit-details-marker { display: none; }
+.adj-inv-name { font-weight: 620; }
+.adj-inv-meta { font-size: 11.5px; color: var(--text-secondary); }
+.adj-inv.is-edited > summary .adj-inv-name { color: #5e5ce6; }
+.adj-inv.is-edited > summary::before {
+  content: ''; width: 3px; align-self: stretch; margin-right: 8px;
+  background: #5e5ce6; border-radius: 2px; flex: 0 0 auto;
+}
+.adj-inv-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px; padding: 4px 0 16px;
+}
+
+.adj-pay-add {
+  display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: center;
+}
+.adj-pay-btn, .adj-pay-drop {
+  min-height: 38px; padding: 0 14px;
+  border: 1px solid #00875a; border-radius: 7px;
+  background: transparent; color: #00875a;
+  font-size: 12.5px; font-weight: 650; cursor: pointer;
+}
+.adj-pay-drop { border-color: var(--border); color: var(--text-secondary); min-height: 32px; padding: 0 10px; }
+.adj-pay-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.adj-pay {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 8px 11px; border-radius: 7px;
+  background: rgba(94, 92, 230, 0.06); border-left: 3px solid #5e5ce6;
+  font-size: 12.5px; color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+
+.adj-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap;
+  padding: 14px 22px; border-top: 1px solid var(--border);
+}
+.adj-count { font-size: 12.5px; font-weight: 650; color: var(--text-secondary); }
+.adj-foot-actions { display: flex; gap: 10px; }
+.adj-reset, .adj-done {
+  min-height: 40px; padding: 0 16px; border-radius: 8px;
+  font-size: 13px; font-weight: 650; cursor: pointer;
+}
+.adj-reset { border: 1px solid #5e5ce6; background: transparent; color: #5e5ce6; }
+.adj-reset:hover { background: rgba(94, 92, 230, 0.08); }
+.adj-done { border: 1px solid #00875a; background: #00875a; color: #fff; }
+
+/* The banner on the dashboard itself. */
+.cap-note.is-adjusted {
+  padding: 9px 12px; border-left: 3px solid #5e5ce6;
+  background: rgba(94, 92, 230, 0.07); border-radius: 0 6px 6px 0;
+  margin-bottom: 14px;
+}
+.cap-inline-btn {
+  border: 0; background: transparent; padding: 0 2px; cursor: pointer;
+  color: #5e5ce6; font-weight: 700; font-size: inherit;
+  text-decoration: underline; text-underline-offset: 2px;
+}
+.dash-link.is-primary { border-color: #5e5ce6; color: #5e5ce6; font-weight: 650; }
+
+@media (max-width: 640px) {
+  .adj-row { grid-template-columns: 1fr; }
+  .adj-pay-add { grid-template-columns: 1fr 1fr; }
+}

@@ -340,6 +340,40 @@
       </div>
     </div>
 
+    <!-- ══ ADJUST THE BOOK ══════════════════════════════════════════════════
+         Every input the dashboard is derived from, editable. An adjustment is
+         neither a question nor a record: it is a set of changed values held by
+         one reader, applied over the book on the way into the engine and never
+         written down. That is what makes the whole screen adjustable on a
+         deployment that can persist nothing.
+
+         Nothing here computes. Every figure on the dashboard behind this
+         drawer is recomputed server-side from the adjusted book by the same
+         functions that derive it from the recorded one. -->
+    <div id="capital-adjust" class="adj-backdrop" hidden>
+      <div class="adj-panel" role="dialog" aria-modal="true" aria-labelledby="adj-title">
+        <header class="adj-head">
+          <div>
+            <h2 id="adj-title">Adjust the figures</h2>
+            <p class="adj-sub" id="adj-sub">—</p>
+          </div>
+          <button type="button" class="adj-close" id="adj-close" aria-label="Close">×</button>
+        </header>
+
+        <p class="cap-note is-adjusted" id="adj-explain"></p>
+
+        <div class="adj-body" id="adj-body"></div>
+
+        <footer class="adj-foot">
+          <span class="adj-count" id="adj-count">Nothing adjusted</span>
+          <div class="adj-foot-actions">
+            <button type="button" class="adj-reset" id="adj-reset" hidden>Reset to the book</button>
+            <button type="button" class="adj-done" id="adj-done">Done</button>
+          </div>
+        </footer>
+      </div>
+    </div>
+
     <!-- ══ Recording the capital book ══════════════════════════════════
          The three things the dashboard is derived from. Nothing here
          computes: balance, deployment and every roll-up come back from the
@@ -583,10 +617,17 @@
               <select id="cap-portfolio-filter" class="cap-select" aria-label="Portfolio">
                 <option value="">All portfolios</option>
               </select>
+              <button type="button" class="dash-link is-primary" id="cap-adjust">Adjust figures</button>
               <button type="button" class="dash-link" id="cap-record">Record</button>
               <button type="button" class="dash-link" id="cap-refresh">Refresh</button>
             </div>
           </header>
+
+          <!-- An adjusted screen says so before its first figure. This project
+               has already had one failure of exactly the opposite kind, where
+               six fields were filled from a demo constant beside a real
+               headline and nothing on screen separated them. -->
+          <p class="cap-note is-adjusted" id="cap-adjusted-banner" hidden></p>
 
           <div class="cap-kpis">
             <div class="cap-kpi">
@@ -1645,6 +1686,7 @@
   <script src="app.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/capital-record.js"></script>
+  <script src="js/capital-adjust.js"></script>
   <script src="js/pcaf.js"></script>
   <script src="js/monitoring.js"></script>
   <script src="js/new-project.js"></script>

@@ -39,6 +39,7 @@ const store   = require('../../services/partc-store');
 const { seedCapitalDemo } = require('../../services/capital-demo-data');
 const baseline = require('../../services/capital-baseline');
 const { basket: basketOf } = require('../../services/capital-basket');
+const adjust = require('../../services/capital-adjust');
 
 const {
   portfolioSchema, portfolioUpdateSchema,
@@ -61,6 +62,66 @@ const handle = fn => async (req, res, next) => {
   catch (err) { if (err.statusCode) return fail(res, err); next(err); }
 };
 
+
+/* The baseline note, declared once. Three endpoints say it, and three copies
+   of a sentence is how one of them ends up saying something the others do not. */
+const BASELINE_NOTE = 'Baseline figures, held in the repository and computed by the same engine. '
+  + 'Nothing has been recorded in this book yet, so the baseline is shown in place of a blank '
+  + 'screen. Record a portfolio and yours replaces it entirely — the two are never mixed.';
+
+/**
+ * The questions a reader may ask of the book, validated once.
+ *
+ * Every one of these is a question rather than a property of the book — what
+ * if I cared more about carbon, what if I looked further out, what if the grid
+ * cleans up faster — so they travel on the request and come back in the
+ * payload, and a screenshot always carries what produced it.
+ *
+ * Declared here because three endpoints read them. When the same validation
+ * lived in two places, one of them accepted a horizon the other refused.
+ *
+ * @returns {{value: object}|{error: object}}
+ */
+function readOptions(query = {}, body = {}) {
+  const pick = (key) => (body[key] !== undefined && body[key] !== null ? body[key] : query[key]);
+
+  const rawWeight = pick('carbonWeight');
+  const carbonWeight = rawWeight === undefined || rawWeight === '' ? 0.5 : Number(rawWeight);
+  if (!Number.isFinite(carbonWeight)) {
+    return { error: {
+      error: 'BAD_WEIGHT',
+      message: `carbonWeight must be a number between 0 and 1; received "${rawWeight}".`,
+    } };
+  }
+
+  const attributionBasis = pick('attributionBasis') || 'outstanding';
+  if (!metrics.ATTRIBUTION_BASES.includes(attributionBasis)) {
+    return { error: {
+      error: 'BAD_BASIS',
+      message: `attributionBasis must be one of ${metrics.ATTRIBUTION_BASES.join(', ')}; `
+        + `received "${attributionBasis}".`,
+    } };
+  }
+
+  const value = {
+    carbonWeight,
+    attributionBasis,
+    horizonYears: pick('horizonYears') ? Number(pick('horizonYears')) : null,
+    gridDeclinePctPerYear: pick('gridDeclinePct') ? Number(pick('gridDeclinePct')) : 0,
+    drawdownYears: pick('drawdownYears') ? Number(pick('drawdownYears')) : 3,
+  };
+  for (const [key, max] of [['horizonYears', 30], ['gridDeclinePctPerYear', 20], ['drawdownYears', 15]]) {
+    const v = value[key];
+    if (v !== null && (!Number.isFinite(v) || v < 0 || v > max)) {
+      return { error: {
+        error: 'BAD_ASSUMPTION',
+        message: `${key} must be a number between 0 and ${max}; received "${v}".`,
+      } };
+    }
+  }
+  return { value };
+}
+
 // ---------------------------------------------------------------------------
 
 router.get('/storage', apiKeyAuth, defaultLimiter, (_req, res) => {
@@ -68,45 +129,17 @@ router.get('/storage', apiKeyAuth, defaultLimiter, (_req, res) => {
 });
 
 router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const raw = req.query.carbonWeight;
-  const carbonWeight = raw === undefined || raw === '' ? 0.5 : Number(raw);
-  if (!Number.isFinite(carbonWeight)) {
-    return res.status(400).json({
-      error: 'BAD_WEIGHT',
-      message: `carbonWeight must be a number between 0 and 1; received "${raw}".`,
-    });
-  }
-  /* The forecast assumptions ride on the query string for the same reason the
-     weighting does: they are questions a reader asks of one book, not
-     properties of the book. They come back in the payload, so a screenshot of
-     a curve always carries the assumptions that produced it. */
-  const basis = req.query.attributionBasis || 'outstanding';
-  if (!metrics.ATTRIBUTION_BASES.includes(basis)) {
-    return res.status(400).json({
-      error: 'BAD_BASIS',
-      message: `attributionBasis must be one of ${metrics.ATTRIBUTION_BASES.join(', ')}; received "${basis}".`,
-    });
-  }
-
-  const opts = {
-    carbonWeight,
-    attributionBasis: basis,
-    horizonYears: req.query.horizonYears ? Number(req.query.horizonYears) : null,
-    gridDeclinePctPerYear: req.query.gridDeclinePct ? Number(req.query.gridDeclinePct) : 0,
-    drawdownYears: req.query.drawdownYears ? Number(req.query.drawdownYears) : 3,
-  };
-  for (const [key, max] of [['horizonYears', 30], ['gridDeclinePctPerYear', 20], ['drawdownYears', 15]]) {
-    const v = opts[key];
-    if (v !== null && (!Number.isFinite(v) || v < 0 || v > max)) {
-      return res.status(400).json({
-        error: 'BAD_ASSUMPTION',
-        message: `${key} must be a number between 0 and ${max}; received "${v}".`,
-      });
-    }
-  }
+  /* The weighting and the forecast assumptions ride on the query string
+     because each is a question a reader asks of one book, not a property of
+     it. They come back in the payload, so a screenshot of a curve always
+     carries the assumptions that produced it. Validated by `readOptions`,
+     which the basket and compute endpoints share — the same rules in three
+     places would be three chances for one of them to drift. */
+  const opts = readOptions(req.query);
+  if (opts.error) return res.status(400).json(opts.error);
 
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
-  const result = metrics.dashboard(held, opts);
+  const result = metrics.dashboard(held, opts.value);
 
   /* An empty book leaves a correct screen with nothing on it — and where
      storage is not writable (a serverless runtime with no Firebase) the seed
@@ -120,6 +153,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
     if (!base) {
       result.sample = false;
       result.source = 'none';
+      result.adjusted = false;
       return res.json({ dashboard: result });
     }
     const filtered = req.query.portfolioId
@@ -129,19 +163,19 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
         payments: base.payments.filter(p => p.portfolioId === req.query.portfolioId),
       }
       : base;
-    const shown = metrics.dashboard({ ...filtered, storage: held.storage }, opts);
+    const shown = metrics.dashboard({ ...filtered, storage: held.storage }, opts.value);
     shown.sample = true;
     shown.source = 'baseline';
     shown.empty = false;
-    shown.sampleNote = 'Baseline figures, held in the repository and computed by the same engine. '
-      + 'Nothing has been recorded in this book yet, so the baseline is shown in place of a blank '
-      + 'screen. Record a portfolio and yours replaces it entirely — the two are never mixed.';
+    shown.sampleNote = BASELINE_NOTE;
     shown.emptyNote = result.emptyNote;
+    shown.adjusted = false;
     return res.json({ dashboard: shown });
   }
 
   result.sample = false;
   result.source = 'recorded';
+  result.adjusted = false;
   res.json({ dashboard: result });
 }));
 
@@ -159,13 +193,8 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
  * cannot be drawn from a different book than the position they are set against.
  */
 router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const basis = req.query.attributionBasis || 'outstanding';
-  if (!metrics.ATTRIBUTION_BASES.includes(basis)) {
-    return res.status(400).json({
-      error: 'BAD_BASIS',
-      message: `attributionBasis must be one of ${metrics.ATTRIBUTION_BASES.join(', ')}; received "${basis}".`,
-    });
-  }
+  const opts = readOptions(req.query);
+  if (opts.error) return res.status(400).json(opts.error);
 
   const raw = req.query.select === undefined ? '' : String(req.query.select);
   const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
@@ -179,30 +208,115 @@ router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
 
-  /* The same two assumptions the chart is drawn under, validated the same way.
-     A scenario run over a different horizon than the curve it is drawn on
-     would be plotted against the wrong years. */
-  const horizonYears = req.query.horizonYears ? Number(req.query.horizonYears) : null;
-  const gridDeclinePctPerYear = req.query.gridDeclinePct ? Number(req.query.gridDeclinePct) : 0;
-  for (const [key, v, max] of [['horizonYears', horizonYears, 30], ['gridDeclinePct', gridDeclinePctPerYear, 20]]) {
-    if (v !== null && (!Number.isFinite(v) || v < 0 || v > max)) {
-      return res.status(400).json({
-        error: 'BAD_ASSUMPTION',
-        message: `${key} must be a number between 0 and ${max}; received "${v}".`,
-      });
-    }
-  }
-
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const source = recorded ? held : (baseline.baselineBook() || held);
 
+  /* The scenario is drawn on the chart's axis, so it takes the chart's horizon
+     and grid trajectory — a run over a different span would be plotted against
+     the wrong years. */
   const result = basketOf(source, ids, {
-    attributionBasis: basis, horizonYears, gridDeclinePctPerYear,
+    attributionBasis: opts.value.attributionBasis,
+    horizonYears: opts.value.horizonYears,
+    gridDeclinePctPerYear: opts.value.gridDeclinePctPerYear,
   });
   result.sample = !recorded;
   result.source = recorded ? 'recorded' : 'baseline';
   res.json({ basket: result });
+}));
+
+/**
+ * The effective book — what the adjust drawer edits against.
+ *
+ * The recorded book where one exists, the repository baseline otherwise: the
+ * same choice `/dashboard` makes, so the drawer cannot show a reader one book
+ * while the screen behind it derives from another. `source` says which, for
+ * the same reason it does everywhere else here.
+ *
+ * Read-only, and deliberately the whole book rather than a page of it — it is
+ * tens of rows, and a drawer that paginated would let a reader adjust a figure
+ * they could not see the effect of.
+ */
+router.get('/book', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const recorded = held.portfolios.length > 0 || held.investments.length > 0;
+  const base = recorded ? held : (baseline.baselineBook() || held);
+  res.json({
+    book: {
+      portfolios: base.portfolios,
+      investments: base.investments,
+      payments: base.payments,
+    },
+    source: recorded ? 'recorded' : 'baseline',
+    sample: !recorded,
+    storage: held.storage || null,
+  });
+}));
+
+/**
+ * Compute a dashboard from the book **as the reader has adjusted it**.
+ *
+ * POST rather than GET because an overlay is a body, not a query string, and
+ * because the shape of it is open-ended. It is nonetheless a **read**: nothing
+ * is stored, no id is issued, and calling it twice changes nothing. That is
+ * deliberate and it is what makes the screen adjustable on a deployment that
+ * can persist nothing — which is this one.
+ *
+ * The overlay names changed values; the base book still comes from the store
+ * or the repository. A browser therefore cannot hand over a book of its own
+ * invention, only a set of edits to one that exists, and an id matching
+ * nothing comes back named rather than quietly becoming a new row.
+ *
+ * Every figure in the response is derived by the same functions that derive
+ * the recorded dashboard. The overlay changes inputs and nothing else.
+ */
+router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const body = req.body || {};
+  const opts = readOptions(req.query, body);
+  if (opts.error) return res.status(400).json(opts.error);
+
+  const overlay = body.overlay && typeof body.overlay === 'object' ? body.overlay : {};
+  /* A cap on the overlay, so a hand-written body cannot turn one request into
+     an unbounded amount of work. The book is tens of rows; anything past this
+     is a mistake rather than a use case. */
+  const editCount = Object.keys(overlay.portfolios || {}).length
+    + Object.keys(overlay.investments || {}).length
+    + (Array.isArray(overlay.payments) ? overlay.payments.length : 0);
+  if (editCount > 500) {
+    return res.status(400).json({
+      error: 'OVERLAY_TOO_LARGE',
+      message: `An overlay may touch at most 500 records; received ${editCount}.`,
+    });
+  }
+
+  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const recorded = held.portfolios.length > 0 || held.investments.length > 0;
+  const base = recorded ? held : (baseline.baselineBook() || held);
+
+  const applied = adjust.applyOverlay(base, overlay);
+  const result = metrics.dashboard({ ...applied.book, storage: held.storage }, opts.value);
+
+  /* Where the reader has changed nothing this is the ordinary dashboard, and
+     it says so — an "adjusted" mark on an unadjusted screen would train a
+     reader to ignore the mark that matters. */
+  result.adjusted = applied.changed > 0;
+  result.adjustedCount = applied.changed;
+  result.adjustedNote = applied.changed > 0 ? adjust.ADJUSTED_NOTE : null;
+  result.unknownIds = applied.unknownIds;
+  result.sample = !recorded;
+  result.source = recorded ? 'recorded' : 'baseline';
+  if (!recorded) result.sampleNote = BASELINE_NOTE;
+
+  const selected = Array.isArray(body.select) ? body.select.map(String).filter(Boolean) : [];
+  const basket = selected.length > 25
+    ? null
+    : basketOf(applied.book, selected, {
+      attributionBasis: opts.value.attributionBasis,
+      horizonYears: opts.value.horizonYears,
+      gridDeclinePctPerYear: opts.value.gridDeclinePctPerYear,
+    });
+
+  res.json({ dashboard: result, basket });
 }));
 
 // ── Portfolios ─────────────────────────────────────────────────────────────

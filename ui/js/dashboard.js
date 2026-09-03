@@ -322,7 +322,45 @@ const Dashboard = (() => {
     return floors;
   }
 
+  /** The questions, in the one shape both the GET and the POST understand. */
+  function _questions() {
+    const q = { carbonWeight: _carbonWeight, attributionBasis: _attributionBasis };
+    if (_asm.horizonYears !== null) q.horizonYears = _asm.horizonYears;
+    if (_asm.drawdownYears !== ASM_DEFAULTS.drawdownYears) q.drawdownYears = _asm.drawdownYears;
+    if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) q.gridDeclinePct = _asm.gridDeclinePct;
+    if (_portfolioFilter) q.portfolioId = _portfolioFilter;
+    return q;
+  }
+
+  /**
+   * Where the reader has adjusted a figure, the dashboard is computed from the
+   * adjusted book instead — one POST that returns the dashboard and the basket
+   * together, so the two can never be one edit apart. Nothing is stored by it;
+   * it is a read of a book the reader has changed on the way in.
+   */
+  async function _fetchAdjusted() {
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/capital/compute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ..._questions(),
+          overlay: CapitalAdjust.overlay(),
+          select: [..._basketIds],
+        }),
+      });
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const body = await res.json();
+      _capital = { mode: 'live', data: body.dashboard };
+      _basket = _basketIds.size ? body.basket : null;
+    } catch (err) {
+      _capital = { mode: 'unavailable', detail: err.message };
+    }
+    return _capital;
+  }
+
   async function _fetchCapital() {
+    if (typeof CapitalAdjust !== 'undefined' && !CapitalAdjust.isEmpty()) return _fetchAdjusted();
     const qs = new URLSearchParams({
       carbonWeight: String(_carbonWeight),
       attributionBasis: _attributionBasis,
@@ -355,6 +393,14 @@ const Dashboard = (() => {
    */
   async function _fetchBasket() {
     if (!_basketIds.size) { _basket = null; return null; }
+    /* While an overlay is in play the basket arrives with the dashboard from
+       /compute, computed against the same adjusted book. Asking the plain
+       basket endpoint here would answer against the unadjusted one, and the
+       dashed line would be a reading of a different book from the solid. */
+    if (typeof CapitalAdjust !== 'undefined' && !CapitalAdjust.isEmpty()) {
+      await _fetchCapital();
+      return _basket;
+    }
     const qs = new URLSearchParams({
       select: [..._basketIds].join(','),
       attributionBasis: _attributionBasis,
@@ -414,6 +460,7 @@ const Dashboard = (() => {
     _renderEmissions(d.emissions);
     _renderCurve(d.forecast, d.capital.currency);
     _renderAssumptions(d.forecast);
+    _renderAdjustedBanner(d);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
     _renderPipeline(d.pipeline, d.capital.currency);
     _renderStorage(d.storage);
@@ -890,6 +937,38 @@ const Dashboard = (() => {
     if (span && f && f.emissions && _asm.horizonYears === null) {
       const opt = span.querySelector('option[value=""]');
       if (opt) opt.textContent = `As long as the book runs (${f.emissions.years} years)`;
+    }
+  }
+
+  /**
+   * An adjusted screen says so above its first figure.
+   *
+   * The opposite failure has already happened here once: six fields filled
+   * from a demo constant beside a real headline, with nothing on the page to
+   * separate them. A mark that appears on an unadjusted screen would be just
+   * as bad in the other direction — it would train a reader to ignore the one
+   * that matters — so it appears only when something has actually changed.
+   */
+  function _renderAdjustedBanner(d) {
+    const el = document.getElementById('cap-adjusted-banner');
+    if (!el) return;
+    const on = !!(d && d.adjusted);
+    el.hidden = !on;
+    if (!on) { el.textContent = ''; return; }
+
+    const n = d.adjustedCount;
+    el.innerHTML = `<b>${n} value${n === 1 ? '' : 's'} adjusted.</b> ${esc(d.adjustedNote)}`
+      + ' <button type="button" class="cap-inline-btn" id="cap-adjusted-reset">Reset</button>';
+    const reset = document.getElementById('cap-adjusted-reset');
+    if (reset) reset.addEventListener('click', () => CapitalAdjust.reset());
+
+    /* An id in the overlay that matches nothing in the book is named rather
+       than dropped: a selection that silently shrank would show a smaller
+       change than the one that was asked for. */
+    if (d.unknownIds && d.unknownIds.length) {
+      el.innerHTML += `<br><span class="cap-dim">${d.unknownIds.length} adjusted `
+        + `id${d.unknownIds.length === 1 ? '' : 's'} matched nothing in the book and `
+        + 'changed nothing.</span>';
     }
   }
 
@@ -1627,10 +1706,20 @@ const Dashboard = (() => {
        asked and the curve is never drawn once on defaults and again on their
        assumptions. */
     _asmLoad();
+    /* The overlay is read before the first fetch too, and for the same reason:
+       wired afterwards, the first request went out with an empty overlay and
+       the screen rendered the unadjusted book for a moment — or, on a reload,
+       permanently, because nothing asked again. Anything that changes what the
+       first request says has to be loaded before it is sent. */
+    if (typeof CapitalAdjust !== 'undefined') CapitalAdjust.init(refreshCapital);
     await Promise.all([
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
     ]);
+    /* The drawer recomputes through the same path a control does, so an
+       adjusted figure and an adjusted assumption reach the screen the same
+       way — one code path, one place for it to be wrong. It is initialised
+       above, before the first fetch. */
     _wireCapitalControls();
   }
 
