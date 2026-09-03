@@ -1,0 +1,149 @@
+/**
+ * CarbonIQ FinTech — Capital book endpoints
+ *
+ *   GET  /v1/capital/dashboard?carbonWeight=0.5&portfolioId=…
+ *        Everything the dashboard draws, derived from one read of the book.
+ *
+ *   GET/POST        /v1/capital/portfolios      ·  PATCH /portfolios/:id
+ *   GET/POST        /v1/capital/investments     ·  PATCH /investments/:id
+ *   GET/POST        /v1/capital/payments        ·  DELETE /payments/:id
+ *   GET             /v1/capital/storage         what this deployment can persist
+ *   POST            /v1/capital/demo            seed a worked book for a demo
+ *
+ * `carbonWeight` is a query parameter rather than a stored setting because it
+ * is a question a reader asks of the same book — "what if I cared more about
+ * carbon than return?" — not a property of the book. It travels back in the
+ * response so a screenshot of a ranking always carries the weighting that
+ * produced it.
+ *
+ * Storage honesty is the same as the rest of the application: on a serverless
+ * runtime with no Firebase, a write is refused with a 503 rather than accepted
+ * and lost.
+ */
+
+'use strict';
+
+const { Router } = require('express');
+const apiKeyAuth = require('../../middleware/api-key');
+const validate   = require('../../middleware/validate');
+const { defaultLimiter } = require('../../middleware/rate-limit');
+
+const book    = require('../../services/capital-book');
+const metrics = require('../../services/capital-metrics');
+const store   = require('../../services/partc-store');
+const { seedCapitalDemo } = require('../../services/capital-demo-data');
+
+const {
+  portfolioSchema, portfolioUpdateSchema,
+  investmentSchema, investmentUpdateSchema,
+  paymentSchema,
+} = require('../../schemas/capital');
+
+const router = Router();
+
+function fail(res, err) {
+  return res.status(err.statusCode || 500).json({
+    error: err.code || 'CAPITAL_ERROR',
+    message: err.message,
+    ...(err.remedy ? { remedy: err.remedy } : {}),
+  });
+}
+
+const handle = fn => async (req, res, next) => {
+  try { await fn(req, res, next); }
+  catch (err) { if (err.statusCode) return fail(res, err); next(err); }
+};
+
+// ---------------------------------------------------------------------------
+
+router.get('/storage', apiKeyAuth, defaultLimiter, (_req, res) => {
+  res.json({ storage: store.capability() });
+});
+
+router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const raw = req.query.carbonWeight;
+  const carbonWeight = raw === undefined || raw === '' ? 0.5 : Number(raw);
+  if (!Number.isFinite(carbonWeight)) {
+    return res.status(400).json({
+      error: 'BAD_WEIGHT',
+      message: `carbonWeight must be a number between 0 and 1; received "${raw}".`,
+    });
+  }
+  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  res.json({ dashboard: metrics.dashboard(held, { carbonWeight }) });
+}));
+
+// ── Portfolios ─────────────────────────────────────────────────────────────
+
+router.get('/portfolios', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({ portfolios: await book.listPortfolios(req.apiKey.orgId) });
+}));
+
+router.post('/portfolios', apiKeyAuth, defaultLimiter,
+  validate({ body: portfolioSchema }),
+  handle(async (req, res) => {
+    res.status(201).json({ portfolio: await book.createPortfolio(req.apiKey.orgId, req.body) });
+  }));
+
+router.patch('/portfolios/:id', apiKeyAuth, defaultLimiter,
+  validate({ body: portfolioUpdateSchema }),
+  handle(async (req, res) => {
+    const updated = await book.updatePortfolio(req.apiKey.orgId, req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No portfolio ${req.params.id}.` });
+    res.json({ portfolio: updated });
+  }));
+
+// ── Investments ────────────────────────────────────────────────────────────
+
+router.get('/investments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({
+    investments: await book.listInvestments(req.apiKey.orgId, {
+      portfolioId: req.query.portfolioId,
+      status: req.query.status,
+    }),
+  });
+}));
+
+router.post('/investments', apiKeyAuth, defaultLimiter,
+  validate({ body: investmentSchema }),
+  handle(async (req, res) => {
+    res.status(201).json({ investment: await book.createInvestment(req.apiKey.orgId, req.body) });
+  }));
+
+router.patch('/investments/:id', apiKeyAuth, defaultLimiter,
+  validate({ body: investmentUpdateSchema }),
+  handle(async (req, res) => {
+    const updated = await book.updateInvestment(req.apiKey.orgId, req.params.id, req.body);
+    if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No investment ${req.params.id}.` });
+    res.json({ investment: updated });
+  }));
+
+// ── Payments ───────────────────────────────────────────────────────────────
+
+router.get('/payments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.json({
+    payments: await book.listPayments(req.apiKey.orgId, {
+      portfolioId: req.query.portfolioId,
+      investmentId: req.query.investmentId,
+    }),
+  });
+}));
+
+router.post('/payments', apiKeyAuth, defaultLimiter,
+  validate({ body: paymentSchema }),
+  handle(async (req, res) => {
+    res.status(201).json({ payment: await book.createPayment(req.apiKey.orgId, req.body) });
+  }));
+
+router.delete('/payments/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  await book.deletePayment(req.apiKey.orgId, req.params.id);
+  res.status(204).end();
+}));
+
+// ── A worked book, for a demonstration ─────────────────────────────────────
+
+router.post('/demo', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  res.status(201).json(await seedCapitalDemo(req.apiKey.orgId));
+}));
+
+module.exports = router;

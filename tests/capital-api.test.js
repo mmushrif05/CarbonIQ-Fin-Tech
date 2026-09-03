@@ -1,0 +1,188 @@
+/**
+ * The capital book over HTTP.
+ *
+ * The engine is tested against fixtures; this suite tests the round trip,
+ * because the round trip is where the first real defect lived. A pipeline
+ * project with no agreed return was stored through a numeric coercion where
+ * `Number(null)` is 0, so "not yet priced" became "prices at zero percent" and
+ * the project was ranked on it rather than held out as unscoreable. The engine
+ * was right and the API was wrong, and only driving the API showed it.
+ */
+
+'use strict';
+
+process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
+
+const request = require('supertest');
+const app   = require('../server');
+const store = require('../services/partc-store');
+
+const KEY = process.env.UI_API_KEY;
+const api = () => request(app);
+const auth = (r) => r.set('x-api-key', KEY);
+
+beforeEach(() => store._resetMemory());
+
+async function seed() {
+  await auth(api().post('/v1/capital/demo')).expect(201);
+}
+
+describe('An empty book', () => {
+  test('is named as unrecorded, never reported as a position of zero', async () => {
+    const res = await auth(api().get('/v1/capital/dashboard')).expect(200);
+    const d = res.body.dashboard;
+    expect(d.empty).toBe(true);
+    expect(d.emptyNote).toMatch(/not a position of zero/);
+    expect(d.capital.allocated).toBe(0);
+    expect(d.capital.deploymentPct).toBeNull();
+  });
+});
+
+describe('The seeded book', () => {
+  beforeEach(seed);
+
+  test('reports the capital position it was seeded with', async () => {
+    const { capital } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(capital.allocated).toBe(750_000_000);
+    expect(capital.committed).toBe(521_000_000);
+    expect(capital.paid).toBe(322_000_000);
+    expect(capital.balance).toBe(428_000_000);
+    expect(capital.undrawnCommitment).toBe(199_000_000);
+  });
+
+  test('keeps the four emission lines apart across the wire', async () => {
+    const { emissions } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(emissions.incurred).toBe(12_050);
+    expect(emissions.forward).toBe(4_230);
+    expect(emissions.reduction).toBe(1_030);
+    expect(emissions.avoided).toBe(36_000);
+    expect(emissions.lifetimeInventory).toBe(16_280);
+  });
+
+  test('an unpriced project survives storage as unpriced, not as zero percent', async () => {
+    const list = (await auth(api().get('/v1/capital/investments?status=pipeline')).expect(200)).body.investments;
+    const trinco = list.find(i => i.id === 'inv_trincomalee_biomass');
+    expect(trinco.expectedReturnPct).toBeNull();
+
+    const { pipeline } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(pipeline.ranked.map(r => r.id)).not.toContain('inv_trincomalee_biomass');
+    const held = pipeline.unrankable.find(r => r.id === 'inv_trincomalee_biomass');
+    expect(held).toBeDefined();
+    expect(held.missing).toContain('expected return');
+  });
+
+  test('seeding twice refreshes the book rather than doubling it', async () => {
+    await seed();
+    const { capital } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(capital.allocated).toBe(750_000_000);
+    expect(capital.committed).toBe(521_000_000);
+  });
+
+  test('the weighting is honoured and echoed back', async () => {
+    const carbon = (await auth(api().get('/v1/capital/dashboard?carbonWeight=1')).expect(200)).body.dashboard;
+    const money  = (await auth(api().get('/v1/capital/dashboard?carbonWeight=0')).expect(200)).body.dashboard;
+
+    expect(carbon.pipeline.carbonWeight).toBe(1);
+    expect(money.pipeline.carbonWeight).toBe(0);
+    expect(carbon.pipeline.ranked[0].id).toBe('inv_jaffna_minigrid');
+    expect(money.pipeline.ranked[0].id).toBe('inv_kowloon_refit');
+    expect(carbon.pipeline.weightingNote).toMatch(/100% carbon impact and 0% expected return/);
+  });
+
+  test('a weighting that is not a number is refused, not silently defaulted', async () => {
+    const res = await auth(api().get('/v1/capital/dashboard?carbonWeight=soon')).expect(400);
+    expect(res.body.error).toBe('BAD_WEIGHT');
+    expect(res.body.message).toMatch(/between 0 and 1/);
+  });
+
+  test('the dashboard can be narrowed to one portfolio', async () => {
+    const res = await auth(api().get('/v1/capital/dashboard?portfolioId=pf_renewables_sa')).expect(200);
+    const d = res.body.dashboard;
+    expect(d.portfolios).toHaveLength(1);
+    expect(d.capital.allocated).toBe(250_000_000);
+    expect(d.capital.paid).toBe(82_000_000);
+  });
+});
+
+describe('Recording a book', () => {
+  test('a portfolio, an investment and a payment move the derived figures', async () => {
+    const pf = (await auth(api().post('/v1/capital/portfolios'))
+      .send({ name: 'Test Fund', currency: 'USD', allocatedBudget: 1_000_000 }).expect(201)).body.portfolio;
+
+    const inv = (await auth(api().post('/v1/capital/investments'))
+      .send({ portfolioId: pf.id, name: 'Test Asset', status: 'deployed', commitment: 400_000 })
+      .expect(201)).body.investment;
+
+    let d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(d.capital.committed).toBe(400_000);
+    expect(d.capital.paid).toBe(0);
+    expect(d.capital.balance).toBe(1_000_000);      // committed is not paid
+
+    await auth(api().post('/v1/capital/payments'))
+      .send({ investmentId: inv.id, kind: 'disbursement', amount: 250_000 }).expect(201);
+
+    d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(d.capital.paid).toBe(250_000);
+    expect(d.capital.balance).toBe(750_000);
+    expect(d.capital.undrawnCommitment).toBe(150_000);
+  });
+
+  test('balance follows a correction, because it is derived rather than stored', async () => {
+    const pf = (await auth(api().post('/v1/capital/portfolios'))
+      .send({ name: 'F', allocatedBudget: 100 }).expect(201)).body.portfolio;
+    const inv = (await auth(api().post('/v1/capital/investments'))
+      .send({ portfolioId: pf.id, name: 'A', status: 'deployed', commitment: 100 }).expect(201)).body.investment;
+    const pay = (await auth(api().post('/v1/capital/payments'))
+      .send({ investmentId: inv.id, amount: 60 }).expect(201)).body.payment;
+
+    expect((await auth(api().get('/v1/capital/dashboard'))).body.dashboard.capital.balance).toBe(40);
+
+    await auth(api().delete(`/v1/capital/payments/${pay.id}`)).expect(204);
+    expect((await auth(api().get('/v1/capital/dashboard'))).body.dashboard.capital.balance).toBe(100);
+  });
+
+  test('a payment against nothing is refused with the reason', async () => {
+    const res = await auth(api().post('/v1/capital/payments'))
+      .send({ investmentId: 'inv_does_not_exist', amount: 10 }).expect(404);
+    expect(res.body.message).toMatch(/A payment has to be against something/);
+  });
+
+  test('an unknown status is refused rather than stored', async () => {
+    const pf = (await auth(api().post('/v1/capital/portfolios'))
+      .send({ name: 'F', allocatedBudget: 1 }).expect(201)).body.portfolio;
+    const inv = (await auth(api().post('/v1/capital/investments'))
+      .send({ portfolioId: pf.id, name: 'A' }).expect(201)).body.investment;
+    await auth(api().patch(`/v1/capital/investments/${inv.id}`)).send({ status: 'maybe' }).expect(400);
+  });
+
+  test('an investment stored with an explicit null return keeps it null', async () => {
+    const pf = (await auth(api().post('/v1/capital/portfolios'))
+      .send({ name: 'F', allocatedBudget: 1 }).expect(201)).body.portfolio;
+    const inv = (await auth(api().post('/v1/capital/investments'))
+      .send({ portfolioId: pf.id, name: 'Unpriced', expectedReturnPct: null, tenorYears: null })
+      .expect(201)).body.investment;
+    expect(inv.expectedReturnPct).toBeNull();
+    expect(inv.tenorYears).toBeNull();
+  });
+});
+
+describe('Storage honesty', () => {
+  test('the endpoint reports what this deployment can persist', async () => {
+    const res = await auth(api().get('/v1/capital/storage')).expect(200);
+    expect(res.body.storage).toHaveProperty('mode');
+    expect(res.body.storage).toHaveProperty('durable');
+    expect(res.body.storage).toHaveProperty('reason');
+  });
+
+  test('the dashboard carries it too, so a screen can warn without a second call', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(d.storage).toHaveProperty('mode');
+  });
+});
+
+describe('Authentication', () => {
+  test('the book is not readable without a key', async () => {
+    await api().get('/v1/capital/dashboard').expect(401);
+    await api().get('/v1/capital/portfolios').expect(401);
+  });
+});

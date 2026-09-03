@@ -94,7 +94,11 @@ const Dashboard = (() => {
    * toast disappears and the wrong numbers stay on screen afterwards.
    */
   function _renderDemoBanner(data) {
-    const hosts = ['page-dashboard', 'page-portfolio']
+    /* Only the Portfolio screen. The Dashboard reads the capital book, which
+       has its own states and its own messages; stamping "sample data — not
+       your portfolio" over live recorded figures was worse than saying
+       nothing at all. */
+    const hosts = ['page-portfolio']
       .map((id) => document.getElementById(id))
       .filter(Boolean);
     if (!hosts.length) return;
@@ -102,7 +106,7 @@ const Dashboard = (() => {
     const src = (data && data._source) || {};
 
     hosts.forEach((host, i) => {
-      const bannerId = 'dash-demo-banner' + (i === 0 ? '' : '-pf');
+      const bannerId = 'dash-demo-banner-pf';
       const existing = document.getElementById(bannerId);
 
       if (src.mode === 'live') { if (existing) existing.remove(); return; }
@@ -142,14 +146,6 @@ const Dashboard = (() => {
   }
 
   /**
-   * A panel the live portfolio does not carry. Named, not filled in.
-   */
-  function _absent(el, what) {
-    if (!el) return;
-    el.innerHTML = '<p class="dash-absent">' + what + '</p>';
-  }
-
-  /**
    * Fill in only what can be derived from the payload itself — never from the
    * sample book. A live portfolio that does not carry a figure is missing it,
    * and `null` is how the renderers know to say so.
@@ -177,18 +173,6 @@ const Dashboard = (() => {
     return `${v.toFixed(dp)} (${band})`;
   }
 
-  /** Every figure blanked, so a failed load cannot leave the last one standing. */
-  function _clearDashboard() {
-    ['dash-emissions-value', 'dash-dq-value', 'dash-coverage-value', 'dash-taxonomy-value']
-      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
-    ['dash-emissions-badge', 'dash-dq-badge', 'dash-coverage-badge', 'dash-taxonomy-badge']
-      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
-    _absent(document.getElementById('dash-asset-bars'), 'No portfolio to break down.');
-    _absent(document.getElementById('dash-hbars'), 'No portfolio to break down.');
-    const tb = document.getElementById('dash-projects-tbody');
-    if (tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:32px">No portfolio loaded</td></tr>';
-  }
-
   function _clearPortfolio() {
     ['pf-outstanding', 'pf-emissions', 'pf-intensity', 'pf-wdq', 'pf-coverage', 'pf-green-ratio']
       .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
@@ -204,117 +188,433 @@ const Dashboard = (() => {
   function _fmtN(n) { return n.toLocaleString('en-US'); }
 
   // ── Dashboard rendering ───────────────────────────────────
-  function _renderDashboard(d) {
+  /* ══════════════════════════════════════════════════════════════════════
+     THE DASHBOARD — the capital book
+     ══════════════════════════════════════════════════════════════════════
+     What the institution has allocated, what it has committed, what it has
+     actually paid, what is left, what the book has emitted and will emit,
+     what it has helped reduce and avoid, and what is waiting to be written.
+
+     Three separations are held on screen because they are held in the engine,
+     and a screen that blurs them would make the engine's care pointless.
+
+     Committed is not paid. They sit in different tiles and different segments
+     of the deployment bar, because a book two-thirds committed and under half
+     deployed is in a completely different position from one with the money out.
+
+     Incurred is not forward. One is measured, the other is a projection over
+     the remaining term. The forward bar is hatched so a reader can see which
+     is which without reading the label, and they are never stacked.
+
+     Reduction and avoidance are not deductions. They sit in a second block
+     behind a rule that says so, because PCAF reports avoided emissions apart
+     from the inventory and never nets them against it (Part A, p.126).
+
+     The palette is validated, not chosen by eye: #00875a / #5e5ce6 / #c77700 /
+     #1f6fb2 pass the lightness band, chroma floor, CVD separation (worst
+     adjacent deutan ΔE 23.4), the normal-vision floor and contrast against
+     this surface. Every segment also carries a direct label and a 2px gap, so
+     nothing rests on colour alone.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const CAP = {
+    paid:      '#00875a',
+    undrawn:   '#5e5ce6',
+    uncommit:  '#c77700',
+    incurred:  '#00875a',
+    forward:   '#5e5ce6',
+    reduction: '#c77700',
+    avoided:   '#1f6fb2',
+  };
+
+  let _capital = null;
+  let _carbonWeight = 0.5;
+  let _portfolioFilter = '';
+
+  const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+  /** Money, at the scale a reader actually holds in their head. */
+  function _money(n, currency = 'USD') {
+    const v = Number(n) || 0;
+    const sign = v < 0 ? '−' : '';
+    const a = Math.abs(v);
+    const sym = currency === 'USD' ? '$' : `${currency} `;
+    if (a >= 1e9) return `${sign}${sym}${(a / 1e9).toFixed(2)}B`;
+    if (a >= 1e6) return `${sign}${sym}${(a / 1e6).toFixed(1)}M`;
+    if (a >= 1e3) return `${sign}${sym}${(a / 1e3).toFixed(0)}K`;
+    return `${sign}${sym}${a.toFixed(0)}`;
+  }
+  const _t = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+  /**
+   * Whole percentages that sum to 100.
+   *
+   * Rounding each share on its own gave 43 + 27 + 31 = 101 for one allocation.
+   * A reader who adds up the parts of one whole and gets 101 stops trusting
+   * the rest of the screen, and they are right to. Largest remainder puts the
+   * rounding difference on the share that lost the most to it.
+   */
+  function _wholePercents(values) {
+    const total = values.reduce((t, v) => t + v, 0);
+    if (!total) return values.map(() => 0);
+    const exact = values.map(v => (v / total) * 100);
+    const floors = exact.map(Math.floor);
+    let left = 100 - floors.reduce((t, v) => t + v, 0);
+    const order = exact
+      .map((v, i) => ({ i, rem: v - Math.floor(v) }))
+      .sort((a, b) => b.rem - a.rem);
+    for (const { i } of order) {
+      if (left <= 0) break;
+      floors[i] += 1;
+      left -= 1;
+    }
+    return floors;
+  }
+
+  async function _fetchCapital() {
+    const qs = new URLSearchParams({ carbonWeight: String(_carbonWeight) });
+    if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/capital/dashboard?${qs}`);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      const { dashboard } = await res.json();
+      _capital = { mode: dashboard.empty ? 'empty' : 'live', data: dashboard };
+    } catch (err) {
+      _capital = { mode: 'unavailable', detail: err.message };
+    }
+    return _capital;
+  }
+
+  function _renderDashboard(state) {
     const $ = (id) => document.getElementById(id);
 
-    // The loader comes down whatever the outcome. A spinner that outlives the
-    // request it represents is the failure this screen is most often reported
-    // for, and it is indistinguishable from a slow network.
+    /* The loader comes down whatever the outcome. A spinner that outlives its
+       request is indistinguishable from a slow network. */
     const loader = $('dash-loading');
     if (loader) loader.style.display = 'none';
+    if (!$('cap-capital')) return;
 
-    if (!d || d._source?.mode === 'unavailable') { _clearDashboard(); return; }
-    d = _withDefaults(d);
-
-    const emVal = $('dash-emissions-value');
-    if (emVal) emVal.innerHTML = `${_fmtN(d.totalFinancedEmissions_tCO2e)} <span class="kpi-unit">tCO2e</span>`;
-    const emBadge = $('dash-emissions-badge');
-    if (emBadge) {
-      emBadge.textContent = `${d.totalProjects} projects`;
-      emBadge.className = 'kpi-badge badge-neutral';
+    const store = $('cap-storage');
+    if (!state || state.mode === 'unavailable') {
+      _capitalMessage(
+        'The book could not be read'
+          + (state && state.detail ? ` (${esc(state.detail)})` : '')
+          + '. Nothing below is your position — it is blank because the request failed, '
+          + 'not because the book is empty.');
+      if (store) store.hidden = true;
+      return;
     }
 
-    const dqVal = $('dash-dq-value');
-    if (dqVal) {
-      dqVal.innerHTML = d.weightedDQ == null
-        ? `— <span class="kpi-unit">${DQ_ABSENT}</span>`
-        : `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best of 1–5</span>`;
-    }
-    const dqBadge = $('dash-dq-badge');
-    if (dqBadge && d.weightedDQ == null) { dqBadge.textContent = DQ_ABSENT; dqBadge.className = 'kpi-badge badge-neutral'; }
-    else if (dqBadge) {
-      const label = d.weightedDQ <= 2.0 ? 'Excellent' : d.weightedDQ <= 3.0 ? 'Good' : 'Fair';
-      dqBadge.textContent = label;
-      dqBadge.className = 'kpi-badge ' + (d.weightedDQ <= 2.0 ? 'badge-green' : d.weightedDQ <= 3.0 ? 'badge-blue' : 'badge-amber');
-    }
-    const dqMeter = $('dash-dq-meter');
-    if (dqMeter) dqMeter.style.width = d.weightedDQ == null ? '0%' : `${((5 - d.weightedDQ) / 4) * 100}%`;
+    const d = state.data;
 
-    const covVal = $('dash-coverage-value');
-    if (covVal) covVal.innerHTML = `${d.coveragePct}<span class="kpi-unit">%</span>`;
-    const covBadge = $('dash-coverage-badge');
-    if (covBadge) {
-      covBadge.textContent = `${d.meta?.resolvedProjects || d.totalProjects} / ${d.meta?.requestedProjects || d.totalProjects}`;
-      covBadge.className = 'kpi-badge badge-blue';
-    }
-    const donut = $('dash-donut-fill');
-    if (donut) donut.setAttribute('stroke-dasharray', `${d.coveragePct} ${100 - d.coveragePct}`);
-
-    const tax = d.taxonomyDistribution || {};
-    const total = (tax.green || 0) + (tax.transition || 0) + (tax.brown || 0);
-    const greenPct = total > 0 ? Math.round((tax.green / total) * 100) : 0;
-    const taxVal = $('dash-taxonomy-value');
-    if (taxVal) taxVal.innerHTML = `${greenPct}% <span class="kpi-unit">green</span>`;
-    const taxBadge = $('dash-taxonomy-badge');
-    if (taxBadge) {
-      taxBadge.textContent = `${tax.green || 0} of ${total}`;
-      taxBadge.className = 'kpi-badge badge-green';
+    if (state.mode === 'empty') {
+      _capitalMessage(d.emptyNote
+        + ' Record a portfolio and its allocation, or load a worked book, from Record.');
+      _renderStorage(d.storage);
+      return;
     }
 
-    const barWrap = $('dash-asset-bars');
-    if (barWrap && !(d.assetClasses || []).length) {
-      _absent(barWrap, 'This portfolio does not carry an asset-class breakdown.');
-    } else if (barWrap && d.assetClasses) {
-      const maxVal = Math.max(...d.assetClasses.map(a => a.value));
-      const colors = ['fill-blue', 'fill-green', 'fill-amber', 'fill-purple'];
-      // The bar lives in a track that owns the height, so its percentage has
-      // something definite to resolve against. Without the track the group was
-      // sized by its own text and every bar computed to zero height — labels
-      // and values on screen, no bars at all.
-      barWrap.innerHTML = d.assetClasses.map((a, i) => `
-        <div class="bar-group">
-          <span class="bar-value">${_fmtN(a.value)}</span>
-          <div class="bar-track">
-            <div class="bar ${colors[i % colors.length]}" style="height:${Math.max(2, Math.round((a.value / maxVal) * 100))}%"
-                 title="${a.label}: ${_fmtN(a.value)} tCO2e"></div>
-          </div>
-          <span class="bar-label">${a.label}</span>
-        </div>
-      `).join('');
+    _clearMessage();
+    _renderCapital(d.capital);
+    _renderEmissions(d.emissions);
+    _renderPortfolioRows(d.portfolios, d.capital.currency);
+    _renderPipeline(d.pipeline, d.capital.currency);
+    _renderStorage(d.storage);
+    _fillPortfolioFilter(d.portfolios);
+  }
+
+  /** One message, in place of the figures, so a blank screen always says why. */
+  function _capitalMessage(text) {
+    for (const id of ['cap-allocated', 'cap-paid', 'cap-undrawn', 'cap-balance']) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '—';
+    }
+    for (const id of ['cap-deploy-bar', 'cap-deploy-legend', 'cap-inventory-rows',
+      'cap-impact-rows', 'cap-portfolio-rows', 'cap-pipeline-rows', 'cap-scatter',
+      'cap-bytype-rows', 'cap-dq']) {
+      const el = document.getElementById(id);
+      if (el) el.innerHTML = '';
+    }
+    let box = document.getElementById('cap-message');
+    if (!box) {
+      box = document.createElement('p');
+      box.id = 'cap-message';
+      box.className = 'cap-message';
+      const host = document.getElementById('page-dashboard');
+      host.insertBefore(box, host.firstChild.nextSibling);
+    }
+    box.textContent = text;
+  }
+  function _clearMessage() {
+    const box = document.getElementById('cap-message');
+    if (box) box.remove();
+  }
+
+  function _renderStorage(st) {
+    const el = document.getElementById('cap-storage');
+    if (!el) return;
+    el.hidden = !(st && st.durable === false);
+    if (st && st.durable === false) {
+      el.textContent = `Storage is ${st.mode} and not durable. ${st.reason || ''} ${st.remedy || ''}`.trim();
+    }
+  }
+
+  // ── Capital ───────────────────────────────────────────────────────────────
+
+  function _renderCapital(c) {
+    const $ = (id) => document.getElementById(id);
+    const cur = c.currency;
+
+    $('cap-capital-sub').textContent =
+      `${c.portfolios} portfolio${c.portfolios === 1 ? '' : 's'} · `
+      + `${c.commitmentPct == null ? '—' : c.commitmentPct + '%'} committed · `
+      + `${c.deploymentPct == null ? '—' : c.deploymentPct + '%'} deployed`;
+
+    $('cap-allocated').textContent = _money(c.allocated, cur);
+    $('cap-allocated-foot').textContent = c.note
+      || `${_money(c.uncommitted, cur)} of it is not yet committed to anything.`;
+
+    $('cap-paid').textContent = _money(c.paid, cur);
+    $('cap-paid-foot').textContent =
+      `${_money(c.disbursed, cur)} disbursed less ${_money(c.repaid, cur)} repaid`
+      + (c.fees ? `. ${_money(c.fees, cur)} of fees is paid but is not a drawdown of commitment.` : '.');
+
+    $('cap-undrawn').textContent = _money(c.undrawnCommitment, cur);
+    $('cap-undrawn-foot').textContent =
+      `${_money(c.committed, cur)} committed in total. A commitment is a promise; a payment is a movement.`;
+
+    $('cap-balance').textContent = _money(c.balance, cur);
+    $('cap-balance-foot').textContent = c.overDeployed
+      ? 'Over the allocation. Reported as it is rather than held at zero.'
+      : 'Allocated less paid. Derived from the payment log, never typed.';
+    $('cap-balance').classList.toggle('is-negative', c.balance < 0);
+
+    /* The stacked bar: paid, committed-but-undrawn, and uncommitted are three
+       parts of the one allocation, so they are one bar rather than three. */
+    const segs = [
+      { key: 'paid',     label: 'Paid out',            value: c.paid,              color: CAP.paid },
+      { key: 'undrawn',  label: 'Committed, undrawn',  value: c.undrawnCommitment, color: CAP.undrawn },
+      { key: 'uncommit', label: 'Uncommitted',         value: Math.max(0, c.uncommitted), color: CAP.uncommit },
+    ];
+    const total = segs.reduce((t, s) => t + Math.max(0, s.value), 0) || 1;
+
+    $('cap-deploy-sub').textContent = `${_money(c.allocated, cur)} allocated in total`;
+    $('cap-deploy-bar').innerHTML = segs
+      .filter(s => s.value > 0)
+      .map(s => `<span class="cap-stack-seg" style="width:${(s.value / total) * 100}%;background:${s.color}"
+                       title="${esc(s.label)}: ${_money(s.value, cur)}"></span>`).join('');
+
+    const shares = _wholePercents(segs.map(s => Math.max(0, s.value)));
+    $('cap-deploy-legend').innerHTML = segs.map((s, i) => `
+      <span class="cap-legend-item">
+        <i class="cap-swatch" style="background:${s.color}"></i>
+        ${esc(s.label)} <b>${_money(s.value, cur)}</b>
+        <em>${shares[i]}%</em>
+      </span>`).join('');
+  }
+
+  // ── Emissions ─────────────────────────────────────────────────────────────
+
+  function _renderEmissions(e) {
+    const $ = (id) => document.getElementById(id);
+
+    $('cap-emissions-sub').textContent =
+      `Across ${e.investmentsCounted} committed or deployed investment`
+      + `${e.investmentsCounted === 1 ? '' : 's'} · ${e.unit}`;
+
+    /* Two blocks, scaled against one maximum so the bars are comparable, but
+       never stacked and never summed across the rule between them. */
+    const all = [e.incurred, e.forward, e.reduction, e.avoided];
+    const max = Math.max(1, ...all.map(v => Math.abs(Number(v) || 0)));
+
+    const row = (label, value, color, { hatch = false, foot = '' } = {}) => `
+      <div class="cap-ledger-row">
+        <span class="cap-row-label">${esc(label)}</span>
+        <span class="cap-row-track">
+          <span class="cap-row-fill${hatch ? ' is-projected' : ''}"
+                style="width:${(Math.abs(value) / max) * 100}%;--fill:${color}"></span>
+        </span>
+        <span class="cap-row-value">${_t(value)}</span>
+        ${foot ? `<span class="cap-row-foot">${esc(foot)}</span>` : ''}
+      </div>`;
+
+    $('cap-inventory-rows').innerHTML =
+      row('Already incurred', e.incurred, CAP.incurred, { foot: 'Measured' })
+      + row('Expected over the remaining term', e.forward, CAP.forward,
+            { hatch: true, foot: 'Projection — hatched wherever it appears' });
+    $('cap-inventory-note').textContent = e.inventoryNote;
+
+    $('cap-impact-rows').innerHTML =
+      row('Reduction achieved', e.reduction, CAP.reduction,
+          { foot: 'Against each project’s own base year' })
+      + row('Emissions avoided', e.avoided, CAP.avoided,
+            { foot: 'Against a counterfactual that did not happen' });
+    $('cap-impact-note').textContent = e.creditNote;
+
+    const dq = e.dataQuality;
+    $('cap-dq').innerHTML = dq.weighted == null
+      ? `<span class="cap-dq-value">not reported</span>
+         <span class="cap-dq-foot">${esc(dq.note || 'No investment carries a data-quality score.')}</span>`
+      : `<span class="cap-dq-label">Data quality</span>
+         <span class="cap-dq-value">${dq.weighted.toFixed(2)}</span>
+         <span class="cap-dq-foot">${esc(dq.scale)} ${esc(dq.basis)}
+           Weighted over ${dq.investmentsScored} investment${dq.investmentsScored === 1 ? '' : 's'}${
+             dq.investmentsWithoutScore
+               ? `; ${dq.investmentsWithoutScore} carrying no score ${dq.investmentsWithoutScore === 1 ? 'is' : 'are'} excluded rather than counted as zero.`
+               : '.'}</span>`;
+  }
+
+  // ── Portfolios ────────────────────────────────────────────────────────────
+
+  function _renderPortfolioRows(rows, cur) {
+    const body = document.getElementById('cap-portfolio-rows');
+    if (!rows.length) {
+      body.innerHTML = '<tr><td colspan="8" class="cap-empty">No portfolio recorded.</td></tr>';
+      return;
+    }
+    body.innerHTML = rows.map(p => `
+      <tr>
+        <td><strong>${esc(p.name)}</strong>
+            <br><span class="cap-dim">${esc(p.mandate || '')}${p.vintage ? ` · vintage ${esc(p.vintage)}` : ''}</span></td>
+        <td class="num">${_money(p.allocated, p.currency || cur)}</td>
+        <td class="num">${_money(p.committed, p.currency || cur)}</td>
+        <td class="num">${_money(p.paid, p.currency || cur)}</td>
+        <td class="num${p.balance < 0 ? ' is-negative' : ''}">${_money(p.balance, p.currency || cur)}</td>
+        <td class="num">${_t(p.incurred_tCO2e)}</td>
+        <td class="num cap-projected">${_t(p.forward_tCO2e)}</td>
+        <td class="num">${p.intensity_tCO2e_perMillion == null
+          ? '<span class="cap-dim">nothing drawn</span>'
+          : `${p.intensity_tCO2e_perMillion} <span class="cap-dim">t/$M</span>`}</td>
+      </tr>`).join('');
+  }
+
+  function _fillPortfolioFilter(rows) {
+    const sel = document.getElementById('cap-portfolio-filter');
+    if (!sel || sel.dataset.filled === String(rows.length)) return;
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">All portfolios</option>'
+      + rows.map(p => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('');
+    sel.value = keep;
+    sel.dataset.filled = String(rows.length);
+  }
+
+  // ── Pipeline ──────────────────────────────────────────────────────────────
+
+  function _renderPipeline(p, cur) {
+    const $ = (id) => document.getElementById(id);
+
+    $('cap-pipeline-sub').textContent =
+      `${p.count} project${p.count === 1 ? '' : 's'} waiting · `
+      + `${_money(p.totalRequested, cur)} requested · `
+      + `${_t(p.totalContribution_tCO2e)} tCO2e would be added to the book if all were written`;
+
+    $('cap-weight-note').textContent = p.weightingNote;
+
+    const rows = [...p.ranked, ...p.unrankable];
+    $('cap-pipeline-rows').innerHTML = rows.length ? rows.map(r => `
+      <tr class="${r.rankable ? '' : 'is-unranked'}">
+        <td class="num">${r.rank || '<span class="cap-dim">—</span>'}</td>
+        <td><strong>${esc(r.name)}</strong>
+            <br><span class="cap-dim">${esc(r.country || '')}${r.taxonomy ? ` · ${esc(r.taxonomy)}` : ''}</span></td>
+        <td>${esc(r.sector || '')}${r.assetType ? `<br><span class="cap-dim">${esc(r.assetType)}</span>` : ''}</td>
+        <td class="num">${_money(r.commitment, cur)}</td>
+        <td class="num">${r.expectedReturnPct == null
+          ? '<span class="cap-dim">not priced</span>' : `${r.expectedReturnPct}%`}</td>
+        <td class="num">${r.impact_tCO2e_perMillion == null
+          ? '<span class="cap-dim">—</span>' : _t(r.impact_tCO2e_perMillion)}</td>
+        <td class="num cap-projected">${_t(r.financedEmissionContribution_tCO2e)}</td>
+        <td class="num">${r.score == null
+          ? `<span class="cap-dim" title="${esc(r.missing.join('; '))}">not scored</span>`
+          : `<b>${r.score.toFixed(3)}</b>`}</td>
+      </tr>`).join('')
+      : '<tr><td colspan="8" class="cap-empty">Nothing is waiting.</td></tr>';
+
+    const un = $('cap-unrankable-note');
+    un.hidden = !p.unrankableNote;
+    if (p.unrankableNote) un.textContent = p.unrankableNote;
+
+    $('cap-bytype-rows').innerHTML = p.byType.map(t => `
+      <div class="cap-bytype-row">
+        <span class="cap-bytype-name">${esc(t.sector)}</span>
+        <span class="cap-bytype-count">${t.count}</span>
+        <span class="cap-bytype-cap">${_money(t.commitment, cur)}</span>
+        <span class="cap-bytype-em cap-projected">${_t(t.contribution_tCO2e)} tCO2e</span>
+      </div>`).join('');
+
+    _renderScatter(p, cur);
+  }
+
+  /**
+   * Impact against return.
+   *
+   * Two different measures, so a scatter rather than a bar: the question is
+   * which projects sit high on both, and no ranked list shows that as
+   * directly. Area carries the capital, so a large ask is visibly a large ask.
+   * Every mark is the same hue — colour follows the entity here, and rank is
+   * shown by a ring and a label rather than by repainting the leader.
+   */
+  function _renderScatter(p, cur) {
+    const host = document.getElementById('cap-scatter');
+    const note = document.getElementById('cap-scatter-note');
+    const pts = p.ranked.filter(r =>
+      Number.isFinite(r.expectedReturnPct) && Number.isFinite(r.impact_tCO2e_perMillion));
+
+    if (pts.length < 2) {
+      host.innerHTML = '';
+      note.textContent = pts.length
+        ? 'One project can be plotted; a scatter needs at least two to compare.'
+        : 'Nothing in the pipeline carries both a return and a carbon impact, so there is nothing to plot.';
+      return;
     }
 
-    const hbars = $('dash-hbars');
-    if (hbars && !(d.assetTypes || []).length) {
-      _absent(hbars, 'This portfolio does not carry an asset-type mix.');
-    } else if (hbars && d.assetTypes) {
-      const maxPct = Math.max(...d.assetTypes.map(a => a.value));
-      const fills = ['fill-blue', 'fill-green', 'fill-amber', 'fill-purple', 'fill-red'];
-      hbars.innerHTML = d.assetTypes.map((a, i) => `
-        <div class="h-bar-row">
-          <span class="h-bar-label">${a.label}</span>
-          <div class="h-bar-track"><div class="h-bar-fill ${fills[i % fills.length]}" style="width:${Math.round((a.value / maxPct) * 100)}%"></div></div>
-          <span class="h-bar-value">${a.value}%</span>
-        </div>
-      `).join('');
-    }
+    const W = 720, H = 316, M = { t: 34, r: 18, b: 40, l: 66 };
+    const xs = pts.map(r => r.expectedReturnPct);
+    const ys = pts.map(r => r.impact_tCO2e_perMillion);
+    const x0 = 0, x1 = Math.max(...xs) * 1.12;               // return starts at zero
+    const yMax = Math.max(...ys) * 1.15;
+    const y0 = -yMax * 0.06, y1 = yMax;   // the axis marks zero; the pad keeps
+                                          // a mark near it from being clipped
+    const px = v => M.l + ((v - x0) / (x1 - x0 || 1)) * (W - M.l - M.r);
+    const py = v => H - M.b - ((v - y0) / (y1 - y0 || 1)) * (H - M.t - M.b);
 
-    const tbody = $('dash-projects-tbody');
-    if (tbody) {
-      if (!d.topContributors || d.topContributors.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:32px">No projects found</td></tr>';
-      } else {
-        tbody.innerHTML = d.topContributors.map(p => {
-          const cls = p.classification || 'brown';
-          const badgeCls = cls === 'green' ? 'badge-green' : cls === 'transition' ? 'badge-amber' : 'badge-red';
-          return `<tr>
-            <td><strong>${p.name || p.projectId}</strong><br><span style="font-size:11px;color:var(--text-tertiary)">${p.projectId}</span></td>
-            <td>${cls.charAt(0).toUpperCase() + cls.slice(1)}</td>
-            <td>${_fmtN(p.financedEmissions_tCO2e)} tCO2e</td>
-            <td><span class="kpi-badge ${badgeCls}">${cls}</span></td>
-          </tr>`;
-        }).join('');
-      }
-    }
+    const maxCap = Math.max(...pts.map(r => r.commitment)) || 1;
+    const rad = c => 7 + 13 * Math.sqrt(Math.max(0, c) / maxCap);
+
+    const xTicks = [0, x1 / 2, x1];
+    const yTicks = [0, y1 / 2, y1];
+
+    host.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="Carbon impact per million against expected return, for ${pts.length} pipeline projects">
+        ${yTicks.map(v => `
+          <line class="cap-grid" x1="${M.l}" y1="${py(v)}" x2="${W - M.r}" y2="${py(v)}"/>
+          <text class="cap-axis-label" x="${M.l - 8}" y="${py(v) + 4}" text-anchor="end">${_t(v)}</text>`).join('')}
+        ${xTicks.map(v => `
+          <text class="cap-axis-label" x="${px(v)}" y="${H - M.b + 18}" text-anchor="middle">${v.toFixed(1)}%</text>`).join('')}
+        <line class="cap-axis" x1="${M.l}" y1="${py(0).toFixed(1)}" x2="${W - M.r}" y2="${py(0).toFixed(1)}"/>
+        <line class="cap-axis" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>
+        <text class="cap-axis-title" x="${M.l}" y="${H - 6}">Expected return</text>
+        <!-- Above the plot, not beside it: at the left margin it sat on top of
+             the topmost tick label. -->
+        <text class="cap-axis-title" x="0" y="14">tCO2e avoided or reduced per $M</text>
+        ${pts.map(r => `
+          <circle class="cap-dot${r.rank === 1 ? ' is-lead' : ''}"
+                  cx="${px(r.expectedReturnPct).toFixed(1)}" cy="${py(r.impact_tCO2e_perMillion).toFixed(1)}"
+                  r="${rad(r.commitment).toFixed(1)}">
+            <title>${esc(r.name)} — ${_money(r.commitment, cur)}, ${r.expectedReturnPct}% return, ${_t(r.impact_tCO2e_perMillion)} tCO2e per $M, score ${r.score}</title>
+          </circle>`).join('')}
+        ${pts.filter(r => r.rank <= 2).map(r => `
+          <text class="cap-dot-label" x="${px(r.expectedReturnPct).toFixed(1)}"
+                y="${(py(r.impact_tCO2e_perMillion) - rad(r.commitment) - 7).toFixed(1)}"
+                text-anchor="middle">${esc(r.name)}</text>`).join('')}
+      </svg>`;
+
+    const lead = pts.find(r => r.rank === 1);
+    note.textContent = lead
+      ? `Up and to the right is better on both measures. ${lead.name} leads at this weighting; `
+        + `move the slider and the leader can change, because these are two different questions.`
+      : '';
   }
 
   // ── Portfolio rendering ───────────────────────────────────
@@ -695,26 +995,72 @@ const Dashboard = (() => {
   // ── Public API ────────────────────────────────────────────
   let _initialized = false;
 
+  /* Two screens, two sources. The Dashboard is the capital book — what has
+     been allocated, committed, paid and emitted, and what is waiting. The
+     Portfolio screen stays on the aggregation endpoint it has always used.
+     They are fetched separately so a slow or missing one cannot blank the
+     other, and neither is ever mixed into the other's totals. */
   async function init() {
     if (_initialized) return;
     _initialized = true;
-    const data = await _fetchData();
-    _renderDemoBanner(data);
-    _renderDashboard(data);
-    _renderPortfolio(data);
+    await Promise.all([
+      _fetchCapital().then(_renderDashboard),
+      _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
+    ]);
+    _wireCapitalControls();
   }
 
   async function refresh() {
     _cache = null;
-    _initialized = false;
+    _initialized = true;
     const dl = document.getElementById('dash-loading');
     const pl = document.getElementById('pf-loading');
     if (dl) dl.style.display = 'flex';
     if (pl) pl.style.display = 'flex';
-    const data = await _fetchData();
-    _renderDemoBanner(data);
-    _renderDashboard(data);
-    _renderPortfolio(data);
+    await Promise.all([
+      _fetchCapital().then(_renderDashboard),
+      _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
+    ]);
+  }
+
+  /** Re-read the book alone — used by the weighting slider and the filter. */
+  async function refreshCapital() {
+    _renderDashboard(await _fetchCapital());
+  }
+
+  let _wired = false;
+  let _weightTimer = null;
+
+  function _wireCapitalControls() {
+    if (_wired) return;
+    const weight = document.getElementById('cap-weight');
+    const filter = document.getElementById('cap-portfolio-filter');
+    if (!weight || !filter) return;
+    _wired = true;
+
+    /* The ranking is recomputed by the engine, never in the browser: a screen
+       that scored differently from the API would be showing one thing and
+       disclosing another. Debounced, because a slider fires continuously. */
+    weight.addEventListener('input', () => {
+      _carbonWeight = Number(weight.value) / 100;
+      const note = document.getElementById('cap-weight-note');
+      if (note) note.textContent = `Reading the pipeline at ${weight.value}% carbon…`;
+      clearTimeout(_weightTimer);
+      _weightTimer = setTimeout(refreshCapital, 180);
+    });
+
+    filter.addEventListener('change', () => {
+      _portfolioFilter = filter.value;
+      refreshCapital();
+    });
+
+    const refreshBtn = document.getElementById('cap-refresh');
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshCapital);
+
+    const record = document.getElementById('cap-record');
+    if (record) record.addEventListener('click', () => {
+      if (typeof CapitalRecord !== 'undefined') CapitalRecord.open();
+    });
   }
 
   function exportCSV() {
@@ -743,5 +1089,5 @@ const Dashboard = (() => {
     URL.revokeObjectURL(url);
   }
 
-  return { init, refresh, exportCSV, generateAIReport };
+  return { init, refresh, refreshCapital, exportCSV, generateAIReport };
 })();
