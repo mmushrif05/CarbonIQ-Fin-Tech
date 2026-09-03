@@ -207,21 +207,29 @@ const PAYMENTS = [
  * refreshes rather than duplicates.
  */
 async function seedCapitalDemo(orgId) {
+  /* Seeded from the repository baseline, so there is one copy of these figures
+     rather than two that can drift apart. The constants below remain the
+     source the baseline file was generated from. */
+  const base = require('./capital-baseline').baselineBook();
+  const portfolios = base ? base.portfolios : PORTFOLIOS;
+  const investments = base ? base.investments : [...HELD, ...PIPELINE];
+  const payments = base ? base.payments : PAYMENTS;
+
   const created = { portfolios: 0, investments: 0, payments: 0 };
 
-  for (const p of PORTFOLIOS) {
+  for (const p of portfolios) {
     const existing = await book.getPortfolio(orgId, p.id);
     if (existing) await book.updatePortfolio(orgId, p.id, p);
     else { await book.createPortfolio(orgId, p); created.portfolios += 1; }
   }
 
-  for (const i of [...HELD, ...PIPELINE]) {
+  for (const i of investments) {
     const existing = await book.getInvestment(orgId, i.id);
     if (existing) await book.updateInvestment(orgId, i.id, i);
     else { await book.createInvestment(orgId, i); created.investments += 1; }
   }
 
-  for (const pay of PAYMENTS) {
+  for (const pay of payments) {
     await book.createPayment(orgId, pay);
     created.payments += 1;
   }

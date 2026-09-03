@@ -8,7 +8,12 @@
  *   GET/POST        /v1/capital/investments     ·  PATCH /investments/:id
  *   GET/POST        /v1/capital/payments        ·  DELETE /payments/:id
  *   GET             /v1/capital/storage         what this deployment can persist
- *   POST            /v1/capital/demo            seed a worked book for a demo
+ *   POST            /v1/capital/demo            copy the baseline into the store
+ *
+ * The book's starting position is `data/capital/book.json`, versioned in the
+ * repository rather than in an external database. Records an organisation has
+ * made of its own win entirely over it; the two are never blended, and the
+ * payload's `source` says which was read.
  *
  * `carbonWeight` is a query parameter rather than a stored setting because it
  * is a question a reader asks of the same book — "what if I cared more about
@@ -31,7 +36,8 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 const book    = require('../../services/capital-book');
 const metrics = require('../../services/capital-metrics');
 const store   = require('../../services/partc-store');
-const { seedCapitalDemo, sampleBook } = require('../../services/capital-demo-data');
+const { seedCapitalDemo } = require('../../services/capital-demo-data');
+const baseline = require('../../services/capital-baseline');
 
 const {
   portfolioSchema, portfolioUpdateSchema,
@@ -100,18 +106,32 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
      payload so the screen can say what it is showing. The moment one real
      portfolio is recorded, this stops. */
   if (result.empty) {
-    const shown = metrics.dashboard({ ...sampleBook(), storage: held.storage }, opts);
+    const base = baseline.baselineBook();
+    if (!base) {
+      result.sample = false;
+      result.source = 'none';
+      return res.json({ dashboard: result });
+    }
+    const filtered = req.query.portfolioId
+      ? {
+        portfolios: base.portfolios.filter(p => p.id === req.query.portfolioId),
+        investments: base.investments.filter(i => i.portfolioId === req.query.portfolioId),
+        payments: base.payments.filter(p => p.portfolioId === req.query.portfolioId),
+      }
+      : base;
+    const shown = metrics.dashboard({ ...filtered, storage: held.storage }, opts);
     shown.sample = true;
+    shown.source = 'baseline';
     shown.empty = false;
-    shown.sampleNote = 'Sample figures. Nothing is recorded in this book yet, so a worked '
-      + 'example is shown in place of a blank screen — it is computed by the same engine and '
-      + 'stored nowhere. Record a portfolio, or adjust these numbers under Record, and your own '
-      + 'position replaces it.';
+    shown.sampleNote = 'Baseline figures, held in the repository and computed by the same engine. '
+      + 'Nothing has been recorded in this book yet, so the baseline is shown in place of a blank '
+      + 'screen. Record a portfolio and yours replaces it entirely — the two are never mixed.';
     shown.emptyNote = result.emptyNote;
     return res.json({ dashboard: shown });
   }
 
   result.sample = false;
+  result.source = 'recorded';
   res.json({ dashboard: result });
 }));
 

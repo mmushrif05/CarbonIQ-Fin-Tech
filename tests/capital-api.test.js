@@ -27,19 +27,20 @@ async function seed() {
   await auth(api().post('/v1/capital/demo')).expect(201);
 }
 
-describe('An empty book shows a worked example rather than a blank screen', () => {
+describe('An empty book falls back to the baseline in the repository', () => {
   /* Correct and blank is still blank — and where storage is not writable the
      seed endpoint is refused, so there would be no way to put figures on the
-     screen at all. The worked book is computed through the same engine,
-     stored nowhere, and marked. */
-  test('the figures are the worked book, and they are marked as a sample', async () => {
+     screen at all. The baseline is versioned in the repository, computed
+     through the same engine, stored nowhere, and marked. */
+  test('the figures are the baseline, and they are marked as such', async () => {
     const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
     expect(d.sample).toBe(true);
     expect(d.empty).toBe(false);
     expect(d.capital.allocated).toBe(750_000_000);
     expect(d.capital.paid).toBe(322_000_000);
-    expect(d.sampleNote).toMatch(/Sample figures/);
-    expect(d.sampleNote).toMatch(/stored nowhere/);
+    expect(d.source).toBe('baseline');
+    expect(d.sampleNote).toMatch(/Baseline figures, held in the repository/);
+    expect(d.sampleNote).toMatch(/never mixed/);
   });
 
   test('it still carries the sentence about an unrecorded book', async () => {
@@ -53,13 +54,16 @@ describe('An empty book shows a worked example rather than a blank screen', () =
     expect(portfolios).toHaveLength(0);
   });
 
-  test('one real portfolio replaces it, rather than sitting beside it', async () => {
+  test('one real portfolio replaces it entirely, rather than sitting beside it', async () => {
     await auth(api().post('/v1/capital/portfolios'))
       .send({ name: 'Mine', allocatedBudget: 42 }).expect(201);
     const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
     expect(d.sample).toBe(false);
+    expect(d.source).toBe('recorded');
     expect(d.capital.allocated).toBe(42);
     expect(d.portfolios.map(p => p.name)).toEqual(['Mine']);
+    // Not 42 plus the baseline's 750M — one book or the other, never both.
+    expect(d.investments).toBeUndefined();
   });
 
   test('the weighting still works on the example', async () => {
