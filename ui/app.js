@@ -59,6 +59,10 @@ const DYNAMIC_PAGES = {
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',
     init: () => typeof PCAFPartCPage !== 'undefined' && PCAFPartCPage.init(),
+    // The position at the top of the screen changes whenever an assessment is
+    // locked elsewhere, so a return visit re-reads the book rather than showing
+    // what it said last time.
+    refresh: () => typeof PCAFPartCPage !== 'undefined' && PCAFPartCPage.refresh(),
   },
   'pcaf-demo': {
     src:  'pages/pcaf-demo.html',

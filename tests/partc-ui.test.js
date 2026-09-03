@@ -29,7 +29,9 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 
-const page = read('ui', 'pages', 'pcaf-partc.html');
+const page  = read('ui', 'pages', 'pcaf-partc.html');
+const appJs = read('ui', 'app.js');
+const sampleBook = JSON.parse(read('ui', 'data', 'portfolio-sample.json')).partC;
 const js   = read('ui', 'js', 'pcaf-partc.js');
 const css  = read('ui', 'css', 'pcaf-partc.css');
 
@@ -239,5 +241,148 @@ describe('The layout holds up', () => {
   test('motion is dropped for anyone who asks for that', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]{0,220}partc-bridge-seg/);
     expect(js).toContain("prefers-reduced-motion: reduce");
+  });
+});
+
+
+describe('The Part C screen opens on the position, not on a file upload', () => {
+  const fetchFn  = js.slice(js.indexOf('async function fetchOverview'), js.indexOf('async function loadSampleBook'));
+  const renderFn = js.slice(js.indexOf('async function renderOverview'), js.indexOf('function renderPipeline'));
+
+  test('the band is the first thing in the page, above step 1', () => {
+    expect(page.indexOf('id="partcOverview"')).toBeGreaterThan(-1);
+    expect(page.indexOf('id="partcOverview"')).toBeLessThan(page.indexOf('Policy document'));
+  });
+
+  test('it is read from the Part C endpoints, never computed in the browser', () => {
+    expect(fetchFn).toContain('/v1/partc/settings');
+    expect(fetchFn).toContain('/v1/partc/portfolio/');
+    expect(fetchFn).toContain('/v1/partc/periods/');
+    expect(fetchFn).toContain('/v1/partc/storage');
+  });
+
+  test('the reporting year comes from the insurer settings', () => {
+    expect(fetchFn).toContain('settings.reportingYear');
+  });
+
+  test('it carries the four figures, and names the PCAF one', () => {
+    for (const id of ['partcOvIae', 'partcOvUseStage', 'partcOvCoverage', 'partcOvDq']) {
+      expect(page).toContain(`id="${id}"`);
+    }
+    expect(page).toMatch(/Insurer's IAE — construction \(A4 \+ A5\)/);
+    expect(page).toMatch(/Use stage — B1 \+ B4 \+ B7/);
+  });
+
+  test('construction and use stage wear the two hues the result below uses', () => {
+    expect(css).toMatch(/\.partc-ovkpi\.is-construction \{ border-left: 3px solid var\(--data-green\); \}/);
+    expect(css).toMatch(/\.partc-ovkpi\.is-usestage {5}\{ border-left: 3px solid var\(--data-indigo\); \}/);
+  });
+
+  test('the use-stage line says it is never summed with the figure beside it', () => {
+    expect(page).toMatch(/never summed with the figure beside it/);
+  });
+
+  test('nothing here is a financed-emissions figure', () => {
+    // A different inventory over a different book. The two are never summed,
+    // and this screen does not reach for the lending endpoint at all.
+    expect(js).not.toContain('/v1/portfolio');
+    expect(js).not.toContain('totalFinancedEmissions');
+  });
+
+  test('a year with nothing locked is named, never rendered as a position of zero', () => {
+    expect(renderFn).toMatch(/nothing locked yet/);
+    expect(renderFn).toMatch(/not a position of zero and is not shown as one/);
+  });
+
+  test('a sample position says so on the band itself', () => {
+    expect(renderFn).toMatch(/sample position/);
+    expect(renderFn).toMatch(/replaced by your own the moment an assessment is locked/);
+  });
+
+  test('the sample is drawn only when the book is genuinely empty', () => {
+    expect(renderFn).toMatch(/const sample = ov\.mode === 'empty' && Boolean\(sampleBook\)/);
+  });
+
+  test('a book that cannot be persisted says so', () => {
+    expect(renderFn).toMatch(/durable === false/);
+    expect(page).toContain('id="partcOvStorage"');
+  });
+
+  test('the premium-weighted score states its direction and what it excluded', () => {
+    expect(renderFn).toContain('SCALE_NOTE');
+    expect(renderFn).toMatch(/excluded rather than counted as zero/);
+    // Singular and plural, because "1 policy are excluded" reads as a bug in
+    // the figure rather than in the sentence.
+    expect(renderFn).toMatch(/=== 1 \? 'is' : 'are'/);
+    expect(renderFn).toMatch(/the disclosed figure is the weighted one/);
+  });
+
+  test('coverage says why a partial book matters', () => {
+    expect(renderFn).toMatch(/means something different from one drawn from all of it/);
+  });
+
+  test('the lifecycle says only a locked assessment reaches a disclosure', () => {
+    const pipe = js.slice(js.indexOf('function renderPipeline'));
+    expect(pipe).toMatch(/Only a locked assessment enters the disclosure/);
+    expect(pipe).toContain("{ key: 'locked'");
+  });
+
+  test('the band re-reads the book on a return visit', () => {
+    // A lock applied on another screen changes this position; showing what it
+    // said last time would be stale the moment it mattered.
+    expect(js).toMatch(/return \{ init, refresh \}/);
+    expect(appJs).toMatch(/'pcaf-partc': \{[\s\S]*?PCAFPartCPage\.refresh\(\)/);
+  });
+
+  test('its links reach the screens behind the figures', () => {
+    for (const target of ['partc-book', 'partc-portfolio']) {
+      expect(page).toContain(`data-goto="${target}"`);
+    }
+    expect(js).toContain('window.CARBONIQ_navigateTo(b.dataset.goto)');
+  });
+});
+
+describe('The sample book reconciles', () => {
+  test('coverage is the assessed share of the policies in the year', () => {
+    expect(Math.round((sampleBook.coverage.assessedPolicies / sampleBook.coverage.policiesInYear) * 100))
+      .toBe(sampleBook.coverage.coveragePct);
+  });
+
+  test('the assessment statuses sum to the total', () => {
+    const { locked, draft, underReview, total } = sampleBook.assessments;
+    expect(locked + draft + underReview).toBe(total);
+  });
+
+  test('only locked assessments count as assessed policies', () => {
+    expect(sampleBook.assessments.locked).toBe(sampleBook.coverage.assessedPolicies);
+  });
+
+  test('the insurer share is a share of the projects’ total, never larger', () => {
+    expect(sampleBook.construction.insurerIAE_tCO2e).toBeLessThan(sampleBook.construction.total_tCO2e);
+  });
+
+  test('the score is weighted over exactly the policies that carry one', () => {
+    expect(sampleBook.dataQuality.policiesScored).toBe(sampleBook.coverage.assessedPolicies);
+  });
+});
+
+describe('The Part C screen has a dark palette, and everything on it uses it', () => {
+  test('no rule on this page reaches for the app shell’s tokens', () => {
+    // The shell's --surface/--border/--text-* do not flip with the theme. Used
+    // here they painted white cards with white text on a black page — the
+    // result screen and the band both, and only for anyone whose device is set
+    // to dark, which is most phones.
+    const shellTokens = /var\(--(surface|border|border-light|text-primary|text-secondary|text-tertiary|shadow-sm)\)/g;
+    const found = css.match(shellTokens) || [];
+    expect(found).toHaveLength(0);
+  });
+
+  test('the page’s own tokens are what the new blocks read', () => {
+    expect(css).toMatch(/\.partc-tile \{[\s\S]*?background: var\(--p-card\);/);
+    expect(css).toMatch(/\.partc-overview \{[\s\S]*?background: var\(--p-card\);/);
+  });
+
+  test('the hard-coded amber notes carry a dark variant', () => {
+    expect(css).toMatch(/@media \(prefers-color-scheme: dark\) \{[\s\S]*?\.partc-ovnote\.is-warn/);
   });
 });
