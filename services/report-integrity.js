@@ -53,11 +53,16 @@ function notProvided(requirement, standardRef) {
 /**
  * A figure the standard asks for that this system cannot compute.
  *
+ * The clause is optional and backward-compatible, but supply it where you can:
+ * a gap listed without the requirement behind it tells a reader something is
+ * missing and not why anyone should care, which is half a disclosure.
+ *
  * @param {string} metric the figure that is missing
  * @param {string} reason why it cannot be derived from what is held
+ * @param {string} [standardRef] the clause that asks for it
  */
-function notMeasured(metric, reason) {
-  return { _status: NOT_MEASURED, metric, reason };
+function notMeasured(metric, reason, standardRef) {
+  return { _status: NOT_MEASURED, metric, reason, standardRef: standardRef || null };
 }
 
 /** Is this a placeholder rather than a value? */

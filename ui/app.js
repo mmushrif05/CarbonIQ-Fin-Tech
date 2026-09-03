@@ -24,6 +24,7 @@ const PAGE_META = {
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
+  'gcf':             { title: 'GCF Pipeline', subtitle: 'DFCC post-accreditation — candidate screening, emissions, disclosure and Concept Note inputs' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'AI-powered National Determined Contribution & SDG alignment for Sri Lanka Green Finance Taxonomy' },
 };
 
@@ -85,6 +86,15 @@ const DYNAMIC_PAGES = {
     // The reporting-year position changes whenever an assessment is locked on
     // another screen, so this page re-reads the period on every return visit.
     refresh: () => typeof PartCPortfolio !== 'undefined' && PartCPortfolio.refresh(),
+  },
+  'gcf': {
+    src:  'pages/gcf.html',
+    init: () => typeof GCFPage !== 'undefined' && GCFPage.init(),
+    // Every panel is fetched, never remembered: a project recorded on the
+    // intake sub-tab changes the pool, the ranking, the report and the
+    // Concept Note package, so a return visit re-reads rather than showing
+    // what it said last time.
+    refresh: () => typeof GCFPage !== 'undefined' && GCFPage.refresh(),
   },
   'ndc-sdg': {
     src:  'pages/ndc-sdg.html',

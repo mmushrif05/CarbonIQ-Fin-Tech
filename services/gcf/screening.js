@@ -402,7 +402,12 @@ function recommend(projects = [], { accreditation, weights, take = 2 } = {}) {
         computedBasis: Object.entries(s.components)
           .sort((a, b) => b[1].normalised * b[1].weight - a[1].normalised * a[1].weight)
           .slice(0, 3)
-          .map(([k, c]) => `${k}: ${c.raw} (${c.metric})`),
+          /* Two decimals at most. A ranking basis printed as 3444.4444 reads
+             as spurious precision on a figure that is a ratio of two rounded
+             inputs. */
+          .map(([k, c]) => `${k}: ${Number(c.raw).toLocaleString('en-US', {
+            maximumFractionDigits: 2,
+          })} (${c.metric})`),
         toResolve: flagsFor(s.id).map(f => f.detail),
       };
     }),
