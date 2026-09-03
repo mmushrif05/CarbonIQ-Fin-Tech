@@ -578,6 +578,208 @@ const PCAFPartCPage = (() => {
   }
 
   /* ══════════════════════════════════════════════════════════════════════
+     THE PART C POSITION — the book as it stands
+     ══════════════════════════════════════════════════════════════════════
+     This screen could run an assessment and could not say where the book had
+     got to, so it opened on a file upload whatever the state behind it. The
+     band answers that first, from the Part C endpoints, before the steps that
+     add to it.
+
+     Two things it will not do. It will not show a financed-emissions figure:
+     that is a different inventory over a different book, and the two are never
+     summed. And it will not render a reporting year holding no locked
+     assessment as a position of zero — `services/partc-disclosure.js` refuses
+     a 409 rather than publish one, because "we have not measured yet" and "we
+     insured nothing carbon-intensive" are different claims.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  let _overview = null;
+
+  async function fetchOverview() {
+    const get = async (path) => {
+      const res = await window.CARBONIQ_fetch(path);
+      if (!res.ok) throw new Error(`${path} → ${res.status}`);
+      return res.json();
+    };
+
+    let year = new Date().getFullYear();
+    try {
+      const { settings } = await get('/v1/partc/settings');
+      if (settings && settings.reportingYear) year = settings.reportingYear;
+
+      const [{ portfolio }, { period }, storage] = await Promise.all([
+        get(`/v1/partc/portfolio/${year}`),
+        get(`/v1/partc/periods/${year}`),
+        get('/v1/partc/storage').catch(() => null),
+      ]);
+
+      const locked = (period && period.assessments && period.assessments.locked) || 0;
+      _overview = {
+        mode: locked > 0 ? 'live' : 'empty',
+        year,
+        insurer: settings && settings.insurerName,
+        currency: settings && settings.currency,
+        portfolio,
+        period,
+        storage: storage && storage.storage,
+      };
+    } catch (err) {
+      _overview = { mode: 'unavailable', year, detail: err.message };
+    }
+    return _overview;
+  }
+
+  /** A sample book, so the band demonstrates rather than sits empty. */
+  let _sampleBook = null;
+  async function loadSampleBook() {
+    if (_sampleBook !== null) return _sampleBook;
+    try {
+      const res = await fetch('/data/portfolio-sample.json', { cache: 'no-store' });
+      _sampleBook = res.ok ? (await res.json()).partC || false : false;
+    } catch (_) { _sampleBook = false; }
+    return _sampleBook;
+  }
+
+  const ovTonnes = (n) => Number(n || 0).toLocaleString('en-US',
+    { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  async function renderOverview(ov) {
+    const status  = $('partcOvStatus');
+    const emptyEl = $('partcOvEmpty');
+    const storeEl = $('partcOvStorage');
+    if (!status) return;
+
+    const blank = () => {
+      ['partcOvIae', 'partcOvUseStage', 'partcOvCoverage', 'partcOvDq']
+        .forEach(id => { const el = $(id); if (el) el.textContent = '—'; });
+      const bar = $('partcOvCoverageBar');
+      if (bar) bar.firstElementChild.style.width = '0%';
+      for (const b of $('partcOvDqScale').children) b.classList.remove('is-here');
+      $('partcOvPipeline').hidden = true;
+    };
+
+    if (!ov || ov.mode === 'unavailable') {
+      status.textContent = 'not available';
+      status.className = 'partc-overview-status is-warn';
+      blank();
+      emptyEl.hidden = false;
+      emptyEl.textContent = 'The book could not be read'
+        + (ov && ov.detail ? ` (${escHtml(ov.detail)})` : '')
+        + '. An assessment can still be run below — it just will not be able to say how it '
+        + 'sits against the rest of the year.';
+      storeEl.hidden = true;
+      return;
+    }
+
+    // An empty book draws the sample position so the band demonstrates, and
+    // says on its own face that it is doing so.
+    const sampleBook = ov.mode === 'empty' ? await loadSampleBook() : false;
+    const sample = ov.mode === 'empty' && Boolean(sampleBook);
+    const src = sample ? sampleBook : ov.portfolio;
+
+    if (ov.mode === 'empty' && !sample) {
+      status.textContent = `${ov.year} · nothing locked yet`;
+      status.className = 'partc-overview-status is-quiet';
+      blank();
+      emptyEl.hidden = false;
+      emptyEl.textContent =
+        `No assessment has been locked for ${ov.year}, so there is no position to report. `
+        + `That is not a position of zero and is not shown as one. Run an assessment below, `
+        + `then lock it from the Reporting Year screen — locking is what binds a figure to a `
+        + `policy and a bill of quantities.`;
+    } else {
+      const cons = src.construction || {};
+      const use  = src.useStage || {};
+      const cov  = src.coverage || {};
+      const dq   = sample ? src.dataQuality
+        : (src.dataQuality && src.dataQuality.disclosed
+          ? { ...src.dataQuality.disclosed.overall, scale: src.dataQuality.scale }
+          : null);
+      const assess = (sample ? src.assessments : (ov.period && ov.period.assessments)) || {};
+
+      status.textContent = sample
+        ? `${src.reportingYear} · sample position`
+        : `${ov.year} · ${assess.locked || 0} locked assessment${(assess.locked || 0) === 1 ? '' : 's'}`
+          // The API's placeholder is not a name; printing it says nothing.
+          + (ov.insurer && ov.insurer !== 'Unnamed insurer' ? ` · ${ov.insurer}` : '');
+      status.className = 'partc-overview-status' + (sample ? ' is-sample' : '');
+
+      $('partcOvIae').textContent = ovTonnes(cons.insurerIAE_tCO2e);
+      $('partcOvIaeFoot').textContent = cons.total_tCO2e
+        ? `The PCAF figure — this insurer's share of the ${ovTonnes(cons.total_tCO2e)} tCO₂e `
+          + `these projects emit. The rest is carried by whoever else insured or financed them.`
+        : 'The PCAF figure.';
+
+      $('partcOvUseStage').textContent = ovTonnes(use.insurerShare_tCO2e);
+
+      const pct = cov.coveragePct || 0;
+      $('partcOvCoverage').textContent = `${pct}%`;
+      requestAnimationFrame(() => {
+        $('partcOvCoverageBar').firstElementChild.style.width = `${Math.min(100, pct)}%`;
+      });
+      $('partcOvCoverageFoot').textContent =
+        `${cov.assessedPolicies || 0} of ${cov.policiesInYear || 0} policies in the year. `
+        + `A total drawn from part of a book means something different from one drawn from all of it.`;
+
+      const w = dq && typeof dq.weighted === 'number' ? dq.weighted : null;
+      $('partcOvDq').textContent = w == null ? 'not scored' : w.toFixed(2);
+      for (const b of $('partcOvDqScale').children) {
+        b.classList.toggle('is-here', w != null && Number(b.dataset.band) === Math.round(w));
+      }
+      $('partcOvDqFoot').textContent = w == null
+        ? 'No policy in this year carries a score yet.'
+        : `${SCALE_NOTE} Premium-weighted over ${dq.policiesScored || 0} polic`
+          + `${(dq.policiesScored || 0) === 1 ? 'y' : 'ies'}`
+          + ((dq.policiesWithoutScore || 0) > 0
+            ? `; ${dq.policiesWithoutScore} carrying no score `
+              + `${dq.policiesWithoutScore === 1 ? 'is' : 'are'} excluded rather than counted as zero.`
+            : '.')
+          + ' The marked band is the nearest whole score — the disclosed figure is the weighted one.';
+
+      renderPipeline(assess);
+
+      emptyEl.hidden = !sample;
+      if (sample) {
+        emptyEl.textContent =
+          `This deployment's book holds no locked assessment for ${ov.year}, so the figures above `
+          + `are a worked sample. They are replaced by your own the moment an assessment is locked.`;
+      }
+    }
+
+    // Firebase is the real store. Without it a serverless runtime cannot keep
+    // what is written, so writes are refused rather than accepted and lost.
+    const st = ov.storage;
+    storeEl.hidden = !(st && st.durable === false);
+    if (st && st.durable === false) {
+      storeEl.textContent = `Storage is ${st.mode} and not durable. ${st.reason || ''} ${st.remedy || ''}`.trim();
+    }
+  }
+
+  /** draft → under review → locked. Only the last of these reaches a disclosure. */
+  function renderPipeline(a) {
+    const box = $('partcOvPipeline');
+    const total = (a.locked || 0) + (a.underReview || 0) + (a.draft || 0);
+    box.hidden = total === 0;
+    if (!total) return;
+
+    const stages = [
+      { key: 'locked',      label: 'Locked',       n: a.locked || 0,      cls: 'is-locked' },
+      { key: 'underReview', label: 'Under review', n: a.underReview || 0, cls: 'is-review' },
+      { key: 'draft',       label: 'Draft',        n: a.draft || 0,       cls: 'is-draft' },
+    ];
+
+    $('partcOvPipelineBar').innerHTML = stages.filter(s => s.n > 0).map(s =>
+      `<span class="partc-ovpipeline-seg ${s.cls}" style="flex:${s.n}"
+             title="${s.label}: ${s.n}"></span>`).join('');
+
+    $('partcOvPipelineLegend').innerHTML = stages.map(s =>
+      `<span class="partc-ovpipeline-item">
+         <i class="partc-ovpipeline-dot ${s.cls}"></i>${s.label} <b>${s.n}</b>
+       </span>`).join('')
+      + '<span class="partc-ovpipeline-item is-note">Only a locked assessment enters the disclosure.</span>';
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
      The result screen, in the same idiom as Part A.
 
      What changed and why: every figure used to arrive as one of four equal
@@ -1097,7 +1299,27 @@ const PCAFPartCPage = (() => {
       t.addEventListener('click', () => showRegister(t.dataset.reg)));
     loadRuns();
     refreshAiStatus();
+
+    /* The position, first — before the steps that add to it. */
+    fetchOverview().then(renderOverview);
+    $('partcOvRefresh').addEventListener('click', () => {
+      $('partcOvStatus').textContent = 'Reading the book…';
+      fetchOverview().then(renderOverview);
+    });
+    document.querySelectorAll('#partcOverview [data-goto]').forEach(b =>
+      b.addEventListener('click', () => {
+        if (typeof window.CARBONIQ_navigateTo === 'function') {
+          window.CARBONIQ_navigateTo(b.dataset.goto);
+        }
+      }));
   }
 
-  return { init };
+  /* A locked assessment changes the position, and the band is above the form
+     that produced it — so a run that completes re-reads the book rather than
+     leaving a figure on screen that the run has just made stale. */
+  function refresh() {
+    fetchOverview().then(renderOverview);
+  }
+
+  return { init, refresh };
 })();

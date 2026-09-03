@@ -201,3 +201,14 @@ describe('The asset-class bars actually have height', () => {
     expect(css).toContain('.bar-label');
   });
 });
+
+describe('The dashboard shell has no dark palette, so nothing may assume one', () => {
+  test('no prefers-color-scheme rule paints on this light page', () => {
+    // A dark override fired on a page whose surfaces stay white: #fbbf24 on a
+    // 10% amber wash over white measured about 1.5:1 against a 4.5:1 floor,
+    // and it hit the banner — the one thing on the screen that must be read —
+    // on exactly the devices set to dark, which is most phones.
+    const rules = css.split('\n').filter(l => l.includes('@media') && l.includes('prefers-color-scheme'));
+    expect(rules).toHaveLength(0);
+  });
+});

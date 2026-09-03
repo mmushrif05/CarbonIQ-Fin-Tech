@@ -13,6 +13,77 @@
     </div>
   </div>
 
+  <!-- ══ THE PART C POSITION ══════════════════════════════════════════════
+       The book as it stands, at the top of the screen that adds to it. Part C
+       had an assessment form and a reporting-year screen but nowhere that
+       answered "where are we?" on opening — so the first thing on the page was
+       a file upload, whatever the state of the book behind it.
+
+       Everything here is read from the Part C endpoints. Nothing on this band
+       is a financed-emissions figure: the two inventories answer different
+       questions over different books and are never summed. -->
+  <section class="partc-overview" id="partcOverview">
+    <div class="partc-overview-head">
+      <div>
+        <h3>The book as it stands</h3>
+        <span class="partc-overview-status" id="partcOvStatus">Loading…</span>
+      </div>
+      <div class="partc-overview-links">
+        <button type="button" class="partc-ovlink" data-goto="partc-book">Insurance Book</button>
+        <button type="button" class="partc-ovlink" data-goto="partc-portfolio">Reporting Year</button>
+        <button type="button" class="partc-ovlink" id="partcOvRefresh">Refresh</button>
+      </div>
+    </div>
+
+    <div class="partc-overview-kpis">
+      <div class="partc-ovkpi is-construction">
+        <span class="partc-ovkpi-label">Insurer's IAE — construction (A4 + A5)</span>
+        <span class="partc-ovkpi-value" id="partcOvIae">—</span>
+        <span class="partc-ovkpi-unit">tCO<sub>2</sub>e</span>
+        <span class="partc-ovkpi-foot" id="partcOvIaeFoot">The PCAF figure</span>
+      </div>
+
+      <div class="partc-ovkpi is-usestage">
+        <span class="partc-ovkpi-label">Use stage — B1 + B4 + B7</span>
+        <span class="partc-ovkpi-value" id="partcOvUseStage">—</span>
+        <span class="partc-ovkpi-unit">tCO<sub>2</sub>e</span>
+        <span class="partc-ovkpi-foot">Optional · a separate line · never summed with the figure beside it</span>
+      </div>
+
+      <div class="partc-ovkpi">
+        <span class="partc-ovkpi-label">Coverage of the book</span>
+        <span class="partc-ovkpi-value" id="partcOvCoverage">—</span>
+        <span class="partc-ovkpi-unit">of the year's policies assessed</span>
+        <div class="partc-ovbar" id="partcOvCoverageBar"><span></span></div>
+        <span class="partc-ovkpi-foot" id="partcOvCoverageFoot"></span>
+      </div>
+
+      <div class="partc-ovkpi">
+        <span class="partc-ovkpi-label">Data quality — premium-weighted</span>
+        <span class="partc-ovkpi-value" id="partcOvDq">—</span>
+        <div class="partc-dqscale" id="partcOvDqScale" role="img" aria-label="PCAF data quality scale">
+          <span class="partc-dqscale-band" data-band="1"><b>1</b></span>
+          <span class="partc-dqscale-band" data-band="2"><b>2</b></span>
+          <span class="partc-dqscale-band" data-band="3"><b>3</b></span>
+          <span class="partc-dqscale-band" data-band="4"><b>4</b></span>
+          <span class="partc-dqscale-band" data-band="5"><b>5</b></span>
+        </div>
+        <small class="partc-dqscale-ends"><span>best evidence</span><span>weakest</span></small>
+        <span class="partc-ovkpi-foot" id="partcOvDqFoot"></span>
+      </div>
+    </div>
+
+    <!-- The lifecycle, because a figure only reaches a disclosure once locked. -->
+    <div class="partc-ovpipeline" id="partcOvPipeline" hidden>
+      <span class="partc-ovpipeline-label">Assessments</span>
+      <div class="partc-ovpipeline-bar" id="partcOvPipelineBar"></div>
+      <div class="partc-ovpipeline-legend" id="partcOvPipelineLegend"></div>
+    </div>
+
+    <p class="partc-ovnote" id="partcOvEmpty" hidden></p>
+    <p class="partc-ovnote is-warn" id="partcOvStorage" hidden></p>
+  </section>
+
   <!-- Whether the agents can run at all. "The agent is static" and "the agent
        is misconfigured" look identical from a screen; this says which. -->
   <div class="partc-ai-status" id="partcAiStatus" hidden></div>
