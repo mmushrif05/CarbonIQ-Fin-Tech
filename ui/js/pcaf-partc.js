@@ -577,12 +577,317 @@ const PCAFPartCPage = (() => {
     }
   }
 
+  /* ══════════════════════════════════════════════════════════════════════
+     The result screen, in the same idiom as Part A.
+
+     What changed and why: every figure used to arrive as one of four equal
+     boxes above four equal tables, so the screen showed a reader everything
+     at once and therefore nothing first. It now leads with the figure the
+     assessment exists to produce, draws the attribution as the step down it
+     actually is, states the data-quality scale's direction beside the score,
+     and folds every table behind a summary.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  const _reduceMotion = () =>
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /** Count up to a value, so a figure that moved is seen to move. */
+  function countTo(node, to, dp) {
+    if (!node) return;
+    const from = Number(String(node.textContent).replace(/[^0-9.-]/g, ''));
+    if (!Number.isFinite(from) || from === to || _reduceMotion()) {
+      node.textContent = fmt(to, dp); return;
+    }
+    const start = performance.now(), dur = 380;
+    cancelAnimationFrame(node._raf);
+    const step = now => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      node.textContent = fmt(from + (to - from) * eased, dp);
+      if (t < 1) node._raf = requestAnimationFrame(step);
+    };
+    node._raf = requestAnimationFrame(step);
+  }
+
+  const pct = (v, dp = 2) => `${(v * 100).toFixed(dp)}%`;
+
+  /**
+   * The hero and the attribution bridge.
+   *
+   * An insurance attribution factor is a very small number — premium over
+   * project cost, here well under one percent — and a lone percentage gives a
+   * reader no sense of what it did. The bridge shows the step: what the
+   * project emitted, how much of it belongs to somebody else, and what is
+   * left for this insurer to disclose.
+   */
+  function renderHero(d) {
+    const s = d.summary;
+    const af = s.attributionFactor || 0;
+
+    countTo($('partcHeroValue'), s.construction_tCO2e, 3);
+    $('partcHeroSub').textContent =
+      `A4 transport and A5 construction process — the re/insurer's own scope 3`;
+
+    const sc = d.dqScoring && d.dqScoring.construction;
+    const chip = $('partcHeroDq');
+    if (sc) {
+      chip.textContent = `Data quality ${sc.score} (Option ${sc.option})`;
+      chip.className = 'partc-chip ' + (sc.score <= 2 ? 'partc-chip-good'
+        : sc.score <= 3 ? 'partc-chip-mid' : 'partc-chip-weak');
+    } else {
+      chip.textContent = 'Data quality not scored';
+      chip.className = 'partc-chip partc-chip-quiet';
+    }
+
+    $('partcHeroPolicy').textContent =
+      `${d.policy.policyType} · ${d.policy.useStageYears} years of use stage`;
+
+    const top = (d.sensitivity.moduleContributions || [])[0];
+    const driver = $('partcHeroDriver');
+    driver.hidden = !top;
+    if (top) driver.textContent = `${top.module} is ${top.sharePct.toFixed(1)}% of it`;
+
+    // ── The bridge ──
+    const total = s.construction_tCO2e;
+    const mine  = s.insurerIAE_tCO2e;
+    const rest  = Math.max(0, total - mine);
+
+    $('partcBridgeTotal').textContent = `${fmt(total, 3)} tCO₂e`;
+    $('partcBridgeDrop').textContent  = `− ${fmt(rest, 3)} tCO₂e`;
+    $('partcIae').textContent         = `${fmt(mine, 4)} tCO₂e`;
+    $('partcAttribPct').textContent   = pct(af, af < 0.01 ? 3 : 1);
+
+    // Segments are laid out on the next frame so they grow from zero.
+    const width = v => total > 0 ? Math.max(0.4, (v / total) * 100) : 0;
+    requestAnimationFrame(() => {
+      const segTotal = $('partcBridgeSegTotal');
+      const segDrop  = $('partcBridgeSegDrop');
+      const segMine  = $('partcBridgeSegResult');
+      if (segTotal) { segTotal.style.left = '0%';  segTotal.style.width = '100%'; }
+      if (segDrop)  { segDrop.style.left  = `${width(mine)}%`; segDrop.style.width = `${width(rest)}%`; }
+      if (segMine)  { segMine.style.left  = '0%';  segMine.style.width = `${width(mine)}%`; }
+    });
+
+    const note = $('partcBridgeNote');
+    if (note) {
+      note.textContent = af < 0.02
+        ? `The last bar is drawn to the same scale as the two above it. At `
+          + `${pct(af, af < 0.01 ? 3 : 1)} it is barely a sliver, and that is the point: `
+          + `an insurer is associated with a small share of a large figure.`
+        : `All three bars are drawn to the same scale.`;
+    }
+
+    $('partcMeansFigure').textContent =
+      `Of the ${fmt(total, 3)} tCO₂e this construction project emits, this insurer is `
+      + `associated with ${fmt(mine, 4)} tCO₂e — ${pct(af, af < 0.01 ? 3 : 1)}, which is the `
+      + `premium's share of the total project cost. The rest is carried by whoever else `
+      + `financed or insured the work and is not this insurer's to report. `
+      + `Every figure here is the re/insurer's own scope 3: that is what an `
+      + `insurance-associated emission is.`;
+  }
+
+  /** The use-stage line, below the break, never summed with the hero. */
+  function renderUseStage(d) {
+    const s = d.summary;
+    countTo($('partcUseStage'), s.useStage_kgCO2e, 2);
+    const gate = $('partcUseStageGate');
+    if (d.policy.useStageYears === 0) {
+      gate.textContent = `Zero by scope rule, not by omission — ${d.policy.gateReason}. `
+        + `PCAF Part C §5.3 gates the use stage on the policy, and a cover period entered `
+        + `on the form applies within that gate rather than overriding it.`;
+    } else {
+      gate.textContent = `Computed over ${d.policy.useStageYears} years of cover. `
+        + `The insurer's share of this line is ${fmt(s.useStageInsurerShare_tCO2e, 4)} tCO₂e.`;
+    }
+  }
+
+  /** The five bands, with this run's marked. 1 is best; the scale says so. */
+  function renderDqTile(d) {
+    const sc = d.dqScoring && d.dqScoring.construction;
+    const num = $('partcDqNum');
+    const opt = $('partcDqOpt');
+    const scale = $('partcDqScale5');
+
+    if (!sc) {
+      num.textContent = '—';
+      opt.textContent = 'not scored';
+      for (const b of scale.children) b.classList.remove('is-here');
+      $('partcDqFoot').textContent = '';
+      return;
+    }
+
+    num.textContent = String(sc.score);
+    opt.textContent = `Option ${sc.option}`;
+    scale.setAttribute('aria-label',
+      `Data quality band ${sc.score} of five, where 1 is the strongest evidence and 5 the weakest`);
+    for (const b of scale.children) {
+      b.classList.toggle('is-here', Number(b.dataset.band) === sc.score);
+    }
+    $('partcDqFoot').textContent =
+      `${sc.optionLabel} ${SCALE_NOTE} The score follows the option, so strengthening one `
+      + `input does not move it — only using a different kind of data does.`;
+  }
+
+  /**
+   * One stacked bar of the module split.
+   *
+   * A5.2 site energy is typically over ninety percent of a construction
+   * figure, so four bars side by side would leave three of them invisible and
+   * would invite reading four parts of one whole as four separate figures.
+   */
+  function renderModuleSplit(d) {
+    const rows = (d.sensitivity.moduleContributions || []).filter(m => m.value > 0);
+    const bar = $('partcModuleSplit');
+    const legend = $('partcModuleLegend');
+    const HUES = ['is-1', 'is-2', 'is-3', 'is-4', 'is-5'];
+
+    $('partcSplitTotal').textContent =
+      `${fmt(d.summary.construction_kgCO2e)} kgCO₂e across ${rows.length} modules`;
+
+    if (!rows.length) {
+      bar.innerHTML = '';
+      legend.innerHTML = '<p class="partc-hint">No modules contributed.</p>';
+      $('partcModuleNote').textContent = '';
+      return;
+    }
+
+    bar.innerHTML = rows.map((m, i) =>
+      `<span class="partc-split-seg ${HUES[i % HUES.length]}" data-w="${m.sharePct}"
+             title="${escHtml(m.label)} — ${m.sharePct.toFixed(2)}%"></span>`).join('');
+    requestAnimationFrame(() => bar.querySelectorAll('.partc-split-seg')
+      .forEach(el => { el.style.width = `${el.dataset.w}%`; }));
+
+    legend.innerHTML = rows.map((m, i) => `
+      <div class="partc-split-row">
+        <span class="partc-split-dot ${HUES[i % HUES.length]}"></span>
+        <span class="partc-split-name">${escHtml(m.label)}</span>
+        <span class="partc-split-val">${fmt(m.value)}</span>
+        <span class="partc-split-pct">${m.sharePct.toFixed(2)}%</span>
+      </div>`).join('');
+
+    const lead = rows[0];
+    const materialShare = rows
+      .filter(m => m.module === 'A4' || m.module === 'A5.3')
+      .reduce((t, m) => t + m.sharePct, 0);
+    $('partcModuleNote').textContent =
+      `${lead.label} is ${lead.sharePct.toFixed(1)}% of the construction figure. `
+      + `Material quantities reach the total only through A4 transport and A5.3 waste, `
+      + `together ${materialShare.toFixed(1)}% — which is why a variation order moves this `
+      + `number far less than a reader expects.`;
+  }
+
+  /**
+   * The Pareto arc: how much of A4 transport the vital few materials carry.
+   *
+   * A value against a whole is what an arc is for, and the concentration is
+   * the fact that decides where evidence is worth gathering.
+   */
+  function renderParetoArc(d) {
+    const few = d.paretoVitalFew || [];
+    const box = $('partcParetoBox');
+    if (!few.length) { box.hidden = true; return; }
+    box.hidden = false;
+
+    const share = few.reduce((t, v) => t + (v.contributionPct || 0), 0);
+    const frac = Math.max(0, Math.min(1, share));
+
+    const R = 44, CX = 52, CY = 52;
+    const LEN = Math.PI * R;                       // a half-turn
+    const arc = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`;
+
+    $('partcParetoArc').innerHTML = `
+      <svg viewBox="0 0 104 62" role="img"
+           aria-label="${few.length} materials account for ${(frac * 100).toFixed(0)} percent of A4 transport emissions">
+        <path class="partc-radial-arc-bg" d="${arc}"/>
+        <path class="partc-radial-arc" d="${arc}"
+              stroke-dasharray="${LEN}" stroke-dashoffset="${(LEN * (1 - frac)).toFixed(2)}"/>
+      </svg>`;
+
+    $('partcParetoPct').textContent = `${(frac * 100).toFixed(0)}%`;
+    $('partcParetoMeta').textContent =
+      `of A4 transport, from ${few.length} of ${materials.length} materials`;
+    $('partcParetoFoot').textContent =
+      `These are the lines worth checking first: evidence spent anywhere else moves `
+      + `the transport figure very little.`;
+  }
+
+  /** The read-out a person would give if asked what this assessment found. */
+  function renderSummary(d) {
+    const s = d.summary;
+    const af = s.attributionFactor || 0;
+    const sc = d.dqScoring && d.dqScoring.construction;
+    const top = (d.sensitivity.moduleContributions || [])[0];
+    const items = [];
+
+    items.push(`Construction (A4 + A5) is <b>${fmt(s.construction_tCO2e, 3)} tCO₂e</b>. `
+      + `This insurer reports <b>${fmt(s.insurerIAE_tCO2e, 4)} tCO₂e</b> of it — `
+      + `<b>${pct(af, af < 0.01 ? 3 : 1)}</b>, the premium's share of project cost.`);
+
+    if (top) {
+      items.push(`<b>${escHtml(top.label)}</b> carries <b>${top.sharePct.toFixed(1)}%</b> of the `
+        + `figure. Anything that changes site energy moves the total; changes elsewhere barely do.`);
+    }
+
+    if (sc) {
+      items.push(`Data quality score <b>${sc.score}</b> (Option ${escHtml(sc.option)}) on PCAF's `
+        + `1–5 scale, where <b>1</b> is the strongest evidence. It moves only if the kind of `
+        + `data behind the estimate changes.`);
+    }
+
+    if (d.policy.useStageYears === 0) {
+      items.push(`Use stage (B1 + B4 + B7) is <b>zero by scope rule</b>, not by omission: `
+        + `${escHtml(d.policy.gateReason)}.`);
+    } else {
+      items.push(`Use stage (B1 + B4 + B7) is <b>${fmt(s.useStage_kgCO2e)} kgCO₂e</b> over `
+        + `${d.policy.useStageYears} years, reported as a separate line and never added `
+        + `to the figure above.`);
+    }
+
+    items.push(`The reusable intensity is <b>${fmt(s.perM2Factor_kgCO2e_m2)} kgCO₂e/m²</b>, `
+      + `which is the figure to carry to a comparable project rather than the total.`);
+
+    $('partcSummaryList').innerHTML = items.map(t => `<li>${t}</li>`).join('');
+
+    const gaps = d.registers && d.registers.badges;
+    $('partcSummaryCaveat').textContent =
+      `This states conformance with PCAF Part C, never endorsement by PCAF. `
+      + (gaps ? `${gaps.dataGaps} data gaps and ${gaps.assumptions} assumptions stand behind `
+        + `these figures and are listed in the registers below. ` : '')
+      + (d.dataQuality && d.dataQuality.tierNote ? d.dataQuality.tierNote : '');
+  }
+
   function render(d) {
     $('partcResult').style.display = '';
-    $('partcConstruction').textContent = fmt(d.summary.construction_kgCO2e);
-    $('partcUseStage').textContent     = fmt(d.summary.useStage_kgCO2e);
-    $('partcIae').textContent          = fmt(d.summary.insurerIAE_tCO2e, 4);
-    $('partcPerM2').textContent        = fmt(d.summary.perM2Factor_kgCO2e_m2);
+
+    // Lead with meaning: the figure, the attribution, the scale.
+    renderHero(d);
+    renderUseStage(d);
+    renderDqTile(d);
+    renderModuleSplit(d);
+    renderParetoArc(d);
+
+    // Then the numbers in full.
+    countTo($('partcConstruction'), d.summary.construction_kgCO2e, 2);
+    countTo($('partcA4'),  d.modules.a4, 2);
+    countTo($('partcA5'),  d.modules.a5, 2);
+    countTo($('partcIaeKg'), d.summary.insurerIAE_tCO2e * 1000, 2);
+    countTo($('partcPerM2'), d.summary.perM2Factor_kgCO2e_m2, 2);
+    const gifa = (lastPayload && lastPayload.siteInputs && lastPayload.siteInputs.gifa_m2) || 0;
+    $('partcPerM2Foot').textContent = gifa
+      ? `The construction figure over ${fmt(gifa, 0)} m² of gross internal area. Carry this to a `
+        + `comparable project rather than the total, which is specific to this one.`
+      : 'The construction figure over the project\u2019s gross internal area.';
+
+    const af = d.summary.attributionFactor || 0;
+    $('partcAf').textContent = af < 0.01 ? af.toExponential(3) : af.toFixed(4);
+    $('partcAfEq').textContent = 'premium ÷ total project cost';
+    // The premium and the project cost are what the operator entered; the
+    // response echoes the policy's scope, not its money.
+    const pol = (lastPayload && lastPayload.policy) || {};
+    $('partcAfFoot').textContent = (pol.premium && pol.projectCost)
+      ? `${fmt(pol.premium)} \u00f7 ${fmt(pol.projectCost)} \u2014 the share of the project this `
+        + `policy carries. Applied to every module alike.`
+      : 'Premium over total project cost. Enter both to see the two figures behind it.';
 
     $('partcModules').innerHTML = `
       <table class="partc-table"><tbody>
@@ -620,6 +925,7 @@ const PCAFPartCPage = (() => {
     showRegister('assumptions');
 
     renderDq(d);
+    renderSummary(d);
 
     $('partcDisclosure').textContent = d.disclosureNote;
     $('partcDataQuality').innerHTML =

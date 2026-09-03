@@ -7,118 +7,191 @@
    ============================================================ */
 
 const Dashboard = (() => {
-  // ── Demo / fallback data ──────────────────────────────────
-  const DEMO = {
-    totalProjects: 87,
-    totalFinancedEmissions_tCO2e: 48230,
-    taxonomyDistribution: { green: 34, transition: 31, brown: 22 },
-    topContributors: [
-      { projectId: 'SG-2024-001', name: 'Marina Bay Tower',        financedEmissions_tCO2e: 4210, classification: 'green',      region: 'Singapore', buildingType: 'Commercial',  loanOutstanding: 185000000, cfsScore: 82 },
-      { projectId: 'SG-2024-015', name: 'Changi Business Hub',     financedEmissions_tCO2e: 3870, classification: 'transition', region: 'Singapore', buildingType: 'Commercial',  loanOutstanding: 142000000, cfsScore: 58 },
-      { projectId: 'MY-2024-003', name: 'KL Eco Residences',       financedEmissions_tCO2e: 3640, classification: 'green',      region: 'Malaysia',  buildingType: 'Residential', loanOutstanding: 98000000,  cfsScore: 74 },
-      { projectId: 'HK-2024-008', name: 'Kowloon Gateway',         financedEmissions_tCO2e: 3120, classification: 'brown',      region: 'Hong Kong', buildingType: 'Mixed-Use',   loanOutstanding: 210000000, cfsScore: 32 },
-      { projectId: 'SG-2024-042', name: 'Tuas Industrial Complex', financedEmissions_tCO2e: 2980, classification: 'transition', region: 'Singapore', buildingType: 'Industrial',  loanOutstanding: 76000000,  cfsScore: 51 },
-    ],
-    aggregatedAt: new Date().toISOString(),
-    meta: { requestedProjects: 87, resolvedProjects: 68, failedProjects: 19 },
-    _demo: true,
-    weightedDQ: 2.4,
-    coveragePct: 78,
-    totalOutstanding: 1240000000,
-    assetClasses: [
-      { label: 'Commercial',  value: 18200 },
-      { label: 'Residential', value: 14400 },
-      { label: 'Industrial',  value: 9800 },
-      { label: 'Mixed-Use',   value: 5830 },
-    ],
-    assetTypes: [
-      { label: 'Office',       value: 35 },
-      { label: 'Residential',  value: 28 },
-      { label: 'Retail',       value: 18 },
-      { label: 'Industrial',   value: 12 },
-      { label: 'Hospitality',  value: 7 },
-    ],
-    dqDistribution: { 1: 22, 2: 31, 3: 24, 4: 15, 5: 8 },
-    regions: [
-      { label: 'Singapore',  projects: 42, emissions: 19800, outstanding: 520000000 },
-      { label: 'Malaysia',   projects: 22, emissions: 12400, outstanding: 310000000 },
-      { label: 'Hong Kong',  projects: 15, emissions: 10200, outstanding: 280000000 },
-      { label: 'Thailand',   projects: 8,  emissions: 5830,  outstanding: 130000000 },
-    ],
-    cfsDistribution: { green: 34, transition: 31, brown: 22 },
-    regulatoryReadiness: [
-      { name: 'PCAF v3',     desc: 'Financed emissions disclosure',       status: 'ready' },
-      { name: 'MAS 652',     desc: 'Environmental risk management (SGP)', status: 'ready' },
-      { name: 'EU Taxonomy', desc: 'Climate Delegated Act 2024',          status: 'partial' },
-      { name: 'GLP 2025',    desc: 'LMA/APLMA Green Loan Principles',    status: 'ready' },
-      { name: 'HKMA SPM',    desc: 'Supervisory Policy Manual (HK)',      status: 'partial' },
-      { name: 'TCFD',        desc: 'Task Force on Climate Disclosures',   status: 'gap' },
-    ],
-  };
+  // ── Sample figures ────────────────────────────────────────
+  // The sample book lives in ui/data/portfolio-sample.json rather than in
+  // this file, so it is data a person can replace without editing code, and
+  // so there is exactly one copy of it. It is drawn only when the API has
+  // nothing to give, never blended into a live portfolio.
+  const SAMPLE_URL = '/data/portfolio-sample.json';
+
+  let _sample = null;
+  async function _loadSample() {
+    if (_sample) return _sample;
+    const res = await fetch(SAMPLE_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error(`sample data ${res.status}`);
+    _sample = await res.json();
+    return _sample;
+  }
 
   let _cache = null;
 
   // ── Fetch portfolio data ──────────────────────────────────
+  /**
+   * Resolve what the screen should draw, and record which of three states it
+   * is in. They are kept apart on purpose:
+   *
+   *   live        the API returned a portfolio that has projects in it
+   *   sample      it did not, so the sample book is drawn and said to be one
+   *   unavailable neither is available, and the screen says that rather than
+   *               sitting on a spinner
+   *
+   * `cause` distinguishes the two ways of arriving at `sample`, because the
+   * remedies are different: an empty book is an API key with no projects
+   * linked to it, an unreachable API is a deployment problem.
+   *
+   * A live portfolio is never topped up from the sample. It used to be —
+   * assetClasses, regions, the data-quality split and the regulatory table
+   * were all quietly filled in from the demo constant whenever the API
+   * omitted them — so a real total sat beside invented bars with nothing on
+   * screen to tell them apart. Anything the portfolio does not carry is now
+   * reported absent.
+   */
   async function _fetchData() {
+    let live = null;
+    let cause = null;
+    let detail = '';
+
     try {
       const res = await window.CARBONIQ_fetch('/v1/portfolio');
       if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      if (!data.weightedDQ) data.weightedDQ = 2.4;
-      if (!data.coveragePct) {
-        const total = (data.meta?.requestedProjects || 0);
-        const resolved = (data.meta?.resolvedProjects || 0);
-        data.coveragePct = total > 0 ? Math.round((resolved / total) * 100) : 0;
-      }
-      if (!data.totalOutstanding) data.totalOutstanding = 0;
-      if (!data.assetClasses) data.assetClasses = DEMO.assetClasses;
-      if (!data.assetTypes) data.assetTypes = DEMO.assetTypes;
-      if (!data.dqDistribution) data.dqDistribution = DEMO.dqDistribution;
-      if (!data.regions) data.regions = DEMO.regions;
-      if (!data.cfsDistribution) data.cfsDistribution = data.taxonomyDistribution || DEMO.cfsDistribution;
-      if (!data.regulatoryReadiness) data.regulatoryReadiness = DEMO.regulatoryReadiness;
-      _cache = data;
-      _cache._demoFallback = null;
-      return data;
+      live = await res.json();
     } catch (err) {
-      // Fall back to the bundled sample figures so the screen still renders,
-      // but say so. Substituting them silently made a dead API look like a
-      // working app showing unchanging numbers — there was no way to tell a
-      // real portfolio that happens to be flat from a backend answering 401.
-      _cache = { ...DEMO, _demoFallback: { reason: err.message } };
+      cause = 'unreachable';
+      detail = err.message;
+    }
+
+    if (live && (live.totalProjects || 0) > 0) {
+      live._source = { mode: 'live' };
+      if (!live.cfsDistribution && live.taxonomyDistribution) {
+        // Not a substitution: the CFS bands and the taxonomy split are the
+        // same three counts under two names.
+        live.cfsDistribution = live.taxonomyDistribution;
+      }
+      _cache = live;
       return _cache;
     }
+
+    if (live) {
+      cause = 'empty';
+      detail = live.message || 'The portfolio came back with no projects in it.';
+    }
+
+    try {
+      const sample = await _loadSample();
+      _cache = { ...sample, _source: { mode: 'sample', cause, detail } };
+    } catch (sampleErr) {
+      _cache = {
+        _source: { mode: 'unavailable', cause, detail, sampleError: sampleErr.message },
+      };
+    }
+    return _cache;
   }
 
   /**
-   * Say plainly, on the page, that these are sample figures.
+   * Say plainly, on the page, which of the three states this is.
    *
    * Placed at the top of the dashboard rather than in a toast, because a
    * toast disappears and the wrong numbers stay on screen afterwards.
    */
   function _renderDemoBanner(data) {
-    const host = document.getElementById('page-dashboard');
-    if (!host) return;
+    const hosts = ['page-dashboard', 'page-portfolio']
+      .map((id) => document.getElementById(id))
+      .filter(Boolean);
+    if (!hosts.length) return;
 
-    const existing = document.getElementById('dash-demo-banner');
-    if (!data || !data._demoFallback) { if (existing) existing.remove(); return; }
+    const src = (data && data._source) || {};
 
-    const reason = String(data._demoFallback.reason || '');
-    const is401 = /\b401\b/.test(reason);
-    const is503 = /\b503\b/.test(reason);
-    const advice = is401
-      ? 'The API rejected the dashboard key. Set UI_API_KEY in your Netlify environment variables, or enter a valid key under Settings.'
-      : is503
-        ? 'The API is reachable but the feature or its database is not configured. Check FF_PORTFOLIO_AGGREGATION and the Firebase variables in your deployment environment.'
-        : 'The dashboard could not reach the API.';
+    hosts.forEach((host, i) => {
+      const bannerId = 'dash-demo-banner' + (i === 0 ? '' : '-pf');
+      const existing = document.getElementById(bannerId);
 
-    const el = existing || document.createElement('div');
-    el.id = 'dash-demo-banner';
-    el.className = 'dash-demo-banner';
-    el.innerHTML =
-      '<strong>Showing sample data — not your portfolio.</strong>' +
-      '<span>' + advice + ' (' + reason.replace(/[<>&]/g, '') + ')</span>';
-    if (!existing) host.insertBefore(el, host.firstChild);
+      if (src.mode === 'live') { if (existing) existing.remove(); return; }
+
+      const detail = String(src.detail || '').replace(/[<>&]/g, '');
+      const is401 = /\b401\b/.test(detail);
+      const is503 = /\b503\b/.test(detail);
+
+      let headline, advice;
+      if (src.mode === 'unavailable') {
+        headline = 'No figures to show.';
+        advice = 'The API returned nothing and the sample book could not be loaded either '
+               + `(${String(src.sampleError || '').replace(/[<>&]/g, '')}). `
+               + 'Check that data/portfolio-sample.json is deployed with the site.';
+      } else if (src.cause === 'empty') {
+        headline = 'Showing sample data — not your portfolio.';
+        advice = 'The API answered, but no projects are linked to this API key yet, so there is '
+               + 'nothing of yours to aggregate. Link projects to the key '
+               + '(npm run key:create — the --projects flag) and these screens switch to your own '
+               + 'figures on their own.';
+      } else {
+        headline = 'Showing sample data — not your portfolio.';
+        advice = is401
+          ? 'The API rejected the dashboard key. Set UI_API_KEY in your Netlify environment variables, or enter a valid key under Settings.'
+          : is503
+            ? 'The API is reachable but the feature or its database is not configured. Check FF_PORTFOLIO_AGGREGATION and the Firebase variables in your deployment environment.'
+            : 'The dashboard could not reach the API.';
+      }
+
+      const el = existing || document.createElement('div');
+      el.id = bannerId;
+      el.className = 'dash-demo-banner' + (src.mode === 'unavailable' ? ' is-unavailable' : '');
+      el.innerHTML = '<strong>' + headline + '</strong><span>' + advice
+                   + (detail ? ' (' + detail + ')' : '') + '</span>';
+      if (!existing) host.insertBefore(el, host.firstChild);
+    });
+  }
+
+  /**
+   * A panel the live portfolio does not carry. Named, not filled in.
+   */
+  function _absent(el, what) {
+    if (!el) return;
+    el.innerHTML = '<p class="dash-absent">' + what + '</p>';
+  }
+
+  /**
+   * Fill in only what can be derived from the payload itself — never from the
+   * sample book. A live portfolio that does not carry a figure is missing it,
+   * and `null` is how the renderers know to say so.
+   */
+  function _withDefaults(d) {
+    const out = { ...d };
+    if (typeof out.weightedDQ !== 'number') out.weightedDQ = null;
+    if (typeof out.totalFinancedEmissions_tCO2e !== 'number') out.totalFinancedEmissions_tCO2e = 0;
+    if (typeof out.totalProjects !== 'number') out.totalProjects = 0;
+    if (typeof out.totalOutstanding !== 'number') out.totalOutstanding = 0;
+    if (typeof out.coveragePct !== 'number') {
+      const req = out.meta?.requestedProjects || 0;
+      const got = out.meta?.resolvedProjects || 0;
+      out.coveragePct = req > 0 ? Math.round((got / req) * 100) : 0;
+    }
+    return out;
+  }
+
+  const DQ_ABSENT = 'not reported';
+
+  /** A score, or the reason there isn't one — never a fabricated 0. */
+  function _dqText(v, dp) {
+    if (v == null) return DQ_ABSENT;
+    const band = v <= 2 ? 'Excellent' : v <= 3 ? 'Good' : 'Fair';
+    return `${v.toFixed(dp)} (${band})`;
+  }
+
+  /** Every figure blanked, so a failed load cannot leave the last one standing. */
+  function _clearDashboard() {
+    ['dash-emissions-value', 'dash-dq-value', 'dash-coverage-value', 'dash-taxonomy-value']
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+    ['dash-emissions-badge', 'dash-dq-badge', 'dash-coverage-badge', 'dash-taxonomy-badge']
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = ''; });
+    _absent(document.getElementById('dash-asset-bars'), 'No portfolio to break down.');
+    _absent(document.getElementById('dash-hbars'), 'No portfolio to break down.');
+    const tb = document.getElementById('dash-projects-tbody');
+    if (tb) tb.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:32px">No portfolio loaded</td></tr>';
+  }
+
+  function _clearPortfolio() {
+    ['pf-outstanding', 'pf-emissions', 'pf-intensity', 'pf-wdq', 'pf-coverage', 'pf-green-ratio']
+      .forEach((id) => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
   }
 
   // ── Number formatters ─────────────────────────────────────
@@ -134,8 +207,14 @@ const Dashboard = (() => {
   function _renderDashboard(d) {
     const $ = (id) => document.getElementById(id);
 
+    // The loader comes down whatever the outcome. A spinner that outlives the
+    // request it represents is the failure this screen is most often reported
+    // for, and it is indistinguishable from a slow network.
     const loader = $('dash-loading');
     if (loader) loader.style.display = 'none';
+
+    if (!d || d._source?.mode === 'unavailable') { _clearDashboard(); return; }
+    d = _withDefaults(d);
 
     const emVal = $('dash-emissions-value');
     if (emVal) emVal.innerHTML = `${_fmtN(d.totalFinancedEmissions_tCO2e)} <span class="kpi-unit">tCO2e</span>`;
@@ -146,15 +225,20 @@ const Dashboard = (() => {
     }
 
     const dqVal = $('dash-dq-value');
-    if (dqVal) dqVal.innerHTML = `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best</span>`;
+    if (dqVal) {
+      dqVal.innerHTML = d.weightedDQ == null
+        ? `— <span class="kpi-unit">${DQ_ABSENT}</span>`
+        : `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best of 1–5</span>`;
+    }
     const dqBadge = $('dash-dq-badge');
-    if (dqBadge) {
+    if (dqBadge && d.weightedDQ == null) { dqBadge.textContent = DQ_ABSENT; dqBadge.className = 'kpi-badge badge-neutral'; }
+    else if (dqBadge) {
       const label = d.weightedDQ <= 2.0 ? 'Excellent' : d.weightedDQ <= 3.0 ? 'Good' : 'Fair';
       dqBadge.textContent = label;
       dqBadge.className = 'kpi-badge ' + (d.weightedDQ <= 2.0 ? 'badge-green' : d.weightedDQ <= 3.0 ? 'badge-blue' : 'badge-amber');
     }
     const dqMeter = $('dash-dq-meter');
-    if (dqMeter) dqMeter.style.width = `${((5 - d.weightedDQ) / 4) * 100}%`;
+    if (dqMeter) dqMeter.style.width = d.weightedDQ == null ? '0%' : `${((5 - d.weightedDQ) / 4) * 100}%`;
 
     const covVal = $('dash-coverage-value');
     if (covVal) covVal.innerHTML = `${d.coveragePct}<span class="kpi-unit">%</span>`;
@@ -178,20 +262,31 @@ const Dashboard = (() => {
     }
 
     const barWrap = $('dash-asset-bars');
-    if (barWrap && d.assetClasses) {
+    if (barWrap && !(d.assetClasses || []).length) {
+      _absent(barWrap, 'This portfolio does not carry an asset-class breakdown.');
+    } else if (barWrap && d.assetClasses) {
       const maxVal = Math.max(...d.assetClasses.map(a => a.value));
       const colors = ['fill-blue', 'fill-green', 'fill-amber', 'fill-purple'];
+      // The bar lives in a track that owns the height, so its percentage has
+      // something definite to resolve against. Without the track the group was
+      // sized by its own text and every bar computed to zero height — labels
+      // and values on screen, no bars at all.
       barWrap.innerHTML = d.assetClasses.map((a, i) => `
         <div class="bar-group">
-          <div class="bar ${colors[i % colors.length]}" style="height:${Math.round((a.value / maxVal) * 100)}%"></div>
-          <span class="bar-label">${a.label}</span>
           <span class="bar-value">${_fmtN(a.value)}</span>
+          <div class="bar-track">
+            <div class="bar ${colors[i % colors.length]}" style="height:${Math.max(2, Math.round((a.value / maxVal) * 100))}%"
+                 title="${a.label}: ${_fmtN(a.value)} tCO2e"></div>
+          </div>
+          <span class="bar-label">${a.label}</span>
         </div>
       `).join('');
     }
 
     const hbars = $('dash-hbars');
-    if (hbars && d.assetTypes) {
+    if (hbars && !(d.assetTypes || []).length) {
+      _absent(hbars, 'This portfolio does not carry an asset-type mix.');
+    } else if (hbars && d.assetTypes) {
       const maxPct = Math.max(...d.assetTypes.map(a => a.value));
       const fills = ['fill-blue', 'fill-green', 'fill-amber', 'fill-purple', 'fill-red'];
       hbars.innerHTML = d.assetTypes.map((a, i) => `
@@ -229,6 +324,9 @@ const Dashboard = (() => {
     const loader = $('pf-loading');
     if (loader) loader.style.display = 'none';
 
+    if (!d || d._source?.mode === 'unavailable') { _clearPortfolio(); return; }
+    d = _withDefaults(d);
+
     // KPI 1: Total Loan Outstanding
     const outstanding = $('pf-outstanding');
     if (outstanding) outstanding.textContent = d.totalOutstanding ? _fmt(d.totalOutstanding) : '—';
@@ -258,15 +356,20 @@ const Dashboard = (() => {
 
     // KPI 4: Weighted Data Quality
     const wdq = $('pf-wdq');
-    if (wdq) wdq.innerHTML = `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best</span>`;
+    if (wdq) {
+      wdq.innerHTML = d.weightedDQ == null
+        ? `— <span class="kpi-unit">${DQ_ABSENT}</span>`
+        : `${d.weightedDQ.toFixed(2)} <span class="kpi-unit">1 = best of 1–5</span>`;
+    }
     const pfDqBadge = $('pf-dq-badge');
-    if (pfDqBadge) {
+    if (pfDqBadge && d.weightedDQ == null) { pfDqBadge.textContent = DQ_ABSENT; pfDqBadge.className = 'kpi-badge badge-neutral'; }
+    else if (pfDqBadge) {
       const label = d.weightedDQ <= 2.0 ? 'Excellent' : d.weightedDQ <= 3.0 ? 'Good' : 'Fair';
       pfDqBadge.textContent = label;
       pfDqBadge.className = 'kpi-badge ' + (d.weightedDQ <= 2.0 ? 'badge-green' : d.weightedDQ <= 3.0 ? 'badge-blue' : 'badge-amber');
     }
     const pfDqMeter = $('pf-dq-meter');
-    if (pfDqMeter) pfDqMeter.style.width = `${((5 - d.weightedDQ) / 4) * 100}%`;
+    if (pfDqMeter) pfDqMeter.style.width = d.weightedDQ == null ? '0%' : `${((5 - d.weightedDQ) / 4) * 100}%`;
 
     // KPI 5: Portfolio Coverage
     const coverage = $('pf-coverage');
@@ -455,7 +558,7 @@ const Dashboard = (() => {
       if (el) el.className = 'pf-ai-step';
     });
 
-    const d = _cache || DEMO;
+    const d = _withDefaults(_cache || {});
 
     const stepLabels = [
       'Scoring assets with Carbon Finance Score engine...',
@@ -538,7 +641,7 @@ const Dashboard = (() => {
         <tr><td>Total Financed Emissions</td><td>${_fmtN(d.totalFinancedEmissions_tCO2e)} tCO2e</td><td>PCAF v3 methodology</td></tr>
         <tr><td>Economic Intensity</td><td>${intensityVal} tCO2e/$M</td><td>${parseFloat(intensityVal) < 40 ? 'Below sector avg' : 'Above sector avg'}</td></tr>
         <tr><td>Green Loan Ratio</td><td>${greenPct}%</td><td>${greenPct >= 40 ? 'On target' : 'Below 40% target'}</td></tr>
-        <tr><td>Weighted Data Quality</td><td>${d.weightedDQ.toFixed(2)}</td><td>PCAF scale 1\u20135, 1 = highest quality</td></tr>
+        <tr><td>Weighted Data Quality</td><td>${_dqText(d.weightedDQ, 2)}</td><td>PCAF scale 1–5, 1 = highest quality</td></tr>
         <tr><td>Portfolio Coverage</td><td>${d.coveragePct}%</td><td>${d.coveragePct >= 80 ? 'Sufficient' : 'Needs improvement'}</td></tr>
       </table>
 
@@ -563,7 +666,7 @@ const Dashboard = (() => {
         <tr><td>Attribution Method</td><td>Loan-to-Value (LTV)</td></tr>
         <tr><td>Asset Class</td><td>Commercial Real Estate — Construction</td></tr>
         <tr><td>PCAF Standard</td><td>v3.0 (2024)</td></tr>
-        <tr><td>Weighted DQ Score</td><td>${d.weightedDQ.toFixed(1)} (${d.weightedDQ <= 2 ? 'Excellent' : d.weightedDQ <= 3 ? 'Good' : 'Fair'})</td></tr>
+        <tr><td>Weighted DQ Score</td><td>${_dqText(d.weightedDQ, 1)}</td></tr>
         <tr><td>Scope Coverage</td><td>Scope 1 + Scope 2 + Embodied Carbon</td></tr>
       </table>
 
@@ -615,7 +718,7 @@ const Dashboard = (() => {
   }
 
   function exportCSV() {
-    const d = _cache || DEMO;
+    const d = _withDefaults(_cache || {});
     if (!d.topContributors || d.topContributors.length === 0) return;
     const rows = [
       ['Project ID', 'Name', 'Region', 'Building Type', 'Financed Emissions (tCO2e)', 'Loan Outstanding', 'CFS Score', 'Classification'],

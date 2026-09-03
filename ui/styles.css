@@ -350,9 +350,9 @@ body {
 /* Bar Chart */
 .bar-chart {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   gap: 24px;
-  height: 180px;
+  height: 220px;
   padding-top: 20px;
 }
 .bar-group {
@@ -360,8 +360,31 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
+  gap: 6px;
+  min-width: 0;
   position: relative;
+}
+/* Owns the height so the bar's percentage resolves against something. */
+.bar-track {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.bar-value {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.bar-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
 }
 .bar-group::after {
   content: attr(data-label);
@@ -1896,4 +1919,32 @@ body {
     border-color: rgba(245, 158, 11, 0.55);
     color: #fbbf24;
   }
+}
+
+/* Not sample figures — no figures. A different colour because the remedy is
+   different: sample data means the screen is working and the book is empty,
+   this means the screen has nothing to draw. */
+.dash-demo-banner.is-unavailable {
+  border-color: #b91c1c;
+  background: #fef2f2;
+  color: #7f1d1d;
+}
+@media (prefers-color-scheme: dark) {
+  .dash-demo-banner.is-unavailable {
+    background: rgba(185, 28, 28, 0.12);
+    border-color: rgba(248, 113, 113, 0.55);
+    color: #fca5a5;
+  }
+}
+
+/* A panel the portfolio does not carry. It used to be filled in from the
+   sample book, which put invented bars beside real totals with nothing to
+   tell them apart. */
+.dash-absent {
+  margin: 0;
+  padding: 20px 4px;
+  color: var(--text-tertiary);
+  font-size: 12.5px;
+  line-height: 1.5;
+  text-align: center;
 }

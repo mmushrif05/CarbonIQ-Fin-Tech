@@ -193,9 +193,14 @@
         Auth.enforceAuth();
         // Navigate to default page for role
         const defaultPage = Auth.getDefaultPage();
-        // Trigger navigation via click
-        const navItem = document.querySelector(`.nav-item[data-page="${defaultPage}"]`);
-        if (navItem) navItem.click();
+        // Call the router directly. Synthesising a click depended on the nav
+        // item being present in the DOM, which role visibility can change.
+        if (typeof window.CARBONIQ_navigateTo === 'function') {
+          window.CARBONIQ_navigateTo(defaultPage);
+        } else {
+          const navItem = document.querySelector(`.nav-item[data-page="${defaultPage}"]`);
+          if (navItem) navItem.click();
+        }
       }
     }
 

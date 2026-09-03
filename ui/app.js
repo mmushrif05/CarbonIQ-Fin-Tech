@@ -188,6 +188,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Every page's data is loaded by navigateTo, and until now navigateTo was
+  // only ever reached by clicking a nav item. A returning user — session
+  // already in localStorage, page reloaded — was shown the Dashboard by the
+  // inline display:block on #page-dashboard while Dashboard.init() never ran,
+  // so the loader sat on "Loading portfolio data…" indefinitely. It looked
+  // like a backend that never answered; nothing had asked it anything.
+  //
+  // Landing is therefore the same code path as clicking, so a page cannot be
+  // visible without having been navigated to.
+  window.CARBONIQ_navigateTo = navigateTo;
+
+  function _landOnFirstPage() {
+    const loggedIn = typeof Auth === 'undefined' || Auth.isLoggedIn();
+    if (!loggedIn) return;   // the login screen owns the first navigation
+    let landing = 'dashboard';
+    if (typeof Auth !== 'undefined' && typeof Auth.getDefaultPage === 'function') {
+      landing = Auth.getDefaultPage() || 'dashboard';
+    }
+    navigateTo(landing);
+  }
+  _landOnFirstPage();
+
   // ── DQ selector interactivity ────────────────────────────────
   document.querySelectorAll('.dq-option input').forEach((opt) => {
     opt.addEventListener('change', () => {
