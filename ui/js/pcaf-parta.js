@@ -124,7 +124,6 @@ const PCAFPartAPage = (() => {
         technology: 'solar_pv',
         basis: 'projected',
         installedCapacity_MW: 60,
-        annualGeneration_MWh: 90600,
         yieldBasis: 'P50',
         auxiliaryConsumption_MWh: '',
         lifetimeYears: 25,
@@ -151,6 +150,13 @@ const PCAFPartAPage = (() => {
     },
   };
 
+  /* Whether the operator typed the generation figure themselves. A preset does
+     not count, and neither does the engine writing its own estimate back into
+     the field — only a keystroke does. This was the bug: the preset supplied
+     90,600, the engine correctly classified it as user-supplied, so it froze
+     across every country and technology AND claimed a better data quality
+     option than it had earned. */
+  let _userSuppliedGeneration = false;
   let _reference = null;
   let _timer = null;
   let _seq = 0;
@@ -352,10 +358,20 @@ const PCAFPartAPage = (() => {
         const v = readField('pa-gen-' + name, kind);
         if (v !== undefined) g[name] = v;
       }
+      /* In projected mode the engine owns this field unless the operator has
+         taken it. Sending back the engine's own estimate would make every run
+         look "supplied" and quietly inflate the data quality option. */
+      if (g.basis !== 'metered' && !_userSuppliedGeneration) delete g.annualGeneration_MWh;
       /* Sent once both fields that decide the answer are present. Asking with
          a country but no generation would draw a validation error while the
          user is still typing the generation. */
-      if (Number.isFinite(g.annualGeneration_MWh) && g.country) body.generation = g;
+      /* Attach on what the mode actually needs. Requiring a generation figure
+         here meant the block was never sent once the preset stopped supplying
+         one — and the entire result panel stayed hidden. */
+      const enough = g.basis === 'metered'
+        ? Number.isFinite(g.annualGeneration_MWh)
+        : Number.isFinite(g.installedCapacity_MW) || Number.isFinite(g.annualGeneration_MWh);
+      if (g.country && enough) body.generation = g;
     }
 
     /* The option is derived unless the claim panel has been deliberately
@@ -383,11 +399,22 @@ const PCAFPartAPage = (() => {
       || !Number.isFinite(body.outstandingAmount)
       || !Number.isFinite(body.totalProjectEquityPlusDebt)) return false;
 
-    return body.generation
-      ? Number.isFinite(body.generation.annualGeneration_MWh) && Boolean(body.generation.country)
-      : Number.isFinite(body.projectScope1_tCO2e)
+    if (!body.generation) {
+      return Number.isFinite(body.projectScope1_tCO2e)
         && Number.isFinite(body.projectScope2_tCO2e)
         && Boolean(body.dataQualityOption);
+    }
+
+    /* The two modes need different things, which is the point of there being
+       two. Projected derives generation from capacity, so demanding a
+       generation figure here would keep the whole result panel hidden — which
+       is exactly what it did. Metered reports what the plant produced, so the
+       figure is required and never derived. */
+    const g = body.generation;
+    if (!g.country) return false;
+    return g.basis === 'metered'
+      ? Number.isFinite(g.annualGeneration_MWh)
+      : Number.isFinite(g.installedCapacity_MW) || Number.isFinite(g.annualGeneration_MWh);
   }
 
   // ── ask the engine ──────────────────────────────────────────
@@ -459,6 +486,7 @@ const PCAFPartAPage = (() => {
     assumption.textContent = (af.assumptions || []).join(' ');
     if (af.assumptions && af.assumptions.length) el('pa-overrideBox').hidden = false;
 
+    if (r.generation) _syncGenerationField(r.generation.annualGeneration);
     _renderGeneration(r.generation);
 
     const inv = r.inventory;
@@ -513,7 +541,10 @@ const PCAFPartAPage = (() => {
         + `justification: ${inv.dataQuality.overrideJustification}`
       : '';
 
+    _renderHero(r);
+    _renderLifetimeChart(r);
     _renderImpact(r.impact);
+    _renderSummary(r);
     _renderTrace(r);
     el('paStandardLine').textContent = r.standard;
   }
@@ -525,7 +556,57 @@ const PCAFPartAPage = (() => {
    * derived figure has to show its factor — publisher, vintage and basis — or
    * it is no more accountable than the text box it replaced.
    */
+  /* The engine's estimate goes back into the field so it stays editable, and
+     the field says which of the two it is holding. */
+  function _syncGenerationField(g) {
+    const node = el('pa-gen-annualGeneration_MWh');
+    if (!node) return;
+    const derived = g.source === 'derived';
+    if (derived) node.value = g.value;
+    node.dataset.derived = derived ? 'true' : 'false';
+    el('pa-genDerivedTag').hidden = !derived;
+    el('pa-genOverrideTag').hidden = !(g.source === 'supplied');
+    el('pa-genReset').hidden = !(g.source === 'supplied');
+  }
+
+  /** Hand the field back to the engine. */
+  function resetGenerationToDerived() {
+    _userSuppliedGeneration = false;
+    writeField('pa-gen-annualGeneration_MWh', '');
+    recompute();
+  }
+
+  /** The chain, rendered as steps a client can follow with a pencil. */
+  function _renderDerivation(g) {
+    const box = el('pa-derivationBox');
+    const d = g && g.derivation;
+    if (!d) {
+      box.hidden = !(g && g.overrideNote);
+      if (g && g.overrideNote) {
+        el('pa-derivationChain').innerHTML = '';
+        el('pa-derivationResult').textContent = fmt(g.value, 0);
+        el('pa-derivationScope').textContent = 'Entered';
+        el('pa-derivationScope').className = 'parta-tag parta-tag-typed';
+        el('pa-derivationWhy').textContent = g.overrideNote;
+      }
+      return;
+    }
+    box.hidden = false;
+    el('pa-derivationScope').textContent = d.cfIsGlobal ? 'Global capacity factor' : 'National capacity factor';
+    el('pa-derivationScope').className = 'parta-tag ' + (d.cfIsGlobal ? 'parta-tag-global' : 'parta-tag-derived');
+    el('pa-derivationChain').innerHTML = d.steps.map(st => `
+      <li>
+        <span class="parta-chain-label">${esc(st.label)}</span>
+        <span class="parta-chain-value">${esc(st.pct !== undefined ? st.pct + '%' : fmt(st.value, st.unit === 'ratio' ? 3 : 0))}
+          <em>${esc(st.unit === 'ratio' ? '' : st.unit)}</em></span>
+        ${st.source ? `<span class="parta-chain-source">${esc(st.source)}</span>` : ''}
+      </li>`).join('');
+    el('pa-derivationResult').textContent = fmt(d.result, 0);
+    el('pa-derivationWhy').textContent = d.whyUnchangedNote;
+  }
+
   function _renderGeneration(g) {
+    _renderDerivation(g && g.annualGeneration);
     const boxes = ['paGridBox', 'paCheckBox', 'paAssumptionsBox'];
     if (!g) { boxes.forEach(id => { el(id).hidden = true; }); return; }
 
@@ -595,6 +676,154 @@ const PCAFPartAPage = (() => {
 
   const _basisName = b => (b === 'combinedMargin' ? 'CDM combined margin' : 'Grid average');
   const _titleCase = s2 => (s2 ? s2.charAt(0).toUpperCase() + s2.slice(1) : '');
+
+
+  /* ── Hero, attribution, chart, summary ──────────────────────────────────
+     Everything here is read off the response. The chart plots the per-year
+     series the engine actually summed, so it cannot drift from the total
+     printed above it. */
+
+  const _round = (n, dp) => Number(n).toLocaleString('en-GB',
+    { minimumFractionDigits: dp, maximumFractionDigits: dp });
+
+  function _renderHero(r) {
+    const inv = r.inventory;
+    el('paHeroValue').textContent = fmt(inv.scope1And2.value);
+    el('paHeroDq').textContent = inv.dataQuality.label;
+    el('paHeroDq').className = 'parta-chip ' + (inv.dataQuality.score <= 2
+      ? 'parta-chip-good' : inv.dataQuality.score <= 3 ? 'parta-chip-mid' : 'parta-chip-weak');
+
+    const yieldChip = el('paHeroYield');
+    const g = r.generation && r.generation.annualGeneration;
+    const showYield = Boolean(g && g.yieldBasis);
+    yieldChip.hidden = !showYield;
+    if (showYield) yieldChip.textContent = `${g.yieldBasis} · ${g.source === 'derived' ? 'estimated' : g.source}`;
+
+    /* Attribution drawn as the share it is. 0.3000 is a ratio; a bar is a share. */
+    const af = r.attribution.value;
+    const pct = Math.max(0, Math.min(1, af)) * 100;
+    el('paAttribLender').style.width = `${pct.toFixed(1)}%`;
+    el('paAttribPct').textContent = `${_round(pct, 1)}%`;
+    el('paAttribRestPct').textContent = `${_round(100 - pct, 1)}%`;
+    el('paAttribDesc').textContent =
+      `Of the project's own scope 1 and 2 emissions, ${_round(pct, 1)}% is attributed to this `
+      + `lender — the outstanding amount over the total project equity plus debt. The other `
+      + `${_round(100 - pct, 1)}% belongs to whoever else financed it, and is not this bank's to report.`;
+
+    el('paMeansInventory').textContent =
+      `This is the ${fmt(inv.scope1And2.value)} tCO2e the bank puts in its own scope 3 Category 15 `
+      + `inventory for this exposure — not the project's total, but the ${_round(pct, 1)}% share its `
+      + `lending attributes to it. ${inv.dataQuality.label}, on a scale where 1 is the best `
+      + `evidence and 5 the weakest. `
+      + (inv.dataQuality.score >= 4
+        ? 'At this level the figure rests on defaults rather than project data, and an assurance '
+          + 'provider will ask what would strengthen it.'
+        : 'That is a defensible level for a disclosure, provided the inputs behind it hold up.');
+  }
+
+  /**
+   * Avoided emissions year by year.
+   *
+   * One series, so no legend — the title names it. The first and last years
+   * are labelled directly rather than every bar, and the axis is recessive.
+   */
+  function _renderLifetimeChart(r) {
+    const fig = el('paLifetimeChart');
+    const life = r.generation && r.generation.lifetime;
+    const series = life && life.series;
+    if (!series || series.length < 2) { fig.hidden = true; return; }
+    fig.hidden = false;
+
+    const W = 640, H = 190, PAD_L = 8, PAD_R = 8, PAD_T = 26, PAD_B = 26;
+    const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    const max = Math.max(...series.map(d => d.avoided_tCO2e));
+    const gap = 2;
+    const bw = Math.max(2, (plotW - gap * (series.length - 1)) / series.length);
+
+    const bars = series.map((d, i) => {
+      const h = Math.max(1, (d.avoided_tCO2e / max) * plotH);
+      const x = PAD_L + i * (bw + gap);
+      const y = PAD_T + (plotH - h);
+      return `<rect class="parta-bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}"
+        height="${h.toFixed(1)}" rx="2"><title>${d.year}: ${fmt(d.avoided_tCO2e)} tCO2e</title></rect>`;
+    }).join('');
+
+    const first = series[0], last = series[series.length - 1];
+    el('paChartBody').innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img" preserveAspectRatio="none"
+           aria-label="Avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO2e over ${series.length} years">
+        <line class="parta-axis" x1="${PAD_L}" y1="${PAD_T + plotH}" x2="${W - PAD_R}" y2="${PAD_T + plotH}"/>
+        ${bars}
+        <text class="parta-bar-label" x="${PAD_L}" y="${PAD_T - 9}">${fmt(first.avoided_tCO2e, 0)}</text>
+        <text class="parta-bar-label parta-bar-label-end" x="${W - PAD_R}" y="${PAD_T - 9}">${fmt(last.avoided_tCO2e, 0)}</text>
+        <text class="parta-axis-label" x="${PAD_L}" y="${H - 8}">${first.year}</text>
+        <text class="parta-axis-label parta-bar-label-end" x="${W - PAD_R}" y="${H - 8}">${last.year}</text>
+      </svg>`;
+
+    const declinePct = (1 - last.avoided_tCO2e / first.avoided_tCO2e) * 100;
+    /* In metered mode the headline is what actually happened, so a 25-year
+       curve beside it has to say plainly that it is a projection FROM that
+       year — otherwise ex-post and ex-ante sit together unlabelled. */
+    const metered = r.generation && r.generation.mode === 'metered';
+    el('paChartSub').textContent =
+      `${fmt(life.value, 0)} tCO2e over ${life.years} years · financed share`
+      + (metered ? ' · projected forward from the metered year' : '');
+    el('paChartNote').textContent =
+      `Output falls ${life.degradationPct}% a year, so the final year avoids ${_round(declinePct, 1)}% `
+      + `less than the first. ${life.trajectory === 'flat'
+        ? 'The grid factor is held flat across the whole life, which is conservative in one '
+          + 'direction only: on a grid that is decarbonising this OVERSTATES the later years.'
+        : 'A declining grid factor has been applied year by year.'}`;
+
+    el('paMeansImpact').textContent =
+      `Avoided emissions are what the grid did not emit because this plant generated instead. They `
+      + `are NOT part of the ${fmt(r.inventory.scope1And2.value)} tCO2e above and are never added to `
+      + `it — PCAF requires them reported separately, and they rest on supplemental guidance rather `
+      + `than on Part A itself. A lender may cite them alongside the inventory, never inside it.`;
+  }
+
+  function _renderSummary(r) {
+    const inv = r.inventory;
+    const g = r.generation && r.generation.annualGeneration;
+    const items = [];
+    const pct = _round(r.attribution.value * 100, 1);
+
+    items.push(`This bank reports <b>${fmt(inv.scope1And2.value)} tCO2e</b> of financed scope 1 and 2 `
+      + `for this exposure, being its <b>${pct}%</b> share of the project.`);
+
+    if (g) {
+      items.push(`Based on <b>${fmt(g.value, 0)} MWh</b> a year, `
+        + `${g.source === 'metered' ? '<b>metered</b> from the plant'
+          : g.source === 'supplied' ? '<b>entered</b> by the user'
+          : '<b>estimated</b> from installed capacity and a capacity factor'}.`);
+    }
+
+    const impact = (r.impact.metrics || [])[0];
+    if (impact) {
+      items.push(`Separately, it finances <b>${fmt(impact.figure.value)} ${esc(impact.figure.unit)}</b> `
+        + `of avoided emissions — reported apart from the figure above, never added to it.`);
+    } else if (r.generation && r.generation.avoided && r.generation.avoided.absent) {
+      items.push('Avoided emissions <b>cannot be stated</b> for this country: '
+        + esc(r.generation.avoided.reason || ''));
+    }
+
+    items.push(`Data quality is <b>${esc(inv.dataQuality.label)}</b>, where 1 is the strongest `
+      + `evidence and 5 the weakest.`);
+
+    el('paSummaryList').innerHTML = items.map(t => `<li>${t}</li>`).join('');
+
+    const weak = [];
+    if (g && g.derivation && g.derivation.cfIsGlobal) weak.push('a global capacity factor rather than a national one');
+    const f = r.generation && r.generation.factors;
+    if (f && (f.consumption.isGlobalDefault || f.displacement.isGlobalDefault)) {
+      weak.push('a global grid emission factor');
+    }
+    if (inv.dataQuality.score >= 4) weak.push('no project-specific generation data');
+    el('paSummaryCaveat').textContent = weak.length
+      ? `Before this supports a disclosure, the weakest links are: ${weak.join('; ')}. `
+        + 'Each is a place evidence would move the score.'
+      : 'No global defaults were used in this run.';
+  }
 
   function _renderImpact(impact) {
     const has = impact && impact.metrics && impact.metrics.length;
@@ -678,8 +907,11 @@ const PCAFPartAPage = (() => {
     const p = PRESETS[name];
     if (!p) return;
 
+    /* Every field, not just the ones this preset names. Writing only the keys a
+       preset owns left the previous preset's values standing — switching from
+       Cement to Solar carried 480,000 tCO2e of scope 1 across with it. */
     for (const [field] of FIELDS) {
-      if (Object.prototype.hasOwnProperty.call(p, field)) writeField('pa-' + field, p[field]);
+      writeField('pa-' + field, Object.prototype.hasOwnProperty.call(p, field) ? p[field] : '');
     }
     for (const [field] of REDUCTION_FIELDS)  writeField('pa-reduction-' + field,  p.reduction  ? p.reduction[field]  : '');
     for (const [field] of GENERATION_FIELDS) writeField('pa-gen-' + field,       p.generation ? p.generation[field] : '');
@@ -692,6 +924,7 @@ const PCAFPartAPage = (() => {
     if (p.dataQualityOptionChosen) writeField('pa-dataQualityOptionChosen', p.dataQualityOptionChosen);
     /* A preset never arrives claiming an option it has not earned, so the
        claim panel is closed and its justification cleared on every switch. */
+    _userSuppliedGeneration = false;
     if (el('pa-dqClaim')) el('pa-dqClaim').open = false;
     writeField('pa-dataQualityOverrideJustification', '');
     _describeDqOption();
@@ -712,7 +945,23 @@ const PCAFPartAPage = (() => {
     });
     el('pa-archetype').addEventListener('change', () => { _applyArchetypeGate(); schedule(); });
     el('pa-dataQualityOptionChosen').addEventListener('change', _describeDqOption);
-    el('pa-gen-country').addEventListener('change', () => { _describeCountry(); schedule(); });
+    /* A keystroke in the generation field — and only that — takes ownership. */
+    el('pa-gen-annualGeneration_MWh').addEventListener('input', () => {
+      _userSuppliedGeneration = true;
+    });
+    el('pa-genReset').addEventListener('click', resetGenerationToDerived);
+
+    /* Country, technology and yield basis all feed the estimate, so each one
+       re-derives it — which is what "90,600 never changes" was reporting. */
+    for (const id of ['pa-gen-country', 'pa-gen-technology', 'pa-gen-yieldBasis']) {
+      const node = el(id);
+      if (!node) continue;
+      node.addEventListener('change', () => {
+        if (!_userSuppliedGeneration) writeField('pa-gen-annualGeneration_MWh', '');
+        if (id === 'pa-gen-country') _describeCountry();
+        schedule();
+      });
+    }
     el('pa-gen-technology').addEventListener('change', schedule);
     el('pa-gen-basis').addEventListener('change', () => { _applyModeGate(); schedule(); });
     /* Opening or closing the claim panel changes what is sent, so it has to
