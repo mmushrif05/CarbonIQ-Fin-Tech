@@ -60,13 +60,6 @@ describe('A returning user lands on a page rather than on a spinner', () => {
     expect(html).toContain('window.CARBONIQ_navigateTo(defaultPage)');
   });
 
-  test('the loader comes down on every outcome, including a failure', () => {
-    const render = dashJs.slice(dashJs.indexOf('function _renderDashboard'));
-    const guardAt  = render.indexOf("_source?.mode === 'unavailable'");
-    const loaderAt = render.indexOf("loader.style.display = 'none'");
-    expect(loaderAt).toBeGreaterThan(-1);
-    expect(guardAt).toBeGreaterThan(loaderAt);   // hidden before we can bail out
-  });
 });
 
 describe('Sample figures are named as samples, and never blended', () => {
@@ -99,10 +92,12 @@ describe('Sample figures are named as samples, and never blended', () => {
     }
   });
 
-  test('a panel the portfolio does not carry is reported absent', () => {
-    expect(dashJs).toContain('function _absent');
-    expect(dashJs).toMatch(/does not carry an asset-class breakdown/);
-    expect(css).toContain('.dash-absent');
+  test('the loader comes down on every outcome, including a failure', () => {
+    const render = dashJs.slice(dashJs.indexOf('function _renderDashboard'));
+    const guardAt  = render.indexOf("mode === 'unavailable'");
+    const loaderAt = render.indexOf("loader.style.display = 'none'");
+    expect(loaderAt).toBeGreaterThan(-1);
+    expect(guardAt).toBeGreaterThan(loaderAt);   // hidden before we can bail out
   });
 
   test('a missing data-quality score is reported, never rendered as zero', () => {
@@ -174,12 +169,6 @@ describe('The sample book reconciles with itself', () => {
 });
 
 describe('The chart says what it is measuring', () => {
-  test('the asset-class chart names its unit and its baseline', () => {
-    // Four numbers with no unit are four numbers.
-    expect(html).toMatch(/chart-sub">Financed emissions, tCO2e · bars start at zero/);
-    expect(css).toContain('.chart-sub');
-  });
-
   test('the scale phrase wraps whole rather than breaking after "of"', () => {
     // "1 = best of 1–5" states the direction of a scale people read backwards.
     // Split across a line it stops reading as one thing.

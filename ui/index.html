@@ -340,6 +340,110 @@
       </div>
     </div>
 
+    <!-- ══ Recording the capital book ══════════════════════════════════
+         The three things the dashboard is derived from. Nothing here
+         computes: balance, deployment and every roll-up come back from the
+         engine on the next read, so a figure on the dashboard can never
+         disagree with the records behind it. -->
+    <div id="capital-record" class="crd-backdrop" style="display:none">
+      <div class="crd-panel" role="dialog" aria-modal="true" aria-labelledby="crd-title">
+        <div class="crd-head">
+          <div>
+            <h3 id="crd-title">Record the book</h3>
+            <p class="crd-hint">Allocation, investments and payments. Balance is worked out from
+               these — it is never typed, so it cannot drift from them.</p>
+          </div>
+          <button type="button" class="btn-icon-sm" id="crd-close" aria-label="Close">×</button>
+        </div>
+
+        <p class="crd-status" id="crd-status">—</p>
+
+        <section class="crd-block">
+          <h4>1 · A portfolio and its allocation</h4>
+          <div class="crd-grid">
+            <label>Name <input type="text" id="crd-pf-name" placeholder="Green Buildings — Asia Pacific"></label>
+            <label>Currency <input type="text" id="crd-pf-currency" value="USD" maxlength="8"></label>
+            <label>Allocated budget <input type="number" id="crd-pf-budget" inputmode="decimal" placeholder="500000000"></label>
+            <label>Vintage <input type="number" id="crd-pf-vintage" inputmode="numeric" placeholder="2026"></label>
+            <label class="crd-wide">Mandate <input type="text" id="crd-pf-mandate" placeholder="What this book is for"></label>
+          </div>
+          <div class="crd-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="crd-pf-save">Add portfolio</button>
+            <button type="button" class="btn btn-ghost btn-sm" id="crd-seed">Load a worked book</button>
+          </div>
+          <div class="crd-list" id="crd-list"></div>
+        </section>
+
+        <section class="crd-block">
+          <h4>2 · Change an allocation</h4>
+          <div class="crd-grid">
+            <label>Portfolio <select id="crd-budget-portfolio"></select></label>
+            <label>Allocated budget <input type="number" id="crd-budget-amount" inputmode="decimal"></label>
+          </div>
+          <div class="crd-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="crd-budget-save">Update allocation</button>
+          </div>
+        </section>
+
+        <section class="crd-block">
+          <h4>3 · An investment against it</h4>
+          <div class="crd-grid">
+            <label>Portfolio <select id="crd-inv-portfolio"></select></label>
+            <label>Name <input type="text" id="crd-inv-name" placeholder="Marina Bay Tower Retrofit"></label>
+            <label>Sector <input type="text" id="crd-inv-sector" placeholder="Commercial real estate"></label>
+            <label>Country <input type="text" id="crd-inv-country" placeholder="SG"></label>
+            <label>Status
+              <select id="crd-inv-status">
+                <option value="pipeline">Pipeline — waiting</option>
+                <option value="committed">Committed</option>
+                <option value="deployed">Deployed</option>
+                <option value="exited">Exited</option>
+                <option value="declined">Declined</option>
+              </select>
+            </label>
+            <label>Commitment <input type="number" id="crd-inv-commitment" inputmode="decimal"></label>
+            <label>Expected return %
+              <input type="number" id="crd-inv-return" step="0.1" inputmode="decimal" placeholder="blank → not yet priced">
+            </label>
+            <label>Tenor (years) <input type="number" id="crd-inv-tenor" inputmode="numeric"></label>
+          </div>
+          <p class="crd-hint">Leaving the return blank records it as unpriced. It is then held out of
+             the pipeline ranking rather than scored as the worst return on the book.</p>
+          <div class="crd-grid">
+            <label>Emissions already incurred (tCO2e) <input type="number" id="crd-inv-incurred" inputmode="decimal"></label>
+            <label>Expected over the term (tCO2e) <input type="number" id="crd-inv-forward" inputmode="decimal"></label>
+            <label>Reduction achieved (tCO2e) <input type="number" id="crd-inv-reduction" inputmode="decimal"></label>
+            <label>Emissions avoided (tCO2e) <input type="number" id="crd-inv-avoided" inputmode="decimal"></label>
+          </div>
+          <p class="crd-hint">The four are recorded and reported separately. Reduction and avoidance are
+             never netted against the inventory.</p>
+          <div class="crd-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="crd-inv-save">Add investment</button>
+          </div>
+        </section>
+
+        <section class="crd-block">
+          <h4>4 · A payment</h4>
+          <div class="crd-grid">
+            <label>Against <select id="crd-pay-investment"></select></label>
+            <label>Kind
+              <select id="crd-pay-kind">
+                <option value="disbursement">Disbursement</option>
+                <option value="repayment">Repayment</option>
+                <option value="fee">Fee</option>
+              </select>
+            </label>
+            <label>Amount <input type="number" id="crd-pay-amount" inputmode="decimal"></label>
+            <label>Date <input type="date" id="crd-pay-date"></label>
+            <label class="crd-wide">Reference <input type="text" id="crd-pay-ref" placeholder="Tranche 1"></label>
+          </div>
+          <div class="crd-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="crd-pay-save">Record payment</button>
+          </div>
+        </section>
+      </div>
+    </div>
+
     <!-- Settings Drawer -->
     <div id="settings-drawer" class="settings-drawer" style="display:none">
       <div class="settings-header">
@@ -397,110 +501,173 @@
         <!-- Loading overlay -->
         <div id="dash-loading" class="dash-loading">
           <div class="rpt-spinner" style="width:20px;height:20px;border-width:2.5px"></div>
-          <span>Loading portfolio data…</span>
+          <span>Reading the book…</span>
         </div>
 
-        <!-- KPI Cards (populated by dashboard.js) -->
-        <div class="kpi-grid" id="dash-kpi-grid">
-          <div class="kpi-card" id="dash-kpi-emissions">
-            <div class="kpi-header">
-              <span class="kpi-label">Total Financed Emissions</span>
-              <span class="kpi-badge badge-neutral" id="dash-emissions-badge">—</span>
+        <!-- ══ CAPITAL ══════════════════════════════════════════════════════
+             Where the money stands. Committed and paid are separate figures
+             on purpose: a book can be two-thirds committed and well under half
+             deployed, and one number cannot say both. -->
+        <section class="cap-section" id="cap-capital">
+          <header class="cap-head">
+            <div>
+              <h3>Capital position</h3>
+              <span class="cap-sub" id="cap-capital-sub">—</span>
             </div>
-            <div class="kpi-value" id="dash-emissions-value">— <span class="kpi-unit">tCO2e</span></div>
-          </div>
-          <div class="kpi-card" id="dash-kpi-dq">
-            <div class="kpi-header">
-              <span class="kpi-label">Weighted Data Quality</span>
-              <span class="kpi-badge badge-neutral" id="dash-dq-badge">—</span>
+            <div class="cap-head-actions">
+              <select id="cap-portfolio-filter" class="cap-select" aria-label="Portfolio">
+                <option value="">All portfolios</option>
+              </select>
+              <button type="button" class="dash-link" id="cap-record">Record</button>
+              <button type="button" class="dash-link" id="cap-refresh">Refresh</button>
             </div>
-            <div class="kpi-value" id="dash-dq-value">— <span class="kpi-unit">1 = best</span></div>
-            <div class="kpi-meter">
-              <div class="meter-track">
-                <div class="meter-fill" id="dash-dq-meter" style="width:0%"></div>
-              </div>
-              <div class="meter-labels"><span>1 Best</span><span>5 Worst</span></div>
-            </div>
-          </div>
-          <div class="kpi-card" id="dash-kpi-coverage">
-            <div class="kpi-header">
-              <span class="kpi-label">Portfolio Coverage</span>
-              <span class="kpi-badge badge-blue" id="dash-coverage-badge">—</span>
-            </div>
-            <div class="kpi-value" id="dash-coverage-value">—<span class="kpi-unit">%</span></div>
-            <div class="kpi-donut">
-              <svg viewBox="0 0 36 36" class="donut-svg">
-                <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e5e7eb" stroke-width="2.5"/>
-                <circle id="dash-donut-fill" cx="18" cy="18" r="15.9" fill="none" stroke="#10b981" stroke-width="2.5" stroke-dasharray="0 100" stroke-dashoffset="25" stroke-linecap="round"/>
-              </svg>
-            </div>
-          </div>
-          <div class="kpi-card" id="dash-kpi-taxonomy">
-            <div class="kpi-header">
-              <span class="kpi-label">Taxonomy Alignment</span>
-              <span class="kpi-badge badge-green" id="dash-taxonomy-badge">—</span>
-            </div>
-            <div class="kpi-value" id="dash-taxonomy-value">— <span class="kpi-unit">green</span></div>
-          </div>
-        </div>
+          </header>
 
-        <!-- Charts Row -->
-        <div class="charts-row">
-          <div class="chart-card chart-wide">
-            <div class="chart-header">
-              <div>
-                <h3>Emissions by Asset Class</h3>
-                <!-- A chart of four numbers with no unit is four numbers. -->
-                <span class="chart-sub">Financed emissions, tCO2e · bars start at zero</span>
-              </div>
-              <button class="btn btn-ghost btn-sm" onclick="Dashboard.refresh()">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7a6 6 0 0111.2-3M13 7a6 6 0 01-11.2 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M12 1v3h-3M2 13v-3h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Refresh
-              </button>
+          <div class="cap-kpis">
+            <div class="cap-kpi">
+              <span class="cap-kpi-label">Allocated budget</span>
+              <span class="cap-kpi-value" id="cap-allocated">—</span>
+              <span class="cap-kpi-foot" id="cap-allocated-foot"></span>
             </div>
-            <div class="chart-body">
-              <div class="bar-chart" id="dash-asset-bars">
-                <!-- filled by dashboard.js -->
-              </div>
+            <div class="cap-kpi is-paid">
+              <span class="cap-kpi-label">Paid out</span>
+              <span class="cap-kpi-value" id="cap-paid">—</span>
+              <span class="cap-kpi-foot" id="cap-paid-foot">Disbursements net of repayments</span>
             </div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-header">
-              <h3>By Asset Type</h3>
+            <div class="cap-kpi is-committed">
+              <span class="cap-kpi-label">Committed, not yet drawn</span>
+              <span class="cap-kpi-value" id="cap-undrawn">—</span>
+              <span class="cap-kpi-foot" id="cap-undrawn-foot"></span>
             </div>
-            <div class="chart-body">
-              <div class="h-bars" id="dash-hbars">
-                <!-- filled by dashboard.js -->
-              </div>
+            <div class="cap-kpi is-balance">
+              <span class="cap-kpi-label">Balance remaining</span>
+              <span class="cap-kpi-value" id="cap-balance">—</span>
+              <span class="cap-kpi-foot" id="cap-balance-foot">Allocated less paid</span>
             </div>
           </div>
-        </div>
 
-        <!-- Projects Table -->
-        <div class="table-card">
-          <div class="table-header">
-            <h3>Top Projects by Emissions</h3>
-            <div class="table-controls">
-              <button class="btn btn-secondary btn-sm" id="dash-export-csv" onclick="Dashboard.exportCSV()">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Export CSV
-              </button>
+          <!-- One stacked bar, because these three are parts of one whole. -->
+          <figure class="cap-figure">
+            <figcaption>
+              <span class="cap-figure-title">How the allocation is placed</span>
+              <span class="cap-figure-sub" id="cap-deploy-sub"></span>
+            </figcaption>
+            <div class="cap-stack" id="cap-deploy-bar"></div>
+            <div class="cap-legend" id="cap-deploy-legend"></div>
+          </figure>
+        </section>
+
+        <!-- ══ EMISSIONS ════════════════════════════════════════════════════
+             Four lines, two blocks, and never one total. What has happened is
+             measured; what is ahead is a projection. Reduction and avoidance
+             sit outside the inventory and are never netted against it. -->
+        <section class="cap-section" id="cap-emissions">
+          <header class="cap-head">
+            <div>
+              <h3>Emissions across the book</h3>
+              <span class="cap-sub" id="cap-emissions-sub">—</span>
+            </div>
+          </header>
+
+          <div class="cap-ledger">
+            <div class="cap-ledger-block">
+              <span class="cap-block-label">Inventory — financed emissions</span>
+              <div class="cap-ledger-rows" id="cap-inventory-rows"></div>
+              <p class="cap-note" id="cap-inventory-note"></p>
+            </div>
+
+            <div class="cap-ledger-rule"><span>Not inventory · never netted against the figures on the left</span></div>
+
+            <div class="cap-ledger-block">
+              <span class="cap-block-label">Impact helped about</span>
+              <div class="cap-ledger-rows" id="cap-impact-rows"></div>
+              <p class="cap-note" id="cap-impact-note"></p>
             </div>
           </div>
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Project</th>
-                <th>Type</th>
-                <th>Financed Emissions</th>
-                <th>Classification</th>
-              </tr>
-            </thead>
-            <tbody id="dash-projects-tbody">
-              <tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:32px">Loading…</td></tr>
-            </tbody>
-          </table>
-        </div>
+
+          <div class="cap-dq" id="cap-dq"></div>
+        </section>
+
+        <!-- ══ PORTFOLIOS ═══════════════════════════════════════════════════ -->
+        <section class="cap-section" id="cap-portfolios">
+          <header class="cap-head">
+            <div>
+              <h3>Portfolios</h3>
+              <span class="cap-sub">Intensity is emissions per unit deployed — the measure that compares books of different sizes.</span>
+            </div>
+          </header>
+          <div class="cap-tablewrap">
+            <table class="data-table cap-table">
+              <thead>
+                <tr>
+                  <th>Portfolio</th><th class="num">Allocated</th><th class="num">Committed</th>
+                  <th class="num">Paid</th><th class="num">Balance</th>
+                  <th class="num">Incurred</th><th class="num">Forward</th>
+                  <th class="num">Intensity</th>
+                </tr>
+              </thead>
+              <tbody id="cap-portfolio-rows"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- ══ PIPELINE ═════════════════════════════════════════════════════
+             What is waiting, what it would cost, what it would add to the
+             book, and — under a weighting the reader sets — which of them to
+             take first. -->
+        <section class="cap-section" id="cap-pipeline">
+          <header class="cap-head">
+            <div>
+              <h3>Pipeline — what is waiting</h3>
+              <span class="cap-sub" id="cap-pipeline-sub">—</span>
+            </div>
+          </header>
+
+          <div class="cap-weight">
+            <label for="cap-weight">What matters more here?</label>
+            <div class="cap-weight-row">
+              <span class="cap-weight-end">Financial return</span>
+              <input type="range" id="cap-weight" min="0" max="100" step="5" value="50"
+                     aria-describedby="cap-weight-note">
+              <span class="cap-weight-end">Carbon impact</span>
+            </div>
+            <p class="cap-note" id="cap-weight-note"></p>
+          </div>
+
+          <!-- Impact against return. Two measures, one mark per project, area
+               by the capital it would take. -->
+          <figure class="cap-figure">
+            <figcaption>
+              <span class="cap-figure-title">Carbon impact against expected return</span>
+              <span class="cap-figure-sub">Each mark is one project waiting; its area is the capital it would take.</span>
+            </figcaption>
+            <div class="cap-scatter" id="cap-scatter"></div>
+            <p class="cap-note" id="cap-scatter-note"></p>
+          </figure>
+
+          <div class="cap-tablewrap">
+            <table class="data-table cap-table">
+              <thead>
+                <tr>
+                  <th class="num">#</th><th>Project</th><th>Type</th>
+                  <th class="num">Capital</th><th class="num">Return</th>
+                  <th class="num">Impact / $M</th>
+                  <th class="num">Adds to the book</th>
+                  <th class="num">Score</th>
+                </tr>
+              </thead>
+              <tbody id="cap-pipeline-rows"></tbody>
+            </table>
+          </div>
+          <p class="cap-note" id="cap-unrankable-note" hidden></p>
+
+          <div class="cap-bytype">
+            <span class="cap-block-label">What kind of thing is waiting</span>
+            <div id="cap-bytype-rows"></div>
+          </div>
+        </section>
+
+        <p class="cap-note is-warn" id="cap-storage" hidden></p>
 
         <!-- Error state -->
         <div id="dash-error" style="display:none"></div>
@@ -1284,6 +1451,7 @@
   <script src="js/auth.js"></script>
   <script src="app.js"></script>
   <script src="js/dashboard.js"></script>
+  <script src="js/capital-record.js"></script>
   <script src="js/pcaf.js"></script>
   <script src="js/monitoring.js"></script>
   <script src="js/new-project.js"></script>

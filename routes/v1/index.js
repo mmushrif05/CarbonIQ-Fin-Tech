@@ -40,6 +40,7 @@ const carbonPricingRouter = require('./carbon-pricing');
 const pcafPartCRouter     = require('./pcaf-partc');
 const pcafPartARouter     = require('./pcaf-parta');
 const partcRegistryRouter = require('./partc-registry');
+const capitalRouter       = require('./capital');
 const ndcSdgRouter        = require('./ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
 
@@ -176,6 +177,7 @@ router.use('/pcaf/part-c', pcafPartCRouter);
    emissions. Separate mounts, separate engines, never merged. */
 router.use('/pcaf/part-a', pcafPartARouter);
 router.use('/partc', partcRegistryRouter);
+router.use('/capital', capitalRouter);
 router.use('/ndc-sdg', ndcSdgRouter);
 
 module.exports = router;
