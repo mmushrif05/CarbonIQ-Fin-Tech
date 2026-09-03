@@ -25,6 +25,7 @@ const portfolioSchema = Joi.object({
   mandate: Joi.string().max(400).allow('').optional(),
   vintage: Joi.alternatives(Joi.number().integer(), Joi.string().max(20)).allow(null).optional(),
   allocatedBudget: money.optional(),
+  pledged: money.optional(),
 });
 
 const portfolioUpdateSchema = Joi.object({
@@ -33,6 +34,7 @@ const portfolioUpdateSchema = Joi.object({
   mandate: Joi.string().max(400).allow('').optional(),
   vintage: Joi.alternatives(Joi.number().integer(), Joi.string().max(20)).allow(null).optional(),
   allocatedBudget: money.optional(),
+  pledged: money.optional(),
 }).min(1);
 
 /* The four emission lines. Each is optional because a project at pipeline
@@ -62,6 +64,8 @@ const investmentSchema = Joi.object({
   projectCost: money.optional(),
   expectedReturnPct: Joi.number().allow(null).optional(),
   tenorYears: Joi.number().min(0).allow(null).optional(),
+  startYear: Joi.number().integer().min(1900).max(2200).allow(null).optional(),
+  phasing: Joi.string().valid('construction', 'level', 'buildThenOperate').allow(null).optional(),
   taxonomy: Joi.string().max(40).allow('', null).optional(),
   emissions: emissionsSchema.optional(),
   notes: Joi.string().max(1000).allow('').optional(),
@@ -78,6 +82,8 @@ const investmentUpdateSchema = Joi.object({
   projectCost: money.optional(),
   expectedReturnPct: Joi.number().allow(null).optional(),
   tenorYears: Joi.number().min(0).allow(null).optional(),
+  startYear: Joi.number().integer().min(1900).max(2200).allow(null).optional(),
+  phasing: Joi.string().valid('construction', 'level', 'buildThenOperate').allow(null).optional(),
   taxonomy: Joi.string().max(40).allow('', null).optional(),
   emissions: emissionsSchema.optional(),
   notes: Joi.string().max(1000).allow('').optional(),

@@ -2273,3 +2273,88 @@ body {
 @media (max-width: 620px) {
   .crd-panel { width: 100%; padding: 16px; }
 }
+
+/* ── The anchor's position ─────────────────────────────────────────────────
+   Five figures, and two of them are not measurements. The kind of statement
+   each one is appears on its face, in the vocabulary the reports already use,
+   because a screen that set all five in the same type at the same weight
+   would invite a reader to treat a projection as a fact.
+   ───────────────────────────────────────────────────────────────────────── */
+
+.anch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.anch {
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex; flex-direction: column;
+  min-width: 0;
+}
+/* The figure he came for carries the weight; the others are the same object
+   one size down, rather than four more cards competing with it. */
+.anch-lead { grid-column: span 2; border-color: var(--border); background: var(--bg); }
+.anch-wide { grid-column: span 2; }
+.anch-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
+  text-transform: uppercase; color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.anch-value {
+  font-weight: 700; letter-spacing: -1px; line-height: 1.05;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+  font-size: 26px;
+}
+.anch-lead .anch-value { font-size: 38px; letter-spacing: -1.4px; }
+.anch-unit { font-size: 11.5px; color: var(--text-tertiary); margin-top: 3px; line-height: 1.45; }
+
+.anch-kind {
+  align-self: flex-start;
+  margin-top: 11px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.7px;
+  text-transform: uppercase;
+  padding: 4px 9px; border-radius: 4px;
+}
+.k-measured { background: #e4f2ec; color: #006140; }
+.k-part     { background: #ecebfd; color: #3b39a8; }
+.k-pending  { background: #fbf1e2; color: #8a4f00; }
+.k-declared { background: var(--bg); color: var(--text-secondary); }
+.k-open     { background: var(--bg); color: var(--text-secondary); }
+
+.anch-split {
+  margin-top: 14px; padding-top: 12px;
+  border-top: 1px solid var(--border-light);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.anch-split-row {
+  display: grid; grid-template-columns: 8px 1fr auto;
+  gap: 10px; align-items: baseline;
+  font-size: 12.5px; color: var(--text-secondary);
+}
+.anch-split-mark { width: 8px; height: 8px; border-radius: 2px; align-self: center; }
+.anch-split-mark.is-measured  { background: #00875a; }
+.anch-split-mark.is-projected {
+  background: #5e5ce6;
+  /* Hatched, the same as everywhere else it means a projection. */
+  background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.6) 0 2px, transparent 2px 4px);
+}
+.anch-split-mark.is-reduction { background: #c77700; }
+.anch-split-mark.is-avoided   { background: #1f6fb2; }
+.anch-split-label { min-width: 0; }
+.anch-split-value {
+  font-variant-numeric: tabular-nums; color: var(--text-primary); font-weight: 600;
+}
+.anch-note {
+  margin: 12px 0 0; font-size: 11px; line-height: 1.55; color: var(--text-tertiary);
+}
+
+@media (max-width: 900px) {
+  .anch-lead, .anch-wide { grid-column: auto; }
+}
+@media (max-width: 620px) {
+  .anch-lead .anch-value { font-size: 30px; }
+  .anch-value { font-size: 23px; }
+}

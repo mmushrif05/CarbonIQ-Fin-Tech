@@ -85,9 +85,12 @@ describe('The emissions ledger keeps its four lines apart on screen', () => {
   test('the projection is hatched, and that texture means only that', () => {
     expect(renderEmissions).toContain('hatch: true');
     expect(css).toMatch(/\.cap-row-fill\.is-projected \{[\s\S]*?repeating-linear-gradient/);
-    // One texture, one meaning.
-    const uses = (css.match(/repeating-linear-gradient/g) || []).length;
-    expect(uses).toBe(1);
+    /* One texture, one meaning. Every rule that uses it must be a
+       `.is-projected` rule — the hatch says "this is a forecast" and must
+       never come to mean anything else. */
+    const rules = css.split('}').filter(chunk => chunk.includes('repeating-linear-gradient'));
+    expect(rules.length).toBeGreaterThan(0);
+    for (const rule of rules) expect(rule).toMatch(/is-projected/);
   });
 
   test('reduction and avoidance carry what they are measured against', () => {

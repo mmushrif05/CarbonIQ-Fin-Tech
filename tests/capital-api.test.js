@@ -27,19 +27,20 @@ async function seed() {
   await auth(api().post('/v1/capital/demo')).expect(201);
 }
 
-describe('An empty book shows a worked example rather than a blank screen', () => {
+describe('An empty book falls back to the baseline in the repository', () => {
   /* Correct and blank is still blank — and where storage is not writable the
      seed endpoint is refused, so there would be no way to put figures on the
-     screen at all. The worked book is computed through the same engine,
-     stored nowhere, and marked. */
-  test('the figures are the worked book, and they are marked as a sample', async () => {
+     screen at all. The baseline is versioned in the repository, computed
+     through the same engine, stored nowhere, and marked. */
+  test('the figures are the baseline, and they are marked as such', async () => {
     const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
     expect(d.sample).toBe(true);
     expect(d.empty).toBe(false);
     expect(d.capital.allocated).toBe(750_000_000);
     expect(d.capital.paid).toBe(322_000_000);
-    expect(d.sampleNote).toMatch(/Sample figures/);
-    expect(d.sampleNote).toMatch(/stored nowhere/);
+    expect(d.source).toBe('baseline');
+    expect(d.sampleNote).toMatch(/Baseline figures, held in the repository/);
+    expect(d.sampleNote).toMatch(/never mixed/);
   });
 
   test('it still carries the sentence about an unrecorded book', async () => {
@@ -53,13 +54,16 @@ describe('An empty book shows a worked example rather than a blank screen', () =
     expect(portfolios).toHaveLength(0);
   });
 
-  test('one real portfolio replaces it, rather than sitting beside it', async () => {
+  test('one real portfolio replaces it entirely, rather than sitting beside it', async () => {
     await auth(api().post('/v1/capital/portfolios'))
       .send({ name: 'Mine', allocatedBudget: 42 }).expect(201);
     const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
     expect(d.sample).toBe(false);
+    expect(d.source).toBe('recorded');
     expect(d.capital.allocated).toBe(42);
     expect(d.portfolios.map(p => p.name)).toEqual(['Mine']);
+    // Not 42 plus the baseline's 750M — one book or the other, never both.
+    expect(d.investments).toBeUndefined();
   });
 
   test('the weighting still works on the example', async () => {
@@ -83,12 +87,35 @@ describe('The seeded book', () => {
   });
 
   test('keeps the four emission lines apart across the wire', async () => {
+    // Attributed on the outstanding amount by default, per PCAF Part A.
     const { emissions } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(emissions.attributionBasis).toBe('outstanding');
+    expect(emissions.incurred).toBe(6_749.24);
+    expect(emissions.forward).toBe(2_324.41);
+    expect(emissions.reduction).toBe(862.59);
+    expect(emissions.avoided).toBe(31_305.88);
+  });
+
+  test('the commitment basis returns the figures the book was reporting before', async () => {
+    // Proof the attribution change moved emissions between lines rather than
+    // making them disappear.
+    const { emissions } = (await auth(api()
+      .get('/v1/capital/dashboard?attributionBasis=commitment')).expect(200)).body.dashboard;
     expect(emissions.incurred).toBe(12_050);
     expect(emissions.forward).toBe(4_230);
     expect(emissions.reduction).toBe(1_030);
     expect(emissions.avoided).toBe(36_000);
-    expect(emissions.lifetimeInventory).toBe(16_280);
+  });
+
+  test('what the drawdown has not reached is on the pending line, not lost', async () => {
+    const { emissions } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(Math.round((emissions.incurred + emissions.pending.incurred) * 100) / 100).toBe(12_050);
+    expect(Math.round((emissions.forward + emissions.pending.forward) * 100) / 100).toBe(4_230);
+  });
+
+  test('an unrecognised attribution basis is refused, not silently defaulted', async () => {
+    const res = await auth(api().get('/v1/capital/dashboard?attributionBasis=vibes')).expect(400);
+    expect(res.body.error).toBe('BAD_BASIS');
   });
 
   test('an unpriced project survives storage as unpriced, not as zero percent', async () => {

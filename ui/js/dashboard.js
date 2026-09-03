@@ -229,6 +229,7 @@ const Dashboard = (() => {
 
   let _capital = null;
   let _carbonWeight = 0.5;
+  let _attributionBasis = 'outstanding';
   let _portfolioFilter = '';
 
   const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
@@ -273,7 +274,10 @@ const Dashboard = (() => {
   }
 
   async function _fetchCapital() {
-    const qs = new URLSearchParams({ carbonWeight: String(_carbonWeight) });
+    const qs = new URLSearchParams({
+      carbonWeight: String(_carbonWeight),
+      attributionBasis: _attributionBasis,
+    });
     if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
     try {
       const res = await window.CARBONIQ_fetch(`/v1/capital/dashboard?${qs}`);
@@ -321,6 +325,7 @@ const Dashboard = (() => {
        the figures. */
     if (d.sample) _capitalMessage(d.sampleNote, 'sample');
     else _clearMessage();
+    _renderAnchor(d.anchor, d.capital.currency);
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
@@ -347,11 +352,13 @@ const Dashboard = (() => {
   }
 
   function _blankWith(text) {
-    for (const id of ['cap-allocated', 'cap-paid', 'cap-undrawn', 'cap-balance']) {
+    for (const id of ['anch-total', 'anch-current', 'anch-pending', 'anch-pledged', 'anch-queue',
+      'cap-allocated', 'cap-paid', 'cap-undrawn', 'cap-balance']) {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     }
-    for (const id of ['cap-deploy-bar', 'cap-deploy-legend', 'cap-inventory-rows',
+    for (const id of ['anch-total-split', 'anch-queue-split',
+      'cap-deploy-bar', 'cap-deploy-legend', 'cap-inventory-rows',
       'cap-impact-rows', 'cap-portfolio-rows', 'cap-pipeline-rows', 'cap-scatter',
       'cap-bytype-rows', 'cap-dq']) {
       const el = document.getElementById(id);
@@ -379,6 +386,68 @@ const Dashboard = (() => {
     if (st && st.durable === false) {
       el.textContent = `Storage is ${st.mode} and not durable. ${st.reason || ''} ${st.remedy || ''}`.trim();
     }
+  }
+
+  // ── The anchor's position ─────────────────────────────────────────────────
+
+  /**
+   * The five figures an investor arrives for.
+   *
+   * Each carries the kind of statement it is, in the vocabulary the reports
+   * already use: measured, part-measured, declared, not-yet-decided. Two of
+   * the five are not measurements, and a screen that presented all five in the
+   * same type at the same weight would be inviting a reader to treat a
+   * projection as a fact.
+   *
+   * Pledged capital shows a dash for emissions rather than a number. There is
+   * nothing named to attribute them to yet, and a figure derived from the book
+   * average would be an invention dressed as a forecast.
+   */
+  function _renderAnchor(a, cur) {
+    const $ = (id) => document.getElementById(id);
+    if (!$('anch-grid') || !a) return;
+
+    $('cap-anchor-sub').textContent = a.attributionBasis === 'outstanding'
+      ? 'Attributed on the outstanding amount, as PCAF Part A defines it. A commitment that has not '
+        + 'been drawn attributes nothing yet — it waits on the third figure.'
+      : 'Attributed on the full commitment whether drawn or not. Conservative, but not how Part A '
+        + 'defines the attribution factor.';
+
+    $('anch-total').textContent = _t(a.totalOverLife.value);
+    $('anch-total-split').innerHTML =
+      _splitRow('Measured so far', a.totalOverLife.measured, 'is-measured')
+      + _splitRow('Projected over the remaining term', a.totalOverLife.projected, 'is-projected');
+    $('anch-total-note').textContent = a.totalOverLife.note;
+
+    $('anch-current').textContent = _t(a.current.value);
+    $('anch-current-note').textContent = a.current.note;
+
+    $('anch-pending').textContent = _money(a.pending.capital, cur);
+    $('anch-pending-unit').textContent = a.pending.capital > 0
+      ? `committed and undrawn · ${_t(a.pending.emissionsOnDrawdown)} tCO2e arrives with it`
+      : 'nothing committed and undrawn';
+    $('anch-pending-note').textContent = a.pending.note;
+
+    $('anch-pledged').textContent = _money(a.pledged.capital, cur);
+    $('anch-pledged-note').textContent = a.pledged.note;
+
+    $('anch-queue').textContent = _t(a.pipelineWouldAdd.emissions);
+    $('anch-queue-split').innerHTML =
+      _splitRow(`${a.pipelineWouldAdd.projects} project${a.pipelineWouldAdd.projects === 1 ? '' : 's'} waiting`,
+        null, '', _money(a.pipelineWouldAdd.capitalNeeded, cur) + ' to fund')
+      + _splitRow('Reduction it would help achieve', a.pipelineWouldAdd.reduction, 'is-reduction')
+      + _splitRow('Emissions it would help avoid', a.pipelineWouldAdd.avoided, 'is-avoided');
+    $('anch-queue-note').textContent = a.pipelineWouldAdd.note;
+
+    $('anch-kinds').textContent = a.kindsNote;
+  }
+
+  function _splitRow(label, value, cls, override) {
+    return `<div class="anch-split-row">
+      <span class="anch-split-mark ${cls}"></span>
+      <span class="anch-split-label">${esc(label)}</span>
+      <span class="anch-split-value">${override || _t(value)}</span>
+    </div>`;
   }
 
   // ── Capital ───────────────────────────────────────────────────────────────
@@ -1074,6 +1143,15 @@ const Dashboard = (() => {
       _portfolioFilter = filter.value;
       refreshCapital();
     });
+
+    const basisSel = document.getElementById('cap-basis');
+    if (basisSel) {
+      basisSel.value = _attributionBasis;
+      basisSel.addEventListener('change', () => {
+        _attributionBasis = basisSel.value;
+        refreshCapital();
+      });
+    }
 
     const refreshBtn = document.getElementById('cap-refresh');
     if (refreshBtn) refreshBtn.addEventListener('click', refreshCapital);

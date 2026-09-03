@@ -504,6 +504,71 @@
           <span>Reading the book…</span>
         </div>
 
+        <!-- ══ THE ANCHOR'S POSITION ════════════════════════════════════════
+             The five questions an investor arrives with, in the order he asks
+             them. Each carries what kind of statement it is, because two of
+             the five are not measurements and must never look like one. -->
+        <section class="cap-section" id="cap-anchor">
+          <header class="cap-head">
+            <div>
+              <h3>Your position</h3>
+              <span class="cap-sub" id="cap-anchor-sub">—</span>
+            </div>
+            <div class="cap-head-actions">
+              <select id="cap-basis" class="cap-select" aria-label="Attribution basis">
+                <option value="outstanding">Attributed on outstanding (PCAF)</option>
+                <option value="commitment">Attributed on commitment</option>
+              </select>
+            </div>
+          </header>
+
+          <div class="anch-grid" id="anch-grid">
+            <article class="anch anch-lead">
+              <span class="anch-label">Total over the life of the book</span>
+              <span class="anch-value" id="anch-total">—</span>
+              <span class="anch-unit">tCO<sub>2</sub>e</span>
+              <span class="anch-kind k-part">Part forecast</span>
+              <div class="anch-split" id="anch-total-split"></div>
+              <p class="anch-note" id="anch-total-note"></p>
+            </article>
+
+            <article class="anch">
+              <span class="anch-label">Emitted so far</span>
+              <span class="anch-value" id="anch-current">—</span>
+              <span class="anch-unit">tCO<sub>2</sub>e</span>
+              <span class="anch-kind k-measured">Measured</span>
+              <p class="anch-note" id="anch-current-note"></p>
+            </article>
+
+            <article class="anch">
+              <span class="anch-label">Still to pay, and what comes with it</span>
+              <span class="anch-value" id="anch-pending">—</span>
+              <span class="anch-unit" id="anch-pending-unit">committed, undrawn</span>
+              <span class="anch-kind k-pending">Not yet attributed</span>
+              <p class="anch-note" id="anch-pending-note"></p>
+            </article>
+
+            <article class="anch">
+              <span class="anch-label">Pledged for deployment</span>
+              <span class="anch-value" id="anch-pledged">—</span>
+              <span class="anch-unit">not yet committed to a project</span>
+              <span class="anch-kind k-declared">Declared</span>
+              <p class="anch-note" id="anch-pledged-note"></p>
+            </article>
+
+            <article class="anch anch-wide">
+              <span class="anch-label">What the queue would add</span>
+              <span class="anch-value" id="anch-queue">—</span>
+              <span class="anch-unit">tCO<sub>2</sub>e if every waiting project were written</span>
+              <span class="anch-kind k-open">Not yet decided</span>
+              <div class="anch-split" id="anch-queue-split"></div>
+              <p class="anch-note" id="anch-queue-note"></p>
+            </article>
+          </div>
+
+          <p class="cap-note" id="anch-kinds"></p>
+        </section>
+
         <!-- ══ CAPITAL ══════════════════════════════════════════════════════
              Where the money stands. Committed and paid are separate figures
              on purpose: a book can be two-thirds committed and well under half
