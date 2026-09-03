@@ -7,9 +7,16 @@
     "accreditation": {
       "decision": "B.36/10",
       "sizeCategory": "medium",
-      "sizeRange_usd": [50000000, 250000000],
+      "sizeRange_usd": [
+        50000000,
+        250000000
+      ],
       "essCategory": "B/I-2",
-      "modalities": ["basic", "project management", "on-lending and blending"],
+      "modalities": [
+        "basic",
+        "project management",
+        "on-lending and blending"
+      ],
       "grantModality": false,
       "grantNote": "The grant box is not ticked in DFCC's accreditation. A grant-dependent design is not deliverable by DFCC as the accredited entity — verify with DFCC or the NDA before this reaches a client conversation.",
       "source": "DFCC DAE Readiness Pre-Qualified Delivery Partner ToR, version 21 November 2025, section 1.1"
@@ -19,13 +26,19 @@
       "note": "The ToR asks for at least two high-potential concepts and up to two Concept Notes. Five is the screening pool; two is the output. The pipeline's job is to defend which two."
     }
   },
-
   "projects": [
     {
       "id": "gcf_p1_jaffna_solar",
       "code": "GCF-P1",
       "name": "Jaffna Peninsula Solar Mini-grids and Storage",
-      "location": { "province": "Northern", "districts": ["Jaffna", "Kilinochchi"], "country": "LK" },
+      "location": {
+        "province": "Northern",
+        "districts": [
+          "Jaffna",
+          "Kilinochchi"
+        ],
+        "country": "LK"
+      },
       "sector": "Renewable generation",
       "resultsArea": "EP",
       "stream": "mitigation",
@@ -33,13 +46,28 @@
       "selectedForCN": true,
       "selectionReason": "Squarely inside DFCC's demonstrated renewable-energy track record, cleanly on-lendable within its accreditation modalities, and maps directly to NDC 3.0's 33.9% power-sector reduction and the 70% renewables commitment.",
       "essCategory": "B",
-      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
-      "ndcSectorTargets": ["power", "coal"],
+      "taxonomy": {
+        "framework": "SLGFT",
+        "band": "green",
+        "objective": "M"
+      },
+      "ndcSectorTargets": [
+        "power",
+        "coal"
+      ],
       "technical": {
         "capacity_mwp": 25,
         "storage_mwh": 12,
-        "yield_kwh_per_kwp": { "value": 1550, "tier": "benchmark", "note": "Sector default for the Northern dry zone. Replace with a site-measured or PVsyst yield." },
-        "generation_mwh_yr": { "value": 38750, "tier": "modelled", "method": "capacity x yield" },
+        "yield_kwh_per_kwp": {
+          "value": 1550,
+          "tier": "benchmark",
+          "note": "Sector default for the Northern dry zone. Replace with a site-measured or PVsyst yield."
+        },
+        "generation_mwh_yr": {
+          "value": 38750,
+          "tier": "modelled",
+          "method": "capacity x yield"
+        },
         "lifetimeYears": 20
       },
       "financing": {
@@ -51,36 +79,80 @@
         "otherLabel": "Sponsor equity",
         "instrument": "concessional_credit_line",
         "gcfInstrumentDetail": "Concessional loan on-lent through DFCC. No grant element.",
-        "grantEquivalentPct": { "value": 31, "tier": "modelled", "note": "Grant-equivalent subsidy from tenor and coupon concession." },
+        "grantEquivalentPct": {
+          "value": 31,
+          "tier": "modelled",
+          "note": "Grant-equivalent subsidy from tenor and coupon concession."
+        },
         "viabilityWithoutGcf": {
           "viable": false,
           "reason": "Post-conflict Northern Province offtake risk and a thin local battery track record put unsupported debt pricing above the tariff's tolerance. GCF's tranche buys tenor, not margin."
         }
       },
       "mitigation": {
-        "annual_tCO2e": { "value": 20500, "tier": "modelled", "method": "generation x grid emission factor" },
-        "lifetime_tCO2e": { "value": 410000, "tier": "modelled", "method": "annual x 20 years, undiscounted" },
+        "annual_tCO2e": {
+          "value": 20500,
+          "tier": "modelled",
+          "method": "generation x grid emission factor"
+        },
+        "lifetime_tCO2e": {
+          "value": 410000,
+          "tier": "modelled",
+          "method": "annual x 20 years, undiscounted"
+        },
         "baseline": {
           "description": "Grid electricity displaced at the Sri Lankan national average emission factor",
           "counterfactual": "Without the project the same demand is met from the national grid",
           "type": "avoided",
-          "gridEF_tCO2e_per_mwh": { "value": 0.53, "tier": "benchmark", "note": "MUST be replaced with the value the NDA and CEB publish, with its vintage. P1 and P5 both hinge on it." }
+          "gridEF_tCO2e_per_mwh": {
+            "value": 0.53,
+            "tier": "benchmark",
+            "note": "MUST be replaced with the value the NDA and CEB publish, with its vintage. P1 and P5 both hinge on it."
+          }
         }
       },
       "beneficiaries": {
-        "direct": { "value": 48000, "tier": "modelled", "definition": "Households connected or receiving materially improved supply" },
-        "indirect": { "value": 210000, "tier": "modelled", "definition": "Wider population in the served grid area" },
-        "womenPct": { "value": 51, "tier": "benchmark", "note": "District population share. Must be disaggregated at source from census/DS-division data." }
+        "direct": {
+          "value": 48000,
+          "tier": "modelled",
+          "definition": "Households connected or receiving materially improved supply"
+        },
+        "indirect": {
+          "value": 210000,
+          "tier": "modelled",
+          "definition": "Wider population in the served grid area"
+        },
+        "womenPct": {
+          "value": 51,
+          "tier": "benchmark",
+          "note": "District population share. Must be disaggregated at source from census/DS-division data."
+        }
       },
-      "area": { "hectares": null },
-      "assets": { "valueProtected_usd": null }
+      "area": {
+        "hectares": null
+      },
+      "assets": {
+        "valueProtected_usd": null
+      },
+      "barriers": [
+        "tenor",
+        "offtake_risk",
+        "perceived_technology_risk"
+      ]
     },
-
     {
       "id": "gcf_p2_dryzone_irrigation",
       "code": "GCF-P2",
       "name": "Dry Zone Irrigation and Tank Cascade Rehabilitation",
-      "location": { "province": "North Central, Southern", "districts": ["Anuradhapura", "Polonnaruwa", "Hambantota"], "country": "LK" },
+      "location": {
+        "province": "North Central, Southern",
+        "districts": [
+          "Anuradhapura",
+          "Polonnaruwa",
+          "Hambantota"
+        ],
+        "country": "LK"
+      },
       "sector": "Water and agriculture",
       "resultsArea": "HW",
       "stream": "adaptation",
@@ -88,9 +160,19 @@
       "selectedForCN": false,
       "selectionReason": "Strong adaptation case and the largest direct beneficiary count in the pool, but the restructuring away from grant leaves the concessionality argument thinner than P1 or P3.",
       "essCategory": "B",
-      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "A" },
-      "ndcSectorTargets": ["postHarvest"],
-      "technical": { "hectares": 18500, "tankCascades": 47, "programmeYears": 7 },
+      "taxonomy": {
+        "framework": "SLGFT",
+        "band": "green",
+        "objective": "A"
+      },
+      "ndcSectorTargets": [
+        "postHarvest"
+      ],
+      "technical": {
+        "hectares": 18500,
+        "tankCascades": 47,
+        "programmeYears": 7
+      },
       "financing": {
         "currency": "USD",
         "totalCost": 31000000,
@@ -100,15 +182,26 @@
         "otherLabel": "Government in-kind",
         "instrument": "highly_concessional_loan",
         "gcfInstrumentDetail": "30-year tenor with a long grace period. Restructured from a grant-heavy design because DFCC's accreditation does not cover the grant modality; the subsidy is delivered through terms rather than instrument type.",
-        "grantEquivalentPct": { "value": 55, "tier": "modelled" },
+        "grantEquivalentPct": {
+          "value": 55,
+          "tier": "modelled"
+        },
         "viabilityWithoutGcf": {
           "viable": false,
           "reason": "Smallholder resilience has no revenue line to price against. The concessional core is the adaptation work; only the on-farm equipment tranche carries a return."
         }
       },
       "mitigation": {
-        "annual_tCO2e": { "value": 3200, "tier": "modelled", "method": "displaced diesel pumping" },
-        "lifetime_tCO2e": { "value": 64000, "tier": "modelled", "method": "annual x 20 years" },
+        "annual_tCO2e": {
+          "value": 3200,
+          "tier": "modelled",
+          "method": "displaced diesel pumping"
+        },
+        "lifetime_tCO2e": {
+          "value": 64000,
+          "tier": "modelled",
+          "method": "annual x 20 years"
+        },
         "isCoBenefit": true,
         "coBenefitNote": "Reported apart from the mitigation headline and never used to rank this project. Ranking a water project against a solar farm on carbon per dollar would systematically defund adaptation.",
         "baseline": {
@@ -118,19 +211,52 @@
         }
       },
       "beneficiaries": {
-        "direct": { "value": 62000, "tier": "declared", "definition": "Farming households in the command areas" },
-        "indirect": { "value": 240000, "tier": "modelled", "definition": "Downstream water users and dependent rural economy" },
-        "womenPct": { "value": 44, "tier": "benchmark" }
+        "direct": {
+          "value": 62000,
+          "tier": "declared",
+          "definition": "Farming households in the command areas"
+        },
+        "indirect": {
+          "value": 240000,
+          "tier": "modelled",
+          "definition": "Downstream water users and dependent rural economy"
+        },
+        "womenPct": {
+          "value": 44,
+          "tier": "benchmark"
+        }
       },
-      "area": { "hectares": { "value": 18500, "tier": "measured", "definition": "Command area under improved climate-resilient management" } },
-      "assets": { "valueProtected_usd": { "value": 74000000, "tier": "modelled", "definition": "Replacement value of irrigation infrastructure and standing crop better protected" } }
+      "area": {
+        "hectares": {
+          "value": 18500,
+          "tier": "measured",
+          "definition": "Command area under improved climate-resilient management"
+        }
+      },
+      "assets": {
+        "valueProtected_usd": {
+          "value": 74000000,
+          "tier": "modelled",
+          "definition": "Replacement value of irrigation infrastructure and standing crop better protected"
+        }
+      },
+      "barriers": [
+        "no_revenue_stream",
+        "fragmented_borrowers",
+        "upfront_capex"
+      ]
     },
-
     {
       "id": "gcf_p3_colombo_cooling",
       "code": "GCF-P3",
       "name": "Colombo District Cooling and Commercial Retrofit",
-      "location": { "province": "Western", "districts": ["Colombo"], "country": "LK" },
+      "location": {
+        "province": "Western",
+        "districts": [
+          "Colombo"
+        ],
+        "country": "LK"
+      },
       "sector": "Buildings and efficiency",
       "resultsArea": "BA",
       "stream": "mitigation",
@@ -138,9 +264,20 @@
       "selectedForCN": true,
       "selectionReason": "The only candidate where the existing PCAF Part C engine already applies — a real A1-A5 bill of quantities — so the demonstration shows the whole stack working on one project, embodied carbon included. Also hits NDC 3.0's electricity-demand and low-GWP refrigerant commitments.",
       "essCategory": "B",
-      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
-      "ndcSectorTargets": ["demand", "refrigerants"],
-      "technical": { "buildings": 14, "floorArea_m2": 310000, "lifetimeYears": 20 },
+      "taxonomy": {
+        "framework": "SLGFT",
+        "band": "green",
+        "objective": "M"
+      },
+      "ndcSectorTargets": [
+        "demand",
+        "refrigerants"
+      ],
+      "technical": {
+        "buildings": 14,
+        "floorArea_m2": 310000,
+        "lifetimeYears": 20
+      },
       "financing": {
         "currency": "USD",
         "totalCost": 58000000,
@@ -150,15 +287,26 @@
         "otherLabel": "Building sponsors",
         "instrument": "blended_sll",
         "gcfInstrumentDetail": "Blended facility with a sustainability-linked margin ratchet tied to measured energy intensity.",
-        "grantEquivalentPct": { "value": 22, "tier": "modelled" },
+        "grantEquivalentPct": {
+          "value": 22,
+          "tier": "modelled"
+        },
         "viabilityWithoutGcf": {
           "viable": false,
           "reason": "Split incentive between landlords and tenants leaves unsupported payback beyond commercial tenor. The concessional tranche closes the gap; the ratchet keeps performance honest."
         }
       },
       "mitigation": {
-        "annual_tCO2e": { "value": 26400, "tier": "modelled", "method": "metered baseline consumption x efficiency saving x grid EF" },
-        "lifetime_tCO2e": { "value": 528000, "tier": "modelled", "method": "annual x 20 years" },
+        "annual_tCO2e": {
+          "value": 26400,
+          "tier": "modelled",
+          "method": "metered baseline consumption x efficiency saving x grid EF"
+        },
+        "lifetime_tCO2e": {
+          "value": 528000,
+          "tier": "modelled",
+          "method": "annual x 20 years"
+        },
         "baseline": {
           "description": "Existing building energy consumption, metered over 12 months before intervention",
           "counterfactual": "Without the project the buildings continue at their current measured intensity",
@@ -166,24 +314,57 @@
         }
       },
       "embodiedCarbon": {
-        "a1a5_tCO2e": { "value": 44900, "tier": "modelled", "method": "BOQ x ICE v3 factors, via the Part C engine" },
-        "paybackYears": { "value": 1.7, "tier": "modelled", "method": "A1-A5 divided by annual saving" },
+        "a1a5_tCO2e": {
+          "value": 44900,
+          "tier": "modelled",
+          "method": "BOQ x ICE v3 factors, via the Part C engine"
+        },
+        "paybackYears": {
+          "value": 1.7,
+          "tier": "modelled",
+          "method": "A1-A5 divided by annual saving"
+        },
         "note": "Inside the project boundary. Shown as a payback period and NEVER deducted from the bank's financed-emissions inventory — three different boundaries, three different questions."
       },
       "beneficiaries": {
-        "direct": { "value": 34000, "tier": "declared", "definition": "Daily occupants of the retrofitted buildings" },
-        "indirect": { "value": 95000, "tier": "modelled", "definition": "Visitors and adjacent district" },
-        "womenPct": { "value": 47, "tier": "benchmark" }
+        "direct": {
+          "value": 34000,
+          "tier": "declared",
+          "definition": "Daily occupants of the retrofitted buildings"
+        },
+        "indirect": {
+          "value": 95000,
+          "tier": "modelled",
+          "definition": "Visitors and adjacent district"
+        },
+        "womenPct": {
+          "value": 47,
+          "tier": "benchmark"
+        }
       },
-      "area": { "hectares": null },
-      "assets": { "valueProtected_usd": null }
+      "area": {
+        "hectares": null
+      },
+      "assets": {
+        "valueProtected_usd": null
+      },
+      "barriers": [
+        "upfront_capex",
+        "perceived_technology_risk"
+      ]
     },
-
     {
       "id": "gcf_p4_mangrove_coast",
       "code": "GCF-P4",
       "name": "Puttalam-Mannar Mangrove and Coastal Restoration",
-      "location": { "province": "North Western, Northern", "districts": ["Puttalam", "Mannar"], "country": "LK" },
+      "location": {
+        "province": "North Western, Northern",
+        "districts": [
+          "Puttalam",
+          "Mannar"
+        ],
+        "country": "LK"
+      },
       "sector": "Ecosystems",
       "resultsArea": "EE",
       "stream": "adaptation",
@@ -191,11 +372,23 @@
       "selectedForCN": false,
       "selectionReason": "Not selected, and the reason is a structuring conclusion rather than a judgement on the project. Ecosystem restoration has no revenue line and DFCC cannot intermediate grant, so even restructured to concessional debt plus results-based payment this likely needs a co-accredited entity for the grant element.",
       "essCategory": "B",
-      "essFlags": ["fpic_required"],
+      "essFlags": [
+        "fpic_required"
+      ],
       "essNote": "Community and potentially indigenous land. Free, prior and informed consent required — a gate that triggers process, not a lower rank.",
-      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "E" },
-      "ndcSectorTargets": ["blueCarbon", "nbs"],
-      "technical": { "hectares": 4200, "programmeYears": 10 },
+      "taxonomy": {
+        "framework": "SLGFT",
+        "band": "green",
+        "objective": "E"
+      },
+      "ndcSectorTargets": [
+        "blueCarbon",
+        "nbs"
+      ],
+      "technical": {
+        "hectares": 4200,
+        "programmeYears": 10
+      },
       "financing": {
         "currency": "USD",
         "totalCost": 19500000,
@@ -205,7 +398,10 @@
         "otherLabel": "Community and NGO",
         "instrument": "concessional_plus_results_based",
         "gcfInstrumentDetail": "Concessional loan 9.0M plus results-based payment 5.0M. Restructured from grant-heavy; see the modality gap above.",
-        "grantEquivalentPct": { "value": 68, "tier": "modelled" },
+        "grantEquivalentPct": {
+          "value": 68,
+          "tier": "modelled"
+        },
         "modalityGap": true,
         "viabilityWithoutGcf": {
           "viable": false,
@@ -213,8 +409,16 @@
         }
       },
       "mitigation": {
-        "annual_tCO2e": { "value": 5800, "tier": "modelled", "method": "area x blue carbon sequestration rate" },
-        "lifetime_tCO2e": { "value": 116000, "tier": "modelled", "method": "annual x 20 years" },
+        "annual_tCO2e": {
+          "value": 5800,
+          "tier": "modelled",
+          "method": "area x blue carbon sequestration rate"
+        },
+        "lifetime_tCO2e": {
+          "value": 116000,
+          "tier": "modelled",
+          "method": "annual x 20 years"
+        },
         "isCoBenefit": true,
         "uncertaintyPct": 40,
         "coBenefitNote": "Sequestration, not avoided emissions, and reported apart from the mitigation headline. Central rate needs a Sri Lanka-specific source before submission.",
@@ -226,19 +430,53 @@
         }
       },
       "beneficiaries": {
-        "direct": { "value": 28500, "tier": "declared", "definition": "Coastal households in the restoration footprint" },
-        "indirect": { "value": 86000, "tier": "modelled", "definition": "Wider coastal population benefiting from storm-surge attenuation and fishery recovery" },
-        "womenPct": { "value": 53, "tier": "benchmark" }
+        "direct": {
+          "value": 28500,
+          "tier": "declared",
+          "definition": "Coastal households in the restoration footprint"
+        },
+        "indirect": {
+          "value": 86000,
+          "tier": "modelled",
+          "definition": "Wider coastal population benefiting from storm-surge attenuation and fishery recovery"
+        },
+        "womenPct": {
+          "value": 53,
+          "tier": "benchmark"
+        }
       },
-      "area": { "hectares": { "value": 4200, "tier": "measured", "definition": "Coastal ecosystem restored or under improved management" } },
-      "assets": { "valueProtected_usd": { "value": 31000000, "tier": "modelled", "definition": "Coastal property and infrastructure behind the restored buffer" } }
+      "area": {
+        "hectares": {
+          "value": 4200,
+          "tier": "measured",
+          "definition": "Coastal ecosystem restored or under improved management"
+        }
+      },
+      "assets": {
+        "valueProtected_usd": {
+          "value": 31000000,
+          "tier": "modelled",
+          "definition": "Coastal property and infrastructure behind the restored buffer"
+        }
+      },
+      "barriers": [
+        "no_revenue_stream",
+        "fragmented_borrowers"
+      ]
     },
-
     {
       "id": "gcf_p5_ebus_western",
       "code": "GCF-P5",
       "name": "Western Province Electric Bus Fleet and Depot Charging",
-      "location": { "province": "Western", "districts": ["Colombo", "Gampaha", "Kalutara"], "country": "LK" },
+      "location": {
+        "province": "Western",
+        "districts": [
+          "Colombo",
+          "Gampaha",
+          "Kalutara"
+        ],
+        "country": "LK"
+      },
       "sector": "Transport",
       "resultsArea": "LT",
       "stream": "mitigation",
@@ -246,9 +484,20 @@
       "selectedForCN": false,
       "selectionReason": "Best cost per beneficiary in the pool and a direct NDC 3.0 transport-target match, but the residual-value risk needs a market assessment the readiness programme has not yet run. A strong candidate for the second round.",
       "essCategory": "B",
-      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
-      "ndcSectorTargets": ["publicTransport", "fleetEfficiency"],
-      "technical": { "buses": 220, "depots": 6, "lifetimeYears": 14 },
+      "taxonomy": {
+        "framework": "SLGFT",
+        "band": "green",
+        "objective": "M"
+      },
+      "ndcSectorTargets": [
+        "publicTransport",
+        "fleetEfficiency"
+      ],
+      "technical": {
+        "buses": 220,
+        "depots": 6,
+        "lifetimeYears": 14
+      },
       "financing": {
         "currency": "USD",
         "totalCost": 46000000,
@@ -258,29 +507,65 @@
         "otherLabel": "Operator equity",
         "instrument": "risk_sharing_facility",
         "gcfInstrumentDetail": "First-loss and concessional tranche absorbing residual-value risk on a bus type with no Sri Lankan resale history.",
-        "grantEquivalentPct": { "value": 26, "tier": "modelled" },
+        "grantEquivalentPct": {
+          "value": 26,
+          "tier": "modelled"
+        },
         "viabilityWithoutGcf": {
           "viable": false,
           "reason": "Fleet economics turn on a residual value no local lender will price. The risk-sharing facility is what makes the asset financeable at all."
         }
       },
       "mitigation": {
-        "annual_tCO2e": { "value": 18900, "tier": "modelled", "method": "displaced diesel bus-km x fuel EF, net of charging grid emissions" },
-        "lifetime_tCO2e": { "value": 264600, "tier": "modelled", "method": "annual x 14 years" },
+        "annual_tCO2e": {
+          "value": 18900,
+          "tier": "modelled",
+          "method": "displaced diesel bus-km x fuel EF, net of charging grid emissions"
+        },
+        "lifetime_tCO2e": {
+          "value": 264600,
+          "tier": "modelled",
+          "method": "annual x 14 years"
+        },
         "baseline": {
           "description": "Existing diesel bus fleet operating the same routes and service frequency",
           "counterfactual": "Without the project the diesel fleet is replaced like-for-like at end of life",
           "type": "avoided",
-          "gridEF_tCO2e_per_mwh": { "value": 0.53, "tier": "benchmark", "note": "Charging emissions netted within the project boundary. Same national factor as P1 and needs the same replacement." }
+          "gridEF_tCO2e_per_mwh": {
+            "value": 0.53,
+            "tier": "benchmark",
+            "note": "Charging emissions netted within the project boundary. Same national factor as P1 and needs the same replacement."
+          }
         }
       },
       "beneficiaries": {
-        "direct": { "value": 145000, "tier": "modelled", "definition": "Daily passenger boardings on the converted routes" },
-        "indirect": { "value": 400000, "tier": "modelled", "definition": "Corridor population benefiting from reduced roadside PM2.5 and NOx" },
-        "womenPct": { "value": 56, "tier": "benchmark", "note": "Public transport ridership skews female in the Western Province." }
+        "direct": {
+          "value": 145000,
+          "tier": "modelled",
+          "definition": "Daily passenger boardings on the converted routes"
+        },
+        "indirect": {
+          "value": 400000,
+          "tier": "modelled",
+          "definition": "Corridor population benefiting from reduced roadside PM2.5 and NOx"
+        },
+        "womenPct": {
+          "value": 56,
+          "tier": "benchmark",
+          "note": "Public transport ridership skews female in the Western Province."
+        }
       },
-      "area": { "hectares": null },
-      "assets": { "valueProtected_usd": null }
+      "area": {
+        "hectares": null
+      },
+      "assets": {
+        "valueProtected_usd": null
+      },
+      "barriers": [
+        "upfront_capex",
+        "tenor",
+        "currency"
+      ]
     }
   ]
 }

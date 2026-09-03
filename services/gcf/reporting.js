@@ -164,12 +164,12 @@ function buildDisclosure(projects = [], opts = {}) {
         standardRef: 'SLFRS S2 §29(a)',
         scope1: integrity.notMeasured('Absolute gross scope 1 emissions',
           'This is the entity\'s own inventory. It is not derivable from a pipeline of candidate '
-          + 'projects and is not held here.'),
+          + 'projects and is not held here.', 'SLFRS S2 §29(a)(i)'),
         scope2: integrity.notMeasured('Absolute gross scope 2 emissions',
-          'As above — an entity-level inventory line.'),
+          'As above — an entity-level inventory line.', 'SLFRS S2 §29(a)(i)'),
         scope3: integrity.notMeasured('Absolute gross scope 3 emissions, including Category 15',
           'Financed emissions are scope 3 Category 15 in full and are reported from the capital '
-          + 'book on PCAF Part A attribution, not from this pipeline.'),
+          + 'book on PCAF Part A attribution, not from this pipeline.', 'SLFRS S2 §29(a)(i)(3)'),
         note: 'Project mitigation is not an inventory figure and is not reported here. Placing it '
           + 'in an inventory line would report an emission the entity does not have in place of '
           + 'one it does.',
@@ -273,19 +273,19 @@ function griMapping(roll) {
   return {
     standard: STANDARDS.gri,
     '305-1': integrity.notMeasured('Direct (Scope 1) GHG emissions',
-      'Entity inventory. Not derivable from a project pipeline.'),
+      'Entity inventory. Not derivable from a project pipeline.', 'GRI 305-1'),
     '305-2': integrity.notMeasured('Energy indirect (Scope 2) GHG emissions',
-      'Entity inventory. Not derivable from a project pipeline.'),
+      'Entity inventory. Not derivable from a project pipeline.', 'GRI 305-2'),
     '305-3': integrity.notMeasured('Other indirect (Scope 3) GHG emissions',
       'For a lender this is dominated by Category 15 financed emissions, reported from the '
-      + 'capital book on PCAF Part A attribution rather than from this pipeline.'),
+      + 'capital book on PCAF Part A attribution rather than from this pipeline.', 'GRI 305-3'),
     '305-4': integrity.notMeasured('GHG emissions intensity',
-      'Requires the inventory above as its numerator.'),
+      'Requires the inventory above as its numerator.', 'GRI 305-4'),
     '305-5': integrity.notMeasured('Reduction of GHG emissions',
       'GRI 305-5 covers reductions in the organisation\'s own emissions achieved by its own '
       + 'initiatives. The mitigation below is achieved by financed third-party projects and is '
       + 'not the bank\'s own reduction, so it is reported as supplementary information rather '
-      + 'than under this disclosure.'),
+      + 'than under this disclosure.', 'GRI 305-5'),
     supplementary: {
       title: 'Emissions avoided, reduced and removed by financed projects',
       annual_tCO2e: roll.headline.annual_tCO2e,

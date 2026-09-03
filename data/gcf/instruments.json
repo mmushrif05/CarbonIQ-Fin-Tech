@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "title": "Financial structures evaluated for the DFCC GCF pipeline",
+    "source": "DFCC DAE Readiness Pre-Qualified Delivery Partner ToR, version 21 November 2025, Lot 2 — which asks for five to seven innovative instruments to be evaluated and their viability shown with and without concessional support.",
+    "note": "Each structure is scored against what DFCC is actually accredited to deliver. The grant modality is NOT ticked in DFCC's accreditation, so a structure that needs it is marked not deliverable by DFCC as the accredited entity — a finding to verify with DFCC or the NDA, not a judgement on the structure.",
+    "concessionalityNote": "GCF applies minimum concessionality: no more concession than is needed to make the project viable. A structure that delivers the same outcome with less subsidy is preferred, which is why grant-equivalent is scored and not just headline size."
+  },
+  "barriers": [
+    { "id": "tenor", "label": "No long-tenor debt available", "detail": "Local bank tenors are shorter than the asset life, so the project cannot be financed at a tariff it can support." },
+    { "id": "offtake_risk", "label": "Offtake or counterparty credit risk", "detail": "The revenue counterparty is not investment grade or has no track record on this contract type." },
+    { "id": "currency", "label": "Currency mismatch", "detail": "Costs or debt in USD against revenue in LKR, with no affordable hedge at the tenor required." },
+    { "id": "perceived_technology_risk", "label": "First-of-kind locally", "detail": "The technology is proven elsewhere but has no local operating record, so lenders price risk they cannot yet measure." },
+    { "id": "upfront_capex", "label": "Upfront capital against deferred savings", "detail": "Benefits accrue over years as avoided cost; the capital is needed now and the payback exceeds available tenor." },
+    { "id": "no_revenue_stream", "label": "Outcome is not monetised", "detail": "The result is a public good — resilience, ecosystem services — with no cash flow to service debt." },
+    { "id": "fragmented_borrowers", "label": "Many small borrowers", "detail": "Transaction cost per borrower exceeds what a commercial lender can recover at the ticket size involved." }
+  ],
+  "instruments": [
+    {
+      "id": "concessional_credit_line",
+      "name": "Concessional on-lent credit line",
+      "summary": "GCF provides a long-tenor concessional facility that DFCC on-lends. Concession is bought as tenor and grace, not as margin.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["tenor", "upfront_capex"],
+      "mobilisation": "high",
+      "mobilisationNote": "Each GCF dollar sits alongside DFCC and sponsor equity at the project level.",
+      "concessionality": "moderate",
+      "dfccRole": "Lender of record, credit risk retained by DFCC.",
+      "barriersNotAddressed": ["offtake_risk", "no_revenue_stream"],
+      "watchOut": "Does nothing for a project whose problem is counterparty risk rather than tenor."
+    },
+    {
+      "id": "risk_sharing_facility",
+      "name": "Partial credit guarantee / first-loss risk sharing",
+      "summary": "GCF funds a first-loss or pari-passu guarantee tranche so DFCC can lend against risk it would otherwise decline.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["offtake_risk", "perceived_technology_risk", "fragmented_borrowers"],
+      "mobilisation": "very high",
+      "mobilisationNote": "A guarantee mobilises a multiple of its own size, so the leverage per GCF dollar is the highest of the seven.",
+      "concessionality": "low",
+      "dfccRole": "Originates and services; GCF carries a defined slice of loss.",
+      "barriersNotAddressed": ["tenor", "currency", "no_revenue_stream"],
+      "watchOut": "Priced wrong it subsidises lending that would have happened anyway — the clearest place minimum concessionality bites."
+    },
+    {
+      "id": "blended_sll",
+      "name": "Blended sustainability-linked loan",
+      "summary": "Commercial and concessional tranches blended into one facility, with a margin ratchet on verified KPIs.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["upfront_capex", "perceived_technology_risk"],
+      "mobilisation": "high",
+      "mobilisationNote": "The commercial tranche is mobilised directly by the concessional one.",
+      "concessionality": "low",
+      "dfccRole": "Arranger and lender; KPI verification is DFCC's monitoring obligation.",
+      "barriersNotAddressed": ["no_revenue_stream", "currency"],
+      "watchOut": "The ratchet is only as good as the KPI. A KPI the borrower was going to hit anyway is a discount, not an incentive."
+    },
+    {
+      "id": "subordinated_debt",
+      "name": "Subordinated / mezzanine tranche",
+      "summary": "GCF takes a junior position so senior commercial debt sees an acceptable risk profile.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["offtake_risk", "perceived_technology_risk", "tenor"],
+      "mobilisation": "high",
+      "mobilisationNote": "Senior lenders are crowded in behind the junior tranche.",
+      "concessionality": "moderate",
+      "dfccRole": "Senior lender alongside; may also arrange.",
+      "barriersNotAddressed": ["no_revenue_stream", "fragmented_borrowers"],
+      "watchOut": "Junior capital is where losses land first; the appraisal has to be honest about the downside case."
+    },
+    {
+      "id": "results_based_finance",
+      "name": "Results-based payment on verified outcomes",
+      "summary": "Payment released against independently verified results rather than against expenditure.",
+      "requiresGrantModality": true,
+      "dfccModality": null,
+      "addresses": ["no_revenue_stream", "perceived_technology_risk"],
+      "mobilisation": "moderate",
+      "mobilisationNote": "Mobilises against a future payment, so it needs a party able to pre-finance.",
+      "concessionality": "high",
+      "dfccRole": "Not deliverable by DFCC as the accredited entity — a results-based payment is a grant instrument and DFCC's accreditation does not carry the grant modality.",
+      "barriersNotAddressed": ["tenor", "currency"],
+      "watchOut": "The only structure here that reaches a project with no cash flow, and the one DFCC currently cannot deliver. That combination is the pipeline's structural gap."
+    },
+    {
+      "id": "green_bond_warehouse",
+      "name": "Warehouse and refinance through a green bond",
+      "summary": "DFCC warehouses eligible loans, then refinances the portfolio through a labelled bond, recycling capacity.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["tenor", "fragmented_borrowers"],
+      "mobilisation": "very high",
+      "mobilisationNote": "Capital recycles: the same balance sheet writes the next cohort.",
+      "concessionality": "low",
+      "dfccRole": "Originator and issuer; requires a taxonomy-aligned eligibility register.",
+      "barriersNotAddressed": ["offtake_risk", "no_revenue_stream"],
+      "watchOut": "Needs a domestic bond market with appetite at the tenor. Depends on sovereign conditions outside the project's control."
+    },
+    {
+      "id": "fx_hedging_facility",
+      "name": "Local-currency lending / FX risk facility",
+      "summary": "GCF absorbs or prices the currency mismatch so the borrower services debt in the currency it earns.",
+      "requiresGrantModality": false,
+      "dfccModality": "on-lending and blending",
+      "addresses": ["currency", "tenor"],
+      "mobilisation": "moderate",
+      "mobilisationNote": "Unlocks lending rather than co-investing alongside it.",
+      "concessionality": "moderate",
+      "dfccRole": "Lends in LKR against a USD facility with the mismatch covered.",
+      "barriersNotAddressed": ["offtake_risk", "no_revenue_stream", "fragmented_borrowers"],
+      "watchOut": "Currency risk is not removed by being moved. Whoever holds it must be able to carry it."
+    }
+  ]
+}

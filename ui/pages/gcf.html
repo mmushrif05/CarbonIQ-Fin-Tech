@@ -1,0 +1,350 @@
+<!-- GCF pipeline — DFCC post-accreditation work.
+     Six sub-tabs over one set of records: nothing on this screen is re-keyed,
+     every figure carries its evidence tier, and the three carbon boundaries
+     are drawn apart wherever they appear. -->
+
+<style>
+  /* Scoped to this page. Tokens first, so both themes resolve as a set. */
+  .gcf {
+    --gcf-ink: #0f172a;
+    --gcf-muted: #64748b;
+    --gcf-line: #e2e8f0;
+    --gcf-surface: #ffffff;
+    --gcf-sunk: #f8fafc;
+    --gcf-accent: #0f766e;          /* teal — GCF's own register */
+    --gcf-accent-soft: #ccfbf1;
+    --gcf-warn: #b45309;
+    --gcf-warn-soft: #fef3c7;
+    --gcf-stop: #b91c1c;
+    --gcf-stop-soft: #fee2e2;
+    --gcf-ok: #15803d;
+    color: var(--gcf-ink);
+    min-width: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .gcf {
+      --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
+      --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
+      --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
+      --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
+      --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a; --gcf-ok: #86efac;
+    }
+  }
+  :root[data-theme="dark"] .gcf {
+    --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
+    --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
+    --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
+    --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
+    --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a; --gcf-ok: #86efac;
+  }
+
+  .gcf-banner {
+    display: flex; gap: 14px; align-items: center; min-width: 0;
+    padding: 14px 16px; margin-bottom: 14px; border-radius: 10px;
+    background: var(--gcf-accent-soft); border: 1px solid var(--gcf-line);
+  }
+  .gcf-banner strong { display: block; font-size: 15px; }
+  .gcf-banner span { font-size: 12.5px; color: var(--gcf-muted); }
+
+  /* Sub-tabs. A row that scrolls rather than wrapping into a ragged block. */
+  .gcf-tabs {
+    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px;
+    margin-bottom: 14px; border-bottom: 1px solid var(--gcf-line);
+  }
+  .gcf-tab {
+    flex: 0 0 auto; padding: 8px 14px; border-radius: 8px 8px 0 0;
+    border: 1px solid transparent; border-bottom: none; background: none;
+    color: var(--gcf-muted); font-size: 13px; font-weight: 600; cursor: pointer;
+    white-space: nowrap;
+  }
+  .gcf-tab:hover { color: var(--gcf-ink); }
+  .gcf-tab[aria-selected="true"] {
+    background: var(--gcf-surface); border-color: var(--gcf-line);
+    color: var(--gcf-accent); margin-bottom: -1px;
+  }
+  .gcf-tab:focus-visible { outline: 2px solid var(--gcf-accent); outline-offset: 2px; }
+
+  /* [hidden] is display:none from the UA sheet and ANY class rule that sets
+     display beats it. This has covered a page from load once already. */
+  .gcf-panel[hidden] { display: none !important; }
+
+  .gcf-card {
+    background: var(--gcf-surface); border: 1px solid var(--gcf-line);
+    border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0;
+  }
+  .gcf-card h4 { margin: 0 0 4px; font-size: 14px; }
+  .gcf-card > p { margin: 0 0 12px; font-size: 12.5px; color: var(--gcf-muted); }
+
+  /* Explicit column counts per breakpoint. auto-fit with a spanning child
+     strands columns, which is how the dashboard fragmented. */
+  .gcf-figures { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 720px)  { .gcf-figures { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1100px) { .gcf-figures { grid-template-columns: repeat(3, 1fr); } }
+
+  .gcf-figure {
+    background: var(--gcf-sunk); border: 1px solid var(--gcf-line);
+    border-radius: 8px; padding: 12px 14px; min-width: 0;
+  }
+  .gcf-figure-label {
+    display: block; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--gcf-muted); margin-bottom: 6px;
+  }
+  .gcf-figure-value {
+    display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+  }
+  .gcf-figure-unit { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 2px; }
+  .gcf-figure-note { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 8px; }
+
+  .gcf-rule {
+    font-size: 12px; color: var(--gcf-muted); border-left: 3px solid var(--gcf-accent);
+    padding: 6px 0 6px 12px; margin: 12px 0;
+  }
+  .gcf-warn {
+    font-size: 12.5px; background: var(--gcf-warn-soft); color: var(--gcf-warn);
+    border-radius: 6px; padding: 10px 12px; margin: 10px 0;
+  }
+
+  .gcf-scroll { overflow-x: auto; }
+  .gcf-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
+  .gcf-table th {
+    text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+    color: var(--gcf-muted); padding: 8px 10px; border-bottom: 1px solid var(--gcf-line);
+    white-space: nowrap;
+  }
+  .gcf-table td { padding: 9px 10px; border-bottom: 1px solid var(--gcf-line); vertical-align: top; }
+  .gcf-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+  .gcf-pill {
+    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+  }
+  .gcf-pill-ok      { background: var(--gcf-accent-soft); color: var(--gcf-accent); }
+  .gcf-pill-flag    { background: var(--gcf-warn-soft);   color: var(--gcf-warn); }
+  .gcf-pill-stop    { background: var(--gcf-stop-soft);   color: var(--gcf-stop); }
+  .gcf-pill-tier    { background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line); }
+
+  .gcf-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; min-width: 0; }
+  /* A select sizes itself to its WIDEST option, not to its container, so one
+     long project name pushed the whole page 78px wide at 430px — the same
+     shape as the dashboard overflow. It has to be told it may shrink. */
+  .gcf-actions select { max-width: 100%; min-width: 0; flex: 1 1 180px; }
+  .gcf-hint { font-size: 12px; color: var(--gcf-muted); }
+
+  .gcf-two { display: grid; gap: 14px; grid-template-columns: 1fr; }
+  @media (min-width: 1000px) { .gcf-two { grid-template-columns: 1fr 1fr; } }
+
+  /* display:block matters. As an inline span the height and background simply
+     do not apply, and the bar renders as nothing at all — which reads as a
+     score of zero rather than as a missing element. */
+  .gcf-bar { display: block; height: 6px; border-radius: 3px; background: var(--gcf-line); overflow: hidden; }
+  .gcf-bar > i { display: block; height: 100%; background: var(--gcf-accent); }
+
+  .gcf-form { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .gcf-form { grid-template-columns: 1fr 1fr; } }
+  .gcf-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .gcf-field > label { font-size: 11.5px; font-weight: 600; color: var(--gcf-muted); }
+  .gcf-field input, .gcf-field select, .gcf-field textarea {
+    padding: 8px 10px; border: 1px solid var(--gcf-line); border-radius: 6px;
+    background: var(--gcf-surface); color: var(--gcf-ink); font: inherit; font-size: 13px;
+    min-width: 0; width: 100%;
+  }
+  .gcf-field-wide { grid-column: 1 / -1; }
+  .gcf-tiered { display: grid; grid-template-columns: 1fr 130px; gap: 6px; }
+</style>
+
+<div class="gcf">
+
+  <div class="gcf-banner">
+    <div style="min-width:0">
+      <strong>GCF pipeline — DFCC Bank PLC</strong>
+      <span id="gcfSubtitle">Direct Access Entity, Board decision B.36/10 — medium size, E&amp;S category B/I-2</span>
+    </div>
+  </div>
+
+  <div id="gcfSampleBanner" class="gcf-warn" hidden></div>
+
+  <div class="gcf-tabs" role="tablist" id="gcfTabs">
+    <button class="gcf-tab" role="tab" data-panel="pipeline"    aria-selected="true">Pipeline</button>
+    <button class="gcf-tab" role="tab" data-panel="emissions"   aria-selected="false">Emissions</button>
+    <button class="gcf-tab" role="tab" data-panel="decision"    aria-selected="false">The decision</button>
+    <button class="gcf-tab" role="tab" data-panel="instruments" aria-selected="false">Instruments</button>
+    <button class="gcf-tab" role="tab" data-panel="reporting"   aria-selected="false">Reporting</button>
+    <button class="gcf-tab" role="tab" data-panel="cn"          aria-selected="false">Concept Note</button>
+    <button class="gcf-tab" role="tab" data-panel="intake"      aria-selected="false">Intake</button>
+  </div>
+
+  <!-- 1 — Pipeline -->
+  <section class="gcf-panel" id="gcfPanel-pipeline" role="tabpanel">
+    <div class="gcf-figures" id="gcfPipelineFigures"></div>
+    <div class="gcf-card">
+      <h4>The candidate pool</h4>
+      <p>Accreditation is a gate, not a score. An excluded project is one DFCC cannot carry as the
+         accredited entity; a flagged project is eligible with something to resolve or verify.</p>
+      <div class="gcf-scroll"><table class="gcf-table" id="gcfPoolTable"></table></div>
+    </div>
+    <div class="gcf-card" id="gcfFlagsCard" hidden>
+      <h4>To resolve</h4>
+      <div id="gcfFlags"></div>
+    </div>
+  </section>
+
+  <!-- 2 — Emissions -->
+  <section class="gcf-panel" id="gcfPanel-emissions" role="tabpanel" hidden>
+    <div class="gcf-card">
+      <h4>Three boundaries, drawn apart</h4>
+      <p>Mitigation is what the project achieves against a counterfactual. Embodied carbon is what
+         building it costs. Financed emissions are the bank's own and live in the capital book.
+         They are never combined, and nothing on this screen adds two of them.</p>
+      <div class="gcf-figures" id="gcfEmissionFigures"></div>
+      <div class="gcf-rule" id="gcfEmissionsRule"></div>
+    </div>
+    <div class="gcf-two">
+      <div class="gcf-card">
+        <h4>NDC 3.0 contribution</h4>
+        <p>Reduction and removal are two separate commitments and are never summed.</p>
+        <div id="gcfNdc"></div>
+      </div>
+      <div class="gcf-card">
+        <h4>Arithmetic checks</h4>
+        <p>Recomputed where an independent path exists. Where none exists the check says so rather
+           than passing.</p>
+        <div class="gcf-scroll"><table class="gcf-table" id="gcfChecks"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 — The decision -->
+  <section class="gcf-panel" id="gcfPanel-decision" role="tabpanel" hidden>
+    <div class="gcf-card">
+      <h4>The weighting is yours</h4>
+      <p>Only a changed weight is sent; an untouched one is answered by the engine's own default.
+         The weighting travels with the answer, so a screenshot carries it.</p>
+      <div class="gcf-form" id="gcfWeights"></div>
+      <div class="gcf-actions" style="margin-top:12px">
+        <button class="btn btn-primary" id="gcfRecompute">Recompute</button>
+        <button class="btn btn-secondary" id="gcfWeightsReset">Reset to defaults</button>
+        <span class="gcf-hint" id="gcfWeightsHint"></span>
+      </div>
+    </div>
+    <div class="gcf-card">
+      <h4>Recommended for a Concept Note</h4>
+      <p>The ToR asks for up to two.</p>
+      <div id="gcfSelected"></div>
+      <div class="gcf-warn" id="gcfDivergence" hidden></div>
+    </div>
+    <div class="gcf-two">
+      <div class="gcf-card">
+        <h4>Two ranked lists, never merged</h4>
+        <p>Adaptation is ranked on beneficiaries per dollar, never on carbon.</p>
+        <div id="gcfRankings"></div>
+      </div>
+      <div class="gcf-card">
+        <h4>What this could not weigh</h4>
+        <p>Three of GCF's six investment criteria rest on judgements this system does not hold.
+           They are named rather than filled in.</p>
+        <div id="gcfNotScored"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 — Instruments -->
+  <section class="gcf-panel" id="gcfPanel-instruments" role="tabpanel" hidden>
+    <div class="gcf-card" id="gcfMandateCard" hidden>
+      <h4>Mandate gap</h4>
+      <div id="gcfMandateGap"></div>
+    </div>
+    <div class="gcf-card">
+      <h4>Structure per project</h4>
+      <p>An instrument answers a barrier or it answers nothing. Coverage is shown with what the
+         structure leaves standing, because the uncovered barrier is what stops a deal.</p>
+      <div class="gcf-scroll"><table class="gcf-table" id="gcfInstrumentTable"></table></div>
+    </div>
+    <div class="gcf-card">
+      <h4>Minimum concessionality</h4>
+      <p>A project viable on commercial terms should not receive concessional finance.</p>
+      <div id="gcfConcessionality"></div>
+    </div>
+  </section>
+
+  <!-- 5 — Reporting -->
+  <section class="gcf-panel" id="gcfPanel-reporting" role="tabpanel" hidden>
+    <div class="gcf-card">
+      <h4>SLFRS S1 / S2 and GRI</h4>
+      <p>A pipeline of financed projects is not the bank's inventory. Inventory lines are reported
+         absent with the clause that requires them and where the figure actually comes from.</p>
+      <div id="gcfReportSummary"></div>
+    </div>
+    <div class="gcf-two">
+      <div class="gcf-card">
+        <h4>What this report could not state</h4>
+        <div id="gcfGaps"></div>
+      </div>
+      <div class="gcf-card">
+        <h4>Entity-level facts</h4>
+        <p>Board oversight, the strategy narrative, the risk process and the entity's own targets
+           cannot be computed from a pipeline. Record them here or they are reported absent.</p>
+        <div class="gcf-form" id="gcfEntityForm"></div>
+        <div class="gcf-actions" style="margin-top:12px">
+          <button class="btn btn-primary" id="gcfEntitySave">Save entity facts</button>
+          <span class="gcf-hint" id="gcfEntityHint"></span>
+        </div>
+      </div>
+    </div>
+    <div class="gcf-card">
+      <h4>Transfer</h4>
+      <p>A period exports whole with a checksum over its canonical form, and an import is verified
+         before anything is written.</p>
+      <div class="gcf-actions">
+        <button class="btn btn-secondary" id="gcfExport">Export period package</button>
+        <span class="gcf-hint" id="gcfExportHint"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 — Concept Note -->
+  <section class="gcf-panel" id="gcfPanel-cn" role="tabpanel" hidden>
+    <div class="gcf-card">
+      <div class="gcf-actions">
+        <label class="gcf-hint" for="gcfCnProject">Project</label>
+        <select id="gcfCnProject"
+                style="padding:7px 10px;border-radius:6px;border:1px solid var(--gcf-line);background:var(--gcf-surface);color:var(--gcf-ink)"></select>
+        <button class="btn btn-secondary" id="gcfCnPdf">PDF</button>
+        <button class="btn btn-secondary" id="gcfCnDocx">Word</button>
+        <span class="gcf-hint" id="gcfCnHint"></span>
+      </div>
+      <div id="gcfCnReadiness"></div>
+    </div>
+    <div class="gcf-card">
+      <h4>Outstanding external inputs</h4>
+      <p>These cannot come from this system. They are the worklist between a pipeline entry and a
+         submission — documents, processes and legal instruments.</p>
+      <div class="gcf-scroll"><table class="gcf-table" id="gcfCnExternal"></table></div>
+    </div>
+    <div class="gcf-card">
+      <h4>Sections A–H</h4>
+      <div id="gcfCnSections"></div>
+    </div>
+  </section>
+
+  <!-- 7 — Intake -->
+  <section class="gcf-panel" id="gcfPanel-intake" role="tabpanel" hidden>
+    <div class="gcf-card">
+      <h4>Record a candidate project</h4>
+      <p>Every figure carries an evidence tier. A bare number is refused at the door, because that
+         is the only way a benchmark default cannot quietly become a measured fact downstream.</p>
+      <div class="gcf-form" id="gcfIntakeForm"></div>
+      <div class="gcf-actions" style="margin-top:14px">
+        <button class="btn btn-primary" id="gcfIntakeSave">Record project</button>
+        <button class="btn btn-secondary" id="gcfAdopt">Adopt the shipped pipeline</button>
+        <span class="gcf-hint" id="gcfIntakeHint"></span>
+      </div>
+      <div class="gcf-warn" id="gcfIntakeError" hidden></div>
+    </div>
+    <div class="gcf-card">
+      <h4>What this deployment can persist</h4>
+      <div id="gcfStorage"></div>
+    </div>
+  </section>
+
+</div>
