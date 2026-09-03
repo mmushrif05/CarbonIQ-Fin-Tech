@@ -6,6 +6,9 @@
  *   POST   /v1/gcf/pipeline          record or replace a project
  *   DELETE /v1/gcf/pipeline/:id      remove a recorded project
  *   POST   /v1/gcf/pipeline/adopt    copy the shipped seed into this org
+ *   GET    /v1/gcf/emissions         the pipeline on three boundaries, kept apart
+ *   GET    /v1/gcf/emissions/:id     one project, with the arithmetic checked
+ *   GET    /v1/gcf/ndc               contribution against NDC 3.0, two ledgers
  *   GET    /v1/gcf/reference         results areas, IRMF indicators, NDC 3.0
  *
  * This tab writes. Everything before it in this application reads a book it
@@ -23,6 +26,8 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 
 const store = require('../../services/gcf/store');
 const record = require('../../services/gcf/record');
+const emissions = require('../../services/gcf/emissions');
+const ndc = require('../../services/gcf/ndc-contribution');
 const partcStore = require('../../services/partc-store');
 
 const AREAS = require('../../data/gcf/results-areas.json');
@@ -124,6 +129,60 @@ router.post('/pipeline/adopt', apiKeyAuth, defaultLimiter, handle(async (req, re
     note: 'The shipped pipeline is now recorded against your organisation and can be edited. '
       + 'The figures remain illustrative; each record carries its origin in provenance.source.',
     storage: partcStore.capability(),
+  });
+}));
+
+/**
+ * The pipeline's emissions, on three boundaries that are never combined.
+ *
+ * Mitigation against a counterfactual, embodied carbon inside the project
+ * boundary, and financed emissions named as belonging to the capital book
+ * rather than quietly missing.
+ */
+router.get('/emissions', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  const result = emissions.portfolioEmissions(projects, { label: source });
+  res.json({
+    emissions: result,
+    source,
+    sample,
+    sampleNote: sample ? store.seedMeta().sampleNote : null,
+  });
+}));
+
+router.get('/emissions/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+  res.json({ emissions: emissions.projectEmissions(project), source, sample });
+}));
+
+/**
+ * Contribution against NDC 3.0.
+ *
+ * Reduction and removal come back as two ledgers and there is no key holding
+ * their sum. The share of the national commitment is absent unless the caller
+ * supplies the BAU tonnage it needs — `?bau=` — because the NDC targets are
+ * percentages and this system does not hold the scenario behind them.
+ */
+router.get('/ndc', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const raw = req.query.bau;
+  if (raw !== undefined && raw !== '' && !Number.isFinite(Number(raw))) {
+    return res.status(400).json({
+      error: 'INVALID_BAU',
+      message: 'bau must be the absolute business-as-usual emissions for 2026-2035 in tCO2e.',
+    });
+  }
+  const bau = raw === undefined || raw === '' ? undefined : Number(raw);
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  res.json({
+    ndc: ndc.portfolioContribution(projects, { bauCumulative_tCO2e: bau }),
+    source,
+    sample,
   });
 }));
 

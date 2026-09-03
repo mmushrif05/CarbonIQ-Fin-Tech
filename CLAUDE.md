@@ -101,6 +101,11 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `POST` | `/v1/capital/compute` | The dashboard and basket from the book **as the reader adjusted it** — stores nothing |
 | `GET` | `/v1/capital/book` | The effective base book, for the adjust drawer to edit against |
 | `GET/POST` | `/v1/capital/portfolios` · `/investments` · `/payments` | The capital book |
+| `GET/POST/DELETE` | `/v1/gcf/pipeline` | GCF candidate projects — every figure carrying its evidence tier |
+| `POST` | `/v1/gcf/pipeline/adopt` | Copy the shipped illustrative pipeline into this organisation, to edit |
+| `GET` | `/v1/gcf/emissions` | The pipeline on three boundaries that never merge |
+| `GET` | `/v1/gcf/ndc` | Contribution against NDC 3.0 — two ledgers, never summed |
+| `GET` | `/v1/gcf/reference` | Results areas, IRMF core indicators, NDC 3.0 |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
 | `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
@@ -220,6 +225,34 @@ Three tiers, enforced structurally rather than by convention:
 **Report honesty (`services/report-integrity.js`):** a disclosure contains exactly three kinds of statement — **measured** (computed from data held here, and traceable to it), **declared** (a fact only the reporting entity can know), and **absent** (required by the standard, not available). The portfolio reports in `services/reports.js` used to emit the first and third as though they were the second: the scope 1/2/3 split was the financed-emissions total × 0.08 / 0.14 / 0.78, printed under GRI 305 and IFRS S2 §29; TCFD carried a board meeting quarterly, a three-person ESG team reporting to the CRO, a $340M pipeline and 12% of the book in flood zones; the CBSL disclosure asserted `'Compliant'` to the regulator that decides compliance; and the PCAF checklist hardcoded every item `met: true`, including the scope breakdown that was only "present" because it had been invented.
 
 Entity-level narrative now comes from `entityDisclosures` or is reported absent with the clause that requires it. Financed emissions are **scope 3 Category 15 in full** — the old split put 85% in Category 1 and 5% in Category 15, inverting the most material line in a lender's inventory. The checklist is answered from the report rather than asserted, so it can fail. Every report carries a `gaps` list of what it could not state, and is never called complete while an item is unmet. A report built without a portfolio is stamped **SAMPLE DATA** on its face, because a document citing a standard must not let a reader assume the figures are theirs. `tests/report-integrity.test.js` sweeps the source for the removed constants rather than trusting the paths a feature test happens to walk.
+
+### The GCF pipeline (`services/gcf/`, `data/gcf/`)
+
+Built for DFCC Bank's post-accreditation work under Board decision **B.36/10** — Lot 1 Milestone 4 (sustainability reporting, whose stated gap is *"lack of proper systems and procedures to capture data"*) and Lot 2 (screening a pool down to **up to two** Concept Notes). Entirely separate from PCAF: nothing here is a financed or an insurance-associated emission.
+
+**The record is the spine (`services/gcf/record.js`).** One record per candidate, read by the pipeline screen, the emissions model, the disclosure and the Concept Note export, so nothing is re-keyed and no two views can disagree. Four rules live in the schema rather than in convention:
+
+*A bare number is refused.* Every figure is `{value, tier}` where tier is **measured · modelled · benchmark · declared**. Without that a benchmark grid factor becomes a measured fact by the time it reaches a submission and nothing on the page says otherwise. These are GCF appraisal classes and are deliberately **not** PCAF's 1–5 data-quality scale — reusing those numerals here would invite them to be quoted as PCAF scores, the same error Part A must not make with Part C's option mapping.
+
+*A tCO2e figure carries its baseline*, with the counterfactual and the type — **reduced, avoided or removal**. Which one applies is decided by the counterfactual, not by the engine.
+
+*Adaptation is never ranked on carbon.* An adaptation project's mitigation is a co-benefit on its own line. `countsInHeadline` decides it once, from the stream as well as the flag, because one un-ticked box should not put a mangrove project into a carbon-per-dollar ranking that would systematically defund adaptation.
+
+*Accreditation is a gate, not a score.* DFCC is accredited to medium size (USD 50–250m) and E&S category B/I-2, so a category A project is **excluded** rather than down-ranked — down-ranking pushes a pipeline towards projects that touch nobody. The **grant modality is not ticked** on DFCC's accreditation; the record says so and says to verify it with DFCC or the NDA, because misreading an accreditation scope would be a serious error.
+
+**Three carbon boundaries, and the shape gives them nowhere to merge (`services/gcf/emissions.js`).** *Mitigation* is what the project achieves against a counterfactual (GCF Mitigation Core Indicator 1). *Embodied* is A1–A5 of the asset itself — a payback period against the mitigation, never a deduction from it. *Financed* emissions are not in this model at all: they are the bank's own attributed exposure on PCAF Part A attribution and they live in the capital book, and the response says that rather than leaving them quietly missing. Netting embodied against mitigation would produce a "net benefit" defined by no standard; no function returns a figure combining two boundaries and a test sweeps the roll-up for one.
+
+GCF's own core indicator is defined over reduced, avoided **and** removed together, so the headline legitimately combines them and says where it does; the split is carried beside it because NDC 3.0 does the opposite.
+
+**The engine checks, and never overwrites.** Where an independent path exists — generation × grid factor, annual × asset life — the figure is recomputed and the divergence reported; a mistyped emission factor is caught rather than carried into a Concept Note. Where no path exists the check reports **unverifiable with the reason**: a check that silently passes because it had nothing to check is worse than no check. A lifetime with no declared asset life shows the *implied* life rather than assuming twenty to make the arithmetic agree.
+
+**Reduction and removal are two commitments, never one (`services/gcf/ndc-contribution.js`).** NDC 3.0 commits Sri Lanka to a 20.09% cumulative reduction against BAU over 2026–2035 and, separately, to a 4.49% increase in net removal. They are carried in two ledgers from record to output and there is no key anywhere holding their sum — including on the adaptation co-benefit footnote, which is where it was easiest to lose and where it was in fact first lost. Only the years falling **inside 2026–2035** count against a 2026–2035 commitment; counting a twenty-year asset's whole life would double the claim, so the window is applied and the operating-start assumption is printed rather than buried.
+
+**The share of the national target is absent, not estimated.** "This project delivers X% of Sri Lanka's NDC" cannot be computed from anything held here: the targets are percentages against a BAU scenario whose absolute tonnage the Ministry of Environment publishes and this system does not hold. The share is reported absent with what it needs; supplied a BAU tonnage it is computed and carried at tier **declared**, with the caveat travelling beside it.
+
+**A pipeline movement is not a performance movement.** Two periods cover different candidate sets, so the difference between two totals is mostly a change of book — the same trap PCAF Part C comparatives handle. The movement is decomposed into what entered, what left and what changed, and carries the note saying what it is not.
+
+**The shipped pipeline is dummy data and says so on its face** (`data/gcf/pipeline.seed.json`): five projects, $196.5M cost, $72.0M GCF ask, both streams across five of the eight results areas. Recorded data replaces it **entirely** and is never merged with it, the discipline the capital book already follows, and every response says which is showing.
 
 **The anchor dashboard (`services/capital-*.js`, `ui/js/dashboard.js`).** The Dashboard is the capital book: portfolios, investments, payments, and the four emission lines against each. It is deliberately **not** connected to Firebase — the baseline lives in `data/capital/book.json`, deep-frozen and read once, because a demonstration book has no business depending on a network round trip and every change to it is then a reviewable commit. If an organisation has recorded anything of its own, its records win **entirely** and the baseline is not read; the two are never merged, and the payload says which is showing.
 
