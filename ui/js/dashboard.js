@@ -315,7 +315,12 @@ const Dashboard = (() => {
       return;
     }
 
-    _clearMessage();
+    /* A worked example stands in for a blank screen until something real is
+       recorded. It says so here as well as in the payload, because a reader
+       who scrolls past a banner should still meet the word "sample" beside
+       the figures. */
+    if (d.sample) _capitalMessage(d.sampleNote, 'sample');
+    else _clearMessage();
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
@@ -324,8 +329,24 @@ const Dashboard = (() => {
     _fillPortfolioFilter(d.portfolios);
   }
 
-  /** One message, in place of the figures, so a blank screen always says why. */
-  function _capitalMessage(text) {
+  /** One message, so the screen always says what it is showing and why. */
+  function _capitalMessage(text, kind = 'blank') {
+    if (kind === 'sample') {
+      let el = document.getElementById('cap-message');
+      if (!el) {
+        el = document.createElement('p');
+        el.id = 'cap-message';
+        const host = document.getElementById('page-dashboard');
+        host.insertBefore(el, host.firstChild.nextSibling);
+      }
+      el.className = 'cap-message is-sample';
+      el.textContent = text;
+      return;
+    }
+    return _blankWith(text);
+  }
+
+  function _blankWith(text) {
     for (const id of ['cap-allocated', 'cap-paid', 'cap-undrawn', 'cap-balance']) {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';

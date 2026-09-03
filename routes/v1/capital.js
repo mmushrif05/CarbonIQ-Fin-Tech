@@ -31,7 +31,7 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 const book    = require('../../services/capital-book');
 const metrics = require('../../services/capital-metrics');
 const store   = require('../../services/partc-store');
-const { seedCapitalDemo } = require('../../services/capital-demo-data');
+const { seedCapitalDemo, sampleBook } = require('../../services/capital-demo-data');
 
 const {
   portfolioSchema, portfolioUpdateSchema,
@@ -70,7 +70,29 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
     });
   }
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
-  res.json({ dashboard: metrics.dashboard(held, { carbonWeight }) });
+  const result = metrics.dashboard(held, { carbonWeight });
+
+  /* An empty book leaves a correct screen with nothing on it — and where
+     storage is not writable (a serverless runtime with no Firebase) the seed
+     endpoint is refused, so there is no way to put figures there at all. The
+     worked book is therefore computed through the same engine and returned
+     marked as a sample. Nothing is stored, and `sample` travels with the
+     payload so the screen can say what it is showing. The moment one real
+     portfolio is recorded, this stops. */
+  if (result.empty) {
+    const shown = metrics.dashboard({ ...sampleBook(), storage: held.storage }, { carbonWeight });
+    shown.sample = true;
+    shown.empty = false;
+    shown.sampleNote = 'Sample figures. Nothing is recorded in this book yet, so a worked '
+      + 'example is shown in place of a blank screen — it is computed by the same engine and '
+      + 'stored nowhere. Record a portfolio, or adjust these numbers under Record, and your own '
+      + 'position replaces it.';
+    shown.emptyNote = result.emptyNote;
+    return res.json({ dashboard: shown });
+  }
+
+  result.sample = false;
+  res.json({ dashboard: result });
 }));
 
 // ── Portfolios ─────────────────────────────────────────────────────────────

@@ -2113,6 +2113,12 @@ body {
   background: #fffbeb; border: 1px solid #f59e0b; border-left-width: 4px;
   color: #78350f; font-size: 13px; line-height: 1.55;
 }
+/* A worked example is not a failure — it is the screen doing its job while
+   the book is still empty. Quieter than the amber, still unmistakable. */
+.cap-message.is-sample {
+  background: var(--bg); border-color: var(--border);
+  border-left-color: #5e5ce6; color: var(--text-secondary);
+}
 
 .cap-dq {
   display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;

@@ -27,14 +27,46 @@ async function seed() {
   await auth(api().post('/v1/capital/demo')).expect(201);
 }
 
-describe('An empty book', () => {
-  test('is named as unrecorded, never reported as a position of zero', async () => {
-    const res = await auth(api().get('/v1/capital/dashboard')).expect(200);
-    const d = res.body.dashboard;
-    expect(d.empty).toBe(true);
+describe('An empty book shows a worked example rather than a blank screen', () => {
+  /* Correct and blank is still blank — and where storage is not writable the
+     seed endpoint is refused, so there would be no way to put figures on the
+     screen at all. The worked book is computed through the same engine,
+     stored nowhere, and marked. */
+  test('the figures are the worked book, and they are marked as a sample', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(d.sample).toBe(true);
+    expect(d.empty).toBe(false);
+    expect(d.capital.allocated).toBe(750_000_000);
+    expect(d.capital.paid).toBe(322_000_000);
+    expect(d.sampleNote).toMatch(/Sample figures/);
+    expect(d.sampleNote).toMatch(/stored nowhere/);
+  });
+
+  test('it still carries the sentence about an unrecorded book', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
     expect(d.emptyNote).toMatch(/not a position of zero/);
-    expect(d.capital.allocated).toBe(0);
-    expect(d.capital.deploymentPct).toBeNull();
+  });
+
+  test('showing it stores nothing — the book is still empty afterwards', async () => {
+    await auth(api().get('/v1/capital/dashboard')).expect(200);
+    const { portfolios } = (await auth(api().get('/v1/capital/portfolios')).expect(200)).body;
+    expect(portfolios).toHaveLength(0);
+  });
+
+  test('one real portfolio replaces it, rather than sitting beside it', async () => {
+    await auth(api().post('/v1/capital/portfolios'))
+      .send({ name: 'Mine', allocatedBudget: 42 }).expect(201);
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(d.sample).toBe(false);
+    expect(d.capital.allocated).toBe(42);
+    expect(d.portfolios.map(p => p.name)).toEqual(['Mine']);
+  });
+
+  test('the weighting still works on the example', async () => {
+    const carbon = (await auth(api().get('/v1/capital/dashboard?carbonWeight=1')).expect(200)).body.dashboard;
+    const money  = (await auth(api().get('/v1/capital/dashboard?carbonWeight=0')).expect(200)).body.dashboard;
+    expect(carbon.pipeline.ranked[0].id).toBe('inv_jaffna_minigrid');
+    expect(money.pipeline.ranked[0].id).toBe('inv_kowloon_refit');
   });
 });
 
