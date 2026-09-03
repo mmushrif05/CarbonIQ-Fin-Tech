@@ -2470,3 +2470,95 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .fc-toggle, .fc-basis > summary::after { transition: none; }
 }
+
+
+/* ══ THE BASKET ════════════════════════════════════════════════════════════
+   "If we wrote these" — the panel under the pipeline table, and the tick
+   column that feeds it.
+
+   The scenario stroke is a dash, and a dash on this system means exactly one
+   thing: not yet written. It is deliberately the only stroke encoding on the
+   curve, so it cannot be confused with the hatch fill, which means projection.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.cap-pick-col { width: 40px; }
+.cap-table td.cap-pick { width: 40px; text-align: center; padding-left: 10px; padding-right: 4px; }
+.cap-table td.cap-pick input {
+  width: 18px; height: 18px; accent-color: #00875a; cursor: pointer;
+}
+.cap-table tr.is-picked { background: rgba(0, 135, 90, 0.07); }
+.cap-table tr.is-picked td { border-color: rgba(0, 135, 90, 0.22); }
+
+.bsk {
+  margin-top: 18px; padding: 18px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-2, var(--surface));
+}
+.bsk-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 10px;
+}
+.bsk-head > div { display: flex; flex-direction: column; gap: 3px; }
+.bsk-clear {
+  min-height: 36px; padding: 0 14px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: transparent; color: var(--text-secondary);
+  font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.bsk-clear:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+/* A scenario says so before any of its figures are read. */
+.cap-note.is-scenario {
+  padding: 8px 11px; border-left: 3px solid #5e5ce6;
+  background: rgba(94, 92, 230, 0.07); border-radius: 0 6px 6px 0;
+}
+
+.bsk-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px; margin-top: 14px;
+}
+.bsk-figures { display: flex; flex-wrap: wrap; gap: 18px; margin: 8px 0 12px; }
+.bsk-fig { display: flex; flex-direction: column; gap: 2px; min-width: 120px; }
+.bsk-fig-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-secondary);
+}
+.bsk-fig-value {
+  font-size: 20px; font-weight: 650; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.bsk-fig.is-ok .bsk-fig-value { color: #00875a; }
+.bsk-fig.is-short .bsk-fig-value { color: #c77700; }
+.bsk-fig.is-forward .bsk-fig-value { color: #5e5ce6; }
+.bsk-fig.is-reduction .bsk-fig-value { color: #c77700; }
+.bsk-fig.is-avoided .bsk-fig-value { color: #1f6fb2; }
+.bsk-fig-foot { font-size: 11.5px; color: var(--text-secondary); line-height: 1.35; }
+
+.bsk-bar-track {
+  position: relative; height: 14px; border-radius: 7px;
+  background: var(--border); overflow: hidden;
+}
+.bsk-bar-avail { position: absolute; inset: 0 auto 0 0; background: rgba(0, 135, 90, 0.22); }
+.bsk-bar-used { position: absolute; inset: 0 auto 0 0; background: #00875a; }
+.bsk-bar-used.is-short { background: #c77700; }
+.bsk-bar-legend {
+  display: flex; flex-wrap: wrap; gap: 14px; margin-top: 7px;
+  font-size: 11.5px; color: var(--text-secondary);
+}
+.bsk-bar-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bsk-swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.bsk-swatch.is-used { background: #00875a; }
+.bsk-swatch.is-avail { background: rgba(0, 135, 90, 0.22); }
+
+/* The scenario line on the curve. No fill: it is the same measure of the same
+   book, not a fourth series. */
+.fc-line.is-scenario { stroke-dasharray: 6 4; stroke-width: 1.6; opacity: 0.85; }
+.fc-readout-scen {
+  font-size: 11.5px; color: var(--text-secondary);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}

@@ -38,6 +38,7 @@ const metrics = require('../../services/capital-metrics');
 const store   = require('../../services/partc-store');
 const { seedCapitalDemo } = require('../../services/capital-demo-data');
 const baseline = require('../../services/capital-baseline');
+const { basket: basketOf } = require('../../services/capital-basket');
 
 const {
   portfolioSchema, portfolioUpdateSchema,
@@ -142,6 +143,50 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
   result.sample = false;
   result.source = 'recorded';
   res.json({ dashboard: result });
+}));
+
+/**
+ * The basket — what writing these would do.
+ *
+ * Selection travels on the query string rather than in a body, because it is a
+ * question about a book and not a change to one: it is idempotent, it is
+ * shareable as a link, and nothing about it is written down. A basket is never
+ * persisted; committing a project is a separate, deliberate act through
+ * PATCH /investments/:id.
+ *
+ * It runs on the same book the dashboard is showing — the recorded one, or the
+ * repository baseline where nothing has been recorded — so the funding figures
+ * cannot be drawn from a different book than the position they are set against.
+ */
+router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const basis = req.query.attributionBasis || 'outstanding';
+  if (!metrics.ATTRIBUTION_BASES.includes(basis)) {
+    return res.status(400).json({
+      error: 'BAD_BASIS',
+      message: `attributionBasis must be one of ${metrics.ATTRIBUTION_BASES.join(', ')}; received "${basis}".`,
+    });
+  }
+
+  const raw = req.query.select === undefined ? '' : String(req.query.select);
+  const ids = raw.split(',').map(s => s.trim()).filter(Boolean);
+  /* A cap, so a hand-edited query string cannot turn one request into a
+     hundred forecast runs. The pipeline is a handful of projects; a selection
+     larger than this is a mistake, not a use case. */
+  if (ids.length > 25) {
+    return res.status(400).json({
+      error: 'TOO_MANY_SELECTED',
+      message: `A basket holds at most 25 projects; received ${ids.length}.`,
+    });
+  }
+
+  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const recorded = held.portfolios.length > 0 || held.investments.length > 0;
+  const source = recorded ? held : (baseline.baselineBook() || held);
+
+  const result = basketOf(source, ids, { attributionBasis: basis });
+  result.sample = !recorded;
+  result.source = recorded ? 'recorded' : 'baseline';
+  res.json({ basket: result });
 }));
 
 // ── Portfolios ─────────────────────────────────────────────────────────────

@@ -198,3 +198,119 @@ describe('The curve uses the validated palette and no dark override', () => {
     expect(css).not.toMatch(/@media[^{]*prefers-color-scheme/);
   });
 });
+
+/* ── The basket on screen ─────────────────────────────────────────────────
+   Phase 5. The panel that answers "if we wrote these", and the dashed reading
+   of each series it puts on the curve above it. */
+
+const basketRender = dashJs.slice(dashJs.indexOf('function _renderBasket'), dashJs.indexOf('function _wireBasketPicks'));
+
+describe('The basket panel', () => {
+  test('the panel and its parts are on the page, hidden until something is ticked', () => {
+    expect(html).toMatch(/id="cap-basket" hidden/);
+    for (const id of ['bsk-sub', 'bsk-scenario', 'bsk-funding', 'bsk-bar', 'bsk-fund-note',
+      'bsk-impact', 'bsk-impact-note', 'bsk-curve-note', 'bsk-clear']) {
+      expect(html).toContain(`id="${id}"`);
+    }
+  });
+
+  test('the pipeline table carries a tick column, and the empty row spans it', () => {
+    expect(html).toContain('cap-pick-col');
+    expect(dashJs).toMatch(/class="bsk-pick" data-id=/);
+    expect(dashJs).toMatch(/colspan="9"/);
+  });
+
+  test('the engine computes the basket — the browser only asks for it', () => {
+    expect(dashJs).toMatch(/\/v1\/capital\/basket\?/);
+    expect(dashJs).toMatch(/async function _fetchBasket/);
+    expect(basketRender).not.toMatch(/reduce\(/);
+  });
+
+  test('it says it is a scenario before it shows a figure', () => {
+    expect(basketRender).toMatch(/b\.scenarioNote/);
+    expect(html).toMatch(/id="bsk-scenario"/);
+    expect(css).toMatch(/\.cap-note\.is-scenario/);
+  });
+
+  test('a failed request shows nothing rather than a figure that might be wrong', () => {
+    expect(basketRender).toMatch(/if \(b\.failed\)/);
+    expect(basketRender).toMatch(/Nothing is shown rather than a figure that might be wrong/);
+  });
+});
+
+describe('Affordability is drawn as one whole, and an overflow is not clipped', () => {
+  test('needed, available and either the remainder or the shortfall are shown', () => {
+    expect(basketRender).toMatch(/'Needed'/);
+    expect(basketRender).toMatch(/'Available'/);
+    expect(basketRender).toMatch(/f\.affordable/);
+    expect(basketRender).toMatch(/'Remaining'/);
+    expect(basketRender).toMatch(/'Shortfall'/);
+  });
+
+  test('the bar scales to whichever is larger, so a basket that does not fit does not look as though it just fits', () => {
+    expect(basketRender).toMatch(/Math\.max\(f\.available, f\.needed\)/);
+    expect(basketRender).toMatch(/rather than clipped to it/);
+  });
+});
+
+describe('The basket adds three figures to the screen and never a fourth', () => {
+  test('emissions, reduction and avoidance are separate tiles', () => {
+    expect(basketRender).toMatch(/Emissions added/);
+    expect(basketRender).toMatch(/'Reduction'/);
+    expect(basketRender).toMatch(/'Avoided'/);
+  });
+
+  test('avoidance is labelled as reported apart, never deducted', () => {
+    expect(basketRender).toMatch(/reported apart, never deducted/);
+  });
+
+  test('the renderer computes no combined impact', () => {
+    expect(basketRender).not.toMatch(/im\.forward_tCO2e\s*-/);
+    expect(basketRender).not.toMatch(/\bnet\b/i);
+  });
+});
+
+describe('The scenario reading of the curve', () => {
+  test('it is drawn from the engine’s second run, not derived in the browser', () => {
+    expect(curve).toMatch(/_basket\.forecast/);
+    expect(curve).toMatch(/scen\.withBasket\.rows/);
+  });
+
+  test('it is the same colour, dashed and unfilled — one more reading, not a fourth series', () => {
+    expect(curve).toMatch(/fc-line is-scenario \$\{FC\[k\]\.cls\}/);
+    expect(curve).not.toMatch(/fc-area is-scenario/);
+    expect(css).toMatch(/\.fc-line\.is-scenario\s*\{[^}]*stroke-dasharray/);
+  });
+
+  test('the axis covers the scenario too, so the dashed line cannot leave the plot', () => {
+    expect(curve).toMatch(/scenRows\.flatMap/);
+  });
+
+  test('the caption says what the dashed reading is', () => {
+    expect(curve).toMatch(/dashed is the same book with the/);
+  });
+
+  test('the readout gives the scenario total beside each series, so the line can be checked', () => {
+    expect(curve).toMatch(/with the basket \$\{/);
+    expect(curve).toMatch(/scen\.withBasket\.totals/);
+  });
+
+  test('the basis note travels with the chart, not only with the panel', () => {
+    expect(curve).toMatch(/scen\.basisNote/);
+  });
+});
+
+describe('Clearing the basket puts the screen back', () => {
+  test('the tick boxes, the row highlight, the panel and the dashed line all go', () => {
+    const wire = dashJs.slice(dashJs.indexOf('function _wireBasketPicks'));
+    expect(wire).toMatch(/_basketIds\.clear\(\)/);
+    expect(wire).toMatch(/b\.checked = false/);
+    expect(wire).toMatch(/classList\.remove\('is-picked'\)/);
+    expect(wire).toMatch(/_renderCurve\(/);
+  });
+
+  test('a basket is held in memory only — it is a question, not a record', () => {
+    expect(dashJs).toMatch(/a basket is a question, not a record/);
+    expect(dashJs).not.toMatch(/localStorage[^\n]*basket/i);
+  });
+});

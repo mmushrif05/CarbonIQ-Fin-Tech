@@ -230,6 +230,12 @@ const Dashboard = (() => {
   let _capital = null;
   let _carbonWeight = 0.5;
   let _attributionBasis = 'outstanding';
+  /* What the reader has ticked in the pipeline. Held here and nowhere else —
+     a basket is a question, not a record, so it is never written down and it
+     does not survive a reload. */
+  const _basketIds = new Set();
+  let _basket = null;
+  let _basketTimer = null;
   let _portfolioFilter = '';
 
   const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
@@ -288,6 +294,31 @@ const Dashboard = (() => {
       _capital = { mode: 'unavailable', detail: err.message };
     }
     return _capital;
+  }
+
+  /**
+   * What writing the ticked projects would do.
+   *
+   * The engine answers this, not the browser. Summing four columns in
+   * JavaScript would be easy and would be a second implementation of figures
+   * the API already derives — and the two would eventually disagree, on the
+   * screen a person acts on rather than in a test.
+   */
+  async function _fetchBasket() {
+    if (!_basketIds.size) { _basket = null; return null; }
+    const qs = new URLSearchParams({
+      select: [..._basketIds].join(','),
+      attributionBasis: _attributionBasis,
+    });
+    if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/capital/basket?${qs}`);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      _basket = (await res.json()).basket;
+    } catch (err) {
+      _basket = { failed: true, detail: err.message };
+    }
+    return _basket;
   }
 
   function _renderDashboard(state) {
@@ -595,9 +626,22 @@ const Dashboard = (() => {
 
     const s = f.emissions;
     const rows = s.rows || [];
+
+    /* When a basket is selected the chart carries a second, dashed reading of
+       each series — the same book with those projects written. Both readings
+       come from the engine and both are drawn at full commitment, so the gap
+       between them is the basket and not a change of method. A dash is the
+       only stroke encoding on this chart and it means one thing: not yet
+       written. */
+    const scen = (_basket && !_basket.failed && _basketIds.size && _basket.forecast.withBasket)
+      ? _basket.forecast : null;
+    const scenRows = scen ? scen.withBasket.rows : [];
+
     document.getElementById('fc-sub').textContent =
       `${s.firstYear} to ${s.lastYear} · every year ahead is a projection, `
-      + `and years after ${s.confidenceHorizonYear} are a direction rather than a figure`;
+      + `and years after ${s.confidenceHorizonYear} are a direction rather than a figure`
+      + (scen ? ` · dashed is the same book with the ${_basketIds.size} selected project`
+        + `${_basketIds.size === 1 ? '' : 's'} written` : '');
 
     const shown = Object.keys(FC).filter(k => _fcOn[k]);
     if (!rows.length || !shown.length) {
@@ -609,7 +653,11 @@ const Dashboard = (() => {
     }
 
     const W = 860, H = 300, M = { t: 18, r: 20, b: 44, l: 70 };
-    const peak = Math.max(1, ...rows.flatMap(r => shown.map(k => r[FC[k].key])));
+    const peak = Math.max(
+      1,
+      ...rows.flatMap(r => shown.map(k => r[FC[k].key])),
+      ...scenRows.flatMap(r => shown.map(k => r[FC[k].key])),
+    );
     const yMax = peak * 1.12;
     const px = (i) => M.l + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (W - M.l - M.r));
     const py = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
@@ -619,7 +667,8 @@ const Dashboard = (() => {
     const step = Math.max(1, Math.ceil(rows.length / 8));
     const horizonIdx = rows.findIndex(r => r.indicative);
 
-    const line = (k) => rows.map((r, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)},${py(r[FC[k].key]).toFixed(1)}`).join(' ');
+    const line = (k, src = rows) =>
+      src.map((r, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)},${py(r[FC[k].key]).toFixed(1)}`).join(' ');
     const area = (k) => `${line(k)} L${px(rows.length - 1).toFixed(1)},${py(0).toFixed(1)} L${px(0).toFixed(1)},${py(0).toFixed(1)} Z`;
 
     host.innerHTML = `
@@ -648,6 +697,11 @@ const Dashboard = (() => {
           <path class="fc-area ${FC[k].cls}" d="${area(k)}" fill="url(#fcHatch)"/>
           <path class="fc-line ${FC[k].cls}" d="${line(k)}"/>`).join('')}
 
+        <!-- The basket, if one is selected. Same colour, dashed, no fill: it
+             is the same measure of the same book, not a fourth series. -->
+        ${scen ? shown.map(k =>
+    `<path class="fc-line is-scenario ${FC[k].cls}" d="${line(k, scenRows)}"/>`).join('') : ''}
+
         ${shown.map(k => rows.map((r, i) => i % step === 0 || i === rows.length - 1
           ? `<circle class="fc-dot ${FC[k].cls}" cx="${px(i).toFixed(1)}" cy="${py(r[FC[k].key]).toFixed(1)}" r="3.5"/>`
           : '').join('')).join('')}
@@ -674,8 +728,11 @@ const Dashboard = (() => {
         <span class="fc-readout-label">${FC[k].label} over ${s.years} years</span>
         <span class="fc-readout-value">${_t(s.totals[FC[k].key])}</span>
         <span class="fc-readout-unit">tCO2e</span>
+        ${scen ? `<span class="fc-readout-scen">with the basket ${
+    _t(scen.withBasket.totals[FC[k].key])}</span>` : ''}
       </div>`).join('')
-      + `<p class="cap-note">${esc(s.notes.separation)}</p>`;
+      + `<p class="cap-note">${esc(s.notes.separation)}</p>`
+      + (scen ? `<p class="cap-note">${esc(scen.basisNote)}</p>` : '');
 
     const cap = f.capital;
     /* A "peak year" is a claim that one year stands above the rest, and on this
@@ -773,7 +830,12 @@ const Dashboard = (() => {
 
     const rows = [...p.ranked, ...p.unrankable];
     $('cap-pipeline-rows').innerHTML = rows.length ? rows.map(r => `
-      <tr class="${r.rankable ? '' : 'is-unranked'}">
+      <tr class="${r.rankable ? '' : 'is-unranked'}${_basketIds.has(r.id) ? ' is-picked' : ''}">
+        <td class="cap-pick">
+          <input type="checkbox" class="bsk-pick" data-id="${esc(r.id)}"
+                 ${_basketIds.has(r.id) ? 'checked' : ''}
+                 aria-label="Add ${esc(r.name)} to the basket">
+        </td>
         <td class="num">${r.rank || '<span class="cap-dim">—</span>'}</td>
         <td><strong>${esc(r.name)}</strong>
             <br><span class="cap-dim">${esc(r.country || '')}${r.taxonomy ? ` · ${esc(r.taxonomy)}` : ''}</span></td>
@@ -788,7 +850,7 @@ const Dashboard = (() => {
           ? `<span class="cap-dim" title="${esc(r.missing.join('; '))}">not scored</span>`
           : `<b>${r.score.toFixed(3)}</b>`}</td>
       </tr>`).join('')
-      : '<tr><td colspan="8" class="cap-empty">Nothing is waiting.</td></tr>';
+      : '<tr><td colspan="9" class="cap-empty">Nothing is waiting.</td></tr>';
 
     const un = $('cap-unrankable-note');
     un.hidden = !p.unrankableNote;
@@ -803,6 +865,131 @@ const Dashboard = (() => {
       </div>`).join('');
 
     _renderScatter(p, cur);
+    _wireBasketPicks(cur);
+    _renderBasket(cur);
+  }
+
+  /**
+   * The basket — what writing the ticked projects would do.
+   *
+   * Three things stay true here however the panel is read. The funding
+   * question is answered against what is *uncommitted*, because five
+   * individually affordable projects are not necessarily affordable together.
+   * The impact is three figures and never one — emissions, reduction and
+   * avoidance are not arithmetic on each other, and a basket that funded a
+   * solar farm must not appear to lower the book's emissions. And the whole
+   * panel says on its face that it is a scenario: nothing here is committed,
+   * and nothing is stored.
+   */
+  function _renderBasket(cur) {
+    const panel = document.getElementById('cap-basket');
+    if (!panel) return;
+    const b = _basket;
+
+    if (!b || !_basketIds.size) { panel.hidden = true; return; }
+    panel.hidden = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    if (b.failed) {
+      $('bsk-sub').textContent = 'The basket could not be worked out.';
+      $('bsk-scenario').textContent =
+        `The request failed (${b.detail}). Nothing is shown rather than a figure that might be wrong.`;
+      for (const id of ['bsk-funding', 'bsk-impact', 'bsk-bar']) $(id).innerHTML = '';
+      $('bsk-fund-note').textContent = '';
+      $('bsk-impact-note').textContent = '';
+      $('bsk-curve-note').textContent = '';
+      return;
+    }
+
+    const f = b.funding;
+    $('bsk-sub').textContent =
+      `${b.count} project${b.count === 1 ? '' : 's'} selected · ${_money(f.needed, cur)} to write`;
+    $('bsk-scenario').textContent = b.scenarioNote;
+
+    const fig = (label, value, kind, foot) => `
+      <div class="bsk-fig${kind ? ` is-${kind}` : ''}">
+        <span class="bsk-fig-label">${esc(label)}</span>
+        <span class="bsk-fig-value">${esc(value)}</span>
+        ${foot ? `<span class="bsk-fig-foot">${esc(foot)}</span>` : ''}
+      </div>`;
+
+    $('bsk-funding').innerHTML =
+      fig('Needed', _money(f.needed, cur), null, 'the capital these projects ask for')
+      + fig('Available', _money(f.available, cur), null, 'allocated and not yet committed')
+      + (f.affordable
+        ? fig('Remaining', _money(f.remaining, cur), 'ok', 'left for everything else waiting')
+        : fig('Shortfall', _money(f.shortfall, cur), 'short', 'more allocation this basket would need'));
+
+    /* One bar, one whole: what the basket takes of what is uncommitted. Where
+       it asks for more than there is, the overflow is drawn beyond the track
+       rather than clipped to it — a bar held at 100% would show a basket that
+       does not fit as one that exactly fits. */
+    const denom = Math.max(f.available, f.needed) || 1;
+    const usedPct = (f.needed / denom) * 100;
+    const availPct = (f.available / denom) * 100;
+    $('bsk-bar').innerHTML = `
+      <div class="bsk-bar-track">
+        <div class="bsk-bar-avail" style="width:${availPct.toFixed(2)}%"></div>
+        <div class="bsk-bar-used${f.affordable ? '' : ' is-short'}" style="width:${usedPct.toFixed(2)}%"></div>
+      </div>
+      <div class="bsk-bar-legend">
+        <span><i class="bsk-swatch is-used"></i>This basket ${_money(f.needed, cur)}</span>
+        <span><i class="bsk-swatch is-avail"></i>Uncommitted ${_money(f.available, cur)}</span>
+      </div>`;
+    $('bsk-fund-note').textContent = f.note
+      + (b.finance.blendedReturnPct === null ? '' : ` Blended expected return ${b.finance.blendedReturnPct}%.`)
+      + ` ${b.finance.note}`;
+
+    const im = b.impact;
+    $('bsk-impact').innerHTML =
+      fig('Emissions added', `${_t(im.forward_tCO2e)} tCO2e`, 'forward', 'the book would carry these')
+      + fig('Reduction', `${_t(im.reduction_tCO2e)} tCO2e`, 'reduction', 'against these projects\u2019 own baseline')
+      + fig('Avoided', `${_t(im.avoided_tCO2e)} tCO2e`, 'avoided', 'reported apart, never deducted');
+    $('bsk-impact-note').textContent = im.basis;
+
+    if (b.unknownNote) $('bsk-impact-note').textContent += ` ${b.unknownNote}`;
+
+    $('bsk-curve-note').textContent = b.forecast.basisNote;
+
+    /* The curve above redraws with the basket on it, so the selection is not
+       just a number in a panel. */
+    if (_capital && _capital.data) _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+  }
+
+  function _wireBasketPicks(cur) {
+    document.querySelectorAll('#cap-pipeline-rows .bsk-pick').forEach((box) => {
+      box.addEventListener('change', () => {
+        const id = box.dataset.id;
+        if (box.checked) _basketIds.add(id); else _basketIds.delete(id);
+        box.closest('tr').classList.toggle('is-picked', box.checked);
+        clearTimeout(_basketTimer);
+        _basketTimer = setTimeout(async () => {
+          await _fetchBasket();
+          _renderBasket(cur);
+          if (!_basketIds.size && _capital && _capital.data) {
+            _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+          }
+        }, 120);
+      });
+    });
+
+    const clear = document.getElementById('bsk-clear');
+    if (clear && !clear.dataset.wired) {
+      clear.dataset.wired = '1';
+      clear.addEventListener('click', () => {
+        _basketIds.clear();
+        _basket = null;
+        document.querySelectorAll('#cap-pipeline-rows .bsk-pick').forEach((b) => {
+          b.checked = false;
+          b.closest('tr').classList.remove('is-picked');
+        });
+        _renderBasket(cur);
+        if (_capital && _capital.data) {
+          _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+        }
+      });
+    }
   }
 
   /**

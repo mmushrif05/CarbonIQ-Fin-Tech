@@ -753,6 +753,7 @@
             <table class="data-table cap-table">
               <thead>
                 <tr>
+                  <th class="cap-pick-col"><span class="sr-only">Select for the basket</span></th>
                   <th class="num">#</th><th>Project</th><th>Type</th>
                   <th class="num">Capital</th><th class="num">Return</th>
                   <th class="num">Impact / $M</th>
@@ -764,6 +765,41 @@
             </table>
           </div>
           <p class="cap-note" id="cap-unrankable-note" hidden></p>
+
+          <!-- ══ THE BASKET ═══════════════════════════════════════════════════
+               Ranking says which to take first. This says what happens if you
+               take these — what it costs against what is uncommitted, what it
+               would add, and where the curve above goes. It is a scenario and
+               it says so on its face; nothing here is committed and nothing is
+               stored. -->
+          <div class="bsk" id="cap-basket" hidden>
+            <header class="bsk-head">
+              <div>
+                <span class="cap-block-label">If we wrote these</span>
+                <span class="cap-sub" id="bsk-sub">—</span>
+              </div>
+              <button type="button" class="bsk-clear" id="bsk-clear">Clear selection</button>
+            </header>
+
+            <p class="cap-note is-scenario" id="bsk-scenario"></p>
+
+            <div class="bsk-grid">
+              <div class="bsk-fund">
+                <span class="cap-block-label">What it would take</span>
+                <div class="bsk-figures" id="bsk-funding"></div>
+                <div class="bsk-bar" id="bsk-bar" role="img" aria-label="The basket against what is uncommitted"></div>
+                <p class="cap-note" id="bsk-fund-note"></p>
+              </div>
+
+              <div class="bsk-impact">
+                <span class="cap-block-label">What it would add</span>
+                <div class="bsk-figures" id="bsk-impact"></div>
+                <p class="cap-note" id="bsk-impact-note"></p>
+              </div>
+            </div>
+
+            <p class="cap-note" id="bsk-curve-note"></p>
+          </div>
 
           <div class="cap-bytype">
             <span class="cap-block-label">What kind of thing is waiting</span>
