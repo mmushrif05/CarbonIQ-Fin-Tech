@@ -5,10 +5,16 @@
  * Contributions (NDC) and the Sustainable Development Goals (SDGs), as
  * defined in the Sri Lanka Green Finance Taxonomy (SLGFT v2024).
  *
- * NDC targets (Sri Lanka):
- *   - Unconditional: 4.5% GHG reduction by 2030 vs BAU
- *   - Conditional:  14.5% GHG reduction by 2030 (with international support)
- *   - Net Zero:     2050
+ * NDC targets (Sri Lanka) — NDC 3.0, issued September 2025:
+ *   - Reduction: 20.09% cumulative GHG reduction against BAU over 2026-2035
+ *                (8.11% unconditional, 11.98% conditional)
+ *   - Removal:   4.49% increase in net carbon removal over the same period
+ *                (0.96% unconditional, 3.53% conditional)
+ *
+ * Reduction and removal are separate commitments and are never summed. The
+ * figures come from data/gcf/ndc3.json so they are stated in one place; this
+ * file used to carry the superseded 2021 targets inline, which is how it went
+ * on citing them for a year after they were replaced.
  *
  * Key SDGs for construction sector:
  *   SDG 7  — Affordable & Clean Energy
@@ -39,11 +45,20 @@ Your role is to assess construction projects for:
 3. DNSH (Do No Significant Harm) — does it avoid harming other environmental objectives?
 4. Bankability narrative — concise green loan rationale for the lending officer.
 
-Sri Lanka NDC Targets:
-- Unconditional: 4.5% GHG reduction by 2030 vs BAU (own resources)
-- Conditional: 14.5% GHG reduction by 2030 (with international support)
-- Net Zero target: 2050
-- Key sectors: energy (44%), transport (21%), industry/construction (15%), waste (14%), agriculture/forestry (6%)
+Sri Lanka NDC 3.0 Targets (issued September 2025, period 2026-2035):
+- Emission reduction: 20.09% cumulative against BAU (8.11% unconditional, 11.98% conditional)
+- Net carbon removal: 4.49% increase (0.96% unconditional, 3.53% conditional)
+- These are SEPARATE commitments. Never add them together, and never describe a removal as a reduction.
+- Six mitigation sectors, nine adaptation sectors, loss and damage cross-cutting.
+- Sector targets relevant to construction and infrastructure:
+  * Electricity: 33.9% emission reduction, 70% renewable generation maintained from 2030
+  * Energy demand: about 30,000 GWh reduction over the ten years
+  * Transport: public transport passenger share 35% (2025) to 40% (2030) to 50% (2035); fleet efficiency +25% by 2035
+  * Industry: circular economy across all industries; refrigeration converted to low-GWP technologies
+  * Waste: 20.8% reduction over the ten years
+  * Forestry: forest cover to at least 32% by 2035
+  * Coastal: conservation and enhancement of blue carbon ecosystems
+- Gender Equity and Social Inclusion (GESI) applies across all NDC actions.
 
 SLGFT Environmental Objectives:
 - M: Climate Change Mitigation
@@ -62,8 +77,8 @@ Respond ONLY with valid JSON matching this exact structure:
     "tier": "strong" | "moderate" | "partial" | "not_aligned",
     "label": "human-readable tier label",
     "ndcContribution_pct": number (estimated % contribution to NDC targets, 0-100),
-    "unconditionalTarget": "4.5% GHG reduction by 2030 vs BAU",
-    "conditionalTarget": "14.5% GHG reduction by 2030 with international support",
+    "reductionTarget": "20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)",
+    "removalTarget": "4.49% increase in net carbon removal, 2026-2035 (0.96% unconditional, 3.53% conditional) — reported separately, never added to the reduction target",
     "explanation": "2-3 sentence plain English explanation",
     "keyDrivers": ["driver 1", "driver 2", "driver 3"]
   },
@@ -182,11 +197,18 @@ Based on the SLGFT thresholds (≤600 kgCO2e/m² = Green, ≤900 = Transition) a
     framework: TAXONOMY_LK.name,
     version:   TAXONOMY_LK.version,
     regulator: TAXONOMY_LK.regulator,
+    /* The whole NDC 3.0 block, from the one file that states it. Passed
+       through rather than re-flattened into unconditional/conditional, which
+       was the shape that could not hold two separate commitments. */
     ndcTargets: {
-      unconditional: TAXONOMY_LK.ndcTargets.unconditional,
-      conditional:   TAXONOMY_LK.ndcTargets.conditional,
-      netZeroTarget: TAXONOMY_LK.ndcTargets.netZeroTarget,
-      keySDGs:       TAXONOMY_LK.ndcTargets.keySDGs,
+      version:   TAXONOMY_LK.ndcTargets._meta.title,
+      issued:    TAXONOMY_LK.ndcTargets._meta.issued,
+      period:    TAXONOMY_LK.ndcTargets._meta.period,
+      reduction: TAXONOMY_LK.ndcTargets.reduction,
+      removal:   TAXONOMY_LK.ndcTargets.removal,
+      sectorCounts: TAXONOMY_LK.ndcTargets.sectorCounts,
+      keySDGs:   TAXONOMY_LK.ndcTargets.keySDGs,
+      gesi:      TAXONOMY_LK.ndcTargets.gesi,
     },
     meta: {
       model:       response.model,

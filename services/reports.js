@@ -505,9 +505,18 @@ function _slgftReport(meta, p, slgft, entity) {
     },
 
     ndcAlignment: {
-      unconditionalTarget: '4.5% GHG reduction by 2030 vs Business-As-Usual',
-      conditionalTarget:   '14.5% GHG reduction by 2030 (with international support)',
-      netZeroTarget:       '2050',
+      /* NDC 3.0 (September 2025). Reduction and removal are separate
+         commitments over 2026-2035 and are never summed. */
+      reductionTarget: '20.09% cumulative GHG reduction against BAU, 2026-2035 '
+        + '(8.11% unconditional, 11.98% conditional)',
+      removalTarget:   '4.49% increase in net carbon removal, 2026-2035 '
+        + '(0.96% unconditional, 3.53% conditional) — reported separately',
+      /* NDC 3.0 as described in the DFCC ToR states no net-zero year, so
+         none is asserted. The 2050 figure here came from the superseded
+         2021 NDC; carrying it forward would be inventing a national
+         commitment inside a regulatory disclosure. */
+      netZeroTarget:       null,
+      netZeroNote:         'NDC 3.0 states no net-zero year. Reported absent rather than carried over from the superseded 2021 NDC.',
       portfolioContribution_pct: ndcContrib,
       keyDrivers: slgft.ndcKeyDrivers || [
         'Below-threshold embodied carbon intensity in green-classified projects',

@@ -16,8 +16,8 @@ const MOCK_ANALYSIS = {
     tier: 'moderate',
     label: 'Moderate NDC Alignment',
     ndcContribution_pct: 35,
-    unconditionalTarget: '4.5% GHG reduction by 2030 vs BAU',
-    conditionalTarget: '14.5% GHG reduction by 2030 with international support',
+    reductionTarget: '20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)',
+    removalTarget: '4.49% increase in net carbon removal, 2026-2035 — reported separately',
     explanation: 'This project contributes to Sri Lanka NDC targets through reduced embodied carbon in construction.',
     keyDrivers: ['Below SLGFT green threshold (≤600 kgCO2e/m²)', 'Sector F construction activity', 'M1.1 green buildings activity code'],
   },
@@ -36,7 +36,7 @@ const MOCK_ANALYSIS = {
       { objective: 'E', label: 'Ecological Conservation',         status: 'pass',        note: 'No significant ecological impact identified.' },
     ],
   },
-  bankabilityNarrative: "This Colombo office tower qualifies as a SLGFT green-aligned asset with embodied carbon intensity of 480 kgCO2e/m\xb2, well below the 600 kgCO2e/m\xb2 green threshold. The project supports Sri Lanka's unconditional NDC commitment of 4.5% GHG reduction by 2030. Recommended for green loan classification with -20 bps pricing adjustment.",
+  bankabilityNarrative: "This Colombo office tower qualifies as a SLGFT green-aligned asset with embodied carbon intensity of 480 kgCO2e/m\xb2, well below the 600 kgCO2e/m\xb2 green threshold. The project supports Sri Lanka's NDC 3.0 commitment of 20.09% cumulative GHG reduction against BAU over 2026-2035. Recommended for green loan classification with -20 bps pricing adjustment.",
   recommendations: [
     'Obtain EPDs for top 3 materials by carbon contribution to upgrade PCAF data quality to Score 2.',
     'Submit climate risk assessment to confirm DNSH compliance under Objective A.',
@@ -90,9 +90,15 @@ describe('NDC/SDG Service', () => {
   test('includes NDC targets in response', async () => {
     const result = await assessNdcSdgAlignment(BASE_PROJECT);
     expect(result.ndcTargets).toBeDefined();
-    expect(result.ndcTargets.unconditional).toContain('4.5%');
-    expect(result.ndcTargets.conditional).toContain('14.5%');
-    expect(result.ndcTargets.netZeroTarget).toBe(2050);
+    /* NDC 3.0, passed through whole rather than flattened into an
+       unconditional/conditional pair — that shape could not hold two
+       separate commitments, which is how the superseded figures survived. */
+    expect(result.ndcTargets.reduction.totalPct).toBe(20.09);
+    expect(result.ndcTargets.removal.totalPct).toBe(4.49);
+    expect(result.ndcTargets.period).toBe('2026-2035');
+    expect(result.ndcTargets.sectorCounts.mitigation).toBe(6);
+    expect(result.ndcTargets.sectorCounts.adaptation).toBe(9);
+    expect(result.ndcTargets).not.toHaveProperty('netZeroTarget');
     expect(result.ndcTargets.keySDGs).toEqual(expect.arrayContaining([7, 9, 11, 13]));
   });
 

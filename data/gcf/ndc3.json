@@ -1,0 +1,135 @@
+{
+  "_meta": {
+    "title": "Sri Lanka Nationally Determined Contributions 3.0",
+    "issued": "2025-09",
+    "period": "2026-2035",
+    "supersedes": "NDC 2.0 (2021) — 4.5% unconditional / 14.5% conditional by 2030, net zero 2050",
+    "source": "DFCC Bank PLC DAE Readiness Pre-Qualified Delivery Partner Terms of Reference, version 21 November 2025, section 1.2",
+    "note": "Targets are cumulative over the ten-year period 2026-2035 against a business-as-usual scenario. The reduction target and the removal target are separate commitments and are never added together.",
+    "verify": "Figures transcribed from the DFCC ToR. Before any figure here reaches a regulatory submission it should be checked against the NDC 3.0 document as published by the Ministry of Environment."
+  },
+
+  "reduction": {
+    "basis": "cumulative GHG emissions against BAU, 2026-2035",
+    "unconditionalPct": 8.11,
+    "conditionalPct": 11.98,
+    "totalPct": 20.09,
+    "unit": "percent"
+  },
+
+  "removal": {
+    "basis": "increase in net carbon removal against BAU, 2026-2035",
+    "unconditionalPct": 0.96,
+    "conditionalPct": 3.53,
+    "totalPct": 4.49,
+    "unit": "percent",
+    "note": "Reported separately from the reduction target. A removal is not a reduction and the two are never summed."
+  },
+
+  "sectorCounts": {
+    "mitigation": 6,
+    "adaptation": 9,
+    "crossCutting": ["Loss and damage"]
+  },
+
+  "sectorTargets": [
+    {
+      "id": "power",
+      "sector": "Electricity (power)",
+      "stream": "mitigation",
+      "target": "33.9% GHG emission reduction, while maintaining 70% renewable energy in electricity generation from and beyond 2030",
+      "gcfResultsArea": "EP"
+    },
+    {
+      "id": "coal",
+      "sector": "Electricity (power)",
+      "stream": "mitigation",
+      "target": "No capacity addition of coal power plants; natural gas introduced to complement renewables for reliability and resource adequacy",
+      "gcfResultsArea": "EP"
+    },
+    {
+      "id": "demand",
+      "sector": "Energy demand",
+      "stream": "mitigation",
+      "target": "Electricity demand reduction of about 30,000 GWh over the ten-year period through energy-efficient equipment, technologies and system improvements",
+      "gcfResultsArea": "BA"
+    },
+    {
+      "id": "publicTransport",
+      "sector": "Transport",
+      "stream": "mitigation",
+      "target": "Share of public transport of passengers (bus and rail) from 35% in 2025 to 40% by 2030 and 50% by 2035",
+      "gcfResultsArea": "LT"
+    },
+    {
+      "id": "fleetEfficiency",
+      "sector": "Transport",
+      "stream": "mitigation",
+      "target": "Fuel economy and emission performance of the active vehicle fleet improved by 25% by 2035",
+      "gcfResultsArea": "LT"
+    },
+    {
+      "id": "circularEconomy",
+      "sector": "Industry",
+      "stream": "mitigation",
+      "target": "Circular economy concepts promoted across all industries; eco industrial parks and villages established",
+      "gcfResultsArea": "BA"
+    },
+    {
+      "id": "refrigerants",
+      "sector": "Industry",
+      "stream": "mitigation",
+      "target": "Industrial and commercial refrigeration systems converted to low global warming potential technologies",
+      "gcfResultsArea": "BA"
+    },
+    {
+      "id": "waste",
+      "sector": "Waste",
+      "stream": "mitigation",
+      "target": "20.8% GHG emission reduction over the ten-year period through integrated activities and management practices, in line with the waste-management hierarchy",
+      "gcfResultsArea": "BA"
+    },
+    {
+      "id": "postHarvest",
+      "sector": "Agriculture",
+      "stream": "adaptation",
+      "target": "Post-harvest losses reduced and value addition of crops improved",
+      "gcfResultsArea": "HW"
+    },
+    {
+      "id": "forestCover",
+      "sector": "Forestry and land use",
+      "stream": "mitigation",
+      "target": "Sustainable management of forests, restoration of degraded lands and planting trees outside forests, to increase forest cover to at least 32% by 2035",
+      "gcfResultsArea": "FL"
+    },
+    {
+      "id": "blueCarbon",
+      "sector": "Coastal and marine",
+      "stream": "adaptation",
+      "target": "Conservation and enhancement of blue carbon ecosystems",
+      "gcfResultsArea": "EE"
+    },
+    {
+      "id": "nbs",
+      "sector": "Cross-cutting",
+      "stream": "adaptation",
+      "target": "Promotion of nature-based solutions",
+      "gcfResultsArea": "EE"
+    }
+  ],
+
+  "gesi": {
+    "requirement": "Gender Equity and Social Inclusion (GESI) in all NDCs",
+    "note": "GESI is a requirement across every NDC action, not a single sector target. Beneficiary reporting is disaggregated at source rather than estimated after the fact."
+  },
+
+  "nap": {
+    "title": "National Adaptation Plan 2026-2035",
+    "sectorCount": 13,
+    "note": "The revised NAP is aligned with NDC 3.0 adaptation commitments, so national adaptation priorities inform international reporting and finance mobilisation under the Paris Agreement.",
+    "status": "Based on the working draft of 2025 as described in the DFCC ToR."
+  },
+
+  "keySDGs": [7, 9, 11, 13, 14, 15]
+}

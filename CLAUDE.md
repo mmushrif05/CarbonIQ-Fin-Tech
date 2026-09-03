@@ -316,7 +316,9 @@ The Sri Lanka work is on `main` as of the merge of `claude/srilanka-taxonomy`.
 | Transition | ≤ 900 kgCO2e/m² |
 | Not aligned | > 900 kgCO2e/m² |
 
-**NDC targets** — unconditional 4.5% GHG reduction by 2030 against BAU; conditional 14.5% with international support; net zero 2050. Key SDGs: 7, 9, 11, 13, 14, 15.
+**NDC targets — NDC 3.0, issued September 2025** (`data/gcf/ndc3.json`). Two **separate** commitments over **2026–2035**, never summed: a **20.09%** cumulative GHG reduction against BAU (8.11% unconditional, 11.98% conditional), and a **4.49%** increase in net carbon removal (0.96% / 3.53%). Six mitigation sectors, nine adaptation sectors, loss and damage cross-cutting. Key SDGs: 7, 9, 11, 13, 14, 15; GESI applies across all NDC actions.
+
+This replaced the 2021 NDC (4.5% / 14.5% by 2030, net zero 2050) that seven source files and three test files were still citing — including the Green Loan Certificate, which printed them onto a document carrying a SHA-256 audit hash. Nothing announced the drift, because the tests asserted the same superseded figures the code produced. `tests/ndc3-currency.test.js` now sweeps the whole tree, and permits the old figures only on a line that marks them as superseded. **NDC 3.0 states no net-zero year**, so none is asserted — an absent commitment is reported absent rather than carried forward.
 
 **Where it lives**
 - `services/ndc-sdg.js` — Claude-powered NDC/SDG alignment analysis

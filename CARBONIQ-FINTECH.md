@@ -822,15 +822,16 @@ Implemented as a dedicated feature branch for DFCC Bank — Sri Lanka's first gr
 The `POST /v1/ndc-sdg/assess` endpoint uses **Claude claude-sonnet-4-6** with prompt caching to:
 
 1. Assess NDC alignment tier (Strong / Moderate / Partial / Not Aligned)
-2. Estimate % contribution to Sri Lanka's 4.5% unconditional NDC target
+2. Estimate % contribution to Sri Lanka's NDC 3.0 reduction target (20.09% cumulative, 2026-2035)
 3. Identify relevant SDGs (from the 6 key SDGs: 7, 9, 11, 13, 14, 15)
 4. Perform DNSH check across all 4 environmental objectives
 5. Generate bankability narrative for the lending officer
 6. Provide concrete recommendations
 
 **NDC Targets (Sri Lanka)**:
-- Unconditional: 4.5% GHG reduction by 2030 vs BAU
-- Conditional: 14.5% GHG reduction by 2030 (with international support)
+- Reduction: 20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)
+- Removal: 4.49% increase in net carbon removal over the same period (0.96% unconditional, 3.53% conditional)
+- The two are separate commitments and are never added together
 - Net Zero: 2050
 
 ### Frontend Integration

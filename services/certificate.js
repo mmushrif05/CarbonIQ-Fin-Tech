@@ -96,11 +96,30 @@ function generateCertificate(opts) {
         ? `${_loanPricing(tier) > 0 ? '+' : ''}${_loanPricing(tier)} bps` : 'Standard rate',
     },
 
+    /* NDC 3.0 (September 2025). Reduction and removal are separate
+       commitments over 2026-2035, so the certificate states both and never a
+       combined figure. The superseded 2021 targets this used to carry
+       (4.5% / 14.5% by 2030, net zero 2050) were being printed onto an
+       audit-hashed certificate, which is the worst place for a stale number:
+       the hash makes it look verified. */
     ndcAlignment: {
       tier: ndcTier || null, contribution_pct: ndcContrib_pct || null,
-      unconditionalTarget: TAXONOMY_LK.ndcTargets.unconditional,
-      conditionalTarget: TAXONOMY_LK.ndcTargets.conditional,
-      netZeroTarget: TAXONOMY_LK.ndcTargets.netZeroTarget,
+      ndcVersion: TAXONOMY_LK.ndcTargets._meta.title,
+      ndcIssued: TAXONOMY_LK.ndcTargets._meta.issued,
+      period: TAXONOMY_LK.ndcTargets._meta.period,
+      reduction: {
+        totalPct: TAXONOMY_LK.ndcTargets.reduction.totalPct,
+        unconditionalPct: TAXONOMY_LK.ndcTargets.reduction.unconditionalPct,
+        conditionalPct: TAXONOMY_LK.ndcTargets.reduction.conditionalPct,
+        basis: TAXONOMY_LK.ndcTargets.reduction.basis,
+      },
+      removal: {
+        totalPct: TAXONOMY_LK.ndcTargets.removal.totalPct,
+        unconditionalPct: TAXONOMY_LK.ndcTargets.removal.unconditionalPct,
+        conditionalPct: TAXONOMY_LK.ndcTargets.removal.conditionalPct,
+        basis: TAXONOMY_LK.ndcTargets.removal.basis,
+      },
+      note: 'Reduction and removal are separate NDC 3.0 commitments and are never summed.',
     },
 
     sdgAlignment: {
