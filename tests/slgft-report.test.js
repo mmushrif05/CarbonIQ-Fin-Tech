@@ -44,9 +44,12 @@ describe('SLGFT Report Service', () => {
   test('includes NDC alignment section', () => {
     const report = generateReport(BASE);
     expect(report.ndcAlignment).toBeDefined();
-    expect(report.ndcAlignment.unconditionalTarget).toContain('4.5%');
-    expect(report.ndcAlignment.conditionalTarget).toContain('14.5%');
-    expect(report.ndcAlignment.netZeroTarget).toBe('2050');
+    expect(report.ndcAlignment.reductionTarget).toContain('20.09%');
+    expect(report.ndcAlignment.removalTarget).toContain('4.49%');
+    /* NDC 3.0 states no net-zero year, so the report asserts none rather than
+       carrying the superseded 2021 figure into a regulatory disclosure. */
+    expect(report.ndcAlignment.netZeroTarget).toBeNull();
+    expect(report.ndcAlignment.netZeroNote).toMatch(/states no net-zero year/);
   });
 
   test('includes SDG alignment', () => {

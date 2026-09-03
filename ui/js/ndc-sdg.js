@@ -243,10 +243,16 @@ const NdcSdgPage = (() => {
             <strong>Regulator:</strong> ${f.regulator || '—'}
           </div>
           <div>
-            <strong>NDC Targets:</strong><br>
-            Unconditional: ${f.ndcTargets?.unconditional || '—'}<br>
-            Conditional: ${f.ndcTargets?.conditional || '—'}<br>
-            Net Zero: ${f.ndcTargets?.netZeroTarget || '—'}<br>
+            <strong>${f.ndcTargets?.version || 'NDC targets'}:</strong><br>
+            Reduction: ${f.ndcTargets?.reduction
+    ? `${f.ndcTargets.reduction.totalPct}% cumulative vs BAU, ${f.ndcTargets.period}
+       (${f.ndcTargets.reduction.unconditionalPct}% unconditional ·
+        ${f.ndcTargets.reduction.conditionalPct}% conditional)` : '—'}<br>
+            Removal: ${f.ndcTargets?.removal
+    ? `${f.ndcTargets.removal.totalPct}% increase in net carbon removal
+       (${f.ndcTargets.removal.unconditionalPct}% unconditional ·
+        ${f.ndcTargets.removal.conditionalPct}% conditional)` : '—'}<br>
+            <span class="slgft-note">Two separate commitments — never added together.</span><br>
             Key SDGs: ${(f.ndcTargets?.keySDGs || []).map(s => `<span class="slgft-sdg-pill">SDG ${s}</span>`).join(' ')}
           </div>
         </div>

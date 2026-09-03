@@ -62,8 +62,9 @@ Sri Lanka-specific fields on `/v1/projects` and `/v1/ndc-sdg/assess`:
 - `activityCode` — SLGFT activity code (e.g. `M1.1` = Green Buildings, `M4.1` = Solar PV)
 
 NDC targets assessed:
-- Unconditional: 4.5% GHG reduction by 2030 vs BAU
-- Conditional: 14.5% GHG reduction by 2030 (with international support)
+- Reduction: 20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)
+- Removal: 4.49% increase in net carbon removal over the same period (0.96% unconditional, 3.53% conditional)
+- The two are separate commitments and are never added together
 - Key SDGs: 7, 9, 11, 13, 14, 15
 
 ## Authentication

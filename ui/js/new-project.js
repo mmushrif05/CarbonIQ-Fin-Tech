@@ -224,7 +224,7 @@ const NewProject = (() => {
           ${slsicSector ? `<div class="review-row"><span>SLSIC Sector</span><strong>Sector ${slsicSector}</strong></div>` : ''}
           ${activityCode ? `<div class="review-row"><span>Activity Code</span><strong>${activityCode}${actDesc}</strong></div>` : ''}
           ${intVal !== null ? `<div class="review-row"><span>Intensity</span><strong>${intVal.toFixed(1)} kgCO2e/m² <span style="color:var(--text-tertiary);font-weight:400">(threshold: ≤600 green, ≤900 transition)</span></strong></div>` : ''}
-          <div class="review-row"><span>NDC Contribution</span><strong>4.5% unconditional / 14.5% conditional GHG reduction by 2030</strong></div>
+          <div class="review-row"><span>NDC Contribution</span><strong>NDC 3.0 &mdash; 20.09% cumulative GHG reduction vs BAU, 2026–2035</strong></div>
           <div class="review-row"><span>Key SDGs</span><strong>SDG 7 · 9 · 11 · 13 · 14 · 15</strong></div>
           <div style="margin-top:8px">
             <button class="btn btn-ghost btn-sm" onclick="navigateTo('ndc-sdg')" style="font-size:12px">

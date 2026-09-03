@@ -96,6 +96,15 @@ app.get('/health', (_req, res) => {
         (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
       )
     },
+    /* What this deployment can actually persist, on the one endpoint that
+       needs no key. "The data did not save" and "this deployment cannot save"
+       look identical from a browser, and the second is the one a deploy can
+       silently cause — the same reason /health already reports the running
+       commit. Mode and yes/no only; no credential can reach the wire. */
+    storage: (() => {
+      const cap = require('./services/partc-store').capability();
+      return { mode: cap.mode, durable: cap.durable, writable: cap.writable };
+    })(),
     timestamp: new Date().toISOString()
   });
 });

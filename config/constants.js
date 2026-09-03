@@ -8,6 +8,8 @@
  * and is mandated by ISO 21930. Do NOT duplicate or override it here.
  */
 
+const NDC3 = require('../data/gcf/ndc3.json');
+
 // ---------------------------------------------------------------------------
 // Carbon Finance Score (CFS) — 0 to 100
 // ---------------------------------------------------------------------------
@@ -219,13 +221,27 @@ const TAXONOMY_LK = {
     transition:         900,           // ≤ 900 kgCO2e/m2 — transition
   },
 
-  // NDC targets Sri Lanka committed to
-  ndcTargets: {
-    unconditional:  '4.5% GHG reduction by 2030 (vs BAU)',
-    conditional:    '14.5% GHG reduction by 2030 (with international support)',
-    netZeroTarget:  2050,
-    keySDGs:        [7, 9, 11, 13, 14, 15],
-  },
+  /* NDC targets Sri Lanka committed to.
+   *
+   * NDC 3.0, issued September 2025, supersedes the 2021 NDC this file used to
+   * carry (4.5% unconditional / 14.5% conditional by 2030, net zero 2050).
+   * Three things changed and each of them matters:
+   *
+   *   The period is 2026-2035 and the target is *cumulative* over it, not a
+   *   single-year 2030 figure.
+   *
+   *   Reduction and removal are two separate commitments. 20.09% is the
+   *   emission reduction; 4.49% is the increase in net carbon removal. They
+   *   are never added, and a project that removes carbon has not reduced
+   *   emissions.
+   *
+   *   There is no net-zero year in NDC 3.0 as described in the DFCC ToR, so
+   *   this file no longer asserts one. An absent commitment is reported
+   *   absent rather than carried forward from a superseded document.
+   *
+   * The figures live in data/gcf/ndc3.json with their source and vintage, so
+   * there is one place they are stated. */
+  ndcTargets: NDC3,
 
   // Carbon pricing (no formal tax yet — voluntary market)
   carbonPricing: {

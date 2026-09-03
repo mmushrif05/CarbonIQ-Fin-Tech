@@ -85,9 +85,14 @@ describe('Certificate Service — generateCertificate()', () => {
 
   test('includes NDC targets', () => {
     const cert = generateCertificate(BASE_OPTS);
-    expect(cert.ndcAlignment.unconditionalTarget).toContain('4.5%');
-    expect(cert.ndcAlignment.conditionalTarget).toContain('14.5%');
-    expect(cert.ndcAlignment.netZeroTarget).toBe(2050);
+    /* NDC 3.0. Reduction and removal are separate commitments — the shape
+       carries both and never a combined figure. */
+    expect(cert.ndcAlignment.reduction.totalPct).toBe(20.09);
+    expect(cert.ndcAlignment.reduction.unconditionalPct).toBe(8.11);
+    expect(cert.ndcAlignment.removal.totalPct).toBe(4.49);
+    expect(cert.ndcAlignment.period).toBe('2026-2035');
+    expect(cert.ndcAlignment.note).toMatch(/never summed/);
+    expect(cert.ndcAlignment).not.toHaveProperty('netZeroTarget');
     expect(cert.ndcAlignment.tier).toBe('moderate');
     expect(cert.ndcAlignment.contribution_pct).toBe(35);
   });

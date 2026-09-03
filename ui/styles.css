@@ -2875,3 +2875,16 @@ body.adj-open { overflow: hidden; }
 
 /* Stretched, so the note sits at the tile's base rather than leaving a hole. */
 .cap-kpi-foot { padding-top: 6px; }
+
+/* NDC 3.0 target tiles. Each carries its own unconditional/conditional split
+   on a second line, because the two commitments do not share one split and
+   the old two-tile layout implied they did. */
+.ndc-target-split {
+  display: block; margin-top: 3px;
+  font-size: 11.5px; font-weight: 400; color: var(--text-secondary);
+  line-height: 1.4;
+}
+.ndc-targets-note {
+  margin: 10px 0 0; font-size: 12.5px; color: var(--text-secondary);
+  line-height: 1.5; max-width: 78ch;
+}

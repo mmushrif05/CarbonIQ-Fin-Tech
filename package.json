@@ -1,7 +1,7 @@
 {
   "name": "carboniq-fintech",
   "version": "0.1.0",
-  "description": "CarbonIQ FinTech \u2014 Bank-facing API layer for construction carbon intelligence",
+  "description": "CarbonIQ FinTech — Bank-facing API layer for construction carbon intelligence",
   "license": "Apache-2.0",
   "main": "server.js",
   "engines": {
@@ -39,6 +39,7 @@
   ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
+    "@netlify/blobs": "^11.0.3",
     "@netlify/functions": "^2.8.2",
     "cors": "^2.8.5",
     "docx": "^9.7.1",
