@@ -89,7 +89,9 @@ describe('Where the money stands', () => {
 });
 
 describe('The emissions ledger keeps four lines apart', () => {
-  const led = metrics.emissionsLedger(BOOK);
+  /* On the commitment basis, which is what these figures were authored as.
+     Attribution on the outstanding amount is exercised in capital-anchor. */
+  const led = metrics.emissionsLedger(BOOK, { attributionBasis: 'commitment' });
 
   test('what has happened and what is projected are separate figures', () => {
     expect(led.incurred).toBe(12_050);

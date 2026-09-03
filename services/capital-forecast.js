@@ -38,6 +38,7 @@
 'use strict';
 
 const { DEPLOYING_STATUSES } = require('./capital-book');
+const attribution = require('./capital-attribution');
 
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
@@ -136,8 +137,19 @@ const CONFIDENCE_HORIZON_YEARS = 5;
  *        Zero by default: a flat grid changes no total, which is what lets the
  *        acceptance test prove this file moves nothing.
  */
-function investmentSeries(inv, { fromYear, years, gridDeclinePctPerYear = 0 } = {}) {
-  const e = inv.emissions || {};
+function investmentSeries(inv, {
+  fromYear, years, gridDeclinePctPerYear = 0, payments = [], attributionBasis = 'outstanding',
+} = {}) {
+  /* Phased from the ATTRIBUTED figures, on the same basis the roll-up uses.
+     When only the roll-up knew about attribution, the curve was drawn from the
+     unattributed numbers and stopped adding up to the total printed above it. */
+  const factor = attribution.factorFor(inv, payments, attributionBasis);
+  const stored = inv.emissions || {};
+  const e = {
+    forward_tCO2e:   (Number(stored.forward_tCO2e)   || 0) * factor,
+    reduction_tCO2e: (Number(stored.reduction_tCO2e) || 0) * factor,
+    avoided_tCO2e:   (Number(stored.avoided_tCO2e)   || 0) * factor,
+  };
   const first = fromYear || new Date().getFullYear();
 
   /* `forward_tCO2e` is by definition what is still ahead — what has already
@@ -200,7 +212,9 @@ function investmentSeries(inv, { fromYear, years, gridDeclinePctPerYear = 0 } = 
  * decision nobody has taken. The basket in a later phase adds selected ones
  * deliberately and says it is doing so.
  */
-function bookSeries(book, { fromYear, years, gridDeclinePctPerYear = 0, include = null } = {}) {
+function bookSeries(book, {
+  fromYear, years, gridDeclinePctPerYear = 0, include = null, attributionBasis = 'outstanding',
+} = {}) {
   const first = fromYear || new Date().getFullYear();
 
   const held = book.investments.filter(i =>
@@ -211,7 +225,10 @@ function bookSeries(book, { fromYear, years, gridDeclinePctPerYear = 0, include 
      the total under it would not reconcile with the roll-up above it. */
   const span = Math.max(1, Math.round(years || _longestTerm(held, first)));
 
-  const per = held.map(i => investmentSeries(i, { fromYear: first, years: span, gridDeclinePctPerYear }));
+  const per = held.map(i => investmentSeries(i, {
+    fromYear: first, years: span, gridDeclinePctPerYear,
+    payments: book.payments || [], attributionBasis,
+  }));
 
   const rows = [];
   const exact = { forward: 0, reduction: 0, avoided: 0 };
@@ -252,6 +269,7 @@ function bookSeries(book, { fromYear, years, gridDeclinePctPerYear = 0, include 
     years: span,
     confidenceHorizonYear: first + CONFIDENCE_HORIZON_YEARS - 1,
     gridDeclinePctPerYear: round(gridDeclinePctPerYear, 2),
+    attributionBasis,
     rows,
     totals,
     investments: per.length,

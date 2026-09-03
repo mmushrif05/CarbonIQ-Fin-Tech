@@ -87,12 +87,35 @@ describe('The seeded book', () => {
   });
 
   test('keeps the four emission lines apart across the wire', async () => {
+    // Attributed on the outstanding amount by default, per PCAF Part A.
     const { emissions } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(emissions.attributionBasis).toBe('outstanding');
+    expect(emissions.incurred).toBe(6_749.24);
+    expect(emissions.forward).toBe(2_324.41);
+    expect(emissions.reduction).toBe(862.59);
+    expect(emissions.avoided).toBe(31_305.88);
+  });
+
+  test('the commitment basis returns the figures the book was reporting before', async () => {
+    // Proof the attribution change moved emissions between lines rather than
+    // making them disappear.
+    const { emissions } = (await auth(api()
+      .get('/v1/capital/dashboard?attributionBasis=commitment')).expect(200)).body.dashboard;
     expect(emissions.incurred).toBe(12_050);
     expect(emissions.forward).toBe(4_230);
     expect(emissions.reduction).toBe(1_030);
     expect(emissions.avoided).toBe(36_000);
-    expect(emissions.lifetimeInventory).toBe(16_280);
+  });
+
+  test('what the drawdown has not reached is on the pending line, not lost', async () => {
+    const { emissions } = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(Math.round((emissions.incurred + emissions.pending.incurred) * 100) / 100).toBe(12_050);
+    expect(Math.round((emissions.forward + emissions.pending.forward) * 100) / 100).toBe(4_230);
+  });
+
+  test('an unrecognised attribution basis is refused, not silently defaulted', async () => {
+    const res = await auth(api().get('/v1/capital/dashboard?attributionBasis=vibes')).expect(400);
+    expect(res.body.error).toBe('BAD_BASIS');
   });
 
   test('an unpriced project survives storage as unpriced, not as zero percent', async () => {

@@ -85,6 +85,9 @@ async function createPortfolio(orgId, input) {
     mandate: input.mandate || '',
     vintage: input.vintage || null,
     allocatedBudget: num(input.allocatedBudget),
+    /* Promised for future deployment, not yet committed to a named project.
+       It sits between the allocated budget and the committed book. */
+    pledged: num(input.pledged),
     createdAt: now(),
     updatedAt: now(),
   };
@@ -98,6 +101,7 @@ async function updatePortfolio(orgId, id, updates) {
     if (updates[k] !== undefined) clean[k] = updates[k];
   }
   if (updates.allocatedBudget !== undefined) clean.allocatedBudget = num(updates.allocatedBudget);
+  if (updates.pledged !== undefined) clean.pledged = num(updates.pledged);
   return store.patch(C_PORTFOLIO, orgId, id, clean);
 }
 

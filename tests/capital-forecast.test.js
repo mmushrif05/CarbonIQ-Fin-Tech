@@ -32,9 +32,20 @@ const BOOK = {
 
 const YEAR = 2026;
 
-describe('The acceptance test for this phase: nothing moved', () => {
+describe('The acceptance test for this phase: the curve adds up to the figure above it', () => {
   const ledger = metrics.emissionsLedger(BOOK);
   const series = forecast.bookSeries(BOOK, { fromYear: YEAR });
+
+  /* Checked on both attribution bases. When only the roll-up knew about
+     attribution, the curve was drawn from the unattributed figures and stopped
+     reconciling — the defect this invariant exists to catch. */
+  test.each(['outstanding', 'commitment'])('on the %s basis, all three series reconcile', (basis) => {
+    const led = metrics.emissionsLedger(BOOK, { attributionBasis: basis });
+    const ser = forecast.bookSeries(BOOK, { fromYear: YEAR, attributionBasis: basis });
+    expect(ser.totals.forward_tCO2e).toBe(led.forward);
+    expect(ser.totals.reduction_tCO2e).toBe(led.reduction);
+    expect(ser.totals.avoided_tCO2e).toBe(led.avoided);
+  });
 
   test('forward emissions sum back to the roll-up, exactly', () => {
     expect(series.totals.forward_tCO2e).toBe(ledger.forward);
@@ -128,7 +139,7 @@ describe('What is ahead is phased from now, not from the original start', () => 
       startYear: 2020, phasing: 'level',
       emissions: { forward_tCO2e: 100 },
     };
-    const s = forecast.investmentSeries(started2020, { fromYear: 2026 });
+    const s = forecast.investmentSeries(started2020, { fromYear: 2026, attributionBasis: 'commitment' });
     expect(s.remainingYears).toBe(4);                  // 2020 + 10 − 2026
     expect(s.rows.reduce((t, r) => t + r.forward_tCO2e, 0)).toBeCloseTo(100, 6);
     expect(s.rows[0].year).toBe(2026);
@@ -139,7 +150,7 @@ describe('What is ahead is phased from now, not from the original start', () => 
       id: 'y', name: 'Ended', status: 'deployed', tenorYears: 2, startYear: 2000,
       phasing: 'level', emissions: { forward_tCO2e: 50 },
     };
-    const s = forecast.investmentSeries(done, { fromYear: 2026 });
+    const s = forecast.investmentSeries(done, { fromYear: 2026, attributionBasis: 'commitment' });
     expect(s.remainingYears).toBe(1);
     expect(s.rows[0].forward_tCO2e).toBeCloseTo(50, 6);
   });
@@ -204,9 +215,12 @@ describe('What the series refuses to do', () => {
 
   test('a pipeline project is not in the curve of what the book will emit', () => {
     // Putting it there would report a decision nobody has taken.
-    const withOne = forecast.bookSeries(BOOK, { fromYear: YEAR, include: ['inv_jaffna_minigrid'] });
-    expect(withOne.totals.avoided_tCO2e).toBeGreaterThan(series.totals.avoided_tCO2e);
-    expect(withOne.investments).toBe(series.investments + 1);
+    const base = forecast.bookSeries(BOOK, { fromYear: YEAR, attributionBasis: 'commitment' });
+    const withOne = forecast.bookSeries(BOOK, {
+      fromYear: YEAR, attributionBasis: 'commitment', include: ['inv_jaffna_minigrid'],
+    });
+    expect(withOne.totals.avoided_tCO2e).toBeGreaterThan(base.totals.avoided_tCO2e);
+    expect(withOne.investments).toBe(base.investments + 1);
   });
 });
 

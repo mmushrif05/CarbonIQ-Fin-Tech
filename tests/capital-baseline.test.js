@@ -81,9 +81,9 @@ describe('The book reconciles with itself', () => {
     }
   });
 
-  test('the phased series sums back to the roll-up', () => {
-    const led = metrics.emissionsLedger(book);
-    const ser = forecast.bookSeries(book, { fromYear: 2026 });
+  test.each(['outstanding', 'commitment'])('the phased series sums back to the roll-up (%s)', (basis) => {
+    const led = metrics.emissionsLedger(book, { attributionBasis: basis });
+    const ser = forecast.bookSeries(book, { fromYear: 2026, attributionBasis: basis });
     expect(ser.totals.forward_tCO2e).toBe(led.forward);
     expect(ser.totals.avoided_tCO2e).toBe(led.avoided);
   });

@@ -42,6 +42,7 @@
 
 const { DEPLOYING_STATUSES } = require('./capital-book');
 const forecast = require('./capital-forecast');
+const attribution = require('./capital-attribution');
 
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
@@ -118,14 +119,33 @@ function capitalPosition(book) {
  * `reduction` and `avoided` sit outside the inventory entirely and are never
  * subtracted from it.
  */
-function emissionsLedger(book) {
+function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
   const held = book.investments.filter(i => DEPLOYING_STATUSES.includes(i.status));
   const e = (i) => i.emissions || {};
+  const basis = attribution.BASES.includes(attributionBasis) ? attributionBasis : 'outstanding';
+  const payments = book.payments || [];
 
-  const incurred  = sum(held, i => e(i).incurred_tCO2e);
-  const forward   = sum(held, i => e(i).forward_tCO2e);
-  const reduction = sum(held, i => e(i).reduction_tCO2e);
-  const avoided   = sum(held, i => e(i).avoided_tCO2e);
+  const split = held.map(i => attribution.splitEmissions(i, payments, basis));
+  const pick = (key, part) => split.reduce((t, s) => t + s[key][part], 0);
+
+  const incurred  = pick('incurred', 'attributed');
+  const forward   = pick('forward', 'attributed');
+  const reduction = pick('reduction', 'attributed');
+  const avoided   = pick('avoided', 'attributed');
+
+  /* What the drawdown has not reached yet. Not lost — it arrives as the money
+     does, and it is the answer to what the position is worth against the
+     payments still to be made. */
+  const pending = {
+    incurred:  round(pick('incurred', 'pending')),
+    forward:   round(pick('forward', 'pending')),
+    reduction: round(pick('reduction', 'pending')),
+    avoided:   round(pick('avoided', 'pending')),
+  };
+  const atFullCommitment = {
+    incurred: round(pick('incurred', 'full')),
+    forward:  round(pick('forward', 'full')),
+  };
 
   const scored = held.filter(i => e(i).dataQuality && Number.isFinite(e(i).dataQuality.score));
   const weightBase = sum(scored, i => Math.abs(Number(i.commitment) || 0));
@@ -144,6 +164,20 @@ function emissionsLedger(book) {
     reduction: round(reduction),
     avoided: round(avoided),
 
+    attributionBasis: basis,
+    attributionNote: basis === 'outstanding'
+      ? 'Attributed on the outstanding amount, per PCAF Part A. A commitment that has not been '
+        + 'drawn attributes nothing yet — the emissions arrive as the money does, and what is '
+        + 'waiting is on the pending line rather than booked early.'
+      : 'Attributed on the full commitment whether or not it has been drawn. Conservative, and it '
+        + 'does not match how Part A defines the attribution factor, so it cannot be disclosed as '
+        + 'conformant without a note.',
+    pending,
+    pendingNote: 'Emissions that will be attributed as the undrawn commitment is drawn. They are '
+      + 'not in the figures above and are not a second inventory — they are the same emissions, '
+      + 'not yet this book\'s to report.',
+    atFullCommitment,
+
     /* Said in the payload as well as on the screen, because a client asked to
        accept these figures will read one of the two. */
     inventoryNote: 'Emissions already incurred are measured; forward emissions are a projection over the remaining term. The two are reported separately and their sum is part measurement, part forecast.',
@@ -159,6 +193,103 @@ function emissionsLedger(book) {
         ? 'No investment in the book carries a data-quality score, so none is reported. An unscored holding is excluded from the weighting rather than counted as zero.'
         : null,
     },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// What an anchor opens the screen to see
+// ---------------------------------------------------------------------------
+
+/**
+ * The five questions an anchor investor actually arrives with, answered in the
+ * order he asks them and each labelled by what kind of statement it is.
+ *
+ * Two of the five are not measurements and must never look like one. What the
+ * book will emit over the rest of its term is a projection. What a pledge will
+ * emit is not even that — there is nothing named to attach emissions to yet,
+ * so the honest answer is the money and an explicit absence, not a number
+ * derived from an average.
+ *
+ * The third figure is the one worth reading twice. "What is my position worth
+ * against the payments still to be made" splits into money still to go out and
+ * the emissions that arrive with it. Booking those emissions today would
+ * overstate the inventory; ignoring them would understate the commitment. They
+ * are their own line.
+ */
+function anchorPosition(book, { attributionBasis = 'outstanding' } = {}) {
+  const cap = capitalPosition(book);
+  const led = emissionsLedger(book, { attributionBasis });
+  const pipe = pipeline(book, { carbonWeight: 0.5 });
+
+  const pledged = sum(book.portfolios, p => p.pledged);
+
+  return {
+    currency: cap.currency,
+    attributionBasis: led.attributionBasis,
+
+    /* 1 — over the whole life of what is held. Part measured, part forecast,
+       and the two halves are carried separately so nobody has to trust the
+       sum. */
+    totalOverLife: {
+      value: round(led.incurred + led.forward),
+      measured: led.incurred,
+      projected: led.forward,
+      kind: 'part-measured',
+      note: 'Attributed emissions over the life of the holdings: what has already been incurred '
+        + 'plus what is projected over the remaining term. The two halves are given separately '
+        + 'because only the first is a measurement.',
+    },
+
+    /* 2 — the only figure here that is a measurement. */
+    current: {
+      value: led.incurred,
+      kind: 'measured',
+      note: 'Attributed to this book to date. The one figure on this screen that is a measurement '
+        + 'rather than a projection.',
+    },
+
+    /* 3 — the position against payments still to be made. */
+    pending: {
+      capital: cap.undrawnCommitment,
+      emissionsOnDrawdown: round(led.pending.incurred + led.pending.forward),
+      incurredWaiting: led.pending.incurred,
+      forwardWaiting: led.pending.forward,
+      kind: 'committed-not-drawn',
+      note: `${cap.undrawnCommitment > 0 ? 'Committed and not yet drawn' : 'Nothing is committed and undrawn'}. `
+        + 'The emissions beside it are not in the figures above: they are attributed as the money '
+        + 'goes out. Booking them today would overstate the inventory; leaving them out entirely '
+        + 'would understate the commitment.',
+    },
+
+    /* 4 — pledged. Money promised for deployment that is not yet committed to
+       anything named, so its emissions are absent rather than estimated. */
+    pledged: {
+      capital: round(pledged),
+      emissions: null,
+      kind: pledged > 0 ? 'declared' : 'none',
+      note: pledged > 0
+        ? 'Pledged for future deployment and not yet committed to a named project. No emissions are '
+          + 'reported against it: there is nothing to attribute them to, and a figure derived from '
+          + 'the book average would be an invention dressed as a forecast.'
+        : 'Nothing has been pledged beyond what is already committed.',
+    },
+
+    /* 5 — what the queue would add. Nothing here is in any total until it is
+       written. */
+    pipelineWouldAdd: {
+      projects: pipe.count,
+      capitalNeeded: pipe.totalRequested,
+      emissions: pipe.totalContribution_tCO2e,
+      reduction: round(sum(pipe.ranked.concat(pipe.unrankable), r => r.reduction_tCO2e)),
+      avoided: round(sum(pipe.ranked.concat(pipe.unrankable), r => r.avoided_tCO2e)),
+      kind: 'not-yet-decided',
+      note: 'What the queue would add to this book if every project in it were written. None of it '
+        + 'is in any figure above, because none of it has been decided.',
+    },
+
+    kindsNote: 'Measured means computed from what is on record. Part-measured means half of it is '
+      + 'a projection. Declared means only the reporting entity can know it. Absent means the '
+      + 'standard asks for it and it is not available — never a zero standing in for it.',
   };
 }
 
@@ -345,6 +476,7 @@ function _byType(rows) {
  */
 function dashboard(book, {
   carbonWeight = 0.5,
+  attributionBasis = 'outstanding',
   horizonYears = null,
   gridDeclinePctPerYear = 0,
   drawdownYears = 3,
@@ -358,8 +490,9 @@ function dashboard(book, {
     emptyNote: empty
       ? 'No portfolio has been recorded, so there is nothing to report. That is not a position of zero — it is a book that has not been entered yet.'
       : null,
+    anchor: anchorPosition(book, { attributionBasis }),
     capital: capitalPosition(book),
-    emissions: emissionsLedger(book),
+    emissions: emissionsLedger(book, { attributionBasis }),
     portfolios: portfolioRows(book),
     pipeline: pipeline(book, { carbonWeight }),
 
@@ -368,7 +501,7 @@ function dashboard(book, {
        does not add up to the number printed beside it is worse than no curve. */
     forecast: {
       emissions: forecast.bookSeries(book, {
-        fromYear: first, years: horizonYears, gridDeclinePctPerYear,
+        fromYear: first, years: horizonYears, gridDeclinePctPerYear, attributionBasis,
       }),
       capital: forecast.capitalSeries(book, {
         fromYear: first, years: horizonYears, drawdownYears,
@@ -381,6 +514,7 @@ function dashboard(book, {
 }
 
 module.exports = {
-  capitalPosition, emissionsLedger, portfolioRows, pipeline, dashboard,
+  capitalPosition, emissionsLedger, anchorPosition, portfolioRows, pipeline, dashboard,
   _normalise,
+  ATTRIBUTION_BASES: attribution.BASES,
 };

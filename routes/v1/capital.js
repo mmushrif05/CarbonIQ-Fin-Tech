@@ -79,8 +79,17 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
      weighting does: they are questions a reader asks of one book, not
      properties of the book. They come back in the payload, so a screenshot of
      a curve always carries the assumptions that produced it. */
+  const basis = req.query.attributionBasis || 'outstanding';
+  if (!metrics.ATTRIBUTION_BASES.includes(basis)) {
+    return res.status(400).json({
+      error: 'BAD_BASIS',
+      message: `attributionBasis must be one of ${metrics.ATTRIBUTION_BASES.join(', ')}; received "${basis}".`,
+    });
+  }
+
   const opts = {
     carbonWeight,
+    attributionBasis: basis,
     horizonYears: req.query.horizonYears ? Number(req.query.horizonYears) : null,
     gridDeclinePctPerYear: req.query.gridDeclinePct ? Number(req.query.gridDeclinePct) : 0,
     drawdownYears: req.query.drawdownYears ? Number(req.query.drawdownYears) : 3,

@@ -13,7 +13,8 @@
       "currency": "USD",
       "vintage": 2024,
       "mandate": "Retrofit and new-build commercial and residential, EU/ASEAN taxonomy aligned.",
-      "allocatedBudget": 500000000
+      "allocatedBudget": 500000000,
+      "pledged": 120000000
     },
     {
       "id": "pf_renewables_sa",
@@ -21,7 +22,8 @@
       "currency": "USD",
       "vintage": 2025,
       "mandate": "Grid-connected generation and storage, NDC-aligned under the Sri Lanka taxonomy.",
-      "allocatedBudget": 250000000
+      "allocatedBudget": 250000000,
+      "pledged": 60000000
     }
   ],
   "investments": [

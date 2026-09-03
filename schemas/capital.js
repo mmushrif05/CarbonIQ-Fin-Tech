@@ -25,6 +25,7 @@ const portfolioSchema = Joi.object({
   mandate: Joi.string().max(400).allow('').optional(),
   vintage: Joi.alternatives(Joi.number().integer(), Joi.string().max(20)).allow(null).optional(),
   allocatedBudget: money.optional(),
+  pledged: money.optional(),
 });
 
 const portfolioUpdateSchema = Joi.object({
@@ -33,6 +34,7 @@ const portfolioUpdateSchema = Joi.object({
   mandate: Joi.string().max(400).allow('').optional(),
   vintage: Joi.alternatives(Joi.number().integer(), Joi.string().max(20)).allow(null).optional(),
   allocatedBudget: money.optional(),
+  pledged: money.optional(),
 }).min(1);
 
 /* The four emission lines. Each is optional because a project at pipeline
