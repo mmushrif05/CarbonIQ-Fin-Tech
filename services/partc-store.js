@@ -25,6 +25,22 @@
  * deployment's records must not move because a new option appeared. Precedence
  * is firebase, then blobs, then memory, then refusal — and `capability().mode`
  * says which of the four is live rather than leaving a caller to guess.
+ *
+ * ── Choosing, rather than inheriting ───────────────────────────────────────
+ *
+ * That default has a sharp edge: a site with Firebase variables still set gets
+ * Firebase even when the operator has decided on Blobs, and nothing about the
+ * screen says why. `STORAGE_BACKEND` makes the choice explicit —
+ *
+ *   auto      (default) firebase, then blobs, then memory
+ *   blobs     Blobs, and refuse rather than fall back to Firebase
+ *   firebase  Firebase, and refuse rather than fall back to Blobs
+ *   memory    in-process only; local development
+ *
+ * A forced backend that is unreachable **refuses** rather than quietly using
+ * the other one. Silently honouring a preference by writing somewhere else is
+ * how a bank ends up with half its records in a store nobody is reading.
+ * `capability()` reports both the mode and whether it was chosen or inherited.
  */
 
 'use strict';
@@ -60,28 +76,74 @@ function isEphemeralRuntime() {
  * What this deployment can actually promise about persistence.
  * @returns {{mode:string, durable:boolean, writable:boolean, reason:string, remedy?:string}}
  */
+const BACKENDS = ['auto', 'blobs', 'firebase', 'memory'];
+
+/** What the operator asked for. Anything unrecognised is treated as auto. */
+function requestedBackend() {
+  const raw = String(process.env.STORAGE_BACKEND || 'auto').trim().toLowerCase();
+  return BACKENDS.includes(raw) ? raw : 'auto';
+}
+
 function capability() {
+  const want = requestedBackend();
+
+  if (want === 'blobs') {
+    if (blobs.isAvailable()) {
+      return {
+        mode: 'blobs', durable: true, writable: true, chosen: true,
+        reason: 'STORAGE_BACKEND=blobs. Netlify Blobs is reachable and is the only store in use.'
+      };
+    }
+    return {
+      mode: 'none', durable: false, writable: false, chosen: true,
+      reason: 'STORAGE_BACKEND=blobs, but Netlify Blobs is not reachable from this runtime.',
+      remedy: 'Blobs needs no configuration on a deployed Netlify site. If this appears in production the deployment is misconfigured. Unset STORAGE_BACKEND to fall back to automatic selection.'
+    };
+  }
+
+  if (want === 'firebase') {
+    if (isDurable()) {
+      return {
+        mode: 'firebase', durable: true, writable: true, chosen: true,
+        reason: 'STORAGE_BACKEND=firebase. Firebase is configured and is the only store in use.'
+      };
+    }
+    return {
+      mode: 'none', durable: false, writable: false, chosen: true,
+      reason: 'STORAGE_BACKEND=firebase, but Firebase is not configured or not reachable.',
+      remedy: 'Set FIREBASE_SERVICE_ACCOUNT and FIREBASE_DATABASE_URL, or unset STORAGE_BACKEND.'
+    };
+  }
+
+  if (want === 'memory') {
+    return {
+      mode: 'memory', durable: false, writable: true, chosen: true,
+      reason: 'STORAGE_BACKEND=memory. Records are held in this process only and are lost when it stops.',
+      remedy: 'Intended for local development and tests. Never set this on a deployed site.'
+    };
+  }
+
   if (isDurable()) {
     return {
-      mode: 'firebase', durable: true, writable: true,
-      reason: 'Firebase is configured. Records persist across requests and restarts.'
+      mode: 'firebase', durable: true, writable: true, chosen: false,
+      reason: 'Firebase is configured, and STORAGE_BACKEND is unset, so it takes precedence. Set STORAGE_BACKEND=blobs to use Netlify Blobs instead.'
     };
   }
   if (blobs.isAvailable()) {
     return {
-      mode: 'blobs', durable: true, writable: true,
-      reason: 'Netlify Blobs is reachable. Records persist across requests, cold starts and deploys.'
+      mode: 'blobs', durable: true, writable: true, chosen: false,
+      reason: 'Netlify Blobs is reachable and no Firebase configuration was found. Records persist across requests, cold starts and deploys.'
     };
   }
   if (isEphemeralRuntime()) {
     return {
-      mode: 'none', durable: false, writable: false,
+      mode: 'none', durable: false, writable: false, chosen: false,
       reason: 'Running in a serverless runtime with no durable store reachable — neither Netlify Blobs nor Firebase. Each request may run in a fresh container, so anything written in memory is lost immediately.',
       remedy: 'Netlify Blobs needs no configuration and is the expected store here; if it is unreachable the deployment is misconfigured. Firebase remains an alternative via FIREBASE_SERVICE_ACCOUNT and FIREBASE_DATABASE_URL. Read-only endpoints and the calculation engine work without either.'
     };
   }
   return {
-    mode: 'memory', durable: false, writable: true,
+    mode: 'memory', durable: false, writable: true, chosen: false,
     reason: 'No durable store reachable. Records are held in this process only and are lost when it stops.',
     remedy: 'Fine for local development. Netlify Blobs is used automatically on a deployed site; set FIREBASE_SERVICE_ACCOUNT if you would rather use Firebase.'
   };
@@ -112,7 +174,7 @@ function _remember(collection, orgId, id, record) {
 /* Blobs is the live store only when Firebase is not — never both. Writing to
    two durable stores would leave them to diverge, and nothing here would say
    which one a figure came from. */
-const _blobsLive = () => !isDurable() && blobs.isAvailable();
+const _blobsLive = () => capability().mode === 'blobs';
 
 async function put(collection, orgId, id, record) {
   assertWritable();
@@ -180,6 +242,6 @@ function _resetMemory() { _memory.clear(); }
 
 module.exports = {
   put, get, list, patch, remove,
-  capability, isDurable, isEphemeralRuntime, assertWritable,
+  capability, isDurable, isEphemeralRuntime, assertWritable, requestedBackend, BACKENDS,
   _resetMemory, MAX_MEMORY_RECORDS
 };

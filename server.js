@@ -73,16 +73,26 @@ app.use(express.static(path.join(__dirname, 'ui')));
  * request settles which of the two it is, without guessing.
  */
 app.get('/health', (_req, res) => {
-  const commit = process.env.COMMIT_REF || process.env.GIT_COMMIT || null;
+  /* COMMIT_REF is a build-time variable and is absent from the function's
+     runtime environment, so reading it here answered "unknown" on every
+     production deploy — the diagnostic built to tell a broken fix from an
+     undeployed one could not, in fact, tell them apart. The build now stamps
+     build-info.json and this reads that, falling back to the environment for
+     a local run. Absent stays absent rather than being guessed. */
+  const stamped = (() => {
+    try { return require('./build-info.json'); } catch (_) { return {}; }
+  })();
+  const commit = stamped.commit || process.env.COMMIT_REF || process.env.GIT_COMMIT || null;
   res.json({
     status: 'ok',
     service: 'carboniq-fintech',
     version: config.version,
     build: {
       commit: commit ? String(commit).slice(0, 12) : 'unknown (not a Netlify build)',
-      branch: process.env.BRANCH || process.env.HEAD || null,
-      deployId: process.env.DEPLOY_ID || null,
-      context: process.env.CONTEXT || process.env.NODE_ENV || null
+      branch: stamped.branch || process.env.BRANCH || process.env.HEAD || null,
+      deployId: stamped.deployId || process.env.DEPLOY_ID || null,
+      context: stamped.context || process.env.CONTEXT || process.env.NODE_ENV || null,
+      builtAt: stamped.builtAt || null
     },
     /* Whether this deployment can actually do its job, as booleans.
        "The dashboard shows 401" and "the AI does nothing" are both usually a

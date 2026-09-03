@@ -45,3 +45,6 @@ tmp/
 temp/
 *.tmp
 *.bak
+
+# Written by the build; stamps the commit so /health can report it.
+build-info.json
