@@ -284,6 +284,10 @@
 
         <!-- The headline a banker reads first. One figure, its scale, and what
              it is — not a wall of equal-weight cards. -->
+        <!-- ══ HERO ══ The figure the screen exists to produce, and the
+             bridge that shows how the project's emissions became the bank's.
+             A percentage bar says "30%"; a bridge says "this was the
+             project's, this much is not yours, this is what you report". -->
         <section class="parta-hero" id="paHero">
           <span class="parta-hero-eyebrow">The PCAF figure · scope 3 Category 15</span>
           <div class="parta-hero-figure">
@@ -296,17 +300,24 @@
             <span class="parta-chip parta-chip-quiet" id="paHeroYield" hidden>—</span>
           </div>
 
-          <!-- Attribution as a proportion, because "0.3000" does not read as
-               a share of anything until you see the share. -->
-          <div class="parta-attrib">
-            <div class="parta-attrib-bar" id="paAttribBar" role="img" aria-labelledby="paAttribDesc">
-              <div class="parta-attrib-lender" id="paAttribLender"></div>
+          <div class="parta-bridge" id="paBridge">
+            <div class="parta-bridge-row">
+              <span class="parta-bridge-name">The project emits</span>
+              <span class="parta-bridge-val" id="paBridgeTotal">—</span>
+              <span class="parta-bridge-track"><span class="parta-bridge-seg is-total" id="paBridgeSegTotal"></span></span>
             </div>
-            <div class="parta-attrib-legend">
-              <span><i class="parta-swatch parta-swatch-lender"></i>This lender <b id="paAttribPct">—</b></span>
-              <span><i class="parta-swatch parta-swatch-rest"></i>Other financiers <b id="paAttribRestPct">—</b></span>
+            <div class="parta-bridge-row">
+              <span class="parta-bridge-name">Financed by others — not yours to report</span>
+              <span class="parta-bridge-val" id="paBridgeDrop">—</span>
+              <span class="parta-bridge-track"><span class="parta-bridge-seg is-drop" id="paBridgeSegDrop"></span></span>
             </div>
-            <p class="parta-attrib-desc" id="paAttribDesc"></p>
+            <hr class="parta-bridge-rule">
+            <div class="parta-bridge-row">
+              <span class="parta-bridge-name">This bank reports <b id="paAttribPct">—</b>
+                <span hidden id="paAttribRestPct"></span></span>
+              <span class="parta-bridge-val" id="paBridgeResult">—</span>
+              <span class="parta-bridge-track"><span class="parta-bridge-seg is-result" id="paAttribLender"></span></span>
+            </div>
           </div>
 
           <details class="parta-means">
@@ -315,135 +326,134 @@
           </details>
         </section>
 
-        <section class="parta-card parta-af">
-          <span class="parta-af-label">Attribution factor</span>
-          <span class="parta-af-value" id="paAf">—</span>
-          <code class="parta-eq" id="paAfEq"></code>
-          <p class="parta-ref" id="paAfRef"></p>
-          <p class="parta-assumption" id="paAfAssumption" hidden></p>
-        </section>
+        <!-- ══ BENTO ══ Tile size encodes importance. Previously every figure
+             got an identical box, so nothing stood out. -->
+        <div class="parta-bento">
 
-        <!-- The grid factor, with everything a reviewer would ask about it. -->
-        <section class="parta-card parta-gridfactor" id="paGridBox" hidden>
-          <header class="parta-card-head">
-            <h3>Grid emission factor</h3>
-            <p id="paGridCountry"></p>
-          </header>
-          <div class="parta-factors">
-            <div class="parta-factor">
-              <span class="parta-factor-label">Displaced by generating</span>
-              <span class="parta-factor-value" id="paGridDisplaced">—</span>
-              <span class="parta-factor-basis" id="paGridDisplacedBasis"></span>
-            </div>
-            <div class="parta-factor">
-              <span class="parta-factor-label">Drawn from the grid</span>
-              <span class="parta-factor-value" id="paGridConsumed">—</span>
-              <span class="parta-factor-basis" id="paGridConsumedBasis"></span>
-            </div>
-          </div>
-          <p class="parta-global-flag" id="paGlobalFlag" hidden></p>
-          <!-- The single most useful thing about a grid factor is how it
-               compares. Norway near zero beside Sri Lanka at 0.81 explains in
-               one glance why the same plant is worth eight times more here. -->
-          <div class="parta-compare" id="paGridCompare"></div>
-
-          <p class="parta-ref" id="paGridSource"></p>
-          <p class="parta-assumption" id="paGridSubstitution" hidden></p>
-          <p class="parta-assumption" id="paGridFlag" hidden></p>
-        </section>
-
-        <!-- The physical check. Runs only where capacity was given. -->
-        <section class="parta-card parta-plaus" id="paCheckBox" hidden>
-          <header class="parta-card-head">
-            <h3>Is this generation physically achievable?</h3>
-          </header>
-          <div class="parta-check-figure">
-            <span class="parta-check-value" id="paCheckCf">—</span>
-            <span class="parta-check-unit">capacity factor</span>
-            <span class="parta-check-band" id="paCheckBand"></span>
-          </div>
-          <div class="parta-yield">
-            <span class="parta-yield-value" id="paSpecificYield">—</span>
-            <span class="parta-yield-unit">kWh/kWp/yr — specific yield</span>
-          </div>
-          <div class="parta-gauge" id="paCfGauge" hidden>
-            <div class="parta-gauge-track">
-              <div class="parta-gauge-fill" id="paGaugeFill"></div>
-              <div class="parta-gauge-ref" id="paGaugeRef"><span></span></div>
-            </div>
-            <div class="parta-gauge-scale">
-              <span>0%</span><span id="paGaugeRefLabel"></span><span id="paGaugeMax"></span>
-            </div>
-          </div>
-          <code class="parta-eq" id="paCheckEq"></code>
-          <p class="parta-check-note" id="paCheckNote"></p>
-        </section>
-
-        <section class="parta-card parta-inventory">
-          <header class="parta-card-head">
-            <h3>Part A inventory</h3>
-            <p id="paCategory"></p>
-          </header>
-
-          <div class="parta-figures">
-            <div class="parta-figure parta-figure-primary">
-              <span class="parta-figure-label">Financed scope 1 and 2 — the PCAF figure</span>
-              <span class="parta-figure-value" id="paScope12">—</span>
-              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
-            </div>
-            <div class="parta-figure">
-              <span class="parta-figure-label">Financed scope 1</span>
-              <span class="parta-figure-value" id="paScope1">—</span>
-              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
-            </div>
-            <div class="parta-figure">
-              <span class="parta-figure-label">Financed scope 2</span>
-              <span class="parta-figure-value" id="paScope2">—</span>
-              <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
-            </div>
-            <div class="parta-figure" id="paScope3Figure">
-              <span class="parta-figure-label">Financed scope 3</span>
-              <span class="parta-figure-value" id="paScope3">—</span>
-              <span class="parta-figure-unit" id="paScope3Unit">tCO<sub>2</sub>e</span>
-            </div>
+          <div class="parta-tile parta-tile-accent-green">
+            <span class="parta-tile-label">Attribution factor</span>
+            <span class="parta-tile-value" id="paAf">—</span>
+            <span class="parta-tile-foot" id="paAfRef"></span>
+            <code class="parta-eq" id="paAfEq" hidden></code>
+            <p class="parta-assumption" id="paAfAssumption" hidden></p>
           </div>
 
-          <p class="parta-absent" id="paScope3Absent" hidden></p>
-
-          <div class="parta-sideline" id="paRemovalsBox" hidden>
-            <span class="parta-sideline-label">Removals — reported separately</span>
-            <span class="parta-sideline-value" id="paRemovals">—</span>
-            <p id="paRemovalsNote"></p>
+          <div class="parta-tile parta-tile-accent-green">
+            <span class="parta-tile-label">Data quality</span>
+            <!-- The number is the display element. "Data quality score: 4
+                 (Option 3a)" is a sentence, and a sentence set at 34px wraps
+                 to three lines and stops being a figure. -->
+            <div class="parta-dqhead">
+              <span class="parta-tile-value" id="paDqNum">—</span>
+              <span class="parta-dqhead-opt" id="paDqOpt"></span>
+            </div>
+            <span class="parta-dq parta-dq-caption" id="paDq">—</span>
+            <div class="parta-dqscale" id="paDqScale5" role="img">
+              <span class="parta-dqscale-band" data-band="1"><b>1</b></span>
+              <span class="parta-dqscale-band" data-band="2"><b>2</b></span>
+              <span class="parta-dqscale-band" data-band="3"><b>3</b></span>
+              <span class="parta-dqscale-band" data-band="4"><b>4</b></span>
+              <span class="parta-dqscale-band" data-band="5"><b>5</b></span>
+            </div>
+            <small class="parta-dqscale-ends"><span>best evidence</span><span>weakest</span></small>
+            <span class="parta-tile-foot" id="paDqScale"></span>
+            <small id="paDqRef" hidden></small>
+            <p class="parta-assumption" id="paDqOverride" hidden></p>
           </div>
 
-          <div class="parta-meta">
-            <div class="parta-meta-item">
-              <span class="parta-meta-label">Economic emission intensity</span>
-              <span class="parta-meta-value" id="paIntensity">—</span>
-              <small id="paIntensityNote"></small>
-            </div>
-            <div class="parta-meta-item">
-              <span class="parta-meta-label">Data quality</span>
-              <!-- A category with its scale beside it. Never a fraction. -->
-              <span class="parta-meta-value parta-dq" id="paDq">—</span>
-              <!-- A score is a position on a five-band scale, so it is drawn
-                   as one. 1 is best, which is the half people get wrong. -->
-              <div class="parta-dqscale" id="paDqScale5" role="img">
-                <span class="parta-dqscale-band" data-band="1"><b>1</b></span>
-                <span class="parta-dqscale-band" data-band="2"><b>2</b></span>
-                <span class="parta-dqscale-band" data-band="3"><b>3</b></span>
-                <span class="parta-dqscale-band" data-band="4"><b>4</b></span>
-                <span class="parta-dqscale-band" data-band="5"><b>5</b></span>
+          <!-- Radial, because a value against a range is what an arc is for. -->
+          <div class="parta-tile" id="paCheckBox" hidden>
+            <span class="parta-tile-label">Is this generation achievable?</span>
+            <div class="parta-radial" id="paCfGauge" hidden>
+              <div id="paGaugeArc"></div>
+              <div class="parta-radial-read">
+                <span class="parta-radial-value" id="paCheckCf">—</span>
+                <span class="parta-radial-meta" id="paCheckBand"></span>
+                <span class="parta-radial-meta" id="paGaugeMax"></span>
               </div>
-              <small class="parta-dqscale-ends"><span>best evidence</span><span>weakest</span></small>
-              <small id="paDqScale"></small>
-              <small id="paDqRef"></small>
+            </div>
+            <details class="parta-basis">
+              <summary>How this reads</summary>
+              <p class="parta-tile-foot" id="paCheckNote" style="margin-top:0"></p>
+              <code class="parta-eq" id="paCheckEq"></code>
+            </details>
+            <span hidden id="paGaugeFill"></span><span hidden id="paGaugeRef"><span></span></span>
+            <span hidden id="paGaugeRefLabel"></span>
+          </div>
+
+          <div class="parta-tile">
+            <span class="parta-tile-label">Specific yield</span>
+            <span class="parta-tile-value" id="paSpecificYield">—</span>
+            <span class="parta-tile-unit">kWh/kWp per year</span>
+            <span class="parta-tile-foot">What a developer reads more fluently than a capacity factor.</span>
+          </div>
+
+          <div class="parta-tile span-2" id="paGridBox" hidden>
+            <span class="parta-tile-label">Grid emission factor</span>
+            <span class="parta-tile-foot" id="paGridCountry" style="margin-top:0"></span>
+            <div class="parta-factors">
+              <div class="parta-factor">
+                <span class="parta-factor-label">Displaced by generating</span>
+                <span class="parta-factor-value" id="paGridDisplaced">—</span>
+                <span class="parta-factor-basis" id="paGridDisplacedBasis"></span>
+              </div>
+              <div class="parta-factor">
+                <span class="parta-factor-label">Drawn from the grid</span>
+                <span class="parta-factor-value" id="paGridConsumed">—</span>
+                <span class="parta-factor-basis" id="paGridConsumedBasis"></span>
+              </div>
+            </div>
+            <div class="parta-compare" id="paGridCompare"></div>
+            <details class="parta-basis">
+              <summary>Basis and sources</summary>
+              <p class="parta-ref" id="paGridSource"></p>
+              <p class="parta-assumption" id="paGridSubstitution" hidden></p>
+              <p class="parta-assumption" id="paGridFlag" hidden></p>
+              <p class="parta-assumption" id="paGlobalFlag" hidden></p>
+            </details>
+          </div>
+
+          <div class="parta-tile span-2 parta-inventory">
+            <span class="parta-tile-label">Part A inventory</span>
+            <span class="parta-tile-foot" id="paCategory" style="margin-top:0"></span>
+            <div class="parta-figures">
+              <div class="parta-figure parta-figure-primary">
+                <span class="parta-figure-label">Financed scope 1 and 2 — the PCAF figure</span>
+                <span class="parta-figure-value" id="paScope12">—</span>
+                <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+              </div>
+              <div class="parta-figure">
+                <span class="parta-figure-label">Financed scope 1</span>
+                <span class="parta-figure-value" id="paScope1">—</span>
+                <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+              </div>
+              <div class="parta-figure">
+                <span class="parta-figure-label">Financed scope 2</span>
+                <span class="parta-figure-value" id="paScope2">—</span>
+                <span class="parta-figure-unit">tCO<sub>2</sub>e</span>
+              </div>
+              <div class="parta-figure" id="paScope3Figure">
+                <span class="parta-figure-label">Financed scope 3</span>
+                <span class="parta-figure-value" id="paScope3">—</span>
+                <span class="parta-figure-unit" id="paScope3Unit">tCO<sub>2</sub>e</span>
+              </div>
+            </div>
+            <p class="parta-absent" id="paScope3Absent" hidden></p>
+            <div class="parta-sideline" id="paRemovalsBox" hidden>
+              <span class="parta-sideline-label">Removals — reported separately</span>
+              <span class="parta-sideline-value" id="paRemovals">—</span>
+              <p id="paRemovalsNote"></p>
             </div>
           </div>
-          <p class="parta-assumption" id="paDqOverride" hidden></p>
-        </section>
 
-        <!-- Everything the derivation assumed, on the page rather than buried. -->
+          <div class="parta-tile span-2">
+            <span class="parta-tile-label">Economic emission intensity</span>
+            <span class="parta-tile-value" id="paIntensity">—</span>
+            <span class="parta-tile-unit" id="paIntensityUnit"></span>
+            <span class="parta-tile-foot" id="paIntensityNote"></span>
+          </div>
+        </div>
+
         <section class="parta-card parta-assumptions" id="paAssumptionsBox" hidden>
           <details>
             <summary>
@@ -456,23 +466,18 @@
           </details>
         </section>
 
-        <!-- The break. Everything below rests on optional supplemental guidance
-             and is never added to anything above it. -->
         <div class="parta-break" id="paBreak" hidden>
           <span>Not Part A · never added to the inventory</span>
         </div>
 
-        <section class="parta-card parta-impact" id="paImpactBox" hidden>
-          <header class="parta-card-head">
-            <h3 id="paImpactTitle">Impact metrics</h3>
-            <p id="paImpactArchetype"></p>
-          </header>
+        <!-- Indigo, not green. Two containers that must never merge now read
+             as two hues — the separation the engine enforces, made visible. -->
+        <section class="parta-impact-v2" id="paImpactBox" hidden>
+          <span class="parta-tile-label" id="paImpactTitle">Impact metrics</span>
+          <p class="parta-tile-foot" id="paImpactArchetype" style="margin-top:2px"></p>
           <p class="parta-absent" id="paImpactAbsent" hidden></p>
           <div id="paMetrics"></div>
 
-          <!-- The lifetime figure is a sum of 25 declining years. Showing the
-               total alone hides both the degradation and the fact that a flat
-               grid factor was assumed. -->
           <figure class="parta-chart" id="paLifetimeChart" hidden>
             <figcaption>
               <span class="parta-chart-title">Avoided emissions over the project life</span>
@@ -482,19 +487,18 @@
             <p class="parta-chart-note" id="paChartNote"></p>
           </figure>
 
+          <div class="parta-sideline" id="paLifetimeBox" hidden>
+            <span class="parta-sideline-label" id="paLifetimeLabel">Lifetime, financed</span>
+            <span class="parta-sideline-value" id="paLifetime">—</span>
+            <p id="paLifetimeNote"></p>
+          </div>
+
+          <p class="parta-notcomparable" id="paNotComparable"></p>
           <details class="parta-means">
             <summary>What this means</summary>
             <p id="paMeansImpact"></p>
           </details>
-          <div class="parta-lifetime" id="paLifetimeBox" hidden>
-            <span class="parta-lifetime-label" id="paLifetimeLabel">Lifetime, financed</span>
-            <span class="parta-lifetime-value" id="paLifetime">—</span>
-            <p class="parta-lifetime-note" id="paLifetimeNote"></p>
-          </div>
-          <p class="parta-notcomparable" id="paNotComparable"></p>
         </section>
-
-        <!-- The read-out a relationship manager takes into a meeting. -->
         <section class="parta-summary" id="paSummary">
           <h3>In summary</h3>
           <ul id="paSummaryList"></ul>
