@@ -253,7 +253,10 @@ body {
   line-height: 1.2;
 }
 .kpi-value-green { color: var(--green); }
-.kpi-unit { font-size: 14px; font-weight: 500; color: var(--text-secondary); }
+/* The unit is a phrase, not a word — "1 = best of 1–5" states the direction of
+   a scale people read backwards. Broken across a line after "of" it stops
+   reading as one thing, so it wraps whole or not at all. */
+.kpi-unit { font-size: 14px; font-weight: 500; color: var(--text-secondary); white-space: nowrap; }
 .kpi-secondary { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
 .kpi-sparkline { margin-top: 12px; height: 32px; }
 .kpi-sparkline svg { width: 100%; height: 100%; }
@@ -327,6 +330,11 @@ body {
   margin-bottom: 20px;
 }
 .chart-header h3 { font-size: 15px; font-weight: 600; }
+.chart-header > div { min-width: 0; }
+.chart-sub {
+  display: block; margin-top: 2px;
+  font-size: 11.5px; color: var(--text-tertiary);
+}
 .chart-controls { display: flex; gap: 4px; }
 .chip {
   font-family: var(--font);

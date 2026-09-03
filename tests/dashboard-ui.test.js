@@ -173,6 +173,20 @@ describe('The sample book reconciles with itself', () => {
   });
 });
 
+describe('The chart says what it is measuring', () => {
+  test('the asset-class chart names its unit and its baseline', () => {
+    // Four numbers with no unit are four numbers.
+    expect(html).toMatch(/chart-sub">Financed emissions, tCO2e · bars start at zero/);
+    expect(css).toContain('.chart-sub');
+  });
+
+  test('the scale phrase wraps whole rather than breaking after "of"', () => {
+    // "1 = best of 1–5" states the direction of a scale people read backwards.
+    // Split across a line it stops reading as one thing.
+    expect(css).toMatch(/\.kpi-unit \{[^}]*white-space: nowrap/);
+  });
+});
+
 describe('The asset-class bars actually have height', () => {
   test('the bar sits in a track that owns the height', () => {
     // A percentage height against a parent sized by its own text resolves to
