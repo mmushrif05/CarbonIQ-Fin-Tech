@@ -653,6 +653,45 @@
           <div class="cap-dq" id="cap-dq"></div>
         </section>
 
+        <!-- ══ THE CURVE ════════════════════════════════════════════════════
+             One chart across the years. A marker at today, hatched to the
+             right of it, and three series that are never combined: emissions,
+             reduction and avoidance. There is deliberately no net line and no
+             crossing point — PCAF reports avoided emissions apart from the
+             inventory and never sets them against it. -->
+        <section class="cap-section" id="cap-curve">
+          <header class="cap-head">
+            <div>
+              <h3>How the book moves from here</h3>
+              <span class="cap-sub" id="fc-sub">—</span>
+            </div>
+            <div class="cap-head-actions">
+              <div class="fc-toggles" id="fc-toggles" role="group" aria-label="Series shown">
+                <button type="button" class="fc-toggle is-on" data-series="forward">
+                  <i class="fc-swatch is-forward"></i>Emissions
+                </button>
+                <button type="button" class="fc-toggle is-on" data-series="reduction">
+                  <i class="fc-swatch is-reduction"></i>Reduction
+                </button>
+                <button type="button" class="fc-toggle is-on" data-series="avoided">
+                  <i class="fc-swatch is-avoided"></i>Avoided
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <figure class="cap-figure fc-figure">
+            <div class="fc-chart" id="fc-chart"></div>
+            <div class="fc-readout" id="fc-readout"></div>
+          </figure>
+
+          <div class="fc-facts" id="fc-facts"></div>
+          <details class="fc-basis">
+            <summary>What this curve assumed</summary>
+            <div id="fc-assumptions"></div>
+          </details>
+        </section>
+
         <!-- ══ PORTFOLIOS ═══════════════════════════════════════════════════ -->
         <section class="cap-section" id="cap-portfolios">
           <header class="cap-head">

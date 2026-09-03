@@ -328,6 +328,7 @@ const Dashboard = (() => {
     _renderAnchor(d.anchor, d.capital.currency);
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
+    _renderCurve(d.forecast, d.capital.currency);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
     _renderPipeline(d.pipeline, d.capital.currency);
     _renderStorage(d.storage);
@@ -357,7 +358,7 @@ const Dashboard = (() => {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     }
-    for (const id of ['anch-total-split', 'anch-queue-split',
+    for (const id of ['anch-total-split', 'anch-queue-split', 'fc-chart', 'fc-readout', 'fc-facts',
       'cap-deploy-bar', 'cap-deploy-legend', 'cap-inventory-rows',
       'cap-impact-rows', 'cap-portfolio-rows', 'cap-pipeline-rows', 'cap-scatter',
       'cap-bytype-rows', 'cap-dq']) {
@@ -553,6 +554,175 @@ const Dashboard = (() => {
              dq.investmentsWithoutScore
                ? `; ${dq.investmentsWithoutScore} carrying no score ${dq.investmentsWithoutScore === 1 ? 'is' : 'are'} excluded rather than counted as zero.`
                : '.'}</span>`;
+  }
+
+  // ── The curve ─────────────────────────────────────────────────────────────
+
+  /**
+   * How the book moves from here.
+   *
+   * Four rules, and each of them is a way to draw a confident line that is
+   * wrong.
+   *
+   * **Never net.** The tempting chart is emissions minus avoidance trending to
+   * zero with a "net zero by 2035" crossing point. PCAF reports avoided
+   * emissions apart from the inventory and never sets them against it (Part A,
+   * p.126). Three separate lines, no stacking, no crossing point, and no
+   * combined total anywhere in this function.
+   *
+   * **Never let a projection look measured.** Everything here is ahead of
+   * today, so the whole plot is hatched and the marker at the current year is
+   * labelled. There is no measured segment to confuse it with, and the caption
+   * says so rather than leaving a reader to infer it.
+   *
+   * **Never call a scenario a plan.** The assumptions that produced the curve
+   * print underneath it, so a screenshot taken to a meeting carries them.
+   *
+   * **Never hide the shape you assumed.** The phasing profiles in play are
+   * named, and the year past which a number is a direction rather than a
+   * figure is marked on the axis.
+   */
+  const FC = {
+    forward:   { key: 'forward_tCO2e',   label: 'Emissions',  colour: '#5e5ce6', cls: 'is-forward' },
+    reduction: { key: 'reduction_tCO2e', label: 'Reduction',  colour: '#c77700', cls: 'is-reduction' },
+    avoided:   { key: 'avoided_tCO2e',   label: 'Avoided',    colour: '#1f6fb2', cls: 'is-avoided' },
+  };
+  let _fcOn = { forward: true, reduction: true, avoided: true };
+
+  function _renderCurve(f, cur = 'USD') {
+    const host = document.getElementById('fc-chart');
+    if (!host || !f) return;
+
+    const s = f.emissions;
+    const rows = s.rows || [];
+    document.getElementById('fc-sub').textContent =
+      `${s.firstYear} to ${s.lastYear} · every year ahead is a projection, `
+      + `and years after ${s.confidenceHorizonYear} are a direction rather than a figure`;
+
+    const shown = Object.keys(FC).filter(k => _fcOn[k]);
+    if (!rows.length || !shown.length) {
+      host.innerHTML = '';
+      document.getElementById('fc-readout').innerHTML = shown.length
+        ? '<p class="cap-note">Nothing to plot.</p>'
+        : '<p class="cap-note">All three series are hidden. Turn one back on above.</p>';
+      return;
+    }
+
+    const W = 860, H = 300, M = { t: 18, r: 20, b: 44, l: 70 };
+    const peak = Math.max(1, ...rows.flatMap(r => shown.map(k => r[FC[k].key])));
+    const yMax = peak * 1.12;
+    const px = (i) => M.l + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (W - M.l - M.r));
+    const py = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
+
+    const ticks = [0, yMax / 2, yMax];
+    /* At most eight year labels, so they never collide on a twenty-year book. */
+    const step = Math.max(1, Math.ceil(rows.length / 8));
+    const horizonIdx = rows.findIndex(r => r.indicative);
+
+    const line = (k) => rows.map((r, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)},${py(r[FC[k].key]).toFixed(1)}`).join(' ');
+    const area = (k) => `${line(k)} L${px(rows.length - 1).toFixed(1)},${py(0).toFixed(1)} L${px(0).toFixed(1)},${py(0).toFixed(1)} Z`;
+
+    host.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="Projected emissions, reduction and avoidance from ${s.firstYear} to ${s.lastYear}, three separate series">
+        <defs>
+          <!-- The only texture in the system: it means projection, and every
+               year on this chart is one. -->
+          <pattern id="fcHatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="none"/>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="2.4" opacity="0.16"/>
+          </pattern>
+        </defs>
+
+        ${ticks.map(v => `
+          <line class="cap-grid" x1="${M.l}" y1="${py(v).toFixed(1)}" x2="${W - M.r}" y2="${py(v).toFixed(1)}"/>
+          <text class="cap-axis-label" x="${M.l - 9}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end">${_t(v)}</text>`).join('')}
+
+        ${horizonIdx > 0 ? `
+          <line class="fc-horizon" x1="${px(horizonIdx).toFixed(1)}" y1="${M.t}"
+                x2="${px(horizonIdx).toFixed(1)}" y2="${H - M.b}"/>
+          <text class="fc-horizon-label" x="${(px(horizonIdx) + 6).toFixed(1)}" y="${M.t + 10}">
+            indicative beyond here</text>` : ''}
+
+        ${shown.map(k => `
+          <path class="fc-area ${FC[k].cls}" d="${area(k)}" fill="url(#fcHatch)"/>
+          <path class="fc-line ${FC[k].cls}" d="${line(k)}"/>`).join('')}
+
+        ${shown.map(k => rows.map((r, i) => i % step === 0 || i === rows.length - 1
+          ? `<circle class="fc-dot ${FC[k].cls}" cx="${px(i).toFixed(1)}" cy="${py(r[FC[k].key]).toFixed(1)}" r="3.5"/>`
+          : '').join('')).join('')}
+
+        <line class="cap-axis" x1="${M.l}" y1="${py(0).toFixed(1)}" x2="${W - M.r}" y2="${py(0).toFixed(1)}"/>
+        <line class="cap-axis" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>
+
+        <!-- Today. Everything to the right of it is ahead, which is all of it. -->
+        <line class="fc-today" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>
+        <text class="fc-today-label" x="${M.l + 6}" y="${H - M.b + 30}">${s.firstYear} — today</text>
+
+        ${rows.map((r, i) => (i % step === 0 && i !== 0) || i === rows.length - 1
+          ? `<text class="cap-axis-label" x="${px(i).toFixed(1)}" y="${H - M.b + 18}" text-anchor="middle">${r.year}</text>`
+          : '').join('')}
+
+        <text class="cap-axis-title" x="0" y="12">tCO2e per year — three separate series, never summed</text>
+      </svg>`;
+
+    /* The totals under each line, so the curve can be checked against the
+       figures above it rather than trusted. */
+    document.getElementById('fc-readout').innerHTML = shown.map(k => `
+      <div class="fc-readout-row">
+        <i class="fc-swatch ${FC[k].cls}"></i>
+        <span class="fc-readout-label">${FC[k].label} over ${s.years} years</span>
+        <span class="fc-readout-value">${_t(s.totals[FC[k].key])}</span>
+        <span class="fc-readout-unit">tCO2e</span>
+      </div>`).join('')
+      + `<p class="cap-note">${esc(s.notes.separation)}</p>`;
+
+    const cap = f.capital;
+    /* A "peak year" is a claim that one year stands above the rest, and on this
+       book six years sit level at the top before it winds down — naming the
+       first of them is a fact about which way the reduce ran, not about the
+       book. A year is only called the peak when nothing else comes within 2%
+       of it; a shared top is reported as the range it actually is. */
+    const top = rows.reduce((m, r) => Math.max(m, r.forward_tCO2e), 0);
+    const atTop = top > 0 ? rows.filter(r => r.forward_tCO2e >= top * 0.98) : [];
+    const shape = atTop.length === 1
+      ? ['Peak year', String(atTop[0].year), 'when the book emits most']
+      : atTop.length === rows.length
+        ? ['Shape', 'level', 'no year stands out — the phasing spreads it evenly']
+        : ['Highest years', `${atTop[0].year}–${atTop[atTop.length - 1].year}`,
+          `${atTop.length} years sit level at the top before the book winds down`];
+
+    document.getElementById('fc-facts').innerHTML = [
+      shape,
+      ['Drawdown ahead', _money(cap.totalPlanned, cur),
+        `over ${cap.drawdownYears} year${cap.drawdownYears === 1 ? '' : 's'}`],
+      ['Phasing in play', s.profiles.map(p => p.label).join(' · '), 'the shape the totals were spread by'],
+    ].map(([label, value, foot]) => `
+      <div class="fc-fact">
+        <span class="fc-fact-label">${esc(label)}</span>
+        <span class="fc-fact-value">${esc(value)}</span>
+        <span class="fc-fact-foot">${esc(foot)}</span>
+      </div>`).join('');
+
+    document.getElementById('fc-assumptions').innerHTML = [
+      s.notes.projection, s.notes.horizon, s.notes.grid, cap.note,
+      ...s.profiles.map(p => `${p.label}: ${p.note}`),
+    ].map(t => `<p class="cap-note">${esc(t)}</p>`).join('');
+  }
+
+  function _wireCurve() {
+    document.querySelectorAll('#fc-toggles .fc-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.series;
+        const on = Object.values(_fcOn).filter(Boolean).length;
+        if (_fcOn[key] && on === 1) return;      // never leave an empty chart
+        _fcOn[key] = !_fcOn[key];
+        btn.classList.toggle('is-on', _fcOn[key]);
+        btn.setAttribute('aria-pressed', String(_fcOn[key]));
+        if (_capital && _capital.data) _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+      });
+      btn.setAttribute('aria-pressed', 'true');
+    });
   }
 
   // ── Portfolios ────────────────────────────────────────────────────────────
@@ -1127,6 +1297,7 @@ const Dashboard = (() => {
     const filter = document.getElementById('cap-portfolio-filter');
     if (!weight || !filter) return;
     _wired = true;
+    _wireCurve();
 
     /* The ranking is recomputed by the engine, never in the browser: a screen
        that scored differently from the API would be showing one thing and
