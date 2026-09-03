@@ -14,6 +14,8 @@
  *   GET    /v1/gcf/recommendation    which two, why, and what could not be weighed
  *   GET    /v1/gcf/instruments       the seven structures, and the pipeline's mandate gap
  *   GET    /v1/gcf/instruments/:id   one project structured, with what is left standing
+ *   GET    /v1/gcf/cn/:id            Concept Note input package — JSON, PDF or Word
+ *   GET    /v1/gcf/conformance       ToR clause -> implementation -> proving test
  *   GET/PUT/v1/gcf/entity           the facts only the reporting entity can state
  *   GET    /v1/gcf/report            SLFRS S1/S2 and GRI lines, with the gaps
  *   GET    /v1/gcf/export            the period package, checksummed
@@ -40,6 +42,9 @@ const ndc = require('../../services/gcf/ndc-contribution');
 const reporting = require('../../services/gcf/reporting');
 const screening = require('../../services/gcf/screening');
 const instruments = require('../../services/gcf/instruments');
+const cnPackage = require('../../services/gcf/cn-package');
+const conformance = require('../../services/gcf/conformance');
+const { sendPdf, sendDocx } = require('../../services/pdf-response');
 const partcStore = require('../../services/partc-store');
 
 const AREAS = require('../../data/gcf/results-areas.json');
@@ -403,5 +408,58 @@ router.get('/instruments/:id', apiKeyAuth, defaultLimiter, handle(async (req, re
     sample,
   });
 }));
+
+/**
+ * The Concept Note input package.
+ *
+ * Every input this system holds, in GCF Concept Note order, with each marked
+ * held, partial or external. It does not write the Concept Note: a GCF
+ * submission is an argument made by people who carry the institutional
+ * commitments behind it, and software that drafted one would produce something
+ * fluent and unsupported.
+ */
+router.get('/cn/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const format = String(req.query.format || 'json').toLowerCase();
+  if (!['json', 'pdf', 'docx'].includes(format)) {
+    return res.status(400).json({
+      error: 'INVALID_FORMAT',
+      message: 'format must be json, pdf or docx.',
+    });
+  }
+
+  const { project, sample } = await store.get(req.apiKey.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+
+  const pkg = cnPackage.buildPackage(project, {
+    accreditation: store.seedMeta().accreditation,
+    sample,
+    sampleNote: store.seedMeta().sampleNote,
+  });
+
+  const stem = `gcf-concept-note-inputs-${project.code}`;
+  if (format === 'docx') {
+    return sendDocx(res, await cnPackage.buildPackageDOCX(pkg), `${stem}.docx`, 'CN input package');
+  }
+  if (format === 'pdf') {
+    return sendPdf(res, cnPackage.buildPackagePDF(pkg), `${stem}.pdf`, 'CN input package');
+  }
+  return res.json({ package: pkg, sample });
+}));
+
+/**
+ * What this claims to do, where each commitment lives, and what proves it.
+ *
+ * A row a reviewer cannot check is worth little, so every rule names a file and
+ * a test. tests/gcf-conformance.test.js fails the build if either citation
+ * stops resolving, which is what keeps the claim from quietly rotting.
+ */
+router.get('/conformance', apiKeyAuth, defaultLimiter, (_req, res) => {
+  res.json(conformance.conformanceMatrix());
+});
 
 module.exports = router;
