@@ -127,9 +127,16 @@
             <input type="number" id="pa-gen-installedCapacity_MW" step="any" min="0">
             <small id="pa-capacityRole"></small>
           </label>
-          <label class="parta-field" id="pa-generationField">Annual generation (MWh)
+          <label class="parta-field" id="pa-generationField">
+            <span class="parta-field-head">Annual generation (MWh)
+              <span class="parta-tag parta-tag-derived" id="pa-genDerivedTag" hidden>Derived</span>
+              <span class="parta-tag parta-tag-typed" id="pa-genOverrideTag" hidden>Yours</span>
+            </span>
             <input type="number" id="pa-gen-annualGeneration_MWh" step="any" min="0">
             <small id="pa-generationRole"></small>
+            <button type="button" class="parta-linkbtn" id="pa-genReset" hidden>
+              Reset to the derived estimate
+            </button>
           </label>
           <label class="parta-field" id="pa-yieldField">Yield basis
             <select id="pa-gen-yieldBasis">
@@ -148,6 +155,20 @@
           <label class="parta-field">Degradation (% per year)
             <input type="number" id="pa-gen-degradationRatePct" step="0.1" min="0" max="5" placeholder="0.5">
           </label>
+        </div>
+        <!-- The working, step by step. A number a client cannot follow is a
+             number they cannot defend, and the first question anyone asks is
+             why it did not move when they changed the country. -->
+        <div class="parta-derivation" id="pa-derivationBox" hidden>
+          <div class="parta-derivation-head">
+            <span>How this figure was reached</span>
+            <span class="parta-tag" id="pa-derivationScope"></span>
+          </div>
+          <ol class="parta-chain" id="pa-derivationChain"></ol>
+          <p class="parta-chain-result">
+            <span id="pa-derivationResult">—</span> <em>MWh per year</em>
+          </p>
+          <p class="parta-chain-why" id="pa-derivationWhy"></p>
         </div>
       </fieldset>
 
@@ -260,6 +281,39 @@
       </div>
 
       <div id="paOutput" hidden>
+
+        <!-- The headline a banker reads first. One figure, its scale, and what
+             it is — not a wall of equal-weight cards. -->
+        <section class="parta-hero" id="paHero">
+          <span class="parta-hero-eyebrow">The PCAF figure · scope 3 Category 15</span>
+          <div class="parta-hero-figure">
+            <span class="parta-hero-value" id="paHeroValue">—</span>
+            <span class="parta-hero-unit">tCO<sub>2</sub>e</span>
+          </div>
+          <span class="parta-hero-sub" id="paHeroSub">Financed scope 1 and 2</span>
+          <div class="parta-hero-chips">
+            <span class="parta-chip" id="paHeroDq">—</span>
+            <span class="parta-chip parta-chip-quiet" id="paHeroYield" hidden>—</span>
+          </div>
+
+          <!-- Attribution as a proportion, because "0.3000" does not read as
+               a share of anything until you see the share. -->
+          <div class="parta-attrib">
+            <div class="parta-attrib-bar" id="paAttribBar" role="img" aria-labelledby="paAttribDesc">
+              <div class="parta-attrib-lender" id="paAttribLender"></div>
+            </div>
+            <div class="parta-attrib-legend">
+              <span><i class="parta-swatch parta-swatch-lender"></i>This lender <b id="paAttribPct">—</b></span>
+              <span><i class="parta-swatch parta-swatch-rest"></i>Other financiers <b id="paAttribRestPct">—</b></span>
+            </div>
+            <p class="parta-attrib-desc" id="paAttribDesc"></p>
+          </div>
+
+          <details class="parta-means">
+            <summary>What this means</summary>
+            <p id="paMeansInventory"></p>
+          </details>
+        </section>
 
         <section class="parta-card parta-af">
           <span class="parta-af-label">Attribution factor</span>
@@ -387,12 +441,36 @@
           </header>
           <p class="parta-absent" id="paImpactAbsent" hidden></p>
           <div id="paMetrics"></div>
+
+          <!-- The lifetime figure is a sum of 25 declining years. Showing the
+               total alone hides both the degradation and the fact that a flat
+               grid factor was assumed. -->
+          <figure class="parta-chart" id="paLifetimeChart" hidden>
+            <figcaption>
+              <span class="parta-chart-title">Avoided emissions over the project life</span>
+              <span class="parta-chart-sub" id="paChartSub"></span>
+            </figcaption>
+            <div class="parta-chart-body" id="paChartBody"></div>
+            <p class="parta-chart-note" id="paChartNote"></p>
+          </figure>
+
+          <details class="parta-means">
+            <summary>What this means</summary>
+            <p id="paMeansImpact"></p>
+          </details>
           <div class="parta-lifetime" id="paLifetimeBox" hidden>
             <span class="parta-lifetime-label" id="paLifetimeLabel">Lifetime, financed</span>
             <span class="parta-lifetime-value" id="paLifetime">—</span>
             <p class="parta-lifetime-note" id="paLifetimeNote"></p>
           </div>
           <p class="parta-notcomparable" id="paNotComparable"></p>
+        </section>
+
+        <!-- The read-out a relationship manager takes into a meeting. -->
+        <section class="parta-summary" id="paSummary">
+          <h3>In summary</h3>
+          <ul id="paSummaryList"></ul>
+          <p class="parta-summary-caveat" id="paSummaryCaveat"></p>
         </section>
 
         <section class="parta-card parta-trace">

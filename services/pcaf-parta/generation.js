@@ -202,13 +202,27 @@ function _lifetime({ annualGeneration_MWh, factorValue, country, years, degradat
 
   const startYear = new Date().getFullYear();
   let total = 0;
+  /* The per-year series, so a chart plots what was actually summed rather than
+     redrawing a curve from the total. */
+  const series = [];
   for (let i = 0; i < years; i++) {
     const output = annualGeneration_MWh * Math.pow(1 - degradationPct / 100, i);
-    total += output * factorFor(startYear + i);
+    const factor = factorFor(startYear + i);
+    const avoided = output * factor;
+    total += avoided;
+    series.push({
+      year: startYear + i,
+      generation_MWh: +output.toFixed(1),
+      factor,
+      avoided_tCO2e: +avoided.toFixed(2),
+    });
   }
 
   return {
     value: +total.toFixed(2),
+    series,
+    firstYear: series[0] ? series[0].avoided_tCO2e : null,
+    lastYear: series.length ? series[series.length - 1].avoided_tCO2e : null,
     years,
     degradationPct,
     trajectory: traj ? 'configured' : 'flat',
@@ -251,6 +265,7 @@ function deriveFromGeneration(input) {
   let generation = annualGeneration_MWh;
   let generationSource;          // metered | supplied | derived
   let generationEquation = null;
+  let derivation = null;
 
   if (mode === 'metered') {
     if (!Number.isFinite(generation) || generation <= 0) {
@@ -286,6 +301,32 @@ function deriveFromGeneration(input) {
     generationSource = 'derived';
     generationEquation = `annual generation = installed capacity × capacity factor × 8,760 h`
       + (yieldBasis === 'P90' ? ` × ${ratio} (P90 ratio)` : '');
+
+    /* The chain, step by step, so the screen can show the working rather than
+       assert a number. The question this answers on sight is the one a user
+       asks first: why did that figure not move when I changed the country? */
+    derivation = {
+      steps: [
+        { label: 'Installed capacity', value: installedCapacity_MW, unit: 'MW' },
+        { label: 'Capacity factor', value: tech.default_cf, unit: 'ratio',
+          pct: +(tech.default_cf * 100).toFixed(1),
+          scope: tech.isGlobalDefault ? 'global' : 'national',
+          source: `${tech.publisher || tech.source} (${tech.year})` },
+        { label: 'Hours in a year', value: HOURS_PER_YEAR, unit: 'h' },
+        ...(yieldBasis === 'P90'
+          ? [{ label: 'P90 ratio', value: ratio, unit: 'ratio',
+               source: CONFIG.yield_basis.ratio_basis }] : []),
+      ],
+      result: generation,
+      cfIsGlobal: Boolean(tech.isGlobalDefault),
+      /* Answers the "why didn't it change?" question before it is asked. */
+      whyUnchangedNote: tech.isGlobalDefault
+        ? `The capacity factor used is a GLOBAL weighted average, because no national one is held `
+          + `for ${cc.TECHNOLOGIES[technology].label} in ${countryName}. Changing the country will `
+          + `not move this figure until a national capacity factor is loaded — changing the `
+          + `TECHNOLOGY will, because each has its own global average.`
+        : `The capacity factor is specific to ${countryName}, so changing the country moves this figure.`,
+    };
     assumptions.push(`Annual generation was estimated from a ${(tech.default_cf * 100).toFixed(1)}% `
       + `capacity factor${tech.isGlobalDefault ? ' (global weighted average, not national)' : ''}, `
       + `not supplied. ${tech.publisher || tech.source} (${tech.year}).`);
@@ -374,6 +415,11 @@ function deriveFromGeneration(input) {
       derived: generationSource === 'derived',
       equation: generationEquation,
       yieldBasis: mode === 'projected' ? yieldBasis : null,
+      derivation,
+      overrideNote: generationSource === 'supplied'
+        ? 'This figure was entered rather than derived, so it does not move when the country or '
+          + 'technology changes. Clear it to return to the derived estimate.'
+        : null,
     },
     installedCapacity_MW: Number.isFinite(installedCapacity_MW) ? installedCapacity_MW : null,
 
