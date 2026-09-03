@@ -1,0 +1,45 @@
+{
+  "_meta": {
+    "title": "GCF Integrated Results Management Framework — core indicators",
+    "adopted": "Board decision B.29/01",
+    "source": "https://www.greenclimate.fund/sites/default/files/decision/b29/decision-b29-01-b01-a01.pdf",
+    "note": "Only the core indicators this model reports against. Direct and indirect beneficiaries are SEPARATE indicators and are never summed into one figure."
+  },
+  "coreIndicators": [
+    {
+      "id": "MCI-1",
+      "stream": "mitigation",
+      "name": "Tonnes of carbon dioxide equivalent reduced or avoided",
+      "unit": "tCO2e",
+      "field": "mitigation.lifetime_tCO2e",
+      "note": "Reduced OR avoided — which one depends entirely on the baseline, so every figure carries its counterfactual."
+    },
+    {
+      "id": "ACI-1",
+      "stream": "adaptation",
+      "name": "Direct beneficiaries",
+      "unit": "people",
+      "field": "beneficiaries.direct",
+      "note": "Never added to indirect beneficiaries. They measure different things."
+    },
+    {
+      "id": "ACI-2",
+      "stream": "adaptation",
+      "name": "Indirect beneficiaries",
+      "unit": "people",
+      "field": "beneficiaries.indirect",
+      "note": "Never added to direct beneficiaries."
+    }
+  ],
+  "supplementary": [
+    { "id": "SUP-AREA", "name": "Hectares under improved low-emission or climate-resilient management", "unit": "ha", "field": "area.hectares" },
+    { "id": "SUP-ASSET", "name": "Value of physical assets made more resilient or better protected", "unit": "USD", "field": "assets.valueProtected_usd" }
+  ],
+  "evidenceTiers": [
+    { "tier": "measured", "rank": 1, "label": "Measured", "note": "Metered, surveyed or audited. Traceable to a record held here." },
+    { "tier": "modelled", "rank": 2, "label": "Modelled", "note": "Computed from project parameters and a named method." },
+    { "tier": "benchmark", "rank": 3, "label": "Benchmark", "note": "A published sector or national default stands in for a project value." },
+    { "tier": "declared", "rank": 4, "label": "Declared", "note": "Stated by the sponsor or the insured; not independently verified here." }
+  ],
+  "tierNote": "Deliberately NOT PCAF's 1-5 data-quality scale. That scale is defined for financed-emissions inventory and reusing it for project appraisal would misrepresent both."
+}
