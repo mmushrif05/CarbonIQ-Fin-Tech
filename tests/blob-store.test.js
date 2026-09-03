@@ -184,11 +184,19 @@ describe('The store layer above it — precedence and the refusal rule', () => {
   const src = require('fs').readFileSync(
     require('path').join(__dirname, '..', 'services', 'partc-store.js'), 'utf8');
 
-  test('Firebase still wins where it is configured', () => {
+  test('Firebase still wins in automatic mode, where it is configured', () => {
     /* An existing deployment's records must not move because a new option
-       appeared. */
-    expect(src).toMatch(/const _blobsLive = \(\) => !isDurable\(\) && blobs\.isAvailable\(\)/);
+       appeared — but the operator can override it, see the block below. */
     expect(src).toMatch(/Firebase still wins where it is configured/);
+  });
+
+  test('one predicate decides where a write goes, and it is capability()', () => {
+    /* This used to re-derive the answer as `!isDurable() && blobs.isAvailable()`,
+       which was a second implementation of the precedence rule and could not
+       see STORAGE_BACKEND at all — so a forced backend would have been
+       reported one way and written another. */
+    expect(src).toMatch(/const _blobsLive = \(\) => capability\(\)\.mode === 'blobs'/);
+    expect(src).not.toMatch(/!isDurable\(\) && blobs\.isAvailable\(\)/);
   });
 
   test('the two durable stores are never written together', () => {
@@ -244,5 +252,112 @@ describe('The deployment says what it can persist, without a key', () => {
     expect(Object.keys(res.body.storage).sort()).toEqual(['durable', 'mode', 'writable']);
     const wire = JSON.stringify(res.body);
     expect(wire).not.toMatch(/token|secret|serviceAccount|private_key|siteID/i);
+  });
+});
+
+describe('The operator chooses the store, rather than inheriting it', () => {
+  /* Found in production: the site still had Firebase variables set, so
+     capability() reported firebase and Blobs was never reached — the storage
+     work shipped and did nothing, and nothing on the screen said why. A
+     default that quietly overrides a decision is not a default, it is a trap. */
+  const store = require('../services/partc-store');
+  const ORIGINAL = process.env.STORAGE_BACKEND;
+
+  afterEach(() => {
+    if (ORIGINAL === undefined) delete process.env.STORAGE_BACKEND;
+    else process.env.STORAGE_BACKEND = ORIGINAL;
+    blobs._reset();
+  });
+
+  test('unset means automatic, and the payload says the mode was not chosen', () => {
+    delete process.env.STORAGE_BACKEND;
+    expect(store.requestedBackend()).toBe('auto');
+    expect(store.capability().chosen).toBe(false);
+  });
+
+  test('an unrecognised value falls back to automatic rather than refusing everything', () => {
+    process.env.STORAGE_BACKEND = 'postgres-please';
+    expect(store.requestedBackend()).toBe('auto');
+    expect(store.capability().writable).toBe(true);
+  });
+
+  test('blobs forces Blobs, and says the mode was chosen', () => {
+    process.env.STORAGE_BACKEND = 'blobs';
+    const cap = store.capability();
+    expect(cap.mode).toBe('blobs');
+    expect(cap.chosen).toBe(true);
+    expect(cap.durable).toBe(true);
+    expect(cap.reason).toMatch(/only store in use/);
+  });
+
+  test('a forced backend that is unreachable refuses rather than using the other one', async () => {
+    /* Silently honouring the preference by writing somewhere else is how half
+       a bank's records end up in a store nobody reads. */
+    const mod = require('@netlify/blobs');
+    mod.getStore.mockImplementationOnce(() => { throw new Error('no context'); });
+    blobs._reset();
+    process.env.STORAGE_BACKEND = 'blobs';
+    const cap = store.capability();
+    expect(cap.mode).toBe('none');
+    expect(cap.writable).toBe(false);
+    expect(cap.chosen).toBe(true);
+    expect(() => store.assertWritable()).toThrow(/not reachable/);
+  });
+
+  test('firebase can be forced too, and refuses when it is not configured', () => {
+    process.env.STORAGE_BACKEND = 'firebase';
+    const cap = store.capability();
+    expect(cap.chosen).toBe(true);
+    /* No Firebase in the test environment, so this is the refusal path. */
+    expect(cap.mode).toBe('none');
+    expect(cap.remedy).toMatch(/FIREBASE_SERVICE_ACCOUNT/);
+  });
+
+  test('memory is selectable for local work and is never durable', () => {
+    process.env.STORAGE_BACKEND = 'memory';
+    const cap = store.capability();
+    expect(cap.mode).toBe('memory');
+    expect(cap.durable).toBe(false);
+    expect(cap.remedy).toMatch(/Never set this on a deployed site/);
+  });
+
+  test('the automatic firebase branch tells the reader how to choose Blobs instead', () => {
+    const src = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'services', 'partc-store.js'), 'utf8');
+    expect(src).toMatch(/Set STORAGE_BACKEND=blobs to use Netlify Blobs instead/);
+  });
+});
+
+describe('The running commit can actually be reported', () => {
+  /* COMMIT_REF is a build-time variable and is absent from the Lambda's
+     runtime environment, so /health answered "unknown (not a Netlify build)"
+     on every production deploy — the diagnostic built to tell a broken fix
+     from an undeployed one could not tell them apart. */
+  const fs = require('fs');
+  const path = require('path');
+  const ROOT = path.join(__dirname, '..');
+
+  test('the build stamps what it knows to a file', () => {
+    expect(fs.existsSync(path.join(ROOT, 'scripts', 'build-info.js'))).toBe(true);
+    const pkg = require('../package.json');
+    expect(pkg.scripts['build:info']).toBe('node scripts/build-info.js');
+  });
+
+  test('the deploy runs that step, and ships the file to the function', () => {
+    const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
+    expect(toml).toMatch(/npm install && npm run build:info/);
+    expect(toml).toMatch(/"build-info\.json"/);
+  });
+
+  test('health reads the stamp, and reports absent rather than guessing', () => {
+    const src = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
+    expect(src).toMatch(/require\('\.\/build-info\.json'\)/);
+    expect(src).toMatch(/Absent stays absent rather than being guessed/);
+    expect(src).toMatch(/stamped\.commit \|\| process\.env\.COMMIT_REF/);
+  });
+
+  test('the generated stamp is not committed', () => {
+    const ignore = fs.readFileSync(path.join(ROOT, '.gitignore'), 'utf8');
+    expect(ignore).toMatch(/^build-info\.json$/m);
   });
 });

@@ -1,7 +1,11 @@
 # CarbonIQ FinTech — Netlify Configuration
 
 [build]
-  command = "npm install"
+  # build:info stamps COMMIT_REF into build-info.json. COMMIT_REF exists only
+  # during the build, not in the function's runtime environment, so without
+  # this step /health cannot report the running commit — which is the one
+  # question it exists to answer.
+  command = "npm install && npm run build:info"
   publish = "ui"
   functions = "netlify/functions"
 
@@ -21,7 +25,13 @@
   # path, so without naming them here the bundle ships without them: the
   # factor store would fail and every report would silently fall back to the
   # built-in PDF fonts.
-  included_files = ["assets/fonts/**", "data/factors/**"]
+  included_files = [
+    "assets/fonts/**",
+    "data/factors/**",
+    "data/gcf/**",
+    "data/capital/**",
+    "build-info.json",
+  ]
 
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include

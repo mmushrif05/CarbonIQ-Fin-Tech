@@ -1,7 +1,7 @@
 {
   "name": "carboniq-fintech",
   "version": "0.1.0",
-  "description": "CarbonIQ FinTech — Bank-facing API layer for construction carbon intelligence",
+  "description": "CarbonIQ FinTech \u2014 Bank-facing API layer for construction carbon intelligence",
   "license": "Apache-2.0",
   "main": "server.js",
   "engines": {
@@ -23,7 +23,8 @@
     "key:revoke": "node scripts/create-api-key.js revoke",
     "key:register-ui": "node scripts/register-ui-key.js",
     "docs:conformance": "node scripts/generate-conformance-doc.js",
-    "setup:seed-partc": "node scripts/seed-partc-demo.js"
+    "setup:seed-partc": "node scripts/seed-partc-demo.js",
+    "build:info": "node scripts/build-info.js"
   },
   "keywords": [
     "carbon",
