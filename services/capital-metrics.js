@@ -41,6 +41,7 @@
 'use strict';
 
 const { DEPLOYING_STATUSES } = require('./capital-book');
+const forecast = require('./capital-forecast');
 
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
@@ -342,8 +343,15 @@ function _byType(rows) {
 /**
  * Everything the dashboard renders, from one read of the book.
  */
-function dashboard(book, { carbonWeight = 0.5 } = {}) {
+function dashboard(book, {
+  carbonWeight = 0.5,
+  horizonYears = null,
+  gridDeclinePctPerYear = 0,
+  drawdownYears = 3,
+  fromYear = null,
+} = {}) {
   const empty = !book.portfolios.length && !book.investments.length;
+  const first = fromYear || new Date().getFullYear();
   return {
     generatedAt: new Date().toISOString(),
     empty,
@@ -354,6 +362,20 @@ function dashboard(book, { carbonWeight = 0.5 } = {}) {
     emissions: emissionsLedger(book),
     portfolios: portfolioRows(book),
     pipeline: pipeline(book, { carbonWeight }),
+
+    /* The same figures, with years attached. The totals under this series are
+       the totals in `emissions` above — a test asserts it, because a curve that
+       does not add up to the number printed beside it is worse than no curve. */
+    forecast: {
+      emissions: forecast.bookSeries(book, {
+        fromYear: first, years: horizonYears, gridDeclinePctPerYear,
+      }),
+      capital: forecast.capitalSeries(book, {
+        fromYear: first, years: horizonYears, drawdownYears,
+      }),
+      thisYear: first,
+    },
+
     storage: book.storage || null,
   };
 }

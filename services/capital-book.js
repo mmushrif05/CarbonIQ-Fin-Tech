@@ -148,6 +148,10 @@ async function createInvestment(orgId, input) {
     assetType: input.assetType || null,
     country: input.country || null,
     status: STATUSES.includes(input.status) ? input.status : 'pipeline',
+    /* The time axis. Without a start year and a shape, everything ahead is a
+       lump with no years attached and no curve can be drawn from it. */
+    startYear: numOrNull(input.startYear),
+    phasing: input.phasing || null,
     commitment: num(input.commitment),
     projectCost: num(input.projectCost),
     expectedReturnPct: numOrNull(input.expectedReturnPct),
@@ -164,9 +168,10 @@ async function createInvestment(orgId, input) {
 
 async function updateInvestment(orgId, id, updates) {
   const clean = {};
-  for (const k of ['name', 'sector', 'assetType', 'country', 'taxonomy', 'notes', 'portfolioId']) {
+  for (const k of ['name', 'sector', 'assetType', 'country', 'taxonomy', 'notes', 'portfolioId', 'phasing']) {
     if (updates[k] !== undefined) clean[k] = updates[k];
   }
+  if (updates.startYear !== undefined) clean.startYear = numOrNull(updates.startYear);
   for (const k of ['commitment', 'projectCost']) {
     if (updates[k] !== undefined) clean[k] = num(updates[k]);
   }

@@ -15,6 +15,12 @@
  *
  * Ids are fixed, so seeding twice updates the same records rather than
  * doubling the book.
+ *
+ * Each investment carries a start year and a named phasing shape, because the
+ * shape of what is ahead is an assumption and an unnamed assumption is the one
+ * nobody checks. Operational assets run level; a build is front-loaded, since
+ * A1 to A5 are incurred while the thing is being built and not across the life
+ * of the loan.
  */
 
 'use strict';
@@ -49,6 +55,7 @@ const HELD = [
     assetType: 'Office', country: 'SG', status: 'deployed',
     commitment: 185_000_000, projectCost: 620_000_000,
     expectedReturnPct: 7.2, tenorYears: 12, taxonomy: 'green',
+    startYear: 2025, phasing: 'level',
     emissions: {
       incurred_tCO2e: 4210, forward_tCO2e: 1180, reduction_tCO2e: 620, avoided_tCO2e: 0,
       basis: 'Attributed embodied carbon from the tender BOQ plus metered operational energy.',
@@ -61,6 +68,7 @@ const HELD = [
     assetType: 'Residential', country: 'MY', status: 'deployed',
     commitment: 98_000_000, projectCost: 340_000_000,
     expectedReturnPct: 6.4, tenorYears: 10, taxonomy: 'green',
+    startYear: 2025, phasing: 'level',
     emissions: {
       incurred_tCO2e: 3640, forward_tCO2e: 990, reduction_tCO2e: 410, avoided_tCO2e: 0,
       basis: 'Attributed embodied carbon; operational energy from a modelled benchmark.',
@@ -73,6 +81,7 @@ const HELD = [
     assetType: 'Office', country: 'SG', status: 'committed',
     commitment: 142_000_000, projectCost: 480_000_000,
     expectedReturnPct: 6.9, tenorYears: 11, taxonomy: 'transition',
+    startYear: 2026, phasing: 'buildThenOperate',
     emissions: {
       incurred_tCO2e: 3870, forward_tCO2e: 1420, reduction_tCO2e: 0, avoided_tCO2e: 0,
       basis: 'Attributed embodied carbon from the tender BOQ. Committed, not yet drawn.',
@@ -85,6 +94,7 @@ const HELD = [
     assetType: 'Onshore wind', country: 'LK', status: 'deployed',
     commitment: 62_000_000, projectCost: 148_000_000,
     expectedReturnPct: 9.1, tenorYears: 15, taxonomy: 'green',
+    startYear: 2025, phasing: 'level',
     emissions: {
       incurred_tCO2e: 210, forward_tCO2e: 380, reduction_tCO2e: 0, avoided_tCO2e: 24_600,
       basis: 'Avoided against the Sri Lankan combined margin. Reported separately from the inventory.',
@@ -97,6 +107,7 @@ const HELD = [
     assetType: 'Solar PV', country: 'LK', status: 'deployed',
     commitment: 34_000_000, projectCost: 91_000_000,
     expectedReturnPct: 8.4, tenorYears: 20, taxonomy: 'green',
+    startYear: 2026, phasing: 'level',
     emissions: {
       incurred_tCO2e: 120, forward_tCO2e: 260, reduction_tCO2e: 0, avoided_tCO2e: 11_400,
       basis: 'Avoided against the Sri Lankan combined margin. Reported separately from the inventory.',
@@ -113,6 +124,7 @@ const PIPELINE = [
     assetType: 'District energy', country: 'LK', status: 'pipeline',
     commitment: 45_000_000, projectCost: 120_000_000,
     expectedReturnPct: 8.8, tenorYears: 14, taxonomy: 'green',
+    startYear: 2027, phasing: 'buildThenOperate',
     emissions: {
       incurred_tCO2e: 0, forward_tCO2e: 2900, reduction_tCO2e: 3200, avoided_tCO2e: 0,
       basis: 'Reduction against the connected buildings\' own base year.',
@@ -125,6 +137,7 @@ const PIPELINE = [
     assetType: 'Solar PV', country: 'LK', status: 'pipeline',
     commitment: 12_000_000, projectCost: 28_000_000,
     expectedReturnPct: 7.5, tenorYears: 18, taxonomy: 'green',
+    startYear: 2027, phasing: 'level',
     emissions: {
       incurred_tCO2e: 0, forward_tCO2e: 90, reduction_tCO2e: 0, avoided_tCO2e: 8600,
       basis: 'Avoided against the combined margin; diesel displacement in the off-grid segment.',
@@ -137,6 +150,7 @@ const PIPELINE = [
     assetType: 'Warehousing', country: 'MY', status: 'pipeline',
     commitment: 71_000_000, projectCost: 210_000_000,
     expectedReturnPct: 6.1, tenorYears: 9, taxonomy: 'transition',
+    startYear: 2027, phasing: 'construction',
     emissions: {
       incurred_tCO2e: 0, forward_tCO2e: 2180, reduction_tCO2e: 240, avoided_tCO2e: 0,
       basis: 'Attributed embodied carbon from the concept design.',
@@ -149,6 +163,7 @@ const PIPELINE = [
     assetType: 'Mixed-Use', country: 'HK', status: 'pipeline',
     commitment: 88_000_000, projectCost: 260_000_000,
     expectedReturnPct: 12.5, tenorYears: 8, taxonomy: 'transition',
+    startYear: 2027, phasing: 'construction',
     emissions: {
       incurred_tCO2e: 0, forward_tCO2e: 3120, reduction_tCO2e: 150, avoided_tCO2e: 0,
       basis: 'Attributed embodied carbon from the concept design.',
@@ -164,6 +179,7 @@ const PIPELINE = [
     assetType: 'Biomass', country: 'LK', status: 'pipeline',
     commitment: 26_000_000, projectCost: 64_000_000,
     expectedReturnPct: null, tenorYears: 12, taxonomy: 'transition',
+    startYear: 2028, phasing: 'level',
     emissions: {
       incurred_tCO2e: 0, forward_tCO2e: 140, reduction_tCO2e: 0, avoided_tCO2e: 5200,
       basis: 'Avoided against the combined margin. Return not yet priced.',

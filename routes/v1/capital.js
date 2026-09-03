@@ -69,8 +69,28 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
       message: `carbonWeight must be a number between 0 and 1; received "${raw}".`,
     });
   }
+  /* The forecast assumptions ride on the query string for the same reason the
+     weighting does: they are questions a reader asks of one book, not
+     properties of the book. They come back in the payload, so a screenshot of
+     a curve always carries the assumptions that produced it. */
+  const opts = {
+    carbonWeight,
+    horizonYears: req.query.horizonYears ? Number(req.query.horizonYears) : null,
+    gridDeclinePctPerYear: req.query.gridDeclinePct ? Number(req.query.gridDeclinePct) : 0,
+    drawdownYears: req.query.drawdownYears ? Number(req.query.drawdownYears) : 3,
+  };
+  for (const [key, max] of [['horizonYears', 30], ['gridDeclinePctPerYear', 20], ['drawdownYears', 15]]) {
+    const v = opts[key];
+    if (v !== null && (!Number.isFinite(v) || v < 0 || v > max)) {
+      return res.status(400).json({
+        error: 'BAD_ASSUMPTION',
+        message: `${key} must be a number between 0 and ${max}; received "${v}".`,
+      });
+    }
+  }
+
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
-  const result = metrics.dashboard(held, { carbonWeight });
+  const result = metrics.dashboard(held, opts);
 
   /* An empty book leaves a correct screen with nothing on it — and where
      storage is not writable (a serverless runtime with no Firebase) the seed
@@ -80,7 +100,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
      payload so the screen can say what it is showing. The moment one real
      portfolio is recorded, this stops. */
   if (result.empty) {
-    const shown = metrics.dashboard({ ...sampleBook(), storage: held.storage }, { carbonWeight });
+    const shown = metrics.dashboard({ ...sampleBook(), storage: held.storage }, opts);
     shown.sample = true;
     shown.empty = false;
     shown.sampleNote = 'Sample figures. Nothing is recorded in this book yet, so a worked '
