@@ -96,8 +96,8 @@ describe('Fall back on geography, never on basis', () => {
 describe('Two modes, driven by the generation-figure dropdown', () => {
   test('projected derives generation from capacity and marks it derived', () => {
     const r = run({ country: 'LK', technology: 'solar_pv', basis: 'projected', installedCapacity_MW: 60 });
-    // 60 MW x 17.4% (IRENA global) x 8,760 h
-    expect(r.generation.annualGeneration.value).toBe(91454.4);
+    // 60 MW x 15.7% (Sri Lanka national, Hambantota) x 8,760 h
+    expect(r.generation.annualGeneration.value).toBe(82519.2);
     expect(r.generation.annualGeneration.source).toBe('derived');
     expect(r.generation.annualGeneration.driver).toBe('capacity');
   });
@@ -160,12 +160,22 @@ describe('The data quality option follows the weakest link', () => {
 
 describe('The physical check is per technology and per country', () => {
   test('no capacity-factor data for a country means no band, not a borrowed one', () => {
-    const t = cc.technology('LK', 'solar_pv');
+    /* Sri Lanka now carries national solar and wind figures, so the fallback
+       case is tested where it still applies. Singapore holds neither. */
+    const t = cc.technology('SG', 'solar_pv');
     expect(t.isGlobalDefault).toBe(true);
     expect(t.hasBand).toBe(false);
-    const p = run(METERED).generation.plausibility;
-    expect(p.status).toBe('no_band');
-    expect(p.note).toMatch(/reference point rather than a pass or a fail/);
+    expect(t.default_cf).toBe(0.174);
+    expect(t.globalDefaultNote).toMatch(/not a national band/);
+  });
+
+  test('a country that holds its own figure is not given the global one', () => {
+    const t = cc.technology('LK', 'solar_pv');
+    expect(t.isGlobalDefault).toBe(false);
+    expect(t.hasBand).toBe(true);
+    expect(t.default_cf).toBe(0.157);
+    expect(t.band_low).toBe(0.15);
+    expect(t.band_high).toBe(0.19);
   });
 
   test('specific yield is reported beside the capacity factor', () => {
@@ -300,6 +310,60 @@ describe('The lifetime series is attributed, like the total beside it', () => {
     const whole = run({ ...METERED, lifetimeYears: 25 }, { outstandingAmount: 40000000 });
     expect(whole.attribution.value).toBe(1);
     expect(whole.impact.lifetime.value).toBe(whole.impact.lifetime.projectTotal);
+  });
+});
+
+/*
+ * Reported from the live screen: "for wind the annual generation stays the
+ * same as 178,704 for all countries". It did, and it was not a bug in the
+ * derivation — every country fell back to the same IRENA global 34%, because
+ * the config held no national capacity factor for anything. A tool where the
+ * country selector cannot move the generation looks broken however correctly
+ * it behaves, so the fix was data rather than code.
+ */
+describe('A national capacity factor makes the country selector do something', () => {
+  const gen = (country, technology) =>
+    run({ country, technology, installedCapacity_MW: 60 }).generation.annualGeneration;
+
+  test('wind now differs between countries that hold their own figure', () => {
+    expect(gen('LK', 'wind_on').value).toBe(139809.6);   // 26.6% national
+    expect(gen('NO', 'wind_on').value).toBe(157680);     // 30.0% national
+    expect(gen('SG', 'wind_on').value).toBe(178704);     // 34.0% global fallback
+    expect(gen('LK', 'wind_on').value).not.toBe(gen('NO', 'wind_on').value);
+  });
+
+  test('solar differs where a national figure is held', () => {
+    expect(gen('LK', 'solar_pv').value).toBe(82519.2);   // 15.7% national
+    expect(gen('SG', 'solar_pv').value).toBe(91454.4);   // 17.4% global fallback
+  });
+
+  test('a national figure is not silently a global one', () => {
+    expect(gen('LK', 'wind_on').derivation.cfIsGlobal).toBe(false);
+    expect(gen('SG', 'wind_on').derivation.cfIsGlobal).toBe(true);
+  });
+
+  test('every national capacity factor carries its source and its caveat', () => {
+    for (const [country, tech] of [['LK', 'solar_pv'], ['LK', 'wind_on'], ['NO', 'wind_on']]) {
+      const t = cc.technology(country, tech);
+      expect(`${country}/${tech}:${t.isGlobalDefault}`).toBe(`${country}/${tech}:false`);
+      expect(t.source).toBeTruthy();
+      expect(t.url).toBeTruthy();
+      expect(t.publisher).toBeTruthy();
+      expect(Number.isFinite(t.year)).toBe(true);
+      /* Each of these rests on one or two plants, not a fleet average, and
+         says so — the gap between "national" and "representative" is exactly
+         what a reviewer would probe. */
+      expect(t.caveat).toBeTruthy();
+      expect(t.verification).toBe('secondary_reported');
+    }
+  });
+
+  test('the band brackets the default it ships with', () => {
+    for (const [country, tech] of [['LK', 'solar_pv'], ['LK', 'wind_on'], ['NO', 'wind_on']]) {
+      const t = cc.technology(country, tech);
+      expect(t.band_low).toBeLessThanOrEqual(t.default_cf);
+      expect(t.band_high).toBeGreaterThanOrEqual(t.default_cf);
+    }
   });
 });
 
