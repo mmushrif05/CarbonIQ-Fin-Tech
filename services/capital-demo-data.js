@@ -218,4 +218,29 @@ async function seedCapitalDemo(orgId) {
   };
 }
 
-module.exports = { seedCapitalDemo, PORTFOLIOS, HELD, PIPELINE, PAYMENTS };
+/**
+ * The same book, assembled in memory and never written.
+ *
+ * A dashboard whose book is empty shows an empty-state note and no figures,
+ * which is correct but leaves nothing on screen to look at — and on a
+ * serverless deployment with no Firebase the seed endpoint is refused, so
+ * there is no way to put figures there at all. Computing the worked book
+ * through the real engine costs nothing, needs no storage, and is labelled a
+ * sample on its own face, so it can never be mistaken for a position.
+ *
+ * The payments carry their portfolio, which the seeded path gets from the
+ * stored investment.
+ */
+function sampleBook() {
+  const investments = [...HELD, ...PIPELINE].map(i => ({ ...i }));
+  const portfolioOf = (investmentId) =>
+    (investments.find(i => i.id === investmentId) || {}).portfolioId || null;
+  return {
+    portfolios: PORTFOLIOS.map(p => ({ ...p })),
+    investments,
+    payments: PAYMENTS.map(pay => ({ ...pay, portfolioId: portfolioOf(pay.investmentId) })),
+    storage: null,
+  };
+}
+
+module.exports = { seedCapitalDemo, sampleBook, PORTFOLIOS, HELD, PIPELINE, PAYMENTS };

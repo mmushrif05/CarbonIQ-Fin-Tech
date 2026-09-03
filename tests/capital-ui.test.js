@@ -204,6 +204,11 @@ describe('Empty and failed states are distinguished', () => {
     expect(render).toContain('d.emptyNote');
   });
 
+  test('a worked example says so beside the figures, not only in a banner', () => {
+    expect(render).toContain("_capitalMessage(d.sampleNote, 'sample')");
+    expect(css).toContain('.cap-message.is-sample');
+  });
+
   test('a failed read says the figures are blank because the request failed', () => {
     expect(render).toMatch(/blank because the request failed/);
   });
