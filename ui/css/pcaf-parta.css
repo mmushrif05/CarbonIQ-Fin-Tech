@@ -730,3 +730,145 @@ input[data-derived="true"] {
 @media (prefers-reduced-motion: reduce) {
   .parta-attrib-lender, .parta-means > summary::after { transition: none; }
 }
+
+/* ══ Visual encodings ═════════════════════════════════════════════════════
+   Each of these replaced a paragraph that was carrying a number. A grid
+   factor means nothing in isolation; a capacity factor means nothing without
+   its ceiling; a data quality score means nothing without the direction of
+   the scale it sits on. */
+
+/* ── Country comparison ────────────────────────────────────────────────── */
+.parta-compare { margin: 16px 0 4px; }
+.parta-compare-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--text-secondary); margin-bottom: 10px;
+}
+.parta-compare-head span { font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--text-tertiary); }
+.parta-compare-row {
+  display: grid; grid-template-columns: 78px 1fr 72px;
+  align-items: center; gap: 10px; padding: 4px 0;
+}
+.parta-compare-name { font-size: 12px; color: var(--text-secondary); }
+.parta-compare-track {
+  height: 9px; border-radius: 999px; background: var(--bg);
+  overflow: hidden; min-width: 0;
+}
+.parta-compare-fill {
+  display: block; height: 100%; border-radius: 999px;
+  background: var(--text-tertiary);
+  transition: width 340ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.parta-compare-value {
+  font-size: 12px; font-variant-numeric: tabular-nums; text-align: right;
+  color: var(--text-secondary);
+}
+.parta-compare-value i { font-style: normal; color: var(--amber); font-weight: 700; }
+/* Emphasis marks the selection; it is not encoding a different quantity. */
+.parta-compare-row.is-here .parta-compare-name { color: var(--text-primary); font-weight: 650; }
+.parta-compare-row.is-here .parta-compare-fill { background: var(--green); }
+.parta-compare-row.is-here .parta-compare-value { color: var(--text-primary); font-weight: 700; }
+.parta-compare-foot {
+  font-size: 10.5px; line-height: 1.5; color: var(--text-tertiary); margin: 8px 0 0;
+}
+.parta-compare-foot:empty { display: none; }
+
+/* ── Capacity factor gauge ─────────────────────────────────────────────── */
+.parta-gauge { margin: 4px 0 14px; }
+.parta-gauge-track {
+  position: relative; height: 10px; border-radius: 999px; background: var(--bg);
+}
+.parta-gauge-fill {
+  height: 100%; border-radius: 999px; background: var(--green);
+  transition: width 340ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.parta-gauge-ref {
+  position: absolute; top: -5px; bottom: -5px; width: 2px;
+  background: var(--text-primary); border-radius: 1px;
+  transition: left 340ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+.parta-gauge-ref span {
+  position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+  font-size: 9.5px; font-weight: 700; color: var(--text-primary);
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
+.parta-gauge-scale {
+  display: flex; justify-content: space-between; gap: 8px; margin-top: 7px;
+  font-size: 10px; color: var(--text-tertiary); font-variant-numeric: tabular-nums;
+}
+
+/* ── The five data quality bands ───────────────────────────────────────── */
+.parta-dqscale { display: flex; gap: 3px; margin: 8px 0 4px; }
+.parta-dqscale-band {
+  flex: 1; height: 26px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  /* One hue, light to dark, because the scale is ordered. Never a rainbow,
+     and never green-to-red, which would read as good-to-bad on a scale whose
+     direction people already get backwards. */
+  background: var(--bg); color: var(--text-tertiary);
+  transition: transform 200ms ease;
+}
+.parta-dqscale-band[data-band="1"] { background: #d3ece3; }
+.parta-dqscale-band[data-band="2"] { background: #b3ddcf; }
+.parta-dqscale-band[data-band="3"] { background: #8fc9b7; }
+.parta-dqscale-band[data-band="4"] { background: #6bb29c; }
+.parta-dqscale-band[data-band="5"] { background: #479a82; }
+.parta-dqscale-band.is-here {
+  outline: 2px solid var(--text-primary); outline-offset: 1px;
+  color: var(--text-primary); transform: scaleY(1.18);
+}
+.parta-dqscale-ends {
+  display: flex; justify-content: space-between;
+  font-size: 9.5px; color: var(--text-tertiary); letter-spacing: 0.2px;
+}
+
+/* ── Folded assumptions ────────────────────────────────────────────────── */
+.parta-assumptions > details > summary {
+  cursor: pointer; list-style: none; min-height: 44px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 650; color: var(--text-primary);
+}
+.parta-assumptions > details > summary::-webkit-details-marker { display: none; }
+.parta-assumptions > details > summary::after {
+  content: ''; width: 6px; height: 6px; margin-left: auto;
+  border-right: 1.6px solid var(--text-tertiary); border-bottom: 1.6px solid var(--text-tertiary);
+  transform: rotate(45deg) translateY(-2px); transition: transform 200ms ease;
+}
+.parta-assumptions > details[open] > summary::after { transform: rotate(-135deg); }
+.parta-count {
+  font-size: 11px; font-weight: 700; min-width: 22px; height: 22px; padding: 0 7px;
+  border-radius: 999px; background: var(--amber-bg); color: #8a5410;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.parta-assumptions-lede {
+  font-size: 12px; line-height: 1.55; color: var(--text-secondary); margin: 4px 0 0;
+}
+
+@media (max-width: 620px) {
+  .parta-compare-row { grid-template-columns: 62px 1fr 62px; gap: 8px; }
+  .parta-compare-name, .parta-compare-value { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parta-compare-fill, .parta-gauge-fill, .parta-gauge-ref, .parta-dqscale-band {
+    transition: none;
+  }
+}
+
+/* The citation stack under a metric is what a reviewer needs and what a
+   client scrolls past. Folded, it is available without being in the way. */
+.parta-basis { margin-top: 8px; }
+.parta-basis > summary {
+  cursor: pointer; list-style: none; min-height: 34px;
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 600; color: var(--text-secondary);
+}
+.parta-basis > summary::-webkit-details-marker { display: none; }
+.parta-basis > summary::after {
+  content: ''; width: 5px; height: 5px;
+  border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform 200ms ease;
+}
+.parta-basis[open] > summary::after { transform: rotate(-135deg); }
+.parta-basis > p { margin-top: 6px; }
+@media (prefers-reduced-motion: reduce) { .parta-basis > summary::after { transition: none; } }

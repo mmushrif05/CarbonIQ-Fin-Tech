@@ -542,6 +542,7 @@ const PCAFPartAPage = (() => {
       : '';
 
     _renderHero(r);
+    _renderDqScale(r.inventory.dataQuality);
     _renderLifetimeChart(r);
     _renderImpact(r.impact);
     _renderSummary(r);
@@ -628,6 +629,7 @@ const PCAFPartAPage = (() => {
 
     const cited = d.absent ? c : d;
     el('paGridSource').textContent = `${cited.publisher} — ${cited.source} (${cited.year})`;
+    _renderGridCompare(g);
 
     /* A figure resting on a global default is not wrong, but it is a weaker
        claim and PCAF scores it lower. Saying so beside the factor is the
@@ -668,10 +670,12 @@ const PCAFPartAPage = (() => {
           : ' parta-check-warn';
       el('paCheckBox').className = 'parta-card parta-plaus' + tone;
     }
+    _renderCfGauge(p);
 
     const list = g.assumptions || [];
     el('paAssumptionsBox').hidden = !list.length;
     el('paAssumptions').innerHTML = list.map(a => `<li>${esc(a)}</li>`).join('');
+    el('paAssumptionCount').textContent = String(list.length);
   }
 
   const _basisName = b => (b === 'combinedMargin' ? 'CDM combined margin' : 'Grid average');
@@ -686,9 +690,108 @@ const PCAFPartAPage = (() => {
   const _round = (n, dp) => Number(n).toLocaleString('en-GB',
     { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
+
+  /* ── Visual encodings ───────────────────────────────────────────────────
+     Each of these replaces a paragraph that was carrying a number. The rule
+     is the same as everywhere else on this screen: they are drawn from the
+     response, never from a second calculation done here. */
+
+  /**
+   * This country's displaced factor against every other one held.
+   *
+   * One series, so no legend — each bar is labelled. The selected country is
+   * emphasised rather than given its own hue, because colour here would be
+   * encoding selection, not data.
+   */
+  function _renderGridCompare(g) {
+    const box = el('paGridCompare');
+    const cov = _reference.countryConfig && _reference.countryConfig.coverage;
+    if (!g || !cov) { box.innerHTML = ''; return; }
+
+    const here = g.countryCode;
+    const rows = cov.map(c => ({
+      code: c.code, name: c.name,
+      /* The displacement factor where held, else the average that stands in
+         for it — the same value the engine used, flagged the same way. */
+      value: c.combined_margin != null ? c.combined_margin : c.grid_average,
+      isGlobal: c.avoidedIsGlobal || c.combined_margin == null,
+      absent: c.combined_margin == null && c.grid_average == null,
+    })).filter(r => r.value != null);
+
+    if (!rows.length) { box.innerHTML = ''; return; }
+    const max = Math.max(...rows.map(r => r.value));
+
+    box.innerHTML = `
+      <div class="parta-compare-head">Displaced factor by country
+        <span>tCO<sub>2</sub>e/MWh</span></div>
+      ${rows.map(r => `
+        <div class="parta-compare-row${r.code === here ? ' is-here' : ''}">
+          <span class="parta-compare-name">${esc(r.name)}</span>
+          <span class="parta-compare-track">
+            <span class="parta-compare-fill" style="width:${((r.value / max) * 100).toFixed(1)}%"></span>
+          </span>
+          <span class="parta-compare-value">${esc(r.value)}${r.isGlobal ? '<i>*</i>' : ''}</span>
+        </div>`).join('')}
+      <p class="parta-compare-foot">${rows.some(r => r.isGlobal)
+        ? '* no combined margin held — the grid average stands in, and the data quality option drops.'
+        : ''}</p>`;
+  }
+
+  /** Where this plant sits between nothing and the technology's ceiling. */
+  function _renderCfGauge(pl) {
+    const gauge = el('paCfGauge');
+    if (!pl || !pl.ran || !pl.limits) { gauge.hidden = true; return; }
+    gauge.hidden = false;
+    const ceiling = pl.limits.ceiling;
+    const pos = Math.max(0, Math.min(1, pl.capacityFactor / ceiling)) * 100;
+    const ref = Math.max(0, Math.min(1, pl.referenceCf / ceiling)) * 100;
+    el('paGaugeFill').style.width = `${pos.toFixed(1)}%`;
+    el('paGaugeRef').style.left = `${ref.toFixed(1)}%`;
+    el('paGaugeRef').firstElementChild.textContent = `${(pl.referenceCf * 100).toFixed(1)}%`;
+    el('paGaugeRefLabel').textContent = `reference ${(pl.referenceCf * 100).toFixed(1)}%`;
+    el('paGaugeMax').textContent = `${(ceiling * 100).toFixed(0)}% ceiling`;
+  }
+
+  /** The five bands, with this run's marked. 1 is best; the scale says so. */
+  function _renderDqScale(dq) {
+    const scale = el('paDqScale5');
+    if (!scale) return;
+    scale.setAttribute('aria-label',
+      `Data quality band ${dq.score} of 5, where 1 is the strongest evidence`);
+    for (const band of scale.children) {
+      band.classList.toggle('is-here', Number(band.dataset.band) === dq.score);
+    }
+  }
+
+  /**
+   * Count up to a new value.
+   *
+   * The screen recomputes on every keystroke, and a number that simply
+   * replaces itself gives no sign it moved. Short, eased, and skipped
+   * entirely under prefers-reduced-motion.
+   */
+  const _reduceMotion = () =>
+    window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function _countTo(node, to, dp) {
+    const from = Number(String(node.textContent).replace(/[^0-9.-]/g, ''));
+    if (!Number.isFinite(from) || from === to || _reduceMotion()) {
+      node.textContent = fmt(to, dp); return;
+    }
+    const start = performance.now(), dur = 380;
+    cancelAnimationFrame(node._raf);
+    const step = now => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      node.textContent = fmt(from + (to - from) * eased, dp);
+      if (t < 1) node._raf = requestAnimationFrame(step);
+    };
+    node._raf = requestAnimationFrame(step);
+  }
+
   function _renderHero(r) {
     const inv = r.inventory;
-    el('paHeroValue').textContent = fmt(inv.scope1And2.value);
+    _countTo(el('paHeroValue'), inv.scope1And2.value, 2);
     el('paHeroDq').textContent = inv.dataQuality.label;
     el('paHeroDq').className = 'parta-chip ' + (inv.dataQuality.score <= 2
       ? 'parta-chip-good' : inv.dataQuality.score <= 3 ? 'parta-chip-mid' : 'parta-chip-weak');
@@ -851,10 +954,14 @@ const PCAFPartAPage = (() => {
           <span class="parta-metric-name">${esc(m.metric)}</span>
           <span class="parta-metric-value">${fmt(f.value)} <small>${esc(f.unit)}</small></span>
           <code class="parta-eq">${esc(f.equation)}</code>
-          ${m.counterfactual ? `<p class="parta-metric-cf"><strong>Counterfactual:</strong> ${esc(m.counterfactual)}<br>
-             <strong>Source:</strong> ${esc(m.counterfactualSource)}</p>` : ''}
-          ${notes ? `<p class="parta-metric-note">${notes}</p>` : ''}
-          <p class="parta-ref">${esc(f.reference || '')}</p>
+          ${(m.counterfactual || notes || f.reference) ? `
+            <details class="parta-basis">
+              <summary>Basis and sources</summary>
+              ${m.counterfactual ? `<p class="parta-metric-cf"><strong>Counterfactual:</strong> ${esc(m.counterfactual)}<br>
+                 <strong>Source:</strong> ${esc(m.counterfactualSource)}</p>` : ''}
+              ${notes ? `<p class="parta-metric-note">${notes}</p>` : ''}
+              <p class="parta-ref">${esc(f.reference || '')}</p>
+            </details>` : ''}
         </div>`;
     }).join('');
 

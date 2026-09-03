@@ -342,6 +342,11 @@
             </div>
           </div>
           <p class="parta-global-flag" id="paGlobalFlag" hidden></p>
+          <!-- The single most useful thing about a grid factor is how it
+               compares. Norway near zero beside Sri Lanka at 0.81 explains in
+               one glance why the same plant is worth eight times more here. -->
+          <div class="parta-compare" id="paGridCompare"></div>
+
           <p class="parta-ref" id="paGridSource"></p>
           <p class="parta-assumption" id="paGridSubstitution" hidden></p>
           <p class="parta-assumption" id="paGridFlag" hidden></p>
@@ -360,6 +365,15 @@
           <div class="parta-yield">
             <span class="parta-yield-value" id="paSpecificYield">—</span>
             <span class="parta-yield-unit">kWh/kWp/yr — specific yield</span>
+          </div>
+          <div class="parta-gauge" id="paCfGauge" hidden>
+            <div class="parta-gauge-track">
+              <div class="parta-gauge-fill" id="paGaugeFill"></div>
+              <div class="parta-gauge-ref" id="paGaugeRef"><span></span></div>
+            </div>
+            <div class="parta-gauge-scale">
+              <span>0%</span><span id="paGaugeRefLabel"></span><span id="paGaugeMax"></span>
+            </div>
           </div>
           <code class="parta-eq" id="paCheckEq"></code>
           <p class="parta-check-note" id="paCheckNote"></p>
@@ -412,6 +426,16 @@
               <span class="parta-meta-label">Data quality</span>
               <!-- A category with its scale beside it. Never a fraction. -->
               <span class="parta-meta-value parta-dq" id="paDq">—</span>
+              <!-- A score is a position on a five-band scale, so it is drawn
+                   as one. 1 is best, which is the half people get wrong. -->
+              <div class="parta-dqscale" id="paDqScale5" role="img">
+                <span class="parta-dqscale-band" data-band="1"><b>1</b></span>
+                <span class="parta-dqscale-band" data-band="2"><b>2</b></span>
+                <span class="parta-dqscale-band" data-band="3"><b>3</b></span>
+                <span class="parta-dqscale-band" data-band="4"><b>4</b></span>
+                <span class="parta-dqscale-band" data-band="5"><b>5</b></span>
+              </div>
+              <small class="parta-dqscale-ends"><span>best evidence</span><span>weakest</span></small>
               <small id="paDqScale"></small>
               <small id="paDqRef"></small>
             </div>
@@ -421,11 +445,15 @@
 
         <!-- Everything the derivation assumed, on the page rather than buried. -->
         <section class="parta-card parta-assumptions" id="paAssumptionsBox" hidden>
-          <header class="parta-card-head">
-            <h3>What the derivation assumed</h3>
-            <p>Each of these is a place the figure could be strengthened by evidence.</p>
-          </header>
-          <ul id="paAssumptions"></ul>
+          <details>
+            <summary>
+              <span>What the derivation assumed</span>
+              <span class="parta-count" id="paAssumptionCount">0</span>
+            </summary>
+            <p class="parta-assumptions-lede">Each of these is a place the figure could be
+               strengthened by evidence.</p>
+            <ul id="paAssumptions"></ul>
+          </details>
         </section>
 
         <!-- The break. Everything below rests on optional supplemental guidance
