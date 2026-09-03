@@ -165,16 +165,16 @@ describe('The worked examples produce the figures they promise', () => {
     /* The preset no longer supplies a generation figure, so the engine derives
        it: 60 MW x 17.4% x 8,760 = 91,454.4 MWh, and scope 2 follows from that
        rather than from a number frozen into the preset. */
-    expect(r.generation.annualGeneration.value).toBe(91454.4);
+    expect(r.generation.annualGeneration.value).toBe(82519.2);
     expect(r.generation.annualGeneration.source).toBe('derived');
-    expect(r.inventory.scope1And2.value).toBe(68.59);
+    expect(r.inventory.scope1And2.value).toBe(61.89);
 
     // 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's band.
-    expect(r.generation.plausibility.capacityFactorPct).toBe(17.4);
+    expect(r.generation.plausibility.capacityFactorPct).toBe(15.7);
     /* No national band is held, so the plant is compared to the global
        weighted average as a ratio rather than passed or failed. */
-    expect(r.generation.plausibility.status).toBe('no_band');
-    expect(r.generation.plausibility.specificYield_kWh_per_kWp).toBe(1524);
+    expect(r.generation.plausibility.status).toBe('within_band');
+    expect(r.generation.plausibility.specificYield_kWh_per_kWp).toBe(1375);
 
     // Scope 3 was not marked relevant: absent, never a zero.
     expect(r.inventory.scope3.absent).toBe(true);
@@ -183,7 +183,7 @@ describe('The worked examples produce the figures they promise', () => {
     // A projection reports EAE, annualised, against a counterfactual the
     // factor store supplied rather than a text box.
     const eae = r.impact.metrics.find(m => /EAE/.test(m.metric));
-    expect(eae.figure.value).toBe(22245.37);
+    expect(eae.figure.value).toBe(20071.97);
     expect(eae.figure.unit).toBe('tCO2e per year');
     expect(eae.counterfactualSource).toMatch(/DNA Sri Lanka/);
 
@@ -257,14 +257,27 @@ describe('A hidden element stays hidden', () => {
       const wind = parta.assessExposure({
         ...base, generation: { ...base.generation, technology: 'wind_on' } });
 
-      expect(solar.generation.annualGeneration.value).toBe(91454.4);
-      expect(wind.generation.annualGeneration.value).toBe(178704);
+      expect(solar.generation.annualGeneration.value).toBe(82519.2);
+      expect(wind.generation.annualGeneration.value).toBe(139809.6);
       expect(wind.generation.annualGeneration.value)
         .toBeGreaterThan(solar.generation.annualGeneration.value);
     });
 
-    test('the screen explains why country does not move it, before being asked', () => {
+    /* Sri Lanka now carries a national capacity factor, so the note says the
+       country DOES move the figure. A country still on the global fallback
+       gets the other half of the message. Both halves are asserted, because
+       the wrong one appearing is exactly the confusion this note exists for. */
+    test('with a national capacity factor, the note says country moves it', () => {
       const r = parta.assessExposure(request('solar'));
+      const d = r.generation.annualGeneration.derivation;
+      expect(d.cfIsGlobal).toBe(false);
+      expect(d.whyUnchangedNote).toMatch(/specific to Sri Lanka, so changing the country moves/);
+    });
+
+    test('on a global fallback, the note says which control does move it', () => {
+      const base = request('solar');
+      const r = parta.assessExposure({
+        ...base, generation: { ...base.generation, country: 'SG' } });
       const d = r.generation.annualGeneration.derivation;
       expect(d.cfIsGlobal).toBe(true);
       expect(d.whyUnchangedNote).toMatch(/GLOBAL weighted average/);

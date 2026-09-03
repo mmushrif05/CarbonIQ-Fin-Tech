@@ -49,11 +49,31 @@
         }
       },
       "technologies": {
-        "solar_pv": null,
-        "wind_on": null,
+        "solar_pv": {
+          "default_cf": 0.157,
+          "band_low": 0.15,
+          "band_high": 0.19,
+          "year": 2012,
+          "source": "Hambantota Solar Power Station, Sri Lanka's first commercial-scale solar plant: 1,237 kW nameplate against 1,700 MWh annual net output, which is a 15.7% capacity factor. Commissioned August 2012.",
+          "url": "https://en.wikipedia.org/wiki/Hambantota_Solar_Power_Station",
+          "publisher": "Sri Lanka Sustainable Energy Authority (plant owner)",
+          "verification": "secondary_reported",
+          "caveat": "A single plant on 2012 module technology, so this is a conservative floor rather than a fleet average. Modern fixed-tilt plant in Sri Lanka should sit nearer the top of the band. Replace with SLSEA fleet data when available."
+        },
+        "wind_on": {
+          "default_cf": 0.266,
+          "band_low": 0.24,
+          "band_high": 0.3,
+          "year": 2024,
+          "source": "Two operating Sri Lankan wind farms reporting almost identical performance: Mampuri Wind Farms at 26.59% and Pawan Danavi Wind Farm at 26.57%.",
+          "url": "https://en.wikipedia.org/wiki/Mampuri_Wind_Farms",
+          "publisher": "Reported operating data for Mampuri and Pawan Danavi",
+          "verification": "secondary_reported",
+          "caveat": "Two plants, both in the Puttalam wind corridor. Mannar-basin projects are expected to run higher. Not a national fleet average."
+        },
         "hydro_ror": null
       },
-      "technologies_absent_reason": "No citable national capacity-factor or specific-yield source could be obtained. See the sourcing gap list."
+      "technologies_absent_reason": "Run-of-river hydro has no citable Sri Lankan capacity factor here. Solar and onshore wind now carry national values; see their caveats for how narrow the evidence behind each is."
     },
     "SG": {
       "name": "Singapore",
@@ -103,10 +123,20 @@
       },
       "technologies": {
         "solar_pv": null,
-        "wind_on": null,
+        "wind_on": {
+          "default_cf": 0.3,
+          "band_low": 0.25,
+          "band_high": 0.35,
+          "year": 2026,
+          "source": "Onshore wind turbines in Norway run at a capacity factor of 25-35%. Onshore capacity reached about 5,063 MW in 2023, supplying 8% of generation.",
+          "url": "https://businessnorway.com/articles/wind-turbines-and-energy-production",
+          "publisher": "Business Norway",
+          "verification": "secondary_reported",
+          "caveat": "A published range rather than a measured fleet mean; the midpoint is used as the default."
+        },
         "hydro_ror": null
       },
-      "technologies_absent_reason": "No citable capacity-factor source obtained. Norwegian solar in particular has an extreme seasonal profile, so a single annual band is a weak instrument there regardless."
+      "technologies_absent_reason": "Solar and run-of-river hydro have no citable Norwegian capacity factor here. Norwegian solar has an extreme seasonal profile, so a single annual band would be a weak instrument regardless."
     },
     "UG": {
       "name": "Uganda",
