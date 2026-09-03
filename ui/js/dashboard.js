@@ -230,6 +230,55 @@ const Dashboard = (() => {
   let _capital = null;
   let _carbonWeight = 0.5;
   let _attributionBasis = 'outstanding';
+  /* What the reader has ticked in the pipeline. Held here and nowhere else —
+     a basket is a question, not a record, so it is never written down and it
+     does not survive a reload. */
+  const _basketIds = new Set();
+  let _basket = null;
+  let _basketTimer = null;
+
+  /**
+   * The three assumptions behind the curve.
+   *
+   * `horizonYears: null` is not "no horizon" — it is *as long as the book
+   * runs*, which is a different and better default than a round number,
+   * because the longest facility on the book is a fact about the book. It is
+   * also the value that has already caused one defect: a default parameter
+   * does not cover null, and Math.round(null) is 0.
+   *
+   * These are kept in the browser rather than on the book. An assumption is a
+   * question one reader is asking, not a property of the portfolio, and
+   * writing it down would make one person's stress test everybody's baseline.
+   */
+  const ASM_DEFAULTS = Object.freeze({ horizonYears: null, drawdownYears: 3, gridDeclinePct: 0 });
+  const ASM_KEY = 'carboniq_capital_assumptions';
+  let _asm = { ...ASM_DEFAULTS };
+  let _asmTimer = null;
+
+  function _asmChanged() {
+    return Object.keys(ASM_DEFAULTS).some(k => _asm[k] !== ASM_DEFAULTS[k]);
+  }
+
+  /* Storage can throw outright in a private window or with site data blocked,
+     so a failure here leaves the defaults standing rather than the screen
+     empty. */
+  function _asmLoad() {
+    try {
+      const raw = window.localStorage.getItem(ASM_KEY);
+      if (!raw) return;
+      const held = JSON.parse(raw);
+      for (const k of Object.keys(ASM_DEFAULTS)) {
+        if (held[k] === null || Number.isFinite(Number(held[k]))) _asm[k] = held[k] === null ? null : Number(held[k]);
+      }
+    } catch (_) { _asm = { ...ASM_DEFAULTS }; }
+  }
+
+  function _asmSave() {
+    try {
+      if (_asmChanged()) window.localStorage.setItem(ASM_KEY, JSON.stringify(_asm));
+      else window.localStorage.removeItem(ASM_KEY);
+    } catch (_) { /* a convenience, never a requirement */ }
+  }
   let _portfolioFilter = '';
 
   const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
@@ -278,6 +327,12 @@ const Dashboard = (() => {
       carbonWeight: String(_carbonWeight),
       attributionBasis: _attributionBasis,
     });
+    /* Only what has actually been asked for. An omitted assumption lets the
+       engine apply its own default and say so, which is not the same as the
+       browser asserting a number it happens to hold. */
+    if (_asm.horizonYears !== null) qs.set('horizonYears', String(_asm.horizonYears));
+    if (_asm.drawdownYears !== ASM_DEFAULTS.drawdownYears) qs.set('drawdownYears', String(_asm.drawdownYears));
+    if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) qs.set('gridDeclinePct', String(_asm.gridDeclinePct));
     if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
     try {
       const res = await window.CARBONIQ_fetch(`/v1/capital/dashboard?${qs}`);
@@ -288,6 +343,35 @@ const Dashboard = (() => {
       _capital = { mode: 'unavailable', detail: err.message };
     }
     return _capital;
+  }
+
+  /**
+   * What writing the ticked projects would do.
+   *
+   * The engine answers this, not the browser. Summing four columns in
+   * JavaScript would be easy and would be a second implementation of figures
+   * the API already derives — and the two would eventually disagree, on the
+   * screen a person acts on rather than in a test.
+   */
+  async function _fetchBasket() {
+    if (!_basketIds.size) { _basket = null; return null; }
+    const qs = new URLSearchParams({
+      select: [..._basketIds].join(','),
+      attributionBasis: _attributionBasis,
+    });
+    /* The dashed reading shares the solid one's axis, so it must share its
+       horizon and its grid trajectory. */
+    if (_asm.horizonYears !== null) qs.set('horizonYears', String(_asm.horizonYears));
+    if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) qs.set('gridDeclinePct', String(_asm.gridDeclinePct));
+    if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/capital/basket?${qs}`);
+      if (!res.ok) throw new Error(`API ${res.status}`);
+      _basket = (await res.json()).basket;
+    } catch (err) {
+      _basket = { failed: true, detail: err.message };
+    }
+    return _basket;
   }
 
   function _renderDashboard(state) {
@@ -328,6 +412,8 @@ const Dashboard = (() => {
     _renderAnchor(d.anchor, d.capital.currency);
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
+    _renderCurve(d.forecast, d.capital.currency);
+    _renderAssumptions(d.forecast);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
     _renderPipeline(d.pipeline, d.capital.currency);
     _renderStorage(d.storage);
@@ -357,7 +443,7 @@ const Dashboard = (() => {
       const el = document.getElementById(id);
       if (el) el.textContent = '—';
     }
-    for (const id of ['anch-total-split', 'anch-queue-split',
+    for (const id of ['anch-total-split', 'anch-queue-split', 'fc-chart', 'fc-readout', 'fc-facts',
       'cap-deploy-bar', 'cap-deploy-legend', 'cap-inventory-rows',
       'cap-impact-rows', 'cap-portfolio-rows', 'cap-pipeline-rows', 'cap-scatter',
       'cap-bytype-rows', 'cap-dq']) {
@@ -555,6 +641,320 @@ const Dashboard = (() => {
                : '.'}</span>`;
   }
 
+  // ── The curve ─────────────────────────────────────────────────────────────
+
+  /**
+   * How the book moves from here.
+   *
+   * Four rules, and each of them is a way to draw a confident line that is
+   * wrong.
+   *
+   * **Never net.** The tempting chart is emissions minus avoidance trending to
+   * zero with a "net zero by 2035" crossing point. PCAF reports avoided
+   * emissions apart from the inventory and never sets them against it (Part A,
+   * p.126). Three separate lines, no stacking, no crossing point, and no
+   * combined total anywhere in this function.
+   *
+   * **Never let a projection look measured.** Everything here is ahead of
+   * today, so the whole plot is hatched and the marker at the current year is
+   * labelled. There is no measured segment to confuse it with, and the caption
+   * says so rather than leaving a reader to infer it.
+   *
+   * **Never call a scenario a plan.** The assumptions that produced the curve
+   * print underneath it, so a screenshot taken to a meeting carries them.
+   *
+   * **Never hide the shape you assumed.** The phasing profiles in play are
+   * named, and the year past which a number is a direction rather than a
+   * figure is marked on the axis.
+   */
+  const FC = {
+    forward:   { key: 'forward_tCO2e',   label: 'Emissions',  colour: '#5e5ce6', cls: 'is-forward' },
+    reduction: { key: 'reduction_tCO2e', label: 'Reduction',  colour: '#c77700', cls: 'is-reduction' },
+    avoided:   { key: 'avoided_tCO2e',   label: 'Avoided',    colour: '#1f6fb2', cls: 'is-avoided' },
+  };
+  let _fcOn = { forward: true, reduction: true, avoided: true };
+
+  function _renderCurve(f, cur = 'USD') {
+    const host = document.getElementById('fc-chart');
+    if (!host || !f) return;
+
+    const s = f.emissions;
+    const rows = s.rows || [];
+
+    /* When a basket is selected the chart carries a second, dashed reading of
+       each series — the same book with those projects written. Both readings
+       come from the engine and both are drawn at full commitment, so the gap
+       between them is the basket and not a change of method. A dash is the
+       only stroke encoding on this chart and it means one thing: not yet
+       written. */
+    const candidate = (_basket && !_basket.failed && _basketIds.size && _basket.forecast.withBasket)
+      ? _basket.forecast : null;
+    /* Both series are plotted by index against the solid one's year axis, so a
+       scenario of a different length would be drawn against the wrong years
+       and would run off the plot — a line that looks like an answer and is a
+       misalignment. They are requested on the same horizon; if they ever
+       arrive different, nothing is drawn rather than something wrong. */
+    const scen = (candidate && candidate.withBasket.rows.length === rows.length) ? candidate : null;
+    const scenRows = scen ? scen.withBasket.rows : [];
+
+    document.getElementById('fc-sub').textContent =
+      `${s.firstYear} to ${s.lastYear} · every year ahead is a projection, `
+      + `and years after ${s.confidenceHorizonYear} are a direction rather than a figure`
+      + (scen ? ` · dashed is the same book with the ${_basketIds.size} selected project`
+        + `${_basketIds.size === 1 ? '' : 's'} written` : '');
+
+    const shown = Object.keys(FC).filter(k => _fcOn[k]);
+    if (!rows.length || !shown.length) {
+      host.innerHTML = '';
+      document.getElementById('fc-readout').innerHTML = shown.length
+        ? '<p class="cap-note">Nothing to plot.</p>'
+        : '<p class="cap-note">All three series are hidden. Turn one back on above.</p>';
+      return;
+    }
+
+    const W = 860, H = 300, M = { t: 18, r: 20, b: 44, l: 70 };
+    const peak = Math.max(
+      1,
+      ...rows.flatMap(r => shown.map(k => r[FC[k].key])),
+      ...scenRows.flatMap(r => shown.map(k => r[FC[k].key])),
+    );
+    const yMax = peak * 1.12;
+    const px = (i) => M.l + (rows.length === 1 ? 0 : (i / (rows.length - 1)) * (W - M.l - M.r));
+    const py = (v) => H - M.b - (v / yMax) * (H - M.t - M.b);
+
+    const ticks = [0, yMax / 2, yMax];
+    /* At most eight year labels, so they never collide on a twenty-year book. */
+    const step = Math.max(1, Math.ceil(rows.length / 8));
+    const horizonIdx = rows.findIndex(r => r.indicative);
+
+    const line = (k, src = rows) =>
+      src.map((r, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)},${py(r[FC[k].key]).toFixed(1)}`).join(' ');
+    const area = (k) => `${line(k)} L${px(rows.length - 1).toFixed(1)},${py(0).toFixed(1)} L${px(0).toFixed(1)},${py(0).toFixed(1)} Z`;
+
+    host.innerHTML = `
+      <svg viewBox="0 0 ${W} ${H}" role="img"
+           aria-label="Projected emissions, reduction and avoidance from ${s.firstYear} to ${s.lastYear}, three separate series">
+        <defs>
+          <!-- The only texture in the system: it means projection, and every
+               year on this chart is one. -->
+          <pattern id="fcHatch" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+            <rect width="6" height="6" fill="none"/>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="currentColor" stroke-width="2.4" opacity="0.16"/>
+          </pattern>
+        </defs>
+
+        ${ticks.map(v => `
+          <line class="cap-grid" x1="${M.l}" y1="${py(v).toFixed(1)}" x2="${W - M.r}" y2="${py(v).toFixed(1)}"/>
+          <text class="cap-axis-label" x="${M.l - 9}" y="${(py(v) + 4).toFixed(1)}" text-anchor="end">${_t(v)}</text>`).join('')}
+
+        ${horizonIdx > 0 ? `
+          <line class="fc-horizon" x1="${px(horizonIdx).toFixed(1)}" y1="${M.t}"
+                x2="${px(horizonIdx).toFixed(1)}" y2="${H - M.b}"/>
+          <text class="fc-horizon-label" x="${(px(horizonIdx) + 6).toFixed(1)}" y="${M.t + 10}">
+            indicative beyond here</text>` : ''}
+
+        ${shown.map(k => `
+          <path class="fc-area ${FC[k].cls}" d="${area(k)}" fill="url(#fcHatch)"/>
+          <path class="fc-line ${FC[k].cls}" d="${line(k)}"/>`).join('')}
+
+        <!-- The basket, if one is selected. Same colour, dashed, no fill: it
+             is the same measure of the same book, not a fourth series. -->
+        ${scen ? shown.map(k =>
+    `<path class="fc-line is-scenario ${FC[k].cls}" d="${line(k, scenRows)}"/>`).join('') : ''}
+
+        ${shown.map(k => rows.map((r, i) => i % step === 0 || i === rows.length - 1
+          ? `<circle class="fc-dot ${FC[k].cls}" cx="${px(i).toFixed(1)}" cy="${py(r[FC[k].key]).toFixed(1)}" r="3.5"/>`
+          : '').join('')).join('')}
+
+        <line class="cap-axis" x1="${M.l}" y1="${py(0).toFixed(1)}" x2="${W - M.r}" y2="${py(0).toFixed(1)}"/>
+        <line class="cap-axis" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>
+
+        <!-- Today. Everything to the right of it is ahead, which is all of it. -->
+        <line class="fc-today" x1="${M.l}" y1="${M.t}" x2="${M.l}" y2="${H - M.b}"/>
+        <text class="fc-today-label" x="${M.l + 6}" y="${H - M.b + 30}">${s.firstYear} — today</text>
+
+        ${rows.map((r, i) => (i % step === 0 && i !== 0) || i === rows.length - 1
+          ? `<text class="cap-axis-label" x="${px(i).toFixed(1)}" y="${H - M.b + 18}" text-anchor="middle">${r.year}</text>`
+          : '').join('')}
+
+        <text class="cap-axis-title" x="0" y="12">tCO2e per year — three separate series, never summed</text>
+      </svg>`;
+
+    /* The totals under each line, so the curve can be checked against the
+       figures above it rather than trusted. */
+    document.getElementById('fc-readout').innerHTML = shown.map(k => `
+      <div class="fc-readout-row">
+        <i class="fc-swatch ${FC[k].cls}"></i>
+        <span class="fc-readout-label">${FC[k].label} over ${s.years} years</span>
+        <span class="fc-readout-value">${_t(s.totals[FC[k].key])}</span>
+        <span class="fc-readout-unit">tCO2e</span>
+        ${scen ? `<span class="fc-readout-scen">with the basket ${
+    _t(scen.withBasket.totals[FC[k].key])}</span>` : ''}
+      </div>`).join('')
+      + `<p class="cap-note">${esc(s.notes.separation)}</p>`
+      + (scen ? `<p class="cap-note">${esc(scen.basisNote)}</p>` : '');
+
+    const cap = f.capital;
+    /* A "peak year" is a claim that one year stands above the rest, and on this
+       book six years sit level at the top before it winds down — naming the
+       first of them is a fact about which way the reduce ran, not about the
+       book. A year is only called the peak when nothing else comes within 2%
+       of it; a shared top is reported as the range it actually is. */
+    const top = rows.reduce((m, r) => Math.max(m, r.forward_tCO2e), 0);
+    const atTop = top > 0 ? rows.filter(r => r.forward_tCO2e >= top * 0.98) : [];
+    const shape = atTop.length === 1
+      ? ['Peak year', String(atTop[0].year), 'when the book emits most']
+      : atTop.length === rows.length
+        ? ['Shape', 'level', 'no year stands out — the phasing spreads it evenly']
+        : ['Highest years', `${atTop[0].year}–${atTop[atTop.length - 1].year}`,
+          `${atTop.length} years sit level at the top before the book winds down`];
+
+    document.getElementById('fc-facts').innerHTML = [
+      shape,
+      ['Drawdown ahead', _money(cap.totalPlanned, cur),
+        `over ${cap.drawdownYears} year${cap.drawdownYears === 1 ? '' : 's'}`],
+      ['Phasing in play', s.profiles.map(p => p.label).join(' · '), 'the shape the totals were spread by'],
+    ].map(([label, value, foot]) => `
+      <div class="fc-fact">
+        <span class="fc-fact-label">${esc(label)}</span>
+        <span class="fc-fact-value">${esc(value)}</span>
+        <span class="fc-fact-foot">${esc(foot)}</span>
+      </div>`).join('');
+
+    document.getElementById('fc-assumptions').innerHTML = [
+      s.notes.projection, s.notes.horizon, s.notes.grid, cap.note,
+      ...s.profiles.map(p => `${p.label}: ${p.note}`),
+    ].map(t => `<p class="cap-note">${esc(t)}</p>`).join('');
+  }
+
+  /**
+   * The assumption controls, and the one thing they must never let happen:
+   * a curve on screen that was drawn under assumptions the reader cannot see.
+   *
+   * So the panel shows what is set, marks anything away from the default, and
+   * keeps a reset within reach — and the values ride in the query string, so
+   * the engine's own account of them comes back in the payload and prints
+   * under the chart. Nothing here re-states an assumption from memory.
+   */
+  function _renderAssumptions(f) {
+    const $ = (id) => document.getElementById(id);
+    if (!$('cap-assumptions')) return;
+
+    const horizon = $('asm-horizon');
+    const draw = $('asm-drawdown');
+    const grid = $('asm-grid');
+    if (horizon) horizon.value = _asm.horizonYears === null ? '' : String(_asm.horizonYears);
+    if (draw) draw.value = String(_asm.drawdownYears);
+    if (grid) grid.value = String(_asm.gridDeclinePct);
+
+    const drawOut = $('asm-drawdown-out');
+    if (drawOut) {
+      drawOut.textContent = `${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`;
+    }
+    const gridOut = $('asm-grid-out');
+    if (gridOut) {
+      gridOut.textContent = _asm.gridDeclinePct === 0
+        ? 'held flat'
+        : `${_asm.gridDeclinePct}% a year`;
+    }
+
+    const changed = _asmChanged();
+    const reset = $('asm-reset');
+    if (reset) reset.hidden = !changed;
+
+    const note = $('asm-changed');
+    if (note) {
+      note.hidden = !changed;
+      /* Cleared as well as hidden. A stale claim sitting inside a hidden
+         element is one CSS rule away from being a false one on screen. */
+      if (!changed) note.textContent = '';
+      if (changed) {
+        const said = [];
+        if (_asm.horizonYears !== null) said.push(`a ${_asm.horizonYears}-year horizon`);
+        if (_asm.drawdownYears !== ASM_DEFAULTS.drawdownYears) {
+          said.push(`capital drawn over ${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`);
+        }
+        if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) {
+          said.push(`the grid cleaning up ${_asm.gridDeclinePct}% a year`);
+        }
+        note.textContent =
+          `This curve is drawn under assumptions you set — ${said.join(', ')} — not the defaults. `
+          + 'Every figure in this section moves with them; nothing above this section does. '
+          + 'They are held in this browser only, and reset clears them.';
+      }
+    }
+
+    /* The engine's own horizon, so the default is a fact rather than a blank
+       control the reader has to infer. */
+    const span = $('asm-horizon');
+    if (span && f && f.emissions && _asm.horizonYears === null) {
+      const opt = span.querySelector('option[value=""]');
+      if (opt) opt.textContent = `As long as the book runs (${f.emissions.years} years)`;
+    }
+  }
+
+  function _wireAssumptions() {
+    const horizon = document.getElementById('asm-horizon');
+    const draw = document.getElementById('asm-drawdown');
+    const grid = document.getElementById('asm-grid');
+    const reset = document.getElementById('asm-reset');
+    if (!horizon || !draw || !grid) return;
+
+    const apply = (immediate) => {
+      _asmSave();
+      _renderAssumptions(_capital && _capital.data ? _capital.data.forecast : null);
+      clearTimeout(_asmTimer);
+      _asmTimer = setTimeout(async () => {
+        /* The basket is re-asked on the new assumptions before the chart is
+           redrawn, so the two readings are never one horizon apart. */
+        await _fetchBasket();
+        await refreshCapital();
+      }, immediate ? 0 : 200);
+    };
+
+    horizon.addEventListener('change', () => {
+      _asm.horizonYears = horizon.value === '' ? null : Number(horizon.value);
+      apply(true);
+    });
+    /* A slider fires continuously, so the label moves at once and the request
+       waits — the reader sees the value they are choosing before the curve
+       catches up, rather than a number that lags their thumb. */
+    draw.addEventListener('input', () => {
+      _asm.drawdownYears = Number(draw.value);
+      const out = document.getElementById('asm-drawdown-out');
+      if (out) out.textContent = `${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`;
+      apply(false);
+    });
+    grid.addEventListener('input', () => {
+      _asm.gridDeclinePct = Number(grid.value);
+      const out = document.getElementById('asm-grid-out');
+      if (out) out.textContent = _asm.gridDeclinePct === 0 ? 'held flat' : `${_asm.gridDeclinePct}% a year`;
+      apply(false);
+    });
+
+    if (reset) {
+      reset.addEventListener('click', () => {
+        _asm = { ...ASM_DEFAULTS };
+        apply(true);
+      });
+    }
+  }
+
+  function _wireCurve() {
+    document.querySelectorAll('#fc-toggles .fc-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.series;
+        const on = Object.values(_fcOn).filter(Boolean).length;
+        if (_fcOn[key] && on === 1) return;      // never leave an empty chart
+        _fcOn[key] = !_fcOn[key];
+        btn.classList.toggle('is-on', _fcOn[key]);
+        btn.setAttribute('aria-pressed', String(_fcOn[key]));
+        if (_capital && _capital.data) _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+      });
+      btn.setAttribute('aria-pressed', 'true');
+    });
+  }
+
   // ── Portfolios ────────────────────────────────────────────────────────────
 
   function _renderPortfolioRows(rows, cur) {
@@ -603,7 +1003,12 @@ const Dashboard = (() => {
 
     const rows = [...p.ranked, ...p.unrankable];
     $('cap-pipeline-rows').innerHTML = rows.length ? rows.map(r => `
-      <tr class="${r.rankable ? '' : 'is-unranked'}">
+      <tr class="${r.rankable ? '' : 'is-unranked'}${_basketIds.has(r.id) ? ' is-picked' : ''}">
+        <td class="cap-pick">
+          <input type="checkbox" class="bsk-pick" data-id="${esc(r.id)}"
+                 ${_basketIds.has(r.id) ? 'checked' : ''}
+                 aria-label="Add ${esc(r.name)} to the basket">
+        </td>
         <td class="num">${r.rank || '<span class="cap-dim">—</span>'}</td>
         <td><strong>${esc(r.name)}</strong>
             <br><span class="cap-dim">${esc(r.country || '')}${r.taxonomy ? ` · ${esc(r.taxonomy)}` : ''}</span></td>
@@ -618,7 +1023,7 @@ const Dashboard = (() => {
           ? `<span class="cap-dim" title="${esc(r.missing.join('; '))}">not scored</span>`
           : `<b>${r.score.toFixed(3)}</b>`}</td>
       </tr>`).join('')
-      : '<tr><td colspan="8" class="cap-empty">Nothing is waiting.</td></tr>';
+      : '<tr><td colspan="9" class="cap-empty">Nothing is waiting.</td></tr>';
 
     const un = $('cap-unrankable-note');
     un.hidden = !p.unrankableNote;
@@ -633,6 +1038,131 @@ const Dashboard = (() => {
       </div>`).join('');
 
     _renderScatter(p, cur);
+    _wireBasketPicks(cur);
+    _renderBasket(cur);
+  }
+
+  /**
+   * The basket — what writing the ticked projects would do.
+   *
+   * Three things stay true here however the panel is read. The funding
+   * question is answered against what is *uncommitted*, because five
+   * individually affordable projects are not necessarily affordable together.
+   * The impact is three figures and never one — emissions, reduction and
+   * avoidance are not arithmetic on each other, and a basket that funded a
+   * solar farm must not appear to lower the book's emissions. And the whole
+   * panel says on its face that it is a scenario: nothing here is committed,
+   * and nothing is stored.
+   */
+  function _renderBasket(cur) {
+    const panel = document.getElementById('cap-basket');
+    if (!panel) return;
+    const b = _basket;
+
+    if (!b || !_basketIds.size) { panel.hidden = true; return; }
+    panel.hidden = false;
+
+    const $ = (id) => document.getElementById(id);
+
+    if (b.failed) {
+      $('bsk-sub').textContent = 'The basket could not be worked out.';
+      $('bsk-scenario').textContent =
+        `The request failed (${b.detail}). Nothing is shown rather than a figure that might be wrong.`;
+      for (const id of ['bsk-funding', 'bsk-impact', 'bsk-bar']) $(id).innerHTML = '';
+      $('bsk-fund-note').textContent = '';
+      $('bsk-impact-note').textContent = '';
+      $('bsk-curve-note').textContent = '';
+      return;
+    }
+
+    const f = b.funding;
+    $('bsk-sub').textContent =
+      `${b.count} project${b.count === 1 ? '' : 's'} selected · ${_money(f.needed, cur)} to write`;
+    $('bsk-scenario').textContent = b.scenarioNote;
+
+    const fig = (label, value, kind, foot) => `
+      <div class="bsk-fig${kind ? ` is-${kind}` : ''}">
+        <span class="bsk-fig-label">${esc(label)}</span>
+        <span class="bsk-fig-value">${esc(value)}</span>
+        ${foot ? `<span class="bsk-fig-foot">${esc(foot)}</span>` : ''}
+      </div>`;
+
+    $('bsk-funding').innerHTML =
+      fig('Needed', _money(f.needed, cur), null, 'the capital these projects ask for')
+      + fig('Available', _money(f.available, cur), null, 'allocated and not yet committed')
+      + (f.affordable
+        ? fig('Remaining', _money(f.remaining, cur), 'ok', 'left for everything else waiting')
+        : fig('Shortfall', _money(f.shortfall, cur), 'short', 'more allocation this basket would need'));
+
+    /* One bar, one whole: what the basket takes of what is uncommitted. Where
+       it asks for more than there is, the overflow is drawn beyond the track
+       rather than clipped to it — a bar held at 100% would show a basket that
+       does not fit as one that exactly fits. */
+    const denom = Math.max(f.available, f.needed) || 1;
+    const usedPct = (f.needed / denom) * 100;
+    const availPct = (f.available / denom) * 100;
+    $('bsk-bar').innerHTML = `
+      <div class="bsk-bar-track">
+        <div class="bsk-bar-avail" style="width:${availPct.toFixed(2)}%"></div>
+        <div class="bsk-bar-used${f.affordable ? '' : ' is-short'}" style="width:${usedPct.toFixed(2)}%"></div>
+      </div>
+      <div class="bsk-bar-legend">
+        <span><i class="bsk-swatch is-used"></i>This basket ${_money(f.needed, cur)}</span>
+        <span><i class="bsk-swatch is-avail"></i>Uncommitted ${_money(f.available, cur)}</span>
+      </div>`;
+    $('bsk-fund-note').textContent = f.note
+      + (b.finance.blendedReturnPct === null ? '' : ` Blended expected return ${b.finance.blendedReturnPct}%.`)
+      + ` ${b.finance.note}`;
+
+    const im = b.impact;
+    $('bsk-impact').innerHTML =
+      fig('Emissions added', `${_t(im.forward_tCO2e)} tCO2e`, 'forward', 'the book would carry these')
+      + fig('Reduction', `${_t(im.reduction_tCO2e)} tCO2e`, 'reduction', 'against these projects\u2019 own baseline')
+      + fig('Avoided', `${_t(im.avoided_tCO2e)} tCO2e`, 'avoided', 'reported apart, never deducted');
+    $('bsk-impact-note').textContent = im.basis;
+
+    if (b.unknownNote) $('bsk-impact-note').textContent += ` ${b.unknownNote}`;
+
+    $('bsk-curve-note').textContent = b.forecast.basisNote;
+
+    /* The curve above redraws with the basket on it, so the selection is not
+       just a number in a panel. */
+    if (_capital && _capital.data) _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+  }
+
+  function _wireBasketPicks(cur) {
+    document.querySelectorAll('#cap-pipeline-rows .bsk-pick').forEach((box) => {
+      box.addEventListener('change', () => {
+        const id = box.dataset.id;
+        if (box.checked) _basketIds.add(id); else _basketIds.delete(id);
+        box.closest('tr').classList.toggle('is-picked', box.checked);
+        clearTimeout(_basketTimer);
+        _basketTimer = setTimeout(async () => {
+          await _fetchBasket();
+          _renderBasket(cur);
+          if (!_basketIds.size && _capital && _capital.data) {
+            _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+          }
+        }, 120);
+      });
+    });
+
+    const clear = document.getElementById('bsk-clear');
+    if (clear && !clear.dataset.wired) {
+      clear.dataset.wired = '1';
+      clear.addEventListener('click', () => {
+        _basketIds.clear();
+        _basket = null;
+        document.querySelectorAll('#cap-pipeline-rows .bsk-pick').forEach((b) => {
+          b.checked = false;
+          b.closest('tr').classList.remove('is-picked');
+        });
+        _renderBasket(cur);
+        if (_capital && _capital.data) {
+          _renderCurve(_capital.data.forecast, _capital.data.capital.currency);
+        }
+      });
+    }
   }
 
   /**
@@ -1093,6 +1623,10 @@ const Dashboard = (() => {
   async function init() {
     if (_initialized) return;
     _initialized = true;
+    /* Before the first fetch, so the request carries whatever this reader last
+       asked and the curve is never drawn once on defaults and again on their
+       assumptions. */
+    _asmLoad();
     await Promise.all([
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
@@ -1127,6 +1661,8 @@ const Dashboard = (() => {
     const filter = document.getElementById('cap-portfolio-filter');
     if (!weight || !filter) return;
     _wired = true;
+    _wireCurve();
+    _wireAssumptions();
 
     /* The ranking is recomputed by the engine, never in the browser: a screen
        that scored differently from the API would be showing one thing and

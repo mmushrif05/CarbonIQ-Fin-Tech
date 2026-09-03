@@ -245,3 +245,96 @@ describe('Authentication', () => {
     await api().get('/v1/capital/portfolios').expect(401);
   });
 });
+
+/* ── The basket over HTTP ──────────────────────────────────────────────────
+   A basket is a question about a book, not a change to one, so it travels on
+   the query string: idempotent, shareable as a link, and written down nowhere.
+   These tests hold that line — and hold the endpoint to the same book the
+   dashboard is showing, because funding figures set against a different book
+   than the position they are compared with would be worse than no figures. */
+
+describe('GET /v1/capital/basket', () => {
+  test('an empty selection is answered, not refused', async () => {
+    const b = (await auth(api().get('/v1/capital/basket')).expect(200)).body.basket;
+    expect(b.count).toBe(0);
+    expect(b.funding.needed).toBe(0);
+    expect(b.scenarioNote).toMatch(/scenario/i);
+  });
+
+  test('it runs on the baseline while nothing has been recorded, and says so', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const id = d.pipeline.ranked[0].id;
+    const b = (await auth(api().get(`/v1/capital/basket?select=${id}`)).expect(200)).body.basket;
+    expect(b.source).toBe('baseline');
+    expect(b.sample).toBe(true);
+    /* The same book as the dashboard, so the funding figures reconcile. */
+    expect(b.funding.available).toBe(d.capital.uncommitted);
+  });
+
+  test('the selected projects come back with what they would cost and add', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const [a, c] = d.pipeline.ranked;
+    const b = (await auth(api().get(`/v1/capital/basket?select=${a.id},${c.id}`)).expect(200)).body.basket;
+    expect(b.count).toBe(2);
+    expect(b.funding.needed).toBe(a.commitment + c.commitment);
+    expect(b.impact.avoided_tCO2e).toBeCloseTo(a.avoided_tCO2e + c.avoided_tCO2e, 1);
+  });
+
+  test('the two curves differ by exactly what the panel says was added', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const ids = d.pipeline.ranked.slice(0, 3).map(r => r.id).join(',');
+    const b = (await auth(api().get(`/v1/capital/basket?select=${ids}`)).expect(200)).body.basket;
+    const before = b.forecast.asItStands.totals;
+    const after  = b.forecast.withBasket.totals;
+    expect(after.forward_tCO2e - before.forward_tCO2e).toBeCloseTo(b.impact.forward_tCO2e, 1);
+    expect(after.avoided_tCO2e - before.avoided_tCO2e).toBeCloseTo(b.impact.avoided_tCO2e, 1);
+  });
+
+  test('an unrecognised attribution basis is refused rather than defaulted', async () => {
+    const r = await auth(api().get('/v1/capital/basket?attributionBasis=vibes')).expect(400);
+    expect(r.body.error).toBe('BAD_BASIS');
+  });
+
+  test('a selection beyond any real pipeline is refused rather than run', async () => {
+    const many = Array.from({ length: 26 }, (_, i) => `inv_${i}`).join(',');
+    const r = await auth(api().get(`/v1/capital/basket?select=${many}`)).expect(400);
+    expect(r.body.error).toBe('TOO_MANY_SELECTED');
+  });
+
+  test('an id that names nothing is reported rather than silently dropped', async () => {
+    const b = (await auth(api().get('/v1/capital/basket?select=inv_nope')).expect(200)).body.basket;
+    expect(b.unknownIds).toEqual(['inv_nope']);
+    expect(b.count).toBe(0);
+  });
+
+  test('asking twice changes nothing — a basket is never written down', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const id = d.pipeline.ranked[0].id;
+    await auth(api().get(`/v1/capital/basket?select=${id}`)).expect(200);
+    await auth(api().get(`/v1/capital/basket?select=${id}`)).expect(200);
+    const after = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    expect(after.capital).toEqual(d.capital);
+    expect(after.pipeline.count).toBe(d.pipeline.count);
+  });
+
+  test('a basket the book cannot afford is answered with a shortfall, not a 4xx', async () => {
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const ids = [...d.pipeline.ranked, ...d.pipeline.unrankable].map(r => r.id).join(',');
+    const b = (await auth(api().get(`/v1/capital/basket?select=${ids}`)).expect(200)).body.basket;
+    expect(b.funding.affordable).toBe(false);
+    expect(b.funding.shortfall).toBeGreaterThan(0);
+  });
+
+  test('it needs a key, like everything else that reads the book', async () => {
+    await api().get('/v1/capital/basket').expect(401);
+  });
+
+  test('once a real book is recorded the basket reads that one', async () => {
+    await seed();
+    const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
+    const b = (await auth(api().get('/v1/capital/basket')).expect(200)).body.basket;
+    expect(b.source).toBe('recorded');
+    expect(b.sample).toBe(false);
+    expect(b.funding.available).toBe(d.capital.uncommitted);
+  });
+});

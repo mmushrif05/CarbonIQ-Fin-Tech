@@ -653,6 +653,98 @@
           <div class="cap-dq" id="cap-dq"></div>
         </section>
 
+        <!-- ══ THE CURVE ════════════════════════════════════════════════════
+             One chart across the years. A marker at today, hatched to the
+             right of it, and three series that are never combined: emissions,
+             reduction and avoidance. There is deliberately no net line and no
+             crossing point — PCAF reports avoided emissions apart from the
+             inventory and never sets them against it. -->
+        <section class="cap-section" id="cap-curve">
+          <header class="cap-head">
+            <div>
+              <h3>How the book moves from here</h3>
+              <span class="cap-sub" id="fc-sub">—</span>
+            </div>
+            <div class="cap-head-actions">
+              <div class="fc-toggles" id="fc-toggles" role="group" aria-label="Series shown">
+                <button type="button" class="fc-toggle is-on" data-series="forward">
+                  <i class="fc-swatch is-forward"></i>Emissions
+                </button>
+                <button type="button" class="fc-toggle is-on" data-series="reduction">
+                  <i class="fc-swatch is-reduction"></i>Reduction
+                </button>
+                <button type="button" class="fc-toggle is-on" data-series="avoided">
+                  <i class="fc-swatch is-avoided"></i>Avoided
+                </button>
+              </div>
+            </div>
+          </header>
+
+          <figure class="cap-figure fc-figure">
+            <div class="fc-chart" id="fc-chart"></div>
+            <div class="fc-readout" id="fc-readout"></div>
+          </figure>
+
+          <div class="fc-facts" id="fc-facts"></div>
+
+          <!-- ══ THE ASSUMPTIONS ══════════════════════════════════════════════
+               Three questions the reader can put to the same book. They are
+               controls rather than notes because the honest answer to "what
+               happens if the grid cleans up faster?" is to redraw the curve,
+               not to caveat it — and because an assumption a reader chose is
+               one they will remember was chosen.
+
+               Each control names the figure it moves and prints its own value
+               beside it. Anything away from the default is marked, and the
+               reset is always there: a reader who has changed three things and
+               forgotten which is otherwise stuck with a curve they cannot
+               explain. -->
+          <div class="asm" id="cap-assumptions">
+            <header class="asm-head">
+              <span class="cap-block-label">Assumptions — ask the same book a different question</span>
+              <button type="button" class="asm-reset" id="asm-reset" hidden>Reset to defaults</button>
+            </header>
+
+            <div class="asm-grid">
+              <div class="asm-item">
+                <label class="asm-label" for="asm-horizon">How far ahead</label>
+                <select class="asm-input" id="asm-horizon">
+                  <option value="">As long as the book runs</option>
+                  <option value="5">5 years</option>
+                  <option value="10">10 years</option>
+                  <option value="15">15 years</option>
+                  <option value="20">20 years</option>
+                  <option value="30">30 years</option>
+                </select>
+                <span class="asm-moves">Moves: the span of the curve and every total under it</span>
+              </div>
+
+              <div class="asm-item">
+                <label class="asm-label" for="asm-drawdown">Drawdown pace
+                  <output class="asm-value" id="asm-drawdown-out">3 years</output>
+                </label>
+                <input class="asm-input" type="range" id="asm-drawdown" min="1" max="15" step="1" value="3">
+                <span class="asm-moves">Moves: when committed capital lands — the drawdown series only</span>
+              </div>
+
+              <div class="asm-item">
+                <label class="asm-label" for="asm-grid">Grid decarbonisation
+                  <output class="asm-value" id="asm-grid-out">held flat</output>
+                </label>
+                <input class="asm-input" type="range" id="asm-grid" min="0" max="20" step="0.5" value="0">
+                <span class="asm-moves">Moves: forward emissions in later years, nothing already incurred</span>
+              </div>
+            </div>
+
+            <p class="cap-note is-scenario" id="asm-changed" hidden></p>
+          </div>
+
+          <details class="fc-basis">
+            <summary>What this curve assumed</summary>
+            <div id="fc-assumptions"></div>
+          </details>
+        </section>
+
         <!-- ══ PORTFOLIOS ═══════════════════════════════════════════════════ -->
         <section class="cap-section" id="cap-portfolios">
           <header class="cap-head">
@@ -714,6 +806,7 @@
             <table class="data-table cap-table">
               <thead>
                 <tr>
+                  <th class="cap-pick-col"><span class="sr-only">Select for the basket</span></th>
                   <th class="num">#</th><th>Project</th><th>Type</th>
                   <th class="num">Capital</th><th class="num">Return</th>
                   <th class="num">Impact / $M</th>
@@ -725,6 +818,41 @@
             </table>
           </div>
           <p class="cap-note" id="cap-unrankable-note" hidden></p>
+
+          <!-- ══ THE BASKET ═══════════════════════════════════════════════════
+               Ranking says which to take first. This says what happens if you
+               take these — what it costs against what is uncommitted, what it
+               would add, and where the curve above goes. It is a scenario and
+               it says so on its face; nothing here is committed and nothing is
+               stored. -->
+          <div class="bsk" id="cap-basket" hidden>
+            <header class="bsk-head">
+              <div>
+                <span class="cap-block-label">If we wrote these</span>
+                <span class="cap-sub" id="bsk-sub">—</span>
+              </div>
+              <button type="button" class="bsk-clear" id="bsk-clear">Clear selection</button>
+            </header>
+
+            <p class="cap-note is-scenario" id="bsk-scenario"></p>
+
+            <div class="bsk-grid">
+              <div class="bsk-fund">
+                <span class="cap-block-label">What it would take</span>
+                <div class="bsk-figures" id="bsk-funding"></div>
+                <div class="bsk-bar" id="bsk-bar" role="img" aria-label="The basket against what is uncommitted"></div>
+                <p class="cap-note" id="bsk-fund-note"></p>
+              </div>
+
+              <div class="bsk-impact">
+                <span class="cap-block-label">What it would add</span>
+                <div class="bsk-figures" id="bsk-impact"></div>
+                <p class="cap-note" id="bsk-impact-note"></p>
+              </div>
+            </div>
+
+            <p class="cap-note" id="bsk-curve-note"></p>
+          </div>
 
           <div class="cap-bytype">
             <span class="cap-block-label">What kind of thing is waiting</span>

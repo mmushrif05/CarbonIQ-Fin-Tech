@@ -315,9 +315,15 @@ function _longestTerm(investments, first) {
  * an undrawn commitment is spread over the drawdown period rather than landing
  * all at once, because nobody draws a facility in a single day.
  */
-function capitalSeries(book, { fromYear, years = 10, drawdownYears = 3 } = {}) {
+function capitalSeries(book, { fromYear, years, drawdownYears = 3 } = {}) {
   const first = fromYear || new Date().getFullYear();
-  const span = Math.max(1, Math.round(years));
+  /* `years` arrives as null when no horizon was asked for, and a default
+     parameter only covers undefined. Math.round(null) is 0, so the series
+     collapsed to a single year and the total reported one year's drawdown as
+     the whole of it — $66.3M where $199M was committed and undrawn. Only the
+     screen showed it: the unit test called this function directly, where the
+     default did apply. */
+  const span = Math.max(1, Math.round(Number(years) || 10));
   const pace = Math.max(1, Math.round(drawdownYears));
 
   const held = book.investments.filter(i => DEPLOYING_STATUSES.includes(i.status));
