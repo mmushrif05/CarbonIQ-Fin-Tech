@@ -236,6 +236,49 @@ const Dashboard = (() => {
   const _basketIds = new Set();
   let _basket = null;
   let _basketTimer = null;
+
+  /**
+   * The three assumptions behind the curve.
+   *
+   * `horizonYears: null` is not "no horizon" — it is *as long as the book
+   * runs*, which is a different and better default than a round number,
+   * because the longest facility on the book is a fact about the book. It is
+   * also the value that has already caused one defect: a default parameter
+   * does not cover null, and Math.round(null) is 0.
+   *
+   * These are kept in the browser rather than on the book. An assumption is a
+   * question one reader is asking, not a property of the portfolio, and
+   * writing it down would make one person's stress test everybody's baseline.
+   */
+  const ASM_DEFAULTS = Object.freeze({ horizonYears: null, drawdownYears: 3, gridDeclinePct: 0 });
+  const ASM_KEY = 'carboniq_capital_assumptions';
+  let _asm = { ...ASM_DEFAULTS };
+  let _asmTimer = null;
+
+  function _asmChanged() {
+    return Object.keys(ASM_DEFAULTS).some(k => _asm[k] !== ASM_DEFAULTS[k]);
+  }
+
+  /* Storage can throw outright in a private window or with site data blocked,
+     so a failure here leaves the defaults standing rather than the screen
+     empty. */
+  function _asmLoad() {
+    try {
+      const raw = window.localStorage.getItem(ASM_KEY);
+      if (!raw) return;
+      const held = JSON.parse(raw);
+      for (const k of Object.keys(ASM_DEFAULTS)) {
+        if (held[k] === null || Number.isFinite(Number(held[k]))) _asm[k] = held[k] === null ? null : Number(held[k]);
+      }
+    } catch (_) { _asm = { ...ASM_DEFAULTS }; }
+  }
+
+  function _asmSave() {
+    try {
+      if (_asmChanged()) window.localStorage.setItem(ASM_KEY, JSON.stringify(_asm));
+      else window.localStorage.removeItem(ASM_KEY);
+    } catch (_) { /* a convenience, never a requirement */ }
+  }
   let _portfolioFilter = '';
 
   const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
@@ -284,6 +327,12 @@ const Dashboard = (() => {
       carbonWeight: String(_carbonWeight),
       attributionBasis: _attributionBasis,
     });
+    /* Only what has actually been asked for. An omitted assumption lets the
+       engine apply its own default and say so, which is not the same as the
+       browser asserting a number it happens to hold. */
+    if (_asm.horizonYears !== null) qs.set('horizonYears', String(_asm.horizonYears));
+    if (_asm.drawdownYears !== ASM_DEFAULTS.drawdownYears) qs.set('drawdownYears', String(_asm.drawdownYears));
+    if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) qs.set('gridDeclinePct', String(_asm.gridDeclinePct));
     if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
     try {
       const res = await window.CARBONIQ_fetch(`/v1/capital/dashboard?${qs}`);
@@ -310,6 +359,10 @@ const Dashboard = (() => {
       select: [..._basketIds].join(','),
       attributionBasis: _attributionBasis,
     });
+    /* The dashed reading shares the solid one's axis, so it must share its
+       horizon and its grid trajectory. */
+    if (_asm.horizonYears !== null) qs.set('horizonYears', String(_asm.horizonYears));
+    if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) qs.set('gridDeclinePct', String(_asm.gridDeclinePct));
     if (_portfolioFilter) qs.set('portfolioId', _portfolioFilter);
     try {
       const res = await window.CARBONIQ_fetch(`/v1/capital/basket?${qs}`);
@@ -360,6 +413,7 @@ const Dashboard = (() => {
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
     _renderCurve(d.forecast, d.capital.currency);
+    _renderAssumptions(d.forecast);
     _renderPortfolioRows(d.portfolios, d.capital.currency);
     _renderPipeline(d.pipeline, d.capital.currency);
     _renderStorage(d.storage);
@@ -633,8 +687,14 @@ const Dashboard = (() => {
        between them is the basket and not a change of method. A dash is the
        only stroke encoding on this chart and it means one thing: not yet
        written. */
-    const scen = (_basket && !_basket.failed && _basketIds.size && _basket.forecast.withBasket)
+    const candidate = (_basket && !_basket.failed && _basketIds.size && _basket.forecast.withBasket)
       ? _basket.forecast : null;
+    /* Both series are plotted by index against the solid one's year axis, so a
+       scenario of a different length would be drawn against the wrong years
+       and would run off the plot — a line that looks like an answer and is a
+       misalignment. They are requested on the same horizon; if they ever
+       arrive different, nothing is drawn rather than something wrong. */
+    const scen = (candidate && candidate.withBasket.rows.length === rows.length) ? candidate : null;
     const scenRows = scen ? scen.withBasket.rows : [];
 
     document.getElementById('fc-sub').textContent =
@@ -765,6 +825,119 @@ const Dashboard = (() => {
       s.notes.projection, s.notes.horizon, s.notes.grid, cap.note,
       ...s.profiles.map(p => `${p.label}: ${p.note}`),
     ].map(t => `<p class="cap-note">${esc(t)}</p>`).join('');
+  }
+
+  /**
+   * The assumption controls, and the one thing they must never let happen:
+   * a curve on screen that was drawn under assumptions the reader cannot see.
+   *
+   * So the panel shows what is set, marks anything away from the default, and
+   * keeps a reset within reach — and the values ride in the query string, so
+   * the engine's own account of them comes back in the payload and prints
+   * under the chart. Nothing here re-states an assumption from memory.
+   */
+  function _renderAssumptions(f) {
+    const $ = (id) => document.getElementById(id);
+    if (!$('cap-assumptions')) return;
+
+    const horizon = $('asm-horizon');
+    const draw = $('asm-drawdown');
+    const grid = $('asm-grid');
+    if (horizon) horizon.value = _asm.horizonYears === null ? '' : String(_asm.horizonYears);
+    if (draw) draw.value = String(_asm.drawdownYears);
+    if (grid) grid.value = String(_asm.gridDeclinePct);
+
+    const drawOut = $('asm-drawdown-out');
+    if (drawOut) {
+      drawOut.textContent = `${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`;
+    }
+    const gridOut = $('asm-grid-out');
+    if (gridOut) {
+      gridOut.textContent = _asm.gridDeclinePct === 0
+        ? 'held flat'
+        : `${_asm.gridDeclinePct}% a year`;
+    }
+
+    const changed = _asmChanged();
+    const reset = $('asm-reset');
+    if (reset) reset.hidden = !changed;
+
+    const note = $('asm-changed');
+    if (note) {
+      note.hidden = !changed;
+      /* Cleared as well as hidden. A stale claim sitting inside a hidden
+         element is one CSS rule away from being a false one on screen. */
+      if (!changed) note.textContent = '';
+      if (changed) {
+        const said = [];
+        if (_asm.horizonYears !== null) said.push(`a ${_asm.horizonYears}-year horizon`);
+        if (_asm.drawdownYears !== ASM_DEFAULTS.drawdownYears) {
+          said.push(`capital drawn over ${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`);
+        }
+        if (_asm.gridDeclinePct !== ASM_DEFAULTS.gridDeclinePct) {
+          said.push(`the grid cleaning up ${_asm.gridDeclinePct}% a year`);
+        }
+        note.textContent =
+          `This curve is drawn under assumptions you set — ${said.join(', ')} — not the defaults. `
+          + 'Every figure in this section moves with them; nothing above this section does. '
+          + 'They are held in this browser only, and reset clears them.';
+      }
+    }
+
+    /* The engine's own horizon, so the default is a fact rather than a blank
+       control the reader has to infer. */
+    const span = $('asm-horizon');
+    if (span && f && f.emissions && _asm.horizonYears === null) {
+      const opt = span.querySelector('option[value=""]');
+      if (opt) opt.textContent = `As long as the book runs (${f.emissions.years} years)`;
+    }
+  }
+
+  function _wireAssumptions() {
+    const horizon = document.getElementById('asm-horizon');
+    const draw = document.getElementById('asm-drawdown');
+    const grid = document.getElementById('asm-grid');
+    const reset = document.getElementById('asm-reset');
+    if (!horizon || !draw || !grid) return;
+
+    const apply = (immediate) => {
+      _asmSave();
+      _renderAssumptions(_capital && _capital.data ? _capital.data.forecast : null);
+      clearTimeout(_asmTimer);
+      _asmTimer = setTimeout(async () => {
+        /* The basket is re-asked on the new assumptions before the chart is
+           redrawn, so the two readings are never one horizon apart. */
+        await _fetchBasket();
+        await refreshCapital();
+      }, immediate ? 0 : 200);
+    };
+
+    horizon.addEventListener('change', () => {
+      _asm.horizonYears = horizon.value === '' ? null : Number(horizon.value);
+      apply(true);
+    });
+    /* A slider fires continuously, so the label moves at once and the request
+       waits — the reader sees the value they are choosing before the curve
+       catches up, rather than a number that lags their thumb. */
+    draw.addEventListener('input', () => {
+      _asm.drawdownYears = Number(draw.value);
+      const out = document.getElementById('asm-drawdown-out');
+      if (out) out.textContent = `${_asm.drawdownYears} year${_asm.drawdownYears === 1 ? '' : 's'}`;
+      apply(false);
+    });
+    grid.addEventListener('input', () => {
+      _asm.gridDeclinePct = Number(grid.value);
+      const out = document.getElementById('asm-grid-out');
+      if (out) out.textContent = _asm.gridDeclinePct === 0 ? 'held flat' : `${_asm.gridDeclinePct}% a year`;
+      apply(false);
+    });
+
+    if (reset) {
+      reset.addEventListener('click', () => {
+        _asm = { ...ASM_DEFAULTS };
+        apply(true);
+      });
+    }
   }
 
   function _wireCurve() {
@@ -1450,6 +1623,10 @@ const Dashboard = (() => {
   async function init() {
     if (_initialized) return;
     _initialized = true;
+    /* Before the first fetch, so the request carries whatever this reader last
+       asked and the curve is never drawn once on defaults and again on their
+       assumptions. */
+    _asmLoad();
     await Promise.all([
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
@@ -1485,6 +1662,7 @@ const Dashboard = (() => {
     if (!weight || !filter) return;
     _wired = true;
     _wireCurve();
+    _wireAssumptions();
 
     /* The ranking is recomputed by the engine, never in the browser: a screen
        that scored differently from the API would be showing one thing and

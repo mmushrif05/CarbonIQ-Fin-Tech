@@ -231,3 +231,34 @@ describe('The basket does not touch the book', () => {
     expect(capitalPosition(b)).toEqual(before);
   });
 });
+
+describe('A scenario is drawn on the same axis as the curve it sits on', () => {
+  test('the basket honours the horizon the reader set', () => {
+    const b = book();
+    const ids = pipelineIds(b).slice(0, 2);
+    const r = basket(b, ids, { horizonYears: 10 });
+    expect(r.forecast.asItStands.rows.length).toBe(10);
+    expect(r.forecast.withBasket.rows.length).toBe(10);
+  });
+
+  test('both readings always run the same number of years', () => {
+    const b = book();
+    const ids = pipelineIds(b).slice(0, 3);
+    for (const horizonYears of [null, 5, 10, 30]) {
+      const r = basket(b, ids, { horizonYears });
+      expect(r.forecast.withBasket.rows.length).toBe(r.forecast.asItStands.rows.length);
+      expect(r.forecast.withBasket.firstYear).toBe(r.forecast.asItStands.firstYear);
+    }
+  });
+
+  test('the grid trajectory applies to both readings, so the gap stays the basket', () => {
+    const b = book();
+    const ids = pipelineIds(b).slice(0, 2);
+    const flat = basket(b, ids, {});
+    const declining = basket(b, ids, { gridDeclinePctPerYear: 4 });
+    expect(declining.forecast.asItStands.totals.avoided_tCO2e)
+      .toBeLessThan(flat.forecast.asItStands.totals.avoided_tCO2e);
+    expect(declining.forecast.withBasket.totals.avoided_tCO2e)
+      .toBeLessThan(flat.forecast.withBasket.totals.avoided_tCO2e);
+  });
+});

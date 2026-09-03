@@ -686,6 +686,59 @@
           </figure>
 
           <div class="fc-facts" id="fc-facts"></div>
+
+          <!-- ══ THE ASSUMPTIONS ══════════════════════════════════════════════
+               Three questions the reader can put to the same book. They are
+               controls rather than notes because the honest answer to "what
+               happens if the grid cleans up faster?" is to redraw the curve,
+               not to caveat it — and because an assumption a reader chose is
+               one they will remember was chosen.
+
+               Each control names the figure it moves and prints its own value
+               beside it. Anything away from the default is marked, and the
+               reset is always there: a reader who has changed three things and
+               forgotten which is otherwise stuck with a curve they cannot
+               explain. -->
+          <div class="asm" id="cap-assumptions">
+            <header class="asm-head">
+              <span class="cap-block-label">Assumptions — ask the same book a different question</span>
+              <button type="button" class="asm-reset" id="asm-reset" hidden>Reset to defaults</button>
+            </header>
+
+            <div class="asm-grid">
+              <div class="asm-item">
+                <label class="asm-label" for="asm-horizon">How far ahead</label>
+                <select class="asm-input" id="asm-horizon">
+                  <option value="">As long as the book runs</option>
+                  <option value="5">5 years</option>
+                  <option value="10">10 years</option>
+                  <option value="15">15 years</option>
+                  <option value="20">20 years</option>
+                  <option value="30">30 years</option>
+                </select>
+                <span class="asm-moves">Moves: the span of the curve and every total under it</span>
+              </div>
+
+              <div class="asm-item">
+                <label class="asm-label" for="asm-drawdown">Drawdown pace
+                  <output class="asm-value" id="asm-drawdown-out">3 years</output>
+                </label>
+                <input class="asm-input" type="range" id="asm-drawdown" min="1" max="15" step="1" value="3">
+                <span class="asm-moves">Moves: when committed capital lands — the drawdown series only</span>
+              </div>
+
+              <div class="asm-item">
+                <label class="asm-label" for="asm-grid">Grid decarbonisation
+                  <output class="asm-value" id="asm-grid-out">held flat</output>
+                </label>
+                <input class="asm-input" type="range" id="asm-grid" min="0" max="20" step="0.5" value="0">
+                <span class="asm-moves">Moves: forward emissions in later years, nothing already incurred</span>
+              </div>
+            </div>
+
+            <p class="cap-note is-scenario" id="asm-changed" hidden></p>
+          </div>
+
           <details class="fc-basis">
             <summary>What this curve assumed</summary>
             <div id="fc-assumptions"></div>

@@ -50,7 +50,9 @@ const SCENARIO_NOTE =
  * @param {object} opts
  * @param {string} opts.attributionBasis  passed through to the forecast
  */
-function basket(book, selectedIds = [], { attributionBasis = 'outstanding' } = {}) {
+function basket(book, selectedIds = [], {
+  attributionBasis = 'outstanding', horizonYears = null, gridDeclinePctPerYear = 0,
+} = {}) {
   const wanted = new Set((selectedIds || []).map(String).filter(Boolean));
   const waiting = book.investments.filter(i => i.status === 'pipeline');
 
@@ -108,7 +110,13 @@ function basket(book, selectedIds = [], { attributionBasis = 'outstanding' } = {
      discipline the BOQ comparison follows: change one thing, so the movement
      is attributable to that thing. */
   const SCENARIO_BASIS = 'commitment';
-  const asItStands = bookSeries(book, { attributionBasis: SCENARIO_BASIS });
+  /* The horizon and the grid trajectory come from whatever the reader has set
+     on the chart, because the dashed reading is drawn on the same axis as the
+     solid one. A scenario run over a different span would be plotted against
+     the wrong years and would leave the plot entirely — the line would look
+     like an answer and be a misalignment. */
+  const seriesOpts = { attributionBasis: SCENARIO_BASIS, years: horizonYears, gridDeclinePctPerYear };
+  const asItStands = bookSeries(book, seriesOpts);
   const withBasket = chosen.length
     ? bookSeries(
       {
@@ -116,7 +124,7 @@ function basket(book, selectedIds = [], { attributionBasis = 'outstanding' } = {
         investments: book.investments.map(i =>
           (wanted.has(String(i.id)) ? { ...i, status: 'committed' } : i)),
       },
-      { attributionBasis: SCENARIO_BASIS },
+      seriesOpts,
     )
     : null;
 

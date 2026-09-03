@@ -314,3 +314,122 @@ describe('Clearing the basket puts the screen back', () => {
     expect(dashJs).not.toMatch(/localStorage[^\n]*basket/i);
   });
 });
+
+/* ── The assumptions ──────────────────────────────────────────────────────
+   Phase 6. Three questions the reader can put to the same book, and the one
+   thing they must never allow: a curve on screen drawn under assumptions the
+   reader cannot see. */
+
+const renderAsm = dashJs.slice(dashJs.indexOf('function _renderAssumptions'), dashJs.indexOf('function _wireAssumptions'));
+const wireAsm   = dashJs.slice(dashJs.indexOf('function _wireAssumptions'), dashJs.indexOf('function _wireCurve'));
+
+describe('The three assumptions are controls, not notes', () => {
+  test('each has an input on the page', () => {
+    for (const id of ['asm-horizon', 'asm-drawdown', 'asm-grid', 'asm-reset', 'asm-changed']) {
+      expect(html).toContain(`id="${id}"`);
+    }
+  });
+
+  test('each names the figure it moves, beside the control that moves it', () => {
+    expect(html).toMatch(/Moves: the span of the curve and every total under it/);
+    expect(html).toMatch(/Moves: when committed capital lands/);
+    expect(html).toMatch(/Moves: forward emissions in later years, nothing already incurred/);
+  });
+
+  test('the defaults are declared once and frozen', () => {
+    expect(dashJs).toMatch(/const ASM_DEFAULTS = Object\.freeze\(\{ horizonYears: null, drawdownYears: 3, gridDeclinePct: 0 \}\)/);
+  });
+
+  test('the default horizon is the book’s own span, stated rather than left blank', () => {
+    expect(renderAsm).toMatch(/As long as the book runs \(\$\{f\.emissions\.years\} years\)/);
+  });
+});
+
+describe('The engine answers; the browser only asks', () => {
+  test('the assumptions ride in the query string', () => {
+    const fetchCap = dashJs.slice(dashJs.indexOf('async function _fetchCapital'), dashJs.indexOf('async function _fetchBasket'));
+    expect(fetchCap).toMatch(/qs\.set\('horizonYears'/);
+    expect(fetchCap).toMatch(/qs\.set\('drawdownYears'/);
+    expect(fetchCap).toMatch(/qs\.set\('gridDeclinePct'/);
+  });
+
+  test('an unchanged assumption is not sent, so the engine applies and reports its own default', () => {
+    const fetchCap = dashJs.slice(dashJs.indexOf('async function _fetchCapital'), dashJs.indexOf('async function _fetchBasket'));
+    expect(fetchCap).toMatch(/_asm\.horizonYears !== null/);
+    expect(fetchCap).toMatch(/!== ASM_DEFAULTS\.drawdownYears/);
+    expect(fetchCap).toMatch(/!== ASM_DEFAULTS\.gridDeclinePct/);
+    expect(fetchCap).toMatch(/which is not the same as the\n       browser asserting a number/);
+  });
+
+  test('the basis printed under the chart is the engine’s account, never restated from memory', () => {
+    expect(curve).toMatch(/s\.notes\.projection/);
+    expect(renderAsm).not.toMatch(/notes\./);
+  });
+});
+
+describe('An assumption away from the default is marked, and reversible', () => {
+  test('the reset and the notice appear only when something has changed', () => {
+    expect(renderAsm).toMatch(/const changed = _asmChanged\(\)/);
+    expect(renderAsm).toMatch(/reset\.hidden = !changed/);
+    expect(renderAsm).toMatch(/note\.hidden = !changed/);
+  });
+
+  test('the notice names every assumption the reader set, not just that some were', () => {
+    expect(renderAsm).toMatch(/said\.push\(`a \$\{_asm\.horizonYears\}-year horizon`\)/);
+    expect(renderAsm).toMatch(/capital drawn over/);
+    expect(renderAsm).toMatch(/the grid cleaning up/);
+    expect(renderAsm).toMatch(/not the defaults/);
+  });
+
+  test('it says what the assumptions do and do not move', () => {
+    expect(renderAsm).toMatch(/Every figure in this section moves with them; nothing above this section does/);
+  });
+
+  test('reset puts every assumption back at once', () => {
+    expect(wireAsm).toMatch(/_asm = \{ \.\.\.ASM_DEFAULTS \}/);
+  });
+});
+
+describe('An assumption is one reader’s question, not a property of the book', () => {
+  test('it is held in the browser and never written to the book', () => {
+    expect(dashJs).toMatch(/writing it down would make one person's stress test everybody's baseline/);
+    expect(dashJs).toMatch(/const ASM_KEY = 'carboniq_capital_assumptions'/);
+  });
+
+  test('returning to the defaults removes the stored override rather than writing the defaults back', () => {
+    /* The same rule the UI key follows: a reset that wrote the old value back
+       would reintroduce exactly what it exists to clear. */
+    expect(dashJs).toMatch(/window\.localStorage\.removeItem\(ASM_KEY\)/);
+  });
+
+  test('storage that throws leaves the defaults standing rather than the screen empty', () => {
+    expect(dashJs).toMatch(/Storage can throw outright in a private window/);
+    expect(dashJs).toMatch(/catch \(_\) \{ _asm = \{ \.\.\.ASM_DEFAULTS \}; \}/);
+  });
+
+  test('what the reader last asked is loaded before the first fetch, not after it', () => {
+    const init = dashJs.slice(dashJs.indexOf('async function init()'), dashJs.indexOf('async function refresh()'));
+    expect(init.indexOf('_asmLoad()')).toBeGreaterThan(-1);
+    expect(init.indexOf('_asmLoad()')).toBeLessThan(init.indexOf('_fetchCapital()'));
+    expect(init).toMatch(/never drawn once on defaults and again on their\n       assumptions/);
+  });
+});
+
+describe('The dashed reading cannot be plotted against the wrong years', () => {
+  test('the basket is asked on the same horizon and grid trajectory as the chart', () => {
+    const fetchBasket = dashJs.slice(dashJs.indexOf('async function _fetchBasket'), dashJs.indexOf('function _renderDashboard'));
+    expect(fetchBasket).toMatch(/qs\.set\('horizonYears'/);
+    expect(fetchBasket).toMatch(/qs\.set\('gridDeclinePct'/);
+    expect(fetchBasket).toMatch(/shares the solid one's axis/);
+  });
+
+  test('a scenario of a different length is not drawn at all', () => {
+    expect(curve).toMatch(/candidate\.withBasket\.rows\.length === rows\.length/);
+    expect(curve).toMatch(/nothing is drawn rather than something wrong/);
+  });
+
+  test('changing an assumption re-asks the basket before the chart redraws', () => {
+    expect(wireAsm).toMatch(/await _fetchBasket\(\)/);
+    expect(wireAsm).toMatch(/never one horizon apart/);
+  });
+});

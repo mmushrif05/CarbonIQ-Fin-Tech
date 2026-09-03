@@ -179,11 +179,27 @@ router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
 
+  /* The same two assumptions the chart is drawn under, validated the same way.
+     A scenario run over a different horizon than the curve it is drawn on
+     would be plotted against the wrong years. */
+  const horizonYears = req.query.horizonYears ? Number(req.query.horizonYears) : null;
+  const gridDeclinePctPerYear = req.query.gridDeclinePct ? Number(req.query.gridDeclinePct) : 0;
+  for (const [key, v, max] of [['horizonYears', horizonYears, 30], ['gridDeclinePct', gridDeclinePctPerYear, 20]]) {
+    if (v !== null && (!Number.isFinite(v) || v < 0 || v > max)) {
+      return res.status(400).json({
+        error: 'BAD_ASSUMPTION',
+        message: `${key} must be a number between 0 and ${max}; received "${v}".`,
+      });
+    }
+  }
+
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const source = recorded ? held : (baseline.baselineBook() || held);
 
-  const result = basketOf(source, ids, { attributionBasis: basis });
+  const result = basketOf(source, ids, {
+    attributionBasis: basis, horizonYears, gridDeclinePctPerYear,
+  });
   result.sample = !recorded;
   result.source = recorded ? 'recorded' : 'baseline';
   res.json({ basket: result });
