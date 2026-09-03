@@ -1,0 +1,17 @@
+{
+  "_meta": {
+    "title": "GCF results areas",
+    "source": "Green Climate Fund — Areas of work. https://www.greenclimate.fund/portfolio/areas-of-work",
+    "note": "Eight areas, four mitigation and four adaptation, each with its official two-letter code. A project binds to exactly one primary area and the code travels with it everywhere."
+  },
+  "areas": [
+    { "code": "EP", "name": "Energy generation and access", "stream": "mitigation" },
+    { "code": "LT", "name": "Transport", "stream": "mitigation" },
+    { "code": "BA", "name": "Buildings, cities, industries and appliances", "stream": "mitigation" },
+    { "code": "FL", "name": "Forests and land use", "stream": "mitigation" },
+    { "code": "VC", "name": "Livelihoods of people and communities", "stream": "adaptation" },
+    { "code": "HW", "name": "Health, food and water security", "stream": "adaptation" },
+    { "code": "IB", "name": "Infrastructure and built environment", "stream": "adaptation" },
+    { "code": "EE", "name": "Ecosystems and ecosystem services", "stream": "adaptation" }
+  ]
+}
