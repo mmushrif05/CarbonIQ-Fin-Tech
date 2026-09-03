@@ -896,3 +896,337 @@
 }
 
 .partc-attach-x:hover { background: #fecaca; color: #b91c1c; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   THE RESULT SCREEN
+   ══════════════════════════════════════════════════════════════════════════
+   The same visual system as the Part A screen, for the same reason: every
+   figure used to arrive as one of four identical boxes above four identical
+   tables, so the screen presented everything at once and therefore nothing
+   first.
+
+   Three things carry it. A hero, so the figure the assessment exists to
+   produce is the largest thing on screen. A bridge, because an insurance
+   attribution factor well under one percent means nothing as a bare
+   percentage and everything as a step down from what the project emitted. And
+   two hues rather than one — construction green, use stage indigo — because
+   they are two containers the standard says must never merge, and the
+   separation the engine enforces structurally is now visible at a glance.
+
+   The palette is the validated pair from the Part A screen: ΔE 28.1 for
+   normal vision and 23.4 under deuteranopia, both clear of the floors.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.partc-result {
+  --data-green: #00875a;
+  --data-green-soft: #e3f4ec;
+  --data-indigo: #5e5ce6;
+  --data-indigo-soft: #ecebfd;
+  --data-amber: #c77700;
+  --tile-radius: 16px;
+}
+
+/* The UA stylesheet's [hidden]{display:none} carries almost no specificity,
+   so any later `display:` rule beats it and a hidden element stays on screen.
+   Declared before the rules it has to beat. */
+.partc-result [hidden] { display: none !important; }
+
+/* ── Hero ──────────────────────────────────────────────────────────────── */
+.partc-hero {
+  background: linear-gradient(168deg, #0e5b4a 0%, #10715b 55%, #0c4c3f 100%);
+  color: #f2fbf8;
+  border-radius: 20px;
+  padding: 22px 22px 18px;
+  box-shadow: 0 10px 28px rgba(12, 76, 63, 0.22);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.partc-hero-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.7px;
+  text-transform: uppercase; color: rgba(242, 251, 248, 0.66);
+}
+.partc-hero-figure { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.partc-hero-value {
+  font-size: clamp(38px, 7vw, 52px); font-weight: 700; line-height: 1.05;
+  letter-spacing: -1.5px; font-variant-numeric: tabular-nums;
+}
+.partc-hero-unit { font-size: 15px; color: rgba(242, 251, 248, 0.75); }
+.partc-hero-sub  { font-size: 13px; color: rgba(242, 251, 248, 0.82); }
+.partc-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.partc-chip {
+  font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16); color: #f2fbf8; white-space: nowrap;
+}
+.partc-chip-good  { background: rgba(255, 255, 255, 0.22); }
+.partc-chip-mid   { background: rgba(245, 158, 11, 0.30); }
+.partc-chip-weak  { background: rgba(239, 68, 68, 0.32); }
+.partc-chip-quiet { background: rgba(255, 255, 255, 0.10); font-weight: 500; }
+
+/* ── The attribution bridge ────────────────────────────────────────────── */
+.partc-bridge { margin-top: 14px; }
+.partc-bridge-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+  gap: 10px; padding: 7px 0;
+}
+.partc-bridge-name { font-size: 11.5px; color: rgba(242, 251, 248, 0.8); }
+.partc-bridge-val {
+  font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums;
+  color: #f2fbf8;
+}
+.partc-bridge-track { grid-column: 1 / -1; height: 8px; position: relative; }
+.partc-bridge-seg {
+  position: absolute; top: 0; height: 100%; border-radius: 3px; width: 0;
+  transition: left 340ms cubic-bezier(0.25,0.1,0.25,1), width 340ms cubic-bezier(0.25,0.1,0.25,1);
+}
+.partc-bridge-seg.is-total  { background: rgba(255,255,255,0.30); }
+.partc-bridge-seg.is-drop   { background: rgba(255,255,255,0.14);
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,0.10) 4px 8px); }
+/* A sliver stays a sliver — 4px is enough to be seen without misstating the
+   share, and the caption below the bridge says it is drawn to scale. */
+.partc-bridge-seg.is-result { background: #7fe7c4; min-width: 4px; }
+.partc-bridge-note {
+  font-size: 11px; line-height: 1.55; margin: 10px 0 0;
+  color: rgba(242, 251, 248, 0.66);
+}
+.partc-bridge-rule { border: 0; border-top: 1px dashed rgba(255,255,255,0.22); margin: 6px 0; }
+
+.partc-means { margin-top: 14px; }
+.partc-means > summary {
+  cursor: pointer; list-style: none; min-height: 44px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 600; color: rgba(242, 251, 248, 0.85);
+}
+.partc-means > summary::-webkit-details-marker { display: none; }
+.partc-means > summary::after {
+  content: ''; width: 6px; height: 6px;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform 200ms ease;
+}
+.partc-means[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
+.partc-means > p {
+  font-size: 12.5px; line-height: 1.65; margin: 2px 0 0;
+  color: rgba(242, 251, 248, 0.78);
+}
+
+/* ── The break ─────────────────────────────────────────────────────────── */
+.partc-break {
+  display: flex; align-items: center; gap: 12px;
+  margin: 2px;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.8px; text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.partc-break::before,
+.partc-break::after {
+  content: ''; flex: 1; height: 0;
+  border-top: 2px dashed var(--border);
+}
+
+/* ── Use stage: indigo, because it is not the PCAF figure ──────────────── */
+.partc-usestage {
+  background: var(--data-indigo-soft);
+  border: 1px solid rgba(94, 92, 230, 0.22);
+  border-radius: var(--tile-radius);
+  padding: 20px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.partc-usestage .partc-tile-label { color: #5b59b8; }
+.partc-usestage .partc-tile-value { color: #3b39a8; }
+.partc-usestage-figure { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.partc-usestage-gate {
+  font-size: 12px; line-height: 1.6; margin: 8px 0 0; color: #4a48a0;
+}
+.partc-usestage .partc-scope-warning { margin-top: 6px; }
+
+/* ── Bento ─────────────────────────────────────────────────────────────── */
+.partc-bento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.partc-bento > .span-2 { grid-column: 1 / -1; }
+
+.partc-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--tile-radius);
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.partc-tile-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+.partc-tile-value {
+  font-size: 34px; font-weight: 700; line-height: 1.05; letter-spacing: -1.2px;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.partc-tile-unit { font-size: 12px; color: var(--text-tertiary); }
+.partc-tile-foot {
+  font-size: 11.5px; line-height: 1.5; color: var(--text-secondary);
+  margin-top: 6px;
+}
+.partc-tile-accent-green  { border-left: 3px solid var(--data-green); }
+.partc-tile-accent-indigo { border-left: 3px solid var(--data-indigo); }
+
+.partc-eq {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; color: var(--text-secondary);
+  background: var(--bg); border-radius: 6px; padding: 5px 8px;
+  align-self: flex-start;
+}
+
+/* ── The data-quality scale, with its direction stated ─────────────────── */
+.partc-dqhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.partc-dqhead-opt {
+  font-size: 13px; font-weight: 650; color: var(--text-secondary);
+  padding: 3px 9px; border-radius: 999px; background: var(--bg);
+}
+.partc-dqscale { display: flex; gap: 3px; margin: 10px 0 4px; }
+.partc-dqscale-band {
+  flex: 1; height: 26px; border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  /* One hue, light to dark, because the scale is ordered. Never a rainbow,
+     and never green-to-red, which would read as good-to-bad on a scale whose
+     direction people already get backwards. */
+  background: var(--bg); color: var(--text-tertiary);
+  transition: transform 200ms ease;
+}
+.partc-dqscale-band[data-band="1"] { background: #d3ece3; }
+.partc-dqscale-band[data-band="2"] { background: #b3ddcf; }
+.partc-dqscale-band[data-band="3"] { background: #8fc9b7; }
+.partc-dqscale-band[data-band="4"] { background: #6bb29c; }
+.partc-dqscale-band[data-band="5"] { background: #479a82; }
+.partc-dqscale-band.is-here {
+  outline: 2px solid var(--text-primary); outline-offset: 1px;
+  color: var(--text-primary); transform: scaleY(1.18);
+}
+.partc-dqscale-ends {
+  display: flex; justify-content: space-between;
+  font-size: 9.5px; color: var(--text-tertiary); letter-spacing: 0.2px;
+}
+
+/* ── Radial ────────────────────────────────────────────────────────────── */
+.partc-radial { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.partc-radial svg { width: 104px; height: 62px; flex: 0 0 104px; overflow: visible; }
+.partc-radial-arc-bg { fill: none; stroke: var(--bg); stroke-width: 9; stroke-linecap: round; }
+.partc-radial-arc {
+  fill: none; stroke: var(--data-green); stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dashoffset 420ms cubic-bezier(0.25,0.1,0.25,1);
+}
+.partc-radial-read { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.partc-radial-value {
+  font-size: 27px; font-weight: 700; letter-spacing: -0.8px; line-height: 1;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.partc-radial-meta { font-size: 10.5px; line-height: 1.45; color: var(--text-tertiary); }
+
+/* ── One stacked bar, because these are parts of one whole ─────────────── */
+.partc-split {
+  display: flex; height: 26px; border-radius: 8px; overflow: hidden;
+  background: var(--bg); margin: 12px 0 10px;
+}
+.partc-split-seg {
+  height: 100%; width: 0; min-width: 2px;
+  transition: width 420ms cubic-bezier(0.25,0.1,0.25,1);
+}
+/* Categorical, in a fixed order, so the same module keeps the same hue
+   between runs. */
+.partc-split-seg.is-1, .partc-split-dot.is-1 { background: #00875a; }
+.partc-split-seg.is-2, .partc-split-dot.is-2 { background: #5e5ce6; }
+.partc-split-seg.is-3, .partc-split-dot.is-3 { background: #c77700; }
+.partc-split-seg.is-4, .partc-split-dot.is-4 { background: #8b5cf6; }
+.partc-split-seg.is-5, .partc-split-dot.is-5 { background: #0f766e; }
+
+.partc-split-legend { display: flex; flex-direction: column; gap: 7px; }
+.partc-split-row {
+  display: grid; grid-template-columns: 10px 1fr auto auto;
+  align-items: baseline; gap: 10px;
+  font-size: 12px; color: var(--text-secondary);
+}
+.partc-split-dot { width: 10px; height: 10px; border-radius: 3px; }
+.partc-split-name { min-width: 0; }
+.partc-split-val {
+  font-variant-numeric: tabular-nums; color: var(--text-primary); font-weight: 600;
+}
+.partc-split-pct {
+  font-variant-numeric: tabular-nums; color: var(--text-tertiary);
+  min-width: 52px; text-align: right;
+}
+
+/* ── Summary ───────────────────────────────────────────────────────────── */
+.partc-summary {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 18px; padding: 20px; box-shadow: var(--shadow-sm);
+}
+.partc-summary h3 { font-size: 15px; font-weight: 650; margin: 0 0 12px; color: var(--text-primary); }
+.partc-summary ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 11px; }
+.partc-summary li {
+  font-size: 13.5px; line-height: 1.6; color: var(--text-secondary);
+  padding-left: 20px; position: relative;
+}
+.partc-summary li::before {
+  content: ''; position: absolute; left: 0; top: 8px;
+  width: 7px; height: 7px; border-radius: 50%; background: var(--data-green);
+}
+.partc-summary li b { color: var(--text-primary); font-weight: 650; font-variant-numeric: tabular-nums; }
+.partc-summary-caveat {
+  margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--border-light);
+  font-size: 12px; line-height: 1.6; color: var(--text-tertiary);
+}
+
+/* ── Folded detail ─────────────────────────────────────────────────────── */
+.partc-fold {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 4px 18px;
+}
+.partc-fold > summary {
+  cursor: pointer; list-style: none; min-height: 48px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; font-weight: 650; color: var(--text-primary);
+}
+.partc-fold > summary::-webkit-details-marker { display: none; }
+.partc-fold > summary::after {
+  content: ''; width: 6px; height: 6px; margin-left: auto;
+  border-right: 1.6px solid var(--text-tertiary); border-bottom: 1.6px solid var(--text-tertiary);
+  transform: rotate(45deg) translateY(-2px); transition: transform 200ms ease;
+}
+.partc-fold[open] > summary::after { transform: rotate(-135deg); }
+.partc-fold > div { padding: 0 0 16px; }
+
+@media (max-width: 900px) {
+  .partc-bento { grid-template-columns: 1fr; }
+  .partc-bento > .span-2 { grid-column: auto; }
+}
+@media (max-width: 620px) {
+  .partc-hero { padding: 18px 16px 16px; border-radius: 16px; }
+  .partc-tile { padding: 15px; }
+  .partc-tile-value { font-size: 28px; }
+  .partc-radial { gap: 12px; }
+  .partc-summary { padding: 16px; }
+  .partc-split-row { grid-template-columns: 10px 1fr auto; }
+  .partc-split-pct { grid-column: 2 / -1; text-align: left; min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .partc-bridge-seg, .partc-radial-arc, .partc-split-seg, .partc-means > summary::after { transition: none; }
+}
+
+@media (prefers-color-scheme: dark) {
+  .partc-result {
+    --data-green-soft: rgba(0, 135, 90, 0.14);
+    --data-indigo-soft: rgba(94, 92, 230, 0.14);
+  }
+  .partc-usestage { border-color: rgba(140, 138, 245, 0.35); }
+  .partc-usestage .partc-tile-label { color: #a5a3f5; }
+  .partc-usestage .partc-tile-value { color: #c7c6ff; }
+  .partc-usestage-gate { color: #b9b7f7; }
+  .partc-dqscale-band[data-band="1"] { background: #1d4a3c; }
+  .partc-dqscale-band[data-band="2"] { background: #235a49; }
+  .partc-dqscale-band[data-band="3"] { background: #2a6b57; }
+  .partc-dqscale-band[data-band="4"] { background: #317c65; }
+  .partc-dqscale-band[data-band="5"] { background: #388d73; }
+}

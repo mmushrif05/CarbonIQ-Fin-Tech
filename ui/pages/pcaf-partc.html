@@ -148,53 +148,193 @@
     <span class="partc-dqlive-hint" id="partcDqLiveHint"></span>
   </div>
 
-  <!-- ── Result ──────────────────────────────────────────── -->
+  <!-- ── Result ──────────────────────────────────────────────
+       Built in the same idiom as the Part A screen: one hero figure with the
+       attribution drawn as a bridge, a bento whose tile size encodes
+       importance, the data-quality scale shown with its direction, and every
+       table folded behind a summary so the screen leads with meaning rather
+       than with rows. -->
   <div id="partcResult" class="partc-result" style="display:none">
 
-    <div class="partc-figures">
-      <div class="partc-figure partc-figure-primary">
-        <span class="partc-figure-label">Construction (A4 + A5) — the PCAF figure</span>
-        <span class="partc-figure-value" id="partcConstruction">—</span>
-        <span class="partc-figure-unit">kgCO₂e</span>
-        <span class="partc-figure-dq" id="partcDqConstruction"></span>
+    <!-- ══ HERO ══ The figure the screen exists to produce. A4 + A5 only:
+         the use stage is a separate line below a visible break, because the
+         two are never summed. -->
+    <section class="partc-hero" id="partcHero">
+      <span class="partc-hero-eyebrow">The PCAF figure · A4 + A5 construction</span>
+      <div class="partc-hero-figure">
+        <span class="partc-hero-value" id="partcHeroValue">—</span>
+        <span class="partc-hero-unit">tCO<sub>2</sub>e</span>
       </div>
-      <div class="partc-figure">
-        <span class="partc-figure-label">Use-stage (B1 + B4 + B7) — separate line</span>
-        <span class="partc-figure-value" id="partcUseStage">—</span>
-        <span class="partc-figure-unit">kgCO₂e</span>
-        <span class="partc-figure-dq" id="partcDqUseStage"></span>
+      <span class="partc-hero-sub" id="partcHeroSub">The project's construction emissions</span>
+      <div class="partc-hero-chips">
+        <span class="partc-chip" id="partcHeroDq">—</span>
+        <span class="partc-chip partc-chip-quiet" id="partcHeroPolicy">—</span>
+        <span class="partc-chip partc-chip-quiet" id="partcHeroDriver" hidden>—</span>
       </div>
-      <div class="partc-figure">
-        <span class="partc-figure-label">Insurer's IAE</span>
-        <span class="partc-figure-value" id="partcIae">—</span>
-        <span class="partc-figure-unit">tCO₂e</span>
-      </div>
-      <div class="partc-figure">
-        <span class="partc-figure-label">Per-m² factor <em>(reusable)</em></span>
-        <span class="partc-figure-value" id="partcPerM2">—</span>
-        <span class="partc-figure-unit">kgCO₂e/m²</span>
-      </div>
-    </div>
-    <p class="partc-scope-warning">These two figures are reported as separate lines and are never summed.</p>
 
-    <div class="partc-panels">
-      <div class="partc-panel">
-        <h4>Module breakdown</h4>
-        <div id="partcModules"></div>
+      <!-- A percentage says "0.38%". A bridge says "this was the project's,
+           this much is not yours, this is what you disclose" — which is the
+           actual shape of an insurance attribution and needs no legend. -->
+      <div class="partc-bridge" id="partcBridge">
+        <div class="partc-bridge-row">
+          <span class="partc-bridge-name">The project emits</span>
+          <span class="partc-bridge-val" id="partcBridgeTotal">—</span>
+          <span class="partc-bridge-track"><span class="partc-bridge-seg is-total" id="partcBridgeSegTotal"></span></span>
+        </div>
+        <div class="partc-bridge-row">
+          <span class="partc-bridge-name">Carried by others — not yours to report</span>
+          <span class="partc-bridge-val" id="partcBridgeDrop">—</span>
+          <span class="partc-bridge-track"><span class="partc-bridge-seg is-drop" id="partcBridgeSegDrop"></span></span>
+        </div>
+        <hr class="partc-bridge-rule">
+        <div class="partc-bridge-row">
+          <span class="partc-bridge-name">This insurer reports <b id="partcAttribPct">—</b></span>
+          <span class="partc-bridge-val" id="partcIae">—</span>
+          <span class="partc-bridge-track"><span class="partc-bridge-seg is-result" id="partcBridgeSegResult"></span></span>
+        </div>
+        <!-- An insurance attribution factor is routinely well under one
+             percent, so the last bar is a sliver. It is drawn to scale rather
+             than exaggerated, and says so, because a bar stretched to be
+             visible would misstate the very quantity it exists to show. -->
+        <p class="partc-bridge-note" id="partcBridgeNote"></p>
       </div>
-      <div class="partc-panel">
-        <h4>What drives this number</h4>
-        <div id="partcDrivers"></div>
+
+      <details class="partc-means">
+        <summary>What this means</summary>
+        <p id="partcMeansFigure"></p>
+      </details>
+    </section>
+
+    <!-- ══ BREAK ══ The separation the engine enforces, made visible. -->
+    <div class="partc-break"><span>Reported separately · never added to the figure above</span></div>
+
+    <!-- Indigo, not green: a different container, so a different hue. -->
+    <section class="partc-usestage" id="partcUseStageBox">
+      <span class="partc-tile-label">Use stage — B1 + B4 + B7</span>
+      <div class="partc-usestage-figure">
+        <span class="partc-tile-value" id="partcUseStage">—</span>
+        <span class="partc-tile-unit">kgCO<sub>2</sub>e</span>
       </div>
-      <div class="partc-panel">
-        <h4>A4 Pareto — the vital few</h4>
-        <div id="partcPareto"></div>
+      <span class="partc-figure-dq" id="partcDqUseStage"></span>
+      <p class="partc-usestage-gate" id="partcUseStageGate"></p>
+      <p class="partc-scope-warning">Optional under PCAF Part C §5.3, policy-gated, and never summed
+         with the construction figure.</p>
+    </section>
+
+    <!-- ══ BENTO ══ Tile size encodes importance. -->
+    <div class="partc-bento">
+
+      <div class="partc-tile partc-tile-accent-green">
+        <span class="partc-tile-label">Attribution factor</span>
+        <span class="partc-tile-value" id="partcAf">—</span>
+        <code class="partc-eq" id="partcAfEq"></code>
+        <span class="partc-tile-foot" id="partcAfFoot"></span>
       </div>
-      <div class="partc-panel partc-panel-wide">
-        <h4>Data quality — where each score comes from</h4>
-        <div id="partcDqPanel"></div>
+
+      <div class="partc-tile partc-tile-accent-green">
+        <span class="partc-tile-label">Data quality</span>
+        <!-- The number is the display element. "Data quality score 3 (Option
+             2b)" is a sentence, and a sentence set at 34px wraps and stops
+             being a figure. The score is never written as a fraction: a
+             slashed form reads as a mark out of five and inverts a scale on
+             which 1 is the best. -->
+        <div class="partc-dqhead">
+          <span class="partc-tile-value" id="partcDqNum">—</span>
+          <span class="partc-dqhead-opt" id="partcDqOpt"></span>
+        </div>
+        <div class="partc-dqscale" id="partcDqScale5" role="img" aria-label="PCAF data quality scale">
+          <span class="partc-dqscale-band" data-band="1"><b>1</b></span>
+          <span class="partc-dqscale-band" data-band="2"><b>2</b></span>
+          <span class="partc-dqscale-band" data-band="3"><b>3</b></span>
+          <span class="partc-dqscale-band" data-band="4"><b>4</b></span>
+          <span class="partc-dqscale-band" data-band="5"><b>5</b></span>
+        </div>
+        <small class="partc-dqscale-ends"><span>best evidence</span><span>weakest</span></small>
+        <span class="partc-figure-dq" id="partcDqConstruction"></span>
+        <span class="partc-tile-foot" id="partcDqFoot"></span>
+      </div>
+
+      <!-- Radial, because a share against a whole is what an arc is for. -->
+      <div class="partc-tile" id="partcParetoBox">
+        <span class="partc-tile-label">The vital few</span>
+        <div class="partc-radial">
+          <div id="partcParetoArc"></div>
+          <div class="partc-radial-read">
+            <span class="partc-radial-value" id="partcParetoPct">—</span>
+            <span class="partc-radial-meta" id="partcParetoMeta"></span>
+          </div>
+        </div>
+        <span class="partc-tile-foot" id="partcParetoFoot"></span>
+      </div>
+
+      <div class="partc-tile">
+        <span class="partc-tile-label">Per-m² factor</span>
+        <span class="partc-tile-value" id="partcPerM2">—</span>
+        <span class="partc-tile-unit">kgCO<sub>2</sub>e/m² — reusable</span>
+        <span class="partc-tile-foot" id="partcPerM2Foot"></span>
+      </div>
+
+      <!-- One stacked bar, because these are parts of one whole. Four bars
+           side by side would invite reading them as four separate figures,
+           and at a 97 / 2 / 1 / 0.07 split three of them would be invisible. -->
+      <div class="partc-tile span-2">
+        <span class="partc-tile-label">Where the figure comes from</span>
+        <span class="partc-tile-foot" id="partcSplitTotal" style="margin-top:2px"></span>
+        <div class="partc-split" id="partcModuleSplit"></div>
+        <div class="partc-split-legend" id="partcModuleLegend"></div>
+        <p class="partc-tile-foot" id="partcModuleNote"></p>
+      </div>
+
+      <div class="partc-tile span-2">
+        <span class="partc-tile-label">Construction total, in full</span>
+        <div class="partc-figures">
+          <div class="partc-figure partc-figure-primary">
+            <span class="partc-figure-label">A4 + A5 — the PCAF figure</span>
+            <span class="partc-figure-value" id="partcConstruction">—</span>
+            <span class="partc-figure-unit">kgCO<sub>2</sub>e</span>
+          </div>
+          <div class="partc-figure">
+            <span class="partc-figure-label">A4 transport to site</span>
+            <span class="partc-figure-value" id="partcA4">—</span>
+            <span class="partc-figure-unit">kgCO<sub>2</sub>e</span>
+          </div>
+          <div class="partc-figure">
+            <span class="partc-figure-label">A5 construction process</span>
+            <span class="partc-figure-value" id="partcA5">—</span>
+            <span class="partc-figure-unit">kgCO<sub>2</sub>e</span>
+          </div>
+          <div class="partc-figure">
+            <span class="partc-figure-label">Insurer's share</span>
+            <span class="partc-figure-value" id="partcIaeKg">—</span>
+            <span class="partc-figure-unit">kgCO<sub>2</sub>e</span>
+          </div>
+        </div>
       </div>
     </div>
+
+    <section class="partc-summary" id="partcSummary">
+      <h3>In summary</h3>
+      <ul id="partcSummaryList"></ul>
+      <p class="partc-summary-caveat" id="partcSummaryCaveat"></p>
+    </section>
+
+    <!-- Everything below is detail: available, not in the way. -->
+    <details class="partc-fold">
+      <summary><span>Module breakdown</span></summary>
+      <div id="partcModules"></div>
+    </details>
+    <details class="partc-fold">
+      <summary><span>What drives this number</span></summary>
+      <div id="partcDrivers"></div>
+    </details>
+    <details class="partc-fold">
+      <summary><span>A4 Pareto — the vital few, line by line</span></summary>
+      <div id="partcPareto"></div>
+    </details>
+    <details class="partc-fold">
+      <summary><span>Data quality — where each score comes from</span></summary>
+      <div id="partcDqPanel"></div>
+    </details>
 
     <!-- Registers live behind their own tabs: off the main screen,
          available to whoever needs them. -->

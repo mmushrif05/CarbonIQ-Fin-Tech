@@ -1,0 +1,64 @@
+{
+  "_meta": {
+    "label": "SAMPLE DATA",
+    "what": "A worked example of a bank's APAC construction book. Every figure here is invented.",
+    "why": "The Dashboard and Portfolio screens need something to draw when GET /v1/portfolio has nothing to give — either because no projects are linked to the API key yet, or because the API could not be reached. Rendering zeros in that situation reads as 'this bank finances nothing carbon-intensive', which is a different claim from 'we have not measured yet'.",
+    "howToReplace": "Link real projects to your API key (npm run key:create ... --projects) and the screens switch to live figures on their own. Nothing here is ever mixed into a live portfolio: the two are all-or-nothing, and the page says which one it is showing.",
+    "internallyConsistent": "The totals reconcile on purpose. Region emissions and asset-class emissions each sum to totalFinancedEmissions_tCO2e; region outstanding sums to totalOutstanding; taxonomyDistribution and every region project count sum to totalProjects; dqDistribution is a percentage split whose weighted mean is exactly weightedDQ; assetTypes sums to 100."
+  },
+
+  "totalProjects": 87,
+  "totalFinancedEmissions_tCO2e": 48230,
+  "totalOutstanding": 1240000000,
+  "weightedDQ": 2.40,
+  "coveragePct": 78,
+
+  "meta": { "requestedProjects": 87, "resolvedProjects": 68, "failedProjects": 19 },
+
+  "taxonomyDistribution": { "green": 34, "transition": 31, "brown": 22 },
+  "cfsDistribution":      { "green": 34, "transition": 31, "brown": 22 },
+
+  "dqDistribution": { "1": 26, "2": 32, "3": 24, "4": 12, "5": 6 },
+
+  "assetClasses": [
+    { "label": "Commercial",  "value": 18200 },
+    { "label": "Residential", "value": 14400 },
+    { "label": "Industrial",  "value": 9800 },
+    { "label": "Mixed-Use",   "value": 5830 }
+  ],
+
+  "assetTypes": [
+    { "label": "Office",      "value": 35 },
+    { "label": "Residential", "value": 28 },
+    { "label": "Retail",      "value": 18 },
+    { "label": "Industrial",  "value": 12 },
+    { "label": "Hospitality", "value": 7 }
+  ],
+
+  "regions": [
+    { "label": "Singapore", "projects": 42, "emissions": 19800, "outstanding": 520000000 },
+    { "label": "Malaysia",  "projects": 22, "emissions": 12400, "outstanding": 310000000 },
+    { "label": "Hong Kong", "projects": 15, "emissions": 10200, "outstanding": 280000000 },
+    { "label": "Thailand",  "projects":  8, "emissions":  5830, "outstanding": 130000000 }
+  ],
+
+  "topContributors": [
+    { "projectId": "SG-2024-001", "name": "Marina Bay Tower",        "financedEmissions_tCO2e": 4210, "classification": "green",      "region": "Singapore", "buildingType": "Commercial",  "loanOutstanding": 185000000, "cfsScore": 82 },
+    { "projectId": "SG-2024-015", "name": "Changi Business Hub",     "financedEmissions_tCO2e": 3870, "classification": "transition", "region": "Singapore", "buildingType": "Commercial",  "loanOutstanding": 142000000, "cfsScore": 58 },
+    { "projectId": "MY-2024-003", "name": "KL Eco Residences",       "financedEmissions_tCO2e": 3640, "classification": "green",      "region": "Malaysia",  "buildingType": "Residential", "loanOutstanding":  98000000, "cfsScore": 74 },
+    { "projectId": "HK-2024-008", "name": "Kowloon Gateway",         "financedEmissions_tCO2e": 3120, "classification": "brown",      "region": "Hong Kong", "buildingType": "Mixed-Use",   "loanOutstanding": 210000000, "cfsScore": 32 },
+    { "projectId": "SG-2024-042", "name": "Tuas Industrial Complex", "financedEmissions_tCO2e": 2980, "classification": "transition", "region": "Singapore", "buildingType": "Industrial",  "loanOutstanding":  76000000, "cfsScore": 51 },
+    { "projectId": "TH-2024-004", "name": "Bangkok Riverside Mixed", "financedEmissions_tCO2e": 2410, "classification": "brown",      "region": "Thailand",  "buildingType": "Mixed-Use",   "loanOutstanding":  64000000, "cfsScore": 37 },
+    { "projectId": "MY-2024-019", "name": "Penang Logistics Park",   "financedEmissions_tCO2e": 2180, "classification": "transition", "region": "Malaysia",  "buildingType": "Industrial",  "loanOutstanding":  71000000, "cfsScore": 55 },
+    { "projectId": "HK-2024-021", "name": "Tsuen Wan Renewal Block", "financedEmissions_tCO2e": 1960, "classification": "green",      "region": "Hong Kong", "buildingType": "Residential", "loanOutstanding":  88000000, "cfsScore": 71 }
+  ],
+
+  "regulatoryReadiness": [
+    { "name": "PCAF v3",     "desc": "Financed emissions disclosure",       "status": "ready"   },
+    { "name": "MAS 652",     "desc": "Environmental risk management (SGP)", "status": "ready"   },
+    { "name": "EU Taxonomy", "desc": "Climate Delegated Act 2024",          "status": "partial" },
+    { "name": "GLP 2025",    "desc": "LMA/APLMA Green Loan Principles",     "status": "ready"   },
+    { "name": "HKMA SPM",    "desc": "Supervisory Policy Manual (HK)",      "status": "partial" },
+    { "name": "TCFD",        "desc": "Task Force on Climate Disclosures",   "status": "gap"     }
+  ]
+}
