@@ -25,6 +25,7 @@ const record = require('./record');
 const SEED = require('../../data/gcf/pipeline.seed.json');
 
 const COLLECTION = 'gcf_projects';
+const SETTINGS_COLLECTION = 'gcf_entity';
 
 /** The shipped pipeline, deep-frozen so nothing downstream can edit the seed. */
 function _deepFreeze(v) {
@@ -118,4 +119,29 @@ async function adoptSeed(orgId, { by = null } = {}) {
   return written;
 }
 
-module.exports = { list, get, put, remove, adoptSeed, seedProjects, seedMeta, COLLECTION };
+/* ── Entity-level disclosures ──────────────────────────────────────────────
+ *
+ * One record per organisation, holding the facts the disclosure cannot compute.
+ * Absent until the entity records them, which is what the report says.
+ */
+
+async function entityDisclosures(orgId) {
+  return store.get(SETTINGS_COLLECTION, orgId, 'entity').catch(() => null);
+}
+
+async function setEntityDisclosures(orgId, body, { by = null } = {}) {
+  store.assertWritable();
+  const value = record.validateEntity({
+    ...(body || {}),
+    updatedBy: by || undefined,
+    updatedAt: new Date().toISOString(),
+  });
+  await store.put(SETTINGS_COLLECTION, orgId, 'entity', value);
+  return value;
+}
+
+module.exports = {
+  list, get, put, remove, adoptSeed, seedProjects, seedMeta,
+  entityDisclosures, setEntityDisclosures,
+  COLLECTION, SETTINGS_COLLECTION,
+};

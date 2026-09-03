@@ -105,6 +105,9 @@ docs/                       Architecture, strategy, scaffolding, and pivot docs
 | `POST` | `/v1/gcf/pipeline/adopt` | Copy the shipped illustrative pipeline into this organisation, to edit |
 | `GET` | `/v1/gcf/emissions` | The pipeline on three boundaries that never merge |
 | `GET` | `/v1/gcf/ndc` | Contribution against NDC 3.0 — two ledgers, never summed |
+| `GET/PUT` | `/v1/gcf/entity` | The facts only the reporting entity can state |
+| `GET` | `/v1/gcf/report` | SLFRS S1/S2 and GRI lines, with what it could not state |
+| `GET/POST` | `/v1/gcf/export` · `/import` | A period package, checksummed and verified on the way back |
 | `GET` | `/v1/gcf/reference` | Results areas, IRMF core indicators, NDC 3.0 |
 | `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
@@ -253,6 +256,12 @@ GCF's own core indicator is defined over reduced, avoided **and** removed togeth
 **A pipeline movement is not a performance movement.** Two periods cover different candidate sets, so the difference between two totals is mostly a change of book — the same trap PCAF Part C comparatives handle. The movement is decomposed into what entered, what left and what changed, and carries the note saying what it is not.
 
 **The shipped pipeline is dummy data and says so on its face** (`data/gcf/pipeline.seed.json`): five projects, $196.5M cost, $72.0M GCF ask, both streams across five of the eight results areas. Recorded data replaces it **entirely** and is never merged with it, the discipline the capital book already follows, and every response says which is showing.
+
+**The disclosure (`services/gcf/reporting.js`).** The same records, rendered as the lines SLFRS S1/S2 and GRI actually ask for. One rule matters more than the rest: **a pipeline of financed projects is not the bank's inventory.** SLFRS S2 §29(a) asks for the entity's own absolute gross scope 1, 2 and 3; GRI 305-5 is reduction of the *organisation's own* emissions from its own initiatives. Project mitigation is neither, and putting it on either line would report an emission the entity does not have in place of one it does. So the inventory lines are reported **absent with the clause that requires them and where the figure actually comes from**, and the pipeline is disclosed where it belongs — climate-related opportunities (§29(d)), capital deployment (§29(e)), and a separately-stated avoided-and-reduced line that is never netted against anything, as GRI and PCAF (Part A, p.126) both require.
+
+Entity-level facts — board oversight, management's role, the strategy narrative, the risk process, the entity's own targets — are recorded by the entity at `PUT /v1/gcf/entity` or reported absent. Nothing is filled in; that is the failure `services/report-integrity.js` exists to prevent, and this module reuses it rather than restating it. The checklist is answered **from the report**, so it can fail, and the inventory item stays unmet even when every entity fact is recorded — because this report is one input to an SLFRS S2 disclosure, not the disclosure, and a checklist that could reach 100% would be claiming otherwise. It says so on its own face.
+
+**The period package (`exportPeriod` / `importPeriod`).** The ToR asks for data that can be *transferred*, and a transfer that silently drops or reorders a record is worse than no transfer. The package carries a SHA-256 over its own **canonical** form — keys sorted at every level, so a re-serialisation of the same content hashes the same, and the export timestamp is outside the hash so two exports of identical records checksum identically. An import verifies before anything is written and is refused **whole** on any failure, because half an imported period is a position nobody can reconcile. A package is a transfer format, not an exemption: every record still has to satisfy the schema on the way in.
 
 **The anchor dashboard (`services/capital-*.js`, `ui/js/dashboard.js`).** The Dashboard is the capital book: portfolios, investments, payments, and the four emission lines against each. It is deliberately **not** connected to Firebase — the baseline lives in `data/capital/book.json`, deep-frozen and read once, because a demonstration book has no business depending on a network round trip and every change to it is then a reviewable commit. If an organisation has recorded anything of its own, its records win **entirely** and the baseline is not read; the two are never merged, and the payload says which is showing.
 

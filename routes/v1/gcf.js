@@ -9,6 +9,10 @@
  *   GET    /v1/gcf/emissions         the pipeline on three boundaries, kept apart
  *   GET    /v1/gcf/emissions/:id     one project, with the arithmetic checked
  *   GET    /v1/gcf/ndc               contribution against NDC 3.0, two ledgers
+ *   GET/PUT/v1/gcf/entity           the facts only the reporting entity can state
+ *   GET    /v1/gcf/report            SLFRS S1/S2 and GRI lines, with the gaps
+ *   GET    /v1/gcf/export            the period package, checksummed
+ *   POST   /v1/gcf/import            verify a package and record it whole
  *   GET    /v1/gcf/reference         results areas, IRMF indicators, NDC 3.0
  *
  * This tab writes. Everything before it in this application reads a book it
@@ -28,6 +32,7 @@ const store = require('../../services/gcf/store');
 const record = require('../../services/gcf/record');
 const emissions = require('../../services/gcf/emissions');
 const ndc = require('../../services/gcf/ndc-contribution');
+const reporting = require('../../services/gcf/reporting');
 const partcStore = require('../../services/partc-store');
 
 const AREAS = require('../../data/gcf/results-areas.json');
@@ -183,6 +188,98 @@ router.get('/ndc', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     ndc: ndc.portfolioContribution(projects, { bauCumulative_tCO2e: bau }),
     source,
     sample,
+  });
+}));
+
+/**
+ * The entity-level facts. Absent until recorded, and the report says which are
+ * missing and which clause asks for each — so the gaps list is a worklist
+ * rather than an apology.
+ */
+router.get('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const entity = await store.entityDisclosures(req.apiKey.orgId);
+  res.json({
+    entity: entity || null,
+    recorded: Boolean(entity),
+    note: entity ? null : 'No entity-level disclosures recorded. Every item that depends on them '
+      + 'is reported absent in the disclosure, with the clause that requires it.',
+  });
+}));
+
+router.put('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const saved = await store.setEntityDisclosures(req.apiKey.orgId, req.body, {
+    by: req.apiKey.name || req.apiKey.orgId,
+  });
+  res.json({ entity: saved, storage: partcStore.capability() });
+}));
+
+/**
+ * The disclosure.
+ *
+ * Entity-level facts — board oversight, targets, the entity's own inventory —
+ * cannot be computed from a pipeline. They are supplied by the entity or
+ * reported absent with the clause that requires them, and the report says on
+ * its face that it is one input to an SLFRS S2 disclosure rather than the
+ * disclosure itself.
+ */
+router.get('/report', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const year = req.query.year === undefined ? undefined : Number(req.query.year);
+  if (year !== undefined && !Number.isInteger(year)) {
+    return res.status(400).json({
+      error: 'INVALID_YEAR',
+      message: 'year must be a four-digit reporting year.',
+    });
+  }
+  const bau = req.query.bau === undefined || req.query.bau === '' ? undefined : Number(req.query.bau);
+  if (bau !== undefined && !Number.isFinite(bau)) {
+    return res.status(400).json({
+      error: 'INVALID_BAU',
+      message: 'bau must be the absolute business-as-usual emissions for 2026-2035 in tCO2e.',
+    });
+  }
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  const settings = await store.entityDisclosures(req.apiKey.orgId);
+  res.json({
+    report: reporting.buildDisclosure(projects, {
+      reportingYear: year,
+      entityDisclosures: settings,
+      bauCumulative_tCO2e: bau,
+      sample,
+      sampleNote: store.seedMeta().sampleNote,
+    }),
+    source,
+  });
+}));
+
+/** A period, exported whole, with a checksum over its canonical form. */
+router.get('/export', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { projects, sample } = await store.list(req.apiKey.orgId);
+  res.json(reporting.exportPeriod(projects, {
+    reportingYear: req.query.year === undefined ? undefined : Number(req.query.year),
+    orgId: req.apiKey.orgId,
+    sample,
+    sampleNote: store.seedMeta().sampleNote,
+  }));
+}));
+
+/**
+ * Import a period package.
+ *
+ * Verified before anything is written, and refused whole on any failure —
+ * half an imported period is a position nobody can reconcile.
+ */
+router.post('/import', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const pkg = reporting.importPeriod(req.body);
+  const written = [];
+  for (const p of pkg.projects) {
+    written.push(await store.put(req.apiKey.orgId, p, { by: req.apiKey.name || req.apiKey.orgId }));
+  }
+  res.status(201).json({
+    imported: written.length,
+    reportingYear: pkg.reportingYear,
+    checksum: pkg.checksum,
+    verified: true,
+    storage: partcStore.capability(),
   });
 }));
 

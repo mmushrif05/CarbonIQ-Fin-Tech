@@ -179,6 +179,39 @@ const projectSchema = Joi.object({
   }).default({}),
 }).unknown(false);
 
+/**
+ * The facts only the reporting entity can state.
+ *
+ * Board oversight, management's role, the strategy narrative, the risk process
+ * and the entity's own climate targets. Software cannot compute any of these
+ * and must not invent them — the portfolio reports in this codebase once
+ * carried a board meeting quarterly and a three-person ESG team, printed under
+ * a cited clause. So there is a place to record them, and until something is
+ * recorded the disclosure reports each one absent with the clause that
+ * requires it.
+ */
+const entitySchema = Joi.object({
+  entityName: Joi.string().max(200).allow('', null).optional(),
+  climateGovernance: Joi.string().max(4000).allow('', null).optional(),
+  managementRole: Joi.string().max(4000).allow('', null).optional(),
+  strategyNarrative: Joi.string().max(6000).allow('', null).optional(),
+  riskManagementProcess: Joi.string().max(6000).allow('', null).optional(),
+  climateTargets: Joi.array().items(Joi.string().max(1000)).optional(),
+  updatedBy: Joi.string().max(160).optional(),
+  updatedAt: Joi.string().max(40).optional(),
+}).unknown(false);
+
+function validateEntity(body) {
+  const { error, value } = entitySchema.validate(body || {}, { abortEarly: false, convert: true });
+  if (error) {
+    const err = new Error(error.details.map(d => d.message).join('; '));
+    err.statusCode = 400;
+    err.code = 'INVALID_ENTITY_DISCLOSURES';
+    throw err;
+  }
+  return value;
+}
+
 /** Validate one project. Returns `{ value }` or throws a 400-shaped error. */
 function validate(project) {
   const { error, value } = projectSchema.validate(project, { abortEarly: false, convert: true });
@@ -238,7 +271,8 @@ function withinAccreditation(project, { sizeRange = [0, Infinity] } = {}) {
 }
 
 module.exports = {
-  projectSchema, validate, weakestTier, tracedFigures, withinAccreditation,
+  projectSchema, validate, entitySchema, validateEntity,
+  weakestTier, tracedFigures, withinAccreditation,
   TIERS, AREA_CODES, STREAMS, STAGES, ESS_CATEGORIES, ESS_WITHIN_DFCC_ACCREDITATION,
   BASELINE_TYPES,
 };
