@@ -538,6 +538,66 @@
           <span>Reading the book…</span>
         </div>
 
+        <!-- ══ CAPITAL ══════════════════════════════════════════════════════
+             Where the money stands. Committed and paid are separate figures
+             on purpose: a book can be two-thirds committed and well under half
+             deployed, and one number cannot say both. -->
+        <section class="cap-section" id="cap-capital">
+          <header class="cap-head">
+            <div>
+              <h3>Capital position</h3>
+              <span class="cap-sub" id="cap-capital-sub">—</span>
+            </div>
+            <div class="cap-head-actions">
+              <select id="cap-portfolio-filter" class="cap-select" aria-label="Portfolio">
+                <option value="">All portfolios</option>
+              </select>
+              <button type="button" class="dash-link is-primary" id="cap-adjust">Adjust figures</button>
+              <button type="button" class="dash-link" id="cap-record">Record</button>
+              <button type="button" class="dash-link" id="cap-refresh">Refresh</button>
+            </div>
+          </header>
+
+          <!-- An adjusted screen says so before its first figure. This project
+               has already had one failure of exactly the opposite kind, where
+               six fields were filled from a demo constant beside a real
+               headline and nothing on screen separated them. -->
+          <p class="cap-note is-adjusted" id="cap-adjusted-banner" hidden></p>
+
+          <div class="cap-kpis">
+            <div class="cap-kpi">
+              <span class="cap-kpi-label">Allocated budget</span>
+              <span class="cap-kpi-value" id="cap-allocated">—</span>
+              <span class="cap-kpi-foot" id="cap-allocated-foot"></span>
+            </div>
+            <div class="cap-kpi is-paid">
+              <span class="cap-kpi-label">Paid out</span>
+              <span class="cap-kpi-value" id="cap-paid">—</span>
+              <span class="cap-kpi-foot" id="cap-paid-foot">Disbursements net of repayments</span>
+            </div>
+            <div class="cap-kpi is-committed">
+              <span class="cap-kpi-label">Committed, not yet drawn</span>
+              <span class="cap-kpi-value" id="cap-undrawn">—</span>
+              <span class="cap-kpi-foot" id="cap-undrawn-foot"></span>
+            </div>
+            <div class="cap-kpi is-balance">
+              <span class="cap-kpi-label">Balance remaining</span>
+              <span class="cap-kpi-value" id="cap-balance">—</span>
+              <span class="cap-kpi-foot" id="cap-balance-foot">Allocated less paid</span>
+            </div>
+          </div>
+
+          <!-- One stacked bar, because these three are parts of one whole. -->
+          <figure class="cap-figure">
+            <figcaption>
+              <span class="cap-figure-title">How the allocation is placed</span>
+              <span class="cap-figure-sub" id="cap-deploy-sub"></span>
+            </figcaption>
+            <div class="cap-stack" id="cap-deploy-bar"></div>
+            <div class="cap-legend" id="cap-deploy-legend"></div>
+          </figure>
+        </section>
+
         <!-- ══ THE ANCHOR'S POSITION ════════════════════════════════════════
              The five questions an investor arrives with, in the order he asks
              them. Each carries what kind of statement it is, because two of
@@ -600,98 +660,16 @@
             </article>
           </div>
 
+          <!-- Every note in full. The tiles clamp to two lines so the band
+               reads as a dashboard rather than a page of prose; nothing is
+               lost, because a figure without its provenance is not a figure
+               this application is willing to show. -->
+          <details class="anch-defs">
+            <summary>What each of these figures means, in full</summary>
+            <div class="anch-defs-body" id="anch-defs-body"></div>
+          </details>
+
           <p class="cap-note" id="anch-kinds"></p>
-        </section>
-
-        <!-- ══ CAPITAL ══════════════════════════════════════════════════════
-             Where the money stands. Committed and paid are separate figures
-             on purpose: a book can be two-thirds committed and well under half
-             deployed, and one number cannot say both. -->
-        <section class="cap-section" id="cap-capital">
-          <header class="cap-head">
-            <div>
-              <h3>Capital position</h3>
-              <span class="cap-sub" id="cap-capital-sub">—</span>
-            </div>
-            <div class="cap-head-actions">
-              <select id="cap-portfolio-filter" class="cap-select" aria-label="Portfolio">
-                <option value="">All portfolios</option>
-              </select>
-              <button type="button" class="dash-link is-primary" id="cap-adjust">Adjust figures</button>
-              <button type="button" class="dash-link" id="cap-record">Record</button>
-              <button type="button" class="dash-link" id="cap-refresh">Refresh</button>
-            </div>
-          </header>
-
-          <!-- An adjusted screen says so before its first figure. This project
-               has already had one failure of exactly the opposite kind, where
-               six fields were filled from a demo constant beside a real
-               headline and nothing on screen separated them. -->
-          <p class="cap-note is-adjusted" id="cap-adjusted-banner" hidden></p>
-
-          <div class="cap-kpis">
-            <div class="cap-kpi">
-              <span class="cap-kpi-label">Allocated budget</span>
-              <span class="cap-kpi-value" id="cap-allocated">—</span>
-              <span class="cap-kpi-foot" id="cap-allocated-foot"></span>
-            </div>
-            <div class="cap-kpi is-paid">
-              <span class="cap-kpi-label">Paid out</span>
-              <span class="cap-kpi-value" id="cap-paid">—</span>
-              <span class="cap-kpi-foot" id="cap-paid-foot">Disbursements net of repayments</span>
-            </div>
-            <div class="cap-kpi is-committed">
-              <span class="cap-kpi-label">Committed, not yet drawn</span>
-              <span class="cap-kpi-value" id="cap-undrawn">—</span>
-              <span class="cap-kpi-foot" id="cap-undrawn-foot"></span>
-            </div>
-            <div class="cap-kpi is-balance">
-              <span class="cap-kpi-label">Balance remaining</span>
-              <span class="cap-kpi-value" id="cap-balance">—</span>
-              <span class="cap-kpi-foot" id="cap-balance-foot">Allocated less paid</span>
-            </div>
-          </div>
-
-          <!-- One stacked bar, because these three are parts of one whole. -->
-          <figure class="cap-figure">
-            <figcaption>
-              <span class="cap-figure-title">How the allocation is placed</span>
-              <span class="cap-figure-sub" id="cap-deploy-sub"></span>
-            </figcaption>
-            <div class="cap-stack" id="cap-deploy-bar"></div>
-            <div class="cap-legend" id="cap-deploy-legend"></div>
-          </figure>
-        </section>
-
-        <!-- ══ EMISSIONS ════════════════════════════════════════════════════
-             Four lines, two blocks, and never one total. What has happened is
-             measured; what is ahead is a projection. Reduction and avoidance
-             sit outside the inventory and are never netted against it. -->
-        <section class="cap-section" id="cap-emissions">
-          <header class="cap-head">
-            <div>
-              <h3>Emissions across the book</h3>
-              <span class="cap-sub" id="cap-emissions-sub">—</span>
-            </div>
-          </header>
-
-          <div class="cap-ledger">
-            <div class="cap-ledger-block">
-              <span class="cap-block-label">Inventory — financed emissions</span>
-              <div class="cap-ledger-rows" id="cap-inventory-rows"></div>
-              <p class="cap-note" id="cap-inventory-note"></p>
-            </div>
-
-            <div class="cap-ledger-rule"><span>Not inventory · never netted against the figures on the left</span></div>
-
-            <div class="cap-ledger-block">
-              <span class="cap-block-label">Impact helped about</span>
-              <div class="cap-ledger-rows" id="cap-impact-rows"></div>
-              <p class="cap-note" id="cap-impact-note"></p>
-            </div>
-          </div>
-
-          <div class="cap-dq" id="cap-dq"></div>
         </section>
 
         <!-- ══ THE CURVE ════════════════════════════════════════════════════
@@ -784,6 +762,37 @@
             <summary>What this curve assumed</summary>
             <div id="fc-assumptions"></div>
           </details>
+        </section>
+
+        <!-- ══ EMISSIONS ════════════════════════════════════════════════════
+             Four lines, two blocks, and never one total. What has happened is
+             measured; what is ahead is a projection. Reduction and avoidance
+             sit outside the inventory and are never netted against it. -->
+        <section class="cap-section" id="cap-emissions">
+          <header class="cap-head">
+            <div>
+              <h3>Emissions across the book</h3>
+              <span class="cap-sub" id="cap-emissions-sub">—</span>
+            </div>
+          </header>
+
+          <div class="cap-ledger">
+            <div class="cap-ledger-block">
+              <span class="cap-block-label">Inventory — financed emissions</span>
+              <div class="cap-ledger-rows" id="cap-inventory-rows"></div>
+              <p class="cap-note" id="cap-inventory-note"></p>
+            </div>
+
+            <div class="cap-ledger-rule"><span>Not inventory · never netted against the figures on the left</span></div>
+
+            <div class="cap-ledger-block">
+              <span class="cap-block-label">Impact helped about</span>
+              <div class="cap-ledger-rows" id="cap-impact-rows"></div>
+              <p class="cap-note" id="cap-impact-note"></p>
+            </div>
+          </div>
+
+          <div class="cap-dq" id="cap-dq"></div>
         </section>
 
         <!-- ══ PORTFOLIOS ═══════════════════════════════════════════════════ -->
