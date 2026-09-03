@@ -9,6 +9,11 @@
  *   GET    /v1/gcf/emissions         the pipeline on three boundaries, kept apart
  *   GET    /v1/gcf/emissions/:id     one project, with the arithmetic checked
  *   GET    /v1/gcf/ndc               contribution against NDC 3.0, two ledgers
+ *   GET    /v1/gcf/screening         the accreditation gate — eligible, flagged, excluded
+ *   GET    /v1/gcf/ranking           two ranked lists, on the reader's weighting
+ *   GET    /v1/gcf/recommendation    which two, why, and what could not be weighed
+ *   GET    /v1/gcf/instruments       the seven structures, and the pipeline's mandate gap
+ *   GET    /v1/gcf/instruments/:id   one project structured, with what is left standing
  *   GET/PUT/v1/gcf/entity           the facts only the reporting entity can state
  *   GET    /v1/gcf/report            SLFRS S1/S2 and GRI lines, with the gaps
  *   GET    /v1/gcf/export            the period package, checksummed
@@ -33,11 +38,14 @@ const record = require('../../services/gcf/record');
 const emissions = require('../../services/gcf/emissions');
 const ndc = require('../../services/gcf/ndc-contribution');
 const reporting = require('../../services/gcf/reporting');
+const screening = require('../../services/gcf/screening');
+const instruments = require('../../services/gcf/instruments');
 const partcStore = require('../../services/partc-store');
 
 const AREAS = require('../../data/gcf/results-areas.json');
 const IRMF = require('../../data/gcf/irmf.json');
 const NDC3 = require('../../data/gcf/ndc3.json');
+const INSTRUMENTS = require('../../data/gcf/instruments.json');
 
 const router = Router();
 
@@ -60,6 +68,9 @@ router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res) => {
     resultsAreas: AREAS,
     irmf: IRMF,
     ndc3: NDC3,
+    instruments: INSTRUMENTS,
+    criteria: screening.GCF_CRITERIA,
+    defaultWeights: screening.DEFAULT_WEIGHTS,
     accreditation: store.seedMeta().accreditation,
     storage: partcStore.capability(),
   });
@@ -280,6 +291,116 @@ router.post('/import', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     checksum: pkg.checksum,
     verified: true,
     storage: partcStore.capability(),
+  });
+}));
+
+/**
+ * One validator for the weighting, shared by /ranking and /recommendation.
+ *
+ * The same rules in two places are two chances for one to drift, and that has
+ * already happened once in this codebase — the capital basket accepted
+ * assumptions the dashboard validated differently.
+ */
+function readWeights(req) {
+  const supplied = {};
+  let any = false;
+  for (const k of Object.keys(screening.DEFAULT_WEIGHTS)) {
+    const raw = req.query[k];
+    if (raw === undefined || raw === '') continue;
+    const n = Number(raw);
+    if (!Number.isFinite(n) || n < 0) {
+      const err = new Error(`Weight "${k}" must be a number of zero or more.`);
+      err.statusCode = 400;
+      err.code = 'INVALID_WEIGHTS';
+      throw err;
+    }
+    supplied[k] = n;
+    any = true;
+  }
+  /* Only a changed weight is sent, so an untouched one is answered by the
+     engine's own default rather than asserted by the caller. */
+  return any ? supplied : undefined;
+}
+
+/** The gate. Runs before any ranking, and its output is three sets. */
+router.get('/screening', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  res.json({
+    screening: screening.screen(projects, { accreditation: store.seedMeta().accreditation }),
+    source,
+    sample,
+  });
+}));
+
+/** Two ranked lists, never merged, on the weighting the reader set. */
+router.get('/ranking', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const weights = readWeights(req);
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  res.json({
+    ranking: screening.rank(projects, {
+      accreditation: store.seedMeta().accreditation,
+      weights,
+    }),
+    source,
+    sample,
+  });
+}));
+
+/**
+ * The answer Lot 2 asks for: which two go forward, and why.
+ *
+ * Carries the runners-up with what would move them, the criteria that could not
+ * be scored, and where the computed ranking disagrees with the recorded
+ * selection — because a recommendation that hides its own limits is worth
+ * nothing to the person who has to defend it.
+ */
+router.get('/recommendation', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const weights = readWeights(req);
+  const take = req.query.take === undefined ? undefined : Number(req.query.take);
+  if (take !== undefined && (!Number.isInteger(take) || take < 1 || take > 10)) {
+    return res.status(400).json({
+      error: 'INVALID_TAKE',
+      message: 'take must be a whole number between 1 and 10. The ToR asks for up to two.',
+    });
+  }
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  res.json({
+    recommendation: screening.recommend(projects, {
+      accreditation: store.seedMeta().accreditation,
+      weights,
+      take,
+    }),
+    source,
+    sample,
+  });
+}));
+
+/** The seven structures across the pipeline, with the barrier nothing covers. */
+router.get('/instruments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  res.json({
+    instruments: instruments.structurePipeline(projects, {
+      accreditation: store.seedMeta().accreditation,
+    }),
+    source,
+    sample,
+  });
+}));
+
+router.get('/instruments/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+  res.json({
+    structuring: instruments.structureFor(project, {
+      accreditation: store.seedMeta().accreditation,
+    }),
+    source,
+    sample,
   });
 }));
 

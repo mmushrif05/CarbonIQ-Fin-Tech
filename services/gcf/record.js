@@ -153,6 +153,11 @@ const projectSchema = Joi.object({
     objective: Joi.string().max(8).optional(),
   }).required(),
   ndcSectorTargets: Joi.array().items(Joi.string().max(40)).default([]),
+  /* Why this project is not already financed commercially. Named from the
+     vocabulary in data/gcf/instruments.json, because an instrument is only
+     the right answer to a barrier somebody has actually stated — matching a
+     structure to a project on anything else is decoration. */
+  barriers: Joi.array().items(Joi.string().max(40)).default([]),
 
   technical: Joi.object().unknown(true).default({}),
   financing: financingSchema.required(),
