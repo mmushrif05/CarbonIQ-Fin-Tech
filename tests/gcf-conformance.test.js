@@ -148,6 +148,34 @@ describe('The claim is bounded', () => {
   });
 });
 
+describe('The generated document cannot drift from its source', () => {
+  const DOC = path.join(ROOT, 'docs/GCF-CONFORMANCE.md');
+
+  test('it exists and marks itself generated', () => {
+    expect(fs.existsSync(DOC)).toBe(true);
+    const md = fs.readFileSync(DOC, 'utf8');
+    expect(md).toMatch(/GENERATED FILE\. Do not edit by hand/);
+    expect(md).toMatch(/npm run docs:gcf-conformance/);
+  });
+
+  test('every rule in the matrix appears in the document', () => {
+    /* A doc regenerated from a stale checkout is worse than no doc: it reads
+       as current. Regenerating is one command, and this is what makes anyone
+       run it. */
+    const md = fs.readFileSync(DOC, 'utf8');
+    const missing = RULES.filter(r => !md.includes(r.id)).map(r => r.id);
+    expect(missing).toEqual([]);
+  });
+
+  test('the counts in the document match the matrix', () => {
+    const md = fs.readFileSync(DOC, 'utf8');
+    const { summarise } = require('../services/gcf/conformance');
+    const s = summarise();
+    expect(md).toContain(`${s.implemented} implemented`);
+    expect(md).toContain(`${s.total} rules`);
+  });
+});
+
 describe('Over HTTP', () => {
   test('the matrix is served with its summary', async () => {
     const res = await auth(api().get('/v1/gcf/conformance')).expect(200);

@@ -23,6 +23,7 @@
     "key:revoke": "node scripts/create-api-key.js revoke",
     "key:register-ui": "node scripts/register-ui-key.js",
     "docs:conformance": "node scripts/generate-conformance-doc.js",
+    "docs:gcf-conformance": "node scripts/generate-gcf-conformance-doc.js",
     "setup:seed-partc": "node scripts/seed-partc-demo.js",
     "build:info": "node scripts/build-info.js"
   },

@@ -247,9 +247,21 @@ describe('The deployment says what it can persist, without a key', () => {
     expect(typeof res.body.storage.writable).toBe('boolean');
   });
 
-  test('it leaks no credential, only the mode and two booleans', async () => {
+  test('it leaks no credential — the key set is closed, and every value is safe', async () => {
+    /* The key set stays pinned so a field cannot be added to this block
+       without someone deciding it is safe to publish. `requested`, `chosen`
+       and `reason` were added deliberately: without them "STORAGE_BACKEND
+       never reached this runtime" and "Blobs is unreachable" look identical
+       from a browser, and the first is far more common. None can carry a
+       credential — `requested` is one of four literals, `chosen` is a boolean,
+       and `reason` and `remedy` are written in the source. */
     const res = await request(app).get('/health').expect(200);
-    expect(Object.keys(res.body.storage).sort()).toEqual(['durable', 'mode', 'writable']);
+    const ALLOWED = ['chosen', 'durable', 'mode', 'reason', 'remedy', 'requested', 'writable'];
+    const keys = Object.keys(res.body.storage).sort();
+    expect(keys.filter(k => !ALLOWED.includes(k))).toEqual([]);
+    expect(keys).toEqual(expect.arrayContaining(['mode', 'requested', 'durable', 'writable']));
+    expect(['auto', 'blobs', 'firebase', 'memory']).toContain(res.body.storage.requested);
+    expect(typeof res.body.storage.chosen).toBe('boolean');
     const wire = JSON.stringify(res.body);
     expect(wire).not.toMatch(/token|secret|serviceAccount|private_key|siteID/i);
   });

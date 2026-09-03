@@ -112,8 +112,25 @@ app.get('/health', (_req, res) => {
        silently cause — the same reason /health already reports the running
        commit. Mode and yes/no only; no credential can reach the wire. */
     storage: (() => {
-      const cap = require('./services/partc-store').capability();
-      return { mode: cap.mode, durable: cap.durable, writable: cap.writable };
+      const store = require('./services/partc-store');
+      const cap = store.capability();
+      /* `requested` and `reason` travel with the mode, because without them
+         "STORAGE_BACKEND never reached this runtime" and "Blobs is unreachable"
+         look identical from a browser — and the first is far more common. It
+         cost this project a round trip once already: /health reported
+         mode "firebase" and there was no way to tell from the response whether
+         the variable had been set at all. Neither field can carry a
+         credential: `requested` is one of four literals, and `reason` is
+         written here. */
+      return {
+        mode: cap.mode,
+        requested: store.requestedBackend(),
+        chosen: cap.chosen === true,
+        durable: cap.durable,
+        writable: cap.writable,
+        reason: cap.reason,
+        ...(cap.remedy ? { remedy: cap.remedy } : {})
+      };
     })(),
     timestamp: new Date().toISOString()
   });
