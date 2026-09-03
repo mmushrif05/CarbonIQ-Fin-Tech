@@ -136,6 +136,12 @@ body {
    ============================================================ */
 .main {
   flex: 1;
+  /* A flex item's default `min-width: auto` refuses to shrink below its
+     content's intrinsic minimum. With a 240px sidebar beside it, the header
+     controls held `main` at 872px inside 794px of space and the whole page
+     scrolled sideways — 78px of it, which is why the right-hand column of
+     every band was cut off. Nothing here is allowed to widen the page. */
+  min-width: 0;
   margin-left: 240px;
   display: flex;
   flex-direction: column;
@@ -2001,10 +2007,16 @@ body {
 .dash-link:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ── KPI tiles ─────────────────────────────────────────────────────────── */
+/* Four tiles, so the column count must be two or four and never three.
+   `auto-fit` chose three at 688px wide and stranded the fourth alone beside an
+   empty column — the same fragmentation the position band had, in a different
+   grid. A count that does not divide the tiles is a count that leaves white. */
 .cap-kpis {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
-  align-items: start; gap: 12px;
+  display: grid; grid-template-columns: 1fr;
+  align-items: stretch; gap: 12px;
 }
+@media (min-width: 560px) { .cap-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1150px) { .cap-kpis { grid-template-columns: repeat(4, 1fr); } }
 .cap-kpi {
   border: 1px solid var(--border-light); border-radius: 12px;
   padding: 15px 16px; display: flex; flex-direction: column; gap: 2px;
@@ -2281,23 +2293,46 @@ body {
    would invite a reader to treat a projection as a fact.
    ───────────────────────────────────────────────────────────────────────── */
 
+/* Five tiles, six cells, and that is the whole trick.
+ 
+   `auto-fit` with two `span 2` tiles was the original defect: at 1034px it
+   resolved to three columns, a spanning tile could not fit the last one, and
+   it wrapped — stranding a whole empty column on two separate rows, which is
+   the white space this band was reported for.
+ 
+   Five items never tile evenly into three or four columns. Giving the lead
+   tile a span of two makes it six cells, and six divides by two, three and
+   six: every supported width lands on a full grid with nothing stranded, and
+   the band is two rows rather than three. Nothing else spans — a second
+   spanning tile reintroduces exactly the fragmentation this replaced. */
 .anch-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  align-items: start;
+  grid-template-columns: 1fr;
+  align-items: stretch;
   gap: 12px;
 }
+@media (min-width: 620px) {
+  .anch-grid { grid-template-columns: repeat(2, 1fr); }
+  .anch-lead { grid-column: span 2; }
+}
+@media (min-width: 1000px) {
+  .anch-grid { grid-template-columns: repeat(3, 1fr); }
+  .anch-lead { grid-column: span 2; }
+}
+/* No six-column tier. One line of five looked right in the abstract and
+   measured worse: at 1440px each tile fell to 172px, the queue's three split
+   rows wrapped, and every tile in the row grew to match — 365px tall against
+   244. Three columns is where this content actually fits. */
 .anch {
   border: 1px solid var(--border-light);
   border-radius: 12px;
-  padding: 16px 18px;
+  padding: 13px 15px;
   display: flex; flex-direction: column;
   min-width: 0;
 }
 /* The figure he came for carries the weight; the others are the same object
    one size down, rather than four more cards competing with it. */
-.anch-lead { grid-column: span 2; border-color: var(--border); background: var(--bg); }
-.anch-wide { grid-column: span 2; }
+.anch-lead { border-color: var(--border); background: var(--bg); }
 .anch-label {
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
   text-transform: uppercase; color: var(--text-tertiary);
@@ -2586,10 +2621,12 @@ body {
 }
 .asm-reset:hover { background: rgba(94, 92, 230, 0.08); }
 
-.asm-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 18px;
-}
+/* Three controls, so one column or three and never two — `auto-fit` chose two
+   and left the third alone beside 336px of nothing. Same rule as the position
+   band and the capital tiles: a column count that does not divide the items is
+   a column count that leaves white. */
+.asm-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
+@media (min-width: 780px) { .asm-grid { grid-template-columns: repeat(3, 1fr); } }
 .asm-item { display: flex; flex-direction: column; gap: 6px; }
 .asm-label {
   display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
@@ -2761,3 +2798,80 @@ body.adj-open { overflow: hidden; }
   .adj-row { grid-template-columns: 1fr; }
   .adj-pay-add { grid-template-columns: 1fr 1fr; }
 }
+
+
+/* ══ THE POSITION BAND, COMPACTED ══════════════════════════════════════════
+   The five figures were each carrying a full paragraph, which made the band
+   1,009px tall on a 1034px screen and pushed the first chart 1.8 screens down.
+   A dashboard whose first graphic is below two folds is a document.
+
+   The paragraphs are not deleted — they carry the measured / declared /
+   absent discipline and a figure without them is a figure without its
+   provenance. Two lines stay in the tile and the whole of every one is a
+   click away, directly underneath. That is the same trade the methodology
+   screen already makes: the equation stays visible, the step-by-step trace
+   collapses.
+   ═════════════════════════════════════════════════════════════════════════ */
+
+.anch-note {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px; line-height: 1.45; margin-top: 9px;
+}
+.anch-lead .anch-note { -webkit-line-clamp: 3; }
+
+.anch-defs { margin-top: 14px; }
+.anch-defs > summary {
+  cursor: pointer; list-style: none; min-height: 40px;
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px; font-weight: 650; color: var(--text-secondary);
+}
+.anch-defs > summary::-webkit-details-marker { display: none; }
+.anch-defs > summary::after {
+  content: ''; width: 6px; height: 6px;
+  border-right: 1.6px solid currentColor; border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translateY(-2px); transition: transform 200ms ease;
+}
+.anch-defs[open] > summary::after { transform: rotate(-135deg) translateY(-1px); }
+.anch-defs-body { display: flex; flex-direction: column; gap: 12px; padding-bottom: 6px; }
+.anch-def { display: flex; flex-direction: column; gap: 3px; }
+.anch-def-name {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--text-secondary);
+}
+.anch-def-text { font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); }
+
+@media (prefers-reduced-motion: reduce) {
+  .anch-defs > summary::after { transition: none; }
+}
+
+
+/* The band's own height. Every one of these was a default that made sense on a
+   card and does not on a row of five. */
+.anch-split { margin-top: 10px; padding-top: 9px; gap: 6px; }
+.anch-split-row { font-size: 12px; }
+#cap-anchor .cap-sub { font-size: 12px; line-height: 1.45; }
+.anch-kind { margin-top: 8px; }
+.anch-value { font-size: 23px; }
+.anch-lead .anch-value { font-size: 34px; }
+
+
+/* Nothing in a header row may widen the page either: the controls wrap onto a
+   second line long before they push the layout out. `min-width: 0` on the row
+   is the same rule as `main` — a flex item that cannot shrink is a flex item
+   that overflows. */
+.topbar { min-width: 0; }
+.topbar-right { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
+.cap-head { min-width: 0; }
+.cap-head-actions { min-width: 0; justify-content: flex-end; }
+.search-box { min-width: 0; }
+
+/* Tiles in a row are equal height, so a short one carries slack. The slack
+   goes below the last line, where it reads as padding — pushing the note to
+   the base instead left a gap in the middle of the tile, which reads as a
+   layout fault. Same amount of white either way; only one of them looks
+   deliberate. */
+.anch-split + .anch-note { padding-top: 0; }
+
+/* Stretched, so the note sits at the tile's base rather than leaving a hole. */
+.cap-kpi-foot { padding-top: 6px; }

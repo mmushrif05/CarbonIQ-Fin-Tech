@@ -572,6 +572,23 @@ const Dashboard = (() => {
       + _splitRow('Emissions it would help avoid', a.pipelineWouldAdd.avoided, 'is-avoided');
     $('anch-queue-note').textContent = a.pipelineWouldAdd.note;
 
+    /* The same notes, in full, under the band. The tiles clamp to two lines
+       so the top of the screen reads as a dashboard rather than a page of
+       prose — but a figure without its provenance is not a figure this
+       application is willing to show, so none of it is dropped. Built from
+       the same payload the tiles render, so the two cannot diverge. */
+    $('anch-defs-body').innerHTML = [
+      ['Total over the life of the book', a.totalOverLife.note],
+      ['Emitted so far', a.current.note],
+      ['Still to pay', a.pending.note],
+      ['Pledged for deployment', a.pledged.note],
+      ['What the queue would add', a.pipelineWouldAdd.note],
+    ].map(([name, text]) => `
+      <div class="anch-def">
+        <span class="anch-def-name">${esc(name)}</span>
+        <span class="anch-def-text">${esc(text)}</span>
+      </div>`).join('');
+
     $('anch-kinds').textContent = a.kindsNote;
   }
 
