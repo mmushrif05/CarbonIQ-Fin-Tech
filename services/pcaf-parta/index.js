@@ -174,6 +174,25 @@ function assessExposure(input) {
             trajectory: derivedGeneration.lifetime.trajectory,
             trajectoryNote: derivedGeneration.lifetime.trajectoryNote,
             degradationNote: derivedGeneration.lifetime.degradationNote,
+
+            /* The ATTRIBUTED series, so anything plotting a lifetime curve
+               reads it from the same place it reads the total. Previously
+               only the total was attributed here while the series stayed on
+               the generation block unattributed — and the chart drew the
+               project's figures under a "financed share" caption, which is
+               this bank claiming three times the emissions avoided than its
+               lending actually attributes to it. */
+            series: derivedGeneration.lifetime.series.map(y => ({
+              year: y.year,
+              avoided_tCO2e: +(y.avoided_tCO2e * af.value).toFixed(2),
+            })),
+            firstYear: +(derivedGeneration.lifetime.firstYear * af.value).toFixed(2),
+            lastYear: +(derivedGeneration.lifetime.lastYear * af.value).toFixed(2),
+
+            /* Kept beside it, named for what it is, so the relationship
+               between the two is on the page rather than inferred. */
+            projectTotal: derivedGeneration.lifetime.value,
+            attributionFactor: af.value,
           };
         }
       }

@@ -247,6 +247,62 @@ describe('Lifetime avoided emissions', () => {
   });
 });
 
+/*
+ * Reported from the live screen: "check avoided emission graph is correct".
+ * It was not. The chart plotted the PROJECT's avoided emissions — 74,151 in
+ * year one, 1,746,703 over the life — under a caption reading "financed
+ * share", while this bank's share at an attribution factor of 0.3 is 22,245
+ * and 524,011. Out by a factor of 3.33, in the direction that flatters the
+ * lender.
+ *
+ * The cause was a split: the TOTAL was attributed on the impact block while
+ * the SERIES stayed unattributed on the generation block, and the chart read
+ * the series. Anything drawing a lifetime curve now reads it from the same
+ * place it reads the total.
+ */
+describe('The lifetime series is attributed, like the total beside it', () => {
+  const r = run({ ...METERED, lifetimeYears: 25 });
+  const af = r.attribution.value;
+  const life = r.impact.lifetime;
+
+  test('the impact series is the financed share, not the project figure', () => {
+    expect(life.attributionFactor).toBe(af);
+    expect(life.series).toHaveLength(25);
+    expect(life.firstYear).toBeLessThan(r.generation.lifetime.firstYear);
+  });
+
+  test('year one of the curve equals the annual figure printed above it', () => {
+    // The single check that would have caught this: the first point of the
+    // chart and the headline annual figure describe the same year.
+    expect(life.series[0].avoided_tCO2e).toBe(r.impact.metrics[0].figure.value);
+  });
+
+  test('the series sums to the total the caption states', () => {
+    const summed = life.series.reduce((t, y) => t + y.avoided_tCO2e, 0);
+    expect(Math.abs(summed - life.value)).toBeLessThan(1);
+  });
+
+  test('every point is the project point times the attribution factor', () => {
+    const project = r.generation.lifetime.series;
+    life.series.forEach((y, i) => {
+      expect(Math.abs(y.avoided_tCO2e - project[i].avoided_tCO2e * af)).toBeLessThan(0.01);
+    });
+  });
+
+  test('the project figure survives, named for what it is', () => {
+    // Not deleted — a reader should see both levels and the ratio between them.
+    expect(life.projectTotal).toBe(r.generation.lifetime.value);
+    expect(life.projectTotal).toBeGreaterThan(life.value);
+    expect(Math.abs(life.projectTotal * af - life.value)).toBeLessThan(1);
+  });
+
+  test('a full attribution makes the two identical, which is the sanity case', () => {
+    const whole = run({ ...METERED, lifetimeYears: 25 }, { outstandingAmount: 40000000 });
+    expect(whole.attribution.value).toBe(1);
+    expect(whole.impact.lifetime.value).toBe(whole.impact.lifetime.projectTotal);
+  });
+});
+
 describe('Every config value carries a citation', () => {
   test('no orphan numbers anywhere in the country config', () => {
     const orphans = [];

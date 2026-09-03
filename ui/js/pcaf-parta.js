@@ -874,7 +874,10 @@ const PCAFPartAPage = (() => {
    */
   function _renderLifetimeChart(r) {
     const fig = el('paLifetimeChart');
-    const life = r.generation && r.generation.lifetime;
+    /* The ATTRIBUTED series. Reading r.generation.lifetime here plotted the
+       project's own avoided emissions under a "financed share" caption —
+       3.33x this bank's actual share at an attribution factor of 0.3. */
+    const life = r.impact && r.impact.lifetime;
     const series = life && life.series;
     if (!series || series.length < 2) { fig.hidden = true; return; }
     fig.hidden = false;
@@ -904,7 +907,7 @@ const PCAFPartAPage = (() => {
     const first = series[0], last = series[series.length - 1];
     el('paChartBody').innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" role="img" preserveAspectRatio="none"
-           aria-label="Avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO2e over ${series.length} years">
+           aria-label="Financed avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO2e over ${series.length} years">
         <defs>
           <linearGradient id="partaAreaGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#5e5ce6" stop-opacity="0.30"/>
@@ -930,7 +933,11 @@ const PCAFPartAPage = (() => {
        year — otherwise ex-post and ex-ante sit together unlabelled. */
     const metered = r.generation && r.generation.mode === 'metered';
     el('paChartSub').textContent =
-      `${fmt(life.value, 0)} tCO2e over ${life.years} years · financed share`
+      `${fmt(life.value, 0)} tCO2e financed over ${life.years} years`
+      + (Number.isFinite(life.projectTotal)
+        ? ` · ${fmt(life.projectTotal, 0)} at project level, of which this bank finances `
+          + `${_round(life.attributionFactor * 100, 1)}%`
+        : '')
       + (metered ? ' · projected forward from the metered year' : '');
     el('paChartNote').textContent =
       `Output falls ${life.degradationPct}% a year, so the final year avoids ${_round(declinePct, 1)}% `

@@ -294,6 +294,18 @@ describe('A hidden element stays hidden', () => {
     });
   });
 
+  /* The chart must read the attributed series. Reading the generation block
+     instead is what drew the project's figures under a financed caption. */
+  test('the lifetime chart reads the attributed series, not the project one', () => {
+    expect(moduleSrc).toMatch(/const life = r\.impact && r\.impact\.lifetime/);
+    expect(moduleSrc).not.toMatch(/const life = r\.generation && r\.generation\.lifetime/);
+  });
+
+  test('the chart caption names both levels rather than one labelled wrongly', () => {
+    expect(moduleSrc).toContain('tCO2e financed over');
+    expect(moduleSrc).toContain('at project level, of which this bank finances');
+  });
+
 describe('The page keeps the two containers apart', () => {
   test('the impact block is reached past a labelled break', () => {
     expect(page).toContain('id="paBreak"');
