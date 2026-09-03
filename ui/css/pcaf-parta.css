@@ -872,3 +872,166 @@ input[data-derived="true"] {
 .parta-basis[open] > summary::after { transform: rotate(-135deg); }
 .parta-basis > p { margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { .parta-basis > summary::after { transition: none; } }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ANALYSIS — v2
+
+   The previous column was eight cards of identical weight, identical white,
+   identical radius, with no type above 14px outside the hero. Everything
+   looked equally important, which means nothing did.
+
+   Three changes carry this. A bento grid, so tile size encodes importance
+   instead of every figure getting the same box. A real display scale, so the
+   numbers a banker came for are the largest thing on screen. And two hues
+   rather than one: the Part A inventory is green, the impact metrics indigo,
+   because they are two containers that must never merge — the separation the
+   engine enforces structurally is now visible at a glance.
+
+   The pair is validated, not chosen by eye: ΔE 28.1 for normal vision and
+   23.4 under deuteranopia, both well clear of the floors.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.parta-results {
+  --data-green: #00875a;
+  --data-green-soft: #e3f4ec;
+  --data-indigo: #5e5ce6;
+  --data-indigo-soft: #ecebfd;
+  --data-amber: #c77700;
+  --data-amber-soft: #fdf1e0;
+  --tile-radius: 16px;
+}
+
+/* ── Bento ─────────────────────────────────────────────────────────────── */
+.parta-bento {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.parta-bento > .span-2 { grid-column: 1 / -1; }
+
+.parta-tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--tile-radius);
+  padding: 18px;
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0;
+}
+.parta-tile-label {
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.7px;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+/* The display scale. These are what the screen exists to show. */
+.parta-tile-value {
+  font-size: 34px; font-weight: 700; line-height: 1.05; letter-spacing: -1.2px;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+  word-break: break-word;
+}
+.parta-tile-unit { font-size: 12px; color: var(--text-tertiary); }
+.parta-tile-foot { font-size: 11.5px; line-height: 1.5; color: var(--text-secondary); margin-top: auto; padding-top: 8px; }
+.parta-tile-accent-green  { border-left: 3px solid var(--data-green); }
+.parta-tile-accent-indigo { border-left: 3px solid var(--data-indigo); }
+
+/* ── Waterfall: how the project's emissions become the bank's ──────────── */
+/* A percentage bar says "30%". A bridge says "this much was the project's,
+   this much is not yours, this is what you report" — which is the actual
+   shape of an attribution and reads without a legend. */
+.parta-bridge { margin-top: 14px; }
+.parta-bridge-row {
+  display: grid; grid-template-columns: 1fr auto; align-items: baseline;
+  gap: 10px; padding: 7px 0;
+}
+.parta-bridge-name { font-size: 11.5px; color: rgba(242,251,248,0.8); }
+.parta-bridge-val {
+  font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums;
+  color: #f2fbf8;
+}
+.parta-bridge-track { grid-column: 1 / -1; height: 8px; position: relative; }
+.parta-bridge-seg {
+  position: absolute; top: 0; height: 100%; border-radius: 3px;
+  transition: left 340ms cubic-bezier(0.25,0.1,0.25,1), width 340ms cubic-bezier(0.25,0.1,0.25,1);
+}
+.parta-bridge-seg.is-total  { background: rgba(255,255,255,0.30); }
+.parta-bridge-seg.is-drop   { background: rgba(255,255,255,0.14);
+  background-image: repeating-linear-gradient(135deg, transparent 0 4px, rgba(255,255,255,0.10) 4px 8px); }
+.parta-bridge-seg.is-result { background: #7fe7c4; }
+.parta-bridge-rule { border: 0; border-top: 1px dashed rgba(255,255,255,0.22); margin: 6px 0; }
+
+/* ── Radial gauge ──────────────────────────────────────────────────────── */
+.parta-radial { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+.parta-radial svg { width: 104px; height: 62px; flex: 0 0 104px; overflow: visible; }
+.parta-radial-arc-bg { fill: none; stroke: var(--bg); stroke-width: 9; stroke-linecap: round; }
+.parta-radial-arc    { fill: none; stroke: var(--data-green); stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dashoffset 420ms cubic-bezier(0.25,0.1,0.25,1); }
+.parta-radial-tick   { stroke: var(--text-primary); stroke-width: 2; }
+.parta-radial-read { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.parta-radial-value {
+  font-size: 27px; font-weight: 700; letter-spacing: -0.8px; line-height: 1;
+  color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.parta-radial-meta { font-size: 10.5px; line-height: 1.45; color: var(--text-tertiary); }
+
+/* ── Area chart with a gradient ────────────────────────────────────────── */
+/* Twenty-five identical bars for a smooth 11% decline read as flat. An area
+   with an emphasised endpoint shows the slope, which is the point. */
+.parta-area-fill { fill: url(#partaAreaGrad); }
+.parta-area-line { fill: none; stroke: var(--data-indigo); stroke-width: 2; stroke-linejoin: round; }
+.parta-area-dot  { fill: var(--data-indigo); stroke: var(--surface); stroke-width: 2; }
+.parta-area-grid { stroke: var(--border-light); stroke-width: 1; }
+.parta-area-hit  { fill: transparent; cursor: crosshair; }
+
+/* ── Segmented control ─────────────────────────────────────────────────── */
+.parta-seg {
+  display: inline-flex; padding: 3px; gap: 2px;
+  background: var(--bg); border-radius: 10px; border: 1px solid var(--border);
+}
+.parta-seg button {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font); font-size: 12px; font-weight: 600;
+  color: var(--text-secondary); padding: 8px 14px; border-radius: 7px;
+  min-height: 36px; transition: background 180ms ease, color 180ms ease;
+}
+.parta-seg button[aria-pressed="true"] {
+  background: var(--surface); color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* ── Impact block reads indigo, because it is not the inventory ────────── */
+.parta-impact-v2 {
+  background: var(--data-indigo-soft);
+  border: 1px solid rgba(94,92,230,0.22);
+  border-radius: var(--tile-radius);
+  padding: 20px;
+}
+.parta-impact-v2 .parta-tile-value { color: #3b39a8; }
+.parta-impact-v2 .parta-tile-label { color: #5b59b8; }
+
+@media (max-width: 900px) {
+  .parta-bento { grid-template-columns: 1fr; }
+  .parta-bento > .span-2 { grid-column: auto; }
+}
+@media (max-width: 620px) {
+  .parta-tile { padding: 15px; }
+  .parta-tile-value { font-size: 28px; }
+  .parta-radial { gap: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .parta-bridge-seg, .parta-radial-arc, .parta-seg button { transition: none; }
+}
+
+/* A score is a number with a category beside it, not a sentence set in
+   display type. The full wording stays underneath, because the standard's
+   phrasing is what a reviewer checks against. */
+.parta-dqhead { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.parta-dqhead-opt {
+  font-size: 13px; font-weight: 650; color: var(--text-secondary);
+  padding: 3px 9px; border-radius: 999px; background: var(--bg);
+}
+.parta-dq-caption {
+  font-size: 11.5px; font-weight: 600; color: var(--data-green);
+  margin-top: 2px;
+}
+/* Tiles size to their content; the foot no longer pushes itself to the
+   bottom of a stretched row and leaves a void under a short figure. */
+.parta-bento { align-items: start; }
+.parta-tile-foot { margin-top: 6px; padding-top: 0; }

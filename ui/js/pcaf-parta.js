@@ -513,13 +513,20 @@ const PCAFPartAPage = (() => {
       el('paRemovalsNote').textContent = inv.removalsNote || '';
     }
 
-    el('paIntensity').textContent = inv.economicIntensity_tCO2e_per_M === null
-      ? '—'
-      : `${fmt(inv.economicIntensity_tCO2e_per_M)} tCO2e per million ${esc(r.project.currency || '')}`.trim();
+    /* Value and unit are separate elements: a unit set at display scale wraps
+       the figure onto a second line and stops it reading as a number. */
+    const ei = inv.economicIntensity_tCO2e_per_M;
+    el('paIntensity').textContent = ei === null ? '—' : fmt(ei);
+    el('paIntensityUnit').textContent = ei === null
+      ? '' : `tCO2e per million ${r.project.currency || ''}`.trim();
     el('paIntensityNote').textContent = inv.economicIntensityNote || '';
 
     /* The label the engine composed — "Data quality score: 3 (Option 2b)" —
        with the scale beside it. Never restated as a fraction. */
+    /* The number carries the display weight; the full sentence stays beneath
+       it so the wording the standard uses is never lost. */
+    el('paDqNum').textContent = String(inv.dataQuality.score);
+    el('paDqOpt').textContent = `Option ${inv.dataQuality.option}`;
     el('paDq').textContent      = inv.dataQuality.label;
     el('paDqScale').textContent = inv.dataQuality.scale;
     el('paDqRef').textContent   = inv.dataQuality.reference;
@@ -737,19 +744,40 @@ const PCAFPartAPage = (() => {
         : ''}</p>`;
   }
 
-  /** Where this plant sits between nothing and the technology's ceiling. */
+  /**
+   * Capacity factor as an arc.
+   *
+   * A value against a range is what an arc is for, and it survives being
+   * small far better than a linear track — which matters in a bento tile.
+   * The reference sits as a tick on the same sweep, so "where am I against
+   * the benchmark" is one glance rather than two numbers to subtract.
+   */
   function _renderCfGauge(pl) {
     const gauge = el('paCfGauge');
     if (!pl || !pl.ran || !pl.limits) { gauge.hidden = true; return; }
     gauge.hidden = false;
+
     const ceiling = pl.limits.ceiling;
-    const pos = Math.max(0, Math.min(1, pl.capacityFactor / ceiling)) * 100;
-    const ref = Math.max(0, Math.min(1, pl.referenceCf / ceiling)) * 100;
-    el('paGaugeFill').style.width = `${pos.toFixed(1)}%`;
-    el('paGaugeRef').style.left = `${ref.toFixed(1)}%`;
-    el('paGaugeRef').firstElementChild.textContent = `${(pl.referenceCf * 100).toFixed(1)}%`;
-    el('paGaugeRefLabel').textContent = `reference ${(pl.referenceCf * 100).toFixed(1)}%`;
-    el('paGaugeMax').textContent = `${(ceiling * 100).toFixed(0)}% ceiling`;
+    const frac = v => Math.max(0, Math.min(1, v / ceiling));
+    const R = 44, CX = 52, CY = 52;
+    const LEN = Math.PI * R;                        // a half-turn
+    const arcPath = `M ${CX - R} ${CY} A ${R} ${R} 0 0 1 ${CX + R} ${CY}`;
+    const tickAngle = Math.PI * (1 - frac(pl.referenceCf));
+    const t1 = { x: CX + Math.cos(tickAngle) * (R - 7), y: CY - Math.sin(tickAngle) * (R - 7) };
+    const t2 = { x: CX + Math.cos(tickAngle) * (R + 7), y: CY - Math.sin(tickAngle) * (R + 7) };
+
+    el('paGaugeArc').innerHTML = `
+      <svg viewBox="0 0 104 62" role="img"
+           aria-label="Capacity factor ${pl.capacityFactorPct}% against a ceiling of ${(ceiling * 100).toFixed(0)}%">
+        <path class="parta-radial-arc-bg" d="${arcPath}"/>
+        <path class="parta-radial-arc" d="${arcPath}"
+              stroke-dasharray="${LEN}" stroke-dashoffset="${(LEN * (1 - frac(pl.capacityFactor))).toFixed(2)}"/>
+        <line class="parta-radial-tick" x1="${t1.x.toFixed(1)}" y1="${t1.y.toFixed(1)}"
+              x2="${t2.x.toFixed(1)}" y2="${t2.y.toFixed(1)}"/>
+      </svg>`;
+
+    el('paGaugeMax').textContent = `${(ceiling * 100).toFixed(0)}% ceiling · tick marks the `
+      + `${(pl.referenceCf * 100).toFixed(1)}% reference`;
   }
 
   /** The five bands, with this run's marked. 1 is best; the scale says so. */
@@ -802,16 +830,30 @@ const PCAFPartAPage = (() => {
     yieldChip.hidden = !showYield;
     if (showYield) yieldChip.textContent = `${g.yieldBasis} · ${g.source === 'derived' ? 'estimated' : g.source}`;
 
-    /* Attribution drawn as the share it is. 0.3000 is a ratio; a bar is a share. */
+    /* The bridge. Attribution is a step DOWN from what the project emits to
+       what this bank reports, and drawing it that way says in one glance what
+       "0.3000" never did: most of these emissions belong to someone else. */
     const af = r.attribution.value;
     const pct = Math.max(0, Math.min(1, af)) * 100;
-    el('paAttribLender').style.width = `${pct.toFixed(1)}%`;
-    el('paAttribPct').textContent = `${_round(pct, 1)}%`;
+    const financed = inv.scope1And2.value;
+    const projectTotal = af > 0 ? financed / af : financed;
+    const others = Math.max(0, projectTotal - financed);
+
+    el('paBridgeTotal').textContent  = `${fmt(projectTotal)} tCO2e`;
+    el('paBridgeDrop').textContent   = `− ${fmt(others)} tCO2e`;
+    el('paBridgeResult').textContent = `${fmt(financed)} tCO2e`;
+    el('paAttribPct').textContent    = `${_round(pct, 1)}%`;
     el('paAttribRestPct').textContent = `${_round(100 - pct, 1)}%`;
-    el('paAttribDesc').textContent =
-      `Of the project's own scope 1 and 2 emissions, ${_round(pct, 1)}% is attributed to this `
-      + `lender — the outstanding amount over the total project equity plus debt. The other `
-      + `${_round(100 - pct, 1)}% belongs to whoever else financed it, and is not this bank's to report.`;
+
+    /* Segments share one scale, so the drop and the result read against the
+       same total rather than each filling its own track. */
+    const seg = (node, left, width) => {
+      node.style.left = `${left.toFixed(1)}%`;
+      node.style.width = `${Math.max(0.6, width).toFixed(1)}%`;
+    };
+    seg(el('paBridgeSegTotal'), 0, 100);
+    seg(el('paBridgeSegDrop'), pct, 100 - pct);
+    seg(el('paAttribLender'), 0, pct);
 
     el('paMeansInventory').textContent =
       `This is the ${fmt(inv.scope1And2.value)} tCO2e the bank puts in its own scope 3 Category 15 `
@@ -837,28 +879,47 @@ const PCAFPartAPage = (() => {
     if (!series || series.length < 2) { fig.hidden = true; return; }
     fig.hidden = false;
 
-    const W = 640, H = 190, PAD_L = 8, PAD_R = 8, PAD_T = 26, PAD_B = 26;
+    /* An area, not twenty-five bars. The decline is smooth and about 11%, so
+       identical bars read as flat — the shape IS the information here, and a
+       filled area with an emphasised endpoint carries it. Still a zero
+       baseline: truncating the axis would exaggerate the fall. */
+    const W = 640, H = 200, PAD_L = 10, PAD_R = 10, PAD_T = 30, PAD_B = 28;
     const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
     const max = Math.max(...series.map(d => d.avoided_tCO2e));
-    const gap = 2;
-    const bw = Math.max(2, (plotW - gap * (series.length - 1)) / series.length);
+    const x = i => PAD_L + (i / (series.length - 1)) * plotW;
+    const y = v => PAD_T + plotH - (v / max) * plotH;
 
-    const bars = series.map((d, i) => {
-      const h = Math.max(1, (d.avoided_tCO2e / max) * plotH);
-      const x = PAD_L + i * (bw + gap);
-      const y = PAD_T + (plotH - h);
-      return `<rect class="parta-bar" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}"
-        height="${h.toFixed(1)}" rx="2"><title>${d.year}: ${fmt(d.avoided_tCO2e)} tCO2e</title></rect>`;
+    const pts = series.map((d, i) => `${x(i).toFixed(1)},${y(d.avoided_tCO2e).toFixed(1)}`);
+    const line = `M ${pts.join(' L ')}`;
+    const area = `${line} L ${x(series.length - 1).toFixed(1)},${(PAD_T + plotH).toFixed(1)} `
+      + `L ${PAD_L},${(PAD_T + plotH).toFixed(1)} Z`;
+
+    /* One hover target per year, wide enough to hit, carrying its own value. */
+    const hits = series.map((d, i) => {
+      const w = plotW / series.length;
+      return `<rect class="parta-area-hit" x="${(x(i) - w / 2).toFixed(1)}" y="${PAD_T}"
+        width="${w.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${d.year}: ${fmt(d.avoided_tCO2e)} tCO2e</title></rect>`;
     }).join('');
 
     const first = series[0], last = series[series.length - 1];
     el('paChartBody').innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" role="img" preserveAspectRatio="none"
            aria-label="Avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO2e over ${series.length} years">
+        <defs>
+          <linearGradient id="partaAreaGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#5e5ce6" stop-opacity="0.30"/>
+            <stop offset="100%" stop-color="#5e5ce6" stop-opacity="0.02"/>
+          </linearGradient>
+        </defs>
+        <line class="parta-area-grid" x1="${PAD_L}" y1="${PAD_T}" x2="${W - PAD_R}" y2="${PAD_T}"/>
         <line class="parta-axis" x1="${PAD_L}" y1="${PAD_T + plotH}" x2="${W - PAD_R}" y2="${PAD_T + plotH}"/>
-        ${bars}
-        <text class="parta-bar-label" x="${PAD_L}" y="${PAD_T - 9}">${fmt(first.avoided_tCO2e, 0)}</text>
-        <text class="parta-bar-label parta-bar-label-end" x="${W - PAD_R}" y="${PAD_T - 9}">${fmt(last.avoided_tCO2e, 0)}</text>
+        <path class="parta-area-fill" d="${area}"/>
+        <path class="parta-area-line" d="${line}"/>
+        <circle class="parta-area-dot" cx="${x(0).toFixed(1)}" cy="${y(first.avoided_tCO2e).toFixed(1)}" r="4"/>
+        <circle class="parta-area-dot" cx="${x(series.length - 1).toFixed(1)}" cy="${y(last.avoided_tCO2e).toFixed(1)}" r="4"/>
+        ${hits}
+        <text class="parta-bar-label" x="${PAD_L}" y="${(y(first.avoided_tCO2e) - 12).toFixed(1)}">${fmt(first.avoided_tCO2e, 0)}</text>
+        <text class="parta-bar-label parta-bar-label-end" x="${W - PAD_R}" y="${(y(last.avoided_tCO2e) - 12).toFixed(1)}">${fmt(last.avoided_tCO2e, 0)}</text>
         <text class="parta-axis-label" x="${PAD_L}" y="${H - 8}">${first.year}</text>
         <text class="parta-axis-label parta-bar-label-end" x="${W - PAD_R}" y="${H - 8}">${last.year}</text>
       </svg>`;
