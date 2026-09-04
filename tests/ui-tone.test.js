@@ -144,12 +144,15 @@ describe('Narrow viewports', () => {
     expect(sheets[sheets.length - 1]).toBe('css/responsive.css');
   });
 
-  test('an auto-fit track can collapse below its own minimum', () => {
+  test('the auto-fit rule is written down where the next grid will be added', () => {
     /* `repeat(auto-fit, minmax(330px, 1fr))` is 330px wide whatever the
-       container is, so on a phone the track sets the page width. This was the
-       cause of the widest overflow measured (297px on Methodology at 430px). */
+       container is, so on a phone the track sets the page width — the cause
+       of the widest overflow measured, 297px at 430px. The pages that carried
+       those grids have since been removed, so there is no live rule left to
+       pin; what has to survive is the instruction, in the file whoever writes
+       the next grid will open. */
     expect(CSS).toMatch(/minmax\(min\(100%, 330px\), 1fr\)/);
-    expect(CSS).toMatch(/minmax\(min\(100%, 268px\), 1fr\)/);
+    expect(CSS).toMatch(/a bare pixel minimum is a\s*\n?\s*page-width bug/);
   });
 
   test('grid and flex children are allowed to shrink', () => {
@@ -164,10 +167,7 @@ describe('Narrow viewports', () => {
   });
 
   test('every wide table has a scrolling container', () => {
-    /* The page must never scroll sideways; the table may. The data-quality
-       rubric was the one table rendered without a wrapper. */
-    const mth = fs.readFileSync(path.join(ROOT, 'ui/js/methodology.js'), 'utf8');
-    expect(mth).toMatch(/<div class="mth-scroll"><table class="mth-table dq-53-2">/);
+    /* The page must never scroll sideways; the table may. */
     expect(INDEX).toMatch(/<div class="table-scroll">\s*<table class="data-table" id="pf-top-table">/);
   });
 });

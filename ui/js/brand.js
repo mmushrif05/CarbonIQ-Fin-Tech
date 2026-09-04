@@ -1,32 +1,26 @@
 /* ============================================================
    CarbonIQ — the Datum Solutions mark
 
-   One source. The mark, the name and the legal name are defined
-   once here and rendered into every `[data-brand]` placeholder
-   in the shell, so the sidebar, the login screen and the page
-   footer can never drift from one another — the same discipline
-   the deployment already applies to the UI API key, which used
-   to be a literal in two places and was wrong in one of them.
+   One source. The lockup, the name and the legal name are defined
+   once here and rendered into every `[data-brand]` placeholder in
+   the shell, so the sidebar, the login screen and the page footer
+   can never drift from one another — the same discipline the
+   deployment already applies to the UI API key, which used to be
+   a literal in two places and was wrong in one of them.
 
-   ── Replacing this with the supplied logo file ──────────────
-   Drop the file in `ui/assets/` and change LOGO.mark below to
-   return an <img>:
+   The artwork is the supplied lockup, not a redrawing of it. The
+   brand rules that come with it are followed rather than
+   reinterpreted: height is set and width follows (the lockup is
+   2.70 : 1), it is never recoloured or stretched, and the
+   knocked-out white variant is used on the dark sidebar rather
+   than the colour one.
 
-       mark: () => '<img src="assets/datum-logo.svg" alt="" '
-                 + 'class="brand-logo-img">',
+   Because the lockup already reads DATUM SOLUTIONS, no text
+   wordmark is rendered beside it — that would say the name twice.
+   The name survives as the image's alt text, so it is announced
+   once and copies correctly.
 
-   Nothing else changes. Every placement picks it up, because
-   every placement reads it from here.
-
-   The mark drawn below is geometric rather than pictorial and
-   inherits `currentColor`, so it reads on both the dark sidebar
-   and the light page without a second asset — a second colour
-   variant is a second thing to keep in step.
-
-   What it draws is the surveyor's benchmark: a reference line
-   with a levelling triangle standing on it. A datum IS a
-   reference point, so the mark says the company's name rather
-   than decorating it.
+   Assets and the brand sheet live in `ui/brand/`.
    ============================================================ */
 
 const Brand = (() => {
@@ -35,25 +29,25 @@ const Brand = (() => {
     name: 'Datum Solutions',
     legalName: 'Datum Solutions (Private) Limited',
     product: 'CarbonIQ FinTech',
-    /* Inherits currentColor. Sized by the CSS class, never by an attribute,
-       so one rule changes every placement. */
-    mark: () => `
-      <svg class="brand-logo-svg" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-        <path d="M3 19h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M6.4 6h11.2L12 16.4 6.4 6z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-        <circle cx="12" cy="9.7" r="1.9" fill="currentColor"/>
-      </svg>`,
+    base: 'brand/',
+
+    /* Two files, one lockup. Which one shows is decided in CSS by the
+       surface behind it, not here: the sidebar is dark in every theme, and
+       the page follows the viewer's. Sizing is by height only. */
+    lockup: (variant) => {
+      const light = `<img class="brand-lockup-img is-on-light" src="${LOGO.base}datum-lockup.png"`
+        + ` alt="${LOGO.name}" width="451" height="167" decoding="async">`;
+      const dark = `<img class="brand-lockup-img is-on-dark" src="${LOGO.base}datum-lockup-white.png"`
+        + ` alt="${LOGO.name}" width="451" height="167" decoding="async">`;
+      /* The sidebar is dark whatever the page theme is, so it takes the
+         knocked-out variant outright rather than switching. */
+      if (variant === 'onDark') return dark;
+      return light + dark;
+    },
   };
 
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-
-  /* A real space between the two words, not a flex gap. A gap looks identical
-     and copies as "DatumSolutions", which is what a screen reader announces
-     and what lands in a pasted citation. */
-  const wordmark = () =>
-    `<span class="brand-word"><b>${esc(LOGO.name.split(' ')[0])}</b> `
-    + `<span>${esc(LOGO.name.split(' ').slice(1).join(' '))}</span></span>`;
 
   /* Three placements, one lockup. Each says the same thing at a different
      weight: the sidebar attributes the product, the footer signs the page,
@@ -62,20 +56,24 @@ const Brand = (() => {
     sidebar: () => `
       <span class="brand-lockup brand-lockup-sidebar">
         <span class="brand-eyebrow">A product of</span>
-        ${LOGO.mark()}${wordmark()}
+        ${LOGO.lockup('onDark')}
       </span>`,
 
     footer: () => `
       <span class="brand-lockup brand-lockup-footer">
-        ${LOGO.mark()}${wordmark()}
+        ${LOGO.lockup()}
         <span class="brand-meta">${esc(LOGO.legalName)} &middot; ${esc(LOGO.product)}
           &middot; &copy; ${new Date().getFullYear()}</span>
       </span>`,
 
+    /* The sign-in screen has its own dark styling in css/login.css and is dark
+       in every theme, so it takes the knocked-out variant outright — the same
+       as the sidebar. The colour lockup on that ground is navy on near-black,
+       which is illegible and is the one thing the brand sheet forbids. */
     login: () => `
       <span class="brand-lockup brand-lockup-login">
         <span class="brand-eyebrow">A product of</span>
-        ${LOGO.mark()}${wordmark()}
+        ${LOGO.lockup('onDark')}
       </span>`,
   };
 

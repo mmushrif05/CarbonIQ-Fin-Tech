@@ -309,29 +309,45 @@ describe('Both document formats', () => {
   });
 });
 
-describe('Over HTTP', () => {
-  test('GET /methodology returns JSON without needing an assessment first', async () => {
-    const res = await auth(request(app).get('/v1/pcaf/part-c/methodology'));
-    expect(res.status).toBe(200);
-    expect(res.body.methodology.calculationChain.length).toBeGreaterThan(0);
-    expect(res.body.methodology.factorStore.rowCount).toBeGreaterThan(0);
-  });
+describe('It is not served', () => {
+  /* The methodology statement is the complete method — every equation, every
+     factor with its tier and named source, the worked example, the limits.
+     The engine that builds it stays in the repository and the annual
+     disclosure still uses it, because a disclosure is issued to a named
+     recipient. What is gone is the way to fetch it from a browser.
 
-  test('format=pdf and format=docx download', async () => {
-    for (const [f, pattern] of [['pdf', /pdf/], ['docx', /wordprocessing/]]) {
-      const res = await auth(request(app).get(`/v1/pcaf/part-c/methodology?format=${f}`))
-        .buffer().parse((r, cb) => {
-          const c = []; r.on('data', x => c.push(x)); r.on('end', () => cb(null, Buffer.concat(c)));
-        });
-      expect(res.status).toBe(200);
-      expect(res.headers['content-type']).toMatch(pattern);
-      expect(res.headers['content-disposition']).toMatch(new RegExp(`methodology\\.${f}`));
+     There is no route rather than a route that refuses: a 403 announces that
+     something exists to be taken, and absence announces nothing. So the
+     assertion is 404 on every format, and on the router file carrying no
+     handler at all. */
+
+  test('GET /methodology is absent, not forbidden', async () => {
+    for (const q of ['', '?format=json', '?format=pdf', '?format=docx']) {
+      const res = await auth(request(app).get(`/v1/pcaf/part-c/methodology${q}`));
+      expect(res.status).toBe(404);
     }
   });
 
-  test('an unsupported format is refused with a remedy', async () => {
-    const res = await auth(request(app).get('/v1/pcaf/part-c/methodology?format=xlsx'));
-    expect(res.status).toBe(400);
-    expect(res.body.remedy).toMatch(/format=/);
+  test('the router declares no methodology handler and imports no builder', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'routes/v1/pcaf-partc.js'), 'utf8');
+    expect(src).not.toMatch(/router\.(get|post)\(\s*'\/methodology'/);
+    expect(src).not.toMatch(/require\([^)]*partc-methodology/);
+  });
+
+  test('the engine survives, because the disclosure is built from it', () => {
+    /* Removing the surface must not remove the asset. The annual disclosure
+       still renders its methodology section, and it is issued rather than
+       published. */
+    const m = buildMethodology();
+    expect(m.calculationChain.length).toBeGreaterThan(0);
+    expect(m.factorStore.rowCount).toBeGreaterThan(0);
+
+    const fs = require('fs');
+    const path = require('path');
+    const disclosure = fs.readFileSync(
+      path.join(__dirname, '..', 'services/partc-disclosure.js'), 'utf8');
+    expect(disclosure).toMatch(/partc-methodology/);
   });
 });

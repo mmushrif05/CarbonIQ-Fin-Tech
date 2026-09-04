@@ -27,7 +27,7 @@ describe('One source', () => {
   test('the name, the legal name and the mark are defined once, in brand.js', () => {
     expect(BRAND_JS).toMatch(/name: 'Datum Solutions'/);
     expect(BRAND_JS).toMatch(/legalName: 'Datum Solutions \(Private\) Limited'/);
-    expect(BRAND_JS).toMatch(/mark: \(\) =>/);
+    expect(BRAND_JS).toMatch(/lockup: \(variant\) =>/);
   });
 
   test('no page fragment or page module keeps a copy of its own', () => {
@@ -51,10 +51,26 @@ describe('One source', () => {
     expect(INDEX).not.toMatch(/Datum\s+Solutions/);
   });
 
-  test('swapping in a supplied logo file is a one-line change, and it says so', () => {
-    expect(BRAND_JS).toMatch(/Replacing this with the supplied logo file/);
-    expect(BRAND_JS).toMatch(/assets\/datum-logo\.svg/);
-    expect(BRAND_CSS).toMatch(/\.brand-logo-img/);
+  test('the artwork is the supplied lockup, not a redrawing of it', () => {
+    expect(BRAND_JS).toMatch(/datum-lockup\.png/);
+    expect(BRAND_JS).toMatch(/datum-lockup-white\.png/);
+    /* No hand-drawn substitute survives beside it — one mark, one file. */
+    expect(BRAND_JS).not.toMatch(/<svg/);
+  });
+
+  test('every referenced asset is actually in the publish directory', () => {
+    /* A missing brand file is a broken image on every page, and it is the one
+       thing nobody checks after a rename. */
+    for (const file of [...BRAND_JS.matchAll(/\$\{LOGO\.base\}([a-z0-9.-]+)/g)].map(m => m[1])) {
+      expect(fs.existsSync(path.join(ROOT, 'ui/brand', file))).toBe(true);
+    }
+    for (const href of [...INDEX.matchAll(/href="(brand\/[a-z0-9.-]+)"/g)].map(m => m[1])) {
+      expect(fs.existsSync(path.join(ROOT, 'ui', href))).toBe(true);
+    }
+  });
+
+  test('the brand sheet ships beside the assets it governs', () => {
+    expect(fs.existsSync(path.join(ROOT, 'ui/brand/BRAND.md'))).toBe(true);
   });
 });
 
@@ -89,33 +105,66 @@ describe('It is on every page, structurally', () => {
 });
 
 describe('It renders correctly wherever it lands', () => {
-  test('one asset serves both themes, because the mark inherits currentColor', () => {
-    /* A second colour variant is a second thing to keep in step, and the
-       sidebar is dark while the page is light. */
-    expect(BRAND_JS).toMatch(/stroke="currentColor"/);
-    expect(BRAND_JS).toMatch(/fill="currentColor"/);
-    expect(BRAND_JS).not.toMatch(/stroke="#|fill="#/);
+  test('the knocked-out variant is used on the dark sidebar, per the brand sheet', () => {
+    /* The sheet forbids the colour lockup on a dark ground. The sidebar is
+       dark in every theme, so it takes the white file outright rather than
+       switching with the page. */
+    expect(BRAND_JS).toMatch(/if \(variant === 'onDark'\) return dark;/);
+    expect(BRAND_CSS).toMatch(/\.brand-lockup-sidebar \.is-on-dark,/);
   });
 
-  test('the mark is a block, or it sits on the text baseline and looks misaligned', () => {
-    expect(BRAND_CSS).toMatch(/\.brand-logo-svg,[\s\S]{0,40}\.brand-logo-img\s*\{[\s\S]*?display:\s*block/);
+  test('both theme states swap the footer and login lockups', () => {
+    /* The default setting stamps nothing on the root, so prefers-color-scheme
+       is the only signal there; an explicit choice must win in both
+       directions. */
+    expect(BRAND_CSS).toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*?:root:not\(\[data-theme="light"\]\)/);
+    expect(BRAND_CSS).toMatch(/:root\[data-theme="dark"\] \.brand-lockup-footer \.is-on-light/);
   });
 
-  test('the name carries a real space, so it copies and is announced correctly', () => {
-    /* A flex gap looks identical and copies as "DatumSolutions" — which is
-       what a screen reader announces and what lands in a pasted citation. */
-    expect(BRAND_JS).toContain('</b> `');
-    expect(BRAND_CSS).not.toMatch(/\.brand-word\s*\{[^}]*gap:/);
+  test('the sign-in screen takes the knocked-out variant too', () => {
+    /* It has its own dark styling and is dark in every theme. A first pass
+       drew the colour lockup there: navy on near-black. */
+    expect(BRAND_JS).toMatch(/login: \(\) => `[\s\S]{0,200}LOGO\.lockup\('onDark'\)/);
+    expect(BRAND_CSS).toMatch(/\.brand-lockup-login\s+\.is-on-dark \{ display: block; \}/);
   });
 
-  test('the mark is decorative and is hidden from assistive technology', () => {
-    /* The name is right beside it in text, so announcing the mark as well
-       would read the company twice. */
-    expect(BRAND_JS).toMatch(/aria-hidden="true"/);
-    expect(BRAND_JS).toMatch(/focusable="false"/);
+  test('height is set and width follows, so the lockup is never stretched', () => {
+    /* 2.70 : 1. Stretching it is the one thing the brand sheet forbids
+       outright, and `width: auto` beside a set height is what prevents it. */
+    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?height:\s*30px/);
+    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?width:\s*auto/);
+    expect(BRAND_CSS).not.toMatch(/\.brand-lockup-img[^}]*width:\s*\d+px/);
+  });
+
+  test('no placement falls below the sheet\'s 28px floor', () => {
+    /* The brand sheet sets 28px as the smallest the lockup may be drawn;
+       below that it says use the mark alone. A first pass shipped it at 24px
+       in the sidebar and the footer, where the two-line wordmark inside the
+       artwork stopped being legible. */
+    const heights = [...BRAND_CSS.matchAll(/height:\s*(\d+)px/g)].map(m => Number(m[1]));
+    expect(Math.min(...heights)).toBeGreaterThanOrEqual(28);
+  });
+
+  test('it is a block, or it sits on the text baseline and looks misaligned', () => {
+    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?display:\s*block/);
+  });
+
+  test('the name is announced once, as the image alt text', () => {
+    /* The lockup already reads DATUM SOLUTIONS, so a text wordmark beside it
+       would say the name twice — once drawn, once spoken. */
+    expect(BRAND_JS).toMatch(/alt="\$\{LOGO\.name\}"/);
+    expect(BRAND_JS).not.toMatch(/brand-word/);
   });
 
   test('rendering twice does not rebuild what is already there', () => {
     expect(BRAND_JS).toMatch(/brandRendered === 'true'/);
+  });
+});
+
+describe('The browser tab carries it too', () => {
+  test('the supplied favicon set is linked', () => {
+    expect(INDEX).toMatch(/rel="icon" href="brand\/favicon\.ico" sizes="any"/);
+    expect(INDEX).toMatch(/sizes="32x32" href="brand\/datum-mark-32\.png"/);
+    expect(INDEX).toMatch(/rel="apple-touch-icon" href="brand\/apple-touch-icon-180\.png"/);
   });
 });

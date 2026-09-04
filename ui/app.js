@@ -14,7 +14,6 @@ const PAGE_META = {
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution (A1-A3, lending)' },
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
-  'methodology': { title: 'Methodology & Evidence', subtitle: 'How every figure is calculated — scope, equations, factors, sources and limits' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
@@ -76,10 +75,6 @@ const DYNAMIC_PAGES = {
   'partc-book': {
     src:  'pages/partc-book.html',
     init: () => typeof PartCBook !== 'undefined' && PartCBook.init(),
-  },
-  'methodology': {
-    src:  'pages/methodology.html',
-    init: () => typeof MethodologyPage !== 'undefined' && MethodologyPage.init(),
   },
   'partc-portfolio': {
     src:     'pages/partc-portfolio.html',
