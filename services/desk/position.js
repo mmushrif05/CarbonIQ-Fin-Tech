@@ -142,12 +142,9 @@ function pipelineWaiting(projects, investments) {
       adaptation: waiting.filter(p => p.stream === 'adaptation').length,
     },
     codes: waiting.map(p => p.code),
-    note: 'Candidates in the GCF pipeline with no investment on this book. `dfccShare` is the '
-      + 'bank\'s own share of their cost, which is what a commitment would be — the GCF ask and any '
-      + 'sponsor equity are somebody else\'s money and are shown apart.',
-    streamNote: 'Adaptation candidates are counted, never ranked here on carbon. Their impact is '
-      + 'measured in people reached, and one league table on tCO2e per dollar would put them last '
-      + 'every time — a fact about the sort key, not about the projects.',
+    note: 'GCF candidates with no corresponding position on this book. Bank share, GCF ask and '
+      + 'total project cost are separate figures and are not additive.',
+    streamNote: 'Adaptation candidates are assessed on beneficiaries reached, not carbon intensity.',
   };
 }
 
@@ -188,8 +185,7 @@ function position(bk, projects, { attributionBasis = 'outstanding' } = {}) {
       /* Nested, not stacked. Disbursed money is inside the committed figure and
          committed money is inside the allocation; adding the three would count
          the same dollar three times. */
-      nestingNote: 'Disbursed sits inside committed, and committed inside allocated. The three are '
-        + 'nested and are never added together.',
+      nestingNote: 'Paid out is a subset of committed; committed is a subset of the allocation.',
     },
 
     emissions: {
@@ -225,33 +221,44 @@ function position(bk, projects, { attributionBasis = 'outstanding' } = {}) {
       attributionNote: ledger.attributionNote,
       inventoryNote: ledger.inventoryNote,
       pendingNote: ledger.pendingNote,
-      claimNote: 'Three claims, never one figure. At full commitment is what this book will carry '
-        + 'when every facility is fully drawn. Carried today is what it carries against the '
-        + 'payments actually made. Still to arrive is the difference, and it is the same emissions '
-        + 'rather than a second inventory.',
-      roundingNote: 'Headline totals come from the emissions ledger rather than from adding the '
-        + 'rows up, so there is one source and not two. Both are carried to two decimals and the '
-        + 'screen displays whole tonnes, so a column added by eye reconciles.',
+      claimNote: 'At full commitment: the position with every facility fully drawn. '
+        + 'Carried today: attributed on the outstanding amount (PCAF Part A). '
+        + 'Still to arrive: the balance, attributed as the undrawn commitment is drawn.',
+      roundingNote: 'Figures are carried to two decimals and displayed to the nearest tonne.',
     },
 
     /* Two axes, counted separately, because they answer different questions. */
     delivery: {
       ...countBy(bk.investments || [], deliveryOf, DELIVERY_STATES),
       states: DELIVERY_STATES,
-      note: 'The asset\'s own progress. `completed` means built and handed over, whatever the '
-        + 'facility does afterwards — it is not the same statement as the bank having exited.',
+      note: 'Construction status of the financed asset. Independent of the bank\'s position on '
+        + 'the facility.',
     },
     lifecycle: {
       ...countBy(bk.investments || [], i => i.status, book.STATUSES),
       held: held.length,
       total: (bk.investments || []).length,
-      note: 'The bank\'s position. Committed, deployed and exited are the holdings that carry '
-        + 'attributed emissions; pipeline and declined are intentions and carry none.',
+      note: 'Committed, deployed and exited positions carry attributed emissions. '
+        + 'Pipeline and declined positions do not.',
     },
 
     rows,
   };
 }
+
+/**
+ * Which book is actually being shown.
+ *
+ * Its own function because three things need the answer and they must not
+ * disagree: the position, the scenario, and the year-end readiness. When the
+ * scenario resolved its own book it could model a selection against a
+ * different book from the one printed above it — the same class of defect as a
+ * forecast drawn from unattributed figures under an attributed total.
+ *
+ * Precedence is the rule the rest of the application follows: an organisation's
+ * own records win entirely, and where it has recorded nothing the repository
+ * baseline is shown instead, marked as what it is. The two are never merged.
+ */
 
 /**
  * Read both books and answer.
@@ -262,38 +269,37 @@ function position(bk, projects, { attributionBasis = 'outstanding' } = {}) {
  * or the shipped pipeline (GCF) is shown instead, marked as what it is. The two
  * are never merged, and the payload says which is showing on each side.
  */
+async function effectiveBook(orgId, { portfolioId } = {}) {
+  const recorded = await book.readBook(orgId, { portfolioId });
+  const hasOwn = (recorded.portfolios || []).length > 0 || (recorded.investments || []).length > 0;
+  if (hasOwn) return { book: recorded, source: 'recorded', sample: false, sampleNote: null };
+
+  const base = baseline.baselineBook();
+  if (!base) return { book: recorded, source: 'none', sample: false, sampleNote: null };
+
+  const bk = portfolioId
+    ? {
+      portfolios: base.portfolios.filter(p => p.id === portfolioId),
+      investments: base.investments.filter(i => i.portfolioId === portfolioId),
+      payments: base.payments.filter(p => p.portfolioId === portfolioId),
+    }
+    : base;
+  return {
+    book: bk,
+    source: 'baseline',
+    sample: true,
+    sampleNote: 'Illustrative dataset — not client records.',
+  };
+}
+
 async function read(orgId, { attributionBasis = 'outstanding', portfolioId } = {}) {
-  const [recorded, pipeline] = await Promise.all([
-    book.readBook(orgId, { portfolioId }),
+  const [effective, pipeline] = await Promise.all([
+    effectiveBook(orgId, { portfolioId }),
     gcfStore.list(orgId),
   ]);
 
-  const hasOwn = (recorded.portfolios || []).length > 0 || (recorded.investments || []).length > 0;
-  let bk = recorded;
-  let source = 'recorded';
-  let sample = false;
-  let sampleNote = null;
-
-  if (!hasOwn) {
-    const base = baseline.baselineBook();
-    if (base) {
-      bk = portfolioId
-        ? {
-          portfolios: base.portfolios.filter(p => p.id === portfolioId),
-          investments: base.investments.filter(i => i.portfolioId === portfolioId),
-          payments: base.payments.filter(p => p.portfolioId === portfolioId),
-        }
-        : base;
-      source = 'baseline';
-      sample = true;
-      sampleNote = 'Baseline figures, held in the repository and computed by the same engine. '
-        + 'Nothing has been recorded in this book yet, so the baseline is shown rather than an '
-        + 'empty screen. Record a portfolio and yours replaces it entirely — the two are never '
-        + 'mixed.';
-    } else {
-      source = 'none';
-    }
-  }
+  const bk = effective.book;
+  const { source, sample, sampleNote } = effective;
 
   const result = position(bk, pipeline.projects, { attributionBasis });
   result.source = source;
@@ -309,4 +315,4 @@ async function read(orgId, { attributionBasis = 'outstanding', portfolioId } = {
   return result;
 }
 
-module.exports = { read, position, rowsFor, pipelineWaiting, DELIVERY_STATES };
+module.exports = { read, effectiveBook, position, rowsFor, pipelineWaiting, DELIVERY_STATES };

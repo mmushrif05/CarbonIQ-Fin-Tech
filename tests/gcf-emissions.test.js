@@ -336,7 +336,7 @@ describe('Over HTTP', () => {
     expect(res.body.emissions.embodiedCarbon.a1a5_tCO2e).toBe(44900);
     expect(res.body.emissions.financedEmissions.available).toBe(false);
     expect(res.body.sample).toBe(true);
-    expect(res.body.sampleNote).toMatch(/not DFCC's book/);
+    expect(res.body.sampleNote).toMatch(/not DFCC's pipeline/);
   });
 
   test('one project comes back with its arithmetic checked', async () => {

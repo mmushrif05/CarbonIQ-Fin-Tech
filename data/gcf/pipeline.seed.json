@@ -2,7 +2,7 @@
   "_meta": {
     "title": "DFCC GCF candidate pipeline — illustrative",
     "sample": true,
-    "sampleNote": "Illustrative figures. Internally consistent and realistic in shape, but not DFCC's book. Every figure carries an evidence tier, and the ones marked benchmark or modelled must be replaced with sourced values before anything here reaches a GCF submission.",
+    "sampleNote": "Illustrative dataset \u2014 not DFCC's pipeline. Figures marked benchmark or modelled require sourced values before submission.",
     "entity": "DFCC Bank PLC",
     "accreditation": {
       "decision": "B.36/10",

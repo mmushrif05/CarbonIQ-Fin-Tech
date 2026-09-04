@@ -111,11 +111,11 @@ describe('Attribution follows the money out of the door', () => {
 
   test('both bases name themselves, and the commitment one names its limit', () => {
     expect(out.attributionNote).toMatch(/per PCAF Part A/);
-    expect(com.attributionNote).toMatch(/cannot be disclosed as conformant without a note/);
+    expect(com.attributionNote).toMatch(/requires a note if disclosed/);
   });
 
   test('the pending line says it is not a second inventory', () => {
-    expect(out.pendingNote).toMatch(/not a second inventory/);
+    expect(out.pendingNote).toMatch(/Not included in/);
   });
 
   test('an unrecognised basis falls back to the standard, not to nothing', () => {

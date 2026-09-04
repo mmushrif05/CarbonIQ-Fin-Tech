@@ -40,9 +40,8 @@ const round = (n, dp = 2) => {
 const sum = (rows, f) => rows.reduce((t, r) => t + (Number(f(r)) || 0), 0);
 
 const SCENARIO_NOTE =
-  'A basket is a scenario. Nothing selected here has been committed, nothing '
-  + 'below is in the capital position or the emissions ledger, and every figure '
-  + 'is what would be added if these were written.';
+  'Scenario only. Nothing selected has been committed and no figure below is in '
+  + 'the capital position or the emissions ledger.';
 
 /**
  * @param {object} book              the capital book
@@ -146,10 +145,10 @@ function basket(book, selectedIds = [], {
       shortfall: remaining < 0 ? round(-remaining) : 0,
       affordable: remaining >= 0,
       note: remaining >= 0
-        ? 'Available is what is allocated and not yet committed. Committing this basket would leave '
-          + 'the remainder for everything else still waiting.'
-        : 'This basket asks for more than is uncommitted. The shortfall is the additional allocation '
-          + 'it would need — it is not a reason the projects are unaffordable individually.',
+        ? 'Available is allocated budget not yet committed. The remainder stays available for the '
+          + 'rest of the pipeline.'
+        : 'This selection exceeds the uncommitted allocation. The shortfall is the additional '
+          + 'allocation required.',
     },
 
     /* Three figures, never one. See the note at the head of this file. */
@@ -158,8 +157,8 @@ function basket(book, selectedIds = [], {
       incurred_tCO2e: round(sum(rows, r => r.incurred_tCO2e)),
       reduction_tCO2e: round(sum(rows, r => r.reduction_tCO2e)),
       avoided_tCO2e: round(sum(rows, r => r.avoided_tCO2e)),
-      basis: 'What these projects would add to the book, at full commitment. Emissions, reduction and '
-        + 'avoidance are reported separately and are never netted against one another.',
+      basis: 'Addition to the book at full commitment. Emissions, reduction and avoidance are '
+        + 'reported separately and are not netted against one another.',
     },
 
     finance: {
@@ -180,10 +179,9 @@ function basket(book, selectedIds = [], {
       asItStands,
       withBasket,
       basisNote:
-        'Both curves are drawn at full commitment. A facility that has just been written has drawn '
-        + 'nothing, so on the outstanding basis a new project moves the line by zero — which would read '
-        + 'as "this changes nothing" rather than "this has not been drawn yet". Holding the basis constant '
-        + 'across both runs means the movement between them is the basket and nothing else.'
+        'Both curves are drawn at full commitment, so the movement between them is attributable to '
+        + 'the selection alone. A newly written facility has no outstanding balance, so on the '
+        + 'outstanding basis it would not move the line.'
         + (attributionBasis === 'commitment' ? '' : ' The figures above the chart remain on the '
           + `${attributionBasis} basis.`),
     },

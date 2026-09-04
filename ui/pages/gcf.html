@@ -104,6 +104,13 @@
     font-size: 12.5px; background: var(--gcf-warn-soft); color: var(--gcf-warn);
     border-radius: 6px; padding: 10px 12px; margin: 10px 0;
   }
+  /* A data-provenance label, not a warning: illustrative figures are the
+     screen working normally, not a fault to be flagged in amber. */
+  .gcf-chip-note {
+    display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 600;
+    letter-spacing: .02em; padding: 5px 11px; border-radius: 999px; margin: 0 0 12px;
+    background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line);
+  }
 
   .gcf-scroll { overflow-x: auto; }
   .gcf-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
@@ -162,7 +169,7 @@
     </div>
   </div>
 
-  <div id="gcfSampleBanner" class="gcf-warn" hidden></div>
+  <div id="gcfSampleBanner" class="gcf-chip-note" hidden></div>
 
   <div class="gcf-tabs" role="tablist" id="gcfTabs">
     <button class="gcf-tab" role="tab" data-panel="pipeline"    aria-selected="true">Pipeline</button>

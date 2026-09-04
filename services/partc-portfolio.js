@@ -390,7 +390,7 @@ async function improvementPlan(orgId, reportingYear) {
     achievableNote: improvedWeighted !== null
       ? `If every assessment below reached Option 2a (primary emission factors), the emissions-weighted score would move from ${roll.dataQuality.weighted} to ${improvedWeighted}.`
       : null,
-    ranking: 'Ordered by construction emissions × data-quality points available, so effort goes where it moves the disclosed figure.',
+    ranking: 'Ordered by construction emissions × available data-quality improvement.',
     items,
     unassessed: roll.coverage.unassessed,
     unassessedNote: roll.coverage.unassessed.length

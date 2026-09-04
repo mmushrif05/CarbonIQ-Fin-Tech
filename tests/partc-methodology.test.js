@@ -61,7 +61,7 @@ describe('What the methodology must state', () => {
 
   test('the policy gate is described as a rule, not an omission', () => {
     const m = buildMethodology();
-    expect(m.scope.policyGate.consequence).toMatch(/by scope rule, not by omission/);
+    expect(m.scope.policyGate.consequence).toMatch(/zero by scope rule \(PCAF Part C v2 §5\.3\), not by omission/);
     expect(m.scope.structuralEnforcement).toMatch(/does not import/);
   });
 

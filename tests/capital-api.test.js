@@ -39,13 +39,13 @@ describe('An empty book falls back to the baseline in the repository', () => {
     expect(d.capital.allocated).toBe(750_000_000);
     expect(d.capital.paid).toBe(322_000_000);
     expect(d.source).toBe('baseline');
-    expect(d.sampleNote).toMatch(/Baseline figures, held in the repository/);
-    expect(d.sampleNote).toMatch(/never mixed/);
+    expect(d.sampleNote).toMatch(/Illustrative dataset/);
+    expect(d.sampleNote).not.toMatch(/never mixed/);
   });
 
   test('it still carries the sentence about an unrecorded book', async () => {
     const d = (await auth(api().get('/v1/capital/dashboard')).expect(200)).body.dashboard;
-    expect(d.emptyNote).toMatch(/not a position of zero/);
+    expect(d.emptyNote).toMatch(/unentered book, not a nil position/);
   });
 
   test('showing it stores nothing — the book is still empty afterwards', async () => {

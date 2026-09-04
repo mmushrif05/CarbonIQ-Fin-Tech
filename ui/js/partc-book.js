@@ -501,7 +501,7 @@ const PartCBook = (() => {
     $('bookPolYearsRow').style.display = useStage ? '' : 'none';
     $('bookPolicyGate').innerHTML = useStage
       ? `<span class="partc-gate-on">Use stage applies.</span> Assessments will compute B1, B4 and B7 over the cover period and report them as a separate line.`
-      : `<span class="partc-gate-off">Construction cover only.</span> A ${value} policy has no use stage, so B1, B4 and B7 are zero by scope rule — not by omission.`;
+      : `<span class="partc-gate-off">Construction cover only.</span> A ${value} policy has no use stage, so B1, B4 and B7 are zero by scope rule (PCAF Part C v2 §5.3), not by omission.`;
   }
 
   async function seedDemo() {

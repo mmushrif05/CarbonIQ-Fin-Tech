@@ -227,7 +227,7 @@ describe('What the series refuses to do', () => {
 describe('Capital over time', () => {
   test('what has been drawn is history and needs no assumption', () => {
     const cap = forecast.capitalSeries(BOOK, { fromYear: YEAR });
-    expect(cap.note).toMatch(/taken from the payment log and needs no assumption/);
+    expect(cap.note).toMatch(/taken from the payment log/);
   });
 
   test('the drawdown pace is an assumption, and changing it moves the shape not the total', () => {

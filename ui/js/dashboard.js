@@ -434,8 +434,7 @@ const Dashboard = (() => {
       _capitalMessage(
         'The book could not be read'
           + (state && state.detail ? ` (${esc(state.detail)})` : '')
-          + '. Nothing below is your position — it is blank because the request failed, '
-          + 'not because the book is empty.');
+          + '. The figures below are unavailable because the request failed.');
       if (store) store.hidden = true;
       return;
     }
@@ -444,15 +443,13 @@ const Dashboard = (() => {
 
     if (state.mode === 'empty') {
       _capitalMessage(d.emptyNote
-        + ' Record a portfolio and its allocation, or load a worked book, from Record.');
+        + ' Record a portfolio and its allocation from Record, or load the illustrative dataset.');
       _renderStorage(d.storage);
       return;
     }
 
-    /* A worked example stands in for a blank screen until something real is
-       recorded. It says so here as well as in the payload, because a reader
-       who scrolls past a banner should still meet the word "sample" beside
-       the figures. */
+    /* The provenance label for an illustrative dataset. Stated in the payload
+       as well as here, so it travels with the figures. */
     if (d.sample) _capitalMessage(d.sampleNote, 'sample');
     else _clearMessage();
     _renderAnchor(d.anchor, d.capital.currency);
@@ -866,12 +863,19 @@ const Dashboard = (() => {
        of it; a shared top is reported as the range it actually is. */
     const top = rows.reduce((m, r) => Math.max(m, r.forward_tCO2e), 0);
     const atTop = top > 0 ? rows.filter(r => r.forward_tCO2e >= top * 0.98) : [];
-    const shape = atTop.length === 1
-      ? ['Peak year', String(atTop[0].year), 'when the book emits most']
-      : atTop.length === rows.length
-        ? ['Shape', 'level', 'no year stands out — the phasing spreads it evenly']
-        : ['Highest years', `${atTop[0].year}–${atTop[atTop.length - 1].year}`,
-          `${atTop.length} years sit level at the top before the book winds down`];
+    /* A book with nothing held emits nothing over its term, so there is no
+       shape to describe. Said, rather than left to fall through a branch that
+       then reads atTop[0] on an empty array — which is how this crashed the
+       whole page for a book carrying a portfolio and only pipeline projects,
+       the exact state a freshly recorded book is in. */
+    const shape = atTop.length === 0
+      ? ['Shape', 'none yet', 'nothing is held, so the book emits nothing over its term']
+      : atTop.length === 1
+        ? ['Peak year', String(atTop[0].year), 'when the book emits most']
+        : atTop.length === rows.length
+          ? ['Shape', 'level', 'no year stands out — the phasing spreads it evenly']
+          : ['Highest years', `${atTop[0].year}–${atTop[atTop.length - 1].year}`,
+            `${atTop.length} years sit level at the top before the book winds down`];
 
     document.getElementById('fc-facts').innerHTML = [
       shape,

@@ -201,18 +201,16 @@ function structureFor(project, { accreditation = {} } = {}) {
        is the one that decides whether this project happens. */
     barriersLeftStanding: uncovered,
     barriersLeftStandingNote: uncovered.length
-      ? 'The recommended structure does not address these. They are what will stop the deal, and '
-        + 'they need either a second instrument alongside or a change in the project design.'
+      ? 'Not addressed by the recommended structure. Resolution requires a second instrument or a '
+        + 'change to the project design.'
       : 'The recommended structure addresses every recorded barrier.',
 
     structuralGap: undeliverableButFitting.length ? {
       instruments: undeliverableButFitting.map(r => ({
         instrumentId: r.instrumentId, name: r.name, coverage: r.coverage, reason: r.deliverabilityNote,
       })),
-      note: 'These structures fit this project but are not deliverable by DFCC on its accreditation '
-        + 'as read. That is a finding about the accreditation, not about the project: it is either '
-        + 'verified, or it is a case for widening the modality, or the project needs a different '
-        + 'accredited entity.',
+      note: 'These structures fit the project but fall outside DFCC\'s accreditation as recorded. '
+        + 'Verify the modality, seek an extension, or route through a partner accredited entity.',
     } : null,
 
     /* Whether the record's own choice survives the analysis. */
@@ -286,17 +284,16 @@ function structurePipeline(projects = [], { accreditation = {} } = {}) {
         label: _barrierById.get(id)?.label || id,
         projects: projects.filter(p => (p.barriers || []).includes(id)).map(p => p.code),
       })),
-      note: 'No structure DFCC can currently deliver addresses these barriers. Where they recur '
-        + 'across the pipeline this is a mandate question — whether to seek the grant modality, or '
-        + 'to partner with an accredited entity that holds it — rather than a deal question.',
+      note: 'No structure within DFCC\'s current accreditation addresses these barriers. Where '
+        + 'they recur across the pipeline, resolution requires either an extended modality or a '
+        + 'partner accredited entity.',
     } : null,
 
     minimumConcessionality: {
       notNeedingSupport: notNeedingSupport.map(r => r.code),
       unassessed: unassessed.map(r => r.code),
-      note: 'A project recorded as viable without GCF should not receive concessional finance. '
-        + 'An unassessed project cannot be put forward: the ToR requires viability shown with and '
-        + 'without support.',
+      note: 'GCF applies minimum concessionality: a project viable on commercial terms is not '
+        + 'eligible for concessional finance. Viability must be assessed with and without support.',
     },
   };
 }

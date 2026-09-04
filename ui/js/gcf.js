@@ -109,7 +109,7 @@ const GCFPage = (() => {
 
       if (pipeline.sample) {
         const b = $('gcfSampleBanner');
-        if (b) { b.hidden = false; b.textContent = `SAMPLE DATA — ${pipeline.sampleNote}`; }
+        if (b) { b.hidden = false; b.textContent = pipeline.sampleNote; }
       }
 
       const totalCost = pipeline.projects.reduce((a, p) => a + (p.financing?.totalCost || 0), 0);

@@ -1,0 +1,100 @@
+/* ============================================================
+   The Datum Solutions lockup
+
+   Three placements, one set of rules. The mark inherits
+   currentColor so a single asset reads on the dark sidebar and
+   the light page alike — a second colour variant would be a
+   second thing to keep in step.
+   ============================================================ */
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex-wrap: wrap;
+  line-height: 1.2;
+}
+
+/* display:block matters on an svg in a flex row: as an inline element it sits
+   on the text baseline and carries the line box's descender gap, which reads
+   as the mark being misaligned with the name beside it. */
+.brand-logo-svg,
+.brand-logo-img {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+/* Not a flex row: the space between the two words is a real space in the
+   markup so the name copies and is announced correctly. */
+.brand-word {
+  display: inline-block;
+  min-width: 0;
+  font-size: 13px;
+  letter-spacing: .01em;
+  white-space: nowrap;
+}
+.brand-word > b    { font-weight: 700; }
+.brand-word > span { font-weight: 400; opacity: .78; }
+
+.brand-eyebrow {
+  flex: 1 1 100%;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  opacity: .55;
+}
+
+.brand-meta {
+  flex: 1 1 100%;
+  font-size: 10.5px;
+  opacity: .6;
+  overflow-wrap: anywhere;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────── */
+.sidebar-brand-datum {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border, rgba(255, 255, 255, .09));
+}
+.sidebar-brand-datum .brand-lockup { color: inherit; opacity: .85; }
+.sidebar-brand-datum .brand-word { font-size: 12.5px; }
+.sidebar-brand-datum .brand-logo-svg { width: 18px; height: 18px; }
+
+/* ── Page footer — present on every page, because it sits in the shell
+      rather than inside any one page fragment. ────────────────────────── */
+.page-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin: 28px 0 8px;
+  padding: 16px 4px 0;
+  border-top: 1px solid var(--border, #e2e8f0);
+  color: var(--text-muted, #64748b);
+  min-width: 0;
+}
+.page-footer .brand-word { font-size: 12.5px; }
+.page-footer-note {
+  font-size: 10.5px;
+  opacity: .75;
+  max-width: 62ch;
+  min-width: 0;
+}
+
+/* ── Login ─────────────────────────────────────────────────── */
+.login-brand-datum {
+  display: flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+.login-brand-datum .brand-lockup { justify-content: center; text-align: center; }
+.login-brand-datum .brand-eyebrow { text-align: center; }
+
+@media (max-width: 560px) {
+  .page-footer { flex-direction: column; align-items: flex-start; }
+}
