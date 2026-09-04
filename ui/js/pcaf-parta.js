@@ -171,6 +171,54 @@ const PCAFPartAPage = (() => {
     ? n.toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp })
     : '—');
 
+
+  /* ── Money fields echo what was actually typed ──────────────
+     An eight-digit amount in a bare number input reads as an
+     unbroken run of characters: 12000000 beside 40000000 is
+     genuinely hard to tell from 120000000, and the person who
+     built this screen misread it. Typed wrong it is worse than
+     misread — an extra zero on the denominator gives a factor of
+     0.03 instead of 0.3, which the engine accepts (it is below 1)
+     and which under-reports financed emissions tenfold with
+     nothing on screen to say so. The opposite slip is caught,
+     because a factor above 1 is refused.
+
+     So each money field prints back what it holds, grouped, with
+     the magnitude named from a million up — an order-of-magnitude
+     slip is the one this has to make obvious.
+
+     Rendered from `writeField` as well as from the keystroke, so
+     a value put there by a preset carries the same echo. One
+     place writes the field, one place refreshes the echo, and the
+     two cannot disagree. */
+  const MONEY_FIELDS = ['pa-outstandingAmount', 'pa-totalProjectEquityPlusDebt'];
+
+  function _magnitude(n) {
+    const a = Math.abs(n);
+    if (a >= 1e9) return `${(n / 1e9).toLocaleString('en-GB', { maximumFractionDigits: 2 })}B`;
+    if (a >= 1e6) return `${(n / 1e6).toLocaleString('en-GB', { maximumFractionDigits: 1 })}M`;
+    return null;
+  }
+
+  function _renderMoneyEcho(id) {
+    const node = el(id);
+    const echo = el(`${id}-echo`);
+    if (!node || !echo) return;
+
+    const raw = String(node.value).trim();
+    const n = Number(raw);
+    /* An empty field says nothing. "USD 0" beside a blank input is an
+       assertion nobody made. */
+    if (raw === '' || !Number.isFinite(n)) { echo.textContent = ''; return; }
+
+    const ccy = (el('pa-currency') && el('pa-currency').value.trim()) || '';
+    const grouped = n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+    const mag = _magnitude(n);
+    echo.textContent = [ccy, grouped].filter(Boolean).join(' ') + (mag ? ` · ${mag}` : '');
+  }
+
+  const _renderMoneyEchoes = () => MONEY_FIELDS.forEach(_renderMoneyEcho);
+
   function readField(id, kind) {
     const node = el(id);
     if (!node) return undefined;
@@ -189,6 +237,7 @@ const PCAFPartAPage = (() => {
     if (!node) return;
     if (node.type === 'checkbox') node.checked = Boolean(value);
     else node.value = value === undefined || value === null ? '' : String(value);
+    if (MONEY_FIELDS.includes(id)) _renderMoneyEcho(id);
   }
 
   // ── reference data drives every selector ────────────────────
@@ -1111,6 +1160,14 @@ const PCAFPartAPage = (() => {
 
   // ── wiring ──────────────────────────────────────────────────
   function _wire() {
+    for (const id of MONEY_FIELDS) {
+      const node = el(id);
+      if (node) node.addEventListener('input', () => _renderMoneyEcho(id));
+    }
+    /* The currency prefixes both echoes, so changing it re-renders both. */
+    const ccy = el('pa-currency');
+    if (ccy) ccy.addEventListener('input', _renderMoneyEchoes);
+
     el('paForm').addEventListener('input', schedule);
     el('paForm').addEventListener('change', schedule);
     el('paForm').addEventListener('submit', e => e.preventDefault());
@@ -1166,6 +1223,7 @@ const PCAFPartAPage = (() => {
     _populateSelectors();
     _wire();
     applyPreset('cement');
+    _renderMoneyEchoes();
   }
 
   return { init, recompute, applyPreset, collect, PRESETS };

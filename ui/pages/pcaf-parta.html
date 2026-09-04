@@ -75,10 +75,17 @@
         <p class="parta-legend-note" id="pa-denominatorNote"></p>
         <div class="parta-grid">
           <label class="parta-field">Outstanding amount
-            <input type="number" id="pa-outstandingAmount" step="any" min="0">
+            <input type="number" id="pa-outstandingAmount" step="any" min="0"
+                   aria-describedby="pa-outstandingAmount-echo">
+            <!-- Eight unbroken digits are hard to read and easy to mistype. The
+                 echo groups them and names the magnitude, so an extra zero is
+                 visible while it is being typed. -->
+            <span class="parta-echo" id="pa-outstandingAmount-echo"></span>
           </label>
           <label class="parta-field" id="pa-denominatorField">Total project equity plus debt
-            <input type="number" id="pa-totalProjectEquityPlusDebt" step="any" min="0">
+            <input type="number" id="pa-totalProjectEquityPlusDebt" step="any" min="0"
+                   aria-describedby="pa-totalProjectEquityPlusDebt-echo">
+            <span class="parta-echo" id="pa-totalProjectEquityPlusDebt-echo"></span>
           </label>
           <label class="parta-field">Currency
             <input type="text" id="pa-currency" maxlength="10">
