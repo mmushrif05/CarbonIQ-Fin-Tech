@@ -1166,7 +1166,6 @@ const PCAFPartCPage = (() => {
 
     $('partcBadgeA').textContent = d.registers.badges.assumptions;
     $('partcBadgeB').textContent = d.registers.badges.dataGaps;
-    $('partcBadgeC').textContent = d.registers.badges.auditTrail;
     showRegister('assumptions');
 
     renderDq(d);
@@ -1210,13 +1209,9 @@ const PCAFPartCPage = (() => {
          <table class="partc-table"><tbody>${r.dataGaps.researchPriority.map(p =>
            `<tr><td>${p.rank}</td><td>${p.factorKey}</td><td class="num">${p.sharePct.toFixed(1)}%</td><td>${p.gap}</td></tr>`).join('')}
          </tbody></table>`;
-    } else {
-      body.innerHTML = `<p class="partc-hint">${r.auditTrail.total} traced calculation steps.</p>` +
-        `<table class="partc-table"><thead><tr><th>#</th><th>Module</th><th>Quantity</th><th>Equation</th><th>Value</th></tr></thead><tbody>${
-          r.auditTrail.entries.map(e =>
-            `<tr><td>${e.step}</td><td>${e.module}</td><td>${e.label}</td><td class="mono">${e.equation}</td><td class="num">${fmt(e.value)} ${e.unit}</td></tr>`).join('')
-        }</tbody></table>`;
     }
+    // There is no third branch. The calculation trace is not sent to the
+    // browser, so there is nothing here to render it from.
   }
 
   // ── Assessment history, with resume for parked runs ───────

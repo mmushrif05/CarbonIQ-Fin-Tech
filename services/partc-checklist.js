@@ -127,10 +127,20 @@ const ITEMS = [
     test: f => !!f.attributionEquation
   },
   {
+    /*
+     * A "shall", and the reason the module equations are still printed while
+     * the 58-step audit trail is not. The two are different artefacts: this is
+     * ten formulas, several of them RICS's and PCAF's own as published; the
+     * trail is every step with its inputs and the factor it consulted.
+     */
     id: 'MET-2', group: 'Methodology', clause: 'Part C ch.6, METHODOLOGY', duty: SHALL,
     item: 'Every module equation is given with its inputs, factors and named sources.',
     section: 'methodology',
-    test: f => Array.isArray(f.equations) && f.equations.length > 0
+    test: f => Array.isArray(f.equations) && f.equations.length > 0,
+    justify: () =>
+      'The module equations are not reproduced in this document. They are retained in '
+      + 'full, released to an assurance provider on request, and given in the annual '
+      + 'disclosure issued for the reporting year.'
   },
   {
     id: 'MET-3', group: 'Methodology', clause: 'Part C v2 §5.3 (p.51)', duty: SHALL,
@@ -253,10 +263,24 @@ const ITEMS = [
     test: f => Array.isArray(f.factorRegister) && f.factorRegister.length > 0
   },
   {
+    /*
+     * The trace is retained, not published. It is every equation the engine
+     * executed with its inputs and factors, which is the method rather than
+     * the disclosure, so it is held for an assurance provider and is not an
+     * annex of this document. The item therefore answers No with that reason
+     * rather than Yes against a section the report does not contain — a
+     * checklist that answers Yes to something absent is the failure this
+     * annex exists to prevent. It cites no section because there is none.
+     */
     id: 'ANX-2', group: 'Annex', clause: 'Audit and assurance', duty: SHOULD,
     item: 'A calculation trace is given for every reported figure.',
-    section: 'annexTrace',
-    test: f => f.auditTrailEntries > 0
+    section: null,
+    test: () => false,
+    justify: f => f.auditTrailEntries > 0
+      ? `A trace of ${f.auditTrailEntries} steps is retained for every figure in this `
+        + 'report and is released to an assurance provider on request. It is not '
+        + 'reproduced here.'
+      : 'No calculation trace was retained for this report.'
   },
   {
     id: 'ANX-3', group: 'Annex', clause: 'Part C ch.6', duty: SHOULD,

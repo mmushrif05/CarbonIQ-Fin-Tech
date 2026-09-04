@@ -109,7 +109,10 @@ describe('The completed disclosure checklist', () => {
     const ids = new Set(model.sections.map(s => s.id).concat(model.annexes.map(a => a.id)));
     for (const i of c.items) {
       expect(i.clause).toBeTruthy();
-      expect(ids.has(i.section)).toBe(true);
+      // An item may cite no section — but only when it is not claiming Yes.
+      // A Yes pointing nowhere is the shape this test exists to catch.
+      if (i.section === null) expect(i.answer).not.toBe('Yes');
+      else expect(ids.has(i.section)).toBe(true);
     }
   });
 

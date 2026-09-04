@@ -86,12 +86,44 @@ describe('Part C API — assessment', () => {
     expect(res.body.summary.useStage_kgCO2e).toBeGreaterThan(0);
   });
 
-  test('the response carries all three registers', async () => {
+  test('the response carries the two registers a client reads', async () => {
     const res = await auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody());
     if (res.status !== 200) return;
     expect(res.body.registers.badges.assumptions).toBeGreaterThan(0);
     expect(res.body.registers.dataGaps.researchPriority.length).toBeGreaterThan(0);
-    expect(res.body.registers.auditTrail.entries.length).toBeGreaterThan(0);
+  });
+
+  /*
+   * The calculation trace never leaves the process. Annex C is every equation
+   * the engine executed with its inputs and the factor each step consulted —
+   * the method, not the disclosure, and the same asset nothing on this site
+   * serves. Removing the tab that rendered it is not enough: the response
+   * carried it whether or not a screen drew it, and a response is readable by
+   * whoever loads the page.
+   *
+   * The whole body is swept rather than the one key, because the leak is the
+   * equations, and they would be just as readable under a different name.
+   */
+  test('no response carries the calculation trace', async () => {
+    const res = await auth(request(app).post('/v1/pcaf/part-c/assess')).send(assessBody());
+    if (res.status !== 200) return;
+    const body = JSON.stringify(res.body);
+    expect(body).not.toContain('auditTrail');
+    expect(body).not.toContain('mass_factor');
+    expect(body).not.toMatch(/EF_road|EF_sea|EF_rail|EF_air/);
+    expect(body).not.toMatch(/"equation"/);
+  });
+
+  test('the trace is still built, so the method survives the removal', () => {
+    // Removing the surface must not remove the asset: partc-methodology.js
+    // and the GWP basis are both derived from this tree.
+    const { buildRegisters } = require('../services/partc-registers');
+    const { runPartC } = require('../services/pcaf-partc');
+    const registers = buildRegisters(runPartC(fx.engineInput ? fx.engineInput() : {
+      policy: fx.POLICY_CAR, materials: fx.MATERIALS, siteInputs: fx.SITE_INPUTS
+    }));
+    expect(registers.auditTrail.entries.length).toBeGreaterThan(0);
+    expect(registers.auditTrail.entries.every(e => e.equation)).toBe(true);
   });
 
   test('an invalid policy type is rejected by validation', async () => {

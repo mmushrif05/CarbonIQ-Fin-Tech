@@ -112,3 +112,114 @@ describe('The asset survives the removal', () => {
     expect(m.factorStore.rowCount).toBeGreaterThan(0);
   });
 });
+
+/*
+ * The calculation trace is the methodology in a different container.
+ *
+ * Annex C is every equation the engine executed, in order, with its inputs and
+ * the factor each step consulted. It was rendered as a tab on the Part C
+ * screen, as an expandable section on the walkthrough, and as an annex table
+ * in the report anyone can download — three copies of the asset the
+ * methodology statement was taken off the website to protect.
+ *
+ * Removing the markup would not have been enough on its own: the assess
+ * response carried the entries whether or not a screen drew them. The sweep is
+ * therefore over the published source AND the wire.
+ */
+describe('The calculation trace is not on the website', () => {
+  test('no published file renders it', () => {
+    const offenders = publishedFiles()
+      .filter(f => /\.(html|js|css)$/.test(f))
+      .filter(f => /auditTrail|audit-trail|pd-trail|partcBadgeC/.test(read(f)));
+    expect(offenders).toEqual([]);
+  });
+
+  test('no published file prints an engine equation', () => {
+    // The equations are the asset, and they read the same under any key name.
+    const offenders = publishedFiles()
+      .filter(f => /\.(html|js)$/.test(f))
+      .filter(f => /EF_road|EF_sea|EF_rail|mass_factor|A4_total\s*=/.test(read(f)));
+    expect(offenders).toEqual([]);
+  });
+
+  test('the route strips it before the response is shaped', () => {
+    const route = read('routes/v1/pcaf-partc.js');
+    expect(route).toMatch(/function _publicRegisters/);
+    expect(route).toMatch(/registers: _publicRegisters\(registers\)/);
+  });
+
+  test('the downloadable report carries no trace annex', () => {
+    expect(read('services/partc-report-standard.js')).toMatch(/auditTrail: \[\],/);
+  });
+
+  /*
+   * Three containers, and the first two passes each missed one. The screen was
+   * only the visible copy: the assess response carried the entries whether or
+   * not a tab drew them; the JSON report carried them as Annex C; and the
+   * rendered report model carried the whole register bundle on its facts,
+   * unread by any section but serialised with everything else. The sweep is
+   * over the built artefact, not over the source that builds it.
+   */
+  test('no built report carries a traced step, in any format', () => {
+    const fx = require('./fixtures/fisheries');
+    const { runPartC } = require('../services/pcaf-partc');
+    const { buildRegisters } = require('../services/partc-registers');
+    const std = require('../services/partc-report-standard');
+    const { buildPartCReport } = require('../services/partc-reports');
+
+    const result = runPartC(fx.workbookInput());
+    const registers = buildRegisters(result);
+
+    const facts = std.assessmentFacts({ result, registers, settings: {} });
+    const model = JSON.stringify(std.buildStandardModel(facts, {}));
+    // A traced step is the step number, its inputs and the factor it consulted.
+    expect(model).not.toMatch(/"step":\s*\d/);
+    expect(model).not.toContain('totalMass_t');
+    expect(model).not.toContain('materialCount');
+
+    const json = JSON.stringify(buildPartCReport({ result, registers, settings: {} }));
+    expect(json).not.toMatch(/"step":\s*\d/);
+    expect(json).not.toContain('totalMass_t');
+  });
+
+  /*
+   * The module equations stay, and this pins the distinction so a later sweep
+   * does not take them out by association. Part C ch.6 METHODOLOGY makes
+   * giving them a "shall" — checklist item MET-2 — and they are ten formulas,
+   * several of them RICS's and PCAF's own as published. The audit trail is a
+   * different artefact: 58 steps, each with its inputs and its factors.
+   */
+  test('the module equations are still given, because the standard requires them', () => {
+    const fx = require('./fixtures/fisheries');
+    const { runPartC } = require('../services/pcaf-partc');
+    const { buildRegisters } = require('../services/partc-registers');
+    const std = require('../services/partc-report-standard');
+    const result = runPartC(fx.workbookInput());
+    const facts = std.assessmentFacts({ result, registers: buildRegisters(result), settings: {} });
+    expect(facts.equations.length).toBeGreaterThan(0);
+
+    const { completeChecklist } = require('../services/partc-checklist');
+    const met2 = completeChecklist(facts).items.find(i => i.id === 'MET-2');
+    expect(met2.duty).toBe('shall');
+    expect(met2.answer).toBe('Yes');
+  });
+});
+
+describe('The trace survives the removal', () => {
+  test('the engine still builds it, equation by equation', () => {
+    const { auditTrail } = require('../services/partc-registers');
+    expect(typeof auditTrail).toBe('function');
+  });
+
+  test('the methodology statement still reads it', () => {
+    expect(read('services/partc-methodology.js')).toMatch(/trace|equation/i);
+  });
+
+  test('the checklist answers the traceability item honestly rather than dropping it', () => {
+    const { ITEMS } = require('../services/partc-checklist');
+    const anx2 = ITEMS.find(i => i.id === 'ANX-2');
+    expect(anx2).toBeTruthy();
+    expect(anx2.section).toBeNull();
+    expect(anx2.justify({ auditTrailEntries: 58 })).toMatch(/retained/);
+  });
+});
