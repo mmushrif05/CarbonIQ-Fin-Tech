@@ -30,6 +30,7 @@ const appJs  = read('ui', 'app.js');
 const authJs = read('ui', 'js', 'auth.js');
 const page   = read('ui', 'pages', 'pcaf-parta.html');
 const moduleSrc = read('ui', 'js', 'pcaf-parta.js');
+const partaCss  = read('ui', 'css', 'pcaf-parta.css');
 
 /* The browser module, loaded without a browser. Nothing at its top level
    touches the DOM — init() does — so it evaluates in a bare context. */
@@ -346,5 +347,63 @@ describe('The page keeps the two containers apart', () => {
       expect(page.includes(`value="${banned}"`)).toBe(false);
     }
     expect(moduleSrc).not.toContain('ESTIMATION_BASES');
+  });
+});
+
+describe('A money field prints back what it holds', () => {
+  /* Eight unbroken digits are hard to read and easy to mistype. `12000000`
+     beside `40000000` was misread as 12 and 4 by the person who built the
+     screen — and typed wrong it is worse than misread. An extra zero on the
+     denominator gives an attribution factor of 0.03 instead of 0.3, which the
+     engine accepts because it is below 1, and which under-reports financed
+     emissions tenfold with nothing on screen to say so. The opposite slip is
+     caught: a factor above 1 is refused. */
+
+  test('both attribution amounts carry an echo element', () => {
+    for (const id of ['pa-outstandingAmount', 'pa-totalProjectEquityPlusDebt']) {
+      expect(page).toContain(`id="${id}-echo"`);
+      /* Described by it rather than announced live: an aria-live region on a
+         field that changes every keystroke reads the value back on each one. */
+      expect(page).toContain(`aria-describedby="${id}-echo"`);
+    }
+  });
+
+  test('the echo is refreshed from writeField, not only from the keystroke', () => {
+    /* One place writes the field and one place refreshes the echo, so a value
+       put there by a preset carries the same echo and the two cannot
+       disagree. */
+    expect(moduleSrc).toMatch(/function writeField[\s\S]{0,300}MONEY_FIELDS\.includes\(id\)[\s\S]{0,60}_renderMoneyEcho\(id\)/);
+  });
+
+  test('the magnitude is named from a million up', () => {
+    /* An order-of-magnitude slip is the one this exists to make obvious, so
+       12M beside 400M is the signal. Below a million the grouped digits read
+       on their own. */
+    expect(moduleSrc).toMatch(/if \(a >= 1e9\)/);
+    expect(moduleSrc).toMatch(/if \(a >= 1e6\)/);
+    expect(moduleSrc).toMatch(/return null;/);
+  });
+
+  test('an empty field says nothing rather than zero', () => {
+    /* "USD 0" beside a blank input is an assertion nobody made. */
+    expect(moduleSrc).toMatch(/if \(raw === '' \|\| !Number\.isFinite\(n\)\) \{ echo\.textContent = ''; return; \}/);
+  });
+
+  test('changing the currency re-renders both echoes', () => {
+    expect(moduleSrc).toMatch(/ccy\.addEventListener\('input', _renderMoneyEchoes\)/);
+  });
+
+  test('the echo holds its line whether or not it has content', () => {
+    /* Without a min-height the two fields jump as one of them is filled. */
+    expect(partaCss).toMatch(/\.parta-echo\s*\{[\s\S]*?min-height/);
+    expect(partaCss).toMatch(/\.parta-echo\s*\{[\s\S]*?tabular-nums/);
+  });
+
+  test('the attribution equation is untouched', () => {
+    /* This change is presentational. The factor is outstanding over the
+       denominator and nothing here alters it. */
+    const attribution = fs.readFileSync(
+      path.join(ROOT, 'services/pcaf-parta/attribution.js'), 'utf8');
+    expect(attribution).toMatch(/const raw = outstandingAmount \/ denominator;/);
   });
 });
