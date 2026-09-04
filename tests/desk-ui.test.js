@@ -109,11 +109,11 @@ describe('The claims the screen must never merge', () => {
     expect(JS).toContain("tile('At full commitment'");
     expect(JS).toContain("tile('Carried today'");
     expect(JS).toContain("tile('Still to arrive'");
-    expect(HTML).toContain('Three claims, never one figure');
+    expect(HTML).toContain('<h4>Attributed emissions</h4>');
   });
 
   test('nothing on the screen nets a credit against the inventory', () => {
-    expect(JS).toContain("tile('Netted against the inventory', 'None'");
+    expect(JS).toContain("tile('Basis', 'PCAF Part A', 'Reported separately from the inventory, p.126')");
     /* No arithmetic anywhere in the renderer subtracts a credit from an
        inventory line. A sweep, not a walk of one code path. */
     expect(JS).not.toMatch(/reduction\s*[-+]\s*(incurred|forward|carried)/);
@@ -130,7 +130,7 @@ describe('The claims the screen must never merge', () => {
 
   test('hatching means not measured, and it is the only texture on the page', () => {
     expect(HTML).toMatch(/repeating-linear-gradient/);
-    expect(JS).toContain('Hatched means not measured');
+    expect(JS).toContain('Hatched — not measured');
     /* Both unmeasured series carry it: the forward projection and the
        emissions that follow money not yet drawn. */
     expect(JS).toMatch(/Expected over the remaining term[\s\S]{0,200}'is-pending'/);
@@ -166,5 +166,112 @@ describe('The data-quality scale is never written as a fraction', () => {
        out of five and inverts it for anyone who has not opened the standard. */
     expect(JS).not.toMatch(/\/\s*5['"`\s]/);
     expect(JS).toContain('PCAF scale 1–5, 1 is best');
+  });
+});
+
+describe('Stage 4 — the candidates band', () => {
+  test('the gate is a chip with three states, and excluded keeps its row', () => {
+    expect(JS).toMatch(/GATE_CHIP = \{[\s\S]*?eligible[\s\S]*?flagged[\s\S]*?excluded/);
+    /* Rows are rendered from what the endpoint returns; nothing filters an
+       excluded project out, and the copy says why it stays. */
+    expect(JS).not.toMatch(/rows\.filter\([^)]*verdict\s*!==\s*'excluded'/);
+    expect(HTML).toContain('Excluded candidates remain listed with the reason for exclusion');
+  });
+
+  test('rank is shown with the stream it is a rank within', () => {
+    /* Two projects legitimately hold rank 1. A bare "#1" on a merged list
+       would be a sort key defunding adaptation. */
+    expect(JS).toMatch(/#\$\{r\.rank\}[\s\S]{0,80}in \$\{esc\(r\.stream\)\}/);
+    expect(HTML).toContain('Ranked within stream');
+  });
+
+  test('an unranked candidate shows a dash, not a zero', () => {
+    expect(JS).toMatch(/r\.rank === null \? '—'/);
+  });
+
+  test('the impact unit differs by stream and never mixes the two', () => {
+    expect(JS).toMatch(/r\.stream === 'adaptation' \? 'people \/ \$M ask' : 'tCO2e·yr \/ \$M ask'/);
+  });
+
+  test('a gate reason is clipped for the row but never thrown away', () => {
+    expect(JS).toMatch(/const clip = /);
+    expect(JS).toMatch(/title="\$\{esc\(r\.gate\.reasons\.join/);
+  });
+
+  test('adoption states that recorded records replace the baseline entirely', () => {
+    expect(JS).toMatch(/Recorded portfolios replace the illustrative dataset in full/);
+    expect(JS).toMatch(/No portfolio has been recorded/);
+  });
+});
+
+describe('Stage 5 — the scenario drawer', () => {
+  test('the drawer is shut at load, and the guard is what keeps it shut', () => {
+    /* The drawer sets display:flex in a class rule, which beats [hidden] from
+       the user-agent sheet. The .dk [hidden] rule above is the only reason it
+       is not covering the page from load — that exact defect has shipped here. */
+    expect(HTML).toMatch(/<aside class="dk-drawer" id="deskDrawer" hidden/);
+    expect(HTML).toMatch(/\.dk-drawer\s*\{[\s\S]*?display:\s*flex/);
+    expect(HTML).toMatch(/\.dk \[hidden\]\s*\{\s*display:\s*none\s*!important/);
+  });
+
+  test('only a project still waiting can be selected', () => {
+    /* A held position is already on the book, so modelling writing it would be
+       modelling a decision that has been taken. */
+    expect(JS).toMatch(/const selectable = r\.status === 'pipeline'/);
+    expect(JS).toMatch(/\$\{selectable \? '' : 'disabled'\}/);
+  });
+
+  test('shortfall and remainder are different words for different facts', () => {
+    /* A selection that does not fit reports a shortfall, never a negative
+       remainder. */
+    expect(JS).toMatch(/f\.affordable \? 'Left over' : 'Shortfall'/);
+  });
+
+  test('the impact is four separate lines and no total combines them', () => {
+    expect(JS).toMatch(/Reduction \(reported separately\)/);
+    expect(JS).toMatch(/Avoided \(reported separately\)/);
+    expect(JS).not.toMatch(/forward_tCO2e\s*[-+]\s*i\.(reduction|avoided)/);
+  });
+
+  test('a selection is a question and the screen says nothing is written down', () => {
+    expect(JS).toMatch(/sc\.storedNote/);
+    expect(JS).toMatch(/sc\.storedNote/);
+  });
+
+  test('escape closes it, so nobody gets stuck behind a panel', () => {
+    expect(JS).toMatch(/ev\.key === 'Escape'[\s\S]{0,60}deskDrawer/);
+  });
+});
+
+describe('Stage 6 — year end', () => {
+  test('the disclosure count is answered from the report, so it can fail', () => {
+    expect(JS).toMatch(/tile\('Outstanding items'/);
+    expect(JS).toMatch(/checklistMet[\s\S]{0,60}checklistTotal/);
+    expect(HTML).toContain('Outstanding items for the SLFRS S1 / S2 disclosure');
+  });
+
+  test('entity facts are shown as recorded-of-total, never as a percentage complete', () => {
+    expect(JS).toMatch(/tile\('Entity disclosures', `\$\{num\(r\.entity\.recorded\)\} \/ \$\{num\(r\.entity\.total\)\}`/);
+  });
+
+  test('readiness is labelled as what is held, not as nearness to a submission', () => {
+    expect(JS).toMatch(/Concept Note inputs outstanding/);
+    expect(JS).toMatch(/r\.conceptNotes\.note/);
+  });
+
+  test('the full workings stay on the GCF Pipeline screen, and the page says so', () => {
+    expect(HTML).toContain('Full detail is on the GCF Pipeline screen');
+    expect(JS).toMatch(/further items — see the GCF Pipeline screen/);
+  });
+});
+
+describe('Nothing was taken off the GCF Pipeline screen', () => {
+  const GCF_HTML = fs.readFileSync(path.join(ROOT, 'ui/pages/gcf.html'), 'utf8');
+
+  test('all seven sub-tabs are still there', () => {
+    for (const panel of ['pipeline', 'emissions', 'decision', 'instruments', 'reporting', 'cn', 'intake']) {
+      expect(GCF_HTML).toContain(`data-panel="${panel}"`);
+      expect(GCF_HTML).toContain(`id="gcfPanel-${panel}"`);
+    }
   });
 });

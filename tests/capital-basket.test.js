@@ -79,7 +79,7 @@ describe('Affordability is asked of the selection, not of its members', () => {
 
   test('the shortfall note does not let it read as though the projects were individually unaffordable', () => {
     const r = basket(book(), pipelineIds(book()));
-    expect(r.funding.note).toMatch(/not a reason the projects are unaffordable individually/);
+    expect(r.funding.note).toMatch(/additional\s*'?\s*\+?\s*'?allocation required/);
   });
 
   test('every project waiting in the baseline is individually affordable, so the case is real', () => {
@@ -158,8 +158,8 @@ describe('The scenario curve moves, and moves by exactly the basket', () => {
 
   test('the payload explains why the basis is held constant', () => {
     const r = basket(book(), pipelineIds(book()).slice(0, 1));
-    expect(r.forecast.basisNote).toMatch(/has drawn\s+nothing|drawn nothing/);
-    expect(r.forecast.basisNote).toMatch(/the movement between them is the basket/);
+    expect(r.forecast.basisNote).toMatch(/no outstanding balance/);
+    expect(r.forecast.basisNote).toMatch(/attributable to the selection alone/);
   });
 });
 

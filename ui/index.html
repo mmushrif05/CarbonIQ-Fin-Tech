@@ -15,8 +15,12 @@
   <link rel="stylesheet" href="css/pcaf-parta.css">
   <link rel="stylesheet" href="css/pcaf-partc.css">
   <link rel="stylesheet" href="css/methodology.css">
+  <link rel="stylesheet" href="css/brand.css">
   <link rel="stylesheet" href="css/pcaf-demo.css">
   <link rel="stylesheet" href="css/mobile-nav.css">
+  <!-- Loaded last: narrow-viewport corrections win without raising the
+       specificity of the rules they correct. -->
+  <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
   <!-- =================== LOGIN / STAKEHOLDER SCREEN =================== -->
@@ -35,6 +39,7 @@
           <span class="login-brand-name">CarbonIQ</span>
         </div>
         <p class="login-tagline">Bank Carbon Intelligence Platform — Green Finance Compliance</p>
+        <div class="login-brand-datum" data-brand="login"></div>
       </div>
 
       <div class="login-card">
@@ -346,6 +351,9 @@
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
+      <!-- Rendered from ui/js/brand.js, which is the only place the mark and
+           the name are defined. Three placements, one source. -->
+      <div class="sidebar-brand-datum" data-brand="sidebar"></div>
     </div>
 
     <!-- ══ ADJUST THE BOOK ══════════════════════════════════════════════════
@@ -1558,6 +1566,7 @@
               <h3>Top Emitting Assets — Concentration Risk</h3>
               <span class="kpi-badge badge-neutral" id="pf-top-pct">Top 5 = —% of portfolio emissions</span>
             </div>
+            <div class="table-scroll">
             <table class="data-table" id="pf-top-table">
               <thead>
                 <tr>
@@ -1573,6 +1582,7 @@
               </thead>
               <tbody id="pf-top-tbody"></tbody>
             </table>
+            </div>
           </div>
         </div>
 
@@ -1693,6 +1703,14 @@
       <div class="page" id="page-pcaf-partc" data-src="pages/pcaf-partc.html"></div>
       <div class="page" id="page-pcaf-demo" data-src="pages/pcaf-demo.html"></div>
 
+      <!-- Signed on every page, because it sits in the shell rather than
+           inside any one page fragment. Rendered from ui/js/brand.js, the
+           single place the mark and the name are defined. -->
+      <footer class="page-footer">
+        <span data-brand="footer"></span>
+        <span class="page-footer-note">Figures are computed from the records held in this system.</span>
+      </footer>
+
     </div>
   </main>
 
@@ -1723,6 +1741,7 @@
   <script src="js/partc-portfolio.js"></script>
   <script src="js/methodology.js"></script>
   <script src="js/mobile-nav.js"></script>
+  <script src="js/brand.js"></script>
   <script src="js/desk.js"></script>
   <script src="js/gcf.js"></script>
   <script src="js/ndc-sdg.js"></script>

@@ -166,31 +166,28 @@ function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
 
     attributionBasis: basis,
     attributionNote: basis === 'outstanding'
-      ? 'Attributed on the outstanding amount, per PCAF Part A. A commitment that has not been '
-        + 'drawn attributes nothing yet — the emissions arrive as the money does, and what is '
-        + 'waiting is on the pending line rather than booked early.'
-      : 'Attributed on the full commitment whether or not it has been drawn. Conservative, and it '
-        + 'does not match how Part A defines the attribution factor, so it cannot be disclosed as '
-        + 'conformant without a note.',
+      ? 'Attributed on the outstanding amount, per PCAF Part A. Undrawn commitment is carried on '
+        + 'the pending line.'
+      : 'Attributed at full commitment. Conservative; this is not the PCAF Part A attribution '
+        + 'factor and requires a note if disclosed.',
     pending,
-    pendingNote: 'Emissions that will be attributed as the undrawn commitment is drawn. They are '
-      + 'not in the figures above and are not a second inventory — they are the same emissions, '
-      + 'not yet this book\'s to report.',
+    pendingNote: 'Emissions attributable as the undrawn commitment is drawn. Not included in '
+      + 'the figures above.',
     atFullCommitment,
 
     /* Said in the payload as well as on the screen, because a client asked to
        accept these figures will read one of the two. */
-    inventoryNote: 'Emissions already incurred are measured; forward emissions are a projection over the remaining term. The two are reported separately and their sum is part measurement, part forecast.',
-    creditNote: 'Reduction and avoided emissions are reported separately from the inventory and are never netted against it. Reduction is measured against a project\'s own base year; avoidance is against a counterfactual that did not happen (PCAF Part A, p.126).',
+    inventoryNote: 'Incurred emissions are measured. Forward emissions are a projection over the remaining term. The two are reported separately.',
+    creditNote: 'Reduction and avoided emissions are reported separately from the inventory and are not deducted from it (PCAF Part A, p.126). Reduction is measured against each project\'s base year; avoidance against a counterfactual.',
 
     dataQuality: {
       weighted: weighted == null ? null : round(weighted),
-      basis: 'Outstanding-amount weighted, per PCAF Part A p.128. A lower score is better.',
+      basis: 'Outstanding-amount weighted, per PCAF Part A p.128. A lower score indicates higher data quality.',
       scale: 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest.',
       investmentsScored: scored.length,
       investmentsWithoutScore: held.length - scored.length,
       note: held.length && !scored.length
-        ? 'No investment in the book carries a data-quality score, so none is reported. An unscored holding is excluded from the weighting rather than counted as zero.'
+        ? 'No holding carries a data-quality score. Unscored holdings are excluded from the weighting.'
         : null,
     },
   };
@@ -488,7 +485,7 @@ function dashboard(book, {
     generatedAt: new Date().toISOString(),
     empty,
     emptyNote: empty
-      ? 'No portfolio has been recorded, so there is nothing to report. That is not a position of zero — it is a book that has not been entered yet.'
+      ? 'No portfolio has been recorded. This is an unentered book, not a nil position.'
       : null,
     anchor: anchorPosition(book, { attributionBasis }),
     capital: capitalPosition(book),

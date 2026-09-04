@@ -502,12 +502,14 @@ const MethodologyPage = (() => {
 
     say('mthDqWhy', s.direction);
 
-    setHtml('mthDqRubric', `<table class="mth-table dq-53-2">
+    /* Wrapped, like every other wide table here. Unwrapped it set the page
+       width on a 360px handset instead of scrolling inside its own box. */
+    setHtml('mthDqRubric', `<div class="mth-scroll"><table class="mth-table dq-53-2">
       <thead><tr><th>Option</th><th>Score</th><th>Data used to estimate the emissions</th></tr></thead>
       <tbody>${s.table.map(r => `
         <tr class="${r.option === s.construction.option ? 'is-selected' : ''}">
           <td class="mono">${esc(r.option)}</td><td class="num">${r.score}</td><td>${esc(r.data)}</td>
-        </tr>`).join('')}</tbody></table>
+        </tr>`).join('')}</tbody></table></div>
       <p class="mth-cap">${esc(s.standard)} The highlighted row is the one the worked example used.</p>`);
 
     setHtml('mthDqInputs', `

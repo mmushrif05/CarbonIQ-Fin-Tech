@@ -189,8 +189,8 @@ function screen(projects = [], { accreditation } = {}) {
     excluded: rows.filter(r => !r.eligible).map(r => r.code),
     flagged: rows.filter(r => r.eligible && r.flags.length).map(r => r.code),
     rows,
-    note: 'Accreditation is a gate, not a score. An excluded project is one DFCC cannot carry as '
-      + 'the accredited entity; a flagged project is eligible with something to resolve or verify.',
+    note: 'Excluded candidates fall outside DFCC\'s accreditation scope. Flagged candidates are '
+      + 'eligible subject to verification.',
   };
 }
 
@@ -326,8 +326,8 @@ function rankStream(projects, stream, suppliedWeights) {
     weights,
     projects: rows,
     note: stream === 'adaptation'
-      ? 'Adaptation is ranked on beneficiaries reached per dollar, never on carbon.'
-      : 'Mitigation is ranked on tCO2e per dollar of concessional ask.',
+      ? 'Ranked on beneficiaries reached per dollar of concessional ask.'
+      : 'Ranked on tCO2e per dollar of concessional ask.',
   };
 }
 
@@ -347,12 +347,11 @@ function rank(projects = [], { accreditation, weights } = {}) {
     criteria: {
       scored: GCF_CRITERIA.filter(c => c.scored),
       notScored: GCF_CRITERIA.filter(c => !c.scored),
-      note: 'Three of GCF\'s six investment criteria rest on judgements this system does not hold. '
-        + 'They are named unscored rather than filled in, so a partial ranking is not mistaken for '
-        + 'a GCF assessment. This ranking is an input to a decision, not the decision.',
+      note: 'Three of the six GCF investment criteria require qualitative assessment outside '
+        + 'this system and are reported unscored. This ranking is an input to an appraisal.',
     },
-    note: 'Two lists, never merged. Merging them would mean sorting adaptation against mitigation '
-      + 'on one key, and any such key defunds one of the two.',
+    note: 'Mitigation and adaptation are ranked on separate metrics and are not combined into a '
+      + 'single list.',
   };
 }
 

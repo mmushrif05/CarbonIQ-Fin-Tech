@@ -65,9 +65,7 @@ const handle = fn => async (req, res, next) => {
 
 /* The baseline note, declared once. Three endpoints say it, and three copies
    of a sentence is how one of them ends up saying something the others do not. */
-const BASELINE_NOTE = 'Baseline figures, held in the repository and computed by the same engine. '
-  + 'Nothing has been recorded in this book yet, so the baseline is shown in place of a blank '
-  + 'screen. Record a portfolio and yours replaces it entirely — the two are never mixed.';
+const BASELINE_NOTE = 'Illustrative dataset — not client records.';
 
 /**
  * The questions a reader may ask of the book, validated once.

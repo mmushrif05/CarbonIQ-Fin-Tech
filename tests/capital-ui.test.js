@@ -213,7 +213,7 @@ describe('Empty and failed states are distinguished', () => {
   });
 
   test('a failed read says the figures are blank because the request failed', () => {
-    expect(render).toMatch(/blank because the request failed/);
+    expect(render).toMatch(/unavailable because the request failed/);
   });
 
   test('the loader comes down before either bail-out', () => {

@@ -1,6 +1,6 @@
 /* ============================================================
    CarbonIQ — NDC & SDG Alignment Module
-   Powered by Claude AI | Sri Lanka Green Finance Taxonomy
+   Sri Lanka Green Finance Taxonomy
    ============================================================ */
 
 const NdcSdgPage = (() => {

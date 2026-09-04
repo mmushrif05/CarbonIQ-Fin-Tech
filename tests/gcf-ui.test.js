@@ -150,7 +150,7 @@ describe('The renderer obeys the engine rules', () => {
 
   test('the sample banner is shown whenever the shipped pipeline is showing', () => {
     expect(JS).toMatch(/gcfSampleBanner/);
-    expect(JS).toMatch(/SAMPLE DATA/);
+    expect(JS).toMatch(/pipeline\.sampleNote/);
   });
 
   test('a write re-reads every open panel rather than leaving stale rows', () => {

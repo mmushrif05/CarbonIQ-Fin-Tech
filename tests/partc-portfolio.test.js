@@ -179,7 +179,7 @@ describe('Improvement plan', () => {
     // The biggest slice of the figure comes first, not the worst score.
     expect(plan.items[0].projectName).toMatch(/Galle/);
     expect(plan.items[0].impact).toBeGreaterThan(plan.items[1].impact);
-    expect(plan.ranking).toMatch(/emissions × data-quality points/);
+    expect(plan.ranking).toMatch(/emissions × available data-quality improvement/);
   });
 
   test('actions come from the assessment register, not a template', async () => {

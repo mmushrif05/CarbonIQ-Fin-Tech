@@ -150,8 +150,8 @@ describe('The ranking says what it could not weigh', () => {
   });
 
   test('it never claims to be a GCF assessment', () => {
-    expect(r.criteria.note).toMatch(/not mistaken for\s+a GCF assessment/);
-    expect(r.criteria.note).toMatch(/input to a decision, not the decision/);
+    expect(r.criteria.note).toMatch(/require qualitative assessment outside/);
+    expect(r.criteria.note).toMatch(/an input to an appraisal/);
   });
 
   test('the weights travel with the result, so a screenshot carries them', () => {
@@ -277,7 +277,7 @@ describe('An instrument answers a barrier, or it answers nothing', () => {
     const p4 = r.projects.find(p => p.code === 'GCF-P4');
     expect(p4.recommended.coverage).toBeLessThan(1);
     expect(p4.barriersLeftStanding.map(b => b.id)).toContain('no_revenue_stream');
-    expect(p4.barriersLeftStandingNote).toMatch(/what will stop the deal/);
+    expect(p4.barriersLeftStandingNote).toMatch(/Not addressed by the recommended structure/);
   });
 
   test('a project with no recorded barriers is unassessable, not perfectly matched', () => {
@@ -301,7 +301,7 @@ describe('An instrument answers a barrier, or it answers nothing', () => {
     const p4 = r.projects.find(p => p.code === 'GCF-P4');
     expect(p4.all[p4.all.length - 1].deliverableByDfcc).toBe(false);
     expect(p4.structuralGap.instruments.map(i => i.instrumentId)).toContain('results_based_finance');
-    expect(p4.structuralGap.note).toMatch(/finding about the accreditation, not about the project/);
+    expect(p4.structuralGap.note).toMatch(/outside DFCC's accreditation as recorded/);
   });
 
   test('the pipeline names the barrier nothing DFCC can deliver addresses', () => {
@@ -310,7 +310,7 @@ describe('An instrument answers a barrier, or it answers nothing', () => {
        modality DFCC does not hold. That is a mandate question. */
     expect(r.mandateGap.barriers.map(b => b.id)).toEqual(['no_revenue_stream']);
     expect(r.mandateGap.barriers[0].projects).toEqual(['GCF-P2', 'GCF-P4']);
-    expect(r.mandateGap.note).toMatch(/mandate question/);
+    expect(r.mandateGap.note).toMatch(/extended modality or a\s+'?\s*\+?\s*'?partner accredited entity/);
   });
 
   test('with the grant modality held, that gap closes', () => {

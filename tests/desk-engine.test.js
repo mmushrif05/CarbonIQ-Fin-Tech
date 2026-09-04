@@ -97,7 +97,7 @@ describe('Three claims, never one number', () => {
     /* No key anywhere holds an inventory figure with a credit taken off it. */
     const flat = JSON.stringify(inv);
     expect(flat).not.toMatch(/net[A-Z_]/);
-    expect(inv.separatelyStated.note).toMatch(/never netted/i);
+    expect(inv.separatelyStated.note).toMatch(/not deducted from it/i);
   });
 
   test('a pipeline investment carries no emissions — an intention is not an inventory', () => {
@@ -124,7 +124,7 @@ describe('Two lifecycle axes, never one field', () => {
 
   test('completed is the asset\'s state, and says so rather than meaning exited', () => {
     const p = desk.position(BOOK(), POOL);
-    expect(p.delivery.note).toMatch(/not the same statement as the bank having exited/);
+    expect(p.delivery.note).toMatch(/Independent of the bank's position/);
     /* A completed project may still be held. If the two axes were one field
        this book could not say that, and it does. */
     const held = p.rows.filter(r => r.delivery === 'completed' && r.held);
@@ -171,7 +171,7 @@ describe('The waiting pipeline', () => {
   test('adaptation candidates are counted and never ranked on carbon here', () => {
     const p = desk.pipelineWaiting(POOL, []);
     expect(p.byStream.adaptation).toBe(2);
-    expect(p.streamNote).toMatch(/never ranked here on carbon/);
+    expect(p.streamNote).toMatch(/beneficiaries reached, not carbon intensity/);
     /* No carbon figure appears in the waiting block at all, so there is
        nothing for a sort to reach for. */
     expect(JSON.stringify(p)).not.toMatch(/tCO2e"\s*:/);

@@ -2125,8 +2125,8 @@ body {
   background: #fffbeb; border: 1px solid #f59e0b; border-left-width: 4px;
   color: #78350f; font-size: 13px; line-height: 1.55;
 }
-/* A worked example is not a failure — it is the screen doing its job while
-   the book is still empty. Quieter than the amber, still unmistakable. */
+/* An illustrative dataset is not a fault, so it is not styled as one:
+   neutral ground with an accent rule, legible but not alarming. */
 .cap-message.is-sample {
   background: var(--bg); border-color: var(--border);
   border-left-color: #5e5ce6; color: var(--text-secondary);

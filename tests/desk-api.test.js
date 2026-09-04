@@ -38,7 +38,7 @@ describe('GET /v1/desk/position', () => {
     expect(p.sample).toBe(true);
     expect(p.pipeline.source).toBe('seed');
     expect(p.pipeline.sample).toBe(true);
-    expect(p.sampleNote).toMatch(/never mixed/);
+    expect(p.sampleNote).toMatch(/Illustrative dataset/);
   });
 
   test('the six figures a committee opens with are all present', async () => {

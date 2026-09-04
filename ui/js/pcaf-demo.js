@@ -612,7 +612,14 @@ const PCAFDemoPage = (() => {
 
   const reportBody = fmt => JSON.stringify({
     ...bodyFor(input), format: fmt,
-    meta: { insurer: 'Demonstration insurer', insured: input.projectName, orgName: 'Datum Solutions' }
+    /* The preparer's name comes from the one place it is defined, so this
+       demo report cannot end up naming a different company from the footer of
+       the page that generated it. */
+    meta: {
+      insurer: 'Demonstration insurer',
+      insured: input.projectName,
+      orgName: (typeof Brand !== 'undefined' && Brand.LOGO.name) || 'CarbonIQ',
+    }
   });
 
   async function loadConformance() {

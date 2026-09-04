@@ -87,8 +87,8 @@ describe('The shipped pipeline is coherent', () => {
 
   test('the seed marks itself illustrative and names what must be replaced', () => {
     expect(SEED._meta.sample).toBe(true);
-    expect(SEED._meta.sampleNote).toMatch(/not DFCC's book/);
-    expect(SEED._meta.sampleNote).toMatch(/replaced with sourced values/);
+    expect(SEED._meta.sampleNote).toMatch(/not DFCC's pipeline/);
+    expect(SEED._meta.sampleNote).toMatch(/require sourced values before submission/);
   });
 });
 
@@ -242,7 +242,7 @@ describe('The register over HTTP', () => {
     expect(r.source).toBe('seed');
     expect(r.sample).toBe(true);
     expect(r.count).toBe(5);
-    expect(r.sampleNote).toMatch(/not DFCC's book/);
+    expect(r.sampleNote).toMatch(/not DFCC's pipeline/);
   });
 
   test('one project comes back with its evidence and its accreditation check', async () => {

@@ -236,7 +236,7 @@ function buildMethodology(opts = {}) {
       exclusion: 'A1–A3 embodied product emissions are outside PCAF Part C for insurance-associated emissions. They are handled by a separate service for lending and have no import path into this engine.',
       policyGate: {
         rule: 'Construction-only cover (CAR/EAR) carries use_stage_years = 0. Cover extending into occupation (IDI/Property) runs the use stage over the cover period.',
-        consequence: 'B1, B4 and B7 are therefore zero by scope rule, not by omission — and the disclosure says which.',
+        consequence: 'B1, B4 and B7 are therefore zero by scope rule (PCAF Part C v2 \u00a75.3), not by omission.',
         override: 'A client-entered cover period applies within the gate and can never override it. An unrecognised policy type fails closed.'
       },
       structuralEnforcement: 'The roll-up module does not import the beyond-PCAF module, so tier 3 cannot reach the reported figure through the module graph at all. A test asserts that import absence, so the guarantee cannot be undone silently.'

@@ -10,7 +10,7 @@ const PAGE_META = {
   'dashboard':   { title: 'Dashboard',          subtitle: 'Portfolio carbon overview' },
   'portfolio':   { title: 'Portfolio',           subtitle: 'Aggregated emissions analysis' },
   'ai-agents':   { title: 'AI Agents',           subtitle: '8-stage green loan lifecycle agents — Coach · Originate · Screen · Underwrite · Triage · Covenants · Monitor · Portfolio' },
-  'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Paste any BOQ — Claude maps materials to ICE v3 carbon factors' },
+  'ai-extract':  { title: 'AI BOQ Extractor',   subtitle: 'Automated mapping of bill-of-quantities lines to ICE v3 carbon factors' },
   'new-project': { title: 'New Project',         subtitle: 'Submit a construction project for scoring' },
   'pcaf':        { title: 'PCAF Calculator',     subtitle: 'Compute financed emissions attribution (A1-A3, lending)' },
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
@@ -18,15 +18,15 @@ const PAGE_META = {
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
-  'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and watch what moves, and what deliberately does not' },
+  'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and see what moves' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
   'reports':         { title: 'Reports',             subtitle: 'Generate PCAF · GRI 305 · TCFD · IFRS S2 · SLGFT CBSL disclosure reports' },
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
-  'desk':            { title: 'Fund Desk', subtitle: 'The book a committee reads — what is completed, what is financed, what it emits fully drawn, what it carries on payments made, and what is waiting' },
+  'desk':            { title: 'Fund Desk', subtitle: 'Position, delivery, attributed emissions and the GCF pipeline' },
   'gcf':             { title: 'GCF Pipeline', subtitle: 'DFCC post-accreditation — candidate screening, emissions, disclosure and Concept Note inputs' },
-  'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'AI-powered National Determined Contribution & SDG alignment for Sri Lanka Green Finance Taxonomy' },
+  'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
 };
 
 /**

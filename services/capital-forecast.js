@@ -358,9 +358,8 @@ function capitalSeries(book, { fromYear, years, drawdownYears = 3 } = {}) {
        differ by fractions of a dollar, and the total is what has to reconcile
        with the undrawn commitment reported above it. */
     totalPlanned: round(exactPlanned),
-    note: `What has been drawn is taken from the payment log and needs no assumption. What is still `
-        + `committed and undrawn is spread over ${pace} year${pace === 1 ? '' : 's'} — nobody draws a `
-        + `facility in a single day, and the pace is adjustable.`,
+    note: `Drawn amounts are taken from the payment log. Undrawn commitment is phased over `
+        + `${pace} year${pace === 1 ? '' : 's'}; the pace is adjustable.`,
   };
 }
 

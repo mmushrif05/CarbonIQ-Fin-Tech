@@ -65,6 +65,14 @@ const DeskPage = (() => {
   };
 
   const pct = (v, dp = 1) => (absent(v) ? '—' : `${Number(v).toFixed(dp)}%`);
+
+  /* A gate reason is a paragraph in the record and a line on a desk. The whole
+     text stays reachable in the title attribute rather than being thrown away
+     — a truncation that loses the reason is worse than no reason at all. */
+  const clip = (s, n = 96) => {
+    const t = String(s || '').trim();
+    return t.length <= n ? t : `${t.slice(0, n - 1).replace(/[\s,;.]+$/, '')}…`;
+  };
   const width = (part, whole) => (absent(part) || absent(whole) || Number(whole) <= 0
     ? 0 : Math.max(0, Math.min(100, (Number(part) / Number(whole)) * 100)));
 
@@ -75,6 +83,11 @@ const DeskPage = (() => {
   const DELIVERY_LABEL = {
     not_started: 'Not started', under_construction: 'Under construction', completed: 'Completed',
   };
+  const GATE_CHIP = {
+    eligible: 'dk-chip dk-chip-done', flagged: 'dk-chip dk-chip-build', excluded: 'dk-chip dk-chip-wait',
+  };
+  const GATE_LABEL = { eligible: 'Eligible', flagged: 'Flagged', excluded: 'Excluded' };
+
   const DELIVERY_CHIP = {
     not_started: 'dk-chip', under_construction: 'dk-chip dk-chip-build', completed: 'dk-chip dk-chip-done',
   };
@@ -83,12 +96,20 @@ const DeskPage = (() => {
     basis: 'outstanding',
     portfolioId: '',
     position: null,
+    candidates: null,
+    readiness: null,
+    scenario: null,
+    /* A selection is one reader's question, held here and never written down —
+       the same rule the dashboard's assumptions follow. */
+    selected: new Set(),
+    adopting: null,
+    portfolios: [],
     filters: { search: '', status: '', delivery: '', sort: 'commitment' },
     loaded: false,
   };
 
-  async function call(path) {
-    const res = await window.CARBONIQ_fetch('/v1/desk' + path);
+  async function call(path, opts) {
+    const res = await window.CARBONIQ_fetch('/v1/desk' + path, opts);
     let data = {};
     try { data = await res.json(); } catch (_) { /* non-JSON body */ }
     if (!res.ok) {
@@ -138,7 +159,7 @@ const DeskPage = (() => {
     setHtml('deskEmissionTiles',
       tile('At full commitment', num(e.atFullCommitment.total), 'tCO2e once every facility is fully drawn')
       + tile('Carried today', num(e.carried.total),
-        `tCO2e attributed on the payments made — ${pct(e.carriedPct)} of the above`, 'dk-tile-ok')
+        `tCO2e attributed on drawdown — ${pct(e.carriedPct)} of the above`, 'dk-tile-ok')
       + tile('Still to arrive', num(e.pending.total),
         'tCO2e that will be attributed as the undrawn money is drawn', 'dk-tile-signal'));
 
@@ -161,7 +182,7 @@ const DeskPage = (() => {
 
     setHtml('deskEmissionLegend', `
       <span><i class="dk-swatch is-deep"></i>Measured — already incurred</span>
-      <span><i class="dk-swatch is-pending"></i>Hatched means not measured: a projection over the remaining term, or emissions that follow money not yet drawn</span>
+      <span><i class="dk-swatch is-pending"></i>Hatched — not measured</span>
       <span>${esc(e.investmentsCounted)} holdings counted · data quality
         ${e.dataQuality && !absent(e.dataQuality.weighted)
           ? `${num(e.dataQuality.weighted, 2)} (PCAF scale 1–5, 1 is best)` : 'not scored'}</span>`);
@@ -173,7 +194,7 @@ const DeskPage = (() => {
     setHtml('deskCreditTiles',
       tile('Reduction', num(e.separatelyStated.reduction), 'tCO2e against each project\'s own base year')
       + tile('Avoided', num(e.separatelyStated.avoided), 'tCO2e against a counterfactual that did not happen')
-      + tile('Netted against the inventory', 'None', 'By rule, not by omission — PCAF Part A, p.126'));
+      + tile('Basis', 'PCAF Part A', 'Reported separately from the inventory, p.126'));
     say('deskCreditNote', e.separatelyStated.note);
   }
 
@@ -217,13 +238,13 @@ const DeskPage = (() => {
     setHtml('deskPipelineFigures', `
       <div class="dk-tiles-3">
         ${tile('Waiting', num(w.waiting), `of ${num(w.pool)} candidates`, 'dk-tile-signal')}
-        ${tile('The bank\'s share', money(w.dfccShare), 'If all were written')}
-        ${tile('Asked of the Fund', money(w.gcfAsk), 'Not added to the above')}
+        ${tile('Bank share', money(w.dfccShare), 'Commitment if all were written')}
+        ${tile('GCF ask', money(w.gcfAsk), 'Concessional finance sought')}
       </div>`);
     say('deskPipelineNote', w.note);
     say('deskPipelineStreams',
-      `${w.byStream.mitigation} mitigation · ${w.byStream.adaptation} adaptation · ${num(w.adopted)} `
-      + `already on the book. ${w.streamNote}`);
+      `${w.byStream.mitigation} mitigation · ${w.byStream.adaptation} adaptation · `
+      + `${num(w.adopted)} on the book. ${w.streamNote}`);
   }
 
   function visibleRows() {
@@ -250,10 +271,12 @@ const DeskPage = (() => {
 
     if (!rows.length) {
       setHtml('deskTable', `<tbody><tr><td class="dk-empty">Nothing on the book matches that.</td></tr></tbody>`);
+      renderSelBar();
       return;
     }
 
     const head = `<thead><tr>
+      <th style="width:28px" aria-label="Select"></th>
       <th>Project</th><th>Position</th><th>Delivery</th>
       <th class="num">Commitment</th><th class="num">Drawn</th>
       <th class="num">Carried tCO2e</th><th class="num">Fully drawn</th>
@@ -272,7 +295,14 @@ const DeskPage = (() => {
           esc(r.pledgedMitigation.tier || 'no tier')}</span>`
         : '—';
 
+      /* Only a project still waiting can be written. A held position is already
+         on the book, so offering to model writing it would be modelling a
+         decision that has been taken. */
+      const selectable = r.status === 'pipeline';
       return `<tr>
+        <td><input type="checkbox" class="dk-check" data-select="${esc(r.id)}"
+             ${selectable ? '' : 'disabled'} ${state.selected.has(r.id) ? 'checked' : ''}
+             aria-label="Model writing ${esc(r.name)}"></td>
         <td>
           <span class="dk-name">${esc(r.name)}</span>
           <span class="dk-sub">${esc(r.sector || 'Unclassified')}${r.country ? ' · ' + esc(r.country) : ''}${
@@ -292,6 +322,262 @@ const DeskPage = (() => {
     }).join('');
 
     setHtml('deskTable', head + `<tbody>${body}</tbody>`);
+
+    /* Delegated, so it survives every re-render of the table body. */
+    const table = $('deskTable');
+    if (table && !table.dataset.wired) {
+      table.dataset.wired = 'true';
+      table.addEventListener('change', (ev) => {
+        const id = ev.target && ev.target.dataset && ev.target.dataset.select;
+        if (!id) return;
+        if (ev.target.checked) state.selected.add(id); else state.selected.delete(id);
+        renderSelBar();
+        if (!$('deskDrawer').hidden) loadScenario();
+      });
+    }
+    renderSelBar();
+  }
+
+  function renderSelBar() {
+    const n = state.selected.size;
+    show('deskSelBar', n > 0);
+    say('deskSelText', n === 0 ? ''
+      : `${n} project${n === 1 ? '' : 's'} selected`);
+    if (n === 0) show('deskDrawer', false);
+  }
+
+
+  // ── Stage 4 — the candidates ───────────────────────────────────────────
+
+  function renderCandidates() {
+    const c = state.candidates;
+    if (!c) return;
+
+    setHtml('deskCandTiles',
+      tile('Waiting', num(c.pool - c.adopted), `of ${num(c.pool)} candidates`, 'dk-tile-signal')
+      + tile('Eligible', num(c.eligible), 'Within DFCC\'s accreditation scope', 'dk-tile-ok')
+      + tile('Flagged', num(c.flagged), 'Eligible, subject to verification')
+      + tile('Excluded', num(c.excluded), 'Outside the accreditation scope'));
+
+    const head = `<thead><tr>
+      <th>Candidate</th><th>Gate</th><th>Rank</th><th class="num">Impact</th>
+      <th class="num">Bank's share</th><th class="num">GCF ask</th>
+      <th>Left standing</th><th></th>
+    </tr></thead>`;
+
+    const body = (c.rows || []).map((r) => {
+      /* An excluded project is not ranked at all, and a dash says so. A zero
+         would read as "ranked last". */
+      const rank = r.rank === null ? '—' : `#${r.rank} <span class="dk-sub">in ${esc(r.stream)}</span>`;
+      const impact = absent(r.impact.value) ? '—'
+        : `${num(r.impact.value)}<span class="dk-sub">${esc(
+          r.stream === 'adaptation' ? 'people / $M ask' : 'tCO2e·yr / $M ask')}</span>`;
+      const left = r.structure && r.structure.barriersLeftStanding.length
+        ? `<span class="dk-chip dk-chip-wait dk-chip-phrase">${
+          esc(r.structure.barriersLeftStanding.join(' · '))}</span>`
+        : '<span class="dk-sub">Covered</span>';
+      const action = r.adopted
+        ? `<span class="dk-chip dk-chip-money">On the book</span>`
+        : `<button type="button" class="dk-btn dk-btn-ghost" data-adopt="${esc(r.id)}">Put on the book</button>`;
+
+      return `<tr>
+        <td>
+          <span class="dk-name">${esc(r.name)}</span>
+          <span class="dk-sub">${esc(r.code)} · ${esc(r.sector || '')} · ${esc(r.stream)}</span>
+        </td>
+        <td>
+          <span class="${GATE_CHIP[r.gate.verdict] || 'dk-chip'}">${esc(GATE_LABEL[r.gate.verdict] || r.gate.verdict)}</span>
+          ${r.gate.reasons.length
+    ? `<span class="dk-reason" title="${esc(r.gate.reasons.join(' — '))}">${esc(clip(r.gate.reasons[0]))}</span>`
+    : ''}
+        </td>
+        <td>${rank}</td>
+        <td class="num">${impact}</td>
+        <td class="num">${esc(money(r.financing.bankShare))}</td>
+        <td class="num">${esc(money(r.financing.gcfAsk))}</td>
+        <td>${left}</td>
+        <td>${action}</td>
+      </tr>`;
+    }).join('');
+
+    setHtml('deskCandTable', head + `<tbody>${body}</tbody>`);
+
+    const table = $('deskCandTable');
+    if (table && !table.dataset.wired) {
+      table.dataset.wired = 'true';
+      table.addEventListener('click', (ev) => {
+        const btn = ev.target.closest && ev.target.closest('[data-adopt]');
+        if (btn) openAdopt(btn.dataset.adopt);
+      });
+    }
+
+    say('deskCandUnscored',
+      `Not scored: ${c.unscoredCriteria.map(x => x.name).join(' · ')}. ${c.criteriaNote}`);
+    
+    say('deskCandMandate', c.mandateGap
+      ? `Mandate gap — ${c.mandateGap.barriers.map(b => b.label).join(', ')}. ${c.mandateGap.note}`
+      : c.gateNote);
+  }
+
+  /* Adopting writes to the organisation's own book, and its own records
+     replace the baseline entirely. That is stated before the write, not
+     discovered after it. */
+  async function openAdopt(recordId) {
+    const row = (state.candidates.rows || []).find(r => r.id === recordId);
+    if (!row) return;
+    state.adopting = row;
+    show('deskAdoptPanel', true);
+    say('deskAdoptName', row.name);
+    say('deskAdoptHint', '');
+    const amount = $('deskAdoptCommitment');
+    if (amount) amount.value = row.financing.bankShare ?? '';
+
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/capital/portfolios');
+      const data = await res.json();
+      state.portfolios = (data.portfolios || data || []).filter(p => p && p.id);
+    } catch (_) { state.portfolios = []; }
+
+    const sel = $('deskAdoptPortfolio');
+    if (!sel) return;
+    if (!state.portfolios.length) {
+      sel.innerHTML = '<option value="">No portfolio recorded</option>';
+      say('deskAdoptHint', 'No portfolio has been recorded. Create one on the Dashboard first. '
+        + 'Recorded portfolios replace the illustrative dataset in full.');
+    } else {
+      sel.innerHTML = state.portfolios
+        .map(p => `<option value="${esc(p.id)}">${esc(p.name || p.id)}</option>`).join('');
+      say('deskAdoptHint', 'Commitment defaults to the bank\'s share of project cost. '
+        + 'Added at pipeline status.');
+    }
+  }
+
+  async function confirmAdopt() {
+    if (!state.adopting) return;
+    const portfolioId = ($('deskAdoptPortfolio') || {}).value || '';
+    if (!portfolioId) {
+      say('deskAdoptHint', 'Select a portfolio.');
+      return;
+    }
+    const raw = ($('deskAdoptCommitment') || {}).value;
+    try {
+      say('deskAdoptHint', 'Writing…');
+      await call('/adopt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          recordId: state.adopting.id,
+          portfolioId,
+          commitment: raw === '' ? undefined : Number(raw),
+        }),
+      });
+      show('deskAdoptPanel', false);
+      state.adopting = null;
+      state.selected.clear();
+      await load();
+    } catch (e) {
+      say('deskAdoptHint', e.message);
+    }
+  }
+
+  // ── Stage 5 — the scenario ─────────────────────────────────────────────
+
+  async function loadScenario() {
+    const ids = [...state.selected];
+    try {
+      const data = await call('/scenario', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          select: ids, attributionBasis: state.basis, portfolioId: state.portfolioId || undefined,
+        }),
+      });
+      state.scenario = data.scenario;
+      renderScenario();
+    } catch (e) {
+      setHtml('deskDrawerBody', `<div class="dk-error">${esc(e.message)}</div>`);
+    }
+  }
+
+  function renderScenario() {
+    const sc = state.scenario;
+    if (!sc) return;
+    say('deskDrawerSub', `${sc.count} selected · ${sc.storedNote}`);
+    
+
+    const f = sc.funding;
+    const fundingBlock = `
+      <div class="dk-tiles-3">
+        ${tile('Would need', money(f.needed), 'Commitment across the selection', 'dk-tile-accent')}
+        ${tile(f.affordable ? 'Left over' : 'Shortfall',
+          money(f.affordable ? f.remaining : f.shortfall),
+          f.affordable ? 'Uncommitted allocation remaining' : 'Additional allocation this would need',
+          f.affordable ? 'dk-tile-ok' : 'dk-tile-signal')}
+        ${tile('Blended return', absent(sc.finance.blendedReturnPct) ? '—' : pct(sc.finance.blendedReturnPct, 2),
+          sc.finance.unpricedCount
+            ? `${sc.finance.unpricedCount} unpriced, excluded from the weighting`
+            : 'Capital-weighted')}
+      </div>
+      <p class="dk-note">${esc(f.note)}</p>`;
+
+    /* Three figures, never one — exactly as the ledger reports them. A basket
+       that funded a solar farm would otherwise appear to lower the book's
+       emissions, which is a different and false claim. */
+    const i = sc.impact;
+    const impactBlock = `
+      <p class="dk-eyebrow" style="margin-top:18px">What it would add</p>
+      <div class="dk-kv">
+        <span>Emissions over the remaining term</span><b>${esc(num(i.forward_tCO2e))} tCO2e</b>
+        <span>Emissions already incurred</span><b>${esc(num(i.incurred_tCO2e))} tCO2e</b>
+        <span>Reduction (reported separately)</span><b>${esc(num(i.reduction_tCO2e))} tCO2e</b>
+        <span>Avoided (reported separately)</span><b>${esc(num(i.avoided_tCO2e))} tCO2e</b>
+      </div>
+      <p class="dk-note">${esc(i.basis)}</p>`;
+
+    const rowsBlock = sc.rows.length ? `
+      <p class="dk-eyebrow" style="margin-top:18px">The selection</p>
+      <div class="dk-kv">
+        ${sc.rows.map(r => `<span>${esc(r.name)}</span><b>${esc(money(r.commitment))}</b>`).join('')}
+      </div>` : '<p class="dk-note">Nothing selected.</p>';
+
+    const unknownBlock = sc.unknownNote ? `<div class="dk-error">${esc(sc.unknownNote)}</div>` : '';
+
+    setHtml('deskDrawerBody', unknownBlock + fundingBlock + impactBlock + rowsBlock
+      + `<p class="dk-note">${esc(sc.forecast.basisNote)}</p>`);
+  }
+
+  // ── Stage 6 — year end ─────────────────────────────────────────────────
+
+  function renderReadiness() {
+    const r = state.readiness;
+    if (!r) return;
+
+    setHtml('deskReadyTiles',
+      tile('Outstanding items', num(r.disclosure.gaps),
+        `items · checklist ${num(r.disclosure.checklistMet)} of ${num(r.disclosure.checklistTotal)} met`,
+        'dk-tile-signal')
+      + tile('Entity disclosures', `${num(r.entity.recorded)} / ${num(r.entity.total)}`,
+        'Recorded by the reporting entity')
+      + tile('Concept Note inputs outstanding', num(r.conceptNotes.outstanding),
+        `across ${num(r.conceptNotes.projects.length)} candidates · ${num(r.conceptNotes.readyCount)} complete`));
+
+    const head = '<thead><tr><th>Candidate</th><th class="num">Held</th>'
+      + '<th class="num">External</th><th class="num">Partial</th><th class="num">Held %</th></tr></thead>';
+    setHtml('deskCnTable', head + `<tbody>${(r.conceptNotes.projects || []).map(p => `
+      <tr>
+        <td><span class="dk-name">${esc(p.code)}</span><span class="dk-sub">${esc(p.name)}</span></td>
+        <td class="num">${esc(num(p.held))} / ${esc(num(p.total))}</td>
+        <td class="num">${esc(num(p.external))}</td>
+        <td class="num">${esc(num(p.partial))}</td>
+        <td class="num">${esc(num(p.pctHeld, 1))}%</td>
+      </tr>`).join('')}</tbody>`);
+    say('deskCnNote', r.conceptNotes.note);
+
+    const gaps = r.disclosure.top || [];
+    setHtml('deskGapList', gaps.map(g => `<li>${esc(g)}</li>`).join('')
+      + (r.disclosure.more ? `<li>and ${esc(num(r.disclosure.more))} further items — see the GCF Pipeline screen</li>` : '')
+      || '<li>Nothing outstanding.</li>');
+    say('deskEntityNote', `${r.disclosure.completenessNote || r.disclosure.note} ${r.entity.note}`);
   }
 
   function renderFilters(p) {
@@ -343,10 +629,13 @@ const DeskPage = (() => {
     renderPipeline(p);
     renderFilters(p);
     renderTable();
+    renderCandidates();
+    renderReadiness();
+    if (!$('deskDrawer').hidden) loadScenario();
 
     say('deskBasisHint', state.basis === 'outstanding'
-      ? 'Attributed on the money actually paid out, as PCAF Part A defines it. A commitment nobody has drawn attributes nothing yet.'
-      : 'Attributed as though every facility were fully drawn. Conservative, and not how Part A defines the attribution factor.');
+      ? 'Attributed on the outstanding amount, per PCAF Part A.'
+      : 'Attributed at full commitment. Conservative; not the Part A attribution factor.');
   }
 
   // ── Fetch ──────────────────────────────────────────────────
@@ -354,19 +643,33 @@ const DeskPage = (() => {
   async function load() {
     const qs = new URLSearchParams({ attributionBasis: state.basis });
     if (state.portfolioId) qs.set('portfolioId', state.portfolioId);
+    const cq = new URLSearchParams();
+    if (state.portfolioId) cq.set('portfolioId', state.portfolioId);
     try {
       show('deskError', false);
-      const data = await call(`/position?${qs.toString()}`);
-      state.position = data.position;
+      /* Three reads over the same two books, issued together so the screen
+         cannot render a position against a stale candidate pool. */
+      const [pos, cand, ready] = await Promise.all([
+        call(`/position?${qs.toString()}`),
+        call(`/candidates?${cq.toString()}`),
+        call('/readiness'),
+      ]);
+      state.position = pos.position;
+      state.candidates = cand.candidates;
+      state.readiness = ready.readiness;
       render();
     } catch (e) {
       /* The failure is visible on the screen rather than only in a response
          body. A screen that silently keeps its last figures after a failed
          request is how a stale number gets read as a current one. */
       state.position = null;
+      state.candidates = null;
+      state.readiness = null;
       show('deskError', true);
       say('deskError', `The desk could not be read. ${e.message}`);
       setHtml('deskTable', '');
+      setHtml('deskCandTable', '');
+      setHtml('deskCnTable', '');
       say('deskRowCount', '');
     }
   }
@@ -396,6 +699,18 @@ const DeskPage = (() => {
     on('deskFilterStatus', 'change', (ev) => { state.filters.status = ev.target.value; renderTable(); });
     on('deskFilterDelivery', 'change', (ev) => { state.filters.delivery = ev.target.value; renderTable(); });
     on('deskSort', 'change', (ev) => { state.filters.sort = ev.target.value; renderTable(); });
+
+    on('deskSelClear', 'click', () => { state.selected.clear(); renderTable(); });
+    on('deskSelOpen', 'click', () => { show('deskDrawer', true); loadScenario(); });
+    on('deskDrawerClose', 'click', () => show('deskDrawer', false));
+    on('deskAdoptCancel', 'click', () => { show('deskAdoptPanel', false); state.adopting = null; });
+    on('deskAdoptConfirm', 'click', confirmAdopt);
+
+    /* Escape closes the drawer. A panel that covers the page and can only be
+       dismissed by finding one small button is a panel people get stuck in. */
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') show('deskDrawer', false);
+    });
 
     return load();
   }

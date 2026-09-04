@@ -215,7 +215,7 @@ const PCAFPartCPage = (() => {
     $('partcYears').disabled = !hasUseStage;
     $('partcGateNote').innerHTML = hasUseStage
       ? `<span class="partc-gate-on">Use stage applies.</span> B1, B4 and B7 will be computed over the cover period and reported as a separate line.`
-      : `<span class="partc-gate-off">Construction cover only.</span> A ${type} policy has no use stage, so B1, B4 and B7 are zero by scope rule — not by omission.`;
+      : `<span class="partc-gate-off">Construction cover only.</span> A ${type} policy has no use stage, so B1, B4 and B7 are zero by scope rule (PCAF Part C v2 §5.3), not by omission.`;
 
     document.querySelectorAll('#partcPolicySeg button').forEach(b =>
       b.setAttribute('aria-selected', String(b.dataset.value === type)));

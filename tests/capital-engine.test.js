@@ -101,7 +101,7 @@ describe('The emissions ledger keeps four lines apart', () => {
 
   test('the projection is named as one', () => {
     expect(led.inventoryNote).toMatch(/forward emissions are a projection/i);
-    expect(led.inventoryNote).toMatch(/part measurement, part forecast/i);
+    expect(led.inventoryNote).toMatch(/reported separately/i);
   });
 
   test('reduction and avoidance are reported, never netted against the inventory', () => {
@@ -112,7 +112,7 @@ describe('The emissions ledger keeps four lines apart', () => {
     expect(led.incurred).toBe(12_050);                       // unchanged by either
     expect(led.lifetimeInventory).toBe(led.incurred + led.forward);
     expect(led.lifetimeInventory).not.toBe(led.incurred + led.forward - led.reduction);
-    expect(led.creditNote).toMatch(/never netted against it/i);
+    expect(led.creditNote).toMatch(/not deducted from it/i);
   });
 
   test('nothing in the ledger subtracts a credit from an emission', () => {
@@ -153,7 +153,7 @@ describe('The emissions ledger keeps four lines apart', () => {
       investments: [{ id: 'a', status: 'deployed', commitment: 100, emissions: {} }],
     });
     expect(none.dataQuality.weighted).toBeNull();
-    expect(none.dataQuality.note).toMatch(/excluded from the weighting rather than counted as zero/);
+    expect(none.dataQuality.note).toMatch(/excluded from the weighting/);
   });
 });
 
@@ -270,7 +270,7 @@ describe('The dashboard payload', () => {
   test('an empty book is named, never rendered as a position of zero', () => {
     const d = metrics.dashboard(EMPTY, {});
     expect(d.empty).toBe(true);
-    expect(d.emptyNote).toMatch(/not a position of zero/);
+    expect(d.emptyNote).toMatch(/unentered book, not a nil position/);
   });
 
   test('a populated book is not flagged empty', () => {

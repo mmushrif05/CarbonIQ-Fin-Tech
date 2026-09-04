@@ -1,0 +1,135 @@
+/* ============================================================
+   Narrow-viewport corrections
+
+   Two shapes account for every horizontal overflow measured
+   across the application at 430px, and both are defaults rather
+   than mistakes:
+
+   A grid or flex item's `min-width` is `auto`, which refuses to
+   shrink the item below its content. One long label, one wide
+   input row, and the track pushes past the viewport — the page
+   itself then scrolls sideways, which on a phone reads as a
+   broken layout rather than a wide one.
+
+   A wide table with no scrolling ancestor does the same. The
+   answer is never to shrink the table: a bank reads the columns.
+   It scrolls inside its own container while the page does not.
+
+   Loaded last so these corrections win without raising the
+   specificity of the rules they correct.
+   ============================================================ */
+
+/* ── Items that must be allowed to shrink ─────────────────── */
+.extract-left-col,
+.extract-right-col,
+.cp-form-panel,
+.cp-results-panel,
+.pipe-form-panel,
+.pipe-results-panel,
+.partc-figure,
+.form-panel,
+.results-panel,
+.form-group,
+.chart-card,
+.table-card,
+.kpi-card {
+  min-width: 0;
+}
+
+/* A control row that cannot wrap pushes the widest button off the edge. */
+.card__header,
+.chart-header,
+.table-header,
+.results-header,
+.extract-input-panel__actions {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* ── Wide tables scroll inside their own container ────────── */
+.table-scroll { overflow-x: auto; }
+
+@media (max-width: 900px) {
+  /* Long headings and labels break rather than setting the page width. */
+  .cp-section-title, .cp-section-desc,
+  .pipe-section-title, .pipe-section-desc,
+  .mth-main h2, .mth-num {
+    overflow-wrap: anywhere;
+  }
+
+  /* Inputs size to their container, not to their placeholder. */
+  .form-input, .form-select, .form-textarea,
+  input[type="text"], input[type="number"], input[type="search"], select, textarea {
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
+/* ── Grids that must collapse to one column ───────────────── */
+@media (max-width: 900px) {
+  .extract-layout,
+  .mth-layout,
+  .cp-layout,
+  .pipe-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .extract-left-col, .extract-right-col { min-width: 0; }
+}
+
+/* A header row with a full-width control cannot stay on one line. */
+.monitoring-header,
+.page-header,
+.section-header {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+/* Cards are grid and flex children throughout the application. */
+.card { min-width: 0; }
+
+/* ── auto-fit tracks that cannot fit ──────────────────────────
+   `repeat(auto-fit, minmax(330px, 1fr))` is 330px wide whatever
+   the container is, so on a phone the track sets the page width
+   instead of the other way round. `min(100%, 330px)` keeps the
+   intent — a 330px column where there is room — and lets it
+   collapse where there is not. */
+@media (max-width: 900px) {
+  .mth-tiles      { grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr)); }
+  .dq-heads       { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 260px), 1fr)); }
+  .dq-weight      { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 330px), 1fr)); }
+  .inputgrid      { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+  .mth-labour     { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 240px), 1fr)); }
+  .diff-row       { grid-template-columns: minmax(0, 1fr); }
+  .mth-chartwrap  { grid-template-columns: minmax(0, 1fr); }
+  .dq-rub         { grid-template-columns: 32px minmax(0, 1fr); }
+  .mth-main       { max-width: 100%; }
+  .mth-diff       { max-width: 100%; }
+}
+
+/* ── Action rows ───────────────────────────────────────────
+   A row of buttons that cannot wrap sets the page width to the
+   sum of its buttons. Wrapping costs a line; not wrapping costs
+   the layout. */
+.form-actions,
+.cp-actions,
+.pipe-actions,
+.partc-actions,
+.project-selector,
+.mth-ctrlbar {
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.btn { max-width: 100%; }
+
+/* Wide tables scroll inside their own container on every screen
+   that has one. */
+.mth-scroll,
+.partc-scroll,
+.cp-scroll { overflow-x: auto; }
+
+@media (max-width: 460px) {
+  /* At the narrowest common handset a two-column action grid is
+     two truncated labels; one column is two readable ones. */
+  .partc-actions { grid-template-columns: minmax(0, 1fr); }
+  .form-actions .btn, .cp-actions .btn, .partc-actions .btn { width: 100%; }
+}
