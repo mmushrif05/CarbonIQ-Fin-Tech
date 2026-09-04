@@ -38,8 +38,6 @@ const { buildForm, formAnswersToEngineInput } = require('../../services/agents/p
 const runStore            = require('../../services/partc-run-store');
 const factors             = require('../../services/pcaf-partc/factors');
 const { conformanceMatrix } = require('../../services/pcaf-partc/conformance');
-const { buildMethodology } = require('../../services/partc-methodology');
-const { buildMethodologyPDF, buildMethodologyDOCX } = require('../../services/partc-methodology-doc');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../services/partc-reports');
 const partcRegistry = require('../../services/partc-registry');
 const { sendPdf, sendDocx } = require('../../services/pdf-response');
@@ -131,37 +129,18 @@ router.get('/options', apiKeyAuth, defaultLimiter, (_req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-/**
- * GET /methodology — how the calculation works, as JSON, PDF or Word.
+/* The methodology statement is deliberately not served.
  *
- * Reachable without running an assessment. A reviewer asked to accept a
- * figure should be able to read the method that produced it first, and
- * everything here is extracted from an execution of the engine rather than
- * written alongside it.
+ * It is the complete method — every equation the engine executes, every factor
+ * with its tier and named source, the worked example and the declared limits.
+ * That is the asset, and a public endpoint hands it to anyone who asks. The
+ * engine that builds it (`services/partc-methodology.js`) remains in the
+ * repository and is still used by the annual disclosure, which is issued to a
+ * named recipient rather than published.
+ *
+ * There is no route here rather than a route that refuses. A 403 announces
+ * that something exists to be taken; absence announces nothing.
  */
-router.get('/methodology', apiKeyAuth, defaultLimiter, async (req, res, next) => {
-  try {
-    const format = String(req.query.format || 'json').toLowerCase();
-    if (!['json', 'pdf', 'docx'].includes(format)) {
-      return res.status(400).json({
-        error: 'UNSUPPORTED_FORMAT',
-        message: `Format "${format}" is not supported.`,
-        remedy: 'Use format=json, format=pdf or format=docx.'
-      });
-    }
-
-    const methodology = buildMethodology();
-    if (format === 'json') return res.json({ methodology });
-
-    if (format === 'docx') {
-      return sendDocx(res, await buildMethodologyDOCX(methodology),
-        'pcaf-part-c-methodology.docx', 'methodology statement');
-    }
-
-    return sendPdf(res, buildMethodologyPDF(methodology),
-      'pcaf-part-c-methodology.pdf', 'methodology statement');
-  } catch (err) { next(err); }
-});
 
 // GET /conformance — what this engine claims, where it lives, what proves it
 //

@@ -742,8 +742,6 @@ const PCAFDemoPage = (() => {
       { method: 'POST', body: reportBody('pdf') }, 'pcaf-part-c-report.pdf', 'report'));
     $('pdDocxBtn').addEventListener('click', () => download('/v1/pcaf/part-c/report',
       { method: 'POST', body: reportBody('docx') }, 'pcaf-part-c-report.docx', 'Word report'));
-    $('pdMethodBtn').addEventListener('click', () => download('/v1/pcaf/part-c/methodology?format=pdf',
-      {}, 'pcaf-part-c-methodology.pdf', 'methodology statement'));
 
     $('pdPremium').value     = input.policy.premium;
     $('pdProjectCost').value = input.policy.projectCost;

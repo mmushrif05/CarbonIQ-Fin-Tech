@@ -52,8 +52,7 @@
 @media (max-width: 900px) {
   /* Long headings and labels break rather than setting the page width. */
   .cp-section-title, .cp-section-desc,
-  .pipe-section-title, .pipe-section-desc,
-  .mth-main h2, .mth-num {
+  .pipe-section-title, .pipe-section-desc {
     overflow-wrap: anywhere;
   }
 
@@ -68,7 +67,6 @@
 /* ── Grids that must collapse to one column ───────────────── */
 @media (max-width: 900px) {
   .extract-layout,
-  .mth-layout,
   .cp-layout,
   .pipe-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -91,20 +89,13 @@
    `repeat(auto-fit, minmax(330px, 1fr))` is 330px wide whatever
    the container is, so on a phone the track sets the page width
    instead of the other way round. `min(100%, 330px)` keeps the
-   intent — a 330px column where there is room — and lets it
-   collapse where there is not. */
-@media (max-width: 900px) {
-  .mth-tiles      { grid-template-columns: repeat(auto-fill, minmax(min(100%, 268px), 1fr)); }
-  .dq-heads       { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 260px), 1fr)); }
-  .dq-weight      { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 330px), 1fr)); }
-  .inputgrid      { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
-  .mth-labour     { grid-template-columns: repeat(auto-fit,  minmax(min(100%, 240px), 1fr)); }
-  .diff-row       { grid-template-columns: minmax(0, 1fr); }
-  .mth-chartwrap  { grid-template-columns: minmax(0, 1fr); }
-  .dq-rub         { grid-template-columns: 32px minmax(0, 1fr); }
-  .mth-main       { max-width: 100%; }
-  .mth-diff       { max-width: 100%; }
-}
+   intent — a column that wide where there is room — and lets it
+   collapse where there is not.
+
+   Apply the same form to any new grid — write
+   `repeat(auto-fit, minmax(min(100%, 330px), 1fr))`, never
+   `repeat(auto-fit, minmax(330px, 1fr))`: a bare pixel minimum is a
+   page-width bug waiting for a narrower handset. */
 
 /* ── Action rows ───────────────────────────────────────────
    A row of buttons that cannot wrap sets the page width to the
@@ -114,8 +105,7 @@
 .cp-actions,
 .pipe-actions,
 .partc-actions,
-.project-selector,
-.mth-ctrlbar {
+.project-selector {
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -123,7 +113,6 @@
 
 /* Wide tables scroll inside their own container on every screen
    that has one. */
-.mth-scroll,
 .partc-scroll,
 .cp-scroll { overflow-x: auto; }
 
