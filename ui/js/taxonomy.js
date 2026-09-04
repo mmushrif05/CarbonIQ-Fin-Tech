@@ -58,7 +58,10 @@ const Taxonomy = (() => {
       label: 'Sri Lanka SLGFT / CBSL',
       flag: '🇱🇰',
       tiers: [
-        { label: 'Green (CBSL Compliant)',  max: 520,  cls: 'taxonomy-aligned',    statusCls: 'badge-green',  icon: 'check' },
+        /* Was 'Green (CBSL Compliant)'. Compliance is the Central Bank's
+           determination, not this screen's — and the taxonomy sets no absolute
+           kgCO2e/m2 threshold, so 520 is our own banding. */
+        { label: 'Green (intensity screen)',  max: 520,  cls: 'taxonomy-aligned',    statusCls: 'badge-green',  icon: 'check' },
         { label: 'Transition',              max: 780,  cls: 'taxonomy-transition', statusCls: 'badge-amber',  icon: 'warn'  },
         { label: 'Not Aligned',             max: Infinity, cls: 'taxonomy-risk',   statusCls: 'badge-red',    icon: 'cross' },
       ],

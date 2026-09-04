@@ -149,7 +149,35 @@ printed onto an audit-hashed document, with nothing checking it.
 
 ---
 
-## 5. What to do next
+## 5. What was corrected against this document
+
+Applied in commit following this note. The rule was: **where the document
+speaks, its values and wording win; where it is silent, our own figures stand
+but stop claiming to be the taxonomy's.**
+
+| Was | Now | Basis |
+|---|---|---|
+| `M1.1` Green Buildings — New Construction, 600 kgCO₂e/m² | `M6.3` Construction of new buildings, ≥10% below a nearly zero-energy benchmark | Document §M6.3 |
+| `M1.2` Green Buildings — Renovation, ≥30% | `M6.1` Renovation of existing buildings, ≥30% PED/energy/GHG | Document §M6.1 — the 30% was right, the code was not |
+| *(absent)* | `M6.2` Acquisition and ownership — Green SL Rated Gold and Platinum | Document §M6.2 |
+| `M6.1` Clean Transportation Infrastructure | `M6.7` Infrastructure for electric rail transport | M6.1 is renovation |
+| `A2.1` Flood-Resilient Construction | `A3.1` Climate-resilient warehouse and storage | **A2.1 is a financial-services activity — affordable climate insurance** |
+| `E1.1`, `E3.1`, `A2.2` | removed | Not in the document; E1.6–1.8 are agriculture, E3.5–3.6 waste |
+| `M4.1` Solar PV, `M4.2` CSP, `M4.3` Wind | kept, `code: null`, `inSourceDocument: false` | Not in this document. Its numbering skips M4.1–M4.4, so these are likely in the full taxonomy under codes we cannot confirm — unevidenced, not excluded |
+| *(absent)* | `M4.5` hydropower, `M4.6` bio-energy, with full criteria | Document §M4.5, §M4.6 |
+| `version: 2024` | `version: '2022-05'`, `edition: 'May 2022'` | The cover |
+| Certificate stamp `SLGFT v2024` | `SLGFT May 2022`, derived from the constant | The stamp is inside the SHA-256 hash, so `LEGACY_STAMP` keeps already-issued certificates verifying |
+| `Green (CBSL Compliant)` | `Green (intensity screen)` | Compliance is the Central Bank's determination |
+| 520/780 and 600/900 | **unchanged**, relabelled as this product's own screen | The document sets no absolute threshold — but changing the numbers would rescore live projects |
+
+`tests/slgft-source-fidelity.test.js` (22 tests) now pins all of it to the
+document, including the PDF's SHA-256. The previous tests asserted the same
+invented codes the constants held, so neither side caught the drift — the NDC
+failure exactly.
+
+---
+
+## 6. What to do next
 
 Decisions for the reporting entity, not for this software:
 

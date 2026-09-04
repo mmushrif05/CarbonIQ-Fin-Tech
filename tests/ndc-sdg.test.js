@@ -19,7 +19,7 @@ const MOCK_ANALYSIS = {
     reductionTarget: '20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)',
     removalTarget: '4.49% increase in net carbon removal, 2026-2035 — reported separately',
     explanation: 'This project contributes to Sri Lanka NDC targets through reduced embodied carbon in construction.',
-    keyDrivers: ['Below SLGFT green threshold (≤600 kgCO2e/m²)', 'Sector F construction activity', 'M1.1 green buildings activity code'],
+    keyDrivers: ['Below SLGFT green threshold (≤600 kgCO2e/m²)', 'Sector F construction activity', 'M6.3 construction of new buildings activity code'],
   },
   sdgAlignment: [
     { sdg: 9,  label: 'Industry, Innovation & Infrastructure', relevance: 'high',   rationale: 'Green building construction.' },
@@ -69,7 +69,7 @@ describe('NDC/SDG Service', () => {
     name: 'Colombo Green Tower',
     buildingType: 'Commercial Office',
     slsicSector: 'F',
-    activityCode: 'M1.1',
+    activityCode: 'M6.3',
     emissions_tCO2e: 4800,
     buildingArea_m2: 10000,
     reductionPct: 22,
@@ -83,7 +83,7 @@ describe('NDC/SDG Service', () => {
     expect(result).toBeDefined();
     expect(result.analysis).toBeDefined();
     expect(result.framework).toBe('Sri Lanka Green Finance Taxonomy');
-    expect(result.version).toBe(2024);
+    expect(result.version).toBe('2022-05');
     expect(result.regulator).toBe('Central Bank of Sri Lanka (CBSL)');
   });
 
@@ -106,14 +106,18 @@ describe('NDC/SDG Service', () => {
     const result = await assessNdcSdgAlignment(BASE_PROJECT);
     expect(result.projectData.intensity_kgCO2e_m2).toBe(480); // 4800 * 1000 / 10000
     expect(result.projectData.slsicSector).toBe('F');
-    expect(result.projectData.activityCode).toBe('M1.1');
+    expect(result.projectData.activityCode).toBe('M6.3');
   });
 
   test('matches activity code to SLGFT constructionActivities', async () => {
+    /* M6.3 is the taxonomy's own code for construction of new buildings.
+       This asserted M1.1 "Green Buildings — New Construction", which the
+       document does not contain — construction is macro-sector 6. */
     const result = await assessNdcSdgAlignment(BASE_PROJECT);
     expect(result.projectData.matchedActivity).toBeDefined();
-    expect(result.projectData.matchedActivity.code).toBe('M1.1');
-    expect(result.projectData.matchedActivity.label).toContain('Green Buildings');
+    expect(result.projectData.matchedActivity.code).toBe('M6.3');
+    expect(result.projectData.matchedActivity.label).toBe('Construction of new buildings');
+    expect(result.projectData.matchedActivity.inSourceDocument).toBe(true);
   });
 
   test('handles missing area gracefully (null intensity)', async () => {
@@ -155,7 +159,7 @@ describe('POST /v1/ndc-sdg/assess', () => {
   const VALID_BODY = {
     name: 'Colombo Green Tower',
     slsicSector: 'F',
-    activityCode: 'M1.1',
+    activityCode: 'M6.3',
     emissions_tCO2e: 4800,
     buildingArea_m2: 10000,
     region: 'LK',
@@ -235,7 +239,7 @@ describe('GET /v1/ndc-sdg/framework', () => {
     expect([200, 503]).toContain(res.status);
     if (res.status === 200) {
       expect(res.body.framework).toBe('Sri Lanka Green Finance Taxonomy');
-      expect(res.body.version).toBe(2024);
+      expect(res.body.version).toBe('2022-05');
       expect(res.body.ndcTargets).toBeDefined();
       expect(res.body.sectors).toBeDefined();
       expect(res.body.activities).toBeInstanceOf(Array);
@@ -263,9 +267,9 @@ describe('GET /v1/ndc-sdg/framework', () => {
     if (res.status === 200) {
       const acts = res.body.activities;
       expect(acts.length).toBeGreaterThanOrEqual(5);
-      const m11 = acts.find(a => a.code === 'M1.1');
-      expect(m11).toBeDefined();
-      expect(m11.label).toContain('Green Buildings');
+      const m63 = acts.find(a => a.code === 'M6.3');
+      expect(m63).toBeDefined();
+      expect(m63.label).toBe('Construction of new buildings');
     } else {
       expect(res.status).toBe(503);
     }

@@ -113,6 +113,13 @@ const TAXONOMY_SG = {
 const TAXONOMY_SL = {
   version: 2022,
   framework: 'CBSL Direction No. 05/2022 + Sri Lanka Green Finance Taxonomy (SLGFT)',
+  /* The 520/780 bands are this product's own carbon-intensity screen. The
+     taxonomy held in this repository sets no absolute kgCO2e/m2 threshold at
+     all — its construction criteria are relative (M6.1, M6.3) or
+     certification-based (M6.2). The numbers are unchanged because changing them
+     would rescore live projects; the claim made about them is what changed. */
+  intensityScreenSource: "CarbonIQ FinTech — this product's own banding, not a taxonomy "
+    + 'threshold. The SLGFT contains no absolute kgCO2e/m2 figure.',
   criteria: {
     construction: {
       maxEmbodiedCarbon_kgCO2e_per_m2_green: 520,
@@ -121,13 +128,23 @@ const TAXONOMY_SL = {
     }
   },
   classifications: {
-    green: { label: 'Green (CBSL Compliant)', maxIntensity: 520 },
-    transition: { label: 'Transition', maxIntensity: 780 },
+    /* Was "Green (CBSL Compliant)". Compliance against the taxonomy is
+       determined by the Central Bank, not by this software — the same failure
+       services/report-integrity.js exists to prevent, where a report asserted
+       'Compliant' to the regulator that decides compliance. */
+    green: { label: 'Green (intensity screen)', maxIntensity: 520 },
+    transition: { label: 'Transition (intensity screen)', maxIntensity: 780 },
     not_aligned: { label: 'Not Aligned', maxIntensity: Infinity },
   },
   certifications: {
-    greensl_platinum: { label: 'Green SL Platinum', minReduction: 40 },
-    greensl_gold: { label: 'Green SL Gold', minReduction: 25 },
+    /* The taxonomy names Green SL Gold and Platinum for activity M6.2 and
+       attaches NO percentage to either. These minReduction figures come from
+       somewhere else and are marked as unevidenced rather than deleted, because
+       the screening code still reads them. */
+    greensl_platinum: { label: 'Green SL Platinum', minReduction: 40, inSourceDocument: false },
+    greensl_gold: { label: 'Green SL Gold', minReduction: 25, inSourceDocument: false },
+    note: 'The taxonomy requires Green SL Rated Gold or Platinum for M6.2 and states no '
+      + 'percentage reduction for either. The figures above are not from the taxonomy.',
   },
   notes: 'CBSL Direction No. 05/2022 mandates green finance classification for all licensed banks. SLFRS S2 (aligned to IFRS S2) phased adoption from 2025.',
 };
@@ -149,7 +166,18 @@ const TAXONOMY_SL = {
 // ---------------------------------------------------------------------------
 
 const TAXONOMY_LK = {
-  version: 2024,
+  /* The edition this repository actually holds. The cover of
+     SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf reads "May 2022", and
+     the PDF was created 2022-05-04. This file previously said 2024, and the
+     Green Loan Certificate stamped "SLGFT v2024" onto a document carrying a
+     SHA-256 audit hash — a version claim nobody could check, which is the same
+     shape as the superseded NDC targets. If a later edition exists it should be
+     added to this repository and this constant moved with it. */
+  version: '2022-05',
+  edition: 'May 2022',
+  sourceDocument: 'SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf',
+  sourceNote: 'The document\'s activity numbering has systematic gaps, so it is a subset '
+    + 'rather than the complete activity list. See docs/SLGFT-SOURCES.md.',
   name: 'Sri Lanka Green Finance Taxonomy',
   regulator: 'Central Bank of Sri Lanka (CBSL)',
 
@@ -200,25 +228,132 @@ const TAXONOMY_LK = {
     },
   },
 
-  // Key activities for construction sector (F 41-43)
+  /* Activities, transcribed from the taxonomy in this repository.
+   *
+   * Source: SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf, root of this
+   * repository. `criterion` is the document's own "Metric & Threshold for Sri
+   * Lanka" wording, quoted rather than paraphrased.
+   *
+   * This list previously carried invented codes and mislabelled real ones. All
+   * of the following were wrong against the source and are corrected here:
+   *
+   *   M1.1 "Green Buildings — New Construction" at 600 kgCO2e/m2 — construction
+   *   is macro-sector SIX in the taxonomy, and the criterion for new buildings
+   *   is RELATIVE, not an absolute carbon intensity. It is now M6.3.
+   *
+   *   M6.1 "Clean Transportation Infrastructure" — M6.1 is renovation of
+   *   existing buildings. Electric rail infrastructure is M6.7.
+   *
+   *   A2.1 "Flood-Resilient Construction" — A2.1 is a FINANCIAL SERVICES
+   *   activity: affordable climate insurance for agriculture and tourism.
+   *   Climate-resilient construction is A3.1.
+   *
+   *   E1.1 and E3.1 do not appear in the document at all. E1.6-E1.8 are
+   *   agriculture and E3.5-E3.6 are waste management.
+   *
+   * `inSourceDocument: false` marks an activity this repository asserts but
+   * cannot evidence. The document's activity numbering has systematic gaps
+   * (M4.5, M4.6, then M4.11), so it is a SUBSET rather than the complete list —
+   * absence here means unevidenced, not excluded.
+   */
   constructionActivities: [
-    { code: 'M1.1', label: 'Green Buildings — New Construction',          objective: 'M', threshold_kgCO2e_m2: 600,  eligibility: 'threshold' },
-    { code: 'M1.2', label: 'Green Buildings — Renovation',                objective: 'M', threshold_kgCO2e_m2: null, eligibility: 'direct',    note: '≥30% energy performance improvement' },
-    { code: 'M4.1', label: 'Solar PV — Electricity Generation',           objective: 'M', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'M4.2', label: 'Concentrated Solar Power (CSP)',               objective: 'M', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'M4.3', label: 'Wind Energy',                                  objective: 'M', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'M6.1', label: 'Clean Transportation Infrastructure',          objective: 'M', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'A2.1', label: 'Flood-Resilient Construction',                 objective: 'A', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'A2.2', label: 'Climate-Resilient Buildings',                  objective: 'A', threshold_kgCO2e_m2: null, eligibility: 'threshold', note: 'Climate risk assessment required' },
-    { code: 'E1.1', label: 'Coastal & Marine Resource Protection',         objective: 'E', threshold_kgCO2e_m2: null, eligibility: 'direct' },
-    { code: 'E3.1', label: 'Sustainable Land Use & Biodiversity',          objective: 'E', threshold_kgCO2e_m2: null, eligibility: 'direct' },
+    { code: 'M6.1', label: 'Renovation of existing buildings', objective: 'M',
+      macroSector: 'Construction', threshold_kgCO2e_m2: null, eligibility: 'threshold',
+      inSourceDocument: true,
+      criterion: 'The building renovation leads to a reduction of primary energy demand '
+        + '(PED) / energy consumption / GHG emissions of at least 30%.' },
+
+    { code: 'M6.2', label: 'Acquisition and ownership of buildings', objective: 'M',
+      macroSector: 'Construction', threshold_kgCO2e_m2: null, eligibility: 'certification',
+      inSourceDocument: true,
+      criterion: 'Green SL Rated buildings: Gold and Platinum.' },
+
+    { code: 'M6.3', label: 'Construction of new buildings', objective: 'M',
+      macroSector: 'Construction', threshold_kgCO2e_m2: null, eligibility: 'threshold',
+      inSourceDocument: true,
+      criterion: 'The GHG emissions / energy consumption / Primary Energy Demand (PED) of '
+        + 'the building resulting from the construction, is at least 10% lower than the '
+        + 'threshold set by a relevant national/international nearly zero-energy building '
+        + 'requirements.',
+      note: 'A RELATIVE criterion. It cannot be evaluated from a carbon intensity alone — '
+        + 'it needs the nearly zero-energy benchmark for Sri Lanka, which this system does '
+        + 'not hold. An M6.3 determination is therefore absent, not computable.' },
+
+    { code: 'M6.7', label: 'Infrastructure for electric rail transport', objective: 'M',
+      macroSector: 'Construction', threshold_kgCO2e_m2: null, eligibility: 'threshold',
+      inSourceDocument: true,
+      criterion: 'Scope: electrified rail only. Criteria on the infrastructure itself.' },
+
+    { code: 'A3.1', label: 'Climate-resilient warehouse and storage for agricultural buffer stocks',
+      objective: 'A', macroSector: 'Construction', threshold_kgCO2e_m2: null,
+      eligibility: 'direct', inSourceDocument: true,
+      criterion: 'Construction and operation of flood-proof warehouses and storage, as a '
+        + 'measure to improve disaster risk preparedness and management.' },
+
+    { code: 'M4.5', label: 'Electricity generation from hydropower', objective: 'M',
+      macroSector: 'Electric power generation, transmission and distribution',
+      threshold_kgCO2e_m2: null, eligibility: 'threshold', inSourceDocument: true,
+      criterion: 'Run-of-river without an artificial reservoir; OR power density above '
+        + '5 W/m2; OR life-cycle GHG emissions below 100 gCO2e/kWh, calculated using '
+        + 'ISO 14067:2018, ISO 14064-1:2018 or the G-res tool and verified by an '
+        + 'independent third party.' },
+
+    { code: 'M4.6', label: 'Electricity generation from bio-energy', objective: 'M',
+      macroSector: 'Electric power generation, transmission and distribution',
+      threshold_kgCO2e_m2: null, eligibility: 'threshold', inSourceDocument: true,
+      criterion: 'Total rated thermal input less than 2 MW. GHG emission savings from the '
+        + 'use of biomass are at least 80% relative to the fossil fuel comparator.' },
+
+    /* Solar and wind do not appear in the taxonomy held here. The document's
+       electricity activities are M4.5 (hydropower) and M4.6 (bio-energy), and
+       its numbering skips M4.1-M4.4 — so these are almost certainly in the full
+       taxonomy under codes this repository cannot confirm. They are kept
+       because the product screens solar projects, and marked unevidenced so no
+       screen prints a code nobody can check. */
+    { code: null, label: 'Solar PV — electricity generation', objective: 'M',
+      macroSector: 'Electric power generation, transmission and distribution',
+      threshold_kgCO2e_m2: null, eligibility: 'direct', inSourceDocument: false,
+      criterion: null,
+      note: 'Not present in the taxonomy document held in this repository. Previously '
+        + 'asserted as M4.1, which the document does not contain. The activity code and '
+        + 'criterion must be confirmed against the complete taxonomy before either is '
+        + 'printed on a certificate.' },
+
+    { code: null, label: 'Wind energy', objective: 'M',
+      macroSector: 'Electric power generation, transmission and distribution',
+      threshold_kgCO2e_m2: null, eligibility: 'direct', inSourceDocument: false,
+      criterion: null,
+      note: 'Not present in the taxonomy document held in this repository. Previously '
+        + 'asserted as M4.3.' },
   ],
 
-  // Embodied carbon thresholds for construction (kgCO2e/m2)
-  thresholds: {
+  /* Carbon-intensity bands — CarbonIQ's own screen, NOT taxonomy thresholds.
+   *
+   * The taxonomy contains no absolute kgCO2e/m2 threshold anywhere. A full-text
+   * sweep of all 26 pages returns exactly one figure per unit area and it is
+   * unrelated (5 W/m2 power density, hydropower). Its construction criteria are
+   * relative (M6.1, M6.3) or certification-based (M6.2).
+   *
+   * The numbers below are unchanged, because they are a useful internal screen
+   * and changing them would rescore live projects. What changed is the claim
+   * made about them: they are this product's own banding and must not be
+   * described as SLGFT alignment or CBSL compliance.
+   */
+  intensityScreen: {
+    source: "CarbonIQ FinTech — this product's own carbon-intensity banding",
+    notTaxonomy: 'The Sri Lanka Green Finance Taxonomy sets no absolute kgCO2e/m2 '
+      + 'threshold. These bands are an internal screen and are not a taxonomy determination.',
     directlyEligible:   null,          // activity meets criteria regardless of intensity
-    green:              600,           // ≤ 600 kgCO2e/m2 — aligned
-    transition:         900,           // ≤ 900 kgCO2e/m2 — transition
+    green:              600,           // ≤ 600 kgCO2e/m2
+    transition:         900,           // ≤ 900 kgCO2e/m2
+  },
+
+  /* Kept under the old key so existing callers keep working. Same numbers, and
+     the honest labelling lives on intensityScreen above. */
+  thresholds: {
+    directlyEligible:   null,
+    green:              600,
+    transition:         900,
   },
 
   /* NDC targets Sri Lanka committed to.

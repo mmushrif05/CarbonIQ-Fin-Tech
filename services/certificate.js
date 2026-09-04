@@ -2,13 +2,29 @@
  * CarbonIQ FinTech — SLGFT Green Loan Certificate Service
  *
  * Generates tamper-evident digital Green Loan Certificates for projects
- * that meet the Sri Lanka Green Finance Taxonomy (SLGFT v2024) criteria,
+ * that meet the Sri Lanka Green Finance Taxonomy criteria,
  * regulated by the Central Bank of Sri Lanka (CBSL).
  */
 
 'use strict';
 
 const crypto = require('crypto');
+
+/* The taxonomy edition stamped into the hashed record.
+ *
+ * This was the literal 'SLGFT v2024' — an edition nobody in this repository
+ * could produce, printed onto a document carrying a SHA-256 audit hash. The
+ * taxonomy actually held here is dated May 2022. The stamp now derives from
+ * the constant, so it cannot drift from the document again.
+ *
+ * LEGACY_STAMP exists because the stamp is INSIDE the hash: a certificate
+ * issued before this change was hashed with the old literal, and verification
+ * recomputes the hash. Changing the stamp without this would invalidate every
+ * certificate ever issued — which is not a correction, it is destroying
+ * evidence. New certificates carry `taxonomy.stamp`; ones that do not fall
+ * back to what they were actually hashed with. */
+const LEGACY_STAMP = 'SLGFT v2024';
+const TAXONOMY_STAMP = `SLGFT ${require('../config/constants').TAXONOMY_LK.edition}`;
 const { TAXONOMY_LK } = require('../config/constants');
 
 const CERT_VERSION = '1.0';
@@ -56,7 +72,7 @@ function generateCertificate(opts) {
 
   const classificationRecord = {
     certId, certVersion: CERT_VERSION, issuedAt,
-    taxonomy: 'SLGFT v2024', regulator: 'Central Bank of Sri Lanka (CBSL)',
+    taxonomy: TAXONOMY_STAMP, regulator: 'Central Bank of Sri Lanka (CBSL)',
     projectName, projectId: projectId || null, tier,
     activityCode: activityCode || null, slsicSector: slsicSector || null,
     intensity_kgCO2e_m2: intensity, emissions_tCO2e: emissions_tCO2e || null,
@@ -69,7 +85,16 @@ function generateCertificate(opts) {
   return {
     certId, certVersion: CERT_VERSION, issuedAt, expiresAt, hash, isValid: true,
 
-    taxonomy: { framework: TAXONOMY_LK.name, version: TAXONOMY_LK.version, regulator: TAXONOMY_LK.regulator },
+    taxonomy: {
+      framework: TAXONOMY_LK.name,
+      version: TAXONOMY_LK.version,
+      edition: TAXONOMY_LK.edition,
+      /* Carried so the verifier reads what this certificate was hashed with,
+         rather than assuming whatever edition the code holds today. */
+      stamp: TAXONOMY_STAMP,
+      sourceDocument: TAXONOMY_LK.sourceDocument,
+      regulator: TAXONOMY_LK.regulator,
+    },
 
     project: {
       name: projectName, id: projectId || null,
@@ -149,7 +174,10 @@ function verifyCertificate(cert) {
   try {
     const rec = {
       certId: cert.certId, certVersion: cert.certVersion, issuedAt: cert.issuedAt,
-      taxonomy: 'SLGFT v2024', regulator: 'Central Bank of Sri Lanka (CBSL)',
+      /* The certificate's own stamp, not the code's current one. A certificate
+         issued under an earlier edition must still verify. */
+      taxonomy: cert.taxonomy?.stamp || LEGACY_STAMP,
+      regulator: 'Central Bank of Sri Lanka (CBSL)',
       projectName: cert.project?.name, projectId: cert.project?.id,
       tier: cert.classification?.tier, activityCode: cert.project?.activityCode,
       slsicSector: cert.project?.slsicSector,

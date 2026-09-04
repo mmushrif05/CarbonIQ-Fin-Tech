@@ -9,7 +9,7 @@ const BASE_OPTS = {
   projectId:      'LK-2026-001',
   bankName:       'DFCC Bank PLC',
   slsicSector:    'F',
-  activityCode:   'M1.1',
+  activityCode:   'M6.3',
   emissions_tCO2e: 4800,
   buildingArea_m2: 10000,
   ndcTier:        'moderate',
@@ -48,8 +48,14 @@ describe('Certificate Service — generateCertificate()', () => {
   });
 
   test('classifies as directly_eligible for direct eligibility activity codes', () => {
-    // M4.1 Solar PV = direct eligibility (no intensity threshold)
-    const cert = generateCertificate({ ...BASE_OPTS, activityCode: 'M4.1', emissions_tCO2e: 12000 });
+    /* A3.1 — climate-resilient warehouse and storage for agricultural buffer
+       stocks. Direct eligibility, no intensity threshold.
+
+       This test used to use M4.1 "Solar PV", a code the Sri Lanka Green
+       Finance Taxonomy does not contain: its electricity activities are M4.5
+       (hydropower) and M4.6 (bio-energy). The test and the constant asserted
+       the same invented code, so neither caught it. */
+    const cert = generateCertificate({ ...BASE_OPTS, activityCode: 'A3.1', emissions_tCO2e: 12000 });
     expect(cert.classification.tier).toBe('directly_eligible');
     expect(cert.loanDetails.pricingAdjustment_bps).toBe(-20);
   });
@@ -79,7 +85,10 @@ describe('Certificate Service — generateCertificate()', () => {
   test('includes taxonomy details', () => {
     const cert = generateCertificate(BASE_OPTS);
     expect(cert.taxonomy.framework).toBe('Sri Lanka Green Finance Taxonomy');
-    expect(cert.taxonomy.version).toBe(2024);
+    /* The edition this repository actually holds. The cover reads May 2022. */
+    expect(cert.taxonomy.version).toBe('2022-05');
+    expect(cert.taxonomy.edition).toBe('May 2022');
+    expect(cert.taxonomy.stamp).toBe('SLGFT May 2022');
     expect(cert.taxonomy.regulator).toBe('Central Bank of Sri Lanka (CBSL)');
   });
 

@@ -406,9 +406,32 @@ here is dated **May 2022**. Either a 2024 edition exists and is not in this
 repository, or the string is wrong — the same class of error as the superseded
 NDC targets, printed onto an audit-hashed document with nothing checking it.
 
-Until both are settled the honest reading is that this product applies **its
-own carbon-intensity bands** — a useful internal screen — and should not
-describe their output as SLGFT alignment or CBSL compliance.
+**Both are now corrected against the document**, on the rule *where the document
+speaks its values win; where it is silent ours stand but stop claiming to be the
+taxonomy's*. Construction moved to macro-sector 6 with the document's own
+criteria quoted (`M6.1` ≥30% PED reduction · `M6.2` Green SL Gold/Platinum ·
+`M6.3` ≥10% below a nearly zero-energy benchmark · `M6.7` electric rail), `A2.1
+Flood-Resilient Construction` became `A3.1` — **A2.1 is a financial-services
+activity, affordable climate insurance** — and `M4.5` hydropower and `M4.6`
+bio-energy were added with their full criteria. Solar and wind are kept with
+`code: null, inSourceDocument: false`, because the document's numbering skips
+M4.1–M4.4 and they are likely in the full taxonomy under codes we cannot
+confirm: unevidenced, not excluded.
+
+The 520/780 and 600/900 numbers are **unchanged** — changing them would rescore
+live projects — but they are relabelled as this product's own intensity screen,
+and `Green (CBSL Compliant)` is now `Green (intensity screen)`.
+
+The certificate stamp derives from the constant, so it cannot drift from the
+document again; because the stamp sits **inside** the SHA-256 hash, the verifier
+reads it off the certificate with a `LEGACY_STAMP` fallback, so every
+already-issued certificate still verifies. Changing a hashed field without that
+is not a correction, it is destroying evidence.
+
+`tests/slgft-source-fidelity.test.js` pins all of it to the document, PDF
+checksum included. The old tests asserted the same invented codes the constants
+held — the NDC failure exactly, and the reason a test only protects you if it
+knows something the code does not.
 
 **NDC targets — NDC 3.0, issued September 2025** (`data/gcf/ndc3.json`). Two **separate** commitments over **2026–2035**, never summed: a **20.09%** cumulative GHG reduction against BAU (8.11% unconditional, 11.98% conditional), and a **4.49%** increase in net carbon removal (0.96% / 3.53%). Six mitigation sectors, nine adaptation sectors, loss and damage cross-cutting. Key SDGs: 7, 9, 11, 13, 14, 15; GESI applies across all NDC actions.
 
