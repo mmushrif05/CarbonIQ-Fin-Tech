@@ -42,6 +42,7 @@ const pcafPartARouter     = require('./pcaf-parta');
 const partcRegistryRouter = require('./partc-registry');
 const capitalRouter       = require('./capital');
 const gcfRouter           = require('./gcf');
+const deskRouter          = require('./desk');
 const ndcSdgRouter        = require('./ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
 
@@ -180,6 +181,7 @@ router.use('/pcaf/part-a', pcafPartARouter);
 router.use('/partc', partcRegistryRouter);
 router.use('/capital', capitalRouter);
 router.use('/gcf', gcfRouter);
+router.use('/desk', deskRouter);
 router.use('/ndc-sdg', ndcSdgRouter);
 
 module.exports = router;

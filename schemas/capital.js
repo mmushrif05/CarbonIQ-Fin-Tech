@@ -60,6 +60,12 @@ const investmentSchema = Joi.object({
   assetType: Joi.string().max(80).allow('', null).optional(),
   country: Joi.string().max(80).allow('', null).optional(),
   status: Joi.string().valid('pipeline', 'committed', 'deployed', 'exited', 'declined').optional(),
+  /* The asset's own progress. A second axis from `status`, which is the
+     bank's position. `origin` and `pledgedMitigation` are deliberately not
+     accepted here: both are provenance, written only by the adoption path,
+     and a caller able to assert them could claim a project came from a GCF
+     record that never existed. */
+  delivery: Joi.string().valid('not_started', 'under_construction', 'completed').optional(),
   commitment: money.optional(),
   projectCost: money.optional(),
   expectedReturnPct: Joi.number().allow(null).optional(),
@@ -78,6 +84,12 @@ const investmentUpdateSchema = Joi.object({
   assetType: Joi.string().max(80).allow('', null).optional(),
   country: Joi.string().max(80).allow('', null).optional(),
   status: Joi.string().valid('pipeline', 'committed', 'deployed', 'exited', 'declined').optional(),
+  /* The asset's own progress. A second axis from `status`, which is the
+     bank's position. `origin` and `pledgedMitigation` are deliberately not
+     accepted here: both are provenance, written only by the adoption path,
+     and a caller able to assert them could claim a project came from a GCF
+     record that never existed. */
+  delivery: Joi.string().valid('not_started', 'under_construction', 'completed').optional(),
   commitment: money.optional(),
   projectCost: money.optional(),
   expectedReturnPct: Joi.number().allow(null).optional(),

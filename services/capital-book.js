@@ -43,6 +43,30 @@ const C_PAYMENT    = 'capital_payments';
 /** Where an investment has got to. Only `pipeline` is ranked for selection. */
 const STATUSES = ['pipeline', 'committed', 'deployed', 'exited', 'declined'];
 
+/**
+ * Where the **asset** has got to. A second axis, and deliberately not the one
+ * above.
+ *
+ * `status` is the bank's position: whether the money is committed, out, or
+ * recovered. `delivery` is the project's: whether the thing has been built.
+ * They move independently — a bank can exit a facility on a plant still under
+ * construction, and a completed building can sit on the book for another
+ * decade. Folding them into one field would make "completed" mean two things
+ * and answer neither question.
+ *
+ * Three states, not four. An earlier draft carried `operating` beside
+ * `completed`, which for a construction facility are the same fact said twice:
+ * a building is operating precisely because construction finished. Two labels
+ * for one state is how two screens end up disagreeing about the same project.
+ * `completed` means built and handed over, whatever the asset does afterwards.
+ *
+ * It lives on the investment rather than on a GCF pipeline record because the
+ * desk shows one row per investment and every financed project has exactly
+ * one. Held in both places it would be two fields that can disagree, which is
+ * the failure this codebase spends most of its effort avoiding.
+ */
+const DELIVERY_STATES = ['not_started', 'under_construction', 'completed'];
+
 /** Money has left the institution for these; the others are intentions. */
 const DEPLOYING_STATUSES = ['committed', 'deployed', 'exited'];
 
@@ -118,6 +142,64 @@ async function updatePortfolio(orgId, id, updates) {
  * `reduction` — achieved against the project's own base year.
  * `avoided`   — against a counterfactual. Reported separately, never netted.
  */
+/**
+ * Where this investment came from, when it was not keyed in by hand.
+ *
+ * Written once, at creation, and never editable: an investment adopted from a
+ * GCF pipeline record came from that record, and a link that can be re-pointed
+ * later is not a provenance trail. The screening verdict is frozen with it,
+ * because a gate answer is a statement about the day it was asked — the
+ * accreditation, the cost and the category could all move afterwards.
+ */
+function _origin(o) {
+  if (!o || typeof o !== 'object' || !o.system || !o.recordId) return null;
+  return {
+    system: String(o.system).slice(0, 40),
+    recordId: String(o.recordId).slice(0, 80),
+    code: o.code ? String(o.code).slice(0, 20) : null,
+    adoptedAt: o.adoptedAt || now(),
+    adoptedBy: o.adoptedBy || null,
+    screening: o.screening && typeof o.screening === 'object'
+      ? {
+        verdict: o.screening.verdict || null,
+        reasons: Array.isArray(o.screening.reasons) ? o.screening.reasons.slice(0, 12) : [],
+        note: 'The gate answer as it stood when this project was adopted into the book. '
+          + 'It is a statement about that day, not a live check.',
+      }
+      : null,
+  };
+}
+
+/**
+ * The mitigation claim as it stood on the day we wrote the facility.
+ *
+ * Frozen on purpose. Recomputing it from the live pipeline record would mean
+ * every later edit silently rewrote what was told to a credit committee, and
+ * the rewrite would be invisible precisely where it matters.
+ *
+ * This is a **project-level** figure against a counterfactual — not attributed
+ * to this book, not part of the inventory, and never netted against anything.
+ * It is a fourth boundary beside the four emission lines and no total in this
+ * application adds it to any of them.
+ */
+function _pledgedMitigation(p) {
+  if (!p || typeof p !== 'object') return null;
+  const v = numOrNull(p.annual_tCO2e);
+  const l = numOrNull(p.lifetime_tCO2e);
+  if (v === null && l === null) return null;
+  return {
+    annual_tCO2e: v,
+    lifetime_tCO2e: l,
+    tier: p.tier || null,
+    baselineType: p.baselineType || null,
+    counterfactual: p.counterfactual || null,
+    isCoBenefit: p.isCoBenefit === true,
+    frozenAt: p.frozenAt || now(),
+    note: 'Project-level mitigation against a counterfactual, frozen at adoption. Not attributed '
+      + 'to this book, not part of the emissions inventory, and never netted against it.',
+  };
+}
+
 function _emissions(e = {}) {
   return {
     incurred_tCO2e:  num(e.incurred_tCO2e),
@@ -152,6 +234,10 @@ async function createInvestment(orgId, input) {
     assetType: input.assetType || null,
     country: input.country || null,
     status: STATUSES.includes(input.status) ? input.status : 'pipeline',
+    /* The asset's own progress, independent of the bank's position above. */
+    delivery: DELIVERY_STATES.includes(input.delivery) ? input.delivery : 'not_started',
+    origin: _origin(input.origin),
+    pledgedMitigation: _pledgedMitigation(input.pledgedMitigation),
     /* The time axis. Without a start year and a shape, everything ahead is a
        lump with no years attached and no curve can be drawn from it. */
     startYear: numOrNull(input.startYear),
@@ -190,6 +276,18 @@ async function updateInvestment(orgId, id, updates) {
     }
     clean.status = updates.status;
   }
+  if (updates.delivery !== undefined) {
+    if (!DELIVERY_STATES.includes(updates.delivery)) {
+      const err = new Error(`Unknown delivery state "${updates.delivery}". One of: ${DELIVERY_STATES.join(', ')}.`);
+      err.statusCode = 400;
+      throw err;
+    }
+    clean.delivery = updates.delivery;
+  }
+  /* `origin` and `pledgedMitigation` are deliberately absent from every list
+     above. Both are written once and are evidence of what was true when the
+     facility was written; a provenance link that can be re-pointed afterwards
+     is not provenance, and a pledge that can be edited is not a pledge. */
   if (updates.emissions !== undefined) clean.emissions = _emissions(updates.emissions);
   return store.patch(C_INVESTMENT, orgId, id, clean);
 }
@@ -269,6 +367,6 @@ module.exports = {
   listInvestments, getInvestment, createInvestment, updateInvestment,
   listPayments, createPayment, deletePayment,
   readBook,
-  STATUSES, DEPLOYING_STATUSES, PAYMENT_KINDS,
+  STATUSES, DELIVERY_STATES, DEPLOYING_STATUSES, PAYMENT_KINDS,
   _collections: { C_PORTFOLIO, C_INVESTMENT, C_PAYMENT },
 };

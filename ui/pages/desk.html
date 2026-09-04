@@ -1,0 +1,299 @@
+<!-- Fund Desk — the bank's own view over two books.
+     The GCF Pipeline tab is the research: every record, every tier, every
+     clause. This screen answers the six questions a credit committee actually
+     arrives with, and nothing computes here — every figure is returned by an
+     engine that already owns it. -->
+
+<style>
+  /* Scoped to this page. Tokens first, so all three theme states resolve as a
+     set: bare :root is the complete light palette, the media query covers the
+     un-stamped system default, and [data-theme] lets an explicit choice win in
+     both directions. */
+  .dk {
+    --dk-ink: #14202e;
+    --dk-muted: #5b6b7c;
+    --dk-line: #dde4ec;
+    --dk-surface: #ffffff;
+    --dk-sunk: #f4f7fa;
+    --dk-accent: #1e4d78;            /* navy — the money register */
+    --dk-accent-soft: #dceafa;
+    --dk-signal: #c2410c;            /* burnt orange — what is still to come */
+    --dk-signal-soft: #ffe9d5;
+    --dk-ok: #15803d;
+    --dk-ok-soft: #dcfce7;
+    --dk-warn: #b45309;
+    --dk-warn-soft: #fef3c7;
+    --dk-neutral: #6b7a8a;
+    --dk-neutral-soft: #eef2f6;
+    color: var(--dk-ink);
+    min-width: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .dk {
+      --dk-ink: #e6edf5; --dk-muted: #93a3b5; --dk-line: #2c3a4b;
+      --dk-surface: #16212e; --dk-sunk: #0e1721;
+      --dk-accent: #7cb2e8; --dk-accent-soft: #14324f;
+      --dk-signal: #fb923c; --dk-signal-soft: #43200a;
+      --dk-ok: #86efac; --dk-ok-soft: #0d2f1a;
+      --dk-warn: #fbbf24; --dk-warn-soft: #3d2606;
+      --dk-neutral: #94a3b8; --dk-neutral-soft: #1c2836;
+    }
+  }
+  :root[data-theme="dark"] .dk {
+    --dk-ink: #e6edf5; --dk-muted: #93a3b5; --dk-line: #2c3a4b;
+    --dk-surface: #16212e; --dk-sunk: #0e1721;
+    --dk-accent: #7cb2e8; --dk-accent-soft: #14324f;
+    --dk-signal: #fb923c; --dk-signal-soft: #43200a;
+    --dk-ok: #86efac; --dk-ok-soft: #0d2f1a;
+    --dk-warn: #fbbf24; --dk-warn-soft: #3d2606;
+    --dk-neutral: #94a3b8; --dk-neutral-soft: #1c2836;
+  }
+
+  /* [hidden] is display:none from the user-agent sheet and ANY class rule that
+     sets display beats it. That has covered a page from load once already in
+     this codebase, so every element here that toggles says it explicitly. */
+  .dk [hidden] { display: none !important; }
+
+  .dk-card {
+    background: var(--dk-surface); border: 1px solid var(--dk-line);
+    border-radius: 12px; padding: 18px; margin-bottom: 14px; min-width: 0;
+  }
+  .dk-card > h4 {
+    margin: 0 0 3px; font-size: 13px; letter-spacing: .02em;
+  }
+  .dk-card > p { margin: 0 0 14px; font-size: 12px; color: var(--dk-muted); max-width: 78ch; }
+
+  .dk-eyebrow {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--dk-muted); margin: 0 0 10px;
+  }
+
+  /* ── Controls ───────────────────────────────────────────────── */
+  .dk-controls {
+    display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+    margin-bottom: 14px; min-width: 0;
+  }
+  /* A select sizes to its WIDEST option, not to its container. One long
+     portfolio name would push the page sideways on a phone without this. */
+  .dk-controls select, .dk-controls input {
+    max-width: 100%; min-width: 0; flex: 0 1 190px;
+    padding: 7px 10px; border: 1px solid var(--dk-line); border-radius: 8px;
+    background: var(--dk-surface); color: var(--dk-ink); font: inherit; font-size: 12.5px;
+  }
+  .dk-toggle { display: inline-flex; border: 1px solid var(--dk-line); border-radius: 8px; overflow: hidden; }
+  .dk-toggle button {
+    border: none; background: var(--dk-surface); color: var(--dk-muted);
+    font: inherit; font-size: 12px; font-weight: 600; padding: 7px 13px; cursor: pointer;
+  }
+  .dk-toggle button[aria-pressed="true"] { background: var(--dk-accent); color: #fff; }
+  :root[data-theme="dark"] .dk-toggle button[aria-pressed="true"],
+  .dk-toggle button[aria-pressed="true"] { color: #fff; }
+  .dk-toggle button:focus-visible { outline: 2px solid var(--dk-accent); outline-offset: -2px; }
+
+  /* ── Figure tiles ───────────────────────────────────────────── */
+  .dk-tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  @media (min-width: 780px)  { .dk-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .dk-tiles-3 { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+  @media (min-width: 780px)  { .dk-tiles-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+  .dk-tile {
+    background: var(--dk-sunk); border: 1px solid var(--dk-line);
+    border-radius: 10px; padding: 14px 15px; min-width: 0;
+    display: flex; flex-direction: column; gap: 5px;
+  }
+  .dk-tile-label {
+    font-size: 10.5px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--dk-muted);
+  }
+  .dk-tile-value {
+    font-size: 26px; font-weight: 700; line-height: 1.05; letter-spacing: -.02em;
+    font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+  }
+  @media (min-width: 780px) { .dk-tile-value { font-size: 30px; } }
+  .dk-tile-unit { font-size: 11.5px; color: var(--dk-muted); }
+  .dk-tile-accent .dk-tile-value { color: var(--dk-accent); }
+  .dk-tile-signal .dk-tile-value { color: var(--dk-signal); }
+  .dk-tile-ok .dk-tile-value     { color: var(--dk-ok); }
+
+  /* ── Bars. display:block matters: as an inline element the height and
+        background simply do not apply and the bar renders as nothing, which
+        reads as a value of zero rather than a missing element. ───────────── */
+  .dk-scale { display: grid; gap: 10px; margin-top: 4px; }
+  .dk-scale-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
+  .dk-scale-head {
+    display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+    font-size: 12px; min-width: 0;
+  }
+  .dk-scale-head b { font-variant-numeric: tabular-nums; font-weight: 700; white-space: nowrap; }
+  .dk-scale-head span { color: var(--dk-muted); min-width: 0; overflow-wrap: anywhere; }
+  .dk-bar {
+    display: block; height: 12px; border-radius: 6px;
+    background: var(--dk-neutral-soft); overflow: hidden;
+  }
+  .dk-bar > i { display: block; height: 100%; border-radius: 6px; background: var(--dk-accent); }
+  .dk-bar > i.is-deep { background: var(--dk-ok); }
+  .dk-bar > i.is-signal { background: var(--dk-signal); }
+  /* Hatching means projection everywhere in this application, and that is what
+     it means here: emissions that arrive as the undrawn money is drawn. */
+  /* Hatching means "not measured" wherever it appears in this application. It
+     is the only texture in the system and it carries that one meaning. */
+  .dk-bar > i.is-pending, .dk-split > i.is-pending {
+    background: repeating-linear-gradient(135deg,
+      var(--dk-signal) 0 2px, var(--dk-signal-soft) 2px 7px);
+  }
+  .dk-split { display: flex; height: 12px; border-radius: 6px; overflow: hidden; background: var(--dk-neutral-soft); }
+  .dk-split > i { display: block; height: 100%; }
+
+  .dk-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; font-size: 11.5px; color: var(--dk-muted); }
+  .dk-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dk-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; background: var(--dk-accent); }
+  .dk-swatch.is-deep { background: var(--dk-ok); }
+  .dk-swatch.is-signal { background: var(--dk-signal); }
+  .dk-swatch.is-pending {
+    background: repeating-linear-gradient(135deg, var(--dk-signal) 0 2px, var(--dk-signal-soft) 2px 6px);
+  }
+  .dk-swatch.is-neutral { background: var(--dk-neutral); }
+
+  /* ── Chips ──────────────────────────────────────────────────── */
+  .dk-chip {
+    display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+    background: var(--dk-neutral-soft); color: var(--dk-muted);
+  }
+  .dk-chip-done  { background: var(--dk-ok-soft);      color: var(--dk-ok); }
+  .dk-chip-build { background: var(--dk-warn-soft);    color: var(--dk-warn); }
+  .dk-chip-money { background: var(--dk-accent-soft);  color: var(--dk-accent); }
+  .dk-chip-wait  { background: var(--dk-signal-soft);  color: var(--dk-signal); }
+
+  /* ── Table ──────────────────────────────────────────────────── */
+  .dk-scroll { overflow-x: auto; }
+  .dk-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 780px; }
+  .dk-table th {
+    text-align: left; font-size: 10px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--dk-muted); padding: 9px 10px; border-bottom: 1px solid var(--dk-line);
+    white-space: nowrap; position: sticky; top: 0; background: var(--dk-surface);
+  }
+  .dk-table td { padding: 10px; border-bottom: 1px solid var(--dk-line); vertical-align: middle; }
+  .dk-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .dk-table tbody tr:hover td { background: var(--dk-sunk); }
+  .dk-name { font-weight: 600; }
+  .dk-sub { display: block; font-size: 11px; color: var(--dk-muted); margin-top: 2px; }
+  .dk-mini { display: block; height: 5px; border-radius: 3px; background: var(--dk-neutral-soft); margin-top: 5px; }
+  .dk-mini > i { display: block; height: 100%; border-radius: 3px; background: var(--dk-accent); }
+
+  .dk-note {
+    font-size: 11.5px; color: var(--dk-muted); border-left: 3px solid var(--dk-line);
+    padding: 4px 0 4px 12px; margin: 12px 0 0;
+  }
+  .dk-banner {
+    display: flex; gap: 12px; align-items: flex-start; min-width: 0;
+    padding: 12px 14px; margin-bottom: 14px; border-radius: 10px; font-size: 12.5px;
+    background: var(--dk-warn-soft); color: var(--dk-warn); border: 1px solid var(--dk-line);
+  }
+  .dk-error {
+    padding: 12px 14px; margin-bottom: 14px; border-radius: 10px; font-size: 12.5px;
+    background: var(--dk-signal-soft); color: var(--dk-signal); border: 1px solid var(--dk-signal);
+  }
+  .dk-empty { padding: 26px 10px; text-align: center; color: var(--dk-muted); font-size: 13px; }
+
+  /* align-items: start, or the shorter card stretches to the taller one and
+     opens a field of dead space under its own content. */
+  .dk-two { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); align-items: start; }
+  @media (min-width: 1040px) { .dk-two { grid-template-columns: 1.6fr 1fr; } }
+</style>
+
+<div class="dk">
+
+  <div id="deskError" class="dk-error" hidden></div>
+  <div id="deskSample" class="dk-banner" hidden></div>
+
+  <!-- Controls. Both of these change what the request says, so they are wired
+       and read before the first fetch is sent. -->
+  <div class="dk-controls">
+    <div class="dk-toggle" role="group" aria-label="Attribution basis">
+      <button type="button" id="deskBasisOutstanding" aria-pressed="true">On payments made</button>
+      <button type="button" id="deskBasisCommitment"  aria-pressed="false">Fully drawn</button>
+    </div>
+    <select id="deskPortfolio" aria-label="Portfolio"><option value="">All portfolios</option></select>
+    <span id="deskBasisHint" class="dk-tile-unit" style="flex:1 1 240px"></span>
+  </div>
+
+  <!-- ── The money ─────────────────────────────────────────────── -->
+  <div class="dk-card">
+    <p class="dk-eyebrow">The book</p>
+    <div class="dk-tiles" id="deskMoneyTiles"></div>
+    <div class="dk-scale" id="deskMoneyScale"></div>
+    <p class="dk-note" id="deskMoneyNote"></p>
+  </div>
+
+  <!-- ── Emissions: three claims, never one number ──────────────── -->
+  <div class="dk-card">
+    <p class="dk-eyebrow">What the book emits</p>
+    <h4>Three claims, never one figure</h4>
+    <p id="deskClaimNote"></p>
+    <div class="dk-tiles-3" id="deskEmissionTiles"></div>
+    <div class="dk-scale" id="deskEmissionScale"></div>
+    <div class="dk-legend" id="deskEmissionLegend"></div>
+    <p class="dk-note" id="deskAttributionNote"></p>
+  </div>
+
+  <!-- ── Outside the inventory, and never netted against it ─────── -->
+  <div class="dk-card">
+    <p class="dk-eyebrow">Reported separately</p>
+    <h4>Reduction and avoided emissions</h4>
+    <p>Outside the inventory above and never subtracted from it. Reduction is measured against a
+       project's own base year; avoidance is against a counterfactual that did not happen.</p>
+    <div class="dk-tiles-3" id="deskCreditTiles"></div>
+    <p class="dk-note" id="deskCreditNote"></p>
+  </div>
+
+  <div class="dk-two">
+    <!-- ── Delivery: the asset's own progress ──────────────────── -->
+    <div class="dk-card">
+      <p class="dk-eyebrow">Projects</p>
+      <h4>Built, building, and not yet started</h4>
+      <p id="deskDeliveryNote"></p>
+      <div class="dk-split" id="deskDeliverySplit"></div>
+      <div class="dk-legend" id="deskDeliveryLegend"></div>
+      <p class="dk-eyebrow" style="margin:16px 0 8px">And the bank's position on each</p>
+      <div class="dk-split" id="deskPositionSplit"></div>
+      <div class="dk-legend" id="deskPositionLegend"></div>
+    </div>
+
+    <!-- ── The pipeline still waiting ──────────────────────────── -->
+    <div class="dk-card">
+      <p class="dk-eyebrow">Waiting</p>
+      <h4>In the GCF pipeline, not yet written</h4>
+      <p id="deskPipelineNote"></p>
+      <div class="dk-scale" id="deskPipelineFigures"></div>
+      <p class="dk-note" id="deskPipelineStreams"></p>
+    </div>
+  </div>
+
+  <!-- ── The book, row by row ───────────────────────────────────── -->
+  <div class="dk-card">
+    <p class="dk-eyebrow">Row by row</p>
+    <h4>Every position on the book</h4>
+    <p>Two states on every row and they are never merged: the bank's position on the facility, and
+       the asset's own progress. A facility can be exited on a plant still under construction.</p>
+    <div class="dk-controls">
+      <input type="search" id="deskSearch" placeholder="Find a project" aria-label="Find a project">
+      <select id="deskFilterStatus" aria-label="Filter by the bank's position">
+        <option value="">Any position</option>
+      </select>
+      <select id="deskFilterDelivery" aria-label="Filter by delivery">
+        <option value="">Any delivery state</option>
+      </select>
+      <select id="deskSort" aria-label="Sort">
+        <option value="commitment">Largest commitment</option>
+        <option value="drawn">Most drawn</option>
+        <option value="carried">Most carried emissions</option>
+        <option value="name">Name</option>
+      </select>
+      <span id="deskRowCount" class="dk-tile-unit"></span>
+    </div>
+    <div class="dk-scroll"><table class="dk-table" id="deskTable"></table></div>
+    <p class="dk-note" id="deskRoundingNote"></p>
+  </div>
+
+</div>
