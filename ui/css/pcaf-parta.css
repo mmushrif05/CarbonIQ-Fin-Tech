@@ -578,6 +578,43 @@ fieldset.parta-card { border: 1px solid var(--border); }
 .parta-hero-sub { font-size: 13px; color: rgba(242, 251, 248, 0.82); }
 .parta-hero-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
+/* ── Two figures on one card ──────────────────────────────────────────────
+   The same block as the Part C hero, and deliberately identical: both screens
+   answer "what does this institution report, out of what the project emits",
+   so they should not look like two different questions. The bank's own figure
+   is the hero; the project's total sits behind a rule at a fraction of the
+   size, because the ratio between the two type sizes is doing the same work
+   as the ratio between the two numbers. */
+.parta-hero-split {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 14px 26px; margin-top: 2px; min-width: 0;
+}
+.parta-hero-mine { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 260px; }
+
+.parta-hero-base {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding-left: 20px; border-left: 1px solid rgba(242, 251, 248, 0.22);
+  align-self: center;
+}
+.parta-hero-base-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+  color: rgba(242, 251, 248, 0.58);
+}
+.parta-hero-base-value {
+  font-size: 19px; font-weight: 600; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: rgba(242, 251, 248, 0.86);
+  overflow-wrap: anywhere;
+}
+.parta-hero-base-note { font-size: 11px; color: rgba(242, 251, 248, 0.55); max-width: 26ch; }
+
+@media (max-width: 620px) {
+  .parta-hero-base {
+    padding-left: 0; padding-top: 12px; border-left: none;
+    border-top: 1px solid rgba(242, 251, 248, 0.22); width: 100%;
+  }
+  .parta-hero-base-note { max-width: none; }
+}
+
 .parta-chip {
   font-size: 11.5px; font-weight: 600; padding: 5px 11px; border-radius: 999px;
   background: rgba(255, 255, 255, 0.16); color: #f2fbf8; white-space: nowrap;

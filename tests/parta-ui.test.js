@@ -407,3 +407,49 @@ describe('A money field prints back what it holds', () => {
     expect(attribution).toMatch(/const raw = outstandingAmount \/ denominator;/);
   });
 });
+
+describe('The hero separates the bank\u2019s share from the project\u2019s total', () => {
+  const hero = moduleSrc.slice(moduleSrc.indexOf('function _renderHero'),
+                               moduleSrc.indexOf('function _renderHero') + 3000);
+
+  /* Part A already led with the attributed figure — emissions.js multiplies
+     the project's scope 1 and 2 by the attribution factor before it leaves the
+     engine — but the card printed only that one number, so a reader had no way
+     to see what share of what it was. The Part C screen had the opposite fault
+     and printed the project total large. Both cards now carry both figures,
+     sized so which is which cannot be mistaken. */
+
+  test('the large figure is the financed share', () => {
+    expect(hero).toContain("_countTo(el('paHeroValue'), inv.scope1And2.value");
+  });
+
+  test('the project total is present, and quieter', () => {
+    expect(page).toContain('id="paHeroBaseValue"');
+    expect(hero).toContain("el('paHeroBaseValue').textContent");
+    const heroRule = /\.parta-hero-value \{([^}]*)\}/.exec(partaCss);
+    const baseRule = /\.parta-hero-base-value \{([^}]*)\}/.exec(partaCss);
+    expect(heroRule).toBeTruthy();
+    expect(baseRule).toBeTruthy();
+    const largest = rule => Math.max(...[...rule.matchAll(/(\d+)px/g)].map(m => Number(m[1])));
+    const basePx = Number(/font-size:\s*(\d+)px/.exec(baseRule[1])[1]);
+    expect(largest(heroRule[1])).toBeGreaterThan(basePx * 2);
+  });
+
+  test('the project total is derived from the attributed figure, never re-fetched', () => {
+    /* One figure and one factor, so the two lines cannot disagree with the
+       bridge drawn underneath them. */
+    expect(hero).toContain('const projectTotal = af > 0 ? financed / af : financed;');
+  });
+
+  test('the share is stated as a percentage beside the figure', () => {
+    expect(hero).toMatch(/% of the project's emissions/);
+  });
+
+  test('both figures on the card carry the same unit', () => {
+    for (const line of hero.split('\n')) {
+      if (/el\('(paHeroBaseValue|paBridgeTotal|paBridgeDrop|paBridgeResult)'\)\.textContent/.test(line)) {
+        expect(line).toContain('tCO\u2082e');
+      }
+    }
+  });
+});

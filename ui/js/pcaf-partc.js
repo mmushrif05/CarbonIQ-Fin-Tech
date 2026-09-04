@@ -816,19 +816,55 @@ const PCAFPartCPage = (() => {
   /**
    * The hero and the attribution bridge.
    *
-   * An insurance attribution factor is a very small number — premium over
-   * project cost, here well under one percent — and a lone percentage gives a
-   * reader no sense of what it did. The bridge shows the step: what the
-   * project emitted, how much of it belongs to somebody else, and what is
-   * left for this insurer to disclose.
+   * The hero is the **insurer's own** figure. An insurance-associated emission
+   * is the attribution factor times the project's emissions — that is the
+   * number the disclosure carries (`attributed_tCO2e` in
+   * `services/partc-report-standard.js`) and the number a client is being
+   * asked to accept. The screen previously led with the project's total under
+   * the heading "The PCAF figure", which reads as though the insurer were
+   * associated with the whole of it; on the worked policy that is 41.257 tCO2e
+   * against an actual 0.1552.
+   *
+   * The project total has not gone: it is the base the share was taken from,
+   * and it is on the card beside the hero, smaller and quieter, so the two can
+   * be compared without either being mistaken for the other.
+   *
+   * Both are printed in one unit, chosen from the insurer's figure. Below a
+   * tonne, "0.1552 tCO2e" reads as nothing at all while "155.19 kgCO2e" reads
+   * as a quantity, and a reader comparing two numbers must not have to convert
+   * between units to do it.
    */
+
+  /**
+   * An attribution factor as a plain decimal, never an exponent. Four
+   * significant figures is enough to reproduce the arithmetic and short
+   * enough to read at a glance.
+   */
+  function afRatio(af) {
+    if (!Number.isFinite(af) || af === 0) return '0';
+    const dp = Math.min(10, Math.max(4, 4 - Math.floor(Math.log10(Math.abs(af))) - 1));
+    return af.toFixed(dp).replace(/0+$/, '').replace(/\.$/, '');
+  }
+
+  /** The unit that makes the smaller of the two figures legible. */
+  function heroUnit(tonnes) {
+    return Math.abs(tonnes) < 1
+      ? { unit: 'kgCO₂e', html: 'kgCO<sub>2</sub>e', scale: 1000, dp: 2 }
+      : { unit: 'tCO₂e', html: 'tCO<sub>2</sub>e', scale: 1, dp: 3 };
+  }
+
   function renderHero(d) {
     const s = d.summary;
     const af = s.attributionFactor || 0;
+    const u = heroUnit(s.insurerIAE_tCO2e);
 
-    countTo($('partcHeroValue'), s.construction_tCO2e, 3);
+    countTo($('partcHeroValue'), s.insurerIAE_tCO2e * u.scale, u.dp);
+    $('partcHeroUnit').innerHTML = u.html;
     $('partcHeroSub').textContent =
-      `A4 transport and A5 construction process — the re/insurer's own scope 3`;
+      `${pct(af, af < 0.01 ? 3 : 1)} of the project's construction emissions — `
+      + `the re/insurer's own scope 3`;
+    $('partcHeroBaseValue').textContent =
+      `${fmt(s.construction_tCO2e * u.scale, u.dp)} ${u.unit}`;
 
     const sc = d.dqScoring && d.dqScoring.construction;
     const chip = $('partcHeroDq');
@@ -854,9 +890,12 @@ const PCAFPartCPage = (() => {
     const mine  = s.insurerIAE_tCO2e;
     const rest  = Math.max(0, total - mine);
 
-    $('partcBridgeTotal').textContent = `${fmt(total, 3)} tCO₂e`;
-    $('partcBridgeDrop').textContent  = `− ${fmt(rest, 3)} tCO₂e`;
-    $('partcIae').textContent         = `${fmt(mine, 4)} tCO₂e`;
+    // The bridge carries the hero's unit, not its own. Two units on one card
+    // makes the reader convert between them to check the arithmetic, which is
+    // exactly the check the bridge exists to make effortless.
+    $('partcBridgeTotal').textContent = `${fmt(total * u.scale, u.dp)} ${u.unit}`;
+    $('partcBridgeDrop').textContent  = `− ${fmt(rest * u.scale, u.dp)} ${u.unit}`;
+    $('partcIae').textContent         = `${fmt(mine * u.scale, u.dp)} ${u.unit}`;
     $('partcAttribPct').textContent   = pct(af, af < 0.01 ? 3 : 1);
 
     // Segments are laid out on the next frame so they grow from zero.
@@ -872,19 +911,19 @@ const PCAFPartCPage = (() => {
 
     const note = $('partcBridgeNote');
     if (note) {
-      note.textContent = af < 0.02
-        ? `The last bar is drawn to the same scale as the two above it. At `
-          + `${pct(af, af < 0.01 ? 3 : 1)} it is barely a sliver, and that is the point: `
-          + `an insurer is associated with a small share of a large figure.`
-        : `All three bars are drawn to the same scale.`;
+      // State what the bars are and stop. An earlier version argued the case
+      // for the sliver being small, which is the register the screens do not
+      // use: the figure and the standard, nothing about the design.
+      note.textContent = `All three bars share one scale. PCAF Part C §5.3 — `
+        + `insurance-associated emissions = attribution factor × project emissions.`;
     }
 
     $('partcMeansFigure').textContent =
-      `Of the ${fmt(total, 3)} tCO₂e this construction project emits, this insurer is `
-      + `associated with ${fmt(mine, 4)} tCO₂e — ${pct(af, af < 0.01 ? 3 : 1)}, which is the `
-      + `premium's share of the total project cost. The rest is carried by whoever else `
-      + `financed or insured the work and is not this insurer's to report. `
-      + `Every figure here is the re/insurer's own scope 3: that is what an `
+      `This insurer reports ${fmt(mine * u.scale, u.dp)} ${u.unit}. That is `
+      + `${pct(af, af < 0.01 ? 3 : 1)} of the ${fmt(total * u.scale, u.dp)} ${u.unit} this `
+      + `construction project emits, the premium's share of the total project cost. The rest `
+      + `is carried by whoever else financed or insured the work and is not this insurer's to `
+      + `report. Every figure here is the re/insurer's own scope 3: that is what an `
       + `insurance-associated emission is.`;
   }
 
@@ -1081,14 +1120,18 @@ const PCAFPartCPage = (() => {
       : 'The construction figure over the project\u2019s gross internal area.';
 
     const af = d.summary.attributionFactor || 0;
-    $('partcAf').textContent = af < 0.01 ? af.toExponential(3) : af.toFixed(4);
+    // Never exponent notation. An insurance attribution factor is routinely a
+    // few thousandths, and 3.762e-3 is the shape a reader has to decode before
+    // they can compare it to anything. Enough decimals to carry four
+    // significant figures, and the percentage beside it.
+    $('partcAf').textContent = afRatio(af);
     $('partcAfEq').textContent = 'premium ÷ total project cost';
     // The premium and the project cost are what the operator entered; the
     // response echoes the policy's scope, not its money.
     const pol = (lastPayload && lastPayload.policy) || {};
     $('partcAfFoot').textContent = (pol.premium && pol.projectCost)
-      ? `${fmt(pol.premium)} \u00f7 ${fmt(pol.projectCost)} \u2014 the share of the project this `
-        + `policy carries. Applied to every module alike.`
+      ? `${fmt(pol.premium)} \u00f7 ${fmt(pol.projectCost)} = ${pct(af, af < 0.01 ? 3 : 1)} \u2014 the `
+        + `share of the project this policy carries. Applied to every module alike.`
       : 'Premium over total project cost. Enter both to see the two figures behind it.';
 
     $('partcModules').innerHTML = `

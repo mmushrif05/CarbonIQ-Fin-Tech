@@ -296,12 +296,28 @@
              A percentage bar says "30%"; a bridge says "this was the
              project's, this much is not yours, this is what you report". -->
         <section class="parta-hero" id="paHero">
-          <span class="parta-hero-eyebrow">The PCAF figure · scope 3 Category 15</span>
-          <div class="parta-hero-figure">
-            <span class="parta-hero-value" id="paHeroValue">—</span>
-            <span class="parta-hero-unit">tCO<sub>2</sub>e</span>
+          <span class="parta-hero-eyebrow">Financed emissions · scope 3 Category 15</span>
+
+          <!-- The hero is what this bank reports: the attribution factor
+               already applied. The project's own total is the base it came
+               from and sits beside it, quieter and smaller, so the larger
+               number is never mistaken for the bank's. Read the same way as
+               the Part C screen, because they answer the same question about
+               two different exposures. -->
+          <div class="parta-hero-split">
+            <div class="parta-hero-mine">
+              <div class="parta-hero-figure">
+                <span class="parta-hero-value" id="paHeroValue">—</span>
+                <span class="parta-hero-unit">tCO<sub>2</sub>e</span>
+              </div>
+              <span class="parta-hero-sub" id="paHeroSub">Financed scope 1 and 2</span>
+            </div>
+            <div class="parta-hero-base">
+              <span class="parta-hero-base-label">The project emits</span>
+              <span class="parta-hero-base-value" id="paHeroBaseValue">—</span>
+              <span class="parta-hero-base-note">Carried by everyone who financed it</span>
+            </div>
           </div>
-          <span class="parta-hero-sub" id="paHeroSub">Financed scope 1 and 2</span>
           <div class="parta-hero-chips">
             <span class="parta-chip" id="paHeroDq">—</span>
             <span class="parta-chip parta-chip-quiet" id="paHeroYield" hidden>—</span>

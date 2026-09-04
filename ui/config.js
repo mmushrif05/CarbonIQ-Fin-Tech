@@ -59,10 +59,22 @@ const Toast = (() => {
       setTimeout(() => toast.remove(), 300);
     }, duration);
   }
+  /* `show` is public because seven call sites across the PCAF Part C and
+     Insurance Book screens use it directly — every one of their validation
+     warnings. Exposing only the three named helpers meant those calls threw
+     "Toast.show is not a function", which killed the handler mid-way: clicking
+     Run assessment with no project GIA produced no warning, no toast and no
+     run, and nothing on screen said why.
+
+     `warn` is here because those calls ask for it by name. Without it the
+     class landed as `toast-warn` with no rule to match, so the message would
+     have rendered unstyled even once it stopped throwing. */
   return {
+    show,
     success: (msg, d) => show(msg, 'success', d),
     error:   (msg, d) => show(msg, 'error',   d),
-    info:    (msg, d) => show(msg, 'info',     d),
+    warn:    (msg, d) => show(msg, 'warn',    d),
+    info:    (msg, d) => show(msg, 'info',    d),
   };
 })();
 
