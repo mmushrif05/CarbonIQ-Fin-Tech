@@ -374,17 +374,41 @@ Section order is the checklist's, not ours: cover · scope and coverage · gases
 The Sri Lanka work is on `main` as of the merge of `claude/srilanka-taxonomy`.
 
 **Key facts**
-- Regulator: Central Bank of Sri Lanka (CBSL). Version SLGFT v2024.
-- 13 SLSIC sectors (A–M), 4 environmental objectives (M/A/P/E).
-- Activity code format: `{Objective}{MacroSector}.{Activity}` — e.g. `M1.1`.
+- Regulator: Central Bank of Sri Lanka (CBSL).
+- 4 environmental objectives (M/A/P/E); activity code format
+  `{Objective}{MacroSector}.{Activity}` — e.g. `M6.3`.
 
-**Embodied carbon thresholds (construction)**
+**The source document is now in the repository** —
+`SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf`, with
+`docs/SLGFT-SOURCES.md` recording what it actually says, quoted. Reading it
+raised two claims this codebase makes that the document does not support, and
+both are recorded rather than silently changed because either would alter what
+an existing caller receives:
 
-| Band | Threshold |
-|---|---|
-| Green | ≤ 600 kgCO2e/m² |
-| Transition | ≤ 900 kgCO2e/m² |
-| Not aligned | > 900 kgCO2e/m² |
+**There is no absolute kgCO2e/m² threshold anywhere in the taxonomy.** A
+full-text sweep of all 26 pages returns one figure per unit area and it is
+unrelated (5 W/m² power density, hydropower). The construction thresholds are
+**relative or certification-based**: M6.1 renovation requires ≥30% reduction in
+PED/energy/GHG; M6.3 new build requires ≥10% below a relevant nearly
+zero-energy building benchmark; M6.2 acquisition requires Green SL Rated Gold
+or Platinum. A relative threshold cannot be evaluated from a carbon intensity
+alone.
+
+Meanwhile `config/constants.js` carries **two different** absolute band sets —
+520/780 at lines 118–125 and 600/900 at 205/220–221 — and the document contains
+neither. The 600/900 set is attributed to activity `M1.1`; construction is
+macro-sector **6** in the document, not 1. The 520 band is labelled "Green
+(CBSL Compliant)", which asserts compliance to the regulator that decides it.
+
+**The version string is unevidenced.** `services/certificate.js` stamps
+`SLGFT v2024` onto a document carrying a SHA-256 audit hash. The document held
+here is dated **May 2022**. Either a 2024 edition exists and is not in this
+repository, or the string is wrong — the same class of error as the superseded
+NDC targets, printed onto an audit-hashed document with nothing checking it.
+
+Until both are settled the honest reading is that this product applies **its
+own carbon-intensity bands** — a useful internal screen — and should not
+describe their output as SLGFT alignment or CBSL compliance.
 
 **NDC targets — NDC 3.0, issued September 2025** (`data/gcf/ndc3.json`). Two **separate** commitments over **2026–2035**, never summed: a **20.09%** cumulative GHG reduction against BAU (8.11% unconditional, 11.98% conditional), and a **4.49%** increase in net carbon removal (0.96% / 3.53%). Six mitigation sectors, nine adaptation sectors, loss and damage cross-cutting. Key SDGs: 7, 9, 11, 13, 14, 15; GESI applies across all NDC actions.
 
