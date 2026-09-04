@@ -398,9 +398,8 @@ const PCAFDemoPage = (() => {
     const r = result;
     $('pdA4').textContent    = r ? num(r.modules.a4) : '—';
     $('pdLines').textContent = input.materials.length;
-    const a4 = r && (r.registers.auditTrail.entries || []).find(e => e.module === 'A4');
-    $('pdMass').textContent = a4 && a4.inputs
-      ? `${num(a4.inputs.totalMass_t)} tonnes carried` : 'tonnes carried';
+    $('pdMass').textContent = r && r.a4MaterialMass_t
+      ? `${num(r.a4MaterialMass_t)} tonnes carried` : 'tonnes carried';
   }
 
   function renderFigure() {
@@ -420,19 +419,6 @@ const PCAFDemoPage = (() => {
         <span class="pd-bar-val"><b>${num(m.value)}</b> · ${m.sharePct.toFixed(1)}%</span>
       </div>`).join('');
 
-    $('pdTrail').innerHTML = (r.registers.auditTrail.entries || []).map(e => `
-      <div class="pd-trail-step">
-        <span class="pd-trail-n">${e.step}</span>
-        <div>
-          <div class="pd-trail-label">${esc(e.label)}</div>
-          <div class="pd-trail-eq">${esc(e.equation)}</div>
-          <div class="pd-trail-out">= ${num(e.value, Math.abs(e.value) < 1 ? 6 : 2)} ${esc(e.unit || '')}</div>
-          ${(e.factors && e.factors.length) ? `<div class="pd-trail-fx">${
-            e.factors.map(f => `${esc(f.key || f.label || '')} — ${esc(f.tier || 'tier not stated')}${
-              f.reference ? ` · ${esc(f.reference)}` : ''}`).join('<br>')
-          }</div>` : ''}
-        </div>
-      </div>`).join('');
   }
 
   /* One score per project, decided by the option used. The scale runs 1 to 5

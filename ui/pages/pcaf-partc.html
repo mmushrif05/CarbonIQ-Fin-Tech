@@ -231,12 +231,28 @@
          the use stage is a separate line below a visible break, because the
          two are never summed. -->
     <section class="partc-hero" id="partcHero">
-      <span class="partc-hero-eyebrow">The PCAF figure · A4 + A5 construction</span>
-      <div class="partc-hero-figure">
-        <span class="partc-hero-value" id="partcHeroValue">—</span>
-        <span class="partc-hero-unit">tCO<sub>2</sub>e</span>
+      <span class="partc-hero-eyebrow">Insurance-associated emissions · A4 + A5 construction</span>
+
+      <!-- Two figures, and which is which has to be unmistakable. The hero is
+           what this insurer discloses — attribution factor x project emissions,
+           which is what an insurance-associated emission is. The project's own
+           total is the base it was taken from and is shown beside it, quieter
+           and smaller, so nobody reads the large number as the insurer's.
+           Both are printed in the same unit so they can be compared by eye. -->
+      <div class="partc-hero-split">
+        <div class="partc-hero-mine">
+          <div class="partc-hero-figure">
+            <span class="partc-hero-value" id="partcHeroValue">—</span>
+            <span class="partc-hero-unit" id="partcHeroUnit">kgCO<sub>2</sub>e</span>
+          </div>
+          <span class="partc-hero-sub" id="partcHeroSub">—</span>
+        </div>
+        <div class="partc-hero-base">
+          <span class="partc-hero-base-label">The project emits</span>
+          <span class="partc-hero-base-value" id="partcHeroBaseValue">—</span>
+          <span class="partc-hero-base-note">Carried by everyone who financed or insured it</span>
+        </div>
       </div>
-      <span class="partc-hero-sub" id="partcHeroSub">The project's construction emissions</span>
       <div class="partc-hero-chips">
         <span class="partc-chip" id="partcHeroDq">—</span>
         <span class="partc-chip partc-chip-quiet" id="partcHeroPolicy">—</span>
@@ -408,12 +424,16 @@
     </details>
 
     <!-- Registers live behind their own tabs: off the main screen,
-         available to whoever needs them. -->
+         available to whoever needs them.
+
+         There is no calculation-trace tab. Annex C is every equation the
+         engine executed with its inputs and factors — the method itself, and
+         the same asset nothing on this site serves. It is not rendered here,
+         not sent to the browser, and not printed in the report. -->
     <div class="partc-registers">
       <div class="partc-tabs">
         <button class="partc-tab active" data-reg="assumptions">Assumptions <span id="partcBadgeA">0</span></button>
         <button class="partc-tab" data-reg="dataGaps">Data gaps <span id="partcBadgeB">0</span></button>
-        <button class="partc-tab" data-reg="auditTrail">Audit trail <span id="partcBadgeC">0</span></button>
       </div>
       <div class="partc-tab-body" id="partcRegisterBody"></div>
     </div>

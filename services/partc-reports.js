@@ -95,13 +95,29 @@ function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, i
     annexes: {
       A: registers.assumptions,
       B: registers.dataGaps,
-      C: registers.auditTrail,
+      /*
+       * Annex C is counted, not carried. The trace is every equation the
+       * engine executed with its inputs and factors — the method rather than
+       * the disclosure — and this report is generated from a screen anyone can
+       * open. The count is what the traceability item is answered from; the
+       * steps are retained and released to an assurance provider on request.
+       */
+      C: {
+        annex: 'C',
+        title: registers.auditTrail.title,
+        total: registers.auditTrail.total,
+        entries: [],
+        note: `A trace of ${registers.auditTrail.total} steps is retained for every figure in `
+          + 'this report and is released to an assurance provider on request. It is not '
+          + 'reproduced in this document.'
+      },
       D: includeWlcaAnnex ? {
         annex: 'D',
         title: 'Beyond-PCAF Whole-Life Annex (voluntary)',
         total: result.beyondPcafAnnex.value,
+        // No equation column, for the same reason Annex C carries no steps.
         entries: result.beyondPcafAnnex.children.map(c => ({
-          module: c.module, label: c.label, value: c.value, equation: c.equation
+          module: c.module, label: c.label, value: c.value
         })),
         note: 'Voluntary whole-life reporting under RICS / EN 15978. NOT part of the PCAF figure and never included in the construction or use-stage lines.'
       } : null

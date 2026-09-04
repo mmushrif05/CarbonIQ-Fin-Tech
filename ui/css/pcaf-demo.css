@@ -546,35 +546,6 @@
 }
 .pd-details[open] > summary { border-bottom: 1px solid var(--border); }
 
-.pd-trail { max-height: 420px; overflow: auto; padding: 6px 0; }
-
-.pd-trail-step {
-  display: grid;
-  grid-template-columns: 34px 1fr;
-  gap: 12px;
-  padding: 11px 16px;
-  border-bottom: 1px solid var(--border-light);
-}
-.pd-trail-step:last-child { border-bottom: none; }
-.pd-trail-n {
-  display: grid; place-items: center;
-  width: 24px; height: 24px;
-  border-radius: 50%;
-  background: var(--pd-sage-l);
-  color: var(--pd-green);
-  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
-}
-.pd-trail-label { font-size: 13px; font-weight: 600; color: var(--pd-ink); }
-.pd-trail-eq {
-  margin-top: 3px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 11.5px;
-  color: var(--pd-slate);
-  word-break: break-word;
-}
-.pd-trail-out { margin-top: 3px; font-size: 12px; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.pd-trail-fx  { margin-top: 4px; font-size: 11.5px; line-height: 1.5; color: var(--text-tertiary); }
-
 /* ── Counterfactuals ──────────────────────────────────────── */
 
 .pd-cf { display: flex; flex-direction: column; gap: 14px; }

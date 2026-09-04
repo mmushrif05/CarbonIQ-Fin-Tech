@@ -1499,6 +1499,9 @@ body {
 .toast-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
 .toast-error   { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
 .toast-info    { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+/* Asked for by name by every validation warning on the Part C and
+   Insurance Book screens. Amber, because these are things to act on. */
+.toast-warn    { background: #fffbeb; color: #92400e; border: 1px solid #fcd34d; }
 
 /* ============================================================
    Taxonomy — dynamic additions

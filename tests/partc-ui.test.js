@@ -56,21 +56,63 @@ describe('The renderers are actually called', () => {
   });
 });
 
-describe('The hero carries the PCAF figure and nothing else', () => {
+describe('The hero leads with the insurer\u2019s share, never the project total', () => {
+  const hero = js.slice(js.indexOf('function renderHero'), js.indexOf('function renderUseStage'));
+
   test('it is A4 + A5 construction, named as such', () => {
-    expect(page).toMatch(/partc-hero-eyebrow">The PCAF figure · A4 \+ A5 construction/);
+    expect(page).toMatch(/partc-hero-eyebrow">Insurance-associated emissions \u00b7 A4 \+ A5 construction/);
   });
 
-  test('the hero value is the construction total, not a sum with the use stage', () => {
+  /*
+   * The defect this pins. The hero used to count to `construction_tCO2e` under
+   * the label "The PCAF figure", which is the project’s whole construction
+   * total — carried by everyone who financed or insured the work. The figure
+   * this insurer discloses is the attributed share, and
+   * services/partc-report-standard.js reports exactly that
+   * (`attributed_tCO2e: s.insurerIAE_tCO2e`). Showing the larger number large
+   * read as the insurer emitting 265 times what it does.
+   */
+  test('the large figure is the attributed share', () => {
+    expect(hero).toContain("countTo($('partcHeroValue'), s.insurerIAE_tCO2e");
+    expect(hero).not.toContain("countTo($('partcHeroValue'), s.construction_tCO2e");
+  });
+
+  test('the project total is present, and quieter', () => {
+    expect(page).toContain('id="partcHeroBaseValue"');
+    expect(hero).toContain("$('partcHeroBaseValue').textContent");
+    // The hero is set with clamp(); the largest of its three lengths is what
+    // it reaches on a desk screen, which is where the two are compared.
+    const heroRule = /\.partc-hero-value \{([^}]*)\}/.exec(css);
+    const baseRule = /\.partc-hero-base-value \{([^}]*)\}/.exec(css);
+    expect(heroRule).toBeTruthy();
+    expect(baseRule).toBeTruthy();
+    const largest = rule => Math.max(...[...rule.matchAll(/(\d+)px/g)].map(m => Number(m[1])));
+    const basePx = Number(/font-size:\s*(\d+)px/.exec(baseRule[1])[1]);
+    expect(largest(heroRule[1])).toBeGreaterThan(basePx * 2);
+  });
+
+  test('the hero never sums the construction figure with the use stage', () => {
     expect(renderFn).not.toMatch(/construction_tCO2e\s*\+\s*useStage/);
-    const hero = js.slice(js.indexOf('function renderHero'), js.indexOf('function renderUseStage'));
-    expect(hero).toContain("countTo($('partcHeroValue'), s.construction_tCO2e");
     expect(hero).not.toContain('useStage_');
   });
 
-  test('the figure is named as the re/insurer’s own scope 3', () => {
-    const hero = js.slice(js.indexOf('function renderHero'), js.indexOf('function renderUseStage'));
+  test('the share is stated as a percentage beside the figure', () => {
+    expect(hero).toMatch(/of the project's construction emissions/);
+  });
+
+  test('the figure is named as the re/insurer\u2019s own scope 3', () => {
     expect(hero).toMatch(/re\/insurer's own scope 3/);
+  });
+
+  /*
+   * Both figures in one unit. An insurance attribution factor is routinely a
+   * few thousandths, so the attributed figure is sub-tonne while the project
+   * total is tens of tonnes; printed in different units the reader has to
+   * convert before they can check that one is a share of the other.
+   */
+  test('the two figures share one unit', () => {
+    expect(hero).toContain('const u = heroUnit(s.insurerIAE_tCO2e);');
+    expect(hero).toContain("$('partcHeroBaseValue').textContent =\n      `${fmt(s.construction_tCO2e * u.scale, u.dp)} ${u.unit}`;");
   });
 });
 
@@ -83,20 +125,38 @@ describe('The attribution is drawn as a bridge', () => {
     expect(page).toContain('id="partcBridgeSegResult"');
   });
 
-  test('the step down is the total less the insurer’s share', () => {
+  test('the step down is the total less the insurer\u2019s share', () => {
     expect(hero).toContain('const rest  = Math.max(0, total - mine);');
   });
 
-  test('the insurer’s row reads the attributed figure, never the project total', () => {
-    expect(hero).toContain("$('partcIae').textContent         = `${fmt(mine, 4)} tCO₂e`");
+  test('the insurer\u2019s row reads the attributed figure, never the project total', () => {
+    expect(hero).toContain("$('partcIae').textContent         = `${fmt(mine * u.scale, u.dp)} ${u.unit}`");
   });
 
-  test('the sliver is drawn to scale, and the page says so', () => {
+  test('the bridge carries the hero\u2019s unit rather than one of its own', () => {
+    for (const id of ['partcBridgeTotal', 'partcBridgeDrop', 'partcIae']) {
+      const line = hero.split('\n').find(l => l.includes(`$('${id}').textContent`));
+      expect(line).toBeTruthy();
+      expect(line).toContain('u.scale');
+      expect(line).toContain('${u.unit}');
+    }
+  });
+
+  test('the sliver is drawn to scale', () => {
     // An insurance attribution factor is routinely well under one percent. A
     // bar stretched to be visible would misstate the quantity it exists to
-    // show, so the caption explains the sliver instead.
-    expect(hero).toMatch(/drawn to the same scale/);
+    // show, so the bars share one scale and the smallest stays a sliver.
+    expect(hero).toMatch(/All three bars share one scale/);
     expect(css).toMatch(/\.partc-bridge-seg\.is-result \{[^}]*min-width: 4px/);
+  });
+
+  /*
+   * `3.762e-3` is the shape a reader has to decode before they can compare it
+   * to anything, and it appeared on the attribution tile of every policy whose
+   * factor was under one percent — which is most of them.
+   */
+  test('the attribution factor is never printed in exponent notation', () => {
+    expect(js).not.toContain('toExponential');
   });
 });
 

@@ -71,6 +71,31 @@ const config           = require('../../config');
 
 const router = Router();
 
+/**
+ * The registers, minus the calculation trace.
+ *
+ * Annex C is every equation the engine executed, in order, with its inputs and
+ * the factor each step consulted. That is the method itself — the same asset
+ * `services/partc-methodology.js` exists to hold and the same reason nothing on
+ * the website serves it. Served to a browser it is copyable by whoever loads
+ * the page, which is by construction everybody.
+ *
+ * It is removed rather than refused, on the rule the methodology statement
+ * already follows: a 403 announces that something exists to be taken, and
+ * absence announces nothing. The trail is still built — the methodology
+ * statement, the GWP basis and the disclosure checklist are all derived from
+ * it — it just never reaches the wire.
+ */
+function _publicRegisters(registers) {
+  if (!registers) return registers;
+  const { assumptions, dataGaps, badges } = registers;
+  return {
+    assumptions,
+    dataGaps,
+    badges: badges ? { assumptions: badges.assumptions, dataGaps: badges.dataGaps } : badges
+  };
+}
+
 /** Shape the client-facing response from an engine result. */
 function _shapeResult(result, registers, extra = {}) {
   return {
@@ -87,6 +112,9 @@ function _shapeResult(result, registers, extra = {}) {
       b7: result.modules.b7.value
     },
     paretoVitalFew: result.modules.a4.vitalFew,
+    // A figure, not a step: the tonnage the A4 module carried. It used to be
+    // read off the calculation trace, which is no longer sent.
+    a4MaterialMass_t: (result.modules.a4.inputs && result.modules.a4.inputs.totalMass_t) || null,
     beyondPcafAnnex: {
       total: result.beyondPcafAnnex.value,
       breakdown: result.beyondPcafAnnex.children.map(c => ({ module: c.module, label: c.label, value: c.value })),
@@ -101,7 +129,7 @@ function _shapeResult(result, registers, extra = {}) {
     disclosureNote: result.disclosureNote,
     sensitivity: result.sensitivity,
     vehicle:     result.vehicle,
-    registers,
+    registers: _publicRegisters(registers),
     generatedAt: result.generatedAt,
     ...extra
   };
@@ -198,7 +226,7 @@ router.post('/assess', apiKeyAuth, defaultLimiter,
         run.policy     = req.body.policy;
         run.materials  = req.body.materials;
         run.result     = result.summary;
-        run.registers  = registers.badges;
+        run.registers  = _publicRegisters(registers).badges;
         run.disclosure = result.disclosureNote;
         run.status     = PARTC_STATUS.COMPLETED;
         run.completedAt = new Date().toISOString();
@@ -397,7 +425,7 @@ router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
         formAnswers: req.body.answers,
         overrides,
         result:      result.summary,
-        registers:   registers.badges,
+        registers:   _publicRegisters(registers).badges,
         disclosure:  result.disclosureNote,
         learnings:   learnings ? learnings.counts : null,
         completedAt,

@@ -230,6 +230,13 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
     // 5
     attributionEquation: 'insurance-associated emissions = attribution factor x project emissions,  where attribution factor = premium / project cost',
     attributionNote: `Project-specific cover, so the denominator is the insured project's own cost. ${premium > 0 && projectCost > 0 ? `${N(premium)} / ${N(projectCost)} ${currency} = ${F4(s.attributionFactor)}.` : `Attribution factor ${F4(s.attributionFactor)}.`} Attribution is applied to this project alone; premiums and emissions are never pooled before attribution.`,
+    /*
+     * The module equations stay. They are a different artefact from the audit
+     * trail: ten formulas, several of them RICS's and PCAF's own as published,
+     * against 58 traced steps carrying every input and every factor. Part C
+     * ch.6 METHODOLOGY makes giving them a "shall" (checklist MET-2), so
+     * removing them would drop this report below the standard it cites.
+     */
     equations: _equations(registers),
     policyGateStatement: result.policy.useStageYears > 0
       ? `${lineType} cover extends into occupation, so the use stage runs over the ${result.policy.useStageYears}-year cover period and is reported as a separate line.`
@@ -285,11 +292,25 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
 
     // 11
     factorRegister: _factorRegister(registers),
-    auditTrail: (registers.auditTrail && registers.auditTrail.entries) || [],
+    /*
+     * The trace is counted, never printed. Annex C is every equation the
+     * engine executed with its inputs and factors — the method itself, and the
+     * same asset services/partc-methodology.js holds and nothing on the
+     * website serves. The count is what the disclosure checklist tests
+     * (traceability is a requirement and it is met), and the report is
+     * downloaded from a screen anyone can open, so the steps stay out of it.
+     */
+    auditTrail: [],
     auditTrailEntries: (registers.auditTrail && registers.auditTrail.total) || 0,
     beyondPcafAnnex: null,
-    memo,
-    registers
+    memo
+    /*
+     * The whole register bundle is deliberately not carried on the facts. It
+     * was, and nothing read it — but it held the audit trail, so any caller
+     * that serialised this model published every step with its inputs. What
+     * the sections need is already extracted above: the factor register, the
+     * equations, the limitations, the data gaps and the trace's count.
+     */
   };
 
   facts.endorsementLanguageFound = _scanLanguage(facts).length > 0;

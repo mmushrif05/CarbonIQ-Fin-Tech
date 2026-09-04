@@ -80,7 +80,9 @@ describe('Part C E2E — the full client journey', () => {
     expect(done.body.disclosureNote).toMatch(/in conformance with/i);
     expect(done.body.disclosureNote).not.toMatch(/PCAF (approved|endorsed|certified)/i);
     expect(done.body.dataQuality.option).toBe('2b');
-    expect(done.body.registers.badges.auditTrail).toBeGreaterThan(0);
+    // The trace is not on the wire: the badge that counted it is gone with the
+    // tab that rendered it. tests/ip-surface.test.js sweeps for it properly.
+    expect(done.body.registers.badges.auditTrail).toBeUndefined();
     expect(done.body.registers.assumptions.limitations.length).toBeGreaterThan(0);
 
     // ── 5. Both report formats ──────────────────────────────────────────

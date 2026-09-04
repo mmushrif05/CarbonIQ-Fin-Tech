@@ -868,6 +868,10 @@ const PCAFPartAPage = (() => {
 
   function _renderHero(r) {
     const inv = r.inventory;
+    /* Already the attributed figure: emissions.js multiplies the project's
+       scope 1 and 2 by the attribution factor. The project's own total is
+       derived back from it below and shown beside it, so the reader can see
+       both without either being mistaken for the other. */
     _countTo(el('paHeroValue'), inv.scope1And2.value, 2);
     el('paHeroDq').textContent = inv.dataQuality.label;
     el('paHeroDq').className = 'parta-chip ' + (inv.dataQuality.score <= 2
@@ -888,9 +892,13 @@ const PCAFPartAPage = (() => {
     const projectTotal = af > 0 ? financed / af : financed;
     const others = Math.max(0, projectTotal - financed);
 
-    el('paBridgeTotal').textContent  = `${fmt(projectTotal)} tCO2e`;
-    el('paBridgeDrop').textContent   = `− ${fmt(others)} tCO2e`;
-    el('paBridgeResult').textContent = `${fmt(financed)} tCO2e`;
+    el('paHeroBaseValue').textContent = `${fmt(projectTotal)} tCO₂e`;
+    el('paHeroSub').textContent =
+      `Financed scope 1 and 2 — ${_round(pct, 1)}% of the project's emissions`;
+
+    el('paBridgeTotal').textContent  = `${fmt(projectTotal)} tCO₂e`;
+    el('paBridgeDrop').textContent   = `− ${fmt(others)} tCO₂e`;
+    el('paBridgeResult').textContent = `${fmt(financed)} tCO₂e`;
     el('paAttribPct').textContent    = `${_round(pct, 1)}%`;
     el('paAttribRestPct').textContent = `${_round(100 - pct, 1)}%`;
 

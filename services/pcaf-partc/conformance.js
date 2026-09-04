@@ -178,7 +178,7 @@ const RULES = [
     clause: 'PCAF data quality scoring',
     rule: 'Every assessment discloses a data quality option and score on the 1 (best) to 5 (worst) scale.',
     implementation: 'services/pcaf-partc/data-quality.js — option-to-score map; the MVP reports Option 2b (physical activity data with secondary factors) = score 3',
-    test: 'tests/pcaf-partc-api.test.js › assessment › the response carries all three registers',
+    test: 'tests/pcaf-partc-api.test.js › assessment › the response carries the two registers a client reads',
     status: 'implemented'
   },
   {

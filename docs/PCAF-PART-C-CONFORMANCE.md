@@ -227,7 +227,7 @@ published audit trail alone, which is the check an assurance provider would run.
 
 **Implementation.** services/pcaf-partc/data-quality.js — option-to-score map; the MVP reports Option 2b (physical activity data with secondary factors) = score 3
 
-**Evidence.** `tests/pcaf-partc-api.test.js › assessment › the response carries all three registers`
+**Evidence.** `tests/pcaf-partc-api.test.js › assessment › the response carries the two registers a client reads`
 
 ### C-DQ-02 — Implemented
 
