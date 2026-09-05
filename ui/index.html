@@ -809,7 +809,62 @@
             </div>
           </div>
 
-          <div class="cap-dq" id="cap-dq"></div>
+        </section>
+
+        <!-- ══ EVIDENCE ═════════════════════════════════════════════════════
+             How good the evidence behind the figures above is, and whether
+             anyone independent has checked it. Two different questions, so two
+             statements side by side rather than one badge doing both — a score
+             without an assurance state invites a reader to supply the missing
+             half themselves, usually generously.
+
+             It sits directly under the emissions it qualifies, and not as a
+             footnote inside that card, because it is what a credit committee
+             asks second and a regulator asks first. -->
+        <section class="cap-section" id="cap-evidence">
+          <header class="cap-head">
+            <div>
+              <h3>Evidence behind these figures</h3>
+              <span class="cap-sub">PCAF data quality on the disclosed basis, and the entity's assurance statement.</span>
+            </div>
+          </header>
+
+          <div class="cap-evidence">
+            <div class="cap-evidence-score">
+              <span class="cap-ev-label">Weighted data quality</span>
+              <div class="cap-ev-figure">
+                <span class="cap-ev-value" id="cap-dq-value">—</span>
+                <span class="cap-ev-scale-note">1 is the best of 1–5</span>
+              </div>
+              <!-- The five bands with this book's marked. A bare "2.40" reads
+                   as a mark out of five to anyone who has not opened the
+                   standard, which inverts it. -->
+              <div class="cap-ev-scale" id="cap-dq-scale" role="img" aria-label="PCAF data quality scale">
+                <span class="cap-ev-band" data-band="1">1</span>
+                <span class="cap-ev-band" data-band="2">2</span>
+                <span class="cap-ev-band" data-band="3">3</span>
+                <span class="cap-ev-band" data-band="4">4</span>
+                <span class="cap-ev-band" data-band="5">5</span>
+              </div>
+              <div class="cap-ev-ends"><span>best evidence</span><span>weakest</span></div>
+              <p class="cap-ev-foot" id="cap-dq-foot"></p>
+            </div>
+
+            <div class="cap-evidence-assurance">
+              <span class="cap-ev-label">Independent assurance</span>
+              <div class="cap-ev-badge" data-assurance="financed"></div>
+              <p class="cap-ev-foot" id="cap-assur-foot"></p>
+            </div>
+
+            <div class="cap-evidence-coverage">
+              <span class="cap-ev-label">Scored share of the book</span>
+              <div class="cap-ev-figure">
+                <span class="cap-ev-value" id="cap-dq-coverage">—</span>
+              </div>
+              <div class="cap-ev-bar"><span id="cap-dq-coverage-bar"></span></div>
+              <p class="cap-ev-foot" id="cap-dq-coverage-foot"></p>
+            </div>
+          </div>
         </section>
 
         <!-- ══ PORTFOLIOS ═══════════════════════════════════════════════════ -->
@@ -1510,6 +1565,10 @@
                 <div class="meter-track"><div class="meter-fill" id="pf-dq-meter" style="width:0%"></div></div>
                 <div class="meter-labels"><span>1 Best</span><span>5 Worst</span></div>
               </div>
+              <!-- The score says how good the evidence is; this says whether
+                   anyone independent has checked it. Two questions, and a
+                   reader shown only the first supplies the second themselves. -->
+              <div class="kpi-assurance" data-assurance="financed"></div>
             </div>
             <div class="kpi-card">
               <div class="kpi-header">
@@ -1740,6 +1799,7 @@
   <script src="js/partc-book.js"></script>
   <script src="js/partc-portfolio.js"></script>
   <script src="js/mobile-nav.js"></script>
+  <script src="js/assurance.js"></script>
   <script src="js/brand.js"></script>
   <script src="js/desk.js"></script>
   <script src="js/gcf.js"></script>

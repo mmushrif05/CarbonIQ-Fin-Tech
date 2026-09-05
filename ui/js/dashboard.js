@@ -455,6 +455,7 @@ const Dashboard = (() => {
     _renderAnchor(d.anchor, d.capital.currency);
     _renderCapital(d.capital);
     _renderEmissions(d.emissions);
+    _renderEvidence(d);
     _renderCurve(d.forecast, d.capital.currency);
     _renderAssumptions(d.forecast);
     _renderAdjustedBanner(d);
@@ -689,17 +690,80 @@ const Dashboard = (() => {
             { foot: 'Against a counterfactual that did not happen' });
     $('cap-impact-note').textContent = e.creditNote;
 
-    const dq = e.dataQuality;
-    $('cap-dq').innerHTML = dq.weighted == null
-      ? `<span class="cap-dq-value">not reported</span>
-         <span class="cap-dq-foot">${esc(dq.note || 'No investment carries a data-quality score.')}</span>`
-      : `<span class="cap-dq-label">Data quality</span>
-         <span class="cap-dq-value">${dq.weighted.toFixed(2)}</span>
-         <span class="cap-dq-foot">${esc(dq.scale)} ${esc(dq.basis)}
-           Weighted over ${dq.investmentsScored} investment${dq.investmentsScored === 1 ? '' : 's'}${
-             dq.investmentsWithoutScore
-               ? `; ${dq.investmentsWithoutScore} carrying no score ${dq.investmentsWithoutScore === 1 ? 'is' : 'are'} excluded rather than counted as zero.`
-               : '.'}</span>`;
+  }
+
+  /**
+   * How good the evidence is, and whether anyone independent has checked it.
+   *
+   * These are two questions, not one, and they are answered side by side. A
+   * score on its own leaves a reader to assume the assurance state, and the
+   * assumption runs generous. The score is also drawn on its scale rather than
+   * printed alone: "2.40" reads as a mark out of five to anyone who has not
+   * opened the standard, which inverts a scale on which 1 is best.
+   *
+   * The band the score falls in is the one it rounds to, and the exact figure
+   * is printed beside it — the band places it, the number is the figure.
+   */
+  function _renderEvidence(d) {
+    // `$` is local to each renderer in this module rather than shared, so it
+    // is declared here too. Reaching for the one inside _renderEmissions threw
+    // on load and left the whole band at em dashes.
+    const $ = (id) => document.getElementById(id);
+    if (!$('cap-dq-value')) return;
+    const dq = (d.emissions && d.emissions.dataQuality) || {};
+
+    const val = $('cap-dq-value');
+    const scale = $('cap-dq-scale');
+    const bands = scale ? Array.from(scale.children) : [];
+
+    if (dq.weighted == null) {
+      val.textContent = 'Not reported';
+      val.classList.add('is-absent');
+      bands.forEach(b => b.classList.remove('is-here'));
+      $('cap-dq-foot').textContent = dq.note
+        || 'No holding carries a data-quality score, so there is nothing to weight.';
+    } else {
+      val.textContent = dq.weighted.toFixed(2);
+      val.classList.remove('is-absent');
+      const band = Math.min(5, Math.max(1, Math.round(dq.weighted)));
+      bands.forEach(b => b.classList.toggle('is-here', Number(b.dataset.band) === band));
+      if (scale) {
+        scale.setAttribute('aria-label',
+          `Data quality ${dq.weighted.toFixed(2)} of five, where 1 is the strongest evidence and 5 the weakest`);
+      }
+      $('cap-dq-foot').textContent = `${dq.scale || ''} ${dq.basis || ''}`.trim();
+    }
+
+    /* Coverage is the share of the book the score actually speaks for. A 2.40
+       over a fifth of a book and a 2.40 over all of it are different claims,
+       and only one of them is worth quoting. */
+    const scored = Number(dq.investmentsScored) || 0;
+    const unscored = Number(dq.investmentsWithoutScore) || 0;
+    const total = scored + unscored;
+    const pct = total > 0 ? Math.round((scored / total) * 100) : null;
+
+    $('cap-dq-coverage').innerHTML = pct == null
+      ? '—'
+      : `${pct}<span class="cap-ev-unit">%</span>`;
+    const bar = $('cap-dq-coverage-bar');
+    if (bar) bar.style.width = `${pct == null ? 0 : pct}%`;
+    $('cap-dq-coverage-foot').textContent = total === 0
+      ? 'No holdings on the book.'
+      : `${scored} of ${total} holding${total === 1 ? '' : 's'} ${scored === 1 ? 'carries' : 'carry'} a score`
+        + (unscored
+          ? `. The ${unscored} without one ${unscored === 1 ? 'is' : 'are'} excluded from the weighting rather than counted as zero.`
+          : '.');
+
+    /* Declared or absent — never inferred. The payload carries it so the badge
+       cannot fall out of step with the figures above it. */
+    const decl = window.CarbonIQAssurance
+      ? window.CarbonIQAssurance.forScope(d.assurance, 'financed')
+      : null;
+    const holder = document.querySelector('#cap-evidence [data-assurance]');
+    if (holder && window.CarbonIQAssurance) {
+      holder.innerHTML = window.CarbonIQAssurance.badgeHtml(decl);
+    }
+    $('cap-assur-foot').textContent = decl ? decl.detail : '';
   }
 
   // ── The curve ─────────────────────────────────────────────────────────────
@@ -1390,6 +1454,10 @@ const Dashboard = (() => {
     }
     const pfDqMeter = $('pf-dq-meter');
     if (pfDqMeter) pfDqMeter.style.width = d.weightedDQ == null ? '0%' : `${((5 - d.weightedDQ) / 4) * 100}%`;
+
+    /* The assurance state beside the score. Entity-level and fetched once for
+       the session, so this screen and the Dashboard cannot disagree about it. */
+    if (window.CarbonIQAssurance) window.CarbonIQAssurance.render(document);
 
     // KPI 5: Portfolio Coverage
     const coverage = $('pf-coverage');

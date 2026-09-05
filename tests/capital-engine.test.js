@@ -128,23 +128,76 @@ describe('The emissions ledger keeps four lines apart', () => {
     expect(led.forward).toBe(4_230);                          // excludes it
   });
 
+  /*
+   * The disclosed score is weighted by the OUTSTANDING amount (PCAF Part A
+   * p.128). This weighted by commitment while its own basis string cited that
+   * page, so the number a reader would have quoted to a regulator was 2.53
+   * when the standard's figure for the same book is 2.28. A label asserting a
+   * standard the arithmetic does not follow is worse than no label, because
+   * there is nothing on the page to give it away.
+   *
+   * The weighting now follows whichever basis the figures beside it are shown
+   * on, and the basis string says which — so the score always describes the
+   * numbers it sits under.
+   */
   test('data quality is weighted by amount, and states its direction', () => {
     expect(led.dataQuality.weighted).toBe(2.53);
     expect(led.dataQuality.scale).toMatch(/1 is the highest data quality/);
+  });
+
+  test('the disclosed basis weights by outstanding, per p.128', () => {
+    const disclosed = metrics.emissionsLedger(BOOK, { attributionBasis: 'outstanding' });
+    expect(disclosed.dataQuality.weightedBy).toBe('outstanding');
+    expect(disclosed.dataQuality.basis).toMatch(/p\.128/);
+    expect(disclosed.dataQuality.weighted).toBe(2.28);
+  });
+
+  test('the full-commitment view says it is not the standard\u2019s basis', () => {
+    expect(led.dataQuality.weightedBy).toBe('commitment');
+    expect(led.dataQuality.basis).toMatch(/Commitment weighted/);
+    // It still names the standard, so a reader knows what to switch to.
     expect(led.dataQuality.basis).toMatch(/p\.128/);
+  });
+
+  test('the two bases genuinely differ, so the weighting is doing work', () => {
+    const disclosed = metrics.emissionsLedger(BOOK, { attributionBasis: 'outstanding' });
+    expect(disclosed.dataQuality.weighted).not.toBe(led.dataQuality.weighted);
   });
 
   test('an unscored holding is excluded from the weighting, not counted as zero', () => {
     const mixed = metrics.emissionsLedger({
-      portfolios: [], payments: [],
+      portfolios: [],
+      payments: [
+        { investmentId: 'a', portfolioId: 'p', amount: 100, kind: 'disbursement' },
+        { investmentId: 'b', portfolioId: 'p', amount: 900, kind: 'disbursement' },
+      ],
       investments: [
         { id: 'a', status: 'deployed', commitment: 100, emissions: { dataQuality: { score: 4 } } },
         { id: 'b', status: 'deployed', commitment: 900, emissions: {} },
       ],
-    });
+    }, { attributionBasis: 'commitment' });
     expect(mixed.dataQuality.weighted).toBe(4);               // not 0.4
     expect(mixed.dataQuality.investmentsScored).toBe(1);
     expect(mixed.dataQuality.investmentsWithoutScore).toBe(1);
+  });
+
+  /*
+   * On the standard's basis the weight is the outstanding amount, so a book
+   * where nothing has been drawn has no amount to weight by. That is reported
+   * absent with the reason rather than as an unweighted average — which would
+   * be a different statistic wearing the disclosed score's name.
+   */
+  test('a scored book with nothing drawn reports the score absent, and says why', () => {
+    const undrawn = metrics.emissionsLedger({
+      portfolios: [], payments: [],
+      investments: [
+        { id: 'a', status: 'deployed', commitment: 100, emissions: { dataQuality: { score: 4 } } },
+      ],
+    });
+    expect(undrawn.dataQuality.weighted).toBeNull();
+    expect(undrawn.dataQuality.investmentsScored).toBe(1);
+    expect(undrawn.dataQuality.note).toMatch(/nil outstanding/i);
+    expect(undrawn.dataQuality.note).not.toMatch(/no holding carries/i);
   });
 
   test('a book with no scores at all reports none, and says why', () => {
