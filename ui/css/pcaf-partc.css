@@ -961,6 +961,41 @@
 .partc-usestage .partc-tile-label { color: #5b59b8; }
 .partc-usestage .partc-tile-value { color: #3b39a8; }
 .partc-usestage-figure { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+
+/* The same split as the construction hero, in the indigo container. The type
+   ratio between the two figures is doing the same work as the ratio between
+   the two numbers, so it is held to the same proportion. */
+.partc-usestage-split {
+  display: flex; flex-wrap: wrap; align-items: flex-start;
+  gap: 12px 26px; min-width: 0;
+}
+.partc-usestage-mine { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 260px; }
+.partc-usestage-sub  { font-size: 12.5px; line-height: 1.5; color: #4a48a0; }
+
+.partc-usestage-base {
+  display: flex; flex-direction: column; gap: 2px; min-width: 0;
+  padding-left: 20px; border-left: 1px solid rgba(94, 92, 230, 0.28);
+  align-self: center;
+}
+.partc-usestage-base-label {
+  font-size: 10.5px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+  color: #6b69c4;
+}
+.partc-usestage-base-value {
+  font-size: 19px; font-weight: 600; line-height: 1.15;
+  font-variant-numeric: tabular-nums; color: #3b39a8;
+  overflow-wrap: anywhere;
+}
+.partc-usestage-base-note { font-size: 11px; color: #6b69c4; max-width: 26ch; }
+
+@media (max-width: 620px) {
+  /* Stacked, the rule between them becomes a rule above them. */
+  .partc-usestage-base {
+    padding-left: 0; padding-top: 12px; border-left: none;
+    border-top: 1px solid rgba(94, 92, 230, 0.28); width: 100%;
+  }
+}
+
 .partc-usestage-gate {
   font-size: 12px; line-height: 1.6; margin: 8px 0 0; color: #4a48a0;
 }
@@ -1152,6 +1187,11 @@
   .partc-usestage .partc-tile-label { color: #a5a3f5; }
   .partc-usestage .partc-tile-value { color: #c7c6ff; }
   .partc-usestage-gate { color: #b9b7f7; }
+  .partc-usestage-sub  { color: #b9b7f7; }
+  .partc-usestage-base { border-left-color: rgba(165, 163, 245, 0.32); }
+  .partc-usestage-base-label,
+  .partc-usestage-base-note { color: #9c9ae8; }
+  .partc-usestage-base-value { color: #c7c6ff; }
   .partc-dqscale-band[data-band="1"] { background: #1d4a3c; }
   .partc-dqscale-band[data-band="2"] { background: #235a49; }
   .partc-dqscale-band[data-band="3"] { background: #2a6b57; }

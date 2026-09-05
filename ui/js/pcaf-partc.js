@@ -928,18 +928,49 @@ const PCAFPartCPage = (() => {
   }
 
   /** The use-stage line, below the break, never summed with the hero. */
+  /**
+   * The optional line, split the same way as the mandatory one.
+   *
+   * It used to lead with the project's whole use-stage figure and mention the
+   * insurer's share in a sentence underneath, in a different unit — 973,680.00
+   * kgCO2e large, 3.6626 tCO2e in prose. That is the fault the construction
+   * hero had: the large number is not the one this insurer reports, and two
+   * units make the reader convert before they can see one is a share of the
+   * other. Same attribution factor, so the same treatment.
+   */
   function renderUseStage(d) {
     const s = d.summary;
-    countTo($('partcUseStage'), s.useStage_kgCO2e, 2);
+    const gated = d.policy.useStageYears === 0;
+
+    const mine = s.useStageInsurerShare_tCO2e || 0;
+    const total = s.useStage_tCO2e || 0;
+    const u = heroUnit(gated ? 0 : mine);
+
+    countTo($('partcUseStage'), mine * u.scale, u.dp);
+    $('partcUseStageUnit').innerHTML = u.html;
+
+    const base = $('partcUseStageBase');
+    const sub  = $('partcUseStageSub');
     const gate = $('partcUseStageGate');
-    if (d.policy.useStageYears === 0) {
+
+    if (gated) {
+      // Nothing to attribute a share of, so no base figure is shown. Printing
+      // "the project emits 0" would assert something about the building rather
+      // than about the cover.
+      base.hidden = true;
+      sub.textContent = 'Zero by scope rule';
       gate.textContent = `Zero by scope rule, not by omission — ${d.policy.gateReason}. `
         + `PCAF Part C §5.3 gates the use stage on the policy, and a cover period entered `
         + `on the form applies within that gate rather than overriding it.`;
-    } else {
-      gate.textContent = `Computed over ${d.policy.useStageYears} years of cover. `
-        + `The insurer's share of this line is ${fmt(s.useStageInsurerShare_tCO2e, 4)} tCO₂e.`;
+      return;
     }
+
+    base.hidden = false;
+    $('partcUseStageBaseValue').textContent = `${fmt(total * u.scale, u.dp)} ${u.unit}`;
+    const af = s.attributionFactor || 0;
+    sub.textContent = `${pct(af, af < 0.01 ? 3 : 1)} of the project's use-stage emissions — `
+      + `the same attribution factor as the construction figure`;
+    gate.textContent = `Computed over ${d.policy.useStageYears} years of cover.`;
   }
 
   /** The five bands, with this run's marked. 1 is best; the scale says so. */

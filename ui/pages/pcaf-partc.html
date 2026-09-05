@@ -295,12 +295,30 @@
     <!-- ══ BREAK ══ The separation the engine enforces, made visible. -->
     <div class="partc-break"><span>Reported separately · never added to the figure above</span></div>
 
-    <!-- Indigo, not green: a different container, so a different hue. -->
+    <!-- Indigo, not green: a different container, so a different hue.
+
+         Two figures, split the same way as the construction hero. The optional
+         use stage is attributed on the same factor as the mandatory one, so the
+         insurer's share leads here too and the project's own line sits beside
+         it, quieter. Where the policy gates the use stage to zero the base is
+         hidden rather than printed as nought: the project does emit over its
+         life, that line is simply out of scope for this cover, and "the project
+         emits 0" would say the opposite. -->
     <section class="partc-usestage" id="partcUseStageBox">
       <span class="partc-tile-label">Use stage — B1 + B4 + B7</span>
-      <div class="partc-usestage-figure">
-        <span class="partc-tile-value" id="partcUseStage">—</span>
-        <span class="partc-tile-unit">kgCO<sub>2</sub>e</span>
+      <div class="partc-usestage-split">
+        <div class="partc-usestage-mine">
+          <div class="partc-usestage-figure">
+            <span class="partc-tile-value" id="partcUseStage">—</span>
+            <span class="partc-tile-unit" id="partcUseStageUnit">kgCO<sub>2</sub>e</span>
+          </div>
+          <span class="partc-usestage-sub" id="partcUseStageSub"></span>
+        </div>
+        <div class="partc-usestage-base" id="partcUseStageBase" hidden>
+          <span class="partc-usestage-base-label">The project emits</span>
+          <span class="partc-usestage-base-value" id="partcUseStageBaseValue">—</span>
+          <span class="partc-usestage-base-note">Over the cover period, carried by everyone who insured it</span>
+        </div>
       </div>
       <span class="partc-figure-dq" id="partcDqUseStage"></span>
       <p class="partc-usestage-gate" id="partcUseStageGate"></p>

@@ -179,6 +179,62 @@ describe('The use stage stays a separate line', () => {
   test('it reads indigo, because it is a different container from the figure', () => {
     expect(css).toMatch(/\.partc-usestage \{[\s\S]*?--data-indigo-soft/);
   });
+
+  /*
+   * The optional line had the fault the construction hero had. It led with the
+   * project's whole use-stage figure — 973,680.00 kgCO2e — and mentioned the
+   * insurer's share in a sentence beneath it, in a different unit (3.6626
+   * tCO2e). The large number is not the one this insurer reports, and two
+   * units make a reader convert before they can see that one is a share of
+   * the other. Same attribution factor as the construction figure, so the same
+   * treatment.
+   */
+  test('the large figure is the insurer\u2019s share', () => {
+    expect(use).toContain("countTo($('partcUseStage'), mine * u.scale, u.dp)");
+    expect(use).toContain('const mine = s.useStageInsurerShare_tCO2e || 0;');
+    expect(use).not.toContain("countTo($('partcUseStage'), s.useStage_kgCO2e");
+  });
+
+  test('the project total is present, and quieter', () => {
+    expect(page).toContain('id="partcUseStageBaseValue"');
+    expect(use).toContain("$('partcUseStageBaseValue').textContent");
+    const mineRule = /\.partc-usestage \.partc-tile-value|\.partc-tile-value \{([^}]*)\}/;
+    const baseRule = /\.partc-usestage-base-value \{([^}]*)\}/.exec(css);
+    expect(baseRule).toBeTruthy();
+    expect(mineRule).toBeTruthy();
+    // The two figures are sized apart, the same way the hero's pair is.
+    const basePx = Number(/font-size:\s*(\d+)px/.exec(baseRule[1])[1]);
+    expect(basePx).toBeLessThan(24);
+  });
+
+  test('both figures on the card carry one unit', () => {
+    expect(use).toContain('const u = heroUnit(gated ? 0 : mine);');
+    expect(use).toContain("$('partcUseStageBaseValue').textContent = `${fmt(total * u.scale, u.dp)} ${u.unit}`;");
+    // The old form printed tCO2e in prose beside a kgCO2e figure.
+    expect(use).not.toMatch(/useStageInsurerShare_tCO2e, 4\)\} tCO/);
+  });
+
+  /*
+   * A gated policy has nothing to take a share of, so no base figure is
+   * drawn. "The project emits 0" would be a claim about the building rather
+   * than about the cover, and the building does emit over its life.
+   */
+  test('a gated policy shows no project total at all', () => {
+    expect(use).toContain('base.hidden = true;');
+    expect(use).toMatch(/const gated = d\.policy\.useStageYears === 0;/);
+  });
+
+  /*
+   * [hidden] is display:none from the user-agent sheet and carries almost no
+   * specificity, so the .partc-usestage-base display rule would beat it and
+   * the base would stay on screen through the gate. This page already carries
+   * the guard; the test is here because this block is a new element that
+   * depends on it.
+   */
+  test('the hidden base is actually hidden', () => {
+    expect(css).toMatch(/\.partc-result \[hidden\] \{ display: none !important; \}/);
+    expect(css).toMatch(/\.partc-usestage-base \{[^}]*display: flex/);
+  });
 });
 
 describe('The data-quality score is a category with its direction stated', () => {
