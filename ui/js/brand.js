@@ -59,11 +59,16 @@ const Brand = (() => {
         ${LOGO.lockup('onDark')}
       </span>`,
 
+    /* The build stamp rides along here because the footer is the one element
+       on every page. It is the answer to "is this the build with the change
+       in it", which a screenshot cannot give and which has already cost a
+       round trip once. Absent on a local run, where there is no build. */
     footer: () => `
       <span class="brand-lockup brand-lockup-footer">
         ${LOGO.lockup()}
         <span class="brand-meta">${esc(LOGO.legalName)} &middot; ${esc(LOGO.product)}
-          &middot; &copy; ${new Date().getFullYear()}</span>
+          &middot; &copy; ${new Date().getFullYear()}${
+            window.CARBONIQ_BUILD ? ` &middot; build ${esc(window.CARBONIQ_BUILD)}` : ''}</span>
       </span>`,
 
     /* The sign-in screen has its own dark styling in css/login.css and is dark

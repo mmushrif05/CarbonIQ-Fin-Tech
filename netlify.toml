@@ -33,6 +33,60 @@
     "build-info.json",
   ]
 
+# ── Caching ──────────────────────────────────────────────────────────────
+#
+# A deploy went out and the browser kept serving the previous build: the screen
+# still showed the figure the change had replaced, which reads as "the fix did
+# not work" rather than "the fix has not reached me". That is the same
+# confusion /health reports the running commit to settle, one layer up.
+#
+# The application is a static shell that fetches its page fragments and its
+# modules by path, with no hash in any filename, so there is nothing in a URL
+# to tell a cache that a file has changed. Every one of them must therefore be
+# revalidated on each load. `no-cache` does not mean "do not store" — the file
+# is still kept and still answered with a 304 when it has not moved — it means
+# "never serve it without asking", which is the guarantee a build needs when
+# its filenames are stable.
+#
+# Fonts, images and the brand artwork are exempt: those are addressed by
+# content that does not change under the same name, and they are the files
+# worth caching.
+
+[[headers]]
+  for = "/*.html"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/pages/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/css/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "no-cache"
+
 # Route API calls to the Express serverless function
 # IMPORTANT: :splat captures everything after the prefix, so we must include
 # the /v1/ segment in the destination so Express receives the correct path.

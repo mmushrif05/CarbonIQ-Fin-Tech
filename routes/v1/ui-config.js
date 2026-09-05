@@ -21,8 +21,31 @@ const { Router } = require('express');
 
 const router = Router();
 
+/**
+ * The commit this deployment is running, read the way /health reads it.
+ *
+ * A build stamp on the page answers, in one look, the question a screenshot
+ * cannot: is this the build with the change in it. "The fix did not work" and
+ * "the browser is still serving the previous build" are indistinguishable from
+ * a screenshot, and the second is far more common — it is exactly what
+ * happened after the attribution hero shipped.
+ *
+ * It rides on this response rather than being baked into a static file for the
+ * same reason the key does: this one is generated per request, so it can never
+ * be the stale copy.
+ */
+function _buildId() {
+  try {
+    // eslint-disable-next-line global-require
+    const info = require('../../build-info.json');
+    if (info && info.commit) return String(info.commit).slice(0, 7);
+  } catch (_) { /* not a Netlify build */ }
+  return '';
+}
+
 router.get('/ui-config.js', (_req, res) => {
   const key = process.env.UI_API_KEY || '';
+  const build = _buildId();
 
   // JSON.stringify, not interpolation: the value reaches the browser as a
   // string literal, so a stray quote in a mis-pasted variable cannot become
@@ -30,6 +53,7 @@ router.get('/ui-config.js', (_req, res) => {
   const body = `/* served by the deployment — do not edit */
 (function () {
   var key = ${JSON.stringify(key)};
+  window.CARBONIQ_BUILD = ${JSON.stringify(build)};
   window.CARBONIQ_SERVER_API_KEY = key;
   if (!key) return;
 

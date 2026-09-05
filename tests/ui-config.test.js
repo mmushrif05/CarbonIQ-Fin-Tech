@@ -132,3 +132,38 @@ describe('GET /health reports whether the deployment is configured', () => {
     Object.values(res.body.configured).forEach(v => expect(typeof v).toBe('boolean'));
   });
 });
+
+/*
+ * The build stamp. A deploy went out and the screen kept showing the figure it
+ * had replaced, which reads as "the fix did not work" rather than "the browser
+ * is still on the previous build" — the same confusion /health reports the
+ * commit to settle, one layer up. The stamp rides on this response because
+ * this response is generated per request, so it can never be the stale copy.
+ */
+describe('The build stamp', () => {
+  test('the served script declares the running build', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    expect(res.text).toMatch(/window\.CARBONIQ_BUILD\s*=/);
+  });
+
+  test('it is a string literal, so a stray character cannot become script', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    const m = /window\.CARBONIQ_BUILD\s*=\s*("[^"]*")/.exec(res.text);
+    expect(m).not.toBeNull();
+    expect(() => JSON.parse(m[1])).not.toThrow();
+  });
+
+  test('it is short, and never a whole commit', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    const m = /window\.CARBONIQ_BUILD\s*=\s*"([^"]*)"/.exec(res.text);
+    expect(m[1].length).toBeLessThanOrEqual(7);
+  });
+
+  test('the footer prints it, and prints nothing where there is no build', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const brand = fs.readFileSync(path.join(__dirname, '..', 'ui', 'js', 'brand.js'), 'utf8');
+    expect(brand).toMatch(/window\.CARBONIQ_BUILD\s*\?/);
+    expect(brand).toMatch(/build \$\{esc\(window\.CARBONIQ_BUILD\)\}/);
+  });
+});
