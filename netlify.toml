@@ -30,6 +30,7 @@
     "data/factors/**",
     "data/gcf/**",
     "data/capital/**",
+    "data/assurance.json",
     "build-info.json",
   ]
 
