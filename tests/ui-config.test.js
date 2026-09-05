@@ -148,14 +148,14 @@ describe('The build stamp', () => {
 
   test('it is a string literal, so a stray character cannot become script', async () => {
     const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
-    const m = /window\.CARBONIQ_BUILD\s*=\s*("[^"]*")/.exec(res.text);
+    const m = /var build = ("[^"]*");/.exec(res.text);
     expect(m).not.toBeNull();
     expect(() => JSON.parse(m[1])).not.toThrow();
   });
 
   test('it is short, and never a whole commit', async () => {
     const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
-    const m = /window\.CARBONIQ_BUILD\s*=\s*"([^"]*)"/.exec(res.text);
+    const m = /var build = "([^"]*)";/.exec(res.text);
     expect(m[1].length).toBeLessThanOrEqual(7);
   });
 
@@ -165,5 +165,67 @@ describe('The build stamp', () => {
     const brand = fs.readFileSync(path.join(__dirname, '..', 'ui', 'js', 'brand.js'), 'utf8');
     expect(brand).toMatch(/window\.CARBONIQ_BUILD\s*\?/);
     expect(brand).toMatch(/build \$\{esc\(window\.CARBONIQ_BUILD\)\}/);
+  });
+});
+
+/*
+ * Breaking a stale shell.
+ *
+ * index.html is fetched by path with no hash in its name, so a copy the
+ * browser took before the no-cache headers existed is one it is entitled to
+ * keep serving. A header only applies to a response the browser actually goes
+ * and asks for, so a deploy could be live and still show the previous screen.
+ * The signature was unmistakable once seen: the two surfaces that went missing
+ * lived in the shell, and the one that appeared was a page fragment, which is
+ * refetched on every navigation.
+ *
+ * The check lives in this script because this script can never itself be the
+ * stale copy.
+ */
+describe('A stale shell reloads itself, once', () => {
+  test('the served script compares the build against what the shell recorded', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    expect(res.text).toMatch(/sessionStorage\.getItem\('carboniq_build'\)/);
+    expect(res.text).toMatch(/seen !== build/);
+  });
+
+  test('it reloads to a URL the cache has no entry for', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    // A plain reload can be answered from the same cached entry.
+    expect(res.text).toMatch(/location\.replace\(/);
+    expect(res.text).toMatch(/\?b=' \+ encodeURIComponent\(build\)/);
+    // The hash is the current screen, so a reload does not also navigate away.
+    expect(res.text).toMatch(/\+ location\.hash/);
+  });
+
+  test('it cannot loop', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    // One reload per build, marked before the reload is issued.
+    expect(res.text).toMatch(/carboniq_reloaded_' \+ build/);
+    expect(res.text).toMatch(/setItem\('carboniq_reloaded_' \+ build, '1'\)[\s\S]{0,200}location\.replace/);
+    // A browser that cannot store anything skips the check rather than
+    // reloading on every load for ever.
+    expect(res.text).toMatch(/catch \(e\) \{ \/\* no storage/);
+  });
+
+  test('a first visit never reloads, because there is nothing to compare', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    // `seen` must be truthy before a mismatch counts.
+    expect(res.text).toMatch(/if \(seen && seen !== build/);
+  });
+
+  test('the whole check is skipped where there is no build', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    expect(res.text).toMatch(/if \(build\) \{/);
+  });
+
+  /* The reload must not cost the credential: the key is assigned after it, so
+     a page that is about to be replaced never half-initialises. */
+  test('the key is still handed over on a page that is not reloading', async () => {
+    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
+    const reloadAt = res.text.indexOf('location.replace(');
+    const keyAt = res.text.indexOf('window.CARBONIQ_SERVER_API_KEY');
+    expect(reloadAt).toBeGreaterThan(-1);
+    expect(keyAt).toBeGreaterThan(reloadAt);
   });
 });

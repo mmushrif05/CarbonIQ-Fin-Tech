@@ -53,7 +53,43 @@ router.get('/ui-config.js', (_req, res) => {
   const body = `/* served by the deployment — do not edit */
 (function () {
   var key = ${JSON.stringify(key)};
-  window.CARBONIQ_BUILD = ${JSON.stringify(build)};
+  var build = ${JSON.stringify(build)};
+  window.CARBONIQ_BUILD = build;
+
+  /*
+   * Break a stale shell, once.
+   *
+   * index.html is fetched by path with no hash in its name, so a copy the
+   * browser took before the no-cache headers existed is one it is entitled to
+   * keep serving — and a header can only apply to a response the browser
+   * actually goes and asks for. That is why a deploy could land, be live, and
+   * still show the previous screen: the page fragments were being refetched
+   * and were current, while the shell around them was months old. The two
+   * surfaces that went missing were both in the shell; the one that appeared
+   * was a fragment. That is the signature.
+   *
+   * This script is the one thing that can never be the stale copy — it is
+   * generated per request and sent no-store — so it is where the check
+   * belongs. If the build it carries is not the build the shell last recorded,
+   * the shell is old: reload once against a URL the cache has no entry for.
+   *
+   * Guarded by sessionStorage against the obvious failure, which is a reload
+   * loop on a browser that cannot store anything. At most one reload per
+   * build per session, and any storage error means no reload at all.
+   */
+  if (build) {
+    try {
+      var seen = sessionStorage.getItem('carboniq_build');
+      if (seen && seen !== build && !sessionStorage.getItem('carboniq_reloaded_' + build)) {
+        sessionStorage.setItem('carboniq_reloaded_' + build, '1');
+        sessionStorage.setItem('carboniq_build', build);
+        location.replace(location.pathname + '?b=' + encodeURIComponent(build) + location.hash);
+        return;
+      }
+      sessionStorage.setItem('carboniq_build', build);
+    } catch (e) { /* no storage: the check is skipped, never retried in a loop */ }
+  }
+
   window.CARBONIQ_SERVER_API_KEY = key;
   if (!key) return;
 
