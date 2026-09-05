@@ -147,10 +147,27 @@ function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
     forward:  round(pick('forward', 'full')),
   };
 
+  /*
+   * PCAF Part A p.128 weights the disclosed data-quality score by the
+   * **outstanding amount**. This weighted by commitment while its own basis
+   * string cited that page — a label asserting a standard the arithmetic did
+   * not follow, which is worse than an unlabelled number because a reader has
+   * no way to see it.
+   *
+   * It now weights by the same amount the attribution uses, so the score
+   * describes the figures printed beside it: outstanding on the standard's
+   * basis, commitment where the reader has asked for the full-commitment view.
+   * Part C weights by premium instead (Box 6-3) and has its own function; the
+   * two must never share one.
+   */
+  const weightOf = (i) => basis === 'commitment'
+    ? Math.abs(Number(i.commitment) || 0)
+    : Math.abs(attribution.drawnShare(i, payments).outstanding || 0);
+
   const scored = held.filter(i => e(i).dataQuality && Number.isFinite(e(i).dataQuality.score));
-  const weightBase = sum(scored, i => Math.abs(Number(i.commitment) || 0));
+  const weightBase = sum(scored, weightOf);
   const weighted = weightBase > 0
-    ? sum(scored, i => (Math.abs(Number(i.commitment) || 0)) * e(i).dataQuality.score) / weightBase
+    ? sum(scored, i => weightOf(i) * e(i).dataQuality.score) / weightBase
     : null;
 
   return {
@@ -182,13 +199,21 @@ function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
 
     dataQuality: {
       weighted: weighted == null ? null : round(weighted),
-      basis: 'Outstanding-amount weighted, per PCAF Part A p.128. A lower score indicates higher data quality.',
+      basis: basis === 'commitment'
+        ? 'Commitment weighted, to match the basis these figures are shown on. PCAF Part A p.128 '
+          + 'weights the disclosed score by outstanding amount; switch the basis to report on it. '
+          + 'A lower score indicates higher data quality.'
+        : 'Outstanding-amount weighted, per PCAF Part A p.128. A lower score indicates higher data quality.',
+      weightedBy: basis === 'commitment' ? 'commitment' : 'outstanding',
       scale: 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest.',
       investmentsScored: scored.length,
       investmentsWithoutScore: held.length - scored.length,
       note: held.length && !scored.length
         ? 'No holding carries a data-quality score. Unscored holdings are excluded from the weighting.'
-        : null,
+        : (scored.length && weightBase === 0
+          ? 'Every scored holding has nil outstanding, so there is no amount to weight by. The '
+            + 'score is reported absent rather than as an unweighted average.'
+          : null),
     },
   };
 }

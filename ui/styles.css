@@ -2135,19 +2135,78 @@ body {
   border-left-color: #5e5ce6; color: var(--text-secondary);
 }
 
-.cap-dq {
-  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
-  margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-light);
+/* ── Evidence ──────────────────────────────────────────────────────────────
+   Three columns, because there are three separate statements: how good the
+   evidence is, whether anyone independent checked it, and how much of the book
+   the score actually speaks for. Collapsing them into one badge would make a
+   reader guess which of the three it meant.
+
+   minmax(min(100%, 240px), 1fr) rather than minmax(240px, 1fr): the fixed form
+   is 240px wide whatever the container is, which is one of the two shapes that
+   put horizontal overflow on nine pages of this application. */
+.cap-evidence {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 20px 28px;
+  align-items: start;
 }
-.cap-dq-label {
+.cap-evidence > div { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.cap-ev-label {
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px;
   text-transform: uppercase; color: var(--text-tertiary);
 }
-.cap-dq-value {
-  font-size: 20px; font-weight: 700; color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+.cap-ev-figure { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.cap-ev-value {
+  font-size: 34px; font-weight: 700; line-height: 1; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.5px;
 }
-.cap-dq-foot { flex: 1 1 30ch; font-size: 11px; line-height: 1.55; color: var(--text-secondary); }
+/* An absent figure is a word, so it is set as one rather than at figure size. */
+.cap-ev-value.is-absent { font-size: 18px; font-weight: 600; color: var(--text-secondary); }
+.cap-ev-unit { font-size: 16px; font-weight: 600; color: var(--text-secondary); }
+.cap-ev-scale-note { font-size: 11.5px; color: var(--text-secondary); }
+
+/* The five bands. The score is a category on a scale with a direction, and
+   the direction is the point: printed as "2.40" alone it reads as a mark out
+   of five and inverts the meaning. */
+.cap-ev-scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; }
+.cap-ev-band {
+  display: grid; place-items: center;
+  height: 24px; border-radius: 5px;
+  font-size: 11px; font-weight: 600; color: var(--text-secondary);
+  background: var(--bg); border: 1px solid var(--border-light);
+}
+.cap-ev-band[data-band="1"] { background: #e7f6ef; }
+.cap-ev-band[data-band="2"] { background: #eef7f2; }
+.cap-ev-band[data-band="3"] { background: #f6f4ea; }
+.cap-ev-band[data-band="4"] { background: #fbf1e6; }
+.cap-ev-band[data-band="5"] { background: #fbeceb; }
+.cap-ev-band.is-here {
+  outline: 2px solid var(--text-primary); outline-offset: 0;
+  color: var(--text-primary); font-weight: 700;
+}
+.cap-ev-ends {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: var(--text-tertiary);
+}
+
+/* display:block, not inline. A bar drawn on an inline element renders as
+   nothing, which reads as a coverage of zero rather than a missing element. */
+.cap-ev-bar {
+  height: 6px; border-radius: 999px; background: var(--border-light); overflow: hidden;
+}
+.cap-ev-bar > span {
+  display: block; height: 100%; width: 0;
+  background: var(--text-primary); border-radius: 999px;
+  transition: width 500ms ease;
+}
+.cap-ev-badge { display: flex; }
+.cap-ev-foot { margin: 0; font-size: 11px; line-height: 1.55; color: var(--text-secondary); }
+
+
+@media (prefers-reduced-motion: reduce) {
+  .cap-ev-bar > span { transition: none; }
+}
 
 /* ── Tables ────────────────────────────────────────────────────────────── */
 .cap-tablewrap { overflow-x: auto; }
@@ -2890,3 +2949,31 @@ body.adj-open { overflow: hidden; }
   margin: 10px 0 0; font-size: 12.5px; color: var(--text-secondary);
   line-height: 1.5; max-width: 78ch;
 }
+
+/* ── The assurance badge ───────────────────────────────────────────────────
+   Whether anyone independent has checked a figure, shown beside the score
+   that says how good the evidence behind it is. Three states, and the tone
+   carries the difference: assured is the only one that earns colour, because
+   a badge that looks the same in every state is a badge nobody reads. */
+.assur-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 3px 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.1px;
+  border: 1px solid transparent; white-space: nowrap;
+}
+.assur-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+
+.assur-badge.is-good  { background: #e7f6ef; color: #10664a; border-color: #b9e3d0; }
+.assur-badge.is-plain { background: #f1f3f6; color: #45505f; border-color: #dde2e9; }
+/* Not declared is the quietest of the three. It is the absence of a statement,
+   not a finding, and drawing it as a warning would read as one. */
+.assur-badge.is-quiet { background: transparent; color: #6b7683; border-color: #dde2e9; }
+.assur-badge.is-quiet .assur-dot { background: #b3bcc7; }
+
+/* No dark block here. This shell is a light page by deliberate choice and a
+   test asserts the stylesheet carries no prefers-color-scheme rule, so a page
+   with its own dark container styles it there — see the Part C hero. */
+
+/* The assurance badge inside a KPI card sits under the meter, on its own
+   line, so it never competes with the figure for the first glance. */
+.kpi-assurance { margin-top: 10px; display: flex; }

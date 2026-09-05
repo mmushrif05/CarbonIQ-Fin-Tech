@@ -36,6 +36,7 @@ const { defaultLimiter } = require('../../middleware/rate-limit');
 const book    = require('../../services/capital-book');
 const metrics = require('../../services/capital-metrics');
 const store   = require('../../services/partc-store');
+const assurance = require('../../services/assurance');
 const { seedCapitalDemo } = require('../../services/capital-demo-data');
 const baseline = require('../../services/capital-baseline');
 const { basket: basketOf } = require('../../services/capital-basket');
@@ -139,6 +140,13 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
   const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
   const result = metrics.dashboard(held, opts.value);
 
+  /* Whether anyone independent has checked these figures is a different
+     question from how good the evidence behind them is, and a reader weighs
+     them together. It travels with the position rather than being fetched by
+     the screen, so the two can never be shown out of step. Declared or
+     reported absent — never inferred. */
+  const assured = await assurance.read(req.apiKey.orgId);
+
   /* An empty book leaves a correct screen with nothing on it — and where
      storage is not writable (a serverless runtime with no Firebase) the seed
      endpoint is refused, so there is no way to put figures there at all. The
@@ -152,6 +160,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
       result.sample = false;
       result.source = 'none';
       result.adjusted = false;
+      result.assurance = assured;
       return res.json({ dashboard: result });
     }
     const filtered = req.query.portfolioId
@@ -168,12 +177,14 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
     shown.sampleNote = BASELINE_NOTE;
     shown.emptyNote = result.emptyNote;
     shown.adjusted = false;
+    shown.assurance = assured;
     return res.json({ dashboard: shown });
   }
 
   result.sample = false;
   result.source = 'recorded';
   result.adjusted = false;
+  result.assurance = assured;
   res.json({ dashboard: result });
 }));
 
@@ -304,6 +315,10 @@ router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
   result.sample = !recorded;
   result.source = recorded ? 'recorded' : 'baseline';
   if (!recorded) result.sampleNote = BASELINE_NOTE;
+
+  /* An overlay changes inputs. It cannot change who audited the book, so the
+     declaration is read the same way here as on the ordinary dashboard. */
+  result.assurance = await assurance.read(req.apiKey.orgId);
 
   const selected = Array.isArray(body.select) ? body.select.map(String).filter(Boolean) : [];
   const basket = selected.length > 25

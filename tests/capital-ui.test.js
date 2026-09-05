@@ -103,8 +103,77 @@ describe('The emissions ledger keeps its four lines apart on screen', () => {
     expect(renderEmissions).toContain('e.creditNote');
   });
 
+});
+
+/*
+ * The evidence band.
+ *
+ * A data-quality score says how good the evidence behind a figure is. It does
+ * not say whether anyone independent has checked it, and a reader shown only
+ * the first supplies the second themselves — generously. So the two are stated
+ * side by side, with the share of the book the score speaks for beside them,
+ * and the band was lifted out of a footnote inside the emissions card because
+ * it is what a regulator asks first.
+ */
+describe('The evidence band states three things, not one', () => {
+  const dashJsAll = read('ui', 'js', 'dashboard.js');
+  const renderEvidence = dashJsAll.slice(
+    dashJsAll.indexOf('function _renderEvidence'),
+    dashJsAll.indexOf('function _renderEvidence') + 3500);
+
+  test('the section exists and is drawn from the payload', () => {
+    expect(html).toContain('id="cap-evidence"');
+    expect(dashJsAll).toMatch(/_renderEvidence\(d\);/);
+  });
+
   test('an unscored holding is named as excluded rather than counted as zero', () => {
-    expect(renderEmissions).toMatch(/excluded rather than counted as zero/);
+    expect(renderEvidence).toMatch(/excluded from the weighting rather than counted as zero/);
+  });
+
+  /*
+   * "2.40" alone reads as a mark out of five to anyone who has not opened the
+   * standard, which inverts a scale on which 1 is the best. The bands carry
+   * the direction, and both ends are named.
+   */
+  test('the score is drawn on its scale, with the direction stated', () => {
+    for (const n of [1, 2, 3, 4, 5]) expect(html).toContain(`data-band="${n}"`);
+    expect(html).toMatch(/best evidence/);
+    expect(html).toMatch(/weakest/);
+    expect(html).toMatch(/1 is the best of 1–5/);
+    expect(renderEvidence).toMatch(/is-here/);
+  });
+
+  test('an absent score is a word, never a zero', () => {
+    expect(renderEvidence).toMatch(/dq\.weighted == null/);
+    expect(renderEvidence).toMatch(/Not reported/);
+    // Number(null) is 0 and 0 is finite: absence is checked before the number.
+    expect(renderEvidence).not.toMatch(/dq\.weighted \|\| 0/);
+  });
+
+  test('coverage says what share of the book the score speaks for', () => {
+    expect(html).toContain('id="cap-dq-coverage"');
+    expect(renderEvidence).toMatch(/investmentsScored/);
+    expect(renderEvidence).toMatch(/investmentsWithoutScore/);
+  });
+
+  /* A bar drawn on an inline element renders as nothing, which reads as a
+     coverage of zero rather than a missing element. */
+  test('the coverage bar is a block', () => {
+    expect(css).toMatch(/\.cap-ev-bar > span \{[^}]*display: block/);
+  });
+
+  test('the assurance state is shown beside the score, never inferred', () => {
+    expect(html).toMatch(/data-assurance="financed"/);
+    expect(renderEvidence).toMatch(/CarbonIQAssurance/);
+    // Declared or absent. Nothing in the renderer decides it from the figures.
+    expect(renderEvidence).not.toMatch(/assured\s*=\s*(true|false)/);
+  });
+
+  /* The grid must collapse. `minmax(240px, 1fr)` is 240px wide whatever the
+     container is, which is one of the two shapes that put horizontal overflow
+     on nine pages of this application. */
+  test('the band collapses on a narrow screen', () => {
+    expect(css).toMatch(/\.cap-evidence \{[\s\S]*?minmax\(min\(100%, 240px\), 1fr\)/);
   });
 });
 

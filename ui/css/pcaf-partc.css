@@ -1339,3 +1339,17 @@
   .partc-overview-status.is-warn,
   .partc-overview-status.is-sample { color: #ffb340; }
 }
+
+/* On the dark hero the badge takes the container's own contrast rather than
+   the app shell's light-ground palette, which would be navy on near-black. */
+.partc-hero-assur .assur-badge {
+  background: rgba(242, 251, 248, 0.10);
+  color: rgba(242, 251, 248, 0.88);
+  border-color: rgba(242, 251, 248, 0.24);
+}
+.partc-hero-assur .assur-badge.is-good {
+  background: rgba(158, 240, 205, 0.16);
+  color: #9ef0cd;
+  border-color: rgba(158, 240, 205, 0.34);
+}
+.partc-hero-assur .assur-badge.is-quiet .assur-dot { background: rgba(242, 251, 248, 0.5); }

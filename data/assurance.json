@@ -1,0 +1,15 @@
+{
+  "_comment": "The entity's own statement about external assurance of its reported emissions. Nothing here can be computed: whether a third party has audited a figure is a fact only the reporting entity can state, and inventing it is the failure services/report-integrity.js exists to prevent. The baseline therefore declares nothing, and every screen reports it absent until an entity records its own. An organisation that records one replaces this entirely; the two are never merged.",
+  "version": "1.0",
+  "source": "baseline",
+  "scopes": {
+    "financed": {
+      "status": "not_declared",
+      "label": "Financed emissions — PCAF Part A"
+    },
+    "insurance": {
+      "status": "not_declared",
+      "label": "Insurance-associated emissions — PCAF Part C"
+    }
+  }
+}

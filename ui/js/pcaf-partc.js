@@ -1133,6 +1133,10 @@ const PCAFPartCPage = (() => {
 
     // Lead with meaning: the figure, the attribution, the scale.
     renderHero(d);
+    /* The declaration is entity-level and fetched once for the session, so
+       every screen shows the same state. Absent until the entity records one —
+       never inferred from the run. */
+    if (window.CarbonIQAssurance) window.CarbonIQAssurance.render(document);
     renderUseStage(d);
     renderDqTile(d);
     renderModuleSplit(d);
