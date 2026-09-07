@@ -404,6 +404,31 @@ Section order is the checklist's, not ours: cover · scope and coverage · gases
 
 ---
 
+## Product North Star — a recognised measurement instrument, not software
+
+This section is strategic intent, recorded here so that every part of the tool is built to the bar it sets. It changes nothing already shipped; it is the standard new work is held to.
+
+**The ambition.** CarbonIQ should reach, for financed and insurance-associated emissions in this region, the position One Click LCA holds in building LCA: a tool whose **output is accepted without re-litigation** because the method is transparent, conformant to a published standard, independently verifiable, and maintained by the recognised regional authority for the numbers. A bank that adopts it should not need to re-hire a consultant to re-measure every year, nor re-certify a baseline it already holds. Build to that bar — it is why the engine does every arithmetic operation, why every figure is traced to its source, and why nothing is asserted that a reader cannot check.
+
+**Four things create that trust; build to all four.**
+
+1. **Conformance to the published standard, shown not asserted.** The PCAF conformance matrix (rule → implementation → proving test) and the methodology statement (every equation, input and factor extracted from an execution of the engine) are the model. Every future module — Part A included — carries its own conformance evidence or it is not done.
+2. **Independent assurability.** Outputs are structured so an external verifier can assure them under **ISO 14064-3 / ISAE 3000** — limited or reasonable assurance over the figures. Datum is led by an ISO 14064 GHG Lead Verifier; that is the credential a bank's auditor recognises and a pure software vendor cannot offer. Assurance — not any listing — is what stands behind a *specific* bank's number.
+3. **A locked, traceable, regional baseline.** See the governance rule below.
+4. **PCAF provider registration** — a roadmap item, not a current credential. See the sequencing and language rules below.
+
+**The regional-baseline authority — the honest moat.** PCAF sets the *method*; it does not set Sri Lanka's *baseline*. Someone credible and in-region must, and that is CarbonIQ: the regional baselines, local emission factors, and taxonomy/regulatory alignment (the SLGFT, CBSL Direction 05, NDC 3.0 work already in this repo) are regional judgement, and whoever holds them becomes the reference the market quotes. This is the position to build toward, and it is truthful — "PCAF-conformant method, localised and maintained by the people who defined it here" — in a way "PCAF-certified" never would be.
+
+**Baseline governance is a market-integrity rule, not a feature.** A baseline anyone can change without a recorded reason is worth nothing: if one institution can move its number silently, every number in the market becomes negotiable. So a baseline **locks**, and changes only through a recorded, reasoned restatement, above a stated threshold, traceable to the source figure — the discipline the Part C locked-assessment / restatement / audit-hash path already follows. As the tool grows, this rule holds everywhere a baseline is set, not only in Part C.
+
+**The PCAF provider path — sequence it after revenue, never front it.** PCAF operates a provider/partner registration: they review how the tool works and list it publicly as a regional provider, for an annual subscription (reported to us as ~USD 13,500/yr). **The exact programme term PCAF uses must be confirmed and then quoted verbatim** — "registered provider", "partner", "listed solution" are not interchangeable and the wrong word is the whole risk; do not invent one. Sequencing: the listing is an accelerant, not a gate — land the first one or two clients on what is already true (conformance, assurability, locked regional baseline, verifier-led), let that revenue fund the registration, and let the listing then strengthen the *next* sale. Do not pay the fee on spec, and do not print "PCAF-listed" as a held credential before it is granted; "registration underway" is the most that may be said in the interim, and only if it has actually begun.
+
+**Language discipline — this extends `services/report-integrity.js`, it does not relax it.** Even once the listing is granted:
+- Never **"PCAF certified / approved / endorsed"** — `containsForbiddenLanguage()` stays in force across every artefact, deck and page. Always **"PCAF-conformant."**
+- The single new claim the listing permits is PCAF's **exact published listing term, stated verbatim and verifiable** (a reader can click through to PCAF's site and confirm it). It means *the tool is a recognised provider* — it does **not** mean PCAF vouches for any specific institution's figure. Keep that distinction visible wherever the listing appears; the good, true claim is discredited the moment it sits next to an implied one.
+
+**Positioning stays: instrument, not software; service, not licence.** The measurement becomes self-service for the client (that is the tool's job and the training's job), while Datum stays for what cannot be automated — the annual independent assurance and the regional-baseline judgement. That is a recurring relationship the client wants, not one they resent, and it is what keeps Datum a consultancy standing behind an instrument rather than a vendor shipping an app.
+
 ---
 
 ## Sri Lanka Green Finance Taxonomy (SLGFT)
