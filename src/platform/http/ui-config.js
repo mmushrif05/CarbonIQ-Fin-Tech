@@ -44,7 +44,7 @@ function _buildId() {
 }
 
 router.get('/ui-config.js', (_req, res) => {
-  const key = process.env.UI_API_KEY || '';
+  const key = require('../config').runtime.uiApiKey;
   const build = _buildId();
 
   // JSON.stringify, not interpolation: the value reaches the browser as a

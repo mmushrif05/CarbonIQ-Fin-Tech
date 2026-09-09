@@ -217,6 +217,17 @@ Closes B1–B4, C1, C2, E4, E5.
 *Exit criterion: a read-only key is refused when it tries to lock an
 assessment, and the refusal is tested.*
 
+> **Delivered** — `docs/API-SCOPES.md`, `src/platform/auth/scopes.js`. All 139
+> routes carry a scope, resolved from the route and enforced from the
+> authentication middleware rather than decorated one by one; the document is
+> generated from the router and held to it by a test. Keys carry scopes and
+> expiry; `key:scope`, `key:expire` and `key:rotate` exist; a key issued before
+> scopes keeps working and is flagged unscoped until scoped. `X-Actor` names
+> the person on locks and on the audit chain. Every `process.env` read is in
+> `src/platform/config/`, with boot validation. One async handler. Coverage
+> thresholds 60 / 75 / 75 / 75 and lint enforced in CI. B1–B4, C1, C2, E4, E5
+> closed. Tests: the exit criterion, in `tests/scopes.test.js`.
+
 ### Phase E3 — Observability (2 weeks) · High
 
 Closes D1–D5, C5.

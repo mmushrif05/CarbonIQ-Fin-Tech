@@ -373,7 +373,8 @@ describe('The running commit can actually be reported', () => {
     const src = fs.readFileSync(path.join(ROOT, 'src/server.js'), 'utf8');
     expect(src).toMatch(/require\('\.\.\/build-info\.json'\)/);
     expect(src).toMatch(/Absent stays absent rather than being guessed/);
-    expect(src).toMatch(/stamped\.commit \|\| process\.env\.COMMIT_REF/);
+    expect(src).toMatch(/stamped\.commit \|\| config\.runtime\.build\.commit/);
+    expect(fs.readFileSync(path.join(ROOT, 'src/platform/config/index.js'), 'utf8')).toMatch(/COMMIT_REF/);
   });
 
   test('the generated stamp is not committed', () => {

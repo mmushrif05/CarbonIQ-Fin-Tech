@@ -248,7 +248,7 @@ const transaction = fn => run(() => client.withTransaction(fn));
  * NODE_ENV=test, because there is no production reason to do this.
  */
 async function truncateAll() {
-  if (process.env.NODE_ENV !== 'test') throw new Error('truncateAll() is a test helper and refuses to run outside NODE_ENV=test.');
+  if (!require('../config').runtime.isTest) throw new Error('truncateAll() is a test helper and refuses to run outside NODE_ENV=test.');
   const { COLLECTIONS } = require('./collections');
   const tables = [...new Set(Object.values(COLLECTIONS).map(c => c.table))];
   const { LOCK_KEY } = require('./audit-chain');

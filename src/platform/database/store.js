@@ -70,6 +70,7 @@
 const fb = require('../bridge/firebase');
 const blobs = require('./blob-store');
 const db = require('.');
+const config = require('../config');
 
 const MAX_MEMORY_RECORDS = 500;
 
@@ -92,7 +93,7 @@ function isDurable() {
  * Netlify sets NETLIFY; Lambda sets AWS_LAMBDA_FUNCTION_NAME.
  */
 function isEphemeralRuntime() {
-  return !!(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT);
+  return config.runtime.isServerless;
 }
 
 /**
@@ -103,7 +104,7 @@ const BACKENDS = ['auto', 'postgres', 'blobs', 'firebase', 'memory'];
 
 /** What the operator asked for. Anything unrecognised is treated as auto. */
 function requestedBackend() {
-  const raw = String(process.env.STORAGE_BACKEND || 'auto').trim().toLowerCase();
+  const raw = String(config.runtime.storageBackend || 'auto').trim().toLowerCase();
   return BACKENDS.includes(raw) ? raw : 'auto';
 }
 
@@ -436,7 +437,7 @@ async function probe({ timeoutMs = 1500 } = {}) {
  */
 function _resetMemory() {
   _memory.clear();
-  if (_pgLive() && process.env.NODE_ENV === 'test') return db.documents.truncateAll();
+  if (_pgLive() && config.runtime.isTest) return db.documents.truncateAll();
   return undefined;
 }
 

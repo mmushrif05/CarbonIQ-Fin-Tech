@@ -24,7 +24,7 @@ const config = require('../config');
 function coreAppUrl() {
   if (config.env === 'development') return 'http://localhost:8888';
 
-  const url = process.env.CORE_APP_URL || process.env.APP_URL;
+  const url = config.runtime.coreAppUrl;
   if (!url) {
     const err = new Error(
       'The CarbonIQ core platform URL is not configured, so the core engine cannot be reached. '

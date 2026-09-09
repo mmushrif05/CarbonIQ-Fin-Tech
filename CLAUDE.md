@@ -29,11 +29,15 @@ npm run setup:verify # Verify environment & Firebase connection
 npm run setup:seed   # Seed demo data into Firestore
 npm run setup:seed-clear  # Clear seeded demo data
 
-# API Key Management
-npm run key:create   # Create a new API key
-npm run key:list     # List all registered API keys
-npm run key:revoke   # Revoke an API key
+# API Key Management (see docs/API-SCOPES.md)
+npm run key:create -- --org "Name" --name "Key" --scopes read,write [--expires YYYY-MM-DD] [--test]
+npm run key:list        # Every key, its scopes and expiry; counts the unscoped
+npm run key:scope  -- <key-id> --scopes read,write,lock   # Apply scopes to an existing key
+npm run key:expire -- <key-id> --expires YYYY-MM-DD
+npm run key:rotate -- <key-id> [--grace-days 7]          # Replacement issued; old key expires after the grace
+npm run key:revoke -- <key-id>
 npm run key:register-ui  # Register the UI dashboard API key
+npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
 
 # Database (PostgreSQL — see docs/DATA-LAYER.md)
 npm run db:migrate      # Apply pending SQL migrations to DATABASE_URL
@@ -160,6 +164,16 @@ Dual-mode authentication — every request must use one of:
 - **API Key** — for bank system integrations; SHA-256 hashed keys stored in Firestore, validated via `src/platform/auth/api-key.js`
 
 The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric chars) to bypass Firebase key registration for internal calls.
+
+**Scopes (`src/platform/auth/scopes.js`, `docs/API-SCOPES.md`).** Five: `read` (every GET and the computations that store nothing), `write` (create, change, delete a record), `lock` (lock an assessment — it enters the disclosure, so it is kept apart from write), `assess` (run an engine that persists a run or calls an AI agent), `admin` (reserved). The scope a route requires is resolved from the route itself — method, pattern, and for a status change the body — and enforced from the authentication middleware, so all 139 routes carry one without a decorator on any of them. `docs/API-SCOPES.md` is generated from the running router and a test fails the build when it drifts. A refusal is `403 SCOPE_REQUIRED` naming the scope required, the scopes held and the command that grants it. The exit criterion of E2 is a test: a read-only key is refused when it tries to lock an assessment.
+
+**A key issued before scopes existed is unscoped, not broken.** It keeps everything it could do; every response on it carries `X-Key-Scopes: unscoped`; the audit chain records it; `key:list` counts them. `key:scope` applies scopes and the key is held to them from that moment. Keys can carry an `expiresAt` (401 `KEY_EXPIRED` with the date), and `key:rotate` issues a replacement with the same scopes while the old key runs out over a grace period and then points at the new one. The dashboard key holds `read write lock assess`, not `admin`; the local `DEV_API_KEY` holds everything and boot validation refuses it in production.
+
+**The person, not only the organisation.** `X-Actor` on a key request names who is acting; the dashboard sends the signed-in user's email on every request (`ui/config.js`). It reaches `lockedBy` on a lock and `actor` on the audit chain, with `via: header | key | user` saying how it was known.
+
+**One place reads the environment (`src/platform/config/index.js`).** Everything read once at load lives on `config`; the variables a deployment context, an operator or a test changes while the process runs — storage backend, database, dashboard key, build stamp — are live getters on `config.runtime`. A test asserts no `process.env` is read anywhere else under `src/`. `config.validate()` names by variable, never by value, what a production deployment cannot run safely with (a default salt, a malformed dashboard key, a non-Postgres `DATABASE_URL`, `DEV_API_KEY` or `STORAGE_BACKEND=memory` in production); a server refuses to start on it, and a serverless function — which cannot refuse — lists the names under `/health` `configured.problems`.
+
+**One async handler (`src/platform/http/async-handler.js`).** Four route files carried their own copy and their own `fail()`; the error handler already knew `statusCode`, `code` and `remedy`, so they are gone.
 
 **The deployment hands the browser that key (`src/platform/http/ui-config.js`).** It used to be a literal in `ui/config.js`, so changing `UI_API_KEY` in Netlify left the shipped copy behind and the app's own key check rejected its own dashboard — with *"API key is invalid or has been revoked"*, which reads as a revoked key rather than a mismatched one and cost a great deal of time to see. There is now one value: an unauthenticated `GET /v1/ui-config.js` emits what the environment holds, and `index.html` loads it after `config.js`. Drift is not possible, and no per-machine Settings step is needed.
 
@@ -570,7 +584,7 @@ npm run test:watch   # Watch mode for TDD
 
 - Test files live in `tests/`
 - Setup/mocks in `tests/setup.js`
-- Coverage thresholds: branches 22%, functions 29%, lines/statements 43%
+- Coverage thresholds: branches 60%, functions 75%, lines/statements 75% (measured 66 / 81 / 80 at the time they were set); `npm run lint` is a CI gate
 - Uses `supertest` for HTTP integration tests against the Express app
 
 ---
@@ -598,6 +612,7 @@ reach the core engine read `CORE_APP_URL`.
 |------|---------|
 | `docs/ARCHITECTURE.md` | Full bank-facing product architecture (CRS, PCAF, Taxonomy, Covenant) |
 | `docs/DATA-LAYER.md` | PostgreSQL behind the seam: schema, transactions, migrations, audit chain, backfill, backup, measured scale |
+| `docs/API-SCOPES.md` | Every route and the scope it requires — generated from the router, held to the code by a test |
 | `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; E1 delivered |
 | `docs/SCAFFOLDING.md` | 17-step build plan |
 | `docs/STRATEGY.md` | FinTech Innovation Lab APAC 2026 strategy |

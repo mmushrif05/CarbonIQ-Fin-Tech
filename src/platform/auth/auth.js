@@ -8,6 +8,7 @@
  */
 
 const { getFirebaseAdmin } = require('../bridge/firebase');
+const { enforceScope, actorOf } = require('./scopes');
 const { ROLES, DEFAULT_ROLE } = require('../../shared/policies');
 
 async function auth(req, res, next) {
@@ -45,7 +46,8 @@ async function auth(req, res, next) {
       organizationId: decoded.organizationId || null
     };
 
-    next();
+    req.actor = actorOf(req);
+    return enforceScope(req, res, next);
   } catch (err) {
     if (err.code === 'auth/id-token-expired') {
       return res.status(401).json({

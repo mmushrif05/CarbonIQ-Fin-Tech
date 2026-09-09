@@ -82,16 +82,16 @@ app.get('/health', async (_req, res) => {
   const stamped = (() => {
     try { return require('../build-info.json'); } catch (_) { return {}; }
   })();
-  const commit = stamped.commit || process.env.COMMIT_REF || process.env.GIT_COMMIT || null;
+  const commit = stamped.commit || config.runtime.build.commit;
   res.json({
     status: 'ok',
     service: 'carboniq-fintech',
     version: config.version,
     build: {
       commit: commit ? String(commit).slice(0, 12) : 'unknown (not a Netlify build)',
-      branch: stamped.branch || process.env.BRANCH || process.env.HEAD || null,
-      deployId: stamped.deployId || process.env.DEPLOY_ID || null,
-      context: stamped.context || process.env.CONTEXT || process.env.NODE_ENV || null,
+      branch: stamped.branch || config.runtime.build.branch,
+      deployId: stamped.deployId || config.runtime.build.deployId,
+      context: stamped.context || config.runtime.build.context,
       builtAt: stamped.builtAt || null
     },
     /* Whether this deployment can actually do its job, as booleans.
@@ -99,12 +99,12 @@ app.get('/health', async (_req, res) => {
        variable that was never set on this context, and neither says so from a
        browser. Names and yes/no only — never a value. */
     configured: {
-      uiKey: Boolean(process.env.UI_API_KEY),
-      anthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
-      firebase: Boolean(
-        process.env.FIREBASE_SERVICE_ACCOUNT ||
-        (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY)
-      )
+      uiKey: Boolean(config.runtime.uiApiKey),
+      anthropicKey: Boolean(config.runtime.anthropicApiKey),
+      firebase: config.runtime.firebaseConfigured,
+      /* Boot validation, by variable name only. A serverless function cannot
+         refuse to start, so it says here what a server would have refused on. */
+      ...(() => { const v = config.validate(); return v.ok ? {} : { problems: v.problems.map(p => p.variable) }; })()
     },
     /* What this deployment can actually persist, on the one endpoint that
        needs no key. "The data did not save" and "this deployment cannot save"
@@ -175,6 +175,13 @@ app.use(errorHandler);
 
 if (require.main === module) {
   const port = config.port;
+  /* A server refuses to start on a variable it cannot run safely with; a
+     serverless function reports the same list on /health instead. */
+  const validation = config.validate();
+  if (!validation.ok) {
+    for (const p of validation.problems) console.error(`[CONFIG] ${p.variable}: ${p.problem} — ${p.remedy}`);
+    if (config.env === 'production') { console.error('[CONFIG] refusing to start.'); process.exit(1); }
+  }
   app.listen(port, () => {
     console.log(`CarbonIQ FinTech API running on port ${port}`);
     console.log(`Environment: ${config.env}`);
@@ -184,8 +191,8 @@ if (require.main === module) {
 
     // Startup diagnostics
     const hasFirebase = !!config.firebase.serviceAccount;
-    const hasUiKey    = !!process.env.UI_API_KEY;
-    const hasDevKey   = !!process.env.DEV_API_KEY;
+    const hasUiKey    = !!config.runtime.uiApiKey;
+    const hasDevKey   = !!config.runtime.devApiKey;
     const hasAI       = !!config.anthropicApiKey;
     console.log(`Firebase: ${hasFirebase ? '✓ connected' : '✗ not configured (503 on DB routes)'}`);
     console.log(`UI Key:   ${hasUiKey   ? '✓ set (frontend auth enabled)' : '✗ not set (frontend will get 401)'}`);

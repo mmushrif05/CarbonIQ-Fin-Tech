@@ -54,18 +54,7 @@ const INSTRUMENTS = require('../../../../../data/gcf/instruments.json');
 
 const router = Router();
 
-function fail(res, err) {
-  return res.status(err.statusCode || 500).json({
-    error: err.code || 'GCF_ERROR',
-    message: err.message,
-    ...(err.remedy ? { remedy: err.remedy } : {}),
-  });
-}
-
-const handle = fn => async (req, res, next) => {
-  try { await fn(req, res, next); }
-  catch (err) { if (err.statusCode) return fail(res, err); next(err); }
-};
+const handle = require('../../../../platform/http/async-handler');
 
 /** The frameworks this tab is built on, so a screen never restates them. */
 router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res) => {

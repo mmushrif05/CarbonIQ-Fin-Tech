@@ -33,7 +33,11 @@
     "db:backup": "node scripts/db-backup.js",
     "db:verify-audit": "node scripts/db-verify-audit.js",
     "test:postgres": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --coverage",
-    "test:scale": "SCALE_STRICT=1 TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --runInBand tests/pg-scale.test.js"
+    "test:scale": "SCALE_STRICT=1 TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --runInBand tests/pg-scale.test.js",
+    "key:scope": "node scripts/create-api-key.js scope",
+    "key:rotate": "node scripts/create-api-key.js rotate",
+    "key:expire": "node scripts/create-api-key.js expire",
+    "docs:scopes": "node scripts/generate-scopes-doc.js"
   },
   "keywords": [
     "carbon",
@@ -78,10 +82,10 @@
     "coverageDirectory": "coverage",
     "coverageThreshold": {
       "global": {
-        "branches": 22,
-        "functions": 29,
-        "lines": 43,
-        "statements": 43
+        "branches": 60,
+        "functions": 75,
+        "lines": 75,
+        "statements": 75
       }
     },
     "globalSetup": "./tests/global-setup.js"

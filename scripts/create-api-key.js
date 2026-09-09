@@ -2,51 +2,61 @@
 /**
  * CarbonIQ FinTech — API Key Manager
  *
- * Creates, lists, or revokes API keys stored in Firebase.
- * Only the SHA-256 hash is stored — the plain key is shown once.
+ * Issues, lists, scopes, expires, rotates and revokes API keys stored in
+ * Firebase. Only the SHA-256 hash is stored — the plain key is shown once.
  *
- * Usage:
- *   node scripts/create-api-key.js create --org "My Bank" --name "Production Key"
- *   node scripts/create-api-key.js list
- *   node scripts/create-api-key.js revoke <hashed-key-id>
+ *   npm run key:create -- --org "DFCC Bank" --name "LOS integration" --scopes read,write [--expires 2027-03-31] [--test]
+ *   npm run key:list
+ *   npm run key:scope  -- <key-id> --scopes read,write,lock
+ *   npm run key:expire -- <key-id> --expires 2027-03-31
+ *   npm run key:rotate -- <key-id> [--grace-days 7]
+ *   npm run key:revoke -- <key-id>
+ *
+ * Scopes: read · write · lock · assess · admin (src/platform/auth/scopes.js).
+ * A key issued before scopes existed has none recorded: it keeps everything
+ * it could do, every response on it says `X-Key-Scopes: unscoped`, and
+ * `list` counts them. `scope` is how one is brought under control, whenever
+ * that is convenient — nothing breaks in the meantime.
  */
 
-const crypto  = require('crypto');
-const path    = require('path');
+'use strict';
+
+const path = require('path');
 const readline = require('readline');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const config = require('../src/platform/config');
+const model = require('../src/platform/auth/api-key-model');
+const { SCOPES } = require('../src/platform/auth/scopes');
 
-// ── Helpers ─────────────────────────────────────────────────────────────────
+const C = { cyan: '\x1b[36m', green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', dim: '\x1b[2m', off: '\x1b[0m' };
+const rule = () => console.log(`${C.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C.off}`);
 
-function generateApiKey(type = 'live') {
-  const random = crypto.randomBytes(16).toString('hex'); // 32 chars
-  return `ck_${type}_${random}`;
-}
-
-function hashApiKey(key) {
-  return crypto
-    .createHmac('sha256', config.apiKey.salt || 'default-dev-salt-change-in-production')
-    .update(key)
-    .digest('hex');
+function flags(args) {
+  const out = { _: [] };
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a.startsWith('--')) {
+      const [k, inline] = a.slice(2).split('=');
+      if (inline !== undefined) out[k] = inline;
+      else if (i + 1 < args.length && !args[i + 1].startsWith('--')) { out[k] = args[i + 1]; i++; }
+      else out[k] = true;
+    } else out._.push(a);
+  }
+  return out;
 }
 
 async function getDb() {
   const admin = require('firebase-admin');
   if (admin.apps.length === 0) {
     if (!config.firebase.serviceAccount) {
-      console.error('\x1b[31m✗ FIREBASE_SERVICE_ACCOUNT is not set in .env\x1b[0m');
-      console.error('  Cannot create a real API key without Firebase.');
-      console.error('  For local dev, use DEV_API_KEY from your .env instead.\n');
+      console.error(`${C.red}✗ FIREBASE_SERVICE_ACCOUNT is not set in .env${C.off}`);
+      console.error('  Keys live in Firebase; without it there is nothing to write to.');
+      console.error('  For local development use DEV_API_KEY from your .env instead.\n');
       process.exit(1);
     }
-    const decoded = Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8');
-    const serviceAccount = JSON.parse(decoded);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: config.firebase.databaseURL
-    });
+    const serviceAccount = JSON.parse(Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8'));
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL: config.firebase.databaseURL });
   }
   return admin.database();
 }
@@ -56,122 +66,137 @@ function ask(question) {
   return new Promise(resolve => rl.question(question, ans => { rl.close(); resolve(ans.trim()); }));
 }
 
-// ── Commands ─────────────────────────────────────────────────────────────────
+/** Resolve a key id given in full or as a unique prefix. */
+async function resolveKey(db, given) {
+  if (!given) { console.error(`${C.red}✗ Provide a key id. Run "list" to see keys.${C.off}`); process.exit(1); }
+  const all = await model.listApiKeys(db);
+  const hits = all.filter(k => k.hashedKey.startsWith(given));
+  if (hits.length === 1) return hits[0];
+  if (!hits.length) { console.error(`${C.red}✗ No key starts with ${given}.${C.off}`); process.exit(1); }
+  console.error(`${C.red}✗ ${hits.length} keys start with ${given}; give more of the id.${C.off}`); process.exit(1);
+}
 
-async function createKey(args) {
-  // Parse --org and --name flags or prompt interactively
-  let orgName = '';
-  let keyName = '';
-  let keyType = 'live';
+function printIssued(issued, orgName) {
+  const r = issued.record;
+  console.log(''); rule();
+  console.log(`${C.green}  ✅ API key issued${C.off}`); rule(); console.log('');
+  console.log(`  Organisation : ${orgName}`);
+  console.log(`  Key name     : ${r.keyName}`);
+  console.log(`  Org ID       : ${r.orgId}`);
+  console.log(`  Type         : ${r.keyType}`);
+  console.log(`  Scopes       : ${r.scopes.join(', ')}`);
+  console.log(`  Expires      : ${r.expiresAt || 'never'}`);
+  console.log(`  Key ID       : ${issued.hashedKey.slice(0, 16)}…`);
+  console.log(`\n  ${C.yellow}⚠️  Copy this key now — it will NOT be shown again:${C.off}\n`);
+  console.log(`  ${C.green}${issued.key}${C.off}\n`);
+  console.log('  Send it in the X-API-Key header. Name the person behind a request in X-Actor.');
+  rule(); console.log('');
+}
 
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--org')  orgName = args[i + 1] || '';
-    if (args[i] === '--name') keyName = args[i + 1] || '';
-    if (args[i] === '--test') keyType = 'test';
-  }
+// ── Commands ─────────────────────────────────────────────────────────────
 
-  if (!orgName) orgName = await ask('  Organization name (e.g. "DBS Bank Singapore"): ');
-  if (!keyName) keyName = await ask('  Key name (e.g. "Production Key"): ');
-
-  if (!orgName || !keyName) {
-    console.error('\x1b[31m✗ Organization name and key name are required.\x1b[0m');
-    process.exit(1);
-  }
-
-  const plainKey   = generateApiKey(keyType);
-  const hashedKey  = hashApiKey(plainKey);
-  const orgId      = 'org_' + crypto.randomBytes(6).toString('hex');
-  const now        = new Date().toISOString();
-
-  const keyRecord = {
-    id:          hashedKey,
-    orgId,
-    orgName,
-    keyName,
-    keyType,
-    active:      true,
-    permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'],
-    projectIds:  [],          // empty = access to all projects
-    rateLimit:   config.apiKey.defaultRateLimit || 100,
-    createdAt:   now,
-    lastUsed:    null
-  };
-
+async function createKey(f) {
+  let orgName = f.org || '';
+  let keyName = f.name || '';
+  if (!orgName) orgName = await ask('  Organisation name (e.g. "DFCC Bank"): ');
+  if (!keyName) keyName = await ask('  Key name (e.g. "LOS integration"): ');
+  if (!orgName || !keyName) { console.error(`${C.red}✗ Organisation and key name are required.${C.off}`); process.exit(1); }
+  let scopes = f.scopes;
+  if (!scopes) scopes = (await ask(`  Scopes [${SCOPES.join(', ')}] (default read): `)) || 'read';
   const db = await getDb();
-  await db.ref(`fintech/apiKeys/${hashedKey}`).set(keyRecord);
-
-  console.log('\n\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m');
-  console.log('\x1b[32m  ✅ API Key Created Successfully\x1b[0m');
-  console.log('\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\n');
-  console.log(`  Organization : ${orgName}`);
-  console.log(`  Key Name     : ${keyName}`);
-  console.log(`  Org ID       : ${orgId}`);
-  console.log(`  Key Type     : ${keyType}`);
-  console.log(`  Created      : ${now}\n`);
-  console.log('  \x1b[33m⚠️  Copy this key now — it will NOT be shown again:\x1b[0m\n');
-  console.log(`  \x1b[32m${plainKey}\x1b[0m\n`);
-  console.log('  Save this in:');
-  console.log('  • Frontend settings (Settings icon in the sidebar)');
-  console.log('  • Netlify environment variables (CARBONIQ_API_KEY)');
-  console.log('  • Your integration\'s X-API-Key header\n');
-  console.log('\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\n');
+  const orgId = f['org-id'] || ('org_' + require('crypto').randomBytes(6).toString('hex'));
+  const issued = await model.createApiKey(db, {
+    orgId, orgName, keyName, scopes, expiresAt: f.expires, isTest: f.test === true,
+    rateLimit: config.apiKey.defaultRateLimit || 100, createdBy: process.env.USER || null,
+  });
+  printIssued(issued, orgName);
 }
 
 async function listKeys() {
   const db = await getDb();
-  const snap = await db.ref('fintech/apiKeys').once('value');
-  const keys = snap.val();
-
-  if (!keys || Object.keys(keys).length === 0) {
-    console.log('\n  No API keys found.\n');
-    return;
-  }
-
-  console.log('\n\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m');
-  console.log('\x1b[36m  API Keys\x1b[0m');
-  console.log('\x1b[36m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\x1b[0m\n');
-
-  Object.values(keys).forEach(k => {
-    const status = k.active ? '\x1b[32mActive\x1b[0m' : '\x1b[31mRevoked\x1b[0m';
-    console.log(`  ${status}  ${k.orgName} / ${k.keyName}`);
-    console.log(`         Org ID  : ${k.orgId}`);
-    console.log(`         Type    : ${k.keyType || 'live'}`);
-    console.log(`         Created : ${k.createdAt}`);
-    console.log(`         Last Use: ${k.lastUsed ? new Date(k.lastUsed).toISOString() : 'Never'}`);
-    console.log(`         Hash ID : ${k.id?.substring(0, 16)}...`);
+  const keys = await model.listApiKeys(db);
+  if (!keys.length) { console.log('\n  No API keys found.\n'); return; }
+  console.log(''); rule(); console.log(`${C.cyan}  API keys${C.off}`); rule(); console.log('');
+  let unscoped = 0;
+  for (const k of keys) {
+    const expired = k.expiresAt && new Date(k.expiresAt).getTime() <= Date.now();
+    const status = !k.active ? `${C.red}Revoked${C.off}` : expired ? `${C.red}Expired${C.off}` : `${C.green}Active ${C.off}`;
+    if (k.active && k.unscoped) unscoped++;
+    console.log(`  ${status}  ${k.orgName} / ${k.keyName || 'unnamed'}`);
+    console.log(`           Key ID  : ${k.hashedKey.slice(0, 16)}…`);
+    console.log(`           Org ID  : ${k.orgId}`);
+    console.log(`           Scopes  : ${k.unscoped ? `${C.yellow}unscoped — full access until scoped${C.off}` : k.scopes.join(', ')}`);
+    console.log(`           Expires : ${k.expiresAt || 'never'}${k.supersededBy ? `  (rotated → ${k.supersededBy.slice(0, 16)}…)` : ''}`);
+    console.log(`           Last use: ${k.lastUsed ? new Date(k.lastUsed).toISOString() : 'never'}`);
     console.log('');
-  });
-}
-
-async function revokeKey(hashId) {
-  if (!hashId) {
-    console.error('\x1b[31m✗ Provide a hash ID. Run "list" to see keys.\x1b[0m');
-    process.exit(1);
   }
-  const db = await getDb();
-  await db.ref(`fintech/apiKeys/${hashId}/active`).set(false);
-  console.log(`\x1b[32m✓ Key ${hashId.substring(0, 16)}... revoked.\x1b[0m`);
+  if (unscoped) {
+    console.log(`  ${C.yellow}${unscoped} active key(s) carry no scopes.${C.off} Apply them with:`);
+    console.log('    npm run key:scope -- <key-id> --scopes read,write\n');
+  }
 }
 
-// ── Main ─────────────────────────────────────────────────────────────────────
+async function scopeKey(f) {
+  const db = await getDb();
+  const key = await resolveKey(db, f._[0]);
+  if (!f.scopes) { console.error(`${C.red}✗ --scopes is required, e.g. --scopes read,write,lock${C.off}`); process.exit(1); }
+  const r = await model.setScopes(db, key.hashedKey, f.scopes);
+  console.log(`${C.green}✓${C.off} ${key.orgName} / ${key.keyName}: scopes now ${r.scopes.join(', ')}${r.wasUnscoped ? ' (was unscoped)' : ''}.`);
+}
+
+async function expireKey(f) {
+  const db = await getDb();
+  const key = await resolveKey(db, f._[0]);
+  if (!f.expires) { console.error(`${C.red}✗ --expires is required, e.g. --expires 2027-03-31${C.off}`); process.exit(1); }
+  const r = await model.setExpiry(db, key.hashedKey, f.expires);
+  console.log(`${C.green}✓${C.off} ${key.orgName} / ${key.keyName}: expires ${r.expiresAt}.`);
+}
+
+async function rotateKey(f) {
+  const db = await getDb();
+  const key = await resolveKey(db, f._[0]);
+  const graceDays = f['grace-days'] === undefined ? 7 : Number(f['grace-days']);
+  const r = await model.rotateApiKey(db, key.hashedKey, { graceDays, createdBy: process.env.USER || null });
+  printIssued(r, key.orgName);
+  console.log(r.previousRevoked
+    ? `  The previous key is revoked.`
+    : `  The previous key keeps working until ${r.previousExpiresAt}, then answers 401 KEY_EXPIRED naming this one.`);
+  console.log('');
+}
+
+async function revokeKey(f) {
+  const db = await getDb();
+  const key = await resolveKey(db, f._[0]);
+  await model.revokeApiKey(db, key.hashedKey);
+  console.log(`${C.green}✓${C.off} ${key.orgName} / ${key.keyName} revoked.`);
+}
+
+function usage() {
+  console.log('\n  Usage:');
+  console.log('    npm run key:create -- --org "Name" --name "Key name" --scopes read,write [--expires YYYY-MM-DD] [--test]');
+  console.log('    npm run key:list');
+  console.log('    npm run key:scope  -- <key-id> --scopes read,write,lock');
+  console.log('    npm run key:expire -- <key-id> --expires YYYY-MM-DD');
+  console.log('    npm run key:rotate -- <key-id> [--grace-days 7]');
+  console.log('    npm run key:revoke -- <key-id>');
+  console.log(`\n  Scopes: ${SCOPES.join(' · ')}\n`);
+}
 
 const [,, command, ...rest] = process.argv;
-
 (async () => {
-  console.log('\n\x1b[36m  CarbonIQ FinTech — API Key Manager\x1b[0m');
-
+  console.log(`\n${C.cyan}  CarbonIQ FinTech — API Key Manager${C.off}`);
+  const f = flags(rest);
   switch (command) {
-    case 'create':  await createKey(rest); break;
-    case 'list':    await listKeys();      break;
-    case 'revoke':  await revokeKey(rest[0]); break;
-    default:
-      console.log('\n  Usage:');
-      console.log('    node scripts/create-api-key.js create [--org "Name"] [--name "Key Name"] [--test]');
-      console.log('    node scripts/create-api-key.js list');
-      console.log('    node scripts/create-api-key.js revoke <hash-id>\n');
+    case 'create': await createKey(f); break;
+    case 'list':   await listKeys(); break;
+    case 'scope':  await scopeKey(f); break;
+    case 'expire': await expireKey(f); break;
+    case 'rotate': await rotateKey(f); break;
+    case 'revoke': await revokeKey(f); break;
+    default: usage();
   }
   process.exit(0);
 })().catch(err => {
-  console.error('\x1b[31m  Error:\x1b[0m', err.message);
+  console.error(`${C.red}  Error:${C.off}`, err.message);
   process.exit(1);
 });
