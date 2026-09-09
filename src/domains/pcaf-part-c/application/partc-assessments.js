@@ -27,6 +27,7 @@
 'use strict';
 
 const crypto   = require('crypto');
+const { fallback } = require('../../../platform/observability/logger');
 const store    = require('../../../platform/database/store');
 const registry = require('./partc-registry');
 const boq      = require('./partc-boq');
@@ -206,7 +207,7 @@ async function createAssessment(orgId, input) {
     orgId, runId: record.assessmentId, result,
     context: { region: settings.region, projectType: ctx.project.projectType },
     materials: revision.materials || []
-  }).catch(() => {});
+  }).catch(fallback('partc.assessments.recordLearnings'));
 
   return { assessment: record, result, registers };
 }

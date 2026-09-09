@@ -32,6 +32,7 @@
 'use strict';
 
 const crypto    = require('crypto');
+const { fallback } = require('../observability/logger');
 const Anthropic = require('@anthropic-ai/sdk');
 const config    = require('../config');
 const { saveAgentRun, updateAgentRun } = require('../bridge/firebase');
@@ -315,7 +316,7 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       updateAgentRun(orgId, runId, {
         steps:      run.steps,
         tokensUsed: run.tokensUsed
-      }).catch(() => {});
+      }).catch(fallback('agent.updateAgentRun'));
     }
 
     // Safety: if we exited the loop without a result, mark as failed

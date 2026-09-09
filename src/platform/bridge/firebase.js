@@ -10,6 +10,8 @@
  */
 
 const admin = require('firebase-admin');
+/* Required lazily: the logger reads config, and this file is loaded early. */
+const log = () => require('../observability/logger').for('platform/bridge/firebase');
 const config = require('../config');
 
 let initialized = false;
@@ -22,7 +24,7 @@ function initFirebase() {
 
   if (!config.firebase.serviceAccount) {
     // No credentials — run without Firebase (frontend-only or test mode)
-    console.warn('[Firebase] No service account — API routes requiring Firebase will return 503');
+    log().warn('no Firebase service account; routes that need Firebase answer 503');
     initialized = true;
     return;
   }
@@ -32,14 +34,13 @@ function initFirebase() {
     const decoded = Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8');
     serviceAccount = JSON.parse(decoded);
   } catch (e) {
-    console.error('[Firebase] FIREBASE_SERVICE_ACCOUNT is not valid base64-encoded JSON:', e.message);
-    console.error('[Firebase] Hint: encode the service account JSON with: cat key.json | base64 -w 0');
+    log().error({ err: e, remedy: 'encode the service account JSON with: cat key.json | base64 -w 0' }, 'FIREBASE_SERVICE_ACCOUNT is not valid base64-encoded JSON');
     initialized = true;
     return;
   }
 
   if (!config.firebase.databaseURL) {
-    console.error('[Firebase] FIREBASE_DATABASE_URL is not set — cannot initialize');
+    log().error('FIREBASE_DATABASE_URL is not set; Firebase cannot initialise');
     initialized = true;
     return;
   }
@@ -50,9 +51,9 @@ function initFirebase() {
       databaseURL: config.firebase.databaseURL
     });
     initialized = true;
-    console.log('[Firebase] Initialized for FinTech API');
+    log().info('Firebase initialised');
   } catch (e) {
-    console.error('[Firebase] initializeApp failed:', e.message);
+    log().error({ err: e }, 'Firebase initializeApp failed');
     initialized = true;
   }
 }

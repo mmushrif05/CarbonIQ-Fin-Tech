@@ -92,7 +92,8 @@ const config = {
 
   // --- Logging ---
   log: {
-    level: process.env.LOG_LEVEL || 'info',
+    /* Silent under test unless asked for, so a suite's output is the suite's. */
+    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'test' ? 'silent' : 'info'),
     verbose: process.env.LOG_VERBOSE === 'true'
   },
 
@@ -117,6 +118,9 @@ const config = {
     get loanAmountThreshold() { return parseInt(process.env.LOAN_AMOUNT_THRESHOLD, 10) || 50_000_000; },
     get coreAppUrl() { return process.env.CORE_APP_URL || process.env.APP_URL || ''; },
     get anthropicApiKey() { return process.env.ANTHROPIC_API_KEY || ''; },
+    /* Error reporting is inert without a DSN; /health says whether one is set, never what it is. */
+    get sentryDsn() { return process.env.SENTRY_DSN || ''; },
+    get sentryEnvironment() { return process.env.SENTRY_ENVIRONMENT || ''; },
     get firebaseConfigured() {
       return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT ||
         (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY));
@@ -157,6 +161,10 @@ function validate({ env = config.env } = {}) {
   }
   if (production && process.env.DEV_API_KEY) {
     problems.push({ variable: 'DEV_API_KEY', problem: 'set in production — the local-development bypass must not exist on a deployed site', remedy: 'Unset it on this context.' });
+  }
+  const dsn = process.env.SENTRY_DSN;
+  if (dsn && !/^https?:\/\/[^@\s]+@[^\/\s]+\/(?:.*\/)?\d+\/?$/.test(dsn)) {
+    problems.push({ variable: 'SENTRY_DSN', problem: 'set, but not of the form https://<key>@<host>/<project id>', remedy: 'Copy the DSN from the Sentry project settings, or unset it to run without error reporting.' });
   }
   if (production && process.env.STORAGE_BACKEND === 'memory') {
     problems.push({ variable: 'STORAGE_BACKEND', problem: 'memory in production — every write is lost when the process ends', remedy: 'Unset it, or set postgres / firebase / blobs.' });

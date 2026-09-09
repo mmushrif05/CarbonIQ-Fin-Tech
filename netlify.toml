@@ -136,6 +136,9 @@
   WEBHOOK_MAX_RETRIES = "3"
   LOG_LEVEL = "info"
   LOG_VERBOSE = "false"
+  # Error reports are tagged with this; the DSN itself is set in the site's
+  # environment variables, never here.
+  SENTRY_ENVIRONMENT = "production"
 
 # A deploy preview must behave like production, or it cannot be used to
 # review a change. Previously only NODE_ENV and FINTECH_API_ENABLED were set
@@ -145,6 +148,7 @@
 # that from a broken branch.
 [context.deploy-preview.environment]
   NODE_ENV = "staging"
+  SENTRY_ENVIRONMENT = "deploy-preview"
   FINTECH_API_ENABLED = "true"
   FF_COVENANT_ENGINE = "true"
   FF_PORTFOLIO_AGGREGATION = "true"

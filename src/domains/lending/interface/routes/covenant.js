@@ -118,7 +118,7 @@ router.post('/:projectId/covenant',
       // Fire webhook if breach (non-blocking)
       if (result.result === 'breach' && config.webhooks && config.webhooks.covenantBreach) {
         _fireWebhook(config.webhooks.covenantBreach, response).catch(err =>
-          console.error('[covenant] webhook error:', err.message)
+          require('../../../../platform/observability/logger').for('domains/lending/interface/routes/covenant').warn({ err }, 'covenant webhook dispatch failed')
         );
       }
 

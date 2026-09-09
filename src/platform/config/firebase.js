@@ -33,7 +33,7 @@ const initFirebase = () => {
           const decoded = Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8');
           initConfig.credential = admin.credential.cert(JSON.parse(decoded));
         } catch (e) {
-          console.warn('[FIREBASE] Could not parse service account, using application default credentials');
+          require('../observability/logger').for('platform/config/firebase').warn('could not parse the service account; using application default credentials');
           initConfig.credential = admin.credential.applicationDefault();
         }
       }
@@ -44,7 +44,7 @@ const initFirebase = () => {
     db = admin.database();
     return db;
   } catch (err) {
-    console.error('[FIREBASE] Initialization failed:', err.message);
+    require('../observability/logger').for('platform/config/firebase').error({ err }, 'Firebase initialisation failed');
     return null;
   }
 };

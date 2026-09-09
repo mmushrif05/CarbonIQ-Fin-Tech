@@ -9,6 +9,9 @@
  */
 
 const crypto = require('crypto');
+const logger = require('../../../platform/observability/logger');
+const { fallback } = logger;
+const log = logger.for('domains/lending/application/webhook');
 const { getDatabase } = require('../../../platform/bridge/firebase');
 const config = require('../../../platform/config');
 
@@ -129,7 +132,7 @@ async function dispatchEvent(orgId, eventType, payload) {
     if (!record.events.includes(eventType)) continue;
 
     _deliverWithRetry(record, eventType, payload, db).catch(err =>
-      console.error(`[WEBHOOK] Dispatch failed for ${record.subscriptionId}:`, err.message)
+      log.warn({ err, subscriptionId: record.subscriptionId, kind: logger.classify(err) }, 'webhook dispatch failed')
     );
   }
 }
@@ -171,7 +174,7 @@ async function _deliverWithRetry(record, eventType, payload, db) {
         db.ref(`fintech/webhooks/${record.subscriptionId}`).update({
           deliveryCount: (record.deliveryCount || 0) + 1,
           lastDeliveredAt: new Date().toISOString()
-        }).catch(() => {});
+        }).catch(fallback('webhook.recordDelivery'));
         return;
       }
 
@@ -186,7 +189,7 @@ async function _deliverWithRetry(record, eventType, payload, db) {
     failureCount: (record.failureCount || 0) + 1,
     lastFailedAt: new Date().toISOString(),
     lastError: lastError ? lastError.message : 'Unknown'
-  }).catch(() => {});
+  }).catch(fallback('webhook.recordFailure'));
 
   throw lastError;
 }

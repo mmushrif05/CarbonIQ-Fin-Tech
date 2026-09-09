@@ -12,6 +12,7 @@
 
 const serverless = require('serverless-http');
 const app = require('../../src/server');
+const errors = require('../../src/platform/observability/errors');
 
 /**
  * Response types that must survive as bytes.
@@ -62,5 +63,13 @@ exports.handler = async (event, context) => {
     ? rawPath.replace('/.netlify/functions/fintech-api', '') || '/'
     : rawPath;
 
-  return handler(event, context);
+  /* Express reports its own failures; this catches the adapter's, which
+     would otherwise reach the platform as a bare invocation error with no
+     request id, no module and no release. */
+  try {
+    return await handler(event, context);
+  } catch (err) {
+    await errors.capture(err, { source: 'invocation', requestId: event.headers && event.headers['x-request-id'] });
+    throw err;
+  }
 };

@@ -71,6 +71,8 @@ const fb = require('../bridge/firebase');
 const blobs = require('./blob-store');
 const db = require('.');
 const config = require('../config');
+const { timed } = require('../observability/metrics');
+const { fallback } = require('../observability/logger');
 
 const MAX_MEMORY_RECORDS = 500;
 
@@ -232,18 +234,18 @@ async function put(collection, orgId, id, record) {
     await blobs.put(collection, orgId, id, record);
     return record;
   }
-  await fb.savePartCRecord(collection, orgId, id, record).catch(() => {});
+  if (isDurable()) await fb.savePartCRecord(collection, orgId, id, record).catch(fallback('store.firebase.save'));
   return record;
 }
 
 async function get(collection, orgId, id, { forUpdate = false } = {}) {
   if (_pgLive()) return db.documents.get(collection, orgId, id, { forUpdate });
   if (_blobsLive()) {
-    const fromBlobs = await blobs.get(collection, orgId, id).catch(() => null);
+    const fromBlobs = await blobs.get(collection, orgId, id).catch(fallback('store.blobs.get', null));
     if (fromBlobs) return fromBlobs;
     return _bucket(collection, orgId).get(id) || null;
   }
-  const stored = await fb.getPartCRecord(collection, orgId, id).catch(() => null);
+  const stored = isDurable() ? await fb.getPartCRecord(collection, orgId, id).catch(fallback('store.firebase.get', null)) : null;
   if (stored) return stored;
   return _bucket(collection, orgId).get(id) || null;
 }
@@ -262,11 +264,11 @@ async function list(collection, orgId, { limit = null } = {}) {
   if (_pgLive()) return db.documents.list(collection, orgId, { limit });
   const cap = limit === null || limit === undefined ? MAX_LIST_WITHOUT_QUERY : limit;
   if (_blobsLive()) {
-    const fromBlobs = await blobs.list(collection, orgId, { limit: cap }).catch(() => []);
+    const fromBlobs = await blobs.list(collection, orgId, { limit: cap }).catch(fallback('store.blobs.list', () => []));
     if (fromBlobs && fromBlobs.length) return fromBlobs;
     return [..._bucket(collection, orgId).values()].slice(0, cap);
   }
-  const stored = await fb.listPartCRecords(collection, orgId, cap).catch(() => []);
+  const stored = isDurable() ? await fb.listPartCRecords(collection, orgId, cap).catch(fallback('store.firebase.list', () => [])) : [];
   if (stored && stored.length) return stored;
   return [..._bucket(collection, orgId).values()].slice(0, cap);
 }
@@ -282,7 +284,7 @@ async function patch(collection, orgId, id, updates) {
     await blobs.put(collection, orgId, id, merged);
     return merged;
   }
-  await fb.savePartCRecord(collection, orgId, id, merged).catch(() => {});
+  if (isDurable()) await fb.savePartCRecord(collection, orgId, id, merged).catch(fallback('store.firebase.patch'));
   return merged;
 }
 
@@ -294,7 +296,7 @@ async function remove(collection, orgId, id) {
     await blobs.remove(collection, orgId, id);
     return;
   }
-  await fb.deletePartCRecord(collection, orgId, id).catch(() => {});
+  if (isDurable()) await fb.deletePartCRecord(collection, orgId, id).catch(fallback('store.firebase.delete'));
 }
 
 // ---------------------------------------------------------------------------
@@ -435,9 +437,13 @@ function _resetMemory() {
   return undefined;
 }
 
+/* Every verb on the seam is timed into the in-process metrics, so store
+   latency is a series beside request latency and a slow database shows as
+   one rather than as slow routes. The raw functions call one another
+   internally; only the seam's edge is observed. */
 module.exports = {
-  put, get, list, patch, remove,
-  query, page, transaction, count, probe,
+  put: timed('put', put), get: timed('get', get), list: timed('list', list), patch: timed('patch', patch), remove: timed('remove', remove),
+  query: timed('query', query), page: timed('page', page), transaction: timed('transaction', transaction), count: timed('count', count), probe,
   capability, isDurable, isPostgresConfigured, isEphemeralRuntime, assertWritable, requestedBackend, BACKENDS,
   _resetMemory, MAX_MEMORY_RECORDS, MAX_LIST_WITHOUT_QUERY
 };

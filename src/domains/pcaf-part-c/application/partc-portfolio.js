@@ -25,6 +25,7 @@
 'use strict';
 
 const registry    = require('./partc-registry');
+const { fallback } = require('../../../platform/observability/logger');
 const { splitStageTotals, SCOPE_OF } = require('../domain/ghg-scopes');
 const assessments = require('./partc-assessments');
 
@@ -421,7 +422,7 @@ async function improvementPlan(orgId, reportingYear) {
  */
 async function factorGapPriority(orgId, reportingYear) {
   const { aggregateResearchPriority, listLearnings } = require('./learning-store');
-  const learnings = await listLearnings(orgId).catch(() => []);
+  const learnings = await listLearnings(orgId).catch(fallback('partc.portfolio.listLearnings', () => []));
   const ranked = aggregateResearchPriority(learnings || []);
   return {
     reportingYear: Number(reportingYear),

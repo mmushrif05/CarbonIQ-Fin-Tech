@@ -3,9 +3,25 @@
  *
  * Catches all unhandled errors and returns structured JSON responses.
  * Never leaks stack traces or internal details in production.
+ *
+ * A 500 is an incident: it is reported through
+ * `platform/observability/errors` — logged with the failing module, the
+ * request id and the organisation, and sent to the error sink where one is
+ * configured — and the report is awaited before the response goes out, so a
+ * serverless container is not frozen with the report still in flight. The
+ * response carries the report's `eventId` beside `requestId`, so a screen
+ * can quote the one handle that finds both the log line and the alert. An
+ * explained 5xx — one that arrived with its own code and remedy — is
+ * reported best-effort and answered without waiting.
  */
 
+'use strict';
+
 const config = require('../config');
+const logger = require('../observability/logger');
+const errors = require('../observability/errors');
+
+const log = logger.for('platform/http/error-handler');
 
 /**
  * Is this an Anthropic SDK failure?
@@ -27,42 +43,31 @@ function isAnthropicError(err) {
     .test((err.constructor && err.constructor.name) || '');
 }
 
-function errorHandler(err, req, res, _next) {
-  // Log full error internally
-  console.error('[ERROR]', {
-    requestId: req.requestId,
-    message: err.message,
-    stack: config.env === 'development' ? err.stack : undefined,
-    path: req.originalUrl,
-    method: req.method
-  });
-
+/** The status and body an error answers with. */
+function shape(err, req) {
   // CORS error
   if (err.message && err.message.startsWith('CORS:')) {
-    return res.status(403).json({
-      error: 'CORS_ERROR',
-      message: err.message
-    });
+    return { status: 403, body: { error: 'CORS_ERROR', message: err.message } };
   }
 
   // Joi validation error (if not caught by validate middleware)
   if (err.isJoi) {
-    return res.status(400).json({
-      error: 'VALIDATION_ERROR',
-      message: err.details.map(d => d.message).join('; '),
-      details: err.details.map(d => ({
-        field: Array.isArray(d.path) ? d.path.join('.') : '',
-        message: d.message
-      }))
-    });
+    return {
+      status: 400,
+      body: {
+        error: 'VALIDATION_ERROR',
+        message: err.details.map(d => d.message).join('; '),
+        details: err.details.map(d => ({
+          field: Array.isArray(d.path) ? d.path.join('.') : '',
+          message: d.message
+        }))
+      }
+    };
   }
 
   // Firebase errors
-  if (err.code && err.code.startsWith('auth/')) {
-    return res.status(401).json({
-      error: 'AUTH_ERROR',
-      message: 'Authentication failed.'
-    });
+  if (err.code && typeof err.code === 'string' && err.code.startsWith('auth/')) {
+    return { status: 401, body: { error: 'AUTH_ERROR', message: 'Authentication failed.' } };
   }
 
   /*
@@ -83,15 +88,18 @@ function errorHandler(err, req, res, _next) {
           || d.status === 'forbidden' || d.status === 'network_blocked') ? 503
           : (d.httpStatus && d.httpStatus >= 400 && d.httpStatus < 600) ? d.httpStatus : 502;
 
-    return res.status(httpStatus).json({
-      error: 'AI_UNAVAILABLE',
-      reason: d.status,
-      message: d.message,
-      remedy: d.remedy,
-      diagnose: 'GET /v1/agent/health',
-      unaffected: require('./require-ai').UNAFFECTED,
-      requestId: req.requestId
-    });
+    return {
+      status: httpStatus,
+      body: {
+        error: 'AI_UNAVAILABLE',
+        reason: d.status,
+        message: d.message,
+        remedy: d.remedy,
+        diagnose: 'GET /v1/agent/health',
+        unaffected: require('./require-ai').UNAFFECTED,
+        requestId: req.requestId
+      }
+    };
   }
 
   // Default: use err.code as error identifier when available
@@ -110,8 +118,32 @@ function errorHandler(err, req, res, _next) {
     requestId: req.requestId
   };
   if (status !== 500 && err.remedy) body.remedy = err.remedy;
+  return { status, body };
+}
 
-  res.status(status).json(body);
+/* Express recognises an error handler by its arity: this must take four. */
+async function errorHandler(err, req, res, next) {
+  if (res.headersSent) return next(err);
+
+  const { status, body } = shape(err, req);
+
+  if (status === 500) {
+    /* Unexpected: the incident the exit criterion names. Awaited, so the
+       report is out before the container can be frozen. */
+    const report = await errors.capture(err, { req, status });
+    body.eventId = report.eventId;
+  } else if (status >= 500) {
+    /* Explained — a store unreachable, the AI provider down, a deadline
+       exceeded — with its own code and remedy. Reported best-effort; the
+       request line is an error-level log regardless, and that is what the
+       drain alerts on. */
+    errors.capture(err, { req, status });
+  } else {
+    log.debug({ err, status, code: body.error, requestId: req.requestId }, `${status} ${body.error}`);
+  }
+  if (config.env === 'development' && status >= 500 && err.stack) body.stack = err.stack;
+
+  return res.status(status).json(body);
 }
 
 module.exports = errorHandler;
