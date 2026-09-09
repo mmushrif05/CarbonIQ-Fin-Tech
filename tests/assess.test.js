@@ -6,7 +6,7 @@
  */
 
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 
 const VALID_BODY = {
   content: 'Concrete C30, 850, tonnes\nSteel Rebar, 120, tonnes\nFloat Glass, 45, tonnes',

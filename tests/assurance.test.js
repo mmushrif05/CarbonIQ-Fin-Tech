@@ -7,7 +7,7 @@
  * assured one carry different weight in front of a regulator.
  *
  * Assurance cannot be computed from anything held here. It is a *declared*
- * fact in the sense services/report-integrity.js uses the word, and inventing
+ * fact in the sense src/shared/report-integrity.js uses the word, and inventing
  * one is the failure that module exists to prevent — the same class as the
  * board meetings and the flood-zone percentage that were removed from the
  * portfolio reports.
@@ -24,8 +24,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const assurance = require('../services/assurance');
-const store = require('../services/partc-store');
+const assurance = require('../src/domains/lending/application/assurance');
+const store = require('../src/platform/database/store');
 
 const ROOT = path.join(__dirname, '..');
 

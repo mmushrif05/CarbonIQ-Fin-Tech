@@ -13,8 +13,8 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const db = require('../platform/database');
-const store = require('../services/partc-store');
+const db = require('../src/platform/database');
+const store = require('../src/platform/database/store');
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -34,8 +34,8 @@ afterEach(() => ENV.forEach((k, i) => { if (savedEnv[i] === undefined) delete pr
 describe('Every collection the services write is registered', () => {
   test('a store call names a collection the registry knows, and the sweep found them', () => {
     /* The two store implementations call their own backends as `store.*`; they are what the seam wraps, not callers of it. */
-    const files = [...walk(path.join(ROOT, 'services')), ...walk(path.join(ROOT, 'routes'))]
-      .filter(f => !/services[\/\\](blob-store|partc-store)\.js$/.test(f));
+    const files = walk(path.join(ROOT, 'src'))
+      .filter(f => !f.includes(`${path.sep}platform${path.sep}database${path.sep}`));
     const registered = new Set(db.collections.names());
     const seen = new Set();
     const unresolved = [];
@@ -87,20 +87,20 @@ describe('Every collection the services write is registered', () => {
 });
 
 describe('The boundary — one file knows the driver', () => {
-  test("only platform/database/client.js requires 'pg'", () => {
+  test("only src/platform/database/client.js requires 'pg'", () => {
     const offenders = walk(ROOT)
       .filter(f => !f.includes(`${path.sep}tests${path.sep}`))
       .filter(f => /require\(\s*['"]pg['"]\s*\)/.test(fs.readFileSync(f, 'utf8')))
       .map(f => path.relative(ROOT, f));
-    expect(offenders).toEqual(['platform/database/client.js']);
+    expect(offenders).toEqual(['src/platform/database/client.js']);
   });
 
   test('no service or route requires platform/database except the seam, the audit middleware, and a declared projection', () => {
     /* partc-portfolio reads the collection registry for the field list of
        its stored projection — a declaration, not a database call. */
-    const allowed = new Set(['services/partc-store.js', 'middleware/audit.js', 'server.js', 'services/partc-portfolio.js']);
-    const offenders = [...walk(path.join(ROOT, 'services')), ...walk(path.join(ROOT, 'routes')), ...walk(path.join(ROOT, 'middleware'))]
-      .filter(f => /require\(['"][./]*platform\/database/.test(fs.readFileSync(f, 'utf8')))
+    const allowed = new Set(['src/platform/database/store.js', 'src/platform/observability/audit.js', 'src/server.js', 'src/domains/pcaf-part-c/application/partc-portfolio.js']);
+    const offenders = walk(path.join(ROOT, 'src')).filter(f => !f.includes(`${path.sep}platform${path.sep}database${path.sep}`))
+      .filter(f => /require\(['"][./]*platform\/database(?!\/store\b)/.test(fs.readFileSync(f, 'utf8')))
       .map(f => path.relative(ROOT, f))
       .filter(f => !allowed.has(f));
     expect(offenders).toEqual([]);
@@ -298,7 +298,7 @@ describe('The stored roll-up projection', () => {
         expect(fn).toContain(`'${f}'`);
       }
     }
-    const P = require('../services/partc-portfolio');
+    const P = require('../src/domains/pcaf-part-c/application/partc-portfolio');
     expect([...P.ROLLUP_FIELDS].sort()).toEqual([...fields].sort());
     expect(db.collections.storedProjection('assessments', P.ROLLUP_FIELDS)).toMatchObject({ column: 'rollup' });
     expect(db.collections.storedProjection('assessments', ['summary'])).toBeNull();

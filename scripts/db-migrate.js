@@ -13,8 +13,8 @@
 'use strict';
 
 require('dotenv').config();
-const client = require('../platform/database/client');
-const migrate = require('../platform/database/migrate');
+const client = require('../src/platform/database/client');
+const migrate = require('../src/platform/database/migrate');
 
 const cmd = process.argv[2] || 'up';
 const ifConfigured = process.argv.includes('--if-configured');

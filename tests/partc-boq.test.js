@@ -5,10 +5,10 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request  = require('supertest');
-const app      = require('../server');
-const boq      = require('../services/partc-boq');
-const registry = require('../services/partc-registry');
-const store    = require('../services/partc-store');
+const app      = require('../src/server');
+const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const store    = require('../src/platform/database/store');
 const fx       = require('./fixtures/fisheries');
 
 const KEY  = process.env.UI_API_KEY;
@@ -62,7 +62,7 @@ describe('BOQ revisions', () => {
   });
 
   test('a revision needs at least one line', () => {
-    const { boqRevisionSchema } = require('../schemas/partc-boq');
+    const { boqRevisionSchema } = require('../src/domains/pcaf-part-c/interface/schemas/partc-boq');
     expect(boqRevisionSchema.validate({}).error.message).toMatch(/at least one material/);
   });
 });

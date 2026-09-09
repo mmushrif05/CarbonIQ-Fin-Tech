@@ -2,13 +2,13 @@
  * PCAF Part C — registers, reports, form and learning store.
  */
 
-const { runPartC } = require('../services/pcaf-partc');
-const { buildRegisters } = require('../services/partc-registers');
-const { buildPartCReport, buildPartCDOCX } = require('../services/partc-reports');
-const { buildForm, formAnswersToEngineInput } = require('../services/agents/partc/form');
-const { buildLearningRecords, aggregateResearchPriority } = require('../services/learning-store');
-const { containsForbiddenLanguage } = require('../services/pcaf-partc/data-quality');
-const factors = require('../services/pcaf-partc/factors');
+const { runPartC } = require('../src/domains/pcaf-part-c/domain');
+const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
+const { buildPartCReport, buildPartCDOCX } = require('../src/domains/pcaf-part-c/reporting/partc-reports');
+const { buildForm, formAnswersToEngineInput } = require('../src/domains/pcaf-part-c/agents/form');
+const { buildLearningRecords, aggregateResearchPriority } = require('../src/domains/pcaf-part-c/application/learning-store');
+const { containsForbiddenLanguage } = require('../src/domains/pcaf-part-c/domain/data-quality');
+const factors = require('../src/domains/pcaf-part-c/domain/factors');
 const fx = require('./fixtures/fisheries');
 
 describe('Part C — factor store', () => {
@@ -207,7 +207,7 @@ describe('Part C — learning store', () => {
 describe('Part C — separation from the lending PCAF service', () => {
   test('the Part C engine does not import the lending PCAF service', () => {
     const fs = require('fs'), path = require('path');
-    const dir = path.join(__dirname, '..', 'services', 'pcaf-partc');
+    const dir = path.join(__dirname, '..', 'src', 'domains', 'pcaf-part-c', 'domain');
     for (const file of fs.readdirSync(dir)) {
       const src = fs.readFileSync(path.join(dir, file), 'utf8');
       expect(src).not.toMatch(/require\(['"]\.\.\/pcaf['"]\)/);
@@ -215,7 +215,7 @@ describe('Part C — separation from the lending PCAF service', () => {
   });
 
   test('the lending PCAF service still works unchanged', () => {
-    const { generatePCAFOutput } = require('../services/pcaf');
+    const { generatePCAFOutput } = require('../src/domains/lending/application/pcaf');
     const out = generatePCAFOutput({
       emissionSummary: { totalBaseline_tCO2e: 1000, totalMaterials: 10, unmatchedItems: 0, conversionFailures: 0 },
       materials80Pct: { items: [{ inTop80Pct: true, factorSource: 'ICE' }], totalItems: 10 },

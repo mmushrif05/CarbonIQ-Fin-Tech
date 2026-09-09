@@ -84,7 +84,7 @@ describe('The build says which build it is', () => {
   });
 
   test('the served config carries it to the browser', () => {
-    const src = fs.readFileSync(path.join(ROOT, 'routes', 'v1', 'ui-config.js'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'src', 'platform', 'http', 'ui-config.js'), 'utf8');
     expect(src).toMatch(/window\.CARBONIQ_BUILD/);
   });
 });

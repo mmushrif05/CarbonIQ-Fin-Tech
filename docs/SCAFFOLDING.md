@@ -10,7 +10,7 @@
 
 ### Why This Structure?
 
-The existing CarbonIQ platform is a **vanilla JS SPA + Netlify Functions + Firebase** stack. It was deployed at `carboniq.online`; that hostname no longer answers, so the two calls into it (`bridge/ai.js`) read `CORE_APP_URL` and refuse with a 503 naming that variable when it is unset, rather than timing out against a dead host. It powers the construction-side workflow: BOQ upload → AI classification → emission calculation → 80% Pareto → approval.
+The existing CarbonIQ platform is a **vanilla JS SPA + Netlify Functions + Firebase** stack. It was deployed at `carboniq.online`; that hostname no longer answers, so the two calls into it (`src/platform/ai/core-ai.js`) read `CORE_APP_URL` and refuse with a 503 naming that variable when it is unset, rather than timing out against a dead host. It powers the construction-side workflow: BOQ upload → AI classification → emission calculation → 80% Pareto → approval.
 
 The FinTech layer is a **separate module** (`fintech/`) that:
 - **Wraps** the existing engine (never modifies `data.js`, `tender.js`, or `parse-boq.js`)
@@ -69,7 +69,7 @@ This foundation is designed to serve the **complete CarbonIQ FinTech product roa
 ```
 Carbon-Management/
 ├── fintech/                          ← NEW: FinTech platform layer
-│   ├── server.js                     ← Express app entry point (local dev + Netlify adapter)
+│   ├── src/server.js                     ← Express app entry point (local dev + Netlify adapter)
 │   ├── package.json                  ← FinTech-specific dependencies
 │   ├── .env.example                  ← Environment variables template
 │   │
@@ -445,17 +445,17 @@ This scaffolding enables the following build sequence:
 |-------|------|-----------------|-------|
 | **Step 1** | Now | Project scaffolding (this document) | All `fintech/` structure files |
 | **Step 2** | 1 | Core API + Auth | `routes/v1/`, `middleware/`, `bridge/` |
-| **Step 3** | 1 | Database schema extensions | `bridge/firebase.js`, `models/` |
-| **Step 4** | 2 | AI Agent bridge | `bridge/engine.js`, `bridge/ai.js` |
-| **Step 5** | 2 | Carbon Finance Score | `services/score.js`, `routes/v1/score.js` |
-| **Step 6** | 3 | Taxonomy alignment | `services/taxonomy.js`, `config/constants.js` |
-| **Step 7** | 3 | PCAF v3 output | `services/pcaf.js` |
-| **Step 8** | 3 | Regulatory reporting | `services/reports.js` |
-| **Step 9** | 4 | Portfolio dashboard | `services/portfolio.js`, `routes/v1/portfolio.js` |
-| **Step 10** | 4 | Green loan lifecycle | `services/covenant.js` |
-| **Step 11** | 4 | Covenant engine | `routes/v1/covenant.js` |
-| **Step 12** | 5 | Verification workflow | `services/verification.js` |
-| **Step 13** | 5 | Webhooks | `services/webhook.js`, `routes/v1/webhook.js` |
+| **Step 3** | 1 | Database schema extensions | `src/platform/bridge/firebase.js`, `models/` |
+| **Step 4** | 2 | AI Agent bridge | `src/platform/bridge/engine.js`, `src/platform/ai/core-ai.js` |
+| **Step 5** | 2 | Carbon Finance Score | `src/domains/lending/domain/score.js`, `src/domains/lending/interface/routes/score.js` |
+| **Step 6** | 3 | Taxonomy alignment | `src/domains/taxonomy/domain/taxonomy.js`, `src/shared/constants.js` |
+| **Step 7** | 3 | PCAF v3 output | `src/domains/lending/application/pcaf.js` |
+| **Step 8** | 3 | Regulatory reporting | `src/domains/lending/application/reports.js` |
+| **Step 9** | 4 | Portfolio dashboard | `src/domains/lending/domain/portfolio.js`, `src/domains/lending/interface/routes/portfolio.js` |
+| **Step 10** | 4 | Green loan lifecycle | `src/domains/lending/domain/covenant.js` |
+| **Step 11** | 4 | Covenant engine | `src/domains/lending/interface/routes/covenant.js` |
+| **Step 12** | 5 | Verification workflow | `src/domains/lending/domain/verification.js` |
+| **Step 13** | 5 | Webhooks | `src/domains/lending/application/webhook.js`, `src/domains/lending/interface/routes/webhook.js` |
 | **Step 14** | 5 | Enterprise security hardening | `middleware/` enhancements |
 | **Step 15** | 6 | API documentation | OpenAPI spec, developer portal |
 | **Step 16** | 6 | Demo environment | Test data, sandbox |

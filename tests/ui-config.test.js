@@ -12,7 +12,7 @@
 const request = require('supertest');
 const express = require('express');
 
-const uiConfigRouter = require('../routes/v1/ui-config');
+const uiConfigRouter = require('../src/platform/http/ui-config');
 
 function buildApp() {
   const app = express();
@@ -102,7 +102,7 @@ describe('GET /health reports whether the deployment is configured', () => {
   // "The dashboard shows 401" and "the fix is not deployed" look identical
   // from a browser. These booleans settle it in one request, without ever
   // putting a value on the wire.
-  const app = require('../server');
+  const app = require('../src/server');
   const originalUi = process.env.UI_API_KEY;
 
   afterEach(() => {

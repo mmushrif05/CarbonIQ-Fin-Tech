@@ -68,7 +68,7 @@ describe('The hero leads with the insurer\u2019s share, never the project total'
    * the label "The PCAF figure", which is the project’s whole construction
    * total — carried by everyone who financed or insured the work. The figure
    * this insurer discloses is the attributed share, and
-   * services/partc-report-standard.js reports exactly that
+   * src/domains/pcaf-part-c/reporting/partc-report-standard.js reports exactly that
    * (`attributed_tCO2e: s.insurerIAE_tCO2e`). Showing the larger number large
    * read as the insurer emitting 265 times what it does.
    */

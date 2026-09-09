@@ -175,7 +175,7 @@ give Chapter 5 — *how it is calculated*. Outstanding:
 ## 7. Consequences for the build
 
 - The **DCL maps directly onto the machinery already built for Part C**
-  (`services/partc-checklist.js`): a self-assessment answered from the same facts
+  (`src/domains/pcaf-part-c/application/partc-checklist.js`): a self-assessment answered from the same facts
   the report sections render, so an item cannot answer Yes to something the
   document does not contain, and anything but Yes carries its reason. Part A's
   version is the same pattern against a different requirement set.

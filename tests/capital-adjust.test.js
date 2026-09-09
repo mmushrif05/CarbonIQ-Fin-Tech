@@ -34,11 +34,11 @@ const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
 
-const app = require('../server');
-const store = require('../services/partc-store');
-const { applyOverlay, ADJUSTED_NOTE } = require('../services/capital-adjust');
-const { baselineBook } = require('../services/capital-baseline');
-const { capitalPosition } = require('../services/capital-metrics');
+const app = require('../src/server');
+const store = require('../src/platform/database/store');
+const { applyOverlay, ADJUSTED_NOTE } = require('../src/domains/capital/domain/capital-adjust');
+const { baselineBook } = require('../src/domains/capital/infrastructure/capital-baseline');
+const { capitalPosition } = require('../src/domains/capital/domain/capital-metrics');
 
 const ROOT = path.join(__dirname, '..');
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
@@ -160,7 +160,7 @@ describe('A payment is added as an event, not edited', () => {
     const b = book();
     const id = b.investments[0].id;
     const before = capitalPosition(b).paid;
-    const r = applyOverlay(b, [] && {} || {});
+    const r = applyOverlay(b, {});
     expect(r.book.payments).toHaveLength(b.payments.length);
 
     const added = applyOverlay(b, {

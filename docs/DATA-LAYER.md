@@ -6,7 +6,7 @@ it holds, and how to run it.
 ## What changed, and what did not
 
 Every service has always read and written through one interface,
-`services/partc-store.js` — `put`, `get`, `list`, `patch`, `remove` on a
+`src/platform/database/store.js` — `put`, `get`, `list`, `patch`, `remove` on a
 `(collection, orgId, id)` key. That seam now has a fourth backend, and it is
 the first one that is a database rather than a place to keep JSON.
 
@@ -21,8 +21,8 @@ the first one that is a database rather than a place to keep JSON.
 | Backup / restore | console export | none | — | **pg_dump / PITR** |
 | Tamper-evident audit | no | no | no | **hash-chained, append-only** |
 
-**No calculation code changed.** `services/pcaf-partc/`, `services/pcaf-parta/`,
-`services/gcf/`, `services/capital-*` compute exactly as before. What changed
+**No calculation code changed.** `src/domains/pcaf-part-c/domain/`, `src/domains/pcaf-part-a/domain/`,
+`src/domains/gcf/domain/`, `services/capital-*` compute exactly as before. What changed
 above the seam is three reads that used to fetch a collection and filter it
 (`listAssessments`, `listRevisions`, `listPayments`) and now ask the store
 for the rows they want; three operations that are now atomic; and one
@@ -31,7 +31,7 @@ roll-up that declares the fields it reads.
 ## Where it lives
 
 ```
-platform/database/
+src/platform/database/
   client.js          the pool, the only require('pg') in the tree; withTransaction()
   collections.js     collection → table, indexed keys, references, stored projections
   document-store.js  put/get/list/query/page/patch/remove/transaction over the tables
@@ -105,7 +105,7 @@ the reporting-year roll-up reads, computed at write time by
 `partc_assessment_rollup()`. A locked assessment is ten kilobytes, most of it
 the data-quality trace; a book of ten thousand is a hundred megabytes to
 serialise, and the serialisation — not the query, which takes 39 ms — is what
-took the second. The field list is owned by `platform/database/collections.js`
+took the second. The field list is owned by `src/platform/database/collections.js`
 and `tests/data-layer.test.js` holds the SQL function, the registry and the
 roll-up's declaration to one another.
 
@@ -141,7 +141,7 @@ without `DATABASE_URL`. Nothing migrates at request time.
 
 `audit_events` is append-only by trigger — UPDATE, DELETE and TRUNCATE are
 refused — and every row's `hash` is the SHA-256 of the previous row's hash
-and its own canonical content. `middleware/audit.js` appends every request
+and its own canonical content. `src/platform/observability/audit.js` appends every request
 that could have changed a record (POST, PUT, PATCH, DELETE); a failed append
 is written to stderr with its reason, never swallowed. `npm run db:verify-audit`
 walks the chain and reports the first sequence number that fails, and why.

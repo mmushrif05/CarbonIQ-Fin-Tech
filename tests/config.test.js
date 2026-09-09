@@ -1,4 +1,4 @@
-const config = require('../config');
+const config = require('../src/platform/config');
 
 describe('Config', () => {
   it('loads default values in test environment', () => {

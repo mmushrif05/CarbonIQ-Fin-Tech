@@ -444,17 +444,17 @@ Firebase Realtime DB (API keys, audit logs, cached results)
 
 | Component | File | Status |
 |---|---|---|
-| Express server | `server.js` | Done — routes, middleware, error handling |
-| Configuration | `config/index.js` | Done — env vars, feature flags, frozen config |
-| Firebase setup | `config/firebase.js` | Done — Realtime DB initialization |
-| CORS config | `config/cors.js` | Done — per-environment origins |
-| Auth middleware | `middleware/auth.js` | Done — HMAC-SHA256 API key + Firebase lookup + cache |
+| Express server | `src/server.js` | Done — routes, middleware, error handling |
+| Configuration | `src/platform/config/index.js` | Done — env vars, feature flags, frozen config |
+| Firebase setup | `src/platform/config/firebase.js` | Done — Realtime DB initialization |
+| CORS config | `src/platform/config/cors.js` | Done — per-environment origins |
+| Auth middleware | `src/platform/auth/auth.js` | Done — HMAC-SHA256 API key + Firebase lookup + cache |
 | Rate limiter | `middleware/rate-limiter.js` | Done — global + per-client limits |
-| Validation middleware | `middleware/validate.js` | Done — Joi schema validation |
-| Audit logger | `middleware/audit.js` | Done — compliance audit trail |
-| Error handler | `middleware/error-handler.js` | Done — centralized error responses |
-| API v1 router | `routes/v1/index.js` | Done — all 6 endpoint stubs (return 501) |
-| Domain constants | `models/constants.js` | Done — material factors, benchmarks, taxonomies, PCAF DQ, score bands |
+| Validation middleware | `src/platform/http/validate.js` | Done — Joi schema validation |
+| Audit logger | `src/platform/observability/audit.js` | Done — compliance audit trail |
+| Error handler | `src/platform/http/error-handler.js` | Done — centralized error responses |
+| API v1 router | `src/platform/http/router.js` | Done — all 6 endpoint stubs (return 501) |
+| Domain constants | `src/shared/models/constants.js` | Done — material factors, benchmarks, taxonomies, PCAF DQ, score bands |
 | All schemas | `schemas/*.js` | Done — Joi validation for all 6 endpoints |
 | Tests | `tests/*.test.js` | Done — auth, config, schemas, middleware, health, v1 info |
 
@@ -482,7 +482,7 @@ Firebase Realtime DB (API keys, audit logs, cached results)
 Build the core calculation service that turns BOQ materials into a 0–100 score.
 
 **What to build:**
-- `services/score.js` — Calculation engine:
+- `src/domains/lending/domain/score.js` — Calculation engine:
   - Accept materials array
   - Look up emission factor per material from `MATERIAL_CARBON_FACTORS` (or use provided EPD factor)
   - Handle unit conversions (tonnes -> kg, m3 -> kg via density factors)
@@ -491,7 +491,7 @@ Build the core calculation service that turns BOQ materials into a 0–100 score
   - Compare against `REGIONAL_BENCHMARKS` for the requested region
   - Apply scoring curve to produce 0–100 score
   - Map to `SCORE_BANDS`
-- Wire validation (`scoreRequestSchema`) + route handler in `routes/v1/index.js`
+- Wire validation (`scoreRequestSchema`) + route handler in `src/platform/http/router.js`
 - Tests: valid BOQ in -> correct score out, edge cases (single material, max materials, unknown category fallback)
 
 ### Step 3 — PCAF Attribution Engine (`/v1/pcaf`)
@@ -499,7 +499,7 @@ Build the core calculation service that turns BOQ materials into a 0–100 score
 Implement the PCAF v3 financed emissions calculation.
 
 **What to build:**
-- `services/pcaf.js` — Attribution calculation:
+- `src/domains/lending/application/pcaf.js` — Attribution calculation:
   - Compute attribution factor: `loan.amount / property.value` (or use provided override)
   - Calculate financed emissions: `attributionFactor x (totalEmbodied + totalOperational) / 1000` (convert kg to tonnes)
   - Determine data quality score based on methodology
@@ -513,7 +513,7 @@ Implement the PCAF v3 financed emissions calculation.
 Check projects against regional taxonomy thresholds.
 
 **What to build:**
-- `services/taxonomy.js` — Alignment evaluation:
+- `src/domains/taxonomy/domain/taxonomy.js` — Alignment evaluation:
   - Look up threshold from `TAXONOMY_THRESHOLDS` for each requested taxonomy + project type
   - Compare actual intensity vs threshold
   - Calculate headroom (threshold - actual)
@@ -541,7 +541,7 @@ Evaluate project metrics against bank-defined covenant rules.
 Aggregate multiple projects into a portfolio-level PCAF disclosure.
 
 **What to build:**
-- `services/portfolio.js` — Portfolio engine:
+- `src/domains/lending/domain/portfolio.js` — Portfolio engine:
   - Process array of assets
   - Calculate attribution + financed emissions per asset
   - Sum total financed emissions
@@ -655,7 +655,7 @@ Steps 8-10: Report, audit, publish
 
 ```
 CarbonIQ-Fin-Tech/
-  server.js                  # Express server entry point
+  src/server.js                  # Express server entry point
   package.json               # Dependencies and scripts
   .env.example               # Environment variable template
   config/

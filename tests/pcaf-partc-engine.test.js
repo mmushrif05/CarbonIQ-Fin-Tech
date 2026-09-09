@@ -6,14 +6,14 @@
  * reason is stated in the test.
  */
 
-const { runPartC } = require('../services/pcaf-partc');
-const { a4Total }  = require('../services/pcaf-partc/a4-transport');
-const { a51Demolition, a52SiteEnergy, a53Waste } = require('../services/pcaf-partc/a5-construction');
-const { attributionFactor } = require('../services/pcaf-partc/attribution');
-const { useStageYears } = require('../services/pcaf-partc/policy-gate');
-const { b1Refrigerant } = require('../services/pcaf-partc/b1-refrigerant');
-const { b4Replacement, replacementCount } = require('../services/pcaf-partc/b4-replacement');
-const { b7Water } = require('../services/pcaf-partc/b7-water');
+const { runPartC } = require('../src/domains/pcaf-part-c/domain');
+const { a4Total }  = require('../src/domains/pcaf-part-c/domain/a4-transport');
+const { a51Demolition, a52SiteEnergy, a53Waste } = require('../src/domains/pcaf-part-c/domain/a5-construction');
+const { attributionFactor } = require('../src/domains/pcaf-part-c/domain/attribution');
+const { useStageYears } = require('../src/domains/pcaf-part-c/domain/policy-gate');
+const { b1Refrigerant } = require('../src/domains/pcaf-part-c/domain/b1-refrigerant');
+const { b4Replacement, replacementCount } = require('../src/domains/pcaf-part-c/domain/b4-replacement');
+const { b7Water } = require('../src/domains/pcaf-part-c/domain/b7-water');
 const fx = require('./fixtures/fisheries');
 
 describe('PCAF Part C — attribution', () => {
@@ -273,7 +273,7 @@ describe('PCAF Part C — scope wall (spec §8)', () => {
 
   test('the roll-up module does not import the Beyond-PCAF module', () => {
     const src = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'services', 'pcaf-partc', 'rollup.js'), 'utf8');
+      require('path').join(__dirname, '..', 'src', 'domains', 'pcaf-part-c', 'domain', 'rollup.js'), 'utf8');
     expect(src).not.toMatch(/require\(['"].*beyond-pcaf/);
   });
 

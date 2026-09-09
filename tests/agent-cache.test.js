@@ -1,5 +1,5 @@
 /**
- * Unit tests for the prompt-caching helpers in bridge/agent.js.
+ * Unit tests for the prompt-caching helpers in src/platform/ai/agent.js.
  *
  * The three helpers are pure functions — no API calls, no Firebase.
  * They are exported (underscore-prefixed) specifically to enable testing.
@@ -7,11 +7,11 @@
 
 'use strict';
 
-const { _withCachedLastTool, _withCachedLastUserMessage, _accumulateTokens } = require('../bridge/agent');
-const { createRunRecord } = require('../models/agent-run');
+const { _withCachedLastTool, _withCachedLastUserMessage, _accumulateTokens } = require('../src/platform/ai/agent');
+const { createRunRecord } = require('../src/shared/models/agent-run');
 
 // ---------------------------------------------------------------------------
-// models/agent-run.js — tokensUsed shape includes cache fields
+// src/shared/models/agent-run.js — tokensUsed shape includes cache fields
 // ---------------------------------------------------------------------------
 
 describe('createRunRecord — tokensUsed shape', () => {

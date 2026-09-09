@@ -62,8 +62,8 @@ production use on real data; **High** blocks a security or audit sign-off;
 |---|---|---|---|
 | A1 | **No relational database.** Firebase RTDB is a JSON document store; Netlify Blobs is key-value | No `postgres`, `mysql`, `prisma`, `sequelize` or `knex` anywhere in the tree | **Critical** |
 | A2 | **No migrations.** A schema change is a code change with no version, no rollback, no forward path for existing records | No `migrations/` directory | **Critical** |
-| A3 | **No query capability.** Listing a collection reads every key then every record | `services/blob-store.js` `list()`; its own header: *"It is not a database. There is no query, no index, no transaction."* | **Critical** |
-| A4 | **No transactions.** Locking an assessment and superseding the previous one cannot be atomic — a crash between the two leaves two locked versions for one policy-year | `services/partc-assessments.js` writes sequentially | **Critical** |
+| A3 | **No query capability.** Listing a collection reads every key then every record | `src/platform/database/blob-store.js` `list()`; its own header: *"It is not a database. There is no query, no index, no transaction."* | **Critical** |
+| A4 | **No transactions.** Locking an assessment and superseding the previous one cannot be atomic — a crash between the two leaves two locked versions for one policy-year | `src/domains/pcaf-part-c/application/partc-assessments.js` writes sequentially | **Critical** |
 | A5 | **No referential integrity.** A project can hold a `clientId` for a deleted client; nothing prevents or detects it | No foreign keys in any store | High |
 | A6 | **No pagination at the API.** List endpoints return whole collections; the store caps at 200 internally without telling the caller | `blob-store.js` `list(..., { limit = 200 })`; no `cursor` in any route | High |
 | A7 | **No backup, restore or point-in-time recovery** documented or scripted | No `scripts/backup*`; nothing in `docs/` | High |
@@ -80,10 +80,10 @@ production use on real data; **High** blocks a security or audit sign-off;
 
 | # | Gap | Evidence | Severity |
 |---|---|---|---|
-| B1 | **RBAC/ABAC is built but not wired.** A 268-line authorisation middleware and a full policy model exist; `authorize()` appears in **2 of 24** route files | `middleware/authorization.js`, `config/policies.js`; only `agent.js` and `supervisor.js` call it | **Critical** |
+| B1 | **RBAC/ABAC is built but not wired.** A 268-line authorisation middleware and a full policy model exist; `authorize()` appears in **2 of 24** route files | `src/platform/auth/authorization.js`, `src/shared/policies.js`; only `agent.js` and `supervisor.js` call it | **Critical** |
 | B2 | **Any valid API key can do anything.** 22 route files check authentication, not permission — so a read-only integration key can lock an assessment or delete a client | Absence of `authorize()` on `partc-registry.js`, `capital.js`, `gcf.js`, `desk.js` | **Critical** |
-| B3 | **No per-user identity on API-key requests.** The audit line records `orgId` only, so "who locked this assessment" is answerable only to an organisation | `middleware/audit.js` logs `orgId` for key auth | High |
-| B4 | **No key rotation or expiry enforcement** | `models/api-key.js`, `middleware/api-key.js` | Medium |
+| B3 | **No per-user identity on API-key requests.** The audit line records `orgId` only, so "who locked this assessment" is answerable only to an organisation | `src/platform/observability/audit.js` logs `orgId` for key auth | High |
+| B4 | **No key rotation or expiry enforcement** | `src/platform/auth/api-key-model.js`, `src/platform/auth/api-key.js` | Medium |
 
 ### C. Testing and quality — 5 gaps
 
@@ -99,12 +99,12 @@ production use on real data; **High** blocks a security or audit sign-off;
 
 | # | Gap | Evidence | Severity |
 |---|---|---|---|
-| D1 | **No structured logging library.** JSON strings via `console.log` | `middleware/audit.js`; no `pino`/`winston` | High |
+| D1 | **No structured logging library.** JSON strings via `console.log` | `src/platform/observability/audit.js`; no `pino`/`winston` | High |
 | D2 | **No log sink.** Logs go to stdout and are captured by Netlify; they are not queryable, alertable or retained | — | High |
 | D3 | **No error tracking.** A 500 in production is invisible unless someone reads function logs | No Sentry/Datadog/New Relic | High |
 | D4 | **No metrics or APM.** No latency, throughput or error-rate signal | — | High |
-| D5 | **Correlation ID is generated but not propagated.** `req.requestId` exists and is returned as a header, but service-layer logs do not carry it, so a request cannot be traced through the engines | `middleware/audit.js` lines 14–23 | Medium |
-| D6 | **Audit trail is not tamper-evident.** It is written to stdout, not to an append-only store | `middleware/audit.js` | **Critical** for a regulated client |
+| D5 | **Correlation ID is generated but not propagated.** `req.requestId` exists and is returned as a header, but service-layer logs do not carry it, so a request cannot be traced through the engines | `src/platform/observability/audit.js` lines 14–23 | Medium |
+| D6 | **Audit trail is not tamper-evident.** It is written to stdout, not to an append-only store | `src/platform/observability/audit.js` | **Critical** for a regulated client |
 
 ### E. Code organisation — 6 gaps
 
@@ -115,7 +115,7 @@ production use on real data; **High** blocks a security or audit sign-off;
 | E3 | **Eight files over 500 lines**, largest 1,232 | `partc-report-standard.js` 1232, `agent.js` 900, `reports.js` 898, `partc-theme.js` 682 | Medium |
 | E4 | **The `handle()` async wrapper is duplicated** in five route files rather than being one shared middleware | `capital.js`, `desk.js`, `gcf.js`, `partc-registry.js`, `assurance.js` | Medium |
 | E5 | **Config sprawl.** `process.env` is read in 6 files outside `config/`, including `STORAGE_BACKEND` and `UI_API_KEY` | `grep -rln process.env services/ routes/ middleware/` | Medium |
-| E6 | **One layering leak** — a service touching HTTP request/response objects | `services/agents/deadline.js` | Low |
+| E6 | **One layering leak** — a service touching HTTP request/response objects | `src/platform/ai/deadline.js` | Low |
 
 > **What is *not* wrong here.** All 125 async route handlers are protected —
 > either by an inline `try/catch` or by a `handle()` wrapper. I checked each
@@ -144,7 +144,7 @@ production use on real data; **High** blocks a security or audit sign-off;
 | H1 | **No build step.** No bundler, no transpile, no minification; 21 hand-written modules served raw | No webpack/vite/rollup config | Medium |
 | H2 | **No component model.** DOM manipulation by hand across 13 pages | — | Medium |
 | H3 | **No frontend behavioural tests.** The UI suites sweep source text; nothing drives the DOM in CI | `tests/*-ui.test.js` | Medium |
-| H4 | **CSP disabled in the app**, deferred to Netlify headers | `server.js`: `contentSecurityPolicy: false` | Medium |
+| H4 | **CSP disabled in the app**, deferred to Netlify headers | `src/server.js`: `contentSecurityPolicy: false` | Medium |
 
 ### I. Operations — 5 gaps
 
@@ -179,7 +179,7 @@ Closes A1–A7, D6, and half of I1.
    assessments, BOQ revisions, policies, capital book, GCF records, audit.
 2. **Migrations from day one.** `prisma migrate`, checked in, with a rollback
    path. No schema change without a versioned migration.
-3. **Repository pattern behind the existing seam.** `services/partc-store.js`
+3. **Repository pattern behind the existing seam.** `src/platform/database/store.js`
    is already a single interface — every engine reads through it and none
    touches a database directly. Swapping the implementation touches **zero
    calculation code**, which is why this is a fortnight rather than a rewrite.
@@ -222,7 +222,7 @@ assessment, and the refusal is tested.*
 Closes D1–D5, C5.
 
 1. **Pino** structured logging, with the correlation ID threaded from
-   `middleware/audit.js` through the service layer.
+   `src/platform/observability/audit.js` through the service layer.
 2. **A log sink** — Better Stack, Datadog or CloudWatch — with retention.
 3. **Sentry** for errors, with release tagging against the commit already
    reported by `/health`.
@@ -313,6 +313,15 @@ tests/
   contract/                against the OpenAPI spec
   acceptance/              the standards' own worked examples
 ```
+
+> **Delivered (structure).** The tree is now `src/domains/{pcaf-part-a, pcaf-part-c,
+> gcf, capital, taxonomy, lending}` with `domain/ · application/ · interface/`
+> (plus `agents/`, `reporting/`, `infrastructure/`, `desk/` where a domain has
+> them), `src/platform/` and `src/shared/`. 192 files moved with history, every
+> require rewritten, every cited path in the conformance matrices regenerated.
+> `tests/architecture.test.js` enforces the direction below; ESLint 9 runs
+> again at zero errors. Not yet done from this phase: splitting `tests/` into
+> unit / integration / contract / acceptance, and the staging context.
 
 **The rule that makes it enterprise, not just tidy:** dependencies point
 inward only. `domain/` imports nothing but `shared/`. `application/` may import

@@ -11,7 +11,7 @@
 'use strict';
 
 require('dotenv').config();
-const db = require('../platform/database');
+const db = require('../src/platform/database');
 
 (async () => {
   if (!db.client.isConfigured()) { console.error('DATABASE_URL is not set.'); process.exit(2); }

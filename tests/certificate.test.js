@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — SLGFT Green Loan Certificate Tests
  */
 
-const { generateCertificate, verifyCertificate } = require('../services/certificate');
+const { generateCertificate, verifyCertificate } = require('../src/domains/taxonomy/domain/certificate');
 
 const BASE_OPTS = {
   projectName:    'Colombo Green Tower',

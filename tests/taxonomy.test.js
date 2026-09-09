@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — Taxonomy Alignment Tests
  */
 
-const { checkAllTaxonomies } = require('../services/taxonomy');
+const { checkAllTaxonomies } = require('../src/domains/taxonomy/domain/taxonomy');
 
 describe('Taxonomy Alignment', () => {
   test('low-carbon project aligns as ASEAN Green', () => {

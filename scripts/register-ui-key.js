@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const path   = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const config = require('../config');
+const config = require('../src/platform/config');
 
 async function main() {
   const uiKey = process.env.UI_API_KEY;

@@ -119,7 +119,7 @@ describe('The screen renders the engine rather than repeating it', () => {
 });
 
 describe('The worked examples produce the figures they promise', () => {
-  const parta = require('../services/pcaf-parta');
+  const parta = require('../src/domains/pcaf-part-a/domain');
 
   /* The page builds its request from a preset the same way collect() does:
      the nested blocks travel under `reduction` and `avoided`. */
@@ -234,7 +234,7 @@ describe('A hidden element stays hidden', () => {
      user-supplied, froze it, AND scored the run 2b as though a human had
      produced it from a yield assessment. A preset is not evidence. */
   describe('A preset never claims to be a supplied generation figure', () => {
-    const parta = require('../services/pcaf-parta');
+    const parta = require('../src/domains/pcaf-part-a/domain');
     const request = name => {
       const p = { ...PartA.PRESETS[name] };
       if (p.dataQualityOptionChosen) p.dataQualityOption = p.dataQualityOptionChosen;
@@ -342,7 +342,7 @@ describe('The page keeps the two containers apart', () => {
        basis comes from the factor store rather than a dropdown, so physical
        activity data is the only basis a generation run can have — a guardrail
        that cannot be tripped beats one that reports being tripped. */
-    const impact = require('../services/pcaf-parta/impact');
+    const impact = require('../src/domains/pcaf-part-a/domain/impact');
     for (const banned of impact.PROHIBITED_BASES) {
       expect(page.includes(`value="${banned}"`)).toBe(false);
     }
@@ -403,7 +403,7 @@ describe('A money field prints back what it holds', () => {
     /* This change is presentational. The factor is outstanding over the
        denominator and nothing here alters it. */
     const attribution = fs.readFileSync(
-      path.join(ROOT, 'services/pcaf-parta/attribution.js'), 'utf8');
+      path.join(ROOT, 'src/domains/pcaf-part-a/domain/attribution.js'), 'utf8');
     expect(attribution).toMatch(/const raw = outstandingAmount \/ denominator;/);
   });
 });

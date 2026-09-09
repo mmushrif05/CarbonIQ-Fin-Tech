@@ -19,8 +19,8 @@ jest.mock('@anthropic-ai/sdk', () =>
 );
 
 const request  = require('supertest');
-const app      = require('../server');
-const { classifyApplication } = require('../services/decision-engine');
+const app      = require('../src/server');
+const { classifyApplication } = require('../src/domains/lending/domain/decision-engine');
 
 const TEST_KEY = process.env.DEV_API_KEY || 'ck_test_00000000000000000000000000000000';
 

@@ -18,13 +18,13 @@
 const URL = process.env.TEST_DATABASE_URL;
 const suite = URL ? describe : describe.skip;
 
-const db = require('../platform/database');
-const store = require('../services/partc-store');
-const registry = require('../services/partc-registry');
-const boq = require('../services/partc-boq');
-const A = require('../services/partc-assessments');
-const P = require('../services/partc-portfolio');
-const { seedDemoBook } = require('../services/partc-demo-data');
+const db = require('../src/platform/database');
+const store = require('../src/platform/database/store');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const boq = require('../src/domains/pcaf-part-c/application/partc-boq');
+const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
+const P = require('../src/domains/pcaf-part-c/application/partc-portfolio');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
 const fx = require('./fixtures/fisheries');
 
 const ORG = 'scale-org';

@@ -9,11 +9,11 @@
 
 'use strict';
 
-const { assessExposure } = require('../services/pcaf-parta');
-const dq = require('../services/pcaf-parta/data-quality');
-const { attributionFactor } = require('../services/pcaf-parta/attribution');
-const { financedEmissions } = require('../services/pcaf-parta/emissions');
-const impact = require('../services/pcaf-parta/impact');
+const { assessExposure } = require('../src/domains/pcaf-part-a/domain');
+const dq = require('../src/domains/pcaf-part-a/domain/data-quality');
+const { attributionFactor } = require('../src/domains/pcaf-part-a/domain/attribution');
+const { financedEmissions } = require('../src/domains/pcaf-part-a/domain/emissions');
+const impact = require('../src/domains/pcaf-part-a/domain/impact');
 
 const BASE = {
   projectName: 'Cement Company 1', counterparty: 'Ceylon Cement PLC', sector: 'Cement',

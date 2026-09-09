@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const errorHandler = require('../middleware/error-handler');
+const errorHandler = require('../src/platform/http/error-handler');
 
 const createTestApp = () => {
   const app = express();

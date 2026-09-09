@@ -13,8 +13,8 @@
 
 'use strict';
 
-const metrics = require('../services/capital-metrics');
-const demo    = require('../services/capital-demo-data');
+const metrics = require('../src/domains/capital/domain/capital-metrics');
+const demo    = require('../src/domains/capital/infrastructure/capital-demo-data');
 
 const investments = [...demo.HELD, ...demo.PIPELINE];
 const byId = (id) => investments.find(i => i.id === id);
@@ -116,7 +116,7 @@ describe('The emissions ledger keeps four lines apart', () => {
   });
 
   test('nothing in the ledger subtracts a credit from an emission', () => {
-    const src = require('fs').readFileSync(require.resolve('../services/capital-metrics'), 'utf8');
+    const src = require('fs').readFileSync(require.resolve('../src/domains/capital/domain/capital-metrics'), 'utf8');
     expect(src).not.toMatch(/incurred\s*-\s*(reduction|avoided)/);
     expect(src).not.toMatch(/forward\s*-\s*(reduction|avoided)/);
   });

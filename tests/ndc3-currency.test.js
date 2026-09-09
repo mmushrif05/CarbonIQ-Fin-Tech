@@ -142,7 +142,7 @@ describe('NDC 3.0 is stated once, and reconciles', () => {
   });
 
   test('the constants read it rather than restating it', () => {
-    const { TAXONOMY_LK } = require('../config/constants');
+    const { TAXONOMY_LK } = require('../src/shared/constants');
     expect(TAXONOMY_LK.ndcTargets.reduction.totalPct).toBe(20.09);
     expect(TAXONOMY_LK.ndcTargets).not.toHaveProperty('unconditional');
     expect(TAXONOMY_LK.ndcTargets).not.toHaveProperty('netZeroTarget');
@@ -173,7 +173,7 @@ describe('Reduction and removal are never summed', () => {
 
 describe('No net-zero year is asserted', () => {
   test('the reports layer reports it absent rather than carrying the old one', () => {
-    const src = fs.readFileSync(path.join(ROOT, 'services', 'reports.js'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'src', 'domains', 'lending', 'application', 'reports.js'), 'utf8');
     expect(src).toMatch(/netZeroTarget:\s*null/);
     expect(src).toMatch(/states no net-zero year/);
   });

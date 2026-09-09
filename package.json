@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "CarbonIQ FinTech \u2014 Bank-facing API layer for construction carbon intelligence",
   "license": "Apache-2.0",
-  "main": "server.js",
+  "main": "src/server.js",
   "engines": {
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
     "test": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint .",

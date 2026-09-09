@@ -1,4 +1,4 @@
-const DataStore = require('../db');
+const DataStore = require('../src/platform/database/firebase-dal');
 
 // Mock Firebase database
 const createMockDb = () => {

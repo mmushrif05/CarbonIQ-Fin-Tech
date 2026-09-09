@@ -65,7 +65,7 @@ jest.mock('@netlify/blobs', () => ({
   getStore: jest.fn(() => mockMakeStore()),
 }));
 
-const blobs = require('../services/blob-store');
+const blobs = require('../src/platform/database/blob-store');
 
 beforeEach(() => { mockData.clear(); blobs._reset(); });
 
@@ -182,7 +182,7 @@ describe('Availability is probed, not assumed', () => {
 
 describe('The store layer above it — precedence and the refusal rule', () => {
   const src = require('fs').readFileSync(
-    require('path').join(__dirname, '..', 'services', 'partc-store.js'), 'utf8');
+    require('path').join(__dirname, '..', 'src', 'platform', 'database', 'store.js'), 'utf8');
 
   test('Firebase still wins in automatic mode, where it is configured', () => {
     /* An existing deployment's records must not move because a new option
@@ -237,7 +237,7 @@ describe('The deployment says what it can persist, without a key', () => {
      one endpoint that needs no credential, which is what makes it the right
      place — the same reason it already reports the running commit. */
   const request = require('supertest');
-  const app = require('../server');
+  const app = require('../src/server');
 
   test('/health reports the storage mode', async () => {
     const res = await request(app).get('/health').expect(200);
@@ -280,7 +280,7 @@ describe('The operator chooses the store, rather than inheriting it', () => {
      capability() reported firebase and Blobs was never reached — the storage
      work shipped and did nothing, and nothing on the screen said why. A
      default that quietly overrides a decision is not a default, it is a trap. */
-  const store = require('../services/partc-store');
+  const store = require('../src/platform/database/store');
   const ORIGINAL = process.env.STORAGE_BACKEND;
 
   afterEach(() => {
@@ -343,7 +343,7 @@ describe('The operator chooses the store, rather than inheriting it', () => {
 
   test('the automatic firebase branch tells the reader how to choose Blobs instead', () => {
     const src = require('fs').readFileSync(
-      require('path').join(__dirname, '..', 'services', 'partc-store.js'), 'utf8');
+      require('path').join(__dirname, '..', 'src', 'platform', 'database', 'store.js'), 'utf8');
     expect(src).toMatch(/Set STORAGE_BACKEND=blobs to use Netlify Blobs instead/);
   });
 });
@@ -370,8 +370,8 @@ describe('The running commit can actually be reported', () => {
   });
 
   test('health reads the stamp, and reports absent rather than guessing', () => {
-    const src = fs.readFileSync(path.join(ROOT, 'server.js'), 'utf8');
-    expect(src).toMatch(/require\('\.\/build-info\.json'\)/);
+    const src = fs.readFileSync(path.join(ROOT, 'src/server.js'), 'utf8');
+    expect(src).toMatch(/require\('\.\.\/build-info\.json'\)/);
     expect(src).toMatch(/Absent stays absent rather than being guessed/);
     expect(src).toMatch(/stamped\.commit \|\| process\.env\.COMMIT_REF/);
   });

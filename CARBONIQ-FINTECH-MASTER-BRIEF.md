@@ -232,7 +232,7 @@ Complete SPA dashboard with 12 pages:
 ### 3.1 CBSL Direction No. 05/2022 Implementation
 
 **Backend (Production-Ready):**
-- Complete taxonomy engine with classification logic (config/constants.js)
+- Complete taxonomy engine with classification logic (src/shared/constants.js)
 - Green threshold: ≤ 520 kgCO2e/m², Transition: ≤ 780 kgCO2e/m²
 - `checkSL()` function in taxonomy service alongside ASEAN/EU/HK/SG
 - Mandatory `requiresSLFRS_S2: true` flag enforced
@@ -243,7 +243,7 @@ Complete SPA dashboard with 12 pages:
 
 ### 3.2 SLFRS S2 Compliance Reporting
 
-**Full Report Generator (services/reports.js):**
+**Full Report Generator (src/domains/lending/application/reports.js):**
 - Report type: `slgft-cbsl`
 - Sections generated:
   1. CBSL Direction No. 05 compliance status with green/transition/brown lending ratios

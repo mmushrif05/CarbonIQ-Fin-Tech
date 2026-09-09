@@ -23,7 +23,7 @@
 
 require('dotenv').config();
 
-const db = require('../platform/database');
+const db = require('../src/platform/database');
 const { COLLECTIONS, inReferentialOrder } = db.collections;
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => {
@@ -45,7 +45,7 @@ const PARENTS = {
 };
 
 async function readFirebase() {
-  const fb = require('../bridge/firebase');
+  const fb = require('../src/platform/bridge/firebase');
   const database = fb.getDatabase();
   if (!database) throw new Error('Firebase is not configured (FIREBASE_SERVICE_ACCOUNT / FIREBASE_DATABASE_URL).');
   const snap = await database.ref('fintech/partc').once('value');
@@ -62,7 +62,7 @@ async function readFirebase() {
 }
 
 async function readBlobs() {
-  const blobs = require('../services/blob-store');
+  const blobs = require('../src/platform/database/blob-store');
   if (!blobs.isAvailable()) throw new Error('Netlify Blobs is not reachable from this process. Run this with `netlify dev` or with NETLIFY_SITE_ID and NETLIFY_AUTH_TOKEN set.');
   const { getStore } = require('@netlify/blobs');
   const store = getStore({ name: blobs.STORE_NAME, consistency: 'strong' });

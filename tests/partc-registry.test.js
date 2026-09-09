@@ -5,10 +5,10 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request  = require('supertest');
-const app      = require('../server');
-const registry = require('../services/partc-registry');
-const store    = require('../services/partc-store');
-const { seedDemoBook } = require('../services/partc-demo-data');
+const app      = require('../src/server');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const store    = require('../src/platform/database/store');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
 
 const KEY  = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);
@@ -131,7 +131,7 @@ describe('Registry — assessment context', () => {
   });
 
   test('the context feeds the engine and reproduces the reference figure', async () => {
-    const { runPartC } = require('../services/pcaf-partc');
+    const { runPartC } = require('../src/domains/pcaf-part-c/domain');
     const fx = require('./fixtures/fisheries');
 
     const c = await registry.createClient(ORG, aClient());

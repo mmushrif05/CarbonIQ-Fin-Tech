@@ -13,9 +13,9 @@
 
 const fs = require('fs');
 const path = require('path');
-const baseline = require('../services/capital-baseline');
-const metrics  = require('../services/capital-metrics');
-const forecast = require('../services/capital-forecast');
+const baseline = require('../src/domains/capital/infrastructure/capital-baseline');
+const metrics  = require('../src/domains/capital/domain/capital-metrics');
+const forecast = require('../src/domains/capital/domain/capital-forecast');
 
 const raw = JSON.parse(fs.readFileSync(baseline.BOOK_PATH, 'utf8'));
 const book = baseline.baselineBook();
@@ -111,7 +111,7 @@ describe('It needs no external service', () => {
   test('the module reaches for the filesystem, never a client', () => {
     // Comments stripped first — this file explains why it does not use
     // Firebase, and the explanation is not a dependency.
-    const code = fs.readFileSync(require.resolve('../services/capital-baseline'), 'utf8')
+    const code = fs.readFileSync(require.resolve('../src/domains/capital/infrastructure/capital-baseline'), 'utf8')
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/.*$/gm, '');
     expect(code).not.toMatch(/firebase|firestore|fetch\(|axios/i);

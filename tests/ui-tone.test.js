@@ -39,10 +39,10 @@ for (const dir of ['ui/pages', 'ui/js']) {
   }
 }
 /** The API note fields render verbatim, so they are held to the same register. */
-for (const f of ['services/desk/position.js', 'services/desk/candidates.js',
-  'services/desk/readiness.js', 'services/capital-metrics.js', 'services/capital-basket.js',
-  'services/capital-forecast.js', 'services/gcf/screening.js', 'services/gcf/instruments.js',
-  'routes/v1/capital.js']) {
+for (const f of ['src/domains/capital/desk/position.js', 'src/domains/capital/desk/candidates.js',
+  'src/domains/capital/desk/readiness.js', 'src/domains/capital/domain/capital-metrics.js', 'src/domains/capital/domain/capital-basket.js',
+  'src/domains/capital/domain/capital-forecast.js', 'src/domains/gcf/domain/screening.js', 'src/domains/gcf/domain/instruments.js',
+  'src/domains/capital/interface/routes/capital.js']) {
   FILES.push([f, rendered(fs.readFileSync(path.join(ROOT, f), 'utf8'))]);
 }
 
@@ -82,9 +82,9 @@ describe('Screens do not leak the implementation', () => {
   });
 
   test('the illustrative-data label is short and is not styled as a fault', () => {
-    const desk = fs.readFileSync(path.join(ROOT, 'services/desk/position.js'), 'utf8');
+    const desk = fs.readFileSync(path.join(ROOT, 'src/domains/capital/desk/position.js'), 'utf8');
     expect(desk).toMatch(/sampleNote: 'Illustrative dataset — not client records\.'/);
-    const capital = fs.readFileSync(path.join(ROOT, 'routes/v1/capital.js'), 'utf8');
+    const capital = fs.readFileSync(path.join(ROOT, 'src/domains/capital/interface/routes/capital.js'), 'utf8');
     expect(capital).toMatch(/BASELINE_NOTE = 'Illustrative dataset — not client records\.'/);
 
     /* A pill in the neutral palette. Amber is reserved for something a reader
@@ -126,7 +126,7 @@ describe('Standard citations survive the trim', () => {
     expect(desk).toMatch(/PCAF Part A, p\.126/);
     expect(desk).toMatch(/B\.36\/10/);
     expect(deskJs).toMatch(/PCAF scale 1–5, 1 is best/);
-    const metrics = fs.readFileSync(path.join(ROOT, 'services/capital-metrics.js'), 'utf8');
+    const metrics = fs.readFileSync(path.join(ROOT, 'src/domains/capital/domain/capital-metrics.js'), 'utf8');
     expect(metrics).toMatch(/PCAF Part A p\.128/);
     expect(metrics).toMatch(/PCAF Part A, p\.126/);
   });

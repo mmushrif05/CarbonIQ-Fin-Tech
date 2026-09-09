@@ -18,9 +18,9 @@
 
 'use strict';
 
-const parta = require('../services/pcaf-parta');
-const cc    = require('../services/pcaf-parta/country-config');
-const { deriveFromGeneration } = require('../services/pcaf-parta/generation');
+const parta = require('../src/domains/pcaf-part-a/domain');
+const cc    = require('../src/domains/pcaf-part-a/domain/country-config');
+const { deriveFromGeneration } = require('../src/domains/pcaf-part-a/domain/generation');
 
 const EXPOSURE = {
   projectName: 'Solar Project', archetype: 'renewable-generation',

@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { Deadline, RESPONSE_MARGIN_MS, MIN_USEFUL_MS } = require('../services/agents/deadline');
+const { Deadline, RESPONSE_MARGIN_MS, MIN_USEFUL_MS } = require('../src/platform/ai/deadline');
 
 describe('A deadline never hands out more time than the request has', () => {
   test('a call is capped by what remains, not by what it asks for', () => {
@@ -51,7 +51,7 @@ describe('Retries are off, because a retry doubles a wall clock there is none of
     jest.resetModules();
     const saved = process.env.ANTHROPIC_MAX_RETRIES;
     delete process.env.ANTHROPIC_MAX_RETRIES;
-    const config = require('../config');
+    const config = require('../src/platform/config');
     expect(config.anthropicMaxRetries).toBe(0);
     if (saved !== undefined) process.env.ANTHROPIC_MAX_RETRIES = saved;
     jest.resetModules();
@@ -81,7 +81,7 @@ describe('Work that cannot finish is refused before it starts', () => {
 
 describe('The budget matches the function it protects', () => {
   test('it defaults to the configured function timeout', () => {
-    const config = require('../config');
+    const config = require('../src/platform/config');
     expect(new Deadline().budgetMs).toBe(config.functionTimeoutMs);
     expect(config.functionTimeoutMs).toBe(26000);   // netlify.toml: timeout = 26
   });

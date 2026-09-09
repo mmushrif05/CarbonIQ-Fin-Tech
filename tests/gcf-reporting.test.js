@@ -6,7 +6,7 @@
  * fill SLFRS S2 §29(a) or GRI 305-1/2/3, and putting it there would report an
  * emission the entity does not have in place of one it does.
  *
- * The rest is the discipline services/report-integrity.js already enforces
+ * The rest is the discipline src/shared/report-integrity.js already enforces
  * elsewhere, applied to a new standard: measured, declared or absent, and
  * never filled in.
  */
@@ -17,11 +17,11 @@ process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
-const partcStore = require('../services/partc-store');
-const reporting = require('../services/gcf/reporting');
-const emissions = require('../services/gcf/emissions');
-const integrity = require('../services/report-integrity');
+const app = require('../src/server');
+const partcStore = require('../src/platform/database/store');
+const reporting = require('../src/domains/gcf/application/reporting');
+const emissions = require('../src/domains/gcf/domain/emissions');
+const integrity = require('../src/shared/report-integrity');
 const SEED = require('../data/gcf/pipeline.seed.json');
 
 const KEY = process.env.UI_API_KEY;

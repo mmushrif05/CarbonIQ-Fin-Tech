@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — Carbon Pricing Service Tests
  */
 
-const { calculateFinancialImpact } = require('../services/carbon-pricing');
+const { calculateFinancialImpact } = require('../src/domains/taxonomy/domain/carbon-pricing');
 
 describe('Carbon Pricing Service', () => {
   const BASE_OPTS = {

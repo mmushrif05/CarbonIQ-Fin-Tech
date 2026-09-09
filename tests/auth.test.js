@@ -1,7 +1,7 @@
 /**
  * CarbonIQ FinTech — JWT Auth Middleware Tests
  *
- * Tests middleware/auth.js which verifies Firebase Bearer tokens.
+ * Tests src/platform/auth/auth.js which verifies Firebase Bearer tokens.
  * Firebase bridge is mocked at module level; per-test behaviour is
  * controlled via the mockVerifyIdToken variable.
  */
@@ -13,14 +13,14 @@ const express = require('express');
 let mockVerifyIdToken;
 let mockFirebaseConfigured = true;
 
-jest.mock('../bridge/firebase', () => ({
+jest.mock('../src/platform/bridge/firebase', () => ({
   getFirebaseAdmin: () => {
     if (!mockFirebaseConfigured) return null;
     return { auth: () => ({ verifyIdToken: (...args) => mockVerifyIdToken(...args) }) };
   }
 }));
 
-const auth = require('../middleware/auth');
+const auth = require('../src/platform/auth/auth');
 
 const createTestApp = () => {
   const app = express();

@@ -16,13 +16,10 @@ A standalone Express.js API that exposes the CarbonIQ carbon engine to banks, le
 
 ```
 CarbonIQ-Fin-Tech/
-├── server.js               Express entry point + /health
-├── config/                 Env config, business constants, CORS
-├── middleware/             Auth (JWT + API key), rate limiting, audit, validation
-├── routes/v1/              8 API endpoints (score, assess, projects, pcaf, taxonomy, covenant, portfolio, webhook)
-├── services/               Score engine, PCAF output, taxonomy alignment, covenant engine, portfolio aggregation
-├── bridge/                 Firebase + engine bridge (read-only access to CarbonIQ core)
-├── models/                 API key, covenant, webhook, taxonomy schemas
+├── src/server.js               Express entry point + /health
+├── src/domains/           six bounded contexts — pcaf-part-a, pcaf-part-c, gcf, capital, taxonomy, lending — each domain/ · application/ · interface/
+├── src/platform/          auth, config, database (the storage seam and PostgreSQL), http, observability, ai, bridge, reporting
+├── src/shared/            constants, policies, report-integrity, models
 ├── tests/                  26 tests across 6 suites (score, taxonomy, covenant, pcaf, api)
 ├── docker/                 Local development container
 ├── netlify/functions/      Serverless adapter (production deployment)

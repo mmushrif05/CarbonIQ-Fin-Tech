@@ -13,7 +13,7 @@
 
 const fs   = require('fs');
 const path = require('path');
-const { conformanceMatrix, summarise, RULES, STANDARD } = require('../services/pcaf-partc/conformance');
+const { conformanceMatrix, summarise, RULES, STANDARD } = require('../src/domains/pcaf-part-c/domain/conformance');
 
 const OUT = path.join(__dirname, '..', 'docs', 'PCAF-PART-C-CONFORMANCE.md');
 
@@ -33,7 +33,7 @@ function render() {
 
   L.push('# PCAF Part C — Conformance Statement');
   L.push('');
-  L.push('> Generated from `services/pcaf-partc/conformance.js`. Do not edit by hand —');
+  L.push('> Generated from `src/domains/pcaf-part-c/domain/conformance.js`. Do not edit by hand —');
   L.push('> run `npm run docs:conformance`. Every claim below is checked by');
   L.push('> `tests/pcaf-partc-conformance.test.js`, which fails the build if a rule');
   L.push('> names a file that does not exist or a test that is not real.');

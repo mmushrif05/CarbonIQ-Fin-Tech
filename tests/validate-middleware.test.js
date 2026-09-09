@@ -1,7 +1,7 @@
 const request = require('supertest');
 const express = require('express');
 const Joi = require('joi');
-const validate = require('../middleware/validate');
+const validate = require('../src/platform/http/validate');
 
 const testSchema = Joi.object({
   name: Joi.string().required(),

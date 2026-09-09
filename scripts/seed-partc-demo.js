@@ -12,10 +12,10 @@
 
 'use strict';
 
-const registry = require('../services/partc-registry');
-const store    = require('../services/partc-store');
-const { seedDemoBook } = require('../services/partc-demo-data');
-const boq      = require('../services/partc-boq');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const store    = require('../src/platform/database/store');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
+const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
 
 const orgArg = process.argv.find(a => a.startsWith('--org='));
 const orgId  = orgArg ? orgArg.split('=')[1] : (process.env.DEMO_ORG_ID || 'ui');

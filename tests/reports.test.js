@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — Reports Service Tests
  */
 
-const { generateReport, buildPDF } = require('../services/reports');
+const { generateReport, buildPDF } = require('../src/domains/lending/application/reports');
 
 describe('Reports Service', () => {
   describe('generateReport', () => {

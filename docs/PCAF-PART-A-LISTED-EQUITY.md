@@ -10,7 +10,7 @@ standard's own modal verb — the distinction is the difference between a
 refusal, a warning and a choice in the engine.
 
 **Status.** Analysis complete. Plan agreed in §5. Implementation in
-`services/pcaf-parta/` follows the plan; the conformance matrix ties each rule
+`src/domains/pcaf-part-a/domain/` follows the plan; the conformance matrix ties each rule
 here to the code that enforces it and the test that proves it.
 
 ---
@@ -315,7 +315,7 @@ insurer will meet on day one.
 
 ## 4. What the existing Part A code already provides
 
-`services/pcaf-parta/` (project finance) supplies, and this class reuses without
+`src/domains/pcaf-part-a/domain/` (project finance) supplies, and this class reuses without
 change: `provenance.traced/absent`, the refuse-not-cap attribution shape, the
 per-class `data-quality.js` lookup and `weightedByOutstanding`, the
 inventory/impact separation in `index.js`, and the route/schema/test layout.
@@ -346,10 +346,10 @@ an exposure register.
 
 ### 5.2 Module structure
 
-Extending `services/pcaf-parta/`:
+Extending `src/domains/pcaf-part-a/domain/`:
 
 ```
-services/pcaf-parta/
+src/domains/pcaf-part-a/domain/
   listed-equity/
     index.js          assessListedEquity(exposure) → traced result
     classify.js       Figure 5-1 gate: instrument, listing, UoP, held-for-sale, fund look-through
@@ -368,8 +368,8 @@ data/pcaf-parta/
   dq-listed-equity-corporate-bonds.json     Table 5.1-2, every row cites p.46
   nace-l2.json                               codes and names, for sector disaggregation
 
-schemas/pcaf-parta.js                        + listedEquityExposureSchema, portfolioSchema
-routes/v1/pcaf-parta.js                      + /listed-equity/assess, /listed-equity/portfolio
+src/domains/pcaf-part-a/interface/schemas/pcaf-parta.js                        + listedEquityExposureSchema, portfolioSchema
+src/domains/pcaf-part-a/interface/routes/pcaf-parta.js                      + /listed-equity/assess, /listed-equity/portfolio
 tests/parta-listed-equity.test.js            acceptance from the standard's own examples
 docs/PCAF-PART-A-LISTED-EQUITY.md            this document
 ```
@@ -420,7 +420,7 @@ Exposure
 | L3 | `portfolio`, `intensity`, `fluctuation` | Box 6.1-6 and Box 5.1-3 reproduce; financial sector apart; S3 apart |
 | L4 | Route, schema, reference endpoint, exposure register (manual entry) | An analyst enters a book of CSE holdings and sees the position |
 | L5 | Report and checklist, reusing `partc-report-standard` and `report-integrity` | Every DCL item answered from the report; adjusted figure **absent** with p.51 |
-| L6 | Conformance matrix + generated doc; `services/pcaf.js` stops claiming to be PCAF | Build fails if a rule cites a missing test |
+| L6 | Conformance matrix + generated doc; `src/domains/lending/application/pcaf.js` stops claiming to be PCAF | Build fails if a rule cites a missing test |
 
 ### 5.6 Not built, and said so
 

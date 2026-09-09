@@ -3,8 +3,8 @@
  */
 
 const request = require('supertest');
-const app     = require('../server');
-const { generateReport } = require('../services/reports');
+const app     = require('../src/server');
+const { generateReport } = require('../src/domains/lending/application/reports');
 
 const TEST_KEY = process.env.DEV_API_KEY || 'ck_test_00000000000000000000000000000000';
 const AUTH     = { 'x-api-key': TEST_KEY };
@@ -206,7 +206,7 @@ describe('POST /v1/ndc-sdg/certificate', () => {
 // ---------------------------------------------------------------------------
 
 describe('POST /v1/ndc-sdg/certificate/verify', () => {
-  const { generateCertificate } = require('../services/certificate');
+  const { generateCertificate } = require('../src/domains/taxonomy/domain/certificate');
 
   test('requires auth', async () => {
     const cert = generateCertificate({ projectName: 'Test', bankName: 'DFCC' });

@@ -18,10 +18,10 @@ process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
-const partcStore = require('../services/partc-store');
-const emissions = require('../services/gcf/emissions');
-const ndc = require('../services/gcf/ndc-contribution');
+const app = require('../src/server');
+const partcStore = require('../src/platform/database/store');
+const emissions = require('../src/domains/gcf/domain/emissions');
+const ndc = require('../src/domains/gcf/domain/ndc-contribution');
 const NDC3 = require('../data/gcf/ndc3.json');
 const SEED = require('../data/gcf/pipeline.seed.json');
 

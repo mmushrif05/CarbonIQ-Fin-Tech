@@ -15,15 +15,15 @@ const URL = process.env.TEST_DATABASE_URL;
 const suite = URL ? describe : describe.skip;
 if (!URL) console.log('tests/pg-store.test.js: TEST_DATABASE_URL not set — PostgreSQL integration tests skipped.');
 
-const app = require('../server');
-const db = require('../platform/database');
-const store = require('../services/partc-store');
-const registry = require('../services/partc-registry');
-const boq = require('../services/partc-boq');
-const A = require('../services/partc-assessments');
-const book = require('../services/capital-book');
-const { adoptCandidate } = require('../services/desk/adopt');
-const { seedDemoBook } = require('../services/partc-demo-data');
+const app = require('../src/server');
+const db = require('../src/platform/database');
+const store = require('../src/platform/database/store');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const boq = require('../src/domains/pcaf-part-c/application/partc-boq');
+const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
+const book = require('../src/domains/capital/infrastructure/capital-book');
+const { adoptCandidate } = require('../src/domains/capital/desk/adopt');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
 const fx = require('./fixtures/fisheries');
 
 const KEY = process.env.UI_API_KEY;

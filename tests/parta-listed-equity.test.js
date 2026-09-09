@@ -10,15 +10,15 @@
 
 'use strict';
 
-const { assessListedEquity } = require('../services/pcaf-parta/listed-equity');
-const { classify } = require('../services/pcaf-parta/listed-equity/classify');
-const { evic, equityPlusDebt } = require('../services/pcaf-parta/listed-equity/denominator');
-const { deriveOptions } = require('../services/pcaf-parta/listed-equity/options');
-const { estimate } = require('../services/pcaf-parta/listed-equity/estimate');
-const { rollUp } = require('../services/pcaf-parta/listed-equity/portfolio');
-const intensity = require('../services/pcaf-parta/listed-equity/intensity');
-const { fluctuation } = require('../services/pcaf-parta/listed-equity/fluctuation');
-const dq = require('../services/pcaf-parta/data-quality');
+const { assessListedEquity } = require('../src/domains/pcaf-part-a/domain/listed-equity');
+const { classify } = require('../src/domains/pcaf-part-a/domain/listed-equity/classify');
+const { evic, equityPlusDebt } = require('../src/domains/pcaf-part-a/domain/listed-equity/denominator');
+const { deriveOptions } = require('../src/domains/pcaf-part-a/domain/listed-equity/options');
+const { estimate } = require('../src/domains/pcaf-part-a/domain/listed-equity/estimate');
+const { rollUp } = require('../src/domains/pcaf-part-a/domain/listed-equity/portfolio');
+const intensity = require('../src/domains/pcaf-part-a/domain/listed-equity/intensity');
+const { fluctuation } = require('../src/domains/pcaf-part-a/domain/listed-equity/fluctuation');
+const dq = require('../src/domains/pcaf-part-a/domain/data-quality');
 
 const AS_OF = '2020-12-31';
 

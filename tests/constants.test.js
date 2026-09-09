@@ -5,7 +5,7 @@ const {
   PCAF_DATA_QUALITY,
   SCORE_BANDS,
   PROJECT_TYPES,
-} = require('../models/constants');
+} = require('../src/shared/models/constants');
 
 describe('Domain Constants', () => {
   it('has carbon factors for all material categories', () => {

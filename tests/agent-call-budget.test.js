@@ -29,7 +29,7 @@
 
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
-const mappingAgent = require('../services/agents/partc/mapping');
+const mappingAgent = require('../src/domains/pcaf-part-c/agents/mapping');
 
 describe('The keys are given, not fetched', () => {
   test('the mapping agent no longer offers list_factor_keys', () => {
@@ -44,7 +44,7 @@ describe('The keys are given, not fetched', () => {
   });
 
   test('the catalogue is in the prompt instead — every key, not a sample', () => {
-    const { TOOL_FUNCTIONS } = require('../services/agents/partc/tools');
+    const { TOOL_FUNCTIONS } = require('../src/domains/pcaf-part-c/agents/tools');
     const catalogue = TOOL_FUNCTIONS.list_factor_keys();
 
     // Spot-check across all three families the mapping actually resolves.
@@ -101,7 +101,7 @@ describe('The request params that actually go to the model', () => {
     });
     process.env.ANTHROPIC_API_KEY = 'sk-ant-api03-' + 'x'.repeat(90);
     request = require('supertest');
-    app = require('../server');
+    app = require('../src/server');
   });
 
   afterAll(() => { jest.dontMock('@anthropic-ai/sdk'); jest.resetModules(); });
@@ -141,8 +141,8 @@ describe('The request params that actually go to the model', () => {
 });
 
 describe('The clock is the platform\'s, not one that starts late', () => {
-  const { forRequest, Deadline, RESPONSE_MARGIN_MS } = require('../services/agents/deadline');
-  const config = require('../config');
+  const { forRequest, Deadline, RESPONSE_MARGIN_MS } = require('../src/platform/ai/deadline');
+  const config = require('../src/platform/config');
 
   test('Lambda\'s remaining time wins over the configured budget', () => {
     const req = { lambdaContext: { getRemainingTimeInMillis: () => 9000 } };
@@ -229,7 +229,7 @@ describe('A run that stops for a reason says the reason', () => {
   });
 
   test('the error handler forwards a remedy instead of dropping it', () => {
-    const errorHandler = require('../middleware/error-handler');
+    const errorHandler = require('../src/platform/http/error-handler');
 
     const err = new Error('Not enough time left to map the bill of quantities.');
     err.statusCode = 504;
@@ -249,7 +249,7 @@ describe('A run that stops for a reason says the reason', () => {
   });
 
   test('a 500 never carries a remedy, whose message is deliberately generic', () => {
-    const errorHandler = require('../middleware/error-handler');
+    const errorHandler = require('../src/platform/http/error-handler');
 
     const err = new Error('boom');
     err.remedy = 'should not be shown';
