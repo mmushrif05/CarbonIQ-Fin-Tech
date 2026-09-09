@@ -11,7 +11,7 @@
 'use strict';
 
 // Mock Firebase before any requires
-jest.mock('../bridge/firebase', () => ({
+jest.mock('../src/platform/bridge/firebase', () => ({
   getFirebaseAdmin: () => null,
   getDatabase: () => null,
   savePipelineRun: jest.fn().mockResolvedValue(),
@@ -23,7 +23,7 @@ jest.mock('../bridge/firebase', () => ({
 }));
 
 // Mock agent runner
-jest.mock('../bridge/agent', () => ({
+jest.mock('../src/platform/ai/agent', () => ({
   runAgent: jest.fn().mockResolvedValue({
     runId: 'run_mock_123',
     status: 'completed',
@@ -47,14 +47,14 @@ const mockAgentModule = {
   buildUserMessageWithResults: (input) => JSON.stringify(input),
 };
 
-jest.mock('../services/agents/screening', () => mockAgentModule);
-jest.mock('../services/agents/underwriting', () => mockAgentModule);
-jest.mock('../services/agents/origination', () => mockAgentModule);
-jest.mock('../services/agents/covenants', () => mockAgentModule);
-jest.mock('../services/agents/monitoring', () => mockAgentModule);
-jest.mock('../services/agents/portfolio', () => mockAgentModule);
-jest.mock('../services/agents/borrower-coaching', () => mockAgentModule);
-jest.mock('../services/agents/decision-review', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/screening', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/underwriting', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/origination', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/covenants', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/monitoring', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/portfolio', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/borrower-coaching', () => mockAgentModule);
+jest.mock('../src/domains/lending/agents/decision-review', () => mockAgentModule);
 
 const {
   PIPELINE_TEMPLATES,
@@ -62,17 +62,17 @@ const {
   STAGE_STATUS,
   createPipelineRecord,
   generatePipelineId,
-} = require('../models/pipeline');
+} = require('../src/shared/models/pipeline');
 
 const {
   createAndRunPipeline,
   validatePipelineAccess,
   _getReadyStages,
   _enrichInput,
-} = require('../services/supervisor');
+} = require('../src/domains/lending/application/supervisor');
 
-const { ROLES, PERMISSIONS } = require('../config/policies');
-const { runAgent, runAgentSingleCall } = require('../bridge/agent');
+const { ROLES, PERMISSIONS } = require('../src/shared/policies');
+const { runAgent, runAgentSingleCall } = require('../src/platform/ai/agent');
 
 // ---------------------------------------------------------------------------
 // Pipeline Model Tests

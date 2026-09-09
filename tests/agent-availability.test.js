@@ -22,7 +22,7 @@
 
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
-const { describe: describeAi, diagnose, AGENTS, KEY_SHAPE } = require('../services/agents/ai-status');
+const { describe: describeAi, diagnose, AGENTS, KEY_SHAPE } = require('../src/platform/ai/ai-status');
 
 describe('Recognising a key that cannot work', () => {
   test('an Anthropic key is sk-ant- and long; a placeholder is neither', () => {
@@ -77,7 +77,7 @@ describe('An SDK failure is translated into cause and remedy', () => {
 
 describe('The gate refuses early, and says what still works', () => {
   const request = require('supertest');
-  const app = require('../server');
+  const app = require('../src/server');
   const KEY = process.env.UI_API_KEY;
 
   test('GET /v1/agent/health reports every agent and never throws', async () => {
@@ -178,7 +178,7 @@ describe('The agents are wired correctly — proven against a stubbed API', () =
     });
     process.env.ANTHROPIC_API_KEY = 'sk-ant-api03-' + 'x'.repeat(90);
     request = require('supertest');
-    app = require('../server');
+    app = require('../src/server');
   });
 
   afterAll(() => { jest.dontMock('@anthropic-ai/sdk'); jest.resetModules(); });

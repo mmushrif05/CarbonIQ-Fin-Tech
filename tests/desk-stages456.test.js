@@ -15,13 +15,13 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app   = require('../server');
-const store = require('../services/partc-store');
+const app   = require('../src/server');
+const store = require('../src/platform/database/store');
 
-const desk = require('../services/desk');
-const screening = require('../services/gcf/screening');
-const { basket } = require('../services/capital-basket');
-const baseline = require('../services/capital-baseline');
+const desk = require('../src/domains/capital/desk');
+const screening = require('../src/domains/gcf/domain/screening');
+const { basket } = require('../src/domains/capital/domain/capital-basket');
+const baseline = require('../src/domains/capital/infrastructure/capital-baseline');
 
 const SEED = require('../data/gcf/pipeline.seed.json');
 const POOL = SEED.projects;

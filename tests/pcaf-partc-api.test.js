@@ -8,7 +8,7 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 const fx = require('./fixtures/fisheries');
 
 const KEY = process.env.UI_API_KEY;
@@ -117,8 +117,8 @@ describe('Part C API — assessment', () => {
   test('the trace is still built, so the method survives the removal', () => {
     // Removing the surface must not remove the asset: partc-methodology.js
     // and the GWP basis are both derived from this tree.
-    const { buildRegisters } = require('../services/partc-registers');
-    const { runPartC } = require('../services/pcaf-partc');
+    const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
+    const { runPartC } = require('../src/domains/pcaf-part-c/domain');
     const registers = buildRegisters(runPartC(fx.engineInput ? fx.engineInput() : {
       policy: fx.POLICY_CAR, materials: fx.MATERIALS, siteInputs: fx.SITE_INPUTS
     }));

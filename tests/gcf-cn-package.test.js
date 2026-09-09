@@ -14,10 +14,10 @@ process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
-const partcStore = require('../services/partc-store');
-const cn = require('../services/gcf/cn-package');
-const { assertWellFormedPdf, toBuffer } = require('../services/pdf-response');
+const app = require('../src/server');
+const partcStore = require('../src/platform/database/store');
+const cn = require('../src/domains/gcf/application/cn-package');
+const { assertWellFormedPdf, toBuffer } = require('../src/platform/reporting/pdf-response');
 const SEED = require('../data/gcf/pipeline.seed.json');
 
 const KEY = process.env.UI_API_KEY;
@@ -47,8 +47,8 @@ describe('Eight sections, in the order a Concept Note reads', () => {
   });
 
   test('the figures come from the engines, not re-keyed', () => {
-    const emissions = require('../services/gcf/emissions');
-    const { N } = require('../services/partc-docgen');
+    const emissions = require('../src/domains/gcf/domain/emissions');
+    const { N } = require('../src/domains/pcaf-part-c/reporting/partc-docgen');
     const e = emissions.projectEmissions(byCode('GCF-P4'));
     const flat = JSON.stringify(pkg.sections);
     /* Rendered through the shared number formatter, so the assertion is on the

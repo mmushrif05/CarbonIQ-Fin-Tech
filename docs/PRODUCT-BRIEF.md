@@ -78,7 +78,7 @@ not absent numbers, but confident wrong ones.
 > **ABSENT** — required by the standard and not available. Saying so is a
 > disclosure in its own right; a plausible number in its place is not.
 
-This is enforced in code (`services/report-integrity.js`), not by convention,
+This is enforced in code (`src/shared/report-integrity.js`), not by convention,
 and it is the thing that makes the product defensible under assurance.
 
 **Why it exists.** An earlier version of this product's own reports emitted the
@@ -102,14 +102,14 @@ a slide.
 
 | Capability | Status | Where |
 |---|---|---|
-| PCAF Part C — insurance-associated emissions | **Shipped** | `services/pcaf-partc/` |
-| The insurer's book — clients, projects, policies, BOQ revisions | **Shipped** | `services/partc-registry.js`, `partc-boq.js` |
-| Assessment lifecycle, locking, restatement | **Shipped** | `services/partc-assessments.js` |
-| Annual disclosure — PDF, Word, JSON | **Shipped** | `services/partc-disclosure.js` |
-| Methodology statement, extracted from engine execution | **Shipped** | `services/partc-methodology.js` |
-| Sri Lanka taxonomy, NDC 3.0, Green Loan Certificate | **Shipped** | `services/taxonomy.js`, `certificate.js` |
+| PCAF Part C — insurance-associated emissions | **Shipped** | `src/domains/pcaf-part-c/domain/` |
+| The insurer's book — clients, projects, policies, BOQ revisions | **Shipped** | `src/domains/pcaf-part-c/application/partc-registry.js`, `partc-boq.js` |
+| Assessment lifecycle, locking, restatement | **Shipped** | `src/domains/pcaf-part-c/application/partc-assessments.js` |
+| Annual disclosure — PDF, Word, JSON | **Shipped** | `src/domains/pcaf-part-c/application/partc-disclosure.js` |
+| Methodology statement, extracted from engine execution | **Shipped** | `src/domains/pcaf-part-c/application/partc-methodology.js` |
+| Sri Lanka taxonomy, NDC 3.0, Green Loan Certificate | **Shipped** | `src/domains/taxonomy/domain/taxonomy.js`, `certificate.js` |
 | Capital / anchor dashboard with attribution and forecast | **Shipped** | `services/capital-*.js` |
-| GCF pipeline — appraisal through Concept Note inputs | **Shipped** | `services/gcf/` |
+| GCF pipeline — appraisal through Concept Note inputs | **Shipped** | `src/domains/gcf/domain/` |
 | AI agent layer — 9 agents, health-probed | **Shipped** | `services/agents/` |
 | PCAF Part A — financed emissions | **Specified, not built** | `docs/PCAF-PART-A-BUILD-SPEC.md` |
 
@@ -132,16 +132,16 @@ Four questions sound alike and are legally distinct:
 
 | Scope | The question | Attribution basis | Where |
 |---|---|---|---|
-| **PCAF Part C** | What emissions are associated with what we **insure**? | Premium | `services/pcaf-partc/` |
-| **PCAF Part A** | What emissions are associated with what we **lend**? | Outstanding amount | `services/pcaf-parta/` *(planned)* |
-| **GCF appraisal** | What will this **project achieve** against a counterfactual? | Not attributed — project-level | `services/gcf/` |
+| **PCAF Part C** | What emissions are associated with what we **insure**? | Premium | `src/domains/pcaf-part-c/domain/` |
+| **PCAF Part A** | What emissions are associated with what we **lend**? | Outstanding amount | `src/domains/pcaf-part-a/domain/` *(planned)* |
+| **GCF appraisal** | What will this **project achieve** against a counterfactual? | Not attributed — project-level | `src/domains/gcf/domain/` |
 | **Entity inventory** | What does the **institution itself** emit? | Not attributed — direct | Not held; reported absent |
 
 Mixing any two produces a figure defined by no standard. The separation is
 structural: the modules do not import each other, and tests assert it rather
 than trusting discipline. Three concrete rules:
 
-- `services/pcaf-partc/rollup.js` **deliberately does not import**
+- `src/domains/pcaf-part-c/domain/rollup.js` **deliberately does not import**
   `beyond-pcaf.js`, so voluntary whole-life figures cannot reach the PCAF
   total through the module graph.
 - Part A weights data quality by **outstanding amount**; Part C weights by
@@ -419,7 +419,7 @@ old figures only on a line marked as superseded.
 ## 9. Architecture
 
 ```
-server.js                Express entry + /health
+src/server.js                Express entry + /health
 config/                  env, business constants, CORS
 middleware/              auth (JWT + API key), rate limit, audit, validation
 routes/v1/               22 route modules
@@ -515,7 +515,7 @@ Present these as roadmap. Do not imply they ship today.
   lint job is `continue-on-error: true`, which is why it reports success.
 - **Two disagreeing Sri Lankan embodied-carbon threshold sets** exist in the
   codebase (520/780 vs 600/900 kgCO₂e/m²). Unreconciled.
-- **`services/pcaf.js` still labels its output "PCAF v3"** and should stop
+- **`src/domains/lending/application/pcaf.js` still labels its output "PCAF v3"** and should stop
   claiming to be PCAF until Part A exists properly.
 - **Storage precedence.** Under `auto`, Firebase takes precedence over Netlify
   Blobs when configured. Deliberate — flipping it would make existing Firebase

@@ -38,6 +38,46 @@ jobs:
         run: npm audit --audit-level=high
         continue-on-error: true
 
+  # The same suite against PostgreSQL. Every test that touches storage runs
+  # on the relational store here, so a change that only works on the
+  # in-memory fallback cannot pass.
+  test-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: carboniq
+          POSTGRES_PASSWORD: carboniq
+          POSTGRES_DB: carboniq_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U carboniq"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      - name: Migrate
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgresql://carboniq:carboniq@localhost:5432/carboniq_test
+      - name: Test against PostgreSQL
+        run: npx jest --coverage
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://carboniq:carboniq@localhost:5432/carboniq_test
+      - name: Scale — the 10,000-row roll-up under a second, measured alone
+        run: npx jest --runInBand tests/pg-scale.test.js
+        env:
+          NODE_ENV: test
+          SCALE_STRICT: '1'
+          TEST_DATABASE_URL: postgresql://carboniq:carboniq@localhost:5432/carboniq_test
+
   lint:
     runs-on: ubuntu-latest
     steps:

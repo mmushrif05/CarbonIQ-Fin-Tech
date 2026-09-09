@@ -6,13 +6,13 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request  = require('supertest');
-const app      = require('../server');
-const P        = require('../services/partc-portfolio');
-const A        = require('../services/partc-assessments');
-const registry = require('../services/partc-registry');
-const boq      = require('../services/partc-boq');
-const store    = require('../services/partc-store');
-const { seedDemoBook } = require('../services/partc-demo-data');
+const app      = require('../src/server');
+const P        = require('../src/domains/pcaf-part-c/application/partc-portfolio');
+const A        = require('../src/domains/pcaf-part-c/application/partc-assessments');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
+const store    = require('../src/platform/database/store');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
 const fx       = require('./fixtures/fisheries');
 
 const KEY  = process.env.UI_API_KEY;
@@ -42,7 +42,7 @@ async function lockOn(projectName, { previousProject = null } = {}) {
 }
 
 beforeEach(async () => {
-  store._resetMemory();
+  await store._resetMemory();
   book = await seedDemoBook(registry, ORG, boq);
 });
 
@@ -270,6 +270,18 @@ describe('Portfolio API', () => {
    outstanding premium, not by emissions. The two are different measures and
    both must survive: premium weighting says how well evidenced the book the
    insurer actually wrote is; emission weighting says which module to fix. */
+describe('The roll-up reads a projection of the assessment, and it changes nothing', () => {
+  test('the projected roll-up equals the roll-up over whole records, figure for figure', async () => {
+    await lockOn('Negombo', { previousProject: fx.PREVIOUS_PROJECT });
+    await lockOn('Kandy');
+    const whole = await P.rollUp(ORG, 2026, { fields: null });
+    const projected = await P.rollUp(ORG, 2026);
+    delete whole.generatedAt; delete projected.generatedAt;
+    expect(projected).toEqual(whole);
+    expect(projected.assessments.locked).toBe(2);
+  });
+});
+
 describe('Portfolio — the disclosed data-quality score', () => {
   test('is premium-weighted, to two decimals, and says which scale it is on', async () => {
     await lockOn('Negombo');
@@ -336,7 +348,7 @@ describe('Portfolio — the disclosed data-quality score', () => {
     const locked = await lockOn('Negombo');
     const stored = await A.getAssessment(ORG, locked.assessmentId);
     stored.dataQuality = { ...stored.dataQuality, score: null };
-    await store.put('partc-assessments', ORG, stored.assessmentId, stored);
+    await store.put(A.COLLECTION, ORG, stored.assessmentId, stored);
 
     const r = await P.rollUp(ORG, 2026);
     expect(r.dataQuality.disclosed.overall.weighted).toBeNull();

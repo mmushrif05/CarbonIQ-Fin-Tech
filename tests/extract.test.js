@@ -6,7 +6,7 @@
  */
 
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -99,7 +99,7 @@ describe('POST /v1/extract — input validation', () => {
 // ── Schema ─────────────────────────────────────────────────────────────────
 
 describe('extractRequestSchema', () => {
-  const { extractRequestSchema } = require('../schemas/extract');
+  const { extractRequestSchema } = require('../src/domains/lending/interface/schemas/extract');
 
   test('accepts a valid CSV payload', () => {
     const { error, value } = extractRequestSchema.validate(VALID_BODY);
@@ -151,9 +151,9 @@ describe('extractRequestSchema', () => {
 
 // ── Schema index registration ──────────────────────────────────────────────
 
-describe('schemas/index.js', () => {
+describe('src/platform/http/schemas.js', () => {
   test('exports extractRequestSchema', () => {
-    const schemas = require('../schemas/index');
+    const schemas = require('../src/platform/http/schemas');
     expect(typeof schemas.extractRequestSchema).toBe('object');
     expect(schemas.extractRequestSchema).toBeDefined();
   });

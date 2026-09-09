@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Regenerate docs/GCF-CONFORMANCE.md from services/gcf/conformance.js.
+ * Regenerate docs/GCF-CONFORMANCE.md from src/domains/gcf/domain/conformance.js.
  *
  * One source. A hand-maintained copy of a conformance table drifts from the
  * code as soon as either changes, and the drift is invisible exactly when it
@@ -14,7 +14,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { RULES, SOURCE, summarise } = require('../services/gcf/conformance');
+const { RULES, SOURCE, summarise } = require('../src/domains/gcf/domain/conformance');
 
 const OUT = path.join(__dirname, '..', 'docs', 'GCF-CONFORMANCE.md');
 
@@ -37,7 +37,7 @@ const groups = [
 let out = `# GCF pipeline — conformance matrix
 
 <!-- GENERATED FILE. Do not edit by hand.
-     Source: services/gcf/conformance.js
+     Source: src/domains/gcf/domain/conformance.js
      Regenerate: npm run docs:gcf-conformance -->
 
 **Source of requirements:** ${SOURCE}

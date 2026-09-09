@@ -16,7 +16,7 @@ const path    = require('path');
 const readline = require('readline');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const config = require('../config');
+const config = require('../src/platform/config');
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

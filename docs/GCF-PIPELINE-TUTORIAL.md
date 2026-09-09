@@ -1073,7 +1073,7 @@ Honesty applies to ourselves too:
   reports success only because the job is `continue-on-error`.
 - Two disagreeing Sri Lankan embodied-carbon threshold sets exist in the
   codebase (520/780 vs 600/900 kgCO₂e/m²). Unreconciled.
-- `services/pcaf.js` still labels its output "PCAF v3" and should stop claiming
+- `src/domains/lending/application/pcaf.js` still labels its output "PCAF v3" and should stop claiming
   to be PCAF until Part A is properly built.
 - **Our own two files word GCF's Mitigation Core Indicator 1 slightly
   differently** — one says "reduced or avoided", the other "reduced, avoided or

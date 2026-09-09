@@ -14,11 +14,11 @@
 
 'use strict';
 
-const desk = require('../services/desk');
-const metrics = require('../services/capital-metrics');
-const attribution = require('../services/capital-attribution');
-const baseline = require('../services/capital-baseline');
-const book = require('../services/capital-book');
+const desk = require('../src/domains/capital/desk');
+const metrics = require('../src/domains/capital/domain/capital-metrics');
+const attribution = require('../src/domains/capital/domain/capital-attribution');
+const baseline = require('../src/domains/capital/infrastructure/capital-baseline');
+const book = require('../src/domains/capital/infrastructure/capital-book');
 
 const BOOK = () => baseline.baselineBook();
 const POOL = require('../data/gcf/pipeline.seed.json').projects;

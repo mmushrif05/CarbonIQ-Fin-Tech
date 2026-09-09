@@ -32,12 +32,12 @@ const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
 const html    = read('ui', 'index.html');
 const dashJs  = read('ui', 'js', 'dashboard.js');
 const css     = read('ui', 'styles.css');
-const forecast = read('services', 'capital-forecast.js');
+const forecast = read('src', 'domains', 'capital', 'domain', 'capital-forecast.js');
 
 const curve = dashJs.slice(dashJs.indexOf('function _renderCurve'), dashJs.indexOf('function _wireCurve'));
 
-const { capitalSeries, bookSeries } = require('../services/capital-forecast');
-const { baselineBook } = require('../services/capital-baseline');
+const { capitalSeries, bookSeries } = require('../src/domains/capital/domain/capital-forecast');
+const { baselineBook } = require('../src/domains/capital/infrastructure/capital-baseline');
 
 describe('The curve is on the page and drawn from the engine', () => {
   test('the chart, its readout, its facts and its assumptions all have a home', () => {

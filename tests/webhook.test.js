@@ -6,7 +6,7 @@
  */
 
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 
 const FAKE_KEY = 'ck_test_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
 const VALID_URL = 'https://hooks.example.bank/carboniq';

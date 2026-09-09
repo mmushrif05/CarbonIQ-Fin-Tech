@@ -6,7 +6,7 @@ const {
   portfolioRequestSchema,
   webhookCreateSchema,
   webhookUpdateSchema,
-} = require('../schemas');
+} = require('../src/platform/http/schemas');
 
 // ---------------------------------------------------------------------------
 // Helpers — valid base payloads for each schema

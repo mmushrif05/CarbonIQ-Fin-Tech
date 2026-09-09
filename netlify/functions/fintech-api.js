@@ -11,7 +11,7 @@
  */
 
 const serverless = require('serverless-http');
-const app = require('../../server');
+const app = require('../../src/server');
 
 /**
  * Response types that must survive as bytes.

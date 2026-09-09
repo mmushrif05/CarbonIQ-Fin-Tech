@@ -18,7 +18,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 
-const { TAXONOMY_LK, TAXONOMY_SL } = require('../config/constants');
+const { TAXONOMY_LK, TAXONOMY_SL } = require('../src/shared/constants');
 
 const ROOT = path.join(__dirname, '..');
 const PDF = path.join(ROOT, 'SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf');
@@ -196,13 +196,13 @@ describe('A certificate issued before the edition was corrected still verifies',
     /* The stamp is inside the hash. Changing it without a fallback would
        invalidate every certificate ever issued — that is not a correction,
        it is destroying evidence. */
-    const src = fs.readFileSync(path.join(ROOT, 'services/certificate.js'), 'utf8');
+    const src = fs.readFileSync(path.join(ROOT, 'src/domains/taxonomy/domain/certificate.js'), 'utf8');
     expect(src).toMatch(/LEGACY_STAMP/);
     expect(src).toMatch(/cert\.taxonomy\?\.stamp \|\| LEGACY_STAMP/);
   });
 
   test('a new certificate carries the edition it was hashed with', () => {
-    const { generateCertificate, verifyCertificate } = require('../services/certificate');
+    const { generateCertificate, verifyCertificate } = require('../src/domains/taxonomy/domain/certificate');
     const cert = generateCertificate({
       projectName: 'Fidelity fixture', emissions_tCO2e: 100,
       buildingArea_m2: 1000, bankName: 'DFCC Bank PLC',

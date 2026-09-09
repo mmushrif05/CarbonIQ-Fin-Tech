@@ -8,9 +8,9 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
-const runStore = require('../services/partc-run-store');
-const { PARTC_STATUS } = require('../models/partc-run');
+const app = require('../src/server');
+const runStore = require('../src/domains/pcaf-part-c/application/partc-run-store');
+const { PARTC_STATUS } = require('../src/shared/models/partc-run');
 const fx = require('./fixtures/fisheries');
 
 const KEY = process.env.UI_API_KEY;

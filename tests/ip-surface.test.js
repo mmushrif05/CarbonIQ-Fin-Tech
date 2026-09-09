@@ -24,7 +24,7 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 
 const ROOT = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -95,18 +95,18 @@ describe('The endpoint is absent, not forbidden', () => {
 
 describe('The asset survives the removal', () => {
   test('the engine is still in the repository', () => {
-    expect(fs.existsSync(path.join(ROOT, 'services/partc-methodology.js'))).toBe(true);
-    expect(fs.existsSync(path.join(ROOT, 'services/partc-methodology-doc.js'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'src/domains/pcaf-part-c/application/partc-methodology.js'))).toBe(true);
+    expect(fs.existsSync(path.join(ROOT, 'src/domains/pcaf-part-c/reporting/partc-methodology-doc.js'))).toBe(true);
   });
 
   test('the annual disclosure still builds its methodology section from it', () => {
     /* This is the distinction that matters: a disclosure is issued to a named
        recipient, a website is issued to everyone. */
-    expect(read('services/partc-disclosure.js')).toMatch(/partc-methodology/);
+    expect(read('src/domains/pcaf-part-c/application/partc-disclosure.js')).toMatch(/partc-methodology/);
   });
 
   test('and it still produces a complete statement when asked', () => {
-    const { buildMethodology } = require('../services/partc-methodology');
+    const { buildMethodology } = require('../src/domains/pcaf-part-c/application/partc-methodology');
     const m = buildMethodology();
     expect(m.calculationChain.length).toBeGreaterThan(0);
     expect(m.factorStore.rowCount).toBeGreaterThan(0);
@@ -143,13 +143,13 @@ describe('The calculation trace is not on the website', () => {
   });
 
   test('the route strips it before the response is shaped', () => {
-    const route = read('routes/v1/pcaf-partc.js');
+    const route = read('src/domains/pcaf-part-c/interface/routes/pcaf-partc.js');
     expect(route).toMatch(/function _publicRegisters/);
     expect(route).toMatch(/registers: _publicRegisters\(registers\)/);
   });
 
   test('the downloadable report carries no trace annex', () => {
-    expect(read('services/partc-report-standard.js')).toMatch(/auditTrail: \[\],/);
+    expect(read('src/domains/pcaf-part-c/reporting/partc-report-standard.js')).toMatch(/auditTrail: \[\],/);
   });
 
   /*
@@ -162,10 +162,10 @@ describe('The calculation trace is not on the website', () => {
    */
   test('no built report carries a traced step, in any format', () => {
     const fx = require('./fixtures/fisheries');
-    const { runPartC } = require('../services/pcaf-partc');
-    const { buildRegisters } = require('../services/partc-registers');
-    const std = require('../services/partc-report-standard');
-    const { buildPartCReport } = require('../services/partc-reports');
+    const { runPartC } = require('../src/domains/pcaf-part-c/domain');
+    const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
+    const std = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');
+    const { buildPartCReport } = require('../src/domains/pcaf-part-c/reporting/partc-reports');
 
     const result = runPartC(fx.workbookInput());
     const registers = buildRegisters(result);
@@ -191,14 +191,14 @@ describe('The calculation trace is not on the website', () => {
    */
   test('the module equations are still given, because the standard requires them', () => {
     const fx = require('./fixtures/fisheries');
-    const { runPartC } = require('../services/pcaf-partc');
-    const { buildRegisters } = require('../services/partc-registers');
-    const std = require('../services/partc-report-standard');
+    const { runPartC } = require('../src/domains/pcaf-part-c/domain');
+    const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
+    const std = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');
     const result = runPartC(fx.workbookInput());
     const facts = std.assessmentFacts({ result, registers: buildRegisters(result), settings: {} });
     expect(facts.equations.length).toBeGreaterThan(0);
 
-    const { completeChecklist } = require('../services/partc-checklist');
+    const { completeChecklist } = require('../src/domains/pcaf-part-c/application/partc-checklist');
     const met2 = completeChecklist(facts).items.find(i => i.id === 'MET-2');
     expect(met2.duty).toBe('shall');
     expect(met2.answer).toBe('Yes');
@@ -207,16 +207,16 @@ describe('The calculation trace is not on the website', () => {
 
 describe('The trace survives the removal', () => {
   test('the engine still builds it, equation by equation', () => {
-    const { auditTrail } = require('../services/partc-registers');
+    const { auditTrail } = require('../src/domains/pcaf-part-c/application/partc-registers');
     expect(typeof auditTrail).toBe('function');
   });
 
   test('the methodology statement still reads it', () => {
-    expect(read('services/partc-methodology.js')).toMatch(/trace|equation/i);
+    expect(read('src/domains/pcaf-part-c/application/partc-methodology.js')).toMatch(/trace|equation/i);
   });
 
   test('the checklist answers the traceability item honestly rather than dropping it', () => {
-    const { ITEMS } = require('../services/partc-checklist');
+    const { ITEMS } = require('../src/domains/pcaf-part-c/application/partc-checklist');
     const anx2 = ITEMS.find(i => i.id === 'ANX-2');
     expect(anx2).toBeTruthy();
     expect(anx2.section).toBeNull();

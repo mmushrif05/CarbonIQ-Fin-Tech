@@ -14,14 +14,14 @@
 
 'use strict';
 
-const { runPartC } = require('../services/pcaf-partc');
+const { runPartC } = require('../src/domains/pcaf-part-c/domain');
 const {
   assessDataQuality, inferOption, OPTION_SCORES, OPTION_LABELS, TABLE_5_3_2
-} = require('../services/pcaf-partc/data-quality');
+} = require('../src/domains/pcaf-part-c/domain/data-quality');
 const {
   scoreRun, scopeOptions, inputBasis, disclosureStatement, STRONG, WEAK
-} = require('../services/pcaf-partc/dq-scoring');
-const fx = require('../tests/fixtures/fisheries');
+} = require('../src/domains/pcaf-part-c/domain/dq-scoring');
+const fx = require('./fixtures/fisheries');
 
 const idiWithCharge = kg => fx.idiInput({ useStage: { ...fx.USE_STAGE, chargeKg: kg } });
 

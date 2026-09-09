@@ -120,8 +120,8 @@ document contains **neither**:
 
 | Where | Green | Transition | Attributed to |
 |---|---|---|---|
-| `config/constants.js:118–125` | 520 | 780 | "CBSL Compliant" |
-| `config/constants.js:205, 220–221` | 600 | 900 | SLGFT activity `M1.1` |
+| `src/shared/constants.js:118–125` | 520 | 780 | "CBSL Compliant" |
+| `src/shared/constants.js:205, 220–221` | 600 | 900 | SLGFT activity `M1.1` |
 | **This document** | — | — | **No absolute band exists** |
 
 Two further problems visible from the source:
@@ -131,11 +131,11 @@ Two further problems visible from the source:
   (`M6.1`, `M6.2`, `M6.3`, `M6.7`), not macro-sector 1.
 - The label "Green (CBSL Compliant)" asserts compliance. Compliance against the
   taxonomy is determined by the Central Bank, not by this software — the same
-  failure `services/report-integrity.js` exists to prevent elsewhere.
+  failure `src/shared/report-integrity.js` exists to prevent elsewhere.
 
 ### 4.2 The version string "SLGFT v2024"
 
-`services/certificate.js` stamps `taxonomy: 'SLGFT v2024'` onto the Green Loan
+`src/domains/taxonomy/domain/certificate.js` stamps `taxonomy: 'SLGFT v2024'` onto the Green Loan
 Certificate — a document that carries a SHA-256 audit hash — and `CLAUDE.md`
 describes the version as "SLGFT v2024" throughout.
 

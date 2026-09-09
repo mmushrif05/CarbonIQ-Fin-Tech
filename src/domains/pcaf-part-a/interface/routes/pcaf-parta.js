@@ -1,0 +1,97 @@
+/**
+ * CarbonIQ FinTech — PCAF Part A (financed emissions)
+ *
+ *   GET  /v1/pcaf/part-a/reference   asset classes, archetypes, data-quality options
+ *   POST /v1/pcaf/part-a/assess      assess one exposure
+ *
+ * Deterministic and synchronous. No model call, so none of the deadline
+ * machinery the agent routes need applies here — an assessment is arithmetic
+ * and returns in single-digit milliseconds.
+ */
+
+'use strict';
+
+const { Router } = require('express');
+const apiKeyAuth = require('../../../../platform/auth/api-key');
+const validate   = require('../../../../platform/http/validate');
+const { defaultLimiter } = require('../../../../platform/http/rate-limit');
+
+const parta = require('../../domain');
+const { assessRequestSchema } = require('../schemas/pcaf-parta');
+
+const router = Router();
+
+/**
+ * What a form needs to render itself.
+ *
+ * The options come from the asset class's own table rather than a list held in
+ * the UI, so a screen cannot offer an option the engine would then reject, and
+ * the two cannot drift.
+ */
+router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res, next) => {
+  try {
+    res.json({
+      standard: parta.STANDARD,
+      assetClasses: [
+        {
+          id: 'project-finance',
+          label: 'Project finance',
+          section: '5.3',
+          definition: 'On-balance sheet loans or equity to projects or activities designated '
+            + 'for specific purposes, with known use of proceeds — for example the construction '
+            + 'and operation of a power plant, a wind or solar project, or energy efficiency projects.',
+          denominator: 'total project equity plus debt',
+          scopes: 'Scope 1 and 2 shall be reported. Scope 3 should be covered if relevant.',
+          dataQualityOptions: parta.dataQuality.optionsFor('project-finance'),
+          dataQualityTable: parta.dataQuality.tableFor('project-finance').table,
+        },
+      ],
+      archetypes: parta.archetypes.list(),
+      /* The countries a renewable project can be sited in, each with both
+         factor bases and the source behind them. A screen offering a country
+         the engine holds no factor for would be offering a refusal. */
+      /* Everything country-dependent, so a form cannot offer a country or a
+         technology the engine holds nothing for. */
+      countryConfig: {
+        unit: parta.countryConfig.CONFIG.unit,
+        gridFactorUses: parta.countryConfig.CONFIG.grid_factor_uses,
+        fallbackRule: parta.countryConfig.CONFIG.fallback_rule,
+        staleAfterYears: parta.countryConfig.CONFIG.stale_after_years,
+        verificationLevels: parta.countryConfig.CONFIG.verification_levels,
+        yieldBasis: parta.countryConfig.CONFIG.yield_basis,
+        degradation: parta.countryConfig.CONFIG.degradation,
+        gridTrajectory: parta.countryConfig.CONFIG.grid_trajectory,
+        technologies: parta.countryConfig.TECHNOLOGIES,
+        technologyLimits: parta.countryConfig.CONFIG.technology_limits,
+        globalDefaults: parta.countryConfig.CONFIG.global_defaults,
+        countries: parta.countryConfig.countries(),
+        coverage: parta.countryConfig.coverage(),
+      },
+      notes: {
+        avoidedEmissions: 'Avoided emissions are no longer covered by Part A. From the '
+          + 'Third Edition (December 2025) they sit in optional supplemental guidance, and '
+          + 'figures resting on it are reported separately from the inventory.',
+        dataQuality: 'The option-to-score mapping differs between asset classes, so the '
+          + 'options above belong to this asset class alone.',
+        derivedOption: 'Where a renewable project supplies its generation and country, the '
+          + 'data quality option is derived from the data consumed rather than chosen. Naming a '
+          + 'different option is then an override and requires a justification.',
+        factorBasis: 'A grid average is what a consumer draws; a combined margin is what a new '
+          + 'grid-connected renewable displaces. They are not interchangeable, and where the '
+          + 'basis a purpose calls for is not held the substitution is reported rather than hidden.',
+      },
+    });
+  } catch (err) { next(err); }
+});
+
+router.post('/assess', apiKeyAuth, defaultLimiter,
+  validate({ body: assessRequestSchema }),
+  (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const result = parta.assessExposure(req.body);
+      res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+module.exports = router;

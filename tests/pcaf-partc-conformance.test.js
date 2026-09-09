@@ -12,9 +12,9 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
-const app = require('../server');
-const { conformanceMatrix, RULES } = require('../services/pcaf-partc/conformance');
-const { containsForbiddenLanguage } = require('../services/pcaf-partc/data-quality');
+const app = require('../src/server');
+const { conformanceMatrix, RULES } = require('../src/domains/pcaf-part-c/domain/conformance');
+const { containsForbiddenLanguage } = require('../src/domains/pcaf-part-c/domain/data-quality');
 
 const ROOT = path.join(__dirname, '..');
 const VALID_STATUS = ['implemented', 'partial', 'excluded'];
@@ -22,12 +22,12 @@ const VALID_STATUS = ['implemented', 'partial', 'excluded'];
 /** Pull the file paths a rule references out of its implementation text. */
 function referencedFiles(text) {
   const out = new Set();
-  // Plain paths: services/pcaf-partc/rollup.js
-  for (const m of text.matchAll(/\b((?:services|data|tests|config|models|routes|schemas)\/[\w./-]*\.\w+)/g)) {
+  // Plain paths: src/domains/pcaf-part-c/domain/rollup.js
+  for (const m of text.matchAll(/(?<![\w/])((?:src|services|data|tests|config|models|routes|schemas)\/[\w./-]*\.\w+)/g)) {
     out.add(m[1]);
   }
-  // Brace expansion: services/pcaf-partc/{b1-refrigerant,b4-replacement}.js
-  for (const m of text.matchAll(/\b((?:services|data|tests)\/[\w./-]*)\{([^}]+)\}(\.\w+)/g)) {
+  // Brace expansion: src/domains/pcaf-part-c/domain/{b1-refrigerant,b4-replacement}.js
+  for (const m of text.matchAll(/(?<![\w/])((?:src|services|data|tests)\/[\w./-]*)\{([^}]+)\}(\.\w+)/g)) {
     for (const part of m[2].split(',')) out.add(`${m[1]}${part.trim()}${m[3]}`);
   }
   return [...out];

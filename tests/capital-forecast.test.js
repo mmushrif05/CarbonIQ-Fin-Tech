@@ -16,9 +16,9 @@
 
 'use strict';
 
-const forecast = require('../services/capital-forecast');
-const metrics  = require('../services/capital-metrics');
-const demo     = require('../services/capital-demo-data');
+const forecast = require('../src/domains/capital/domain/capital-forecast');
+const metrics  = require('../src/domains/capital/domain/capital-metrics');
+const demo     = require('../src/domains/capital/infrastructure/capital-demo-data');
 
 const investments = [...demo.HELD, ...demo.PIPELINE];
 const BOOK = {
@@ -188,7 +188,7 @@ describe('What the series refuses to do', () => {
   });
 
   test('the source carries no subtraction of avoidance from emissions', () => {
-    const src = require('fs').readFileSync(require.resolve('../services/capital-forecast'), 'utf8');
+    const src = require('fs').readFileSync(require.resolve('../src/domains/capital/domain/capital-forecast'), 'utf8');
     expect(src).not.toMatch(/forward[^;\n]*-[^;\n]*avoided/);
     expect(src).not.toMatch(/avoided[^;\n]*-[^;\n]*forward/);
   });

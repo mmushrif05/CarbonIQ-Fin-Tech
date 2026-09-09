@@ -3,13 +3,13 @@
  */
 
 const request = require('supertest');
-const app     = require('../server');
+const app     = require('../src/server');
 
 const TEST_KEY = process.env.DEV_API_KEY || 'ck_test_00000000000000000000000000000000';
 const AUTH     = { 'x-api-key': TEST_KEY };
 
 // ── Schema unit tests ────────────────────────────────────────────────────────
-const { createProjectSchema, monitoringEntrySchema } = require('../schemas/projects');
+const { createProjectSchema, monitoringEntrySchema } = require('../src/domains/lending/interface/schemas/projects');
 
 describe('createProjectSchema', () => {
   test('accepts valid minimal project', () => {

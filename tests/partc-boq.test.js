@@ -5,10 +5,10 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request  = require('supertest');
-const app      = require('../server');
-const boq      = require('../services/partc-boq');
-const registry = require('../services/partc-registry');
-const store    = require('../services/partc-store');
+const app      = require('../src/server');
+const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const store    = require('../src/platform/database/store');
 const fx       = require('./fixtures/fisheries');
 
 const KEY  = process.env.UI_API_KEY;
@@ -22,11 +22,25 @@ const SITE = { gifa_m2: 1000, demolitionKm: 100, wasteDisposalKm: 40, previousPr
 const compare = (from, to, thresholdPct = 5, siteInputs = SITE) =>
   boq.compareRevisions({ from, to, enginePolicy: ENGINE_POLICY, siteInputs, distances: fx.DISTANCES, thresholdPct });
 
-beforeEach(() => store._resetMemory());
+/* A revision belongs to a project, and on PostgreSQL that is a foreign key
+   rather than a convention — so the project has to exist before its bill of
+   quantities does. */
+let PJ, PJ2, PJK;
+async function aProject(clientId, name) {
+  const project = await registry.createProject(ORG, { clientId, name, projectType: 'building', gifa_m2: 1000, projectCost: 6499442 });
+  return project.projectId;
+}
+beforeEach(async () => {
+  await store._resetMemory();
+  const client = await registry.createClient(ORG, { name: 'Department of Fisheries', country: 'Sri Lanka' });
+  PJ  = await aProject(client.clientId, 'Negombo Fisheries Complex');
+  PJ2 = await aProject(client.clientId, 'Other project');
+  PJK = await aProject(client.clientId, 'Key-matching project');
+});
 
 async function twoRevisions(secondMaterials, note = 'VO-01') {
-  const r1 = await boq.createRevision(ORG, 'pj1', { note: 'Tender', materials: fx.MATERIALS, demolitionItems: fx.DEMOLITION_ITEMS });
-  const r2 = await boq.createRevision(ORG, 'pj1', { note, materials: secondMaterials, demolitionItems: fx.DEMOLITION_ITEMS });
+  const r1 = await boq.createRevision(ORG, PJ, { note: 'Tender', materials: fx.MATERIALS, demolitionItems: fx.DEMOLITION_ITEMS });
+  const r2 = await boq.createRevision(ORG, PJ, { note, materials: secondMaterials, demolitionItems: fx.DEMOLITION_ITEMS });
   return [r1, r2];
 }
 
@@ -41,14 +55,14 @@ describe('BOQ revisions', () => {
 
   test('revisions are listed oldest first and scoped to their project', async () => {
     await twoRevisions(fx.MATERIALS);
-    await boq.createRevision(ORG, 'pj2', { note: 'Other project', materials: fx.MATERIALS });
-    const list = await boq.listRevisions(ORG, 'pj1');
+    await boq.createRevision(ORG, PJ2, { note: 'Other project', materials: fx.MATERIALS });
+    const list = await boq.listRevisions(ORG, PJ);
     expect(list.map(r => r.label)).toEqual(['R1', 'R2']);
-    expect((await boq.listRevisions(ORG, 'pj2')).map(r => r.label)).toEqual(['R1']);
+    expect((await boq.listRevisions(ORG, PJ2)).map(r => r.label)).toEqual(['R1']);
   });
 
   test('a revision needs at least one line', () => {
-    const { boqRevisionSchema } = require('../schemas/partc-boq');
+    const { boqRevisionSchema } = require('../src/domains/pcaf-part-c/interface/schemas/partc-boq');
     expect(boqRevisionSchema.validate({}).error.message).toMatch(/at least one material/);
   });
 });
@@ -89,11 +103,11 @@ describe('BOQ mapping carry-forward', () => {
   });
 
   test('a line is matched by its wording or by its resolved name', async () => {
-    const r1 = await boq.createRevision(ORG, 'pjk', {
+    const r1 = await boq.createRevision(ORG, PJK, {
       materials: [{ id: 'c1', name: 'Concrete (all grades)', sourceText: 'Cement concrete in foundations',
                     quantity: 10, unit: 'm3', densityKey: 'concrete_normal' }] });
     // Client re-pastes using the original wording, with no mapping supplied.
-    const r2 = await boq.createRevision(ORG, 'pjk', {
+    const r2 = await boq.createRevision(ORG, PJK, {
       materials: [{ name: 'Cement concrete in foundations',
                     sourceText: 'Cement concrete in foundations ...... 14 m3', quantity: 14, unit: 'm3' }] });
     expect(r2.materials[0].densityKey).toBe('concrete_normal');
@@ -166,8 +180,8 @@ describe('BOQ materiality and restatement', () => {
   });
 
   test('removing the demolition scope does breach the threshold', async () => {
-    const r1 = await boq.createRevision(ORG, 'pj1', { note: 'Tender', materials: fx.MATERIALS, demolitionItems: fx.DEMOLITION_ITEMS });
-    const r2 = await boq.createRevision(ORG, 'pj1', { note: 'Demolition removed', materials: fx.MATERIALS, demolitionItems: [] });
+    const r1 = await boq.createRevision(ORG, PJ, { note: 'Tender', materials: fx.MATERIALS, demolitionItems: fx.DEMOLITION_ITEMS });
+    const r2 = await boq.createRevision(ORG, PJ, { note: 'Demolition removed', materials: fx.MATERIALS, demolitionItems: [] });
     const c = compare(r1, r2);
     expect(c.emissions.deltaPct).toBeCloseTo(-5.08, 1);
     expect(c.materiality.breaches).toBe(true);

@@ -15,15 +15,15 @@
 
 'use strict';
 
-const { runPartC } = require('../services/pcaf-partc');
-const { buildRegisters } = require('../services/partc-registers');
+const { runPartC } = require('../src/domains/pcaf-part-c/domain');
+const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
 const {
   splitByGhgScope, splitStageTotals, stageEmissions,
   SCOPE_OF, CONSTRUCTION_STAGES, USE_STAGE_STAGES
-} = require('../services/pcaf-partc/ghg-scopes');
-const { completeChecklist, ITEMS } = require('../services/partc-checklist');
-const standard = require('../services/partc-report-standard');
-const { RECALCULATION_TRIGGERS } = require('../schemas/partc-registry');
+} = require('../src/domains/pcaf-part-c/domain/ghg-scopes');
+const { completeChecklist, ITEMS } = require('../src/domains/pcaf-part-c/application/partc-checklist');
+const standard = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');
+const { RECALCULATION_TRIGGERS } = require('../src/domains/pcaf-part-c/interface/schemas/partc-registry');
 const fx = require('./fixtures/fisheries');
 
 const SETTINGS = {

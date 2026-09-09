@@ -27,9 +27,9 @@
 const fs   = require('fs');
 const path = require('path');
 
-const { basket } = require('../services/capital-basket');
-const { baselineBook } = require('../services/capital-baseline');
-const { capitalPosition } = require('../services/capital-metrics');
+const { basket } = require('../src/domains/capital/domain/capital-basket');
+const { baselineBook } = require('../src/domains/capital/infrastructure/capital-baseline');
+const { capitalPosition } = require('../src/domains/capital/domain/capital-metrics');
 
 const ROOT = path.join(__dirname, '..');
 const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
@@ -106,7 +106,7 @@ describe('Impact is three figures and never one', () => {
   });
 
   test('the source says avoidance is never set against the inventory', () => {
-    const src = read('services', 'capital-basket.js');
+    const src = read('src', 'domains', 'capital', 'domain', 'capital-basket.js');
     expect(src).toMatch(/never netted/);
     expect(src).toMatch(/Part A, p\.126/);
   });
@@ -134,7 +134,7 @@ describe('The scenario curve moves, and moves by exactly the basket', () => {
        nothing, so attribution on outstanding scales its emissions to zero and
        the curve does not move. A reader would take "this changes nothing" from
        a chart that had simply not been asked the question. */
-    const { bookSeries } = require('../services/capital-forecast');
+    const { bookSeries } = require('../src/domains/capital/domain/capital-forecast');
     const b = book();
     const ids = pipelineIds(b).slice(0, 2);
     const written = {

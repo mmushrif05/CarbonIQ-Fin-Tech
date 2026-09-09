@@ -19,8 +19,8 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
-const app = require('../server');
-const { conformanceMatrix, RULES, VALID_STATUS } = require('../services/gcf/conformance');
+const app = require('../src/server');
+const { conformanceMatrix, RULES, VALID_STATUS } = require('../src/domains/gcf/domain/conformance');
 
 const ROOT = path.join(__dirname, '..');
 const auth = r => r.set('x-api-key', process.env.UI_API_KEY);
@@ -169,7 +169,7 @@ describe('The generated document cannot drift from its source', () => {
 
   test('the counts in the document match the matrix', () => {
     const md = fs.readFileSync(DOC, 'utf8');
-    const { summarise } = require('../services/gcf/conformance');
+    const { summarise } = require('../src/domains/gcf/domain/conformance');
     const s = summarise();
     expect(md).toContain(`${s.implemented} implemented`);
     expect(md).toContain(`${s.total} rules`);

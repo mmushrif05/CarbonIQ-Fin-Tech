@@ -9,11 +9,11 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app     = require('../server');
-const { buildMethodology } = require('../services/partc-methodology');
-const { buildMethodologyPDF, buildMethodologyDOCX } = require('../services/partc-methodology-doc');
-const { runPartC }       = require('../services/pcaf-partc');
-const { buildRegisters } = require('../services/partc-registers');
+const app     = require('../src/server');
+const { buildMethodology } = require('../src/domains/pcaf-part-c/application/partc-methodology');
+const { buildMethodologyPDF, buildMethodologyDOCX } = require('../src/domains/pcaf-part-c/reporting/partc-methodology-doc');
+const { runPartC }       = require('../src/domains/pcaf-part-c/domain');
+const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
 const fx = require('./fixtures/fisheries');
 
 const auth = req => req.set('x-api-key', process.env.UI_API_KEY);
@@ -331,7 +331,7 @@ describe('It is not served', () => {
   test('the router declares no methodology handler and imports no builder', () => {
     const fs = require('fs');
     const path = require('path');
-    const src = fs.readFileSync(path.join(__dirname, '..', 'routes/v1/pcaf-partc.js'), 'utf8');
+    const src = fs.readFileSync(path.join(__dirname, '..', 'src/domains/pcaf-part-c/interface/routes/pcaf-partc.js'), 'utf8');
     expect(src).not.toMatch(/router\.(get|post)\(\s*'\/methodology'/);
     expect(src).not.toMatch(/require\([^)]*partc-methodology/);
   });
@@ -347,7 +347,7 @@ describe('It is not served', () => {
     const fs = require('fs');
     const path = require('path');
     const disclosure = fs.readFileSync(
-      path.join(__dirname, '..', 'services/partc-disclosure.js'), 'utf8');
+      path.join(__dirname, '..', 'src/domains/pcaf-part-c/application/partc-disclosure.js'), 'utf8');
     expect(disclosure).toMatch(/partc-methodology/);
   });
 });

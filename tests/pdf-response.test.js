@@ -10,8 +10,8 @@
 
 'use strict';
 
-const { assertWellFormedPdf, toBuffer, sendDocx } = require('../services/pdf-response');
-const theme = require('../services/partc-theme');
+const { assertWellFormedPdf, toBuffer, sendDocx } = require('../src/platform/reporting/pdf-response');
+const theme = require('../src/domains/pcaf-part-c/reporting/partc-theme');
 
 /** A real, minimal document from the house writer. */
 async function tinyPdf() {

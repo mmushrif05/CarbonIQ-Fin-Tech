@@ -1,0 +1,418 @@
+/**
+ * CarbonIQ FinTech — Agentic AI Orchestrator
+ *
+ * Executes multi-step AI workflows using Claude's tool-calling loop.
+ * Every step (tool calls, reasoning traces) is persisted to Firebase for
+ * regulatory audit trail compliance.
+ *
+ * --- Prompt Caching Strategy ---
+ *
+ * Three cache breakpoints are applied on every API call (max allowed: 4):
+ *
+ *   1. Tools (last tool definition)
+ *      Tool schemas are large (~50 tokens each × 18 tools = ~900 tokens)
+ *      and identical across all iterations of the same run.
+ *      Render order: tools → system → messages, so caching tools gives
+ *      the deepest prefix and highest cache hit rate.
+ *
+ *   2. System prompt
+ *      200–400 line agent instructions. Same on every iteration.
+ *      Cache reads cost ~10% of normal input token price.
+ *
+ *   3. Conversation history (rolling)
+ *      After each tool-call round trip, the entire prior message history
+ *      is stable — only the newest message is new. Placing cache_control
+ *      on the last content block of the most-recently-appended user turn
+ *      allows all prior history to be read from cache on the next iteration.
+ *
+ * For the underwriting agent (typically 5–7 iterations, 800–1200 tokens of
+ * tools + system), this reduces effective input token spend by 60–80%.
+ */
+
+'use strict';
+
+const crypto    = require('crypto');
+const Anthropic = require('@anthropic-ai/sdk');
+const config    = require('../config');
+const { saveAgentRun, updateAgentRun } = require('../bridge/firebase');
+const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../../shared/models/agent-run');
+const { Deadline } = require('./deadline');
+
+// Safety guard: never run more than this many loop iterations per agent run
+const MAX_ITERATIONS = 20;
+
+/**
+ * Generate a unique run ID.
+ * @returns {string} e.g. "run_1710000000000_a3f9"
+ */
+function generateRunId() {
+  return `run_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
+}
+
+// ---------------------------------------------------------------------------
+// Cache helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Return a copy of the tool definitions array with cache_control on the
+ * last entry. The last tool definition is the deepest cacheable position
+ * in the tools prefix and gives the highest cache hit rate.
+ *
+ * Does NOT mutate the input array.
+ *
+ * @param {Object[]} toolDefs
+ * @returns {Object[]}
+ */
+function _withCachedLastTool(toolDefs) {
+  if (!toolDefs || toolDefs.length === 0) return toolDefs;
+  const copy = toolDefs.slice();
+  copy[copy.length - 1] = { ...copy[copy.length - 1], cache_control: { type: 'ephemeral' } };
+  return copy;
+}
+
+/**
+ * Return a copy of the messages array with cache_control placed on the
+ * last content block of the most-recently-appended user message.
+ *
+ * This caches the entire conversation prefix up to that point so Claude
+ * can read it cheaply on the next iteration instead of re-processing it.
+ *
+ * Does NOT mutate the input array or any message objects.
+ *
+ * @param {Array} messages
+ * @returns {Array}
+ */
+function _withCachedLastUserMessage(messages) {
+  if (!messages || messages.length === 0) return messages;
+
+  // Find the index of the last user-role message
+  let lastUserIdx = -1;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'user') { lastUserIdx = i; break; }
+  }
+  if (lastUserIdx === -1) return messages;
+
+  const msg     = messages[lastUserIdx];
+  const content = msg.content;
+
+  let newContent;
+  if (typeof content === 'string') {
+    // Convert to block array so we can attach cache_control
+    newContent = [{ type: 'text', text: content, cache_control: { type: 'ephemeral' } }];
+  } else if (Array.isArray(content) && content.length > 0) {
+    const blocks = content.slice();
+    blocks[blocks.length - 1] = { ...blocks[blocks.length - 1], cache_control: { type: 'ephemeral' } };
+    newContent = blocks;
+  } else {
+    return messages; // unexpected shape — don't touch
+  }
+
+  const copy = messages.slice();
+  copy[lastUserIdx] = { ...msg, content: newContent };
+  return copy;
+}
+
+/**
+ * Accumulate cache token counters from a response into run.tokensUsed.
+ */
+function _accumulateTokens(run, usage) {
+  run.tokensUsed.input       += usage.input_tokens                    || 0;
+  run.tokensUsed.output      += usage.output_tokens                   || 0;
+  run.tokensUsed.cacheRead   += usage.cache_read_input_tokens         || 0;
+  run.tokensUsed.cacheCreated += usage.cache_creation_input_tokens    || 0;
+}
+
+// ---------------------------------------------------------------------------
+// runAgent — multi-turn agentic loop
+// ---------------------------------------------------------------------------
+
+/**
+ * Execute an agentic AI workflow.
+ *
+ * @param {Object}   params
+ * @param {string}   params.agentType        - Agent identifier (e.g. 'underwriting')
+ * @param {string}   params.systemPrompt     - The agent's role and instructions
+ * @param {Object[]} params.toolDefinitions  - Claude tool schemas (name, description, input_schema)
+ * @param {Object}   params.toolFunctions    - Map of toolName → async function(input)
+ * @param {string}   params.userMessage      - The initial user request / task description
+ * @param {string}   params.orgId            - Organisation ID for Firebase scoping
+ * @param {Object}   [params.metadata]       - Extra context stored with the run
+ * @param {Object}   [params.callProfile]    - Per-agent cost of a turn: {maxTokens, thinking}.
+ *                                             Omit for the reasoning default (adaptive, 32K).
+ *                                             thinking:null turns thinking off for agents that
+ *                                             classify rather than reason.
+ *
+ * @returns {Promise<Object>} Completed run record with steps, result, tokensUsed
+ */
+async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunctions, userMessage, orgId, metadata, deadline, callProfile }) {
+  if (!config.anthropicApiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not configured. Agentic AI is unavailable.');
+  }
+
+  const runId = generateRunId();
+  const run   = createRunRecord({ runId, agentType, orgId, userMessage, metadata: metadata || {} });
+
+  // Persist initial "running" state so callers can poll for progress
+  await saveAgentRun(orgId, run);
+
+  /* One clock for the whole request. Without it each iteration claimed its own
+     20 seconds and the function was killed mid-loop — which returns no body,
+     and therefore no explanation. */
+  const clock = deadline || new Deadline();
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, ...clock.clientOptions() });
+
+  /* What one turn costs this agent. Undeclared means the reasoning default,
+     so every existing agent behaves exactly as before. */
+  const profile  = callProfile || {};
+  const thinking = profile.thinking === null ? null : (profile.thinking || { type: 'adaptive' });
+
+  // Cache breakpoint 2: system prompt (same on every iteration)
+  const cachedSystem = [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }];
+
+  // Cache breakpoint 1: last tool definition (tools render before system,
+  // so this gives the deepest prefix)
+  const cachedTools = _withCachedLastTool(toolDefinitions);
+
+  /* A string for most agents, but may be an array of content blocks so a PDF
+     reaches the model directly. Handing the document to the agent that maps it
+     removes an entire transcription round-trip — the thing that made the PDF
+     path unable to fit inside one invocation. */
+  const messages = [{ role: 'user', content: userMessage }];
+  let iterations = 0;
+
+  try {
+    // -----------------------------------------------------------------------
+    // Agentic loop
+    // -----------------------------------------------------------------------
+    while (iterations < MAX_ITERATIONS) {
+      /* Stop before a turn that cannot finish. Breaking here returns the run
+         with what it has and an explanation; being killed by the platform
+         returns neither. */
+      if (!clock.canStart()) {
+        run.error = `Ran out of time after ${iterations} step(s): `
+          + `${Math.round(clock.elapsed() / 1000)}s of the `
+          + `${Math.round(clock.budgetMs / 1000)}s request budget was spent.`;
+        break;
+      }
+      iterations++;
+
+      // Cache breakpoint 3 (rolling): last user message in current history.
+      // Caches the entire conversation prefix up to this point so the next
+      // iteration reads prior history cheaply.
+      const cachedMessages = _withCachedLastUserMessage(messages);
+
+      // Use streaming + finalMessage() to prevent Netlify 10s HTTP timeouts
+      // on long memo generation, and to allow up to 32K output tokens safely.
+      // Adaptive thinking lets claude-opus-4-6 decide how deeply to reason on
+      // complex steps (PCAF attribution, multi-taxonomy analysis, etc.) without
+      // a fixed budget_tokens cap.
+      /* Not every agent needs to reason. Underwriting weighs regulation and
+         earns adaptive thinking and a 32,000-token ceiling; mapping classifies
+         BOQ lines against a fixed vocabulary and pays for both in the only
+         resource a 26-second function has none of. An agent may therefore
+         declare what a turn should cost it. */
+      const params = {
+        model:      config.anthropicModel,
+        max_tokens: Number(profile.maxTokens) || 32000,
+        system:     cachedSystem,
+        tools:      cachedTools,
+        messages:   cachedMessages
+      };
+      if (thinking) params.thinking = thinking;
+
+      const stream = client.messages.stream(params, clock.clientOptions());
+
+      const response = await stream.finalMessage();
+
+      _accumulateTokens(run, response.usage);
+
+      // Thinking blocks are internal reasoning — strip them before surfacing to
+      // callers; only text and tool_use blocks are meaningful for the run record.
+      // Thinking blocks are internal reasoning — strip them before surfacing
+      // to callers; only text and tool_use blocks matter for the run record.
+      const textBlocks    = response.content.filter(b => b.type === 'text');
+      const toolUseBlocks = response.content.filter(b => b.type === 'tool_use');
+
+      // Record any reasoning text the agent emitted before/between tool calls
+      if (textBlocks.length > 0) {
+        run.steps.push({
+          step:      run.steps.length + 1,
+          type:      STEP_TYPES.REASONING,
+          content:   textBlocks.map(b => b.text).join('\n'),
+          timestamp: new Date().toISOString()
+        });
+      }
+
+      // ------------------------------------------------------------------
+      // pause_turn — server-side tool loop (web_search, web_fetch, code
+      // execution) hit its 10-iteration limit. Append the assistant turn
+      // and re-send so the API resumes from where it left off. The API
+      // detects the trailing server_tool_use block and resumes automatically.
+      // ------------------------------------------------------------------
+      if (response.stop_reason === 'pause_turn') {
+        messages.push({ role: 'assistant', content: response.content });
+        continue;
+      }
+
+      // ------------------------------------------------------------------
+      // No user-defined tool calls → agent has finished and produced its answer
+      // server_tool_use blocks (web searches) are handled by the API internally
+      // and do not appear here; they are invisible to the client-side loop.
+      // ------------------------------------------------------------------
+      if (toolUseBlocks.length === 0 || response.stop_reason === 'end_turn') {
+        run.result      = textBlocks.map(b => b.text).join('\n');
+        run.status      = AGENT_STATUS.COMPLETED;
+        run.completedAt = new Date().toISOString();
+        break;
+      }
+
+      // Append the assistant's full response (including tool_use blocks) to history
+      messages.push({ role: 'assistant', content: response.content });
+
+      // ------------------------------------------------------------------
+      // Execute each tool the agent requested
+      // ------------------------------------------------------------------
+      const toolResults = [];
+
+      for (const toolUse of toolUseBlocks) {
+        const toolFn    = toolFunctions[toolUse.name];
+        let   output    = null;
+        let   toolError = null;
+
+        try {
+          if (!toolFn) {
+            throw new Error(`Tool "${toolUse.name}" is not registered for this agent.`);
+          }
+          output = await toolFn(toolUse.input);
+        } catch (err) {
+          toolError = err.message;
+          output    = { error: err.message };
+        }
+
+        // Log every tool call with its full input/output for audit trail
+        run.steps.push({
+          step:      run.steps.length + 1,
+          type:      STEP_TYPES.TOOL_CALL,
+          tool:      toolUse.name,
+          input:     toolUse.input,
+          output,
+          error:     toolError || null,
+          timestamp: new Date().toISOString()
+        });
+
+        toolResults.push({
+          type:        'tool_result',
+          tool_use_id: toolUse.id,
+          content:     JSON.stringify(output)
+        });
+      }
+
+      // Return tool results to Claude so it can reason about them.
+      // This user message will be cached on the NEXT iteration (breakpoint 3).
+      messages.push({ role: 'user', content: toolResults });
+
+      // Persist progress to Firebase (non-blocking — best-effort mid-run save)
+      updateAgentRun(orgId, runId, {
+        steps:      run.steps,
+        tokensUsed: run.tokensUsed
+      }).catch(() => {});
+    }
+
+    // Safety: if we exited the loop without a result, mark as failed
+    if (run.status === AGENT_STATUS.RUNNING) {
+      run.status      = AGENT_STATUS.FAILED;
+      run.error       = `Agent exceeded maximum iterations (${MAX_ITERATIONS}) without producing a final answer.`;
+      run.completedAt = new Date().toISOString();
+    }
+
+  } catch (err) {
+    run.status      = AGENT_STATUS.FAILED;
+    run.error       = err.message;
+    run.completedAt = new Date().toISOString();
+  }
+
+  // Final authoritative save to Firebase
+  await updateAgentRun(orgId, runId, {
+    status:      run.status,
+    steps:       run.steps,
+    result:      run.result,
+    error:       run.error,
+    tokensUsed:  run.tokensUsed,
+    completedAt: run.completedAt
+  });
+
+  return run;
+}
+
+// ---------------------------------------------------------------------------
+// runAgentSingleCall — single Claude call, no tool loop
+// ---------------------------------------------------------------------------
+
+/**
+ * Run an agent with a single Claude API call (no tool-calling loop).
+ *
+ * Use this when tool results have already been pre-computed locally and
+ * embedded in the userMessage. Claude just needs to write the final output.
+ * Keeps execution under Netlify's 10-second function timeout.
+ *
+ * @param {Object} params - Same shape as runAgent, minus toolDefinitions/toolFunctions
+ * @returns {Promise<Object>} Run record with status, result, tokensUsed
+ */
+async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId, metadata }) {
+  if (!config.anthropicApiKey) {
+    throw new Error('ANTHROPIC_API_KEY is not configured. Agentic AI is unavailable.');
+  }
+
+  const runId = generateRunId();
+  const run   = createRunRecord({ runId, agentType, orgId, userMessage, metadata: metadata || {} });
+
+  await saveAgentRun(orgId, run);
+
+  const client = new Anthropic({ apiKey: config.anthropicApiKey, timeout: config.anthropicTimeoutMs, maxRetries: config.anthropicMaxRetries });
+
+  try {
+    // claude-haiku-4-5 is the current alias (date-suffix IDs are deprecated).
+    // max_tokens raised to 8000: screening memos have 6 sections + tables and
+    // regularly exceed 2048 tokens, causing truncated output.
+    const fastModel = process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5';
+
+    const response = await client.messages.create({
+      model:      fastModel,
+      max_tokens: 8000,
+      // Cache the system prompt — same for every call to this agent type
+      system:   [{ type: 'text', text: systemPrompt, cache_control: { type: 'ephemeral' } }],
+      messages: [{ role: 'user', content: userMessage }]
+    });
+
+    _accumulateTokens(run, response.usage);
+
+    run.result      = response.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+    run.status      = AGENT_STATUS.COMPLETED;
+    run.completedAt = new Date().toISOString();
+
+    run.steps.push({
+      step:      1,
+      type:      STEP_TYPES.REASONING,
+      content:   run.result,
+      timestamp: run.completedAt
+    });
+
+  } catch (err) {
+    run.status      = AGENT_STATUS.FAILED;
+    run.error       = err.message;
+    run.completedAt = new Date().toISOString();
+  }
+
+  await updateAgentRun(orgId, runId, {
+    status:      run.status,
+    steps:       run.steps,
+    result:      run.result,
+    error:       run.error,
+    tokensUsed:  run.tokensUsed,
+    completedAt: run.completedAt
+  });
+
+  return run;
+}
+
+module.exports = { runAgent, runAgentSingleCall, _withCachedLastTool, _withCachedLastUserMessage, _accumulateTokens };

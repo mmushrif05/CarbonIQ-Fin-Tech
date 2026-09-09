@@ -9,7 +9,7 @@ Two open-licensed families, embedded in every PDF the application generates.
 
 ## Why these are in the repository
 
-`services/partc-theme.js` reads them with `fs.readFileSync` at render time.
+`src/domains/pcaf-part-c/reporting/partc-theme.js` reads them with `fs.readFileSync` at render time.
 Netlify's bundler traces `require()` calls, not file paths, so the files are
 named in `netlify.toml` under `included_files` — without that the function
 ships without them and every report silently falls back to the built-in PDF

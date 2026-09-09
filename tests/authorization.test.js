@@ -1,7 +1,7 @@
 /**
  * CarbonIQ FinTech — Hybrid RBAC + ABAC Authorization Tests
  *
- * Tests middleware/authorization.js policy engine:
+ * Tests src/platform/auth/authorization.js policy engine:
  *   - RBAC: role-based permission checks
  *   - ABAC: attribute-based contextual constraints
  *   - Legacy permission mapping for backwards compatibility
@@ -14,13 +14,13 @@ const express = require('express');
 const request = require('supertest');
 
 // Mock firebase so auth.js doesn't blow up
-jest.mock('../bridge/firebase', () => ({
+jest.mock('../src/platform/bridge/firebase', () => ({
   getFirebaseAdmin: () => null,
   getDatabase: () => null,
 }));
 
-const { authorize, buildSubject, checkAccess, _mapLegacyPermissions, _checkRBAC, _checkABAC } = require('../middleware/authorization');
-const { PERMISSIONS, ROLES } = require('../config/policies');
+const { authorize, buildSubject, checkAccess, _mapLegacyPermissions, _checkRBAC, _checkABAC } = require('../src/platform/auth/authorization');
+const { PERMISSIONS, ROLES } = require('../src/shared/policies');
 
 // ---------------------------------------------------------------------------
 // Unit tests — buildSubject

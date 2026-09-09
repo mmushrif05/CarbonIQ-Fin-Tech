@@ -13,11 +13,11 @@ let mockDb          = null;
 let mockSnapshot    = null;
 let mockDbSetError  = null;
 
-jest.mock('../bridge/firebase', () => ({
+jest.mock('../src/platform/bridge/firebase', () => ({
   getDatabase: () => mockDb
 }));
 
-const apiKeyAuth = require('../middleware/api-key');
+const apiKeyAuth = require('../src/platform/auth/api-key');
 const { requireProjectAccess, requirePermission, hashApiKey } = apiKeyAuth;
 
 // ─── helpers ─────────────────────────────────────────────────────────────────

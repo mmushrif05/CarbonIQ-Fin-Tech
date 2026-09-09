@@ -27,10 +27,10 @@ process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
-const app = require('../server');
-const partcStore = require('../services/partc-store');
-const record = require('../services/gcf/record');
-const store = require('../services/gcf/store');
+const app = require('../src/server');
+const partcStore = require('../src/platform/database/store');
+const record = require('../src/domains/gcf/domain/record');
+const store = require('../src/domains/gcf/infrastructure/store');
 const SEED = require('../data/gcf/pipeline.seed.json');
 
 const KEY = process.env.UI_API_KEY;

@@ -19,8 +19,8 @@
 const fs   = require('fs');
 const path = require('path');
 
-const { generateReport } = require('../services/reports');
-const integrity = require('../services/report-integrity');
+const { generateReport } = require('../src/domains/lending/application/reports');
+const integrity = require('../src/shared/report-integrity');
 
 const TYPES = ['pcaf', 'gri305', 'tcfd', 'ifrs-s2', 'slgft', 'slgft-cbsl'];
 
@@ -162,7 +162,7 @@ describe('Sample figures announce themselves', () => {
 
 describe('The invented constants are gone from the source', () => {
   // A sweep, because a feature test only walks the paths it happens to touch.
-  const src = fs.readFileSync(path.join(__dirname, '..', 'services', 'reports.js'), 'utf8');
+  const src = fs.readFileSync(path.join(__dirname, '..', 'src', 'domains', 'lending', 'application', 'reports.js'), 'utf8');
   const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
   test.each([

@@ -5,12 +5,12 @@
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request  = require('supertest');
-const app      = require('../server');
-const A        = require('../services/partc-assessments');
-const registry = require('../services/partc-registry');
-const boq      = require('../services/partc-boq');
-const store    = require('../services/partc-store');
-const { seedDemoBook } = require('../services/partc-demo-data');
+const app      = require('../src/server');
+const A        = require('../src/domains/pcaf-part-c/application/partc-assessments');
+const registry = require('../src/domains/pcaf-part-c/application/partc-registry');
+const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
+const store    = require('../src/platform/database/store');
+const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
 const fx       = require('./fixtures/fisheries');
 
 const KEY  = process.env.UI_API_KEY;
@@ -22,7 +22,7 @@ const SITE = { demolitionKm: 100, wasteDisposalKm: 40, previousProject: fx.PREVI
 let book, negombo, carPolicy, R1, R2, R3;
 
 beforeEach(async () => {
-  store._resetMemory();
+  await store._resetMemory();
   book = await seedDemoBook(registry, ORG, boq);
   negombo = book.projects.find(p => /Negombo/.test(p.name));
   carPolicy = negombo.policies[0];

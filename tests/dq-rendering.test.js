@@ -17,7 +17,7 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const DIRS = ['services', 'routes', 'ui/js', 'ui/pages'];
+const DIRS = ['src', 'ui/js', 'ui/pages'];
 const FILES = ['ui/index.html'];
 
 /** Every source file that could render a score, with its text. */
@@ -82,7 +82,7 @@ describe('No data-quality score is rendered as a fraction of five', () => {
 });
 
 describe('The scale direction is stated where a score is shown', () => {
-  const { SCALE_NOTE } = require('../services/pcaf-partc/data-quality');
+  const { SCALE_NOTE } = require('../src/domains/pcaf-part-c/domain/data-quality');
 
   test('the canonical wording names 1 as the highest quality', () => {
     expect(SCALE_NOTE).toMatch(/1 is the highest data quality/i);
@@ -90,7 +90,7 @@ describe('The scale direction is stated where a score is shown', () => {
   });
 
   test('the engine carries it on every scored result', () => {
-    const { runPartC } = require('../services/pcaf-partc');
+    const { runPartC } = require('../src/domains/pcaf-part-c/domain');
     const fx = require('./fixtures/fisheries');
     const r = runPartC(fx.idiInput());
     expect(r.dataQuality.scaleNote).toBe(SCALE_NOTE);

@@ -15,8 +15,8 @@
 
 'use strict';
 
-const metrics  = require('../services/capital-metrics');
-const baseline = require('../services/capital-baseline');
+const metrics  = require('../src/domains/capital/domain/capital-metrics');
+const baseline = require('../src/domains/capital/infrastructure/capital-baseline');
 
 const BOOK = baseline.baselineBook();
 

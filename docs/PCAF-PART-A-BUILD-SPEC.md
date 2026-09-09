@@ -115,11 +115,11 @@ some classes, silently.
 
 ## 2. Module structure
 
-Entirely separate from `services/pcaf-partc/` and from the legacy
-`services/pcaf.js`. Three scopes, never merged.
+Entirely separate from `src/domains/pcaf-part-c/domain/` and from the legacy
+`src/domains/lending/application/pcaf.js`. Three scopes, never merged.
 
 ```
-services/pcaf-parta/
+src/domains/pcaf-part-a/domain/
   index.js            orchestration — assess one exposure, and a portfolio
   asset-classes.js    the ten classes: definition, required inputs, denominator
                       rule, DQ table id, which scopes apply
@@ -145,8 +145,8 @@ data/pcaf-parta/
   asset-classes.json  ten classes, each citing its section
   dq-tables/          ONE TABLE PER ASSET CLASS, each row citing its page
 
-schemas/pcaf-parta.js
-routes/v1/pcaf-parta.js
+src/domains/pcaf-part-a/interface/schemas/pcaf-parta.js
+src/domains/pcaf-part-a/interface/routes/pcaf-parta.js
 ui/pages/pcaf-parta.html      manual entry + exposure register
 tests/parta-*.test.js
 ```
@@ -175,7 +175,7 @@ come later without blocking v1.
 2. **1 is best, 5 is worst**; never rendered `3 / 5`; enforced by a source sweep.
 3. Every figure is a **traced value**; registers derive from the trace.
 4. **Refuse rather than render zero** — a year with no exposures is a 409.
-5. **Measured / declared / absent** (`services/report-integrity.js`) from day one.
+5. **Measured / declared / absent** (`src/shared/report-integrity.js`) from day one.
 6. One content model, one renderer, for every document.
 
 ## 5. Phases
@@ -196,10 +196,10 @@ come later without blocking v1.
 2. **Which scopes are mandatory per class**, and the mandatory sectors for scope 3
    (DCL Absolute Emissions item 2) — to be read per class in Chapter 5.
 3. **Attribution factor above 1** — disclosed, capped, or refused. The legacy
-   `services/pcaf.js` silently caps at 1; that behaviour must not carry over
+   `src/domains/lending/application/pcaf.js` silently caps at 1; that behaviour must not carry over
    without a decision.
 4. **Sector taxonomy** for the sector-level disaggregation requirement (p.125)
    — NACE, GICS, or the borrower's own.
-5. `services/pcaf.js` currently labels attributed embodied carbon as "PCAF v3".
+5. `src/domains/lending/application/pcaf.js` currently labels attributed embodied carbon as "PCAF v3".
    Once Part A exists it must stop claiming to be PCAF.
 

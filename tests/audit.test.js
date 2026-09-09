@@ -1,6 +1,6 @@
 const request = require('supertest');
 const express = require('express');
-const audit = require('../middleware/audit');
+const audit = require('../src/platform/observability/audit');
 
 describe('Audit Middleware', () => {
   it('attaches X-Request-Id to response', async () => {

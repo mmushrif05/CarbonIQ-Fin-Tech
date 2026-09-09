@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — Carbon Finance Score Tests
  */
 
-const { calculateCarbonFinanceScore } = require('../services/score');
+const { calculateCarbonFinanceScore } = require('../src/domains/lending/domain/score');
 
 describe('Carbon Finance Score', () => {
   test('returns green classification for high-scoring project', () => {

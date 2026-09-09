@@ -63,7 +63,7 @@ jest.mock('@anthropic-ai/sdk', () => {
 // ---------------------------------------------------------------------------
 
 describe('NDC/SDG Service', () => {
-  const { assessNdcSdgAlignment } = require('../services/ndc-sdg');
+  const { assessNdcSdgAlignment } = require('../src/domains/taxonomy/application/ndc-sdg');
 
   const BASE_PROJECT = {
     name: 'Colombo Green Tower',
@@ -154,7 +154,7 @@ const TEST_KEY = process.env.DEV_API_KEY || 'ck_test_000000000000000000000000000
 const AUTH     = { 'x-api-key': TEST_KEY };
 
 describe('POST /v1/ndc-sdg/assess', () => {
-  const app = require('../server');
+  const app = require('../src/server');
 
   const VALID_BODY = {
     name: 'Colombo Green Tower',
@@ -225,7 +225,7 @@ describe('POST /v1/ndc-sdg/assess', () => {
 // ---------------------------------------------------------------------------
 
 describe('GET /v1/ndc-sdg/framework', () => {
-  const app = require('../server');
+  const app = require('../src/server');
 
   test('requires API key', async () => {
     const res = await request(app).get('/v1/ndc-sdg/framework');

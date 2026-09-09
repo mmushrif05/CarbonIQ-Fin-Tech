@@ -1,5 +1,5 @@
 const request = require('supertest');
-const app = require('../server');
+const app = require('../src/server');
 
 describe('GET /v1', () => {
   it('returns service info without auth', async () => {
