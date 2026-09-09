@@ -374,7 +374,7 @@ async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId,
     // claude-haiku-4-5 is the current alias (date-suffix IDs are deprecated).
     // max_tokens raised to 8000: screening memos have 6 sections + tables and
     // regularly exceed 2048 tokens, causing truncated output.
-    const fastModel = process.env.ANTHROPIC_FAST_MODEL || 'claude-haiku-4-5';
+    const fastModel = config.anthropicFastModel;
 
     const response = await client.messages.create({
       model:      fastModel,

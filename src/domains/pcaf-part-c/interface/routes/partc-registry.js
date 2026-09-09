@@ -47,20 +47,7 @@ const { createAssessmentSchema, statusChangeSchema } = require('../schemas/partc
 
 const router = Router();
 
-/** Turn a service-thrown error carrying statusCode into a clean response. */
-function fail(res, err) {
-  const status = err.statusCode || 500;
-  return res.status(status).json({
-    error: err.code || 'REGISTRY_ERROR',
-    message: err.message,
-    ...(err.remedy ? { remedy: err.remedy } : {})
-  });
-}
-
-const handle = fn => async (req, res, next) => {
-  try { await fn(req, res, next); }
-  catch (err) { if (err.statusCode) return fail(res, err); next(err); }
-};
+const handle = require('../../../../platform/http/async-handler');
 
 // ---------------------------------------------------------------------------
 // Storage capability
@@ -332,7 +319,7 @@ router.post('/assessments/:assessmentId/status', apiKeyAuth, defaultLimiter,
   handle(async (req, res) => {
     const a = await assessments.changeStatus(
       req.apiKey.orgId, req.params.assessmentId, req.body.status,
-      { note: req.body.note, actor: req.apiKey.orgName || req.apiKey.orgId });
+      { note: req.body.note, actor: (req.actor && req.actor.label) || req.apiKey.orgName || req.apiKey.orgId });
     res.json({ assessment: a });
   }));
 

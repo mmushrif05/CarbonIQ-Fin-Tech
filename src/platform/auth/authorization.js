@@ -203,7 +203,7 @@ function authorize(permission, opts = {}) {
 
     const env = {
       timestamp: Date.now(),
-      loanAmountThreshold: parseInt(process.env.LOAN_AMOUNT_THRESHOLD, 10) || 50_000_000,
+      loanAmountThreshold: require('../config').runtime.loanAmountThreshold,
       ...opts.env,
     };
 

@@ -30,6 +30,7 @@
 'use strict';
 
 const { AsyncLocalStorage } = require('async_hooks');
+const config = require('../config');
 
 let pgLib = null;
 try { pgLib = require('pg'); } catch (_) { pgLib = null; }
@@ -39,12 +40,12 @@ let _pool = null;
 
 /** Configured means: the driver is installed and DATABASE_URL is set. */
 function isConfigured() {
-  return !!(pgLib && String(process.env.DATABASE_URL || '').trim());
+  return !!(pgLib && String(config.runtime.databaseUrl).trim());
 }
 
 /** A schema name is an identifier, and an identifier is validated, never quoted around. */
 function schemaName() {
-  const s = String(process.env.DATABASE_SCHEMA || 'public').trim();
+  const s = String(config.runtime.databaseSchema || 'public').trim();
   if (!/^[a-z_][a-z0-9_]{0,62}$/.test(s)) {
     const err = new Error(`DATABASE_SCHEMA "${s}" is not a plain lower-case identifier.`);
     err.code = 'DATABASE_SCHEMA_INVALID';
@@ -54,7 +55,7 @@ function schemaName() {
 }
 
 function sslConfig() {
-  const v = String(process.env.DATABASE_SSL || '').trim().toLowerCase();
+  const v = String(config.runtime.databaseSsl).trim().toLowerCase();
   if (v === 'true' || v === 'require') return { rejectUnauthorized: true };
   if (v === 'no-verify') return { rejectUnauthorized: false };
   if (v === 'false' || v === 'disable') return false;
@@ -72,12 +73,12 @@ function pool() {
   const schema = schemaName();
   const ssl = sslConfig();
   _pool = new pgLib.Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: config.runtime.databaseUrl,
     ...(ssl === undefined ? {} : { ssl }),
     /* The schema travels as a startup parameter, so it is in force before
        the first statement and needs no query of its own on connect. */
     options: `-c search_path=${schema}`,
-    max: Math.max(1, Number(process.env.DATABASE_POOL_MAX) || 3),
+    max: Math.max(1, Number(config.runtime.databasePoolMax) || 3),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 5_000,
   });

@@ -26,12 +26,17 @@ function chainWrite(req, res, logEntry) {
   if (store.capability().mode !== 'postgres') return;
   const { auditChain } = require('../database');
   auditChain.append({
-    orgId: logEntry.orgId || (req.user && req.user.orgId) || null,
-    actor: logEntry.userId || (req.apiKey && (req.apiKey.name || req.apiKey.orgId)) || null,
+    orgId: logEntry.orgId || (req.user && req.user.organizationId) || null,
+    actor: (req.actor && req.actor.id) || logEntry.userId || (req.apiKey && (req.apiKey.keyName || req.apiKey.orgId)) || null,
     action: `${req.method} ${req.path}`,
     resource: req.originalUrl,
     requestId: req.requestId,
-    detail: { status: res.statusCode, authType: logEntry.authType || null, durationMs: Number(logEntry.duration.replace('ms', '')) },
+    detail: {
+      status: res.statusCode, authType: logEntry.authType || null, durationMs: Number(logEntry.duration.replace('ms', '')),
+      scope: req.requiredScope || null, actorVia: req.actor ? req.actor.via : null,
+      ...(req.apiKey && req.apiKey.keyName ? { keyName: req.apiKey.keyName } : {}),
+      ...(req.apiKey && req.apiKey.unscoped ? { unscoped: true } : {}),
+    },
   }).catch(err => {
     console.error('[AUDIT] chain write failed:', err.code || '', err.message, `(request ${req.requestId})`);
   });
@@ -66,7 +71,13 @@ function audit(req, res, next) {
     } else if (req.apiKey) {
       logEntry.authType = 'api_key';
       logEntry.orgId = req.apiKey.orgId;
+      if (req.apiKey.keyName) logEntry.keyName = req.apiKey.keyName;
+      if (req.apiKey.unscoped) logEntry.unscoped = true;
     }
+    /* The person, where one was named (X-Actor), else the key. "Who locked
+       this assessment" is answerable to a person, not only to an organisation. */
+    if (req.actor && req.actor.id) logEntry.actor = req.actor.id;
+    if (req.requiredScope) logEntry.scope = req.requiredScope;
 
     // Log to stdout (captured by Netlify / Docker logs)
     if (res.statusCode >= 400) {

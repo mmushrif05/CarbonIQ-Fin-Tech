@@ -12,6 +12,25 @@
 const crypto = require('crypto');
 const config = require('../config');
 const { getDatabase } = require('../bridge/firebase');
+const { enforceScope, actorOf, UI_KEY_SCOPES, DEV_KEY_SCOPES } = require('./scopes');
+
+/**
+ * Every authenticated request ends here: the subject is on the request, the
+ * actor is named, and the route's scope is enforced. One exit, so no route
+ * can be authenticated without being authorised.
+ */
+function admit(req, res, next) {
+  req.actor = actorOf(req);
+  return enforceScope(req, res, next);
+}
+
+/** A key past its expiry is refused with the date, so the fix is obvious. */
+function expired(keyData) {
+  if (!keyData || !keyData.expiresAt) return null;
+  const at = new Date(keyData.expiresAt);
+  if (Number.isNaN(at.getTime())) return null;
+  return at.getTime() <= Date.now() ? at.toISOString() : null;
+}
 
 function hashApiKey(key) {
   return crypto
@@ -40,15 +59,19 @@ async function apiKeyAuth(req, res, next) {
 
   // UI key bypass: UI_API_KEY env var allows the frontend's hardcoded key to work
   // in all environments (dev + production). Set this in Netlify environment variables.
-  const uiKey = process.env.UI_API_KEY;
+  const uiKey = config.runtime.uiApiKey;
   if (uiKey && apiKey === uiKey) {
-    req.apiKey = { orgId: 'ui', orgName: 'CarbonIQ Frontend', projectIds: [], permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'], rateLimit: 500 };
-    return next();
+    req.apiKey = {
+      orgId: 'ui', orgName: 'CarbonIQ Frontend', keyName: 'dashboard', projectIds: [],
+      permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'],
+      scopes: [...UI_KEY_SCOPES], rateLimit: 500,
+    };
+    return admit(req, res, next);
   }
 
   // Dev bypass: when Firebase is not configured, allow the DEV_API_KEY env var.
   // Set DEV_API_KEY in .env (development only — never set in production).
-  const devKey = process.env.DEV_API_KEY;
+  const devKey = config.runtime.devApiKey;
   const db = getDatabase();
   if (!db && devKey && apiKey === devKey) {
     // Same permission set as the dashboard key. An empty list here meant the
@@ -56,11 +79,11 @@ async function apiKeyAuth(req, res, next) {
     // failed every authorization check with a 403, which reads as a broken
     // endpoint rather than as a key that grants nothing.
     req.apiKey = {
-      orgId: 'dev', orgName: 'Development', projectIds: [],
+      orgId: 'dev', orgName: 'Development', keyName: 'dev', projectIds: [],
       permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'],
-      rateLimit: 1000
+      scopes: [...DEV_KEY_SCOPES], rateLimit: 1000
     };
-    return next();
+    return admit(req, res, next);
   }
 
   try {
@@ -81,12 +104,29 @@ async function apiKeyAuth(req, res, next) {
       });
     }
 
-    // Attach key metadata to request — includes optional role for RBAC
+    const expiredAt = expired(keyData);
+    if (expiredAt) {
+      return res.status(401).json({
+        error: 'KEY_EXPIRED',
+        message: `This API key expired at ${expiredAt}.`,
+        remedy: keyData.supersededBy
+          ? 'A replacement key was issued when this one was rotated; use it.'
+          : 'Ask your administrator to rotate the key: npm run key:rotate -- <key-id>.'
+      });
+    }
+
+    // Attach key metadata to request — includes optional role for RBAC.
+    // `scopes` is absent on a key issued before scopes existed; enforceScope
+    // treats that as unscoped and says so on the response.
     req.apiKey = {
+      keyId: hashedKey,
+      keyName: keyData.keyName || null,
       orgId: keyData.orgId,
       orgName: keyData.orgName,
       projectIds: keyData.projectIds || [],
       permissions: keyData.permissions || [],
+      scopes: Array.isArray(keyData.scopes) ? keyData.scopes : undefined,
+      expiresAt: keyData.expiresAt || null,
       role: keyData.role || null,
       rateLimit: keyData.rateLimit || config.apiKey.defaultRateLimit
     };
@@ -96,7 +136,7 @@ async function apiKeyAuth(req, res, next) {
       console.error('[API-KEY] lastUsed update failed:', err.message)
     );
 
-    next();
+    return admit(req, res, next);
   } catch (err) {
     return res.status(500).json({
       error: 'AUTH_ERROR',
@@ -146,3 +186,4 @@ module.exports = apiKeyAuth;
 module.exports.requireProjectAccess = requireProjectAccess;
 module.exports.requirePermission = requirePermission;
 module.exports.hashApiKey = hashApiKey;
+module.exports.expired = expired;

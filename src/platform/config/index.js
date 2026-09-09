@@ -94,7 +94,76 @@ const config = {
   log: {
     level: process.env.LOG_LEVEL || 'info',
     verbose: process.env.LOG_VERBOSE === 'true'
-  }
+  },
+
+  /* --- Read at the moment of use ---
+     Everything above is read once, at load. These are read on every access,
+     because they are the variables a deployment context, a test or an
+     operator changes while the process runs — the storage backend, the
+     database, the dashboard key — and the store, the health check and the
+     tests all expect to see the change. They are still the only place the
+     variable is named: a test asserts no `process.env` is read outside this
+     file. */
+  runtime: {
+    get uiApiKey() { return process.env.UI_API_KEY || ''; },
+    get devApiKey() { return process.env.DEV_API_KEY || ''; },
+    get storageBackend() { return process.env.STORAGE_BACKEND || ''; },
+    get isServerless() { return !!(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT); },
+    get isTest() { return process.env.NODE_ENV === 'test'; },
+    get databaseUrl() { return process.env.DATABASE_URL || ''; },
+    get databaseSchema() { return process.env.DATABASE_SCHEMA || ''; },
+    get databaseSsl() { return process.env.DATABASE_SSL || ''; },
+    get databasePoolMax() { return process.env.DATABASE_POOL_MAX || ''; },
+    get loanAmountThreshold() { return parseInt(process.env.LOAN_AMOUNT_THRESHOLD, 10) || 50_000_000; },
+    get coreAppUrl() { return process.env.CORE_APP_URL || process.env.APP_URL || ''; },
+    get anthropicApiKey() { return process.env.ANTHROPIC_API_KEY || ''; },
+    get firebaseConfigured() {
+      return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT ||
+        (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY));
+    },
+    /* What the platform stamped on this build, where it did. */
+    get build() {
+      return {
+        commit: process.env.COMMIT_REF || process.env.GIT_COMMIT || null,
+        branch: process.env.BRANCH || process.env.HEAD || null,
+        deployId: process.env.DEPLOY_ID || null,
+        context: process.env.CONTEXT || process.env.NODE_ENV || null,
+      };
+    },
+  },
 };
+
+/**
+ * Boot-time validation: the variables a production deployment cannot run
+ * without, or cannot run safely with. Names only in the result — never a
+ * value — because /health prints it.
+ *
+ * @returns {{ ok: boolean, problems: {variable: string, problem: string, remedy: string}[] }}
+ */
+function validate({ env = config.env } = {}) {
+  const problems = [];
+  const production = env === 'production';
+  const salt = process.env.API_KEY_SALT || '';
+  if (production && (!salt || salt === 'default-dev-salt-change-in-production')) {
+    problems.push({ variable: 'API_KEY_SALT', problem: 'unset or the development default', remedy: "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"" });
+  }
+  const ui = process.env.UI_API_KEY;
+  if (ui && !/^ck_(live|test)_[a-zA-Z0-9]{32}$/.test(ui)) {
+    problems.push({ variable: 'UI_API_KEY', problem: 'set, but not of the form ck_test_ or ck_live_ plus 32 alphanumerics', remedy: 'Issue one with npm run key:create -- --test and set it here.' });
+  }
+  const url = process.env.DATABASE_URL;
+  if (url && !/^postgres(ql)?:\/\//.test(url)) {
+    problems.push({ variable: 'DATABASE_URL', problem: 'set, but not a postgresql:// URL', remedy: 'postgresql://user:password@host:5432/database?sslmode=require' });
+  }
+  if (production && process.env.DEV_API_KEY) {
+    problems.push({ variable: 'DEV_API_KEY', problem: 'set in production — the local-development bypass must not exist on a deployed site', remedy: 'Unset it on this context.' });
+  }
+  if (production && process.env.STORAGE_BACKEND === 'memory') {
+    problems.push({ variable: 'STORAGE_BACKEND', problem: 'memory in production — every write is lost when the process ends', remedy: 'Unset it, or set postgres / firebase / blobs.' });
+  }
+  return { ok: problems.length === 0, problems };
+}
+
+config.validate = validate;
 
 module.exports = Object.freeze(config);

@@ -28,12 +28,23 @@
     window.CARBONIQ_API_KEY  = cfg.apiKey;
   };
 
+  // The signed-in person, named on every request so a lock and the audit
+  // trail carry who, not only which organisation.
+  function actorHeader() {
+    try {
+      const s = JSON.parse(localStorage.getItem('carboniq_session') || 'null');
+      const who = s && (s.email || s.name);
+      return who ? { 'x-actor': String(who).slice(0, 120) } : {};
+    } catch (_) { return {}; }
+  }
+
   // 4) Shared fetch helper (every page can use this)
   window.CARBONIQ_fetch = async function (path, opts = {}) {
     const url = `${window.CARBONIQ_API_BASE}${path}`;
     const headers = {
       'Content-Type': 'application/json',
       ...(window.CARBONIQ_API_KEY ? { 'x-api-key': window.CARBONIQ_API_KEY } : {}),
+      ...(actorHeader()),
       ...(opts.headers || {}),
     };
     return fetch(url, { ...opts, headers });

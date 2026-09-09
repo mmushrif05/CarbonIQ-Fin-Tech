@@ -47,18 +47,7 @@ const screening = require('../../../gcf/domain/screening');
 
 const router = Router();
 
-function fail(res, err) {
-  return res.status(err.statusCode || 500).json({
-    error: err.code || 'DESK_ERROR',
-    message: err.message,
-    ...(err.remedy ? { remedy: err.remedy } : {}),
-  });
-}
-
-const handle = fn => async (req, res, next) => {
-  try { await fn(req, res, next); }
-  catch (err) { if (err.statusCode) return fail(res, err); next(err); }
-};
+const handle = require('../../../../platform/http/async-handler');
 
 /** The position over both books. */
 router.get('/position', apiKeyAuth, defaultLimiter, handle(async (req, res) => {

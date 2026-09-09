@@ -50,18 +50,7 @@ const {
 
 const router = Router();
 
-function fail(res, err) {
-  return res.status(err.statusCode || 500).json({
-    error: err.code || 'CAPITAL_ERROR',
-    message: err.message,
-    ...(err.remedy ? { remedy: err.remedy } : {}),
-  });
-}
-
-const handle = fn => async (req, res, next) => {
-  try { await fn(req, res, next); }
-  catch (err) { if (err.statusCode) return fail(res, err); next(err); }
-};
+const handle = require('../../../../platform/http/async-handler');
 
 
 /* The baseline note, declared once. Three endpoints say it, and three copies
