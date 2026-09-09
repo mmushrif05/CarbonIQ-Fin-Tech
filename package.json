@@ -25,7 +25,15 @@
     "docs:conformance": "node scripts/generate-conformance-doc.js",
     "docs:gcf-conformance": "node scripts/generate-gcf-conformance-doc.js",
     "setup:seed-partc": "node scripts/seed-partc-demo.js",
-    "build:info": "node scripts/build-info.js"
+    "build:info": "node scripts/build-info.js",
+    "db:migrate": "node scripts/db-migrate.js up",
+    "db:status": "node scripts/db-migrate.js status",
+    "db:rollback": "node scripts/db-migrate.js down",
+    "db:backfill": "node scripts/migrate-to-postgres.js",
+    "db:backup": "node scripts/db-backup.js",
+    "db:verify-audit": "node scripts/db-verify-audit.js",
+    "test:postgres": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --coverage",
+    "test:scale": "SCALE_STRICT=1 TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --runInBand tests/pg-scale.test.js"
   },
   "keywords": [
     "carbon",
@@ -53,6 +61,7 @@
     "joi": "^17.13.3",
     "morgan": "^1.10.0",
     "pdfkit": "^0.15.2",
+    "pg": "^8.23.0",
     "serverless-http": "^3.2.0",
     "uuid": "^10.0.0"
   },
@@ -74,6 +83,7 @@
         "lines": 43,
         "statements": 43
       }
-    }
+    },
+    "globalSetup": "./tests/global-setup.js"
   }
 }

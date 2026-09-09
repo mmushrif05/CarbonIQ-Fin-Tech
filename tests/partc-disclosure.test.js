@@ -42,7 +42,7 @@ async function lockFisheries(extra = {}) {
 }
 
 beforeEach(async () => {
-  store._resetMemory();
+  await store._resetMemory();
   book = await seedDemoBook(registry, ORG, boq);
 });
 

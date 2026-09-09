@@ -72,7 +72,7 @@ app.use(express.static(path.join(__dirname, 'ui')));
  * and DEPLOY_ID on every build, so the running commit is reported here: one
  * request settles which of the two it is, without guessing.
  */
-app.get('/health', (_req, res) => {
+app.get('/health', async (_req, res) => {
   /* COMMIT_REF is a build-time variable and is absent from the function's
      runtime environment, so reading it here answered "unknown" on every
      production deploy — the diagnostic built to tell a broken fix from an
@@ -111,9 +111,11 @@ app.get('/health', (_req, res) => {
        look identical from a browser, and the second is the one a deploy can
        silently cause — the same reason /health already reports the running
        commit. Mode and yes/no only; no credential can reach the wire. */
-    storage: (() => {
+    storage: await (async () => {
       const store = require('./services/partc-store');
-      const cap = store.capability();
+      /* On PostgreSQL the probe also answers the async half — reachable, and
+         whether the schema is current — within a bounded time. */
+      const cap = store.capability().mode === 'postgres' ? await store.probe() : store.capability();
       /* `requested` and `reason` travel with the mode, because without them
          "STORAGE_BACKEND never reached this runtime" and "Blobs is unreachable"
          look identical from a browser — and the first is far more common. It
@@ -128,7 +130,10 @@ app.get('/health', (_req, res) => {
         chosen: cap.chosen === true,
         durable: cap.durable,
         writable: cap.writable,
+        transactional: cap.transactional === true,
         reason: cap.reason,
+        ...(cap.reachable !== undefined ? { reachable: cap.reachable } : {}),
+        ...(cap.schema ? { schema: cap.schema } : {}),
         ...(cap.remedy ? { remedy: cap.remedy } : {})
       };
     })(),

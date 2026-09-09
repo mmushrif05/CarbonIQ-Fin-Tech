@@ -119,6 +119,15 @@ router.delete('/clients/:clientId', apiKeyAuth, defaultLimiter, handle(async (re
 // Projects
 // ---------------------------------------------------------------------------
 router.get('/projects', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  /* `limit` asks for a page; without it the whole list comes back as it
+     always has. A page carries the cursor for the next one and nothing else
+     changes shape. Filtering by reporting year is not paged: it reads inside
+     the policies array, which is not a key the store indexes. */
+  if (req.query.limit !== undefined && !req.query.reportingYear) {
+    const where = req.query.clientId ? { clientId: req.query.clientId } : {};
+    const pg = await store.page('projects', req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
+    return res.json({ projects: pg.items, page: { limit: pg.limit, nextCursor: pg.nextCursor } });
+  }
   const projects = await registry.listProjects(req.apiKey.orgId, {
     clientId: req.query.clientId, reportingYear: req.query.reportingYear
   });
@@ -282,6 +291,15 @@ router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 
 router.get('/assessments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+  if (req.query.limit !== undefined) {
+    const where = {};
+    if (req.query.projectId) where.projectId = req.query.projectId;
+    if (req.query.policyId) where.policyId = req.query.policyId;
+    if (req.query.reportingYear) where.reportingYear = Number(req.query.reportingYear);
+    if (req.query.status) where.status = req.query.status;
+    const pg = await store.page(assessments.COLLECTION, req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
+    return res.json({ assessments: pg.items, page: { limit: pg.limit, nextCursor: pg.nextCursor } });
+  }
   const list = await assessments.listAssessments(req.apiKey.orgId, {
     projectId: req.query.projectId, policyId: req.query.policyId,
     reportingYear: req.query.reportingYear, status: req.query.status

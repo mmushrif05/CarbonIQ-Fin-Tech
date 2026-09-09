@@ -82,11 +82,9 @@ function hasMapping(item) {
 // Revisions
 // ---------------------------------------------------------------------------
 
-async function listRevisions(orgId, projectId) {
-  const all = await store.list(COLLECTION, orgId, { limit: 500 });
-  return all
-    .filter(r => r.projectId === projectId)
-    .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+async function listRevisions(orgId, projectId, { forUpdate = false } = {}) {
+  const all = await store.query(COLLECTION, orgId, { where: { projectId }, forUpdate });
+  return all.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
 }
 
 async function getRevision(orgId, revisionId) {
@@ -147,7 +145,19 @@ function carryForwardMappings(items = [], previousItems = []) {
  * inherited from the previous revision unless the caller supplied them.
  */
 async function createRevision(orgId, projectId, data) {
-  const existing = await listRevisions(orgId, projectId);
+  /* Reading the previous revision and writing the next is one transaction,
+     with the project's revisions locked for the duration: two variations
+     posted together must become R2 and R3, not two R2s each carrying
+     mappings forward from R1. */
+  return store.transaction(() => _createRevision(orgId, projectId, data));
+}
+
+async function _createRevision(orgId, projectId, data) {
+  /* The project row is the lock: FOR UPDATE on the revisions alone locks
+     nothing when there are none yet, and that is exactly when two tenders
+     posted together would both become R1. */
+  await store.get('projects', orgId, projectId, { forUpdate: true });
+  const existing = await listRevisions(orgId, projectId, { forUpdate: true });
   const previous = existing.length ? existing[existing.length - 1] : null;
 
   const mats = carryForwardMappings(data.materials || [], previous ? previous.materials || [] : []);

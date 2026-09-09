@@ -35,6 +35,16 @@ npm run key:list     # List all registered API keys
 npm run key:revoke   # Revoke an API key
 npm run key:register-ui  # Register the UI dashboard API key
 
+# Database (PostgreSQL — see docs/DATA-LAYER.md)
+npm run db:migrate      # Apply pending SQL migrations to DATABASE_URL
+npm run db:status       # Applied / pending / drifted
+npm run db:rollback     # Roll back the last migration (-- down section)
+npm run db:backfill -- --from=blobs|firebase [--commit]   # Move records in, counts verified
+npm run db:backup       # pg_dump archive, proved readable
+npm run db:verify-audit # Walk the audit hash chain
+npm run test:postgres   # The whole suite against PostgreSQL (one schema per worker)
+npm run test:scale      # The 10,000-row roll-up, alone, held to a second
+
 # Docker (local dev with Firebase emulator)
 docker-compose -f docker/docker-compose.yml up
 ```
@@ -47,6 +57,8 @@ docker-compose -f docker/docker-compose.yml up
 server.js                   Express entry point + /health endpoint
 config/                     env config, business constants, CORS policy
 middleware/                 auth (JWT + API key), rate limiting, audit logging, validation
+platform/database/          PostgreSQL: client, collection registry, document store, migrator, audit chain (the only require('pg'))
+migrations/                 Numbered SQL migrations, checksummed once applied
 routes/v1/                  REST endpoints (score, assess, projects, pcaf, pcaf-partc, taxonomy, covenant, portfolio, webhook)
 services/                   Business logic: score engine, PCAF formatter, taxonomy, covenant, portfolio, agents
 services/pcaf-partc/        PCAF Part C engine — insurance-associated emissions (pure, deterministic)
@@ -157,6 +169,9 @@ Copy `.env.example` to `.env` and fill in:
 | `JWT_SECRET` | Secret for signing JWT tokens |
 | `API_KEY_SALT` | 64-char hex salt for hashing API keys |
 | `UI_API_KEY` | Internal dashboard key (`ck_test_` + 32 chars) |
+| `DATABASE_URL` | PostgreSQL connection string; when set it is the store (see `docs/DATA-LAYER.md`) |
+| `DATABASE_SCHEMA` · `DATABASE_SSL` · `DATABASE_POOL_MAX` | Schema (default `public`), SSL mode, connections per process (default 3) |
+| `STORAGE_BACKEND` | `auto` · `postgres` · `firebase` · `blobs` · `memory` — a forced store that is unreachable refuses writes |
 | `NODE_ENV` | `development` or `production` |
 | `FINTECH_API_PORT` | Server port (default: 3001) |
 | `ANTHROPIC_MODEL` | Main agentic loop model (default: `claude-sonnet-4-6`) |
@@ -342,7 +357,13 @@ Three rules. **The engine still does every calculation** — the overlay changes
 
 **`Number(null)` is 0, and 0 is finite.** This has now caused three separate defects in this area: a pipeline project stored at 0% return and ranked on it, a blended return dragged down by a project nobody had priced, and — via `Math.round(null)` and a default parameter that only covers `undefined` — a ten-year drawdown series collapsed to one year, reporting $66.3M as the whole of $199M. Absence is checked before the number is, everywhere in this book. Every one of these reached the screen with its unit test passing, because the test called the function directly where the default did apply.
 
-**Storage honesty (`services/partc-store.js`):** Firebase is the real store. Without it there is an in-process fallback for local development, but in a serverless runtime (Netlify) that fallback cannot work, so writes are **refused with a 503** rather than accepted and lost. `GET /v1/partc/storage` reports the active mode.
+**Storage honesty (`services/partc-store.js`):** PostgreSQL is the store when `DATABASE_URL` is set; Firebase where configured otherwise; Netlify Blobs on a deployed site; and an in-process fallback for local development. In a serverless runtime with no durable store, writes are **refused with a 503** rather than accepted and lost. `GET /v1/partc/storage` reports the active mode.
+
+**The data layer (`platform/database/`, `docs/DATA-LAYER.md`):** one table per collection with the record as JSONB and the fields a query needs as **generated columns** — so the column cannot disagree with the record and a foreign key on it is a foreign key on the record. `ON DELETE RESTRICT` everywhere: a project with a bill of quantities cannot be deleted, and the refusal names what is attached. Two unique indexes restate in the database what the services say in code — one locked assessment per policy-year, one investment per adopted pipeline record — because a check in code cannot stop two requests racing and an index can. `store.transaction(fn)` publishes one connection through `AsyncLocalStorage`, so lock-and-supersede, revision-and-carry-forward and adopt-to-book are atomic without threading a handle through any signature. Migrations are plain SQL, checksummed once applied; an edited applied migration is **drift** and is refused. `audit_events` is append-only by trigger and hash-chained; `npm run db:verify-audit` finds an edited row. No calculation code changed, and a test sweeps the tree for a second `require('pg')`.
+
+**A roll-up reads a projection, and a stored one where it counts.** A locked assessment is ten kilobytes, mostly its data-quality trace. The reporting-year roll-up over ten thousand of them read a hundred megabytes to use eighteen fields, and the serialisation — not the query, which takes 39 ms — took the second. `partc_assessments.rollup` is a generated column holding exactly those fields, declared once in `platform/database/collections.js`; `partc-portfolio.js` asks for that set and gets the column. A test holds the SQL function, the registry and the roll-up's declaration to one another, and another proves the projected roll-up equals the whole-record roll-up figure for figure. `store.list()` used to cap at 200 rows silently — a book of 201 projects rolled up as 200 without a word; it now returns the collection, and the stores that cannot query cap at 5,000 and say so in the source.
+
+**The suite runs twice.** `npm test` is the in-memory store; `npm run test:postgres` is the same 94 suites on PostgreSQL, one schema per Jest worker. The first run on PostgreSQL failed 27 tests, and every one was a test that had been allowed a shortcut — a BOQ revision for a project that did not exist, a reset that was not awaited — that the memory store permitted and a foreign key does not.
 
 **BOQ revisions (`services/partc-boq.js`):** a bill of quantities is never final, so each project holds a series of revisions and an assessment binds to exactly one. A revision inherits the previous revision's factor mappings, stable ids and haul distances, so only genuinely new lines need review. Match keys deliberately **ignore the quantity** — a revision exists because quantities changed, so keying on raw text would mean a line never matched its own earlier self. Matching is exact after normalisation rather than fuzzy: binding the wrong factor to the wrong material would corrupt a disclosure silently, so unmatched lines are flagged for review instead.
 
@@ -562,6 +583,8 @@ reach the core engine read `CORE_APP_URL`.
 | File | Contents |
 |------|---------|
 | `docs/ARCHITECTURE.md` | Full bank-facing product architecture (CRS, PCAF, Taxonomy, Covenant) |
+| `docs/DATA-LAYER.md` | PostgreSQL behind the seam: schema, transactions, migrations, audit chain, backfill, backup, measured scale |
+| `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; E1 delivered |
 | `docs/SCAFFOLDING.md` | 17-step build plan |
 | `docs/STRATEGY.md` | FinTech Innovation Lab APAC 2026 strategy |
 | `docs/PIVOT_ANALYSIS.md` | Green finance pivot analysis |

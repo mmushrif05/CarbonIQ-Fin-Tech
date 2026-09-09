@@ -242,7 +242,7 @@ describe('The deployment says what it can persist, without a key', () => {
   test('/health reports the storage mode', async () => {
     const res = await request(app).get('/health').expect(200);
     expect(res.body.storage).toBeDefined();
-    expect(['firebase', 'blobs', 'memory', 'none']).toContain(res.body.storage.mode);
+    expect(['postgres', 'firebase', 'blobs', 'memory', 'none']).toContain(res.body.storage.mode);
     expect(typeof res.body.storage.durable).toBe('boolean');
     expect(typeof res.body.storage.writable).toBe('boolean');
   });
@@ -253,15 +253,23 @@ describe('The deployment says what it can persist, without a key', () => {
        and `reason` were added deliberately: without them "STORAGE_BACKEND
        never reached this runtime" and "Blobs is unreachable" look identical
        from a browser, and the first is far more common. None can carry a
-       credential — `requested` is one of four literals, `chosen` is a boolean,
-       and `reason` and `remedy` are written in the source. */
+       credential — `requested` is one of five literals, `chosen` and
+       `transactional` are booleans, and `reason` and `remedy` are written in
+       the source. `reachable` (boolean) and `schema` (three integers: applied,
+       pending, drifted) were added with PostgreSQL for the same reason: a
+       DATABASE_URL that never took and a database that is down look the same
+       from a browser, and so do a current schema and a forgotten migration. */
     const res = await request(app).get('/health').expect(200);
-    const ALLOWED = ['chosen', 'durable', 'mode', 'reason', 'remedy', 'requested', 'writable'];
+    const ALLOWED = ['chosen', 'durable', 'mode', 'reachable', 'reason', 'remedy', 'requested', 'schema', 'transactional', 'writable'];
     const keys = Object.keys(res.body.storage).sort();
     expect(keys.filter(k => !ALLOWED.includes(k))).toEqual([]);
-    expect(keys).toEqual(expect.arrayContaining(['mode', 'requested', 'durable', 'writable']));
-    expect(['auto', 'blobs', 'firebase', 'memory']).toContain(res.body.storage.requested);
+    expect(keys).toEqual(expect.arrayContaining(['mode', 'requested', 'durable', 'writable', 'transactional']));
+    expect(['auto', 'postgres', 'blobs', 'firebase', 'memory']).toContain(res.body.storage.requested);
     expect(typeof res.body.storage.chosen).toBe('boolean');
+    expect(typeof res.body.storage.transactional).toBe('boolean');
+    if (res.body.storage.schema) {
+      expect(Object.keys(res.body.storage.schema).sort()).toEqual(['applied', 'drifted', 'pending']);
+    }
     const wire = JSON.stringify(res.body);
     expect(wire).not.toMatch(/token|secret|serviceAccount|private_key|siteID/i);
   });

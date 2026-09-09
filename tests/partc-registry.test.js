@@ -238,7 +238,7 @@ describe('Registry — API', () => {
   test('GET /storage reports what this deployment can persist', async () => {
     const res = await auth(request(app).get(`${B}/storage`));
     if (res.status !== 200) return;
-    expect(['firebase', 'memory', 'none']).toContain(res.body.storage.mode);
+    expect(['postgres', 'firebase', 'memory', 'none']).toContain(res.body.storage.mode);
     expect(typeof res.body.storage.writable).toBe('boolean');
     expect(res.body.storage.reason).toBeTruthy();
   });
@@ -261,8 +261,15 @@ describe('Registry — API', () => {
 });
 
 describe('Registry — storage honesty', () => {
+  /* These describe the precedence below PostgreSQL, so when the suite runs
+     against a database they take DATABASE_URL away for the duration. */
+  const ENV = ['DATABASE_URL', 'STORAGE_BACKEND'];
+  let saved;
+  beforeEach(() => { saved = ENV.map(k => process.env[k]); ENV.forEach(k => delete process.env[k]); });
+  afterEach(() => ENV.forEach((k, i) => { if (saved[i] === undefined) delete process.env[k]; else process.env[k] = saved[i]; }));
+
   test('a serverless runtime with no Firebase refuses writes rather than losing them', () => {
-    const saved = process.env.NETLIFY;
+    const savedNetlify = process.env.NETLIFY;
     process.env.NETLIFY = 'true';
     try {
       const cap = store.capability();
@@ -271,7 +278,7 @@ describe('Registry — storage honesty', () => {
       expect(cap.remedy).toMatch(/FIREBASE_SERVICE_ACCOUNT/);
       expect(() => store.assertWritable()).toThrow(/serverless runtime/);
     } finally {
-      if (saved === undefined) delete process.env.NETLIFY; else process.env.NETLIFY = saved;
+      if (savedNetlify === undefined) delete process.env.NETLIFY; else process.env.NETLIFY = savedNetlify;
     }
   });
 

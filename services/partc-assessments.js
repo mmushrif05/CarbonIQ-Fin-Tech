@@ -59,12 +59,16 @@ function _fail(message, code, statusCode = 400) {
 // Reads
 // ---------------------------------------------------------------------------
 
-async function listAssessments(orgId, { projectId, policyId, reportingYear, status } = {}) {
-  let all = await store.list(COLLECTION, orgId, { limit: 500 });
-  if (projectId)     all = all.filter(a => a.projectId === projectId);
-  if (policyId)      all = all.filter(a => a.policyId === policyId);
-  if (reportingYear) all = all.filter(a => a.reportingYear === Number(reportingYear));
-  if (status)        all = all.filter(a => a.status === status);
+async function listAssessments(orgId, { projectId, policyId, reportingYear, status } = {}, { fields = null } = {}) {
+  /* Every one of these is an indexed column on PostgreSQL, so a book of
+     thousands is answered by the index rather than by reading the book. */
+  const where = {};
+  if (projectId)     where.projectId = projectId;
+  if (policyId)      where.policyId = policyId;
+  if (reportingYear) where.reportingYear = Number(reportingYear);
+  if (status)        where.status = status;
+  /* Ordered here, so the store is not asked to sort a book it will not keep the order of. */
+  const all = await store.query(COLLECTION, orgId, { where, orderBy: null, fields: fields ? [...new Set([...fields, 'createdAt'])] : null });
   return all.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
 }
 
@@ -237,17 +241,28 @@ async function changeStatus(orgId, assessmentId, nextStatus, { note, actor } = {
   if (note) updates.statusNote = note;
 
   if (nextStatus === STATUS.LOCKED) {
-    // Only one locked assessment per policy-year: locking supersedes the last.
-    const previouslyLocked = await lockedFor(orgId, current.policyId, current.reportingYear);
-    if (previouslyLocked && previouslyLocked.assessmentId !== assessmentId) {
-      await store.patch(COLLECTION, orgId, previouslyLocked.assessmentId, {
-        status: STATUS.SUPERSEDED,
-        supersededBy: assessmentId,
-        updatedAt: _now()
-      });
-    }
+    /* Only one locked assessment per policy-year: locking supersedes the last.
+       The supersede and the lock are one transaction, so a failure between
+       them cannot leave a policy-year with two locked versions or with none.
+       On PostgreSQL a unique index says the same thing a second time. */
     updates.lockedAt = _now();
     updates.lockedBy = actor || 'insurer';
+    return store.transaction(async () => {
+      const previouslyLocked = await lockedFor(orgId, current.policyId, current.reportingYear);
+      if (previouslyLocked && previouslyLocked.assessmentId !== assessmentId) {
+        await store.patch(COLLECTION, orgId, previouslyLocked.assessmentId, {
+          status: STATUS.SUPERSEDED,
+          supersededBy: assessmentId,
+          updatedAt: _now()
+        });
+      }
+      return store.patch(COLLECTION, orgId, assessmentId, updates);
+    }).catch(e => {
+      if (e && e.code === 'DUPLICATE') {
+        _fail('Another assessment for this policy-year was locked at the same moment. Re-read the book and lock again.', 'LOCK_RACE', 409);
+      }
+      throw e;
+    });
   }
 
   return store.patch(COLLECTION, orgId, assessmentId, updates);

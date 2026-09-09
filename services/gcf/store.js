@@ -51,7 +51,7 @@ function seedMeta() {
  * @returns {{projects: object[], source: 'recorded'|'seed', sample: boolean, meta: object}}
  */
 async function list(orgId) {
-  const recorded = await store.list(COLLECTION, orgId, { limit: 200 }).catch(() => []);
+  const recorded = await store.list(COLLECTION, orgId).catch(() => []);
   if (recorded && recorded.length) {
     return { projects: recorded, source: 'recorded', sample: false, meta: seedMeta() };
   }

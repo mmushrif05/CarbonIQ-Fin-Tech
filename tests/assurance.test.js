@@ -29,7 +29,7 @@ const store = require('../services/partc-store');
 
 const ROOT = path.join(__dirname, '..');
 
-beforeEach(() => { if (store._resetMemory) store._resetMemory(); });
+beforeEach(() => (store._resetMemory ? store._resetMemory() : undefined));
 
 describe('Nothing is assumed on a deployment where nothing was recorded', () => {
   test('every scope reports absent, not "not assured"', async () => {

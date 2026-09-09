@@ -5,7 +5,7 @@
   # during the build, not in the function's runtime environment, so without
   # this step /health cannot report the running commit — which is the one
   # question it exists to answer.
-  command = "npm install && npm run build:info"
+  command = "npm install && npm run build:info && node scripts/db-migrate.js up --if-configured"
   publish = "ui"
   functions = "netlify/functions"
 
@@ -32,6 +32,8 @@
     "data/capital/**",
     "data/assurance.json",
     "build-info.json",
+    # /health reports how many migrations are pending, which needs the files.
+    "migrations/**",
   ]
 
 # ── Caching ──────────────────────────────────────────────────────────────

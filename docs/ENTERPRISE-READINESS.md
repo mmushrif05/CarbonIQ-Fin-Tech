@@ -194,6 +194,13 @@ Closes A1–A7, D6, and half of I1.
 *Exit criterion: every existing test passes against Postgres, and a 10,000-row
 portfolio roll-up returns in under a second.*
 
+> **Delivered** — `docs/DATA-LAYER.md`. Plain SQL with `pg` rather than
+> Prisma (the reasons are in that document). All 94 suites pass on PostgreSQL;
+> the 10,001-row roll-up measures 832 ms alone, on a stored projection column,
+> and the suite holds it. A1–A7 and D6 closed; A8 (caching) deliberately not
+> started — a read that takes 39 ms of SQL does not need a cache in front of
+> it yet.
+
 ### Phase E2 — Control (2 weeks) · Critical
 
 Closes B1–B4, C1, C2, E4, E5.

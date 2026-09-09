@@ -53,7 +53,7 @@ function fisheries() {
 }
 
 beforeEach(async () => {
-  store._resetMemory();
+  await store._resetMemory();
   book = await seedDemoBook(registry, ORG, boq);
 });
 

@@ -22,7 +22,7 @@ const SITE = { demolitionKm: 100, wasteDisposalKm: 40, previousProject: fx.PREVI
 let book, negombo, carPolicy, R1, R2, R3;
 
 beforeEach(async () => {
-  store._resetMemory();
+  await store._resetMemory();
   book = await seedDemoBook(registry, ORG, boq);
   negombo = book.projects.find(p => /Negombo/.test(p.name));
   carPolicy = negombo.policies[0];

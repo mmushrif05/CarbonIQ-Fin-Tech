@@ -5,9 +5,37 @@
  * Financial APIs require complete audit trails per MAS/HKMA guidelines.
  *
  * Logged fields: timestamp, method, path, user/key, status, duration
+ *
+ * Every request goes to stdout. Where PostgreSQL is the live store, every
+ * request that could have changed a record — anything but GET, HEAD and
+ * OPTIONS — is also appended to the hash-chained `audit_events` table, which
+ * refuses updates and deletes. A chain write that fails is reported on
+ * stderr with its reason; it is never swallowed, because an audit trail with
+ * silent gaps is the one kind an auditor cannot use.
  */
 
 const { v4: uuidv4 } = require('uuid');
+
+const MUTATING = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+
+function chainWrite(req, res, logEntry) {
+  if (!MUTATING.has(req.method)) return;
+  if (req.originalUrl === '/health') return;
+  let store;
+  try { store = require('../services/partc-store'); } catch (_) { return; }
+  if (store.capability().mode !== 'postgres') return;
+  const { auditChain } = require('../platform/database');
+  auditChain.append({
+    orgId: logEntry.orgId || (req.user && req.user.orgId) || null,
+    actor: logEntry.userId || (req.apiKey && (req.apiKey.name || req.apiKey.orgId)) || null,
+    action: `${req.method} ${req.path}`,
+    resource: req.originalUrl,
+    requestId: req.requestId,
+    detail: { status: res.statusCode, authType: logEntry.authType || null, durationMs: Number(logEntry.duration.replace('ms', '')) },
+  }).catch(err => {
+    console.error('[AUDIT] chain write failed:', err.code || '', err.message, `(request ${req.requestId})`);
+  });
+}
 
 function audit(req, res, next) {
   // Assign unique request ID
@@ -46,6 +74,8 @@ function audit(req, res, next) {
     } else {
       console.log('[AUDIT]', JSON.stringify(logEntry));
     }
+
+    chainWrite(req, res, logEntry);
   });
 
   next();

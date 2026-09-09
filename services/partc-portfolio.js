@@ -85,11 +85,23 @@ const _num = v => Number(v) || 0;
  * @param {string} orgId
  * @param {number|string} reportingYear
  */
-async function rollUp(orgId, reportingYear) {
+/**
+ * What the roll-up reads of an assessment — and all it reads. A locked
+ * assessment is ten kilobytes, most of it the data-quality trace and the
+ * inputs; a book of ten thousand would be a hundred megabytes to read six
+ * fields from. `tests/pg-scale.test.js` holds the roll-up to a second on that
+ * book, and `tests/partc-portfolio.test.js` proves the projected roll-up
+ * equals the one read whole, so a field added below without being added
+ * here is caught rather than silently zero.
+ */
+const ROLLUP_FIELDS = Object.freeze(
+  require('../platform/database/collections').COLLECTIONS.assessments.projections.rollup.fields);
+
+async function rollUp(orgId, reportingYear, { fields = ROLLUP_FIELDS } = {}) {
   const year     = Number(reportingYear);
   const settings = await registry.getSettings(orgId);
   const policies = await registry.listPolicies(orgId, { reportingYear: year });
-  const all      = await assessments.listAssessments(orgId, { reportingYear: year });
+  const all      = await assessments.listAssessments(orgId, { reportingYear: year }, { fields });
   const locked   = all.filter(a => a.status === assessments.STATUS.LOCKED);
 
   /* Premium, project cost and floor area come from the book rather than the
@@ -421,4 +433,4 @@ async function factorGapPriority(orgId, reportingYear) {
   };
 }
 
-module.exports = { rollUp, improvementPlan, factorGapPriority, BEST_ACHIEVABLE_SCORE };
+module.exports = { rollUp, improvementPlan, factorGapPriority, BEST_ACHIEVABLE_SCORE, ROLLUP_FIELDS };

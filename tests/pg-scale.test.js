@@ -1,0 +1,122 @@
+/**
+ * The exit criterion of the data layer: a ten-thousand-row book rolls up in
+ * under a second. Needs PostgreSQL (TEST_DATABASE_URL); skipped otherwise.
+ *
+ * The book is built from one genuine locked assessment — produced by the
+ * engine, not typed — cloned across 2,000 projects with five policies each,
+ * so every row has exactly the shape the roll-up reads.
+ *
+ * A timing is only a measurement on a quiet machine. Inside the parallel
+ * suite this file shares the CPU with a dozen workers, so there it holds a
+ * regression guard of three seconds; `npm run test:scale` runs it alone,
+ * in band, with SCALE_STRICT=1, and there the second is enforced. CI runs
+ * both. The measured figure is printed either way.
+ */
+
+'use strict';
+
+const URL = process.env.TEST_DATABASE_URL;
+const suite = URL ? describe : describe.skip;
+
+const db = require('../platform/database');
+const store = require('../services/partc-store');
+const registry = require('../services/partc-registry');
+const boq = require('../services/partc-boq');
+const A = require('../services/partc-assessments');
+const P = require('../services/partc-portfolio');
+const { seedDemoBook } = require('../services/partc-demo-data');
+const fx = require('./fixtures/fisheries');
+
+const ORG = 'scale-org';
+const PROJECTS = 2000;
+const POLICIES_PER = 5;
+const withDist = mats => mats.map(m => ({ ...m, distance: fx.DISTANCES[m.id] || {} }));
+
+jest.setTimeout(120_000);
+
+async function bulk(collection, orgId, records) {
+  const { table } = db.collections.definition(collection);
+  for (let i = 0; i < records.length; i += 2500) {
+    const chunk = records.slice(i, i + 2500);
+    await db.client.query(
+      `INSERT INTO ${table} (org_id, id, data, created_at)
+       SELECT $1, e->>'__id', e - '__id', COALESCE((e->>'createdAt')::timestamptz, now())
+       FROM jsonb_array_elements($2::jsonb) e`,
+      [orgId, JSON.stringify(chunk)]);
+  }
+}
+
+suite('Scale — a 10,000-policy book', () => {
+  let template, projectTemplate;
+
+  beforeAll(async () => {
+    await store._resetMemory();
+    const seeded = await seedDemoBook(registry, ORG, boq);
+    const pj = seeded.projects.find(p => /Negombo/.test(p.name));
+    const pol = pj.policies.find(x => x.reportingYear === 2026);
+    const rev = (await boq.listRevisions(ORG, pj.projectId))[0]
+      || await boq.createRevision(ORG, pj.projectId, { materials: withDist(fx.MATERIALS), demolitionItems: fx.DEMOLITION_ITEMS });
+    const { assessment } = await A.createAssessment(ORG, {
+      projectId: pj.projectId, policyId: pol.policyId, boqRevisionId: rev.revisionId,
+      siteInputs: { demolitionKm: 100, wasteDisposalKm: 40, previousProject: fx.PREVIOUS_PROJECT },
+    });
+    await A.changeStatus(ORG, assessment.assessmentId, 'under_review');
+    template = await A.changeStatus(ORG, assessment.assessmentId, 'locked', { actor: 'Ceylon Insurance PLC' });
+    projectTemplate = pj;
+
+    const projects = [], revisions = [], assessments = [];
+    const t0 = new Date('2026-01-01T00:00:00.000Z').getTime();
+    for (let i = 0; i < PROJECTS; i++) {
+      const projectId = `pj_s${i}`;
+      const revisionId = `rev_s${i}`;
+      const policies = [];
+      for (let k = 0; k < POLICIES_PER; k++) {
+        const policyId = `pol_s${i}_${k}`;
+        policies.push({ ...pol, policyId, reference: `${policyId}`, premium: 10000 + (i * POLICIES_PER + k), reportingYear: 2026 });
+        assessments.push({
+          ...template, __id: `as_s${i}_${k}`, assessmentId: `as_s${i}_${k}`,
+          projectId, policyId, boqRevisionId: revisionId, projectName: `Scale project ${i}`,
+          createdAt: new Date(t0 + (i * POLICIES_PER + k) * 1000).toISOString(),
+        });
+      }
+      projects.push({ ...pj, __id: projectId, projectId, name: `Scale project ${i}`, policies, createdAt: new Date(t0 + i * 1000).toISOString() });
+      revisions.push({ __id: revisionId, revisionId, projectId, orgId: ORG, label: 'R1', materials: [], demolitionItems: [], createdAt: new Date(t0 + i * 1000).toISOString() });
+    }
+    await bulk('projects', ORG, projects);
+    await bulk('boqRevisions', ORG, revisions);
+    await bulk('assessments', ORG, assessments);
+  });
+
+  afterAll(() => (process.env.KEEP_SCALE ? undefined : store._resetMemory()));
+
+  test('the book holds what was written', async () => {
+    expect(await store.count('assessments', ORG, { status: 'locked' })).toBe(PROJECTS * POLICIES_PER + 1);
+    expect(await store.count('projects', ORG)).toBeGreaterThanOrEqual(PROJECTS);
+  });
+
+  test('an indexed lookup of one policy-year is answered in milliseconds', async () => {
+    const started = process.hrtime.bigint();
+    const rows = await A.listAssessments(ORG, { policyId: 'pol_s777_3', reportingYear: 2026, status: 'locked' });
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(rows).toHaveLength(1);
+    expect(rows[0].assessmentId).toBe('as_s777_3');
+    expect(ms).toBeLessThan(100);
+  });
+
+  test('the reporting-year roll-up over 10,000 locked assessments returns in under a second', async () => {
+    const times = [];
+    let r;
+    for (let i = 0; i < 3; i++) {
+      const started = process.hrtime.bigint();
+      r = await P.rollUp(ORG, 2026);
+      times.push(Number(process.hrtime.bigint() - started) / 1e6);
+    }
+    const best = Math.min(...times);
+    expect(r.assessments.locked).toBe(PROJECTS * POLICIES_PER + 1);
+    expect(r.construction.total_kgCO2e).toBeCloseTo(template.summary.construction_kgCO2e * (PROJECTS * POLICIES_PER + 1), 0);
+    const bound = process.env.SCALE_STRICT ? 1000 : 3000;
+    console.log(`roll-up over ${r.assessments.locked} locked assessments: best ${best.toFixed(0)} ms of ${times.map(t => t.toFixed(0)).join(' / ')} ms (bound ${bound} ms${process.env.SCALE_STRICT ? ', strict' : ', regression guard'})`);
+    expect(best).toBeLessThan(bound);
+    expect(projectTemplate).toBeTruthy();
+  });
+});

@@ -43,6 +43,7 @@
 const book = require('../capital-book');
 const gcfStore = require('../gcf/store');
 const screening = require('../gcf/screening');
+const store = require('../partc-store');
 
 const err = (statusCode, code, message, remedy) => {
   const e = new Error(message);
@@ -94,7 +95,21 @@ async function adoptCandidate(orgId, input = {}) {
   /* One record, one investment. Checked against the book rather than against
      the generated id alone, so an investment created under any id still blocks
      a second adoption of the same project — two rows for one project would
-     double every figure on the desk. */
+     double every figure on the desk. The check and the write run in one
+     transaction, and on PostgreSQL a unique index on the origin catches the
+     race the check cannot; its refusal is reported as the same 409. */
+  return store.transaction(() => _adopt(orgId, input, project, source, portfolio)).catch(e => {
+    if (e && e.code === 'DUPLICATE') {
+      throw err(409, 'ALREADY_ADOPTED',
+        `"${project.name}" is already on the book.`,
+        'Amend that investment rather than adopting the record a second time.');
+    }
+    throw e;
+  });
+}
+
+async function _adopt(orgId, input, project, source, portfolio) {
+  const recordId = input.recordId;
   const existing = await book.listInvestments(orgId);
   const already = existing.find(i => i.origin && i.origin.system === 'gcf' && i.origin.recordId === recordId);
   if (already) {

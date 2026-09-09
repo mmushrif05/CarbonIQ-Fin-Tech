@@ -92,7 +92,7 @@ const numOrNull = (v) =>
 // ---------------------------------------------------------------------------
 
 async function listPortfolios(orgId) {
-  const rows = await store.list(C_PORTFOLIO, orgId, { limit: 200 });
+  const rows = await store.list(C_PORTFOLIO, orgId);
   return rows.slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
 }
 
@@ -214,10 +214,10 @@ function _emissions(e = {}) {
 }
 
 async function listInvestments(orgId, { portfolioId, status } = {}) {
-  const rows = await store.list(C_INVESTMENT, orgId, { limit: 500 });
-  return rows.filter(r =>
-    (!portfolioId || r.portfolioId === portfolioId) &&
-    (!status || r.status === status));
+  const where = {};
+  if (portfolioId) where.portfolioId = portfolioId;
+  if (status) where.status = status;
+  return store.query(C_INVESTMENT, orgId, { where });
 }
 
 async function getInvestment(orgId, id) {
@@ -304,12 +304,11 @@ async function updateInvestment(orgId, id, updates) {
  * there is no second number to reconcile it against.
  */
 async function listPayments(orgId, { portfolioId, investmentId } = {}) {
-  const rows = await store.list(C_PAYMENT, orgId, { limit: 1000 });
-  return rows
-    .filter(r =>
-      (!portfolioId || r.portfolioId === portfolioId) &&
-      (!investmentId || r.investmentId === investmentId))
-    .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const where = {};
+  if (portfolioId) where.portfolioId = portfolioId;
+  if (investmentId) where.investmentId = investmentId;
+  const rows = await store.query(C_PAYMENT, orgId, { where });
+  return rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
 }
 
 async function createPayment(orgId, input) {
