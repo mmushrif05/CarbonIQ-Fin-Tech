@@ -13,6 +13,7 @@ const crypto = require('crypto');
 const config = require('../config');
 const { getDatabase } = require('../bridge/firebase');
 const { enforceScope, actorOf, UI_KEY_SCOPES, DEV_KEY_SCOPES } = require('./scopes');
+const { keyStoreFor } = require('./key-store');
 
 /**
  * Every authenticated request ends here: the subject is on the request, the
@@ -88,14 +89,15 @@ async function apiKeyAuth(req, res, next) {
 
   try {
     const hashedKey = hashApiKey(apiKey);
-    if (!db) {
+    const keys = keyStoreFor({ firebaseDb: db });
+    if (!keys) {
       return res.status(503).json({
         error: 'SERVICE_UNAVAILABLE',
-        message: 'Database not configured. API key verification is unavailable.'
+        message: 'No database is configured, so API keys cannot be verified.',
+        remedy: 'Set DATABASE_URL (or Firebase). The dashboard key and DEV_API_KEY do not need one.'
       });
     }
-    const snapshot = await db.ref(`fintech/apiKeys/${hashedKey}`).once('value');
-    const keyData = snapshot.val();
+    const keyData = await keys.get(hashedKey);
 
     if (!keyData || !keyData.active) {
       return res.status(401).json({
@@ -132,7 +134,7 @@ async function apiKeyAuth(req, res, next) {
     };
 
     // Update last used timestamp (fire-and-forget)
-    db.ref(`fintech/apiKeys/${hashedKey}/lastUsed`).set(Date.now()).catch(err =>
+    keys.touch(hashedKey).catch(err =>
       console.error('[API-KEY] lastUsed update failed:', err.message)
     );
 

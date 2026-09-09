@@ -74,12 +74,12 @@ describe('Every collection the services write is registered', () => {
     }
   });
 
-  test('every registered key is a generated column in the initial migration', () => {
-    const sql = fs.readFileSync(path.join(ROOT, 'migrations', '0001_initial.sql'), 'utf8');
+  test('every registered key is a generated column in a migration', () => {
+    const sql = db.migrate.files().map(m => m.sql).join('\n');
     for (const [name, def] of Object.entries(db.collections.COLLECTIONS)) {
       expect(sql).toMatch(new RegExp(`CREATE TABLE ${def.table} \\(`));
       for (const [field, column] of Object.entries(def.keys)) {
-        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer) GENERATED ALWAYS AS \\(\\(?data->>'${field}'`));
+        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer|boolean) GENERATED ALWAYS AS \\(\\(?data->>'${field}'`));
       }
       expect(name).toBeTruthy();
     }

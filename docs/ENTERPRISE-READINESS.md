@@ -200,6 +200,15 @@ portfolio roll-up returns in under a second.*
 > and the suite holds it. A1–A7 and D6 closed; A8 (caching) deliberately not
 > started — a read that takes 39 ms of SQL does not need a cache in front of
 > it yet.
+>
+> **Amended — the database is external.** The operator provisions PostgreSQL
+> apart from the hosting platform and hands the site its URL. Netlify Blobs is
+> no longer chosen automatically (opt-in by `STORAGE_BACKEND=blobs` only), and
+> migration `0002` moves the last four records that lived only in Firebase —
+> API keys, Part C runs, learnings, benchmarks — into the one database, so a
+> deployment on PostgreSQL needs nothing else. TLS is on by default for any
+> non-local host. The runbook is *Provisioning the database* in
+> `docs/DATA-LAYER.md`.
 
 ### Phase E2 — Control (2 weeks) · Critical
 

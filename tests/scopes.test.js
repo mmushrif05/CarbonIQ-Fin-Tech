@@ -39,8 +39,17 @@ const KEY = 'ck_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456';
 const ORG = 'scope-org';
 const withDist = mats => mats.map(m => ({ ...m, distance: fx.DISTANCES[m.id] || {} }));
 
-/** A Firebase that answers one key record and accepts the lastUsed write. */
-function firebaseWith(record) {
+/**
+ * Put one key record where keys live: in PostgreSQL through the key store
+ * when that is the suite's database, else in a Firebase stand-in.
+ */
+const { hashApiKey } = require('../src/platform/auth/api-key');
+async function firebaseWith(record) {
+  if (store.capability().mode === 'postgres') {
+    const { keyStoreFor } = require('../src/platform/auth/key-store');
+    await keyStoreFor().set(hashApiKey(KEY), record);
+    return;
+  }
   keyRecord = record;
   mockDb = { ref: () => ({ once: async () => ({ val: () => keyRecord }), set: async () => {}, update: async () => {} }) };
 }
@@ -66,7 +75,7 @@ const key = (rec) => ({ orgId: ORG, orgName: 'Scope Org', keyName: 'los', active
 describe('The exit criterion — a read-only key cannot lock', () => {
   test('locking with a read-only key is refused, naming the scope needed and the scopes held', async () => {
     const id = await draftAssessment();
-    firebaseWith(key({ scopes: ['read'] }));
+    await firebaseWith(key({ scopes: ['read'] }));
     const res = await request(app).post(`/v1/partc/assessments/${id}/status`).set('x-api-key', KEY).send({ status: 'locked' });
     expect(res.status).toBe(403);
     expect(res.body.error).toBe('SCOPE_REQUIRED');
@@ -78,7 +87,7 @@ describe('The exit criterion — a read-only key cannot lock', () => {
 
   test('the same key may read the assessment it may not lock', async () => {
     const id = await draftAssessment();
-    firebaseWith(key({ scopes: ['read'] }));
+    await firebaseWith(key({ scopes: ['read'] }));
     const res = await request(app).get(`/v1/partc/assessments/${id}`).set('x-api-key', KEY);
     expect(res.status).toBe(200);
     expect(res.headers['x-key-scopes']).toBeUndefined();
@@ -86,7 +95,7 @@ describe('The exit criterion — a read-only key cannot lock', () => {
 
   test('a write key may move the status but not lock; a lock key may lock, and the lock records the person', async () => {
     const id = await draftAssessment();
-    firebaseWith(key({ scopes: ['read', 'write'] }));
+    await firebaseWith(key({ scopes: ['read', 'write'] }));
     const back = await request(app).post(`/v1/partc/assessments/${id}/status`).set('x-api-key', KEY).send({ status: 'draft' });
     expect(back.status).toBe(200);
     const refused = await request(app).post(`/v1/partc/assessments/${id}/status`).set('x-api-key', KEY).send({ status: 'under_review' })
@@ -94,7 +103,7 @@ describe('The exit criterion — a read-only key cannot lock', () => {
     expect(refused.status).toBe(403);
     expect(refused.body.required).toBe('lock');
 
-    firebaseWith(key({ scopes: ['read', 'write', 'lock'] }));
+    await firebaseWith(key({ scopes: ['read', 'write', 'lock'] }));
     const locked = await request(app).post(`/v1/partc/assessments/${id}/status`).set('x-api-key', KEY).set('x-actor', 'n.perera@bank.lk').send({ status: 'locked' });
     expect(locked.status).toBe(200);
     expect(locked.body.assessment.status).toBe('locked');
@@ -104,14 +113,14 @@ describe('The exit criterion — a read-only key cannot lock', () => {
 
 describe('Keys issued before scopes existed', () => {
   test('keep working, and every response says they are unscoped', async () => {
-    firebaseWith(key({ scopes: undefined }));
+    await firebaseWith(key({ scopes: undefined }));
     const res = await request(app).get('/v1/partc/clients').set('x-api-key', KEY);
     expect(res.status).toBe(200);
     expect(res.headers['x-key-scopes']).toBe('unscoped');
   });
 
   test('are held to scopes the moment scopes are recorded', async () => {
-    firebaseWith(key({ scopes: ['read'] }));
+    await firebaseWith(key({ scopes: ['read'] }));
     const res = await request(app).post('/v1/partc/clients').set('x-api-key', KEY).send({ name: 'X', country: 'LK' });
     expect(res.status).toBe(403);
     expect(res.body.required).toBe('write');
@@ -120,7 +129,7 @@ describe('Keys issued before scopes existed', () => {
 
 describe('Expiry', () => {
   test('an expired key is refused with the date, and points at its replacement when rotated', async () => {
-    firebaseWith(key({ scopes: ['read'], expiresAt: '2020-01-01T00:00:00.000Z', supersededBy: 'abc' }));
+    await firebaseWith(key({ scopes: ['read'], expiresAt: '2020-01-01T00:00:00.000Z', supersededBy: 'abc' }));
     const res = await request(app).get('/v1/partc/clients').set('x-api-key', KEY);
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('KEY_EXPIRED');
@@ -129,7 +138,7 @@ describe('Expiry', () => {
   });
 
   test('a key with a future expiry works', async () => {
-    firebaseWith(key({ scopes: ['read'], expiresAt: '2999-01-01T00:00:00.000Z' }));
+    await firebaseWith(key({ scopes: ['read'], expiresAt: '2999-01-01T00:00:00.000Z' }));
     expect((await request(app).get('/v1/partc/clients').set('x-api-key', KEY)).status).toBe(200);
   });
 });

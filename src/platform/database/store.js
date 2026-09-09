@@ -17,14 +17,14 @@
  * ── Netlify Blobs ──────────────────────────────────────────────────────────
  *
  * Blobs is part of the platform the function already runs in, so it needs no
- * vendor, no credential and no connection handshake. It is now the durable
- * store wherever it is reachable, which is what makes this deployment able to
- * hold data at all.
+ * vendor, no credential and no connection handshake. It was the durable store
+ * wherever it was reachable, until the database became the operator's.
  *
- * Firebase still wins where it is configured. That is deliberate: an existing
- * deployment's records must not move because a new option appeared. Precedence
- * is firebase, then blobs, then memory, then refusal — and `capability().mode`
- * says which of the four is live rather than leaving a caller to guess.
+ * Blobs is now **opt-in**. The database belongs to the operator, provisioned
+ * apart from the hosting platform, so a deployment that has not been given
+ * one refuses to write rather than quietly keeping records inside Netlify.
+ * `STORAGE_BACKEND=blobs` still selects it, explicitly, for a trial that
+ * wants it.
  *
  * ── Choosing, rather than inheriting ───────────────────────────────────────
  *
@@ -32,8 +32,8 @@
  * Firebase even when the operator has decided on Blobs, and nothing about the
  * screen says why. `STORAGE_BACKEND` makes the choice explicit —
  *
- *   auto      (default) firebase, then blobs, then memory
- *   blobs     Blobs, and refuse rather than fall back to Firebase
+ *   auto      (default) postgres, then firebase, then memory; never blobs
+ *   blobs     Blobs, explicitly, and refuse rather than fall back to Firebase
  *   firebase  Firebase, and refuse rather than fall back to Blobs
  *   memory    in-process only; local development
  *
@@ -49,7 +49,7 @@
  * migrations and a backup path. `src/platform/database/` owns it; this file only
  * decides when it is live.
  *
- *   auto      postgres when DATABASE_URL is set, then firebase, then blobs, then memory
+ *   auto      postgres when DATABASE_URL is set, then firebase, then memory
  *   postgres  PostgreSQL, and refuse rather than fall back
  *
  * Setting DATABASE_URL is a deliberate act — nobody has it set by accident —
@@ -175,26 +175,20 @@ function capability() {
   if (isDurable()) {
     return {
       mode: 'firebase', durable: true, writable: true, transactional: false, chosen: false,
-      reason: 'Firebase is configured, and STORAGE_BACKEND is unset, so it takes precedence. Set STORAGE_BACKEND=blobs to use Netlify Blobs instead.'
-    };
-  }
-  if (blobs.isAvailable()) {
-    return {
-      mode: 'blobs', durable: true, writable: true, transactional: false, chosen: false,
-      reason: 'Netlify Blobs is reachable and no Firebase configuration was found. Records persist across requests, cold starts and deploys.'
+      reason: 'Firebase is configured, DATABASE_URL is not, and STORAGE_BACKEND is unset, so Firebase is the store. Set DATABASE_URL to move to PostgreSQL.'
     };
   }
   if (isEphemeralRuntime()) {
     return {
       mode: 'none', durable: false, writable: false, transactional: false, chosen: false,
-      reason: 'Running in a serverless runtime with no durable store reachable — neither Netlify Blobs nor Firebase. Each request may run in a fresh container, so anything written in memory is lost immediately.',
-      remedy: 'Netlify Blobs needs no configuration and is the expected store here; if it is unreachable the deployment is misconfigured. Firebase remains an alternative via FIREBASE_SERVICE_ACCOUNT and FIREBASE_DATABASE_URL. Read-only endpoints and the calculation engine work without either.'
+      reason: 'Running in a serverless runtime with no database configured. Each request may run in a fresh container, so anything written in memory is lost immediately, and records are not kept inside the hosting platform by default.',
+      remedy: 'Set DATABASE_URL to the PostgreSQL database provisioned for this deployment (docs/DATA-LAYER.md, "Provisioning"). Firebase remains an alternative via FIREBASE_SERVICE_ACCOUNT and FIREBASE_DATABASE_URL, and STORAGE_BACKEND=blobs selects Netlify Blobs explicitly for a trial. Read-only endpoints and the calculation engine work without any of them.'
     };
   }
   return {
     mode: 'memory', durable: false, writable: true, transactional: false, chosen: false,
-    reason: 'No durable store reachable. Records are held in this process only and are lost when it stops.',
-    remedy: 'Fine for local development. Netlify Blobs is used automatically on a deployed site; set FIREBASE_SERVICE_ACCOUNT if you would rather use Firebase.'
+    reason: 'No database configured. Records are held in this process only and are lost when it stops.',
+    remedy: 'Fine for local development. Set DATABASE_URL for a database, or FIREBASE_SERVICE_ACCOUNT for Firebase.'
   };
 }
 

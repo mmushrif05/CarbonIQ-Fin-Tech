@@ -28,6 +28,8 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const config = require('../src/platform/config');
 const model = require('../src/platform/auth/api-key-model');
 const { SCOPES } = require('../src/platform/auth/scopes');
+const store = require('../src/platform/database/store');
+const { keyStoreFor } = require('../src/platform/auth/key-store');
 
 const C = { cyan: '\x1b[36m', green: '\x1b[32m', red: '\x1b[31m', yellow: '\x1b[33m', dim: '\x1b[2m', off: '\x1b[0m' };
 const rule = () => console.log(`${C.cyan}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${C.off}`);
@@ -46,7 +48,15 @@ function flags(args) {
   return out;
 }
 
+/** The key store: PostgreSQL when DATABASE_URL is set, else Firebase. */
 async function getDb() {
+  if (store.capability().mode === 'postgres') {
+    const s = await store.probe();
+    if (!s.reachable) { console.error(`${C.red}✗ PostgreSQL is configured but not reachable.${C.off} ${s.remedy || ''}`); process.exit(1); }
+    if (s.schema && s.schema.pending) { console.error(`${C.red}✗ ${s.schema.pending} migration(s) pending — run npm run db:migrate first.${C.off}`); process.exit(1); }
+    console.log(`  ${C.dim}keys in PostgreSQL${C.off}`);
+    return keyStoreFor();
+  }
   const admin = require('firebase-admin');
   if (admin.apps.length === 0) {
     if (!config.firebase.serviceAccount) {
@@ -58,6 +68,7 @@ async function getDb() {
     const serviceAccount = JSON.parse(Buffer.from(config.firebase.serviceAccount, 'base64').toString('utf8'));
     admin.initializeApp({ credential: admin.credential.cert(serviceAccount), databaseURL: config.firebase.databaseURL });
   }
+  console.log(`  ${C.dim}keys in Firebase (no DATABASE_URL)${C.off}`);
   return admin.database();
 }
 
@@ -195,6 +206,7 @@ const [,, command, ...rest] = process.argv;
     case 'revoke': await revokeKey(f); break;
     default: usage();
   }
+  await require('../src/platform/database/client').close();
   process.exit(0);
 })().catch(err => {
   console.error(`${C.red}  Error:${C.off}`, err.message);

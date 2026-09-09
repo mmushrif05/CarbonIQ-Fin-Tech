@@ -54,6 +54,12 @@ const COLLECTIONS = Object.freeze({
   gcf_projects:        { table: 'gcf_projects',        keys: {}, dependsOn: [] },
   gcf_entity:          { table: 'gcf_entity',          keys: {}, dependsOn: [] },
   assurance:           { table: 'assurance_declarations', keys: {}, dependsOn: [] },
+  /* 0002 — what still lived only in Firebase. Keys share one partition ('_')
+     because they are looked up by hash, not by organisation. */
+  api_keys:            { table: 'api_keys',          keys: { orgId: 'owner_org_id', active: 'active' }, dependsOn: [] },
+  partc_runs:          { table: 'partc_runs',        keys: { status: 'status' }, dependsOn: [] },
+  partc_learnings:     { table: 'partc_learnings',   keys: {}, dependsOn: [] },
+  partc_benchmarks:    { table: 'partc_benchmarks',  keys: { region: 'region', projectType: 'project_type' }, dependsOn: [] },
 });
 
 function definition(collection) {

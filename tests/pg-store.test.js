@@ -40,7 +40,7 @@ suite('PostgreSQL — the seam', () => {
     expect(store.capability().mode).toBe('postgres');
     const res = await request(app).get('/health').expect(200);
     expect(res.body.storage).toMatchObject({ mode: 'postgres', reachable: true, transactional: true, writable: true, durable: true });
-    expect(res.body.storage.schema).toEqual({ applied: 1, pending: 0, drifted: 0 });
+    expect(res.body.storage.schema).toEqual({ applied: db.migrate.files().length, pending: 0, drifted: 0 });
   });
 
   test('a record round-trips whole, and the row version counts every write', async () => {
@@ -223,6 +223,49 @@ suite('PostgreSQL — the audit chain', () => {
   });
 });
 
+suite('PostgreSQL — one database holds the keys, the runs and the learnings', () => {
+  beforeEach(() => store._resetMemory());
+
+  test('API keys are issued into PostgreSQL through the key store, verified from it, and scoped in it', async () => {
+    const { keyStoreFor } = require('../src/platform/auth/key-store');
+    const model = require('../src/platform/auth/api-key-model');
+    const keys = keyStoreFor();
+    expect(keys.kind).toBe('postgres');
+    const issued = await model.createApiKey(keys, { orgId: 'pg-bank', orgName: 'PG Bank', keyName: 'LOS', scopes: ['read'] });
+    const ok = await request(app).get('/v1/partc/clients').set('x-api-key', issued.key);
+    expect(ok.status).toBe(200);
+    const refused = await request(app).post('/v1/partc/clients').set('x-api-key', issued.key).send({ name: 'PG Client', country: 'LK' });
+    expect(refused.status).toBe(403);
+    await model.setScopes(keys, issued.hashedKey, 'read,write');
+    const allowed = await request(app).post('/v1/partc/clients').set('x-api-key', issued.key).send({ name: 'PG Client', country: 'LK' });
+    expect(allowed.status).toBe(201);
+    const listed = await model.listApiKeys(keys);
+    expect(listed.find(k => k.hashedKey === issued.hashedKey)).toMatchObject({ orgId: 'pg-bank', scopes: ['read', 'write'], unscoped: false });
+    const rotated = await model.rotateApiKey(keys, issued.hashedKey, { graceDays: 0 });
+    expect((await request(app).get('/v1/partc/clients').set('x-api-key', issued.key)).status).toBe(401);
+    expect((await request(app).get('/v1/partc/clients').set('x-api-key', rotated.key)).status).toBe(200);
+  });
+
+  test('a Part C run outlives the request in PostgreSQL, and its learnings become benchmarks', async () => {
+    const runStore = require('../src/domains/pcaf-part-c/application/partc-run-store');
+    const learning = require('../src/domains/pcaf-part-c/application/learning-store');
+    const run = { runId: 'run_pg_1', status: 'awaiting_client', createdAt: new Date().toISOString(), form: { fields: 3 } };
+    expect(await runStore.saveRun(ORG, run)).toEqual({ durable: true });
+    await runStore.updateRun(ORG, 'run_pg_1', { status: 'completed' });
+    expect((await runStore.getRun(ORG, 'run_pg_1')).status).toBe('completed');
+    expect((await runStore.listRuns(ORG)).map(r => r.runId)).toEqual(['run_pg_1']);
+    expect(runStore.isDurable()).toBe(true);
+
+    await store.put('partc_benchmarks', ORG, 'b1', { runId: 'b1', region: 'Sri Lanka', projectType: 'building', perM2_kgCO2e: 15 });
+    await store.put('partc_benchmarks', ORG, 'b2', { runId: 'b2', region: 'Sri Lanka', projectType: 'building', perM2_kgCO2e: 25 });
+    await store.put('partc_benchmarks', ORG, 'b3', { runId: 'b3', region: 'Sri Lanka', projectType: 'road', perM2_kgCO2e: 99 });
+    const none = await learning.findBenchmark({ orgId: ORG, region: 'Sri Lanka', projectType: 'building', minSamples: 3 });
+    expect(none.available).toBe(false);
+    const some = await learning.findBenchmark({ orgId: ORG, region: 'Sri Lanka', projectType: 'building', minSamples: 2 });
+    expect(some).toMatchObject({ available: true, samples: 2, median_kgCO2e_m2: 25, min_kgCO2e_m2: 15, max_kgCO2e_m2: 25 });
+  });
+});
+
 suite('PostgreSQL — migrations', () => {
   const SCRATCH = `scratch_${process.env.JEST_WORKER_ID || 1}`;
   const original = process.env.DATABASE_SCHEMA;
@@ -239,15 +282,16 @@ suite('PostgreSQL — migrations', () => {
     await db.client.query(`DROP SCHEMA IF EXISTS ${SCRATCH} CASCADE`);
 
     const first = await db.migrate.up();
-    expect(first.applied.map(m => m.name)).toEqual(['0001_initial']);
+    expect(first.applied.map(m => m.name)).toEqual(db.migrate.files().map(m => m.name));
     expect((await db.migrate.status()).pending).toEqual([]);
     expect((await db.migrate.up()).applied).toEqual([]);
     const { rows } = await db.client.query(`SELECT count(*)::int AS n FROM information_schema.tables WHERE table_schema = '${SCRATCH}' AND table_name = 'partc_assessments'`);
     expect(rows[0].n).toBe(1);
 
+    const last = db.migrate.files().slice(-1)[0].name;
     const down = await db.migrate.down();
-    expect(down.rolledBack.name).toBe('0001_initial');
-    expect((await db.migrate.status()).pending.map(m => m.name)).toEqual(['0001_initial']);
+    expect(down.rolledBack.name).toBe(last);
+    expect((await db.migrate.status()).pending.map(m => m.name)).toEqual([last]);
     await db.migrate.up();
 
     await db.client.query("UPDATE schema_migrations SET checksum = repeat('f', 64) WHERE version = 1");

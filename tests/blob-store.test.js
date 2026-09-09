@@ -186,8 +186,11 @@ describe('The store layer above it — precedence and the refusal rule', () => {
 
   test('Firebase still wins in automatic mode, where it is configured', () => {
     /* An existing deployment's records must not move because a new option
-       appeared — but the operator can override it, see the block below. */
-    expect(src).toMatch(/Firebase still wins where it is configured/);
+       appeared — and Blobs is never chosen under auto at all: the database is
+       the operator's, provisioned apart from the hosting platform. The
+       operator can still override it, see the block below. */
+    expect(src).toMatch(/auto\s+\(default\) postgres, then firebase, then memory; never blobs/);
+    expect(src).toMatch(/Blobs is now \*\*opt-in\*\*/);
   });
 
   test('one predicate decides where a write goes, and it is capability()', () => {
@@ -227,7 +230,8 @@ describe('The store layer above it — precedence and the refusal rule', () => {
   });
 
   test('the unreachable-store remedy no longer tells the reader to set up Firebase first', () => {
-    expect(src).toMatch(/Netlify Blobs needs no configuration and is the expected store here/);
+    expect(src).toMatch(/Set DATABASE_URL to the PostgreSQL database provisioned for this deployment/);
+    expect(src).not.toMatch(/Netlify Blobs needs no configuration and is the expected store here/);
   });
 });
 
@@ -344,7 +348,9 @@ describe('The operator chooses the store, rather than inheriting it', () => {
   test('the automatic firebase branch tells the reader how to choose Blobs instead', () => {
     const src = require('fs').readFileSync(
       require('path').join(__dirname, '..', 'src', 'platform', 'database', 'store.js'), 'utf8');
-    expect(src).toMatch(/Set STORAGE_BACKEND=blobs to use Netlify Blobs instead/);
+    expect(src).toMatch(/Set DATABASE_URL to move to PostgreSQL/);
+    /* Blobs is never inherited: the database is provisioned apart from the platform. */
+    expect(src).not.toMatch(/if \(blobs\.isAvailable\(\)\) \{\n    return \{\n      mode: 'blobs', durable: true, writable: true, transactional: false, chosen: false/);
   });
 });
 

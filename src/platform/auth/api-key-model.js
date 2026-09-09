@@ -12,9 +12,9 @@
  * sets it on the old key to the end of a grace period, so an integration
  * has that long to move to the new one.
  *
- * Every function takes the database it writes to, so the CLI — which
- * initialises Firebase itself — and the application share one definition
- * of the record.
+ * Every function takes the key store it writes to (src/platform/auth/key-store.js
+ * — PostgreSQL through the seam, or Firebase), so the CLI and the
+ * application share one definition of the record.
  */
 
 'use strict';
@@ -22,8 +22,10 @@
 const crypto = require('crypto');
 const { hashApiKey } = require('./api-key');
 const { normaliseScopes } = require('./scopes');
+const { firebaseKeyStore, FIREBASE_PATH: KEYS_PATH } = require('./key-store');
 
-const KEYS_PATH = 'fintech/apiKeys';
+/** A key store, or a raw Firebase handle for callers that still hold one. */
+const ks = s => (s && typeof s.ref === 'function' ? firebaseKeyStore(s) : s);
 
 function generatePlainKey(isTest) {
   return `${isTest ? 'ck_test_' : 'ck_live_'}${crypto.randomBytes(16).toString('hex')}`;
@@ -75,19 +77,17 @@ function buildKeyRecord({ orgId, orgName, keyName, projectIds, permissions, scop
 
 async function createApiKey(db, params) {
   const built = buildKeyRecord(params);
-  await db.ref(`${KEYS_PATH}/${built.hashedKey}`).set(built.record);
+  await ks(db).set(built.hashedKey, built.record);
   return { key: built.key, hashedKey: built.hashedKey, keyPrefix: built.record.keyPrefix, record: built.record };
 }
 
 async function getApiKeyRecord(db, hashedKey) {
-  const snap = await db.ref(`${KEYS_PATH}/${hashedKey}`).once('value');
-  return snap.val() || null;
+  return (await ks(db).get(hashedKey)) || null;
 }
 
 async function listApiKeys(db) {
-  const snap = await db.ref(KEYS_PATH).once('value');
-  const all = snap.val() || {};
-  return Object.entries(all).map(([hashedKey, r]) => ({ hashedKey, ...r, unscoped: !Array.isArray(r.scopes) }));
+  const all = await ks(db).list();
+  return all.map(r => ({ ...r, unscoped: !Array.isArray(r.scopes) }));
 }
 
 /** Apply scopes to an existing key — the moment an unscoped key becomes held to something. */
@@ -95,7 +95,7 @@ async function setScopes(db, hashedKey, scopes) {
   const list = normaliseScopes(scopes);
   const current = await getApiKeyRecord(db, hashedKey);
   if (!current) throw Object.assign(new Error(`No key ${hashedKey.slice(0, 16)}….`), { code: 'KEY_NOT_FOUND' });
-  await db.ref(`${KEYS_PATH}/${hashedKey}`).update({ scopes: list, scopesSetAt: new Date().toISOString() });
+  await ks(db).update(hashedKey, { scopes: list, scopesSetAt: new Date().toISOString() });
   return { hashedKey, scopes: list, wasUnscoped: !Array.isArray(current.scopes) };
 }
 
@@ -103,7 +103,7 @@ async function setExpiry(db, hashedKey, expiresAt) {
   const iso = parseExpiry(expiresAt);
   const current = await getApiKeyRecord(db, hashedKey);
   if (!current) throw Object.assign(new Error(`No key ${hashedKey.slice(0, 16)}….`), { code: 'KEY_NOT_FOUND' });
-  await db.ref(`${KEYS_PATH}/${hashedKey}`).update({ expiresAt: iso });
+  await ks(db).update(hashedKey, { expiresAt: iso });
   return { hashedKey, expiresAt: iso };
 }
 
@@ -126,12 +126,12 @@ async function rotateApiKey(db, hashedKey, { graceDays = 7, createdBy } = {}) {
   });
   const oldUpdate = { supersededBy: issued.hashedKey, rotatedAt: new Date().toISOString() };
   if (days === 0) oldUpdate.active = false; else oldUpdate.expiresAt = graceEnd;
-  await db.ref(`${KEYS_PATH}/${hashedKey}`).update(oldUpdate);
+  await ks(db).update(hashedKey, oldUpdate);
   return { ...issued, previous: hashedKey, previousExpiresAt: days === 0 ? null : graceEnd, previousRevoked: days === 0 };
 }
 
 async function revokeApiKey(db, hashedKey) {
-  await db.ref(`${KEYS_PATH}/${hashedKey}`).update({ active: false, revokedAt: new Date().toISOString() });
+  await ks(db).update(hashedKey, { active: false, revokedAt: new Date().toISOString() });
 }
 
 module.exports = { KEYS_PATH, buildKeyRecord, createApiKey, getApiKeyRecord, listApiKeys, setScopes, setExpiry, rotateApiKey, revokeApiKey, parseExpiry };
