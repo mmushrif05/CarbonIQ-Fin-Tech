@@ -253,6 +253,24 @@ Closes D1–D5, C5.
 *Exit criterion: a 500 in production raises an alert naming the request ID,
 the org and the failing module.*
 
+> **Delivered** — `docs/OBSERVABILITY.md`. Pino JSON lines with the request
+> id, organisation and actor read from an `AsyncLocalStorage` request
+> context at write time, so a log three calls deep carries them without
+> being handed them; secrets redacted by key. Error reports over Sentry's
+> envelope API (no SDK in the bundle — the reasons are in that document),
+> tagged with `requestId`, `orgId`, `module` (the innermost `src/` frame),
+> `route`, `status`, `kind` and the running commit as release; awaited
+> before the response so a frozen container cannot lose it; inert without
+> `SENTRY_DSN`, and `/health` says which. In-process metrics by route
+> pattern — rate, latency histogram and percentiles, 5xx rate, store latency
+> per verb — at `GET /v1/metrics` as JSON or Prometheus text, honest about
+> being one process's view; the log drain (platform configuration, with the
+> steps and the retention floor in the document) is the cross-instance
+> view. The 13 swallowed catches were 33 once `.catch(() => null)` and
+> `.catch(() => [])` were counted; every one is now a named, classified,
+> counted fallback and a test refuses a new one. D1–D5 and C5 closed. Tests:
+> the exit criterion, in `tests/observability.test.js`.
+
 ### Phase E4 — Contract and scale (3 weeks) · High
 
 Closes A6, A8, F1–F4, I1, I2.

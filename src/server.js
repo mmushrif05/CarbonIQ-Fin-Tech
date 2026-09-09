@@ -23,6 +23,8 @@ const config = require('./platform/config');
 const corsConfig = require('./platform/config/cors');
 const errorHandler = require('./platform/http/error-handler');
 const audit = require('./platform/observability/audit');
+const logger = require('./platform/observability/logger');
+const errors = require('./platform/observability/errors');
 const v1Router = require('./platform/http/router');
 
 const app = express();
@@ -111,6 +113,14 @@ app.get('/health', async (_req, res) => {
        look identical from a browser, and the second is the one a deploy can
        silently cause — the same reason /health already reports the running
        commit. Mode and yes/no only; no credential can reach the wire. */
+    /* How this deployment can be watched: whether an error sink is
+       configured (never which), the log level, where the metrics are. */
+    observability: {
+      logging: 'json',
+      logLevel: config.log.level,
+      errorTracking: errors.configured(),
+      metrics: '/v1/metrics'
+    },
     storage: await (async () => {
       const store = require('./platform/database/store');
       /* On PostgreSQL the probe also answers the async half — reachable, and
@@ -169,6 +179,18 @@ app.use((_req, res) => {
 // Centralized error handler
 app.use(errorHandler);
 
+/* A rejection nobody caught and an exception nobody caught are reported
+   with the same fields as a 500, so they alert with a module and a release
+   rather than dying quietly in a function log. The process still ends on an
+   uncaught exception — it is no longer in a state anyone can vouch for — but
+   only after the report has been sent. */
+if (!config.runtime.isTest) {
+  process.on('unhandledRejection', reason => { errors.capture(reason, { source: 'unhandledRejection' }); });
+  process.on('uncaughtException', err => {
+    errors.capture(err, { source: 'uncaughtException' }).finally(() => process.exit(1));
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Server Start (local dev only — Netlify uses the adapter)
 // ---------------------------------------------------------------------------
@@ -179,8 +201,9 @@ if (require.main === module) {
      serverless function reports the same list on /health instead. */
   const validation = config.validate();
   if (!validation.ok) {
-    for (const p of validation.problems) console.error(`[CONFIG] ${p.variable}: ${p.problem} — ${p.remedy}`);
-    if (config.env === 'production') { console.error('[CONFIG] refusing to start.'); process.exit(1); }
+    const log = logger.for('server');
+    for (const p of validation.problems) log.error({ variable: p.variable, remedy: p.remedy }, `${p.variable}: ${p.problem}`);
+    if (config.env === 'production') { log.fatal('refusing to start on the configuration problems above'); process.exit(1); }
   }
   app.listen(port, () => {
     console.log(`CarbonIQ FinTech API running on port ${port}`);

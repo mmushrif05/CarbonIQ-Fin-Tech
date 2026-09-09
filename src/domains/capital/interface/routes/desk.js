@@ -37,6 +37,7 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { fallback } = require('../../../../platform/observability/logger');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
 const desk = require('../../desk');
@@ -125,7 +126,7 @@ router.get('/readiness', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
   }
 
   const pipeline = await gcfStore.list(req.apiKey.orgId);
-  const entityDisclosures = await gcfStore.entityDisclosures(req.apiKey.orgId).catch(() => null);
+  const entityDisclosures = await gcfStore.entityDisclosures(req.apiKey.orgId).catch(fallback('desk.readiness.entityDisclosures', null));
 
   res.json({
     readiness: {

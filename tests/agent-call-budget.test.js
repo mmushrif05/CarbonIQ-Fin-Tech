@@ -248,7 +248,8 @@ describe('A run that stops for a reason says the reason', () => {
     expect(payload.remedy).toBe('Paste the document text instead of uploading a PDF.');
   });
 
-  test('a 500 never carries a remedy, whose message is deliberately generic', () => {
+  test('a 500 never carries a remedy, whose message is deliberately generic', async () => {
+    /* A 500 is reported before it is answered, so the handler is awaited. */
     const errorHandler = require('../src/platform/http/error-handler');
 
     const err = new Error('boom');
@@ -260,8 +261,10 @@ describe('A run that stops for a reason says the reason', () => {
       json: body => { payload = body; return res; },
       setHeader: () => {}, headersSent: false
     };
-    errorHandler(err, { requestId: 'r2', path: '/x', method: 'POST' }, res, () => {});
+    await errorHandler(err, { requestId: 'r2', path: '/x', method: 'POST' }, res, () => {});
 
     expect(payload.remedy).toBeUndefined();
+    expect(payload.error).toBe('INTERNAL_ERROR');
+    expect(payload.eventId).toMatch(/^[0-9a-f]{32}$/);
   });
 });

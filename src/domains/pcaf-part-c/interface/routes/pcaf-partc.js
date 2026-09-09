@@ -28,6 +28,7 @@
 'use strict';
 
 const { Router }   = require('express');
+const { fallback } = require('../../../../platform/observability/logger');
 const apiKeyAuth   = require('../../../../platform/auth/api-key');
 const validate     = require('../../../../platform/http/validate');
 const { defaultLimiter, agentLimiter } = require('../../../../platform/http/rate-limit');
@@ -232,13 +233,13 @@ router.post('/assess', apiKeyAuth, defaultLimiter,
         run.completedAt = new Date().toISOString();
         addStep(run, { type: PARTC_STEP_TYPES.CALCULATION,
                        summary: `Construction ${Math.round(result.summary.construction_kgCO2e)} kgCO2e, IAE ${result.summary.insurerIAE_tCO2e.toFixed(4)} tCO2e` });
-        await runStore.saveRun(orgId, run).catch(() => {});
+        await runStore.saveRun(orgId, run).catch(fallback('partc.runs.save'));
 
         learnings = await recordLearnings({
           orgId, runId, result,
           context: req.body.context,
           materials: req.body.materials
-        }).catch(() => null);
+        }).catch(fallback('partc.recordLearnings', null));
       }
 
       res.json(_shapeResult(result, registers, {
@@ -287,7 +288,7 @@ router.post('/report', apiKeyAuth, defaultLimiter,
          threshold, recalculation protocol, currency. A Part C disclosure
          must state them, and they belong to the entity rather than to the
          request, so the report reads them from the book. */
-      const settings  = await partcRegistry.getSettings(req.apiKey.orgId).catch(() => ({}));
+      const settings  = await partcRegistry.getSettings(req.apiKey.orgId).catch(fallback('partc.form.getSettings', () => ({})));
       const report    = buildPartCReport({
         result, registers, settings, memo: req.body.memo,
         meta: {
@@ -417,7 +418,7 @@ router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
         context:   run.context || {},
         materials: run.materials || [],
         overrides
-      }).catch(() => null);
+      }).catch(fallback('partc.recordLearnings', null));
 
       const completedAt = new Date().toISOString();
       const updates = {
@@ -442,7 +443,7 @@ router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
     } catch (err) {
       await runStore.updateRun(orgId, runId, {
         status: PARTC_STATUS.FAILED, error: err.message, updatedAt: new Date().toISOString()
-      }).catch(() => {});
+      }).catch(fallback('partc.runs.markFailed'));
       next(err);
     }
   });

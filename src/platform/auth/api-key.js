@@ -135,7 +135,7 @@ async function apiKeyAuth(req, res, next) {
 
     // Update last used timestamp (fire-and-forget)
     keys.touch(hashedKey).catch(err =>
-      console.error('[API-KEY] lastUsed update failed:', err.message)
+      require('../observability/logger').for('platform/auth/api-key').warn({ err }, 'lastUsed update failed')
     );
 
     return admit(req, res, next);

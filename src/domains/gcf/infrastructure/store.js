@@ -21,6 +21,7 @@
 'use strict';
 
 const store = require('../../../platform/database/store');
+const { fallback } = require('../../../platform/observability/logger');
 const record = require('../domain/record');
 const SEED = require('../../../../data/gcf/pipeline.seed.json');
 
@@ -51,7 +52,7 @@ function seedMeta() {
  * @returns {{projects: object[], source: 'recorded'|'seed', sample: boolean, meta: object}}
  */
 async function list(orgId) {
-  const recorded = await store.list(COLLECTION, orgId).catch(() => []);
+  const recorded = await store.list(COLLECTION, orgId).catch(fallback('gcf.pipeline.list', () => []));
   if (recorded && recorded.length) {
     return { projects: recorded, source: 'recorded', sample: false, meta: seedMeta() };
   }
@@ -59,7 +60,7 @@ async function list(orgId) {
 }
 
 async function get(orgId, id) {
-  const recorded = await store.get(COLLECTION, orgId, id).catch(() => null);
+  const recorded = await store.get(COLLECTION, orgId, id).catch(fallback('gcf.pipeline.get', null));
   if (recorded) return { project: recorded, source: 'recorded', sample: false };
   const fromSeed = seedProjects().find(p => p.id === id);
   return fromSeed
@@ -77,7 +78,7 @@ async function get(orgId, id) {
 async function put(orgId, project, { by = null } = {}) {
   store.assertWritable();
   const now = new Date().toISOString();
-  const existing = await store.get(COLLECTION, orgId, project.id).catch(() => null);
+  const existing = await store.get(COLLECTION, orgId, project.id).catch(fallback('gcf.pipeline.get', null));
 
   const withProvenance = {
     ...project,
@@ -126,7 +127,7 @@ async function adoptSeed(orgId, { by = null } = {}) {
  */
 
 async function entityDisclosures(orgId) {
-  return store.get(SETTINGS_COLLECTION, orgId, 'entity').catch(() => null);
+  return store.get(SETTINGS_COLLECTION, orgId, 'entity').catch(fallback('gcf.entity.get', null));
 }
 
 async function setEntityDisclosures(orgId, body, { by = null } = {}) {

@@ -29,6 +29,7 @@ const {
 } = require('../../../shared/models/pipeline');
 
 const { AGENT_PERMISSION_MAP }  = require('../../../shared/policies');
+const { fallback } = require('../../../platform/observability/logger');
 const { checkAccess }           = require('../../../platform/auth/authorization');
 const { runAgent, runAgentSingleCall } = require('../../../platform/ai/agent');
 const { savePipelineRun, updatePipelineRun } = require('../../../platform/bridge/firebase');
@@ -318,7 +319,7 @@ async function createAndRunPipeline({ templateId, input, subject, orgId, metadat
         stages:     pipeline.stages,
         tokensUsed: pipeline.tokensUsed,
         status:     pipeline.status,
-      }).catch(() => {});
+      }).catch(fallback('supervisor.updatePipelineRun'));
     }
   } catch (err) {
     pipeline.status = PIPELINE_STATUS.FAILED;
@@ -463,7 +464,7 @@ createAndRunPipeline._continueExecution = async function _continueExecution(pipe
         stages:     pipeline.stages,
         tokensUsed: pipeline.tokensUsed,
         status:     pipeline.status,
-      }).catch(() => {});
+      }).catch(fallback('supervisor.updatePipelineRun'));
     }
   } catch (err) {
     pipeline.status = PIPELINE_STATUS.FAILED;

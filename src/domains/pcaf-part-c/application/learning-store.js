@@ -28,7 +28,10 @@
 
 const fb = require('../../../platform/bridge/firebase');
 const store = require('../../../platform/database/store');
+const { fallback } = require('../../../platform/observability/logger');
 const _pg = () => store.capability().mode === 'postgres';
+/* Firebase is the home for these records only where it is configured. */
+const _fbLive = () => { try { return !!fb.getDatabase(); } catch (_) { return false; } };
 
 function _now() { return new Date().toISOString(); }
 
@@ -50,7 +53,7 @@ async function recordLearnings({ orgId, runId, result, context = {}, materials =
     if (records && records.perM2Factor) await store.put('partc_benchmarks', orgId, runId, { ...records.perM2Factor, runId });
     return records;
   }
-  await fb.savePartCLearnings(orgId, runId, records).catch(() => {});
+  if (_fbLive()) await fb.savePartCLearnings(orgId, runId, records).catch(fallback('partc.learnings.firebase.save'));
   return records;
 }
 
@@ -167,7 +170,7 @@ function aggregateResearchPriority(allLearnings = []) {
 async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
   const all = _pg()
     ? await store.query('partc_benchmarks', orgId, { where: { ...(region ? { region } : {}), ...(projectType ? { projectType } : {}) } })
-    : await fb.listPartCBenchmarks(orgId).catch(() => []);
+    : _fbLive() ? await fb.listPartCBenchmarks(orgId).catch(fallback('partc.benchmarks.firebase.list', () => [])) : [];
   const matches = (all || []).filter(b =>
     b && b.perM2_kgCO2e > 0 &&
     (!region || b.region === region) &&
@@ -192,7 +195,7 @@ async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
 /** Every learning record for an organisation, from whichever store holds them. */
 async function listLearnings(orgId) {
   if (_pg()) return store.list('partc_learnings', orgId);
-  return fb.listPartCLearnings(orgId).catch(() => []);
+  return _fbLive() ? fb.listPartCLearnings(orgId).catch(fallback('partc.learnings.firebase.list', () => [])) : [];
 }
 
 module.exports = { recordLearnings, buildLearningRecords, aggregateResearchPriority, findBenchmark, listLearnings };

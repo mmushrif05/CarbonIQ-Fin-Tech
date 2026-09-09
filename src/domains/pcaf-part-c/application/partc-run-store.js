@@ -17,6 +17,7 @@
 'use strict';
 
 const fb = require('../../../platform/bridge/firebase');
+const { fallback } = require('../../../platform/observability/logger');
 const store = require('../../../platform/database/store');
 
 const COLLECTION = 'partc_runs';
@@ -48,13 +49,13 @@ function isDurable() {
 async function saveRun(orgId, run) {
   if (_pg()) { await store.put(COLLECTION, orgId, run.runId, run); return { durable: true }; }
   _remember(orgId, run);
-  await fb.savePartCRun(orgId, run).catch(() => {});
+  if (isDurable()) await fb.savePartCRun(orgId, run).catch(fallback('partc.runs.firebase.save'));
   return { durable: isDurable() };
 }
 
 async function getRun(orgId, runId) {
   if (_pg()) return store.get(COLLECTION, orgId, runId);
-  const stored = await fb.getPartCRun(orgId, runId).catch(() => null);
+  const stored = isDurable() ? await fb.getPartCRun(orgId, runId).catch(fallback('partc.runs.firebase.get', null)) : null;
   if (stored) return stored;
   return _org(orgId).get(runId) || null;
 }
@@ -63,12 +64,12 @@ async function updateRun(orgId, runId, updates) {
   if (_pg()) { await store.patch(COLLECTION, orgId, runId, updates); return; }
   const current = _org(orgId).get(runId);
   if (current) _remember(orgId, { ...current, ...updates });
-  await fb.updatePartCRun(orgId, runId, updates).catch(() => {});
+  if (isDurable()) await fb.updatePartCRun(orgId, runId, updates).catch(fallback('partc.runs.firebase.update'));
 }
 
 async function listRuns(orgId, limit = 20) {
   if (_pg()) return store.query(COLLECTION, orgId, { orderBy: '-created_at', limit });
-  const stored = await fb.listPartCRuns(orgId, limit).catch(() => []);
+  const stored = isDurable() ? await fb.listPartCRuns(orgId, limit).catch(fallback('partc.runs.firebase.list', () => [])) : [];
   if (stored && stored.length) return stored;
   return [..._org(orgId).values()]
     .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))

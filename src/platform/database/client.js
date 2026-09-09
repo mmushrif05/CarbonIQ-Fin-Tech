@@ -30,6 +30,8 @@
 'use strict';
 
 const { AsyncLocalStorage } = require('async_hooks');
+const logger = require('../observability/logger');
+const log = logger.for('platform/database/client');
 const config = require('../config');
 
 let pgLib = null;
@@ -98,7 +100,7 @@ function pool() {
     statement_timeout: 20_000,
   });
   _pool.on('error', err => {
-    console.error('[DATABASE] idle client error:', err.message);
+    log.error({ err, kind: logger.classify(err) }, 'idle database client error');
   });
   return _pool;
 }
@@ -123,7 +125,7 @@ async function withTransaction(fn) {
     await client.query('COMMIT');
     return result;
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    await client.query('ROLLBACK').catch(logger.fallback('database.rollback'));
     throw err;
   } finally {
     client.release();
@@ -155,7 +157,7 @@ async function ping({ timeoutMs = 1500 } = {}) {
 async function close() {
   const p = _pool;
   _pool = null;
-  if (p) await p.end().catch(() => {});
+  if (p) await p.end().catch(logger.fallback('database.close', undefined, { level: 'debug' }));
 }
 
 /** Test helper — forget the pool so the environment can change. */
