@@ -27,6 +27,8 @@
 'use strict';
 
 const fb = require('../../../platform/bridge/firebase');
+const store = require('../../../platform/database/store');
+const _pg = () => store.capability().mode === 'postgres';
 
 function _now() { return new Date().toISOString(); }
 
@@ -43,6 +45,11 @@ function _now() { return new Date().toISOString(); }
  */
 async function recordLearnings({ orgId, runId, result, context = {}, materials = [], overrides = {} }) {
   const records = buildLearningRecords({ runId, result, context, materials, overrides });
+  if (_pg()) {
+    await store.put('partc_learnings', orgId, runId, { ...records, runId });
+    if (records && records.perM2Factor) await store.put('partc_benchmarks', orgId, runId, { ...records.perM2Factor, runId });
+    return records;
+  }
   await fb.savePartCLearnings(orgId, runId, records).catch(() => {});
   return records;
 }
@@ -158,7 +165,9 @@ function aggregateResearchPriority(allLearnings = []) {
  * Returns null until enough comparable projects have been recorded.
  */
 async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
-  const all = await fb.listPartCBenchmarks(orgId).catch(() => []);
+  const all = _pg()
+    ? await store.query('partc_benchmarks', orgId, { where: { ...(region ? { region } : {}), ...(projectType ? { projectType } : {}) } })
+    : await fb.listPartCBenchmarks(orgId).catch(() => []);
   const matches = (all || []).filter(b =>
     b && b.perM2_kgCO2e > 0 &&
     (!region || b.region === region) &&
@@ -180,4 +189,10 @@ async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
   };
 }
 
-module.exports = { recordLearnings, buildLearningRecords, aggregateResearchPriority, findBenchmark };
+/** Every learning record for an organisation, from whichever store holds them. */
+async function listLearnings(orgId) {
+  if (_pg()) return store.list('partc_learnings', orgId);
+  return fb.listPartCLearnings(orgId).catch(() => []);
+}
+
+module.exports = { recordLearnings, buildLearningRecords, aggregateResearchPriority, findBenchmark, listLearnings };

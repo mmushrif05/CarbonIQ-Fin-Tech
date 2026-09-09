@@ -54,12 +54,23 @@ function schemaName() {
   return s;
 }
 
+/**
+ * TLS to the database. DATABASE_SSL decides when set; otherwise the URL's
+ * own sslmode decides; otherwise a host that is not this machine gets TLS
+ * with certificate verification, because the database is provisioned apart
+ * from the platform and the wire between them is not ours.
+ */
 function sslConfig() {
   const v = String(config.runtime.databaseSsl).trim().toLowerCase();
-  if (v === 'true' || v === 'require') return { rejectUnauthorized: true };
+  if (v === 'true' || v === 'require' || v === 'verify-full') return { rejectUnauthorized: true };
   if (v === 'no-verify') return { rejectUnauthorized: false };
   if (v === 'false' || v === 'disable') return false;
-  return undefined;
+  let url;
+  try { url = new URL(config.runtime.databaseUrl); } catch (_) { return undefined; }
+  if (url.searchParams.has('sslmode')) return undefined; // the driver honours it
+  const host = url.hostname;
+  const local = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '' || host.endsWith('.local');
+  return local ? undefined : { rejectUnauthorized: true };
 }
 
 function pool() {
@@ -76,11 +87,15 @@ function pool() {
     connectionString: config.runtime.databaseUrl,
     ...(ssl === undefined ? {} : { ssl }),
     /* The schema travels as a startup parameter, so it is in force before
-       the first statement and needs no query of its own on connect. */
-    options: `-c search_path=${schema}`,
+       the first statement and needs no query of its own on connect. Sent
+       only when a schema was asked for: a connection pooler in front of an
+       external database may refuse startup options it does not know. */
+    ...(schema === 'public' ? {} : { options: `-c search_path=${schema}` }),
     max: Math.max(1, Number(config.runtime.databasePoolMax) || 3),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 5_000,
+    /* A serverless function is killed at 26 s; a statement must give up first. */
+    statement_timeout: 20_000,
   });
   _pool.on('error', err => {
     console.error('[DATABASE] idle client error:', err.message);

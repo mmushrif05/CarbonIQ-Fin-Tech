@@ -420,9 +420,8 @@ async function improvementPlan(orgId, reportingYear) {
  * insurer's own emissions.
  */
 async function factorGapPriority(orgId, reportingYear) {
-  const { aggregateResearchPriority } = require('./learning-store');
-  const fb = require('../../../platform/bridge/firebase');
-  const learnings = await fb.listPartCLearnings(orgId).catch(() => []);
+  const { aggregateResearchPriority, listLearnings } = require('./learning-store');
+  const learnings = await listLearnings(orgId).catch(() => []);
   const ranked = aggregateResearchPriority(learnings || []);
   return {
     reportingYear: Number(reportingYear),

@@ -5,6 +5,11 @@
  * AI calls are mocked so tests run without ANTHROPIC_API_KEY.
  */
 
+/* These tests mock Firebase as the home of API keys. On a PostgreSQL run
+   the keys would be looked up in the database instead, so this suite pins
+   the in-memory store: it is about the middleware, not about where keys live
+   (tests/pg-store.test.js covers keys in PostgreSQL). */
+process.env.STORAGE_BACKEND = 'memory';
 const request = require('supertest');
 const app = require('../src/server');
 

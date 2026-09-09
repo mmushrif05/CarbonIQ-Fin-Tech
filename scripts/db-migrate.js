@@ -31,6 +31,11 @@ const ifConfigured = process.argv.includes('--if-configured');
       const r = await migrate.up({ log });
       console.log(`Applied ${r.applied.length} migration(s); ${r.totalApplied} applied in total; schema ${client.schemaName()} is current.`);
     } else if (cmd === 'status') {
+      const ping = await client.ping({ timeoutMs: 5000 });
+      if (!ping.reachable) { console.error(`Cannot reach PostgreSQL: ${ping.error}`); process.exitCode = 4; return; }
+      const { rows } = await client.query('SELECT version() AS v, current_database() AS db, current_user AS u, (SELECT ssl FROM pg_stat_ssl WHERE pid = pg_backend_pid()) AS ssl');
+      const r = rows[0] || {};
+      console.log(`Reached ${r.db || '?'} as ${r.u || '?'} in ${ping.latencyMs} ms — ${String(r.v || '').split(' on ')[0]}${r.ssl ? ', TLS on' : ', TLS off'}`);
       const s = await migrate.status();
       console.log(`Schema ${client.schemaName()}`);
       for (const m of s.applied) console.log(`  applied  ${m.name}  (${new Date(m.appliedAt).toISOString()})`);

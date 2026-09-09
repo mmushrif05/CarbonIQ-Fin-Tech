@@ -40,6 +40,10 @@ src/platform/database/
   errors.js          PostgreSQL errors → statusCode / code / message / remedy
 migrations/
   0001_initial.sql   every table, every key, every constraint; a -- down section
+  0002_one_database.sql  API keys, Part C runs, learnings and benchmarks — the last
+                     four records that lived only in Firebase
+src/platform/auth/
+  key-store.js       where API keys live: the api_keys table on PostgreSQL, else Firebase
 scripts/
   db-migrate.js              npm run db:migrate | db:status | db:rollback
   migrate-to-postgres.js     npm run db:backfill -- --from=firebase|blobs [--commit]
@@ -57,16 +61,30 @@ lapse by convention.
 |---|---|
 | `DATABASE_URL` | `postgresql://user:pass@host:5432/db?sslmode=require` |
 | `DATABASE_SCHEMA` | schema to use; default `public` |
-| `DATABASE_SSL` | `true` · `no-verify` · `false`; unset lets the URL decide |
+| `DATABASE_SSL` | `true` · `no-verify` · `false`. Unset: the URL's `sslmode` decides; a URL without one gets TLS with certificate verification for any host that is not local |
 | `DATABASE_POOL_MAX` | connections per process; default 3 — a serverless function is one of many processes |
 | `STORAGE_BACKEND` | `auto` (default) · `postgres` · `firebase` · `blobs` · `memory` |
 
 **Precedence under `auto`:** PostgreSQL when `DATABASE_URL` is set, then
-Firebase when configured, then Blobs on a deployed Netlify site, then memory
-for local development. Setting `DATABASE_URL` is a deliberate act, so it
-displaces a Firebase configuration that may only have been left in place —
-and `/health` says so in `storage.reason`. A forced backend that is unreachable
-refuses writes (503 `STORAGE_UNAVAILABLE`) rather than falling back.
+Firebase when configured, then memory for local development. Netlify Blobs is
+**never chosen automatically**: the database belongs to the operator and is
+provisioned apart from the hosting platform, so a deployed site that has not
+been given one refuses writes (503) rather than quietly keeping records inside
+Netlify. `STORAGE_BACKEND=blobs` still selects it, explicitly, for a trial.
+Setting `DATABASE_URL` is a deliberate act, so it displaces a Firebase
+configuration that may only have been left in place — and `/health` says so in
+`storage.reason`. A forced backend that is unreachable refuses writes (503
+`STORAGE_UNAVAILABLE`) rather than falling back.
+
+**One database.** With `DATABASE_URL` set, PostgreSQL holds everything the
+application persists — the registry, the capital book, the GCF pipeline, the
+audit chain, and since migration `0002` the API keys, the Part C runs that
+pause for a client, and the learning records and per-m² benchmarks a run
+leaves behind. Nothing on such a deployment needs Firebase: the key middleware,
+the key CLI (`npm run key:*`) and the run store all resolve their home from
+the live store (`src/platform/auth/key-store.js`,
+`partc-run-store.js`, `learning-store.js`). Without `DATABASE_URL` those four
+records stay in Firebase, exactly where they were, and nothing moves.
 
 `GET /health` → `storage` now also carries `transactional` (boolean),
 `reachable` (boolean, PostgreSQL only) and `schema` (`applied`, `pending`,
@@ -148,10 +166,50 @@ walks the chain and reports the first sequence number that fails, and why.
 The integration test edits a row with triggers disabled and shows the
 verifier finding it.
 
+## Provisioning the database
+
+The database is provisioned by the operator, on a host of the operator's
+choosing, and is not part of the Netlify site. Any managed PostgreSQL 14+
+works — RDS, Cloud SQL, Azure Database, Neon, Supabase, a self-hosted
+instance — and the application asks nothing of it beyond one database, one
+role that owns it, and TLS.
+
+1. **Create the database and a role that owns it.** One database per
+   deployment context (production, staging). Take the connection string the
+   host gives, in the form
+   `postgresql://user:password@host:5432/dbname?sslmode=require`. If the host's
+   string carries no `sslmode`, the client still uses TLS with certificate
+   verification for any non-local host; set `DATABASE_SSL=no-verify` only for
+   a host whose certificate cannot be verified, and never on production.
+   A connection pooler (PgBouncer, Neon's pooled endpoint, Supabase's pooler)
+   is fine: the client sends no session-level startup options when the schema
+   is `public`.
+2. **Apply the schema from a machine that can reach it.**
+   `DATABASE_URL=… npm run db:migrate`, then `npm run db:status`, which pings
+   the database and prints the server version, the connected user, the
+   round-trip latency, whether the connection is on TLS, and the migrations
+   applied and pending. Both must say what you expect before the next step.
+3. **Give the site the URL.** In the Netlify site's environment variables set
+   `DATABASE_URL` on the context that should use it (and `DATABASE_SSL` if
+   step 1 needed it). Leave `STORAGE_BACKEND` unset, or set it to `postgres`
+   to refuse every fallback. Redeploy — an environment change does not
+   restart a running function.
+4. **Confirm from the site.** `GET /health` → `storage` must read
+   `requested: auto|postgres`, `chosen: postgres`, `reachable: true`,
+   `schema: { pending: 0, drifted: 0 }`, and `configured.problems` must be
+   empty. `GET /v1/partc/storage` says the same in one line.
+5. **Issue the keys against it.** `DATABASE_URL=… npm run key:create -- --org
+   "Name" --name "Key" --scopes read,write` writes the key into the same
+   database; `npm run key:list` reads it back. Keys issued into Firebase before
+   this point are not moved by the schema step — reissue them, or backfill
+   (below).
+6. **Turn on the host's continuous backup** (point-in-time recovery) and
+   record the RPO and RTO it gives in the deployment runbook.
+
 ## Moving an existing deployment
 
-1. Provision PostgreSQL; set `DATABASE_URL` (and `DATABASE_SSL=true` on a
-   managed host). Do **not** set it on the production context yet.
+1. Provision PostgreSQL as above; set `DATABASE_URL` locally. Do **not** set
+   it on the production context yet.
 2. `npm run db:migrate` against it.
 3. `npm run db:backfill -- --from=blobs` (or `firebase`). Dry run: reads,
    checks every reference, prints the count per collection per organisation,
@@ -179,7 +237,7 @@ deployment's runbook; do not quote these until measured there.
 ## Testing
 
 `npm test` runs against the in-memory store. `npm run test:postgres` runs the
-**same 94 suites** against PostgreSQL — every test that touches storage runs
+**same 97 suites** against PostgreSQL — every test that touches storage runs
 on the relational store, and each Jest worker gets its own schema
 (`test_w1`, `test_w2` …) so suites stay parallel. `npm run test:scale` runs
 the ten-thousand-row roll-up alone, in band, and enforces the second. CI runs
