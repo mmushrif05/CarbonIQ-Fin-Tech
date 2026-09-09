@@ -19,6 +19,7 @@
 
 const TABLES = {
   'project-finance': require('../../data/pcaf-parta/dq-project-finance.json'),
+  'listed-equity-corporate-bonds': require('../../data/pcaf-parta/dq-listed-equity-corporate-bonds.json'),
 };
 
 /** The data-quality table for an asset class, or an error naming the gap. */
@@ -65,6 +66,10 @@ function score(assetClass, option) {
     option: row.option,
     family: row.family,
     when: row.when,
+    /* Present on tables that record them: which scopes the option can reach
+       (fn 53) and whether it yields an attribution factor at all (fn 41). */
+    ...(row.scopes ? { scopes: row.scopes } : {}),
+    ...(row.attributionFactor !== undefined ? { attributionFactor: row.attributionFactor } : {}),
     /* Rendered as a category with the scale beside it. Never "3 / 5". */
     label: `Data quality score: ${row.score} (Option ${row.option})`,
     scale: table.scale,

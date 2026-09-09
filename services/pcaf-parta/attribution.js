@@ -26,6 +26,18 @@ const DENOMINATORS = {
     label: 'total project equity plus debt',
     reference: 'PCAF Part A Third Edition §5.3, Attribution of emissions',
   },
+  /* §5.1 uses two: EVIC for a listed company, total equity plus debt for a
+     bond to a private one (p.42). The classifier decides which. */
+  'listed-equity-corporate-bonds': {
+    field: 'evic',
+    label: 'enterprise value including cash (EVIC)',
+    reference: 'PCAF Part A Third Edition §5.1, Attribution of emissions (pp.41–42)',
+  },
+  'corporate-bond-private': {
+    field: 'totalEquityPlusDebt',
+    label: 'total company equity plus debt',
+    reference: 'PCAF Part A Third Edition §5.1, Attribution of emissions (p.42)',
+  },
 };
 
 /**
