@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — AI Borrower Coaching Agent
  *

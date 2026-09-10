@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The GHG Protocol Scope 3 recalculation triggers, as Part C's checklist
  * expects them to be declared. A domain fact: the schema defaults to it and

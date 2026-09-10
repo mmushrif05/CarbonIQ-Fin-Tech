@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The route table as the application registered it, with the scope each
  * route requires — the source of docs/API-SCOPES.md and of the test that
@@ -28,7 +29,7 @@ function layerPath(layer) {
 
 /**
  * Every registered route: method, full pattern, and its scope.
- * @param {import('express').Express} app
+ * @param {any} app  the Express application
  */
 function routeTable(app) {
   const rows = [];

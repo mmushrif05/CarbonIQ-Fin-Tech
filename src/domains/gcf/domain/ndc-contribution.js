@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — contribution against Sri Lanka's NDC 3.0
  *

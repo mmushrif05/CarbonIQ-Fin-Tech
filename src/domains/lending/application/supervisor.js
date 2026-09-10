@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Multi-Agent Supervisor / Orchestrator
  *

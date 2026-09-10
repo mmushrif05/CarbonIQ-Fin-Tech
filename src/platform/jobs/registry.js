@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The job types this deployment can run, and the handler for each.
  *

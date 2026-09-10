@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The request context — what every log line and every error report needs to
  * know about the request it happened inside, without being handed it.

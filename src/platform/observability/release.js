@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The identity of the running build — one reading, used by /health, the
  * logger's base fields and every error report, so the three cannot disagree

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The job handlers — a composition root.
  *
@@ -15,11 +16,13 @@
 
 'use strict';
 
+/** @typedef {import('./shared/types').AppError} AppError */
+
 const registry = require('./platform/jobs/registry');
 const { toBuffer, PDF, DOCX } = require('./platform/reporting/pdf-response');
 
 const invalid = (error) => {
-  const e = new Error(error.details.map(d => d.message).join('; '));
+  const e = /** @type {AppError} */ (new Error(error.details.map(d => d.message).join('; ')));
   e.statusCode = 400; e.code = 'VALIDATION_ERROR'; e.details = error.details;
   return e;
 };

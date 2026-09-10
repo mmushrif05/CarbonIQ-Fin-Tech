@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — The baseline book, held in the repository
  *

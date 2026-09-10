@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * `doc({...})` — a no-op middleware carrying what the generator cannot
  * infer from the router: a summary, a description, the query parameters a
@@ -10,7 +11,7 @@
 'use strict';
 
 /**
- * @param {{summary?: string, description?: string, query?: object, response?: object, status?: number, tags?: string[]}} hints
+ * @param {{summary?: string, description?: string, query?: object, response?: object, body?: object, status?: number, tags?: string[], produces?: string[], responseDescription?: string}} hints
  *   `query` maps a name to a JSON Schema (or a description string);
  *   `response` is the JSON Schema of the 2xx body, or `{ $ref }` to a component.
  */

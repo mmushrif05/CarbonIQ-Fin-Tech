@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — AI Decision Review Agent Definition
  *

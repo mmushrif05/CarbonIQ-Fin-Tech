@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * OpenAPI 3.1 from the router (gaps F1, F4).
  *
@@ -220,6 +221,7 @@ function responsesFor(row, dataSchema) {
     ok.content = { 'application/json': { schema: data }, [VND]: { schema: envelopeOf(data) } };
     for (const type of row.hints.produces || []) ok.content[type] = { schema: { type: 'string', format: 'binary' } };
   }
+  /** @type {Record<string, any>} */
   const responses = { [okStatus]: ok };
   if (row.cached) responses['304'] = { $ref: '#/components/responses/NotModified' };
   if (row.validate || row.paged) responses['400'] = { $ref: '#/components/responses/BadRequest' };

@@ -173,7 +173,10 @@ describe('Reduction and removal are never summed', () => {
 
 describe('No net-zero year is asserted', () => {
   test('the reports layer reports it absent rather than carrying the old one', () => {
-    const src = fs.readFileSync(path.join(ROOT, 'src', 'domains', 'lending', 'application', 'reports.js'), 'utf8');
+    /* The reports module is a barrel over a directory of parts (E5); the rule lives in whichever part renders the line. */
+    const dir = path.join(ROOT, 'src', 'domains', 'lending', 'application', 'reports');
+    const src = [path.join(ROOT, 'src', 'domains', 'lending', 'application', 'reports.js'), ...fs.readdirSync(dir).map(f => path.join(dir, f))]
+      .map(f => fs.readFileSync(f, 'utf8')).join('\n');
     expect(src).toMatch(/netZeroTarget:\s*null/);
     expect(src).toMatch(/states no net-zero year/);
   });

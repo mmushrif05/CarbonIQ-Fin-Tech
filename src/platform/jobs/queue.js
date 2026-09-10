@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The job queue (gaps I1, I2): work that does not fit inside one request.
  *
@@ -24,6 +25,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const crypto = require('crypto');
 const config = require('../config');
@@ -78,7 +81,7 @@ const SELECT = `org_id, id, type, status, payload, result, error, attempts, max_
   artifact_type, artifact_name, length(artifact) AS artifact_bytes, created_at, started_at, finished_at, run_after`;
 
 function unknownType(type) {
-  const e = new Error(`No job type "${type}".`);
+  const e = /** @type {AppError} */ (new Error(`No job type "${type}".`));
   e.statusCode = 400; e.code = 'UNKNOWN_JOB_TYPE';
   e.remedy = `One of: ${registry.types().map(t => t.type).join(', ')}. GET /v1/jobs/types describes each.`;
   return e;
@@ -221,7 +224,7 @@ async function get(orgId, jobId) {
   return _bucket(orgId).get(jobId) || null;
 }
 
-async function list(orgId, { status, type, limit = 500 } = {}) {
+async function list(orgId, { status, type, limit = 500 } = /** @type {{status?: any, type?: any, limit?: any}} */ ({})) {
   if (mode() === 'postgres') {
     const where = ['org_id = $1']; const params = [orgId];
     if (status) { params.push(status); where.push(`status = $${params.length}`); }

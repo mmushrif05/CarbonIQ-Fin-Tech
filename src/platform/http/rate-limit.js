@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Rate Limiting Middleware
  *
@@ -6,7 +7,7 @@
  * JWT-authenticated requests use the default limit.
  */
 
-const rateLimit = require('express-rate-limit');
+const rateLimit = /** @type {any} */ (require('express-rate-limit'));
 const { RATE_LIMITS } = require('../../shared/constants');
 
 function createLimiter(limitConfig = RATE_LIMITS.default) {

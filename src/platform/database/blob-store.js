@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — durable storage on Netlify Blobs
  *
@@ -38,6 +39,8 @@
 
 'use strict';
 
+/** @typedef {import('../../shared/types').AppError} AppError */
+
 let _blobs = null;
 try { _blobs = require('@netlify/blobs'); } catch (_) { _blobs = null; }
 
@@ -74,7 +77,7 @@ function isAvailable() {
 
 function _requireStore() {
   if (!isAvailable()) {
-    const err = new Error('Netlify Blobs is not available in this runtime.');
+    const err = /** @type {AppError} */ (new Error('Netlify Blobs is not available in this runtime.'));
     err.statusCode = 503;
     err.code = 'BLOB_STORE_UNAVAILABLE';
     throw err;

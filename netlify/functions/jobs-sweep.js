@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The sweep: every ten minutes, look at the queue.
  *

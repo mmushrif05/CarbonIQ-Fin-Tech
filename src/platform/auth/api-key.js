@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — API Key Authentication Middleware
  *

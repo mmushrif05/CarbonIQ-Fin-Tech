@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — the entity's assurance declaration
  *

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Carbon Pricing Request Validation Schema
  */

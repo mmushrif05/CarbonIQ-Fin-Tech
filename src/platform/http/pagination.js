@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Pagination on every list (gap A6).
  *
@@ -17,11 +18,13 @@
 
 'use strict';
 
+/** @typedef {import('../../shared/types').AppError} AppError */
+
 const MAX_LIMIT = 500;
 const DEFAULT_LIMIT = 50;
 
 function badRequest(message, remedy) {
-  const e = new Error(message);
+  const e = /** @type {AppError} */ (new Error(message));
   e.statusCode = 400; e.code = 'BAD_PAGE'; e.remedy = remedy;
   return e;
 }

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — How much of a project's emissions this book carries
  *

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * In-process metrics — request rate, latency, error rate, store latency —
  * for the instance that is answering (gap D4).

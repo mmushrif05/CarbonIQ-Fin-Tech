@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * Stamp the build's identity into a file the function can read at runtime.
  *

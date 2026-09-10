@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The capital book's vocabulary — the states an investment, its asset and a
  * payment can be in. Pure, so the engines (forecast, metrics, basket) can

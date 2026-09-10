@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Agentic AI Orchestrator
  *
@@ -33,7 +34,7 @@
 
 const crypto    = require('crypto');
 const { fallback } = require('../observability/logger');
-const Anthropic = require('@anthropic-ai/sdk');
+const Anthropic = /** @type {any} */ (require('@anthropic-ai/sdk'));
 const config    = require('../config');
 const { saveAgentRun, updateAgentRun } = require('../bridge/firebase');
 const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../../shared/models/agent-run');
@@ -138,6 +139,7 @@ function _accumulateTokens(run, usage) {
  * @param {string}   params.userMessage      - The initial user request / task description
  * @param {string}   params.orgId            - Organisation ID for Firebase scoping
  * @param {Object}   [params.metadata]       - Extra context stored with the run
+ * @param {Object}   [params.deadline]       - The request's Deadline (platform/ai/deadline.js)
  * @param {Object}   [params.callProfile]    - Per-agent cost of a turn: {maxTokens, thinking}.
  *                                             Omit for the reasoning default (adaptive, 32K).
  *                                             thinking:null turns thinking off for agents that
@@ -178,6 +180,7 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
      reaches the model directly. Handing the document to the agent that maps it
      removes an entire transcription round-trip — the thing that made the PDF
      path unable to fit inside one invocation. */
+  /** @type {Array<{role: string, content: any}>} */
   const messages = [{ role: 'user', content: userMessage }];
   let iterations = 0;
 

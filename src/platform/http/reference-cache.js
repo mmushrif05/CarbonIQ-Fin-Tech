@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Caching for reference data (gap A8).
  *

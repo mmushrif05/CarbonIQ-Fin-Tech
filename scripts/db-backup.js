@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * A logical backup of the configured database, in pg_dump's custom format,
  * and a check that the file it wrote can be read back.

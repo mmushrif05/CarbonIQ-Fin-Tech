@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — year-end readiness, on the desk
  *

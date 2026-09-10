@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C: Storage Layer
  *
@@ -66,6 +67,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const fb = require('../bridge/firebase');
 const blobs = require('./blob-store');
@@ -198,7 +201,7 @@ function capability() {
 function assertWritable() {
   const cap = capability();
   if (cap.writable) return cap;
-  const err = new Error(cap.reason);
+  const err = /** @type {AppError} */ (new Error(cap.reason));
   err.statusCode = 503;
   err.code = 'STORAGE_UNAVAILABLE';
   err.remedy = cap.remedy;
@@ -367,14 +370,14 @@ async function query(collection, orgId, { where = {}, limit = null, orderBy = 'c
 }
 
 /** One page and the cursor for the next. The cursor is opaque and store-specific. */
-async function page(collection, orgId, { limit = 50, cursor, where = {} } = {}) {
+async function page(collection, orgId, { limit = 50, cursor, where = {} } = /** @type {{limit?: any, cursor?: any, where?: any}} */ ({})) {
   if (_pgLive()) return db.documents.page(collection, orgId, { limit, cursor, where });
   const size = Math.min(500, Math.max(1, Number(limit) || 50));
   let offset = 0;
   if (cursor) {
     offset = Number(Buffer.from(String(cursor), 'base64url').toString('utf8'));
     if (!Number.isInteger(offset) || offset < 0) {
-      const err = new Error('The cursor is not one this store issued.');
+      const err = /** @type {AppError} */ (new Error('The cursor is not one this store issued.'));
       err.statusCode = 400; err.code = 'BAD_CURSOR';
       throw err;
     }

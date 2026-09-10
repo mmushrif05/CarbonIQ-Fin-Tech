@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — adjusting the book without recording it
  *

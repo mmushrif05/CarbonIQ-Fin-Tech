@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The tamper-evident audit trail.
  *
@@ -71,7 +72,7 @@ const ISO = `to_char(at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`;
 
 /**
  * Walk the chain from the start and recompute every hash.
- * @returns {{ok:boolean, checked:number, brokenAt:number|null, reason:string|null}}
+ * @returns {Promise<{ok:boolean, checked:number, brokenAt:number|null, reason:string|null}>}
  */
 async function verify({ batch = 1000 } = {}) {
   let prev = GENESIS, checked = 0, lastSeq = 0;
@@ -102,7 +103,7 @@ async function verify({ batch = 1000 } = {}) {
   }
 }
 
-async function tail({ orgId, limit = 50 } = {}) {
+async function tail({ orgId, limit = 50 } = /** @type {{orgId?: any, limit?: any}} */ ({})) {
   const params = [Math.min(500, Math.max(1, Number(limit) || 50))];
   let sql = `SELECT seq, org_id, ${ISO} AS at, actor, action, resource, request_id, detail, hash FROM audit_events`;
   if (orgId) { sql += ' WHERE org_id = $2'; params.push(orgId); }

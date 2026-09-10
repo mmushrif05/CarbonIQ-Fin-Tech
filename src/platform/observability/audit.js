@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — the request line, the request context, and the audit chain.
  *

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Hybrid RBAC + ABAC Authorization Middleware
  *

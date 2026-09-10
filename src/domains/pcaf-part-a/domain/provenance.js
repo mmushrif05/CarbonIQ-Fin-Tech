@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * A figure and how it was arrived at, together.
  *

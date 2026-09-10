@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Joi → JSON Schema (the dialect OpenAPI 3.1 speaks).
  *

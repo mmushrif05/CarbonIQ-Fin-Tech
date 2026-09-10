@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * A worked capital book, for demonstrating the dashboard.
  *

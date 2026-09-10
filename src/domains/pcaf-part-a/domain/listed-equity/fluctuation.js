@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Fluctuation analysis: why the financed-emissions figure moved between two
  * reporting periods (Chapter 6, pp.164–165).
