@@ -73,6 +73,20 @@
           </button>
           <span class="login-hint">Your role and organisation come from your account.</span>
         </div>
+
+        <!-- The sample book, opened by an address. Offered only where the
+             server says a preview session can be issued, so the panel is
+             never a button that cannot work. -->
+        <div class="login-preview" id="login-preview" hidden>
+          <h3>See a worked example</h3>
+          <p class="login-subtitle">A sample insurance book, read-only. No client records.</p>
+          <div class="login-preview-row">
+            <input id="preview-email" type="email" class="login-input" autocomplete="email"
+                   placeholder="you@bank.lk" aria-label="Email address" />
+            <button class="login-btn login-btn-quiet" id="preview-btn" onclick="LoginPage.preview()">Open</button>
+          </div>
+          <div class="login-error" id="preview-error" role="alert" aria-live="polite"></div>
+        </div>
       </div>
 
       <!-- Choosing your own password. An account is issued with one an
@@ -277,6 +291,41 @@
       }
     }
 
+    /** Open the sample book against an address, and nothing else. */
+    async function preview() {
+      const email = document.getElementById('preview-email').value.trim();
+      if (!email) return _say('preview-error', 'Enter an email address.');
+      _say('preview-error', '');
+      const btn = document.getElementById('preview-btn');
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/preview`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return _say('preview-error', [body.message, body.remedy].filter(Boolean).join(' '));
+        Auth.startSession(body);
+        _enter();
+      } catch (_) {
+        _say('preview-error', 'Could not reach the server. Check your connection and try again.');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    /* Asked before the panel is drawn, for the same reason the first-run
+       window is: a deployment that cannot issue a preview session should show
+       no offer rather than one that fails when pressed. */
+    async function _checkPreview() {
+      try {
+        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/preview`);
+        const body = await res.json().catch(() => ({}));
+        const el = document.getElementById('login-preview');
+        if (el && res.ok && body.available) el.hidden = false;
+      } catch (_) { /* offline: offer nothing */ }
+    }
+
     /* The window is checked before the form is drawn, so an operator setting
        a deployment up meets the first-run screen rather than a sign-in form
        that can only refuse them. */
@@ -298,7 +347,10 @@
         const el = document.getElementById(id);
         if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') changePassword(); });
       });
+      const pv = document.getElementById('preview-email');
+      if (pv) pv.addEventListener('keydown', e => { if (e.key === 'Enter') preview(); });
       _checkFirstRun();
+      _checkPreview();
     }
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', _wireEnter);
@@ -306,7 +358,7 @@
       _wireEnter();
     }
 
-    return { submit, changePassword, bootstrap };
+    return { submit, changePassword, bootstrap, preview };
   })();
   </script>
 

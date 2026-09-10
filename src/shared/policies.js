@@ -137,6 +137,34 @@ const ROLES = {
     description: 'Read-only access to all runs, reports, and audit trails',
   },
 
+  /*
+   * A preview visitor, admitted by email alone into the shared preview
+   * organisation, where the only records are the sample book.
+   *
+   * It is a role of its own rather than a reuse of `auditor` because the two
+   * make different claims. An auditor is a named person a bank has appointed
+   * to read its real book; a preview visitor is someone who typed an address
+   * into a public form. Labelling the second as the first would put "Auditor"
+   * beside a marketing address on the Accounts screen, which is the kind of
+   * quiet mislabelling this codebase already had to correct once in the audit
+   * chain — a cryptographically sound record of a self-declared identity.
+   *
+   * The level is what enforces it: `scopesForRoleLevel(20)` falls through to
+   * `['read']`, so a preview session cannot write, cannot lock, and cannot run
+   * an agent — the last of which also means it cannot spend the deployment's
+   * AI budget.
+   */
+  viewer: {
+    label: 'Preview visitor',
+    level: 20,
+    permissions: [
+      PERMISSIONS.PROJECT_READ,
+      PERMISSIONS.PORTFOLIO_READ,
+      PERMISSIONS.RUNS_READ,
+    ],
+    description: 'Read-only access to the sample book — admitted by email address alone',
+  },
+
   borrower: {
     label: 'Borrower',
     level: 10,

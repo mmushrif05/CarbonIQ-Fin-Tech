@@ -63,6 +63,11 @@ const OVERRIDES = Object.freeze([
      being reserved. */
   { method: 'POST', pattern: /^\/v1\/auth\/logout$/, scope: 'read', why: 'ends the caller\'s own session' },
   { method: 'POST', pattern: /^\/v1\/auth\/password$/, scope: 'read', why: 'changes the caller\'s own password' },
+  /* The preview register is a list of addresses people gave a public form.
+     It is the most personal data this deployment holds and the least
+     protected by anything else, so it is `admin` — one bar above the `read`
+     that every other list on the surface needs. */
+  { method: 'GET', pattern: /^\/v1\/auth\/preview\/signups$/, scope: 'admin', why: 'reads the addresses visitors gave a public form' },
   { method: 'GET', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'reads other people\'s accounts' },
   { method: 'POST', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'creates or resets another account' },
   { method: 'PATCH', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'changes another account\'s role or standing' },

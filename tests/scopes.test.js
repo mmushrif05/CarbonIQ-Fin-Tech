@@ -201,11 +201,21 @@ describe('Every route carries a scope, and the document says which', () => {
        before any credential exists on this deployment: they answer only while
        it holds no accounts at all and only against ADMIN_BOOTSTRAP_TOKEN, so
        the window closes with the account they create and cannot be reopened.
-       These three are the only writes on this list. */
+
+       The two /v1/auth/preview routes carry none because there is nothing to
+       authenticate: the address a visitor types is recorded, not believed.
+       What they hand back is bounded instead of trusted — a session holding
+       `read`, in an organisation whose only records are the sample book — so
+       the credential-free write here grants strictly less than a sign-in
+       would to somebody who already had an account.
+
+       These four are the only writes on this list, and a fifth joining it is
+       a decision somebody should have to make in this file. */
     expect(open.sort()).toEqual([
-      'GET /v1', 'GET /v1/auth/bootstrap', 'GET /v1/carbon-pricing/rates',
+      'GET /v1', 'GET /v1/auth/bootstrap', 'GET /v1/auth/preview',
+      'GET /v1/carbon-pricing/rates',
       'GET /v1/openapi.json', 'GET /v1/reports/types', 'GET /v1/ui-config.js',
-      'POST /v1/auth/bootstrap', 'POST /v1/auth/login',
+      'POST /v1/auth/bootstrap', 'POST /v1/auth/login', 'POST /v1/auth/preview',
     ]);
   });
 

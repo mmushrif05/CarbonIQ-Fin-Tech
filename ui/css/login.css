@@ -356,3 +356,76 @@
     white-space: nowrap;
   }
 }
+
+/* ── The sample book, offered under the sign-in form ────────────
+   A second way in rather than a competing one: quieter than the
+   sign-in button, separated by a rule, and hidden outright until the
+   server says a preview session can be issued. */
+.login-preview {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.login-preview h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f5f5f7;
+  margin-bottom: 6px;
+}
+
+/* The card's own subtitle carries 28px of space before a form grid;
+   this one sits directly above a single row and needs less. */
+.login-preview .login-subtitle {
+  font-size: 13px;
+  color: #8e8e93;
+  margin-bottom: 16px;
+}
+
+.login-preview-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+}
+
+/* An input in a flex row will not shrink below its content width
+   unless it is told to: min-width is auto, and one long placeholder
+   would otherwise set the width of the card at a phone size. */
+.login-preview-row .login-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.login-btn-quiet {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #f5f5f7;
+  padding: 12px 24px;
+  flex: 0 0 auto;
+}
+
+.login-btn-quiet:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.28);
+  box-shadow: none;
+}
+
+@media (max-width: 520px) {
+  .login-preview-row { flex-direction: column; }
+  .login-btn-quiet { justify-content: center; }
+}
+
+/* ── The mark a preview session carries on every screen ─────────
+   A provenance label, not a warning: the figures are real arithmetic
+   over invented policies, which is the combination most likely to be
+   read as somebody's real position. Neutral, because amber in this
+   product means something the reader has to act on. */
+.preview-mark {
+  padding: 10px 24px;
+  background: rgba(148, 163, 184, 0.12);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}

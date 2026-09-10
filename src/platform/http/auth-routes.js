@@ -242,6 +242,10 @@ router.post('/bootstrap',
     res.status(201).json({ user });
   }));
 
+/* Preview access — its own file, because it is its own concern and this
+   one was over the length the structure test allows. */
+router.use(require('./auth-preview-routes'));
+
 router.post('/login',
   signInLimiter,
   validate({ body: loginSchema }),

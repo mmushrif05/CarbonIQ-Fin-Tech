@@ -42,7 +42,14 @@ without a decorator on any of them.
 | `esg_analyst` | 60 | read, write, lock, assess |
 | `relationship_manager` | 40 | read, write, assess |
 | `auditor` | 30 | read |
+| `viewer` | 20 | read |
 | `borrower` | 10 | read |
+
+`viewer` is the preview visitor (below). It is a role of its own rather than a
+reuse of `auditor` because the two make different claims: an auditor is a named
+person a bank appointed to read its real book, and a preview visitor is someone
+who typed an address into a public form. Labelling the second as the first
+would put *Auditor* beside a marketing address on the Accounts screen.
 
 `lock` is kept apart from `write` because a lock enters an assessment into a
 regulatory disclosure. `admin` was reserved until now; the user-administration
@@ -100,6 +107,86 @@ npm run user:trial  -- guest@customer.lk --until 2026-03-31
 npm run user:disable -- ana@bank.lk     # and ends every session
 npm run user:enable  -- ana@bank.lk
 ```
+
+---
+
+## Preview access — the sample book, opened by an address
+
+`POST /v1/auth/preview` takes an email address and nothing else, and answers
+with a session. That sounds like an open door and it is not one: what comes
+back holds `read`, in an organisation whose only records are a sample book.
+
+**There is nothing to authenticate.** The address is recorded, not believed.
+That is why the route carries no credential — the same reason `POST
+/v1/auth/login` does not, arrived at from the other direction — and why it can
+grant strictly less than a sign-in grants somebody who already has an account.
+
+### One shared account, one register row per address
+
+The obvious design is an account per visitor, and it is wrong twice. A public
+form that writes a row into `users` for anyone who types into it is an
+unbounded write on the table holding every real person; and `users` keys on the
+address, so the first time somebody at a bank that already has an account typed
+their own address into the preview form the route would have to either refuse —
+announcing to an anonymous caller that the address is registered, which is
+precisely the oracle the sign-in route goes to lengths to avoid — or touch
+their real account.
+
+So every visitor is admitted on one shared account (`preview@carboniq.invalid`,
+role `viewer`, organisation `preview`) and each gets their own session row,
+which is what expires and can be revoked. Who asked lives in `preview_signups`
+(migration `0007`), which is the register a product team reads. The two facts
+are kept apart deliberately: removing an account must not erase the fact that
+the question was asked.
+
+The cost is worth stating. An audit line for a preview read names the preview
+account rather than the visitor. That is accurate rather than lossy — the
+preview account is the authority the request carried — and it cannot mislead
+anyone about a book, because the only book a preview session can reach is the
+sample one.
+
+### Why the isolation holds
+
+Not a check that refuses; a partition that is empty. Every read at the storage
+seam takes the organisation as its second argument and is partitioned on it, so
+an organisation whose only records are the sample book can only ever return the
+sample book. A record written into another organisation is invisible from a
+preview session with no rule firing, and `tests/preview-access.test.js` proves
+exactly that by writing one.
+
+`scopesForRoleLevel(20)` resolves to `['read']`, so a preview session cannot
+write, cannot lock and cannot run an agent — the last of which also means a
+public form cannot spend the deployment's AI budget.
+
+### The register
+
+`GET /v1/auth/preview/signups` requires the **`admin`** scope — one bar above
+the `read` every other list on the surface needs, because it is the most
+personal thing this deployment holds. It answers newest first: the address,
+when it first asked, when it last did, and how many times. A returning address
+is one row with a count rather than four rows, because *asked once in March*
+and *has come back four times this week* are different facts about the same
+address and only the second is worth acting on.
+
+No IP address is kept. The register holds what a visitor chose to give.
+
+### The sample book, and the switch
+
+The capital book and the GCF pipeline already fall back to the baselines
+shipped in `data/` when an organisation has recorded nothing, so they need no
+seeding. Part C has no such baseline, so its demo book is installed into the
+preview organisation on the first admission, once. That install is sequentially
+idempotent; two visitors pressing the button in the same instant on a
+deployment that has never been previewed could both pass the check and seed
+twice, which would duplicate the sample book rather than do anything unsafe.
+The seam publishes no lock to close it and this is recorded rather than left to
+be found.
+
+`PREVIEW_ACCESS=off` closes the door; `GET /v1/auth/preview` then says so with
+the remedy, and the sign-in screen offers no panel. The default is on, which is
+the less cautious of the two defaults and is deliberate: what the route can do
+is bounded by construction, so the usual reason to default a public door shut
+does not apply.
 
 ---
 
