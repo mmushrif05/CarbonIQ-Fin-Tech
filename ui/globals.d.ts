@@ -63,9 +63,22 @@ declare const Toast: {
   [key: string]: any;
 };
 
-/* The three pages whose module is declared inline in their own HTML fragment
-   rather than in a file under `ui/js/`. They exist only once that fragment has
-   been loaded, which is why every call site guards with `typeof`. */
-declare const ReportsPage: CarbonIQPage | undefined;
-declare const PipelinePage: CarbonIQPage | undefined;
-declare const CarbonPricingPage: CarbonIQPage | undefined;
+/* ReportsPage, PipelinePage and CarbonPricingPage used to be declared here.
+   They were declared because each was defined inside a `<script>` in its own
+   HTML fragment, where the type checker could not see it — and, as it turned
+   out, where the browser never executed it either: a fragment is inserted
+   with innerHTML, and a script inserted that way is inert. The declaration
+   made three modules that did not exist at runtime look present at build
+   time, which is the shape of a fiction rather than a type.
+
+   They are files under `ui/js/` now, so their own definitions are the types,
+   and re-declaring them here would clash with the real ones. */
+
+/**
+ * The dispatcher behind `data-action`. Defined in `ui/js/actions.js`, which
+ * loads before anything that registers with it or is reached through it.
+ */
+declare const Actions: {
+  register: (modules: Record<string, any>) => void;
+  init: () => void;
+};

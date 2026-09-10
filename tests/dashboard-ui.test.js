@@ -28,7 +28,7 @@ const { source, must, mustNot } = require('./helpers/ui-source');
 const read = (...p) => source(p.join('/'));
 
 const appJs  = read('ui', 'app.js');
-const html   = read('ui', 'index.html');
+const login  = read('ui', 'js', 'login.js');
 const dashJs = read('ui', 'js', 'dashboard.js');
 const css    = read('ui', 'styles.css');
 const sample = JSON.parse(read('ui', 'data', 'portfolio-sample.json').text);
@@ -56,7 +56,9 @@ describe('A returning user lands on a page rather than on a spinner', () => {
   });
 
   test('the login screen calls the router directly', () => {
-    must(html, 'window.CARBONIQ_navigateTo(defaultPage)', "the login screen calls the router directly");
+    /* The controller moved out of index.html into a file of its own when
+       script-src stopped allowing inline script; the rule did not move. */
+    must(login, 'window.CARBONIQ_navigateTo(defaultPage)', "the login screen calls the router directly");
   });
 
 });

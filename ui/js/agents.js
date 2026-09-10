@@ -1222,7 +1222,7 @@ const AgentsPage = (() => {
           </div>
           <div class="form-group">
             <label>Decision</label>
-            <select id="cvr-decision" class="form-input form-input-sm" onchange="AgentsPage._onReviewDecisionChange()">
+            <select id="cvr-decision" class="form-input form-input-sm" data-action-change="AgentsPage.onReviewDecisionChange">
               <option value="">-- Select --</option>
               <option value="approved">Approved — accept all AI recommendations</option>
               <option value="modified">Modified — accept with threshold changes</option>
@@ -1237,10 +1237,10 @@ const AgentsPage = (() => {
         <div id="cvr-mods-wrap" style="display:none">
           <label style="font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;display:block">Modifications</label>
           <div id="cvr-mods-list"></div>
-          <button class="btn btn-ghost btn-sm" onclick="AgentsPage._addModRow()" style="margin-top:4px">+ Add Modification</button>
+          <button class="btn btn-ghost btn-sm" data-action="AgentsPage.addModRow" style="margin-top:4px">+ Add Modification</button>
         </div>
         <div style="margin-top:16px;display:flex;gap:8px;align-items:center">
-          <button class="btn btn-primary btn-sm" id="cvr-submit-btn" onclick="AgentsPage._submitCovenantReview('${runId}')">
+          <button class="btn btn-primary btn-sm" id="cvr-submit-btn" data-action="AgentsPage.submitCovenantReview" data-arg="${runId}">
             Submit Review
           </button>
           <span id="cvr-status" style="font-size:12px;color:var(--text-secondary)"></span>
@@ -1338,5 +1338,17 @@ const AgentsPage = (() => {
     }
   }
 
-  return { init, _onReviewDecisionChange: _onReviewDecisionChange, _addModRow: _addModRow, _submitCovenantReview: _submitCovenantReview };
+  /*
+   * Three controls this page renders call these, and markup may only reach a
+   * module's public surface — an allow-list that resolved private names would
+   * not be one. The bodies are unchanged; only the way in is.
+   */
+  const onReviewDecisionChange = () => _onReviewDecisionChange();
+  const addModRow = () => _addModRow();
+  /** @param {string} runId */
+  const submitCovenantReview = runId => _submitCovenantReview(runId);
+
+  return { init, _onReviewDecisionChange: _onReviewDecisionChange, _addModRow: _addModRow, _submitCovenantReview: _submitCovenantReview,
+    onReviewDecisionChange, addModRow, submitCovenantReview,
+  };
 })();

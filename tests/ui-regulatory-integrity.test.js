@@ -207,12 +207,14 @@ describe('The engine does every arithmetic operation, including against the brow
 
 describe('No screen restates a threshold the engine owns', () => {
   test('the pricing tiers and their score boundaries come from the API', () => {
-    const src = fs.readFileSync(path.join(UI, 'pages/carbon-pricing.html'), 'utf8');
+    /* The module moved out of the fragment — where, being inserted by
+       innerHTML, it had never executed at all — into ui/js/carbon-pricing.js. */
+    const src = fs.readFileSync(path.join(UI, 'js/carbon-pricing.js'), 'utf8');
     expect(src).toMatch(/CARBONIQ_fetch\('\/v1\/carbon-pricing\/rates'\)/);
     expect(src).toMatch(/if \(!_tiers\)/);
     /* The boundaries and the pricing were written into the hint prose beside
        an engine that owns all three. */
-    expect(code(path.join(UI, 'pages/carbon-pricing.html')))
+    expect(code(path.join(UI, 'js/carbon-pricing.js')))
       .not.toMatch(/score >= 70|score >= 40|−20 bps|-20 bps/);
   });
 

@@ -101,7 +101,7 @@
         <label for="ndc-activity-code">SLGFT Activity Code <span class="slgft-tag">Sri Lanka</span></label>
         <input id="ndc-activity-code" type="text" class="form-input"
           placeholder="e.g. M6.3, M6.1, M4.5"
-          oninput="NdcSdgPage.onActivityInput(this.value)" />
+          data-action-input="NdcSdgPage.onActivityInput" />
         <span class="form-hint">SLGFT activity code. The description is read from the taxonomy in force.</span>
       </div>
       <div class="form-group">
@@ -111,7 +111,7 @@
       <div class="form-group">
         <label for="ndc-area">Gross Floor Area (m²)</label>
         <input id="ndc-area" type="number" class="form-input" placeholder="e.g. 25000" min="0"
-          oninput="NdcSdgPage.calcIntensity()" />
+          data-action-input="NdcSdgPage.calcIntensity" />
       </div>
       <div class="form-group">
         <label for="ndc-reduction">Carbon Reduction vs Baseline (%)</label>
@@ -142,11 +142,11 @@
     <div id="ndc-activity-desc" class="slgft-activity-result" style="display:none;margin-top:8px"></div>
 
     <div style="margin-top:20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="NdcSdgPage.runAssessment()" id="ndc-assess-btn">
+      <button class="btn btn-primary" data-action="NdcSdgPage.runAssessment" id="ndc-assess-btn">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.3"/><path d="M5 8l2 2 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Run AI NDC/SDG Assessment
       </button>
-      <button class="btn btn-ghost" onclick="NdcSdgPage.loadFramework()">View SLGFT Framework →</button>
+      <button class="btn btn-ghost" data-action="NdcSdgPage.loadFramework">View SLGFT Framework →</button>
       <span id="ndc-status-msg" style="font-size:13px;color:var(--text-tertiary)"></span>
     </div>
   </div>
@@ -219,7 +219,7 @@
       </div>
     </div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="NdcSdgPage.generateCertificate()" id="ndc-cert-btn">
+      <button class="btn btn-primary" data-action="NdcSdgPage.generateCertificate" id="ndc-cert-btn">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Generate Certificate
       </button>
@@ -232,7 +232,7 @@
   <div id="ndc-framework-panel" style="display:none">
     <div class="ndc-result-card">
       <div class="ndc-card-header"><h3>SLGFT Framework Reference</h3>
-        <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.hideFramework()">Hide ×</button>
+        <button class="btn btn-ghost btn-sm" data-action="NdcSdgPage.hideFramework">Hide ×</button>
       </div>
       <div id="ndc-framework-body" class="ndc-framework-body">Loading…</div>
     </div>

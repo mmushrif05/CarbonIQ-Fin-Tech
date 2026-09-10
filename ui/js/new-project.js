@@ -96,21 +96,21 @@ const NewProject = (() => {
       ).join('');
       return `<tr>
         <td><input type="text" class="form-input form-input-sm" value="${m.name}"
-          onchange="NewProject._updateMat(${i},'name',this.value)" /></td>
+          data-action-change="NewProject.editMaterial" data-index="${i}" data-field="name" /></td>
         <td><select class="form-input form-input-sm"
-          onchange="NewProject._updateMat(${i},'category',this.value)">${catOpts}</select></td>
+          data-action-change="NewProject.editMaterial" data-index="${i}" data-field="category">${catOpts}</select></td>
         <td><input type="number" class="form-input form-input-sm" value="${m.qty}" min="0"
-          onchange="NewProject._updateMat(${i},'qty',+this.value)" /></td>
+          data-action-change="NewProject.editMaterial" data-index="${i}" data-field="qty" /></td>
         <td>
           <select class="form-input form-input-sm"
-            onchange="NewProject._updateMat(${i},'unit',this.value)">
+            data-action-change="NewProject.editMaterial" data-index="${i}" data-field="unit">
             <option value="kg" ${m.unit==='kg'?'selected':''}>kg</option>
             <option value="tonnes" ${m.unit==='tonnes'?'selected':''}>tonnes</option>
           </select>
         </td>
         <td class="cell-auto">${factor === null ? '—' : factor.toFixed(3)}</td>
         <td class="cell-computed">${co2 === null ? '—' : _fmtN(co2)}</td>
-        <td><button class="btn-icon-sm" onclick="NewProject._removeMat(${i})">×</button></td>
+        <td><button class="btn-icon-sm" data-action="NewProject.removeMaterial" data-arg="${i}">×</button></td>
       </tr>`;
     }).join('');
 
@@ -131,6 +131,32 @@ const NewProject = (() => {
         : `${_fmtN(total)} kgCO2e${missing > 0 ? ` (${missing} line${missing === 1 ? '' : 's'} unpriced)` : ''}`;
     }
     return total;
+  }
+
+  /*
+   * The row edits, taken off the control rather than baked into it.
+   *
+   * A row used to carry `_updateMat(3,'qty',+this.value)` — an index, a field
+   * name and a coercion, written into markup by a template. The index and the
+   * field are the row's own facts, so they live on the row as data; the value
+   * comes from the event. Which field it is decides whether the value is a
+   * number, which is the one thing the old form got right and the only thing
+   * worth carrying over.
+   *
+   * @param {string} value
+   * @param {HTMLElement} el
+   */
+  function editMaterial(value, el) {
+    const idx = Number(el.dataset.index);
+    const field = el.dataset.field;
+    if (!Number.isInteger(idx) || !field) return;
+    _updateMat(idx, field, field === 'qty' ? Number(value) : value);
+  }
+
+  /** @param {string} index */
+  function removeMaterial(index) {
+    const i = Number(index);
+    if (Number.isInteger(i)) _removeMat(i);
   }
 
   function _updateMat(idx, field, value) {
@@ -303,7 +329,7 @@ const NewProject = (() => {
           <div class="review-row"><span>NDC Contribution</span><strong>NDC 3.0 &mdash; 20.09% cumulative GHG reduction vs BAU, 2026–2035</strong></div>
           <div class="review-row"><span>Key SDGs</span><strong>SDG 7 · 9 · 11 · 13 · 14 · 15</strong></div>
           <div style="margin-top:8px">
-            <button class="btn btn-ghost btn-sm" onclick="navigateTo('ndc-sdg')" style="font-size:12px">
+            <button class="btn btn-ghost btn-sm" data-action="Nav.go" data-arg="ndc-sdg" style="font-size:12px">
               Run AI NDC/SDG Analysis →
             </button>
           </div>
@@ -348,8 +374,8 @@ const NewProject = (() => {
         ${lkSection}
       </div>
       <div class="review-actions">
-        <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(3)">← Back</button>
-        <button class="btn btn-primary btn-lg" id="np-submit-btn" onclick="NewProject.submitProject()">
+        <button class="btn btn-ghost btn-lg" data-action="NewProject.goTo" data-arg="3">← Back</button>
+        <button class="btn btn-primary btn-lg" id="np-submit-btn" data-action="NewProject.submitProject">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 8h12M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Submit Project
         </button>
@@ -461,5 +487,6 @@ const NewProject = (() => {
   }
 
   return { init, goTo, nextFromStep1, nextFromStep3, addMaterial, submitProject,
-           onRegionChange, lookupActivity, _updateMat, _removeMat };
+           onRegionChange, lookupActivity, editMaterial, removeMaterial,
+           _updateMat, _removeMat };
 })();

@@ -16,6 +16,9 @@ const { source, must, mustNot } = require('./helpers/ui-source');
 const html = source('ui/pages/accounts.html');
 const js = source('ui/js/accounts.js');
 const shell = source('ui/index.html');
+/* The sign-in controller is `ui/js/login.js` since script-src stopped
+   allowing inline script; it used to be 213 lines inside the shell. */
+const login = source('ui/js/login.js');
 const app = source('ui/app.js');
 const auth = source('ui/js/auth.js');
 
@@ -56,7 +59,7 @@ describe('The four mechanical faults', () => {
     for (const id of ['login-change', 'login-bootstrap']) {
       must(shell, new RegExp(`id="${id}"[^>]*hidden`), `${id} is hidden in the markup`);
     }
-    must(shell, /el\.hidden = name !== which/, 'the pane switcher toggles [hidden] rather than a display class');
+    must(login, /el\.hidden = name !== which/, 'the pane switcher toggles [hidden] rather than a display class');
   });
 
   test('every control and grid child may shrink below its content', () => {

@@ -191,13 +191,13 @@ flowchart TD
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,738 |
 |       `src/platform/database/adapters/` | 6 | 436 |
-|     `src/platform/http/` | 22 | 2,561 |
+|     `src/platform/http/` | 22 | 2,569 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 3 | 291 |
 |   `src/shared/` | 10 | 1,790 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **297** | **50,516** |
+| **total** | **297** | **50,524** |
 
 <!-- END MODULE-MAP -->
 

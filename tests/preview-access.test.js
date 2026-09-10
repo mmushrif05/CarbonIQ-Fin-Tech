@@ -244,6 +244,10 @@ describe('The screen', () => {
    * `e2e/` is for — but it can prove the shape of it is there.
    */
   const shell = () => source('ui/index.html');
+  /* The sign-in controller is a file of its own since script-src stopped
+     allowing inline script. The markup stayed in the shell; the behaviour
+     did not. */
+  const login = () => source('ui/js/login.js');
   const auth = () => source('ui/js/auth.js');
   const css = () => source('ui/css/login.css');
 
@@ -252,7 +256,7 @@ describe('The screen', () => {
        rule that sets display beats it — which is how a drawer once covered the
        page from load while its markup said hidden. */
     must(shell(), /id="login-preview"[^>]*\shidden/, 'the preview panel starts hidden');
-    must(shell(), /getElementById\('login-preview'\)[\s\S]{0,120}\.hidden = false/,
+    must(login(), /getElementById\('login-preview'\)[\s\S]{0,120}\.hidden = false/,
       'and is revealed by clearing [hidden], not by a class');
     mustNot(css(), /\.login-preview\s*\{[^}]*display\s*:/,
       'no class rule sets display on the preview panel',
@@ -269,8 +273,8 @@ describe('The screen', () => {
   test('availability is asked before the panel could be pressed', () => {
     /* Anything that changes what the first screen offers has to be loaded
        before that screen is offered. */
-    must(shell(), /_checkPreview\(\);/, 'the check runs during wiring');
-    const t = shell().text;
+    must(login(), /_checkPreview\(\);/, 'the check runs during wiring');
+    const t = login().text;
     expect(t.indexOf('async function _checkPreview')).toBeLessThan(t.indexOf('return { submit, changePassword, bootstrap, preview }'));
   });
 
