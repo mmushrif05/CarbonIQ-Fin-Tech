@@ -67,7 +67,7 @@
     "express-rate-limit": "^7.5.0",
     "firebase-admin": "^12.0.0",
     "helmet": "^8.0.0",
-    "joi": "^17.13.3",
+    "joi": "^18.2.8",
     "morgan": "^1.10.0",
     "pdfkit": "^0.15.2",
     "pg": "^8.23.0",
