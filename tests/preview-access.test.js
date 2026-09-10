@@ -256,11 +256,42 @@ describe('The screen', () => {
        rule that sets display beats it — which is how a drawer once covered the
        page from load while its markup said hidden. */
     must(shell(), /id="login-preview"[^>]*\shidden/, 'the preview panel starts hidden');
-    must(login(), /getElementById\('login-preview'\)[\s\S]{0,120}\.hidden = false/,
+    must(login(), /getElementById\('login-preview'\)[\s\S]{0,120}\.hidden = /,
       'and is revealed by clearing [hidden], not by a class');
     mustNot(css(), /\.login-preview\s*\{[^}]*display\s*:/,
       'no class rule sets display on the preview panel',
       'A display rule here would beat [hidden] and show the panel from load.');
+  });
+
+  test('the offer is its own card, not a panel inside the sign-in one', () => {
+    /* It shipped nested inside `#login-card-signin`. `_showPane()` hides that
+       whole card to show another, so on a deployment whose first-run window
+       was open — no accounts yet and a bootstrap token set — the offer was
+       revealed by one check and then hidden by the other, and which of the
+       two a visitor saw depended on which answered first. It flashed and
+       went, and the e2e journeys could not see it because that server sets no
+       ADMIN_BOOTSTRAP_TOKEN, so the bootstrap pane never appears there. */
+    const markup = shell().text;
+    const card = markup.indexOf('id="login-card-signin"');
+    const panel = markup.indexOf('id="login-preview"');
+    const bootstrap = markup.indexOf('id="login-bootstrap"');
+    expect(card).toBeGreaterThan(-1);
+    expect(panel).toBeGreaterThan(bootstrap);
+
+    /* And the two facts are combined in one place, so neither answer can
+       overwrite the other by arriving second. */
+    must(login(), /function _applyPreview\(\)/, 'one function decides whether the offer shows');
+    must(login(), /_pane = which;[\s\S]{0,400}_applyPreview\(\);/,
+      'a pane change re-applies it');
+    must(login(), /_previewOffered = true;[\s\S]{0,60}_applyPreview\(\);/,
+      'and so does the answer from the server');
+  });
+
+  test('the offer is not made on the change-password pane', () => {
+    /* That person is part-way through taking ownership of their own account.
+       Opening the sample book from there would replace the session they hold. */
+    must(login(), /_previewOffered && _pane !== 'change'/,
+      'the offer is withheld while a password is being replaced');
   });
 
   test('the input can shrink, so one long address does not widen the page', () => {
