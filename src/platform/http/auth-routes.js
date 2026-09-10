@@ -172,9 +172,13 @@ async function assertSomeoneExists() {
  * The token itself never reaches the wire, here or on `/health`.
  */
 async function bootstrapState() {
-  if (!store.capability().writable) {
-    return { available: false, reason: 'This deployment cannot persist anything.',
-      remedy: 'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.' };
+  const cap = store.capability();
+  if (!cap.writable) {
+    /* The seam's own reason, not a guess. See the note on the sign-in refusal
+       below: "set DATABASE_URL" is the wrong instruction for four of the five
+       ways this can be false, and it is the one an operator acts on first. */
+    return { available: false, reason: `This deployment cannot persist anything. ${cap.reason}`,
+      remedy: cap.remedy || 'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.' };
   }
   if (await users.countUsers() > 0) {
     return { available: false, reason: 'This deployment already has accounts, so the first-run window has closed.',
@@ -258,10 +262,22 @@ router.post('/login',
     },
   }),
   handle(async (req, res) => {
-    if (!store.capability().writable) {
+    const cap = store.capability();
+    if (!cap.writable) {
+      /*
+       * The store already knows *why* it cannot write, and this used to throw
+       * that away and say "Set DATABASE_URL" whatever the cause. On a
+       * deployment with STORAGE_BACKEND=blobs forced and Netlify Blobs
+       * unreachable, that instruction is wrong in a way that costs hours:
+       * setting DATABASE_URL changes nothing while a forced backend stands,
+       * and the screen keeps saying the same thing. `capability()` returns a
+       * reason and, where one applies, the remedy that actually fixes it —
+       * "a forced store that is unreachable refuses writes" is a state this
+       * codebase already models, and the refusal should say so.
+       */
       throw fail(503, 'STORAGE_UNAVAILABLE',
-        'Sessions cannot be issued because this deployment cannot persist anything.',
-        'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.');
+        `Sessions cannot be issued because this deployment cannot persist anything. ${cap.reason}`,
+        cap.remedy || 'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.');
     }
     await assertSomeoneExists();
     const { user, reason } = await users.authenticate(req.body.email, req.body.password);
