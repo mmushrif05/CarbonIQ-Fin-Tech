@@ -256,6 +256,31 @@ describe('The type check covers the platform and never regresses (G1)', () => {
   });
 });
 
+describe('The suite does not depend on the developer\'s own environment', () => {
+  /*
+   * Seven tests passed here and failed in CI, and no local run could have
+   * produced them: `require-ai` refuses a call before the SDK when the key is
+   * absent or malformed, so a suite that mocks the SDK never reaches its mock
+   * unless something has put a plausible key on the environment — and on a
+   * developer's machine a `.env` quietly does. CI has no `.env`.
+   *
+   * This asserts the precondition rather than the line that supplies it, so it
+   * still fails if the default moves, is renamed, or is made conditional in a
+   * way that a checkout without `.env` does not satisfy.
+   */
+  test('the AI gate admits, so a mocked suite reaches its mock in CI as well as here', () => {
+    const status = require('../src/platform/ai/ai-status').describe();
+    expect(status.configured).toBe(true);
+    expect(status.keyWellFormed).toBe(true);
+  });
+
+  test('and the key the suite runs on is not a credential', () => {
+    /* It has the shape the gate checks and nothing else. A real key reaching
+       the suite would mean a mocked test could make a paid call. */
+    expect(process.env.ANTHROPIC_API_KEY).toMatch(/not-a-real-key|^sk-ant-api03-x+$/);
+  });
+});
+
 describe('Operations: staging, the deploy gate, Dependabot (I3, I4, I5)', () => {
   test('a staging context is configured, production-shaped, with its own secrets', () => {
     const toml = fs.readFileSync(path.join(ROOT, 'netlify.toml'), 'utf8');
