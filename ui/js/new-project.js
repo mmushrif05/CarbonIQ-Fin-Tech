@@ -7,19 +7,27 @@
    ============================================================ */
 
 const NewProject = (() => {
-  // ICE v3 carbon factors (A1-A3 cradle-to-gate, kgCO2e/kg)
-  const ICE_FACTORS = {
-    Concrete:  { default: 0.130, label: 'Concrete (general)' },
-    Steel:     { default: 1.550, label: 'Steel rebar / structural' },
-    Timber:    { default: 0.263, label: 'Timber (general)' },
-    Glass:     { default: 1.440, label: 'Float glass' },
-    Aluminium: { default: 8.240, label: 'Aluminium (primary)' },
-    Copper:    { default: 3.820, label: 'Copper' },
-    Brick:     { default: 0.213, label: 'Clay brick' },
-    Insulation:{ default: 1.280, label: 'Mineral wool insulation' },
-    Plaster:   { default: 0.120, label: 'Gypsum plaster' },
-    Other:     { default: 0.500, label: 'Other / unspecified' },
-  };
+  /**
+   * The material factors are **not** held here.
+   *
+   * A copy lived in this file and disagreed with the engine's — timber at
+   * 0.263 against -1.00, aluminium at 8.240 against 6.67 — and the screen
+   * multiplied by it, so the carbon total on the review step, and the SLGFT
+   * tier drawn from that total, were computed on factors the engine does not
+   * use. A relationship manager filling this in with a client saw a figure
+   * this product would not stand behind.
+   *
+   * They come from `GET /v1/extract/factors` now, which serves what the
+   * engine multiplies by, with the source of each row.
+   */
+  let _factors = null;
+
+  async function loadFactors() {
+    if (_factors) return _factors;
+    const res = await window.CARBONIQ_fetch('/v1/extract/factors');
+    _factors = res.factors || null;
+    return _factors;
+  }
 
   let _step = 1;
   let _materials = [
@@ -31,9 +39,23 @@ const NewProject = (() => {
   // ── Helpers ───────────────────────────────────────────────
   function $$(id)  { return document.getElementById(id); }
   function _fmtN(n){ return Math.round(n).toLocaleString('en-US'); }
+  /** The factor for a category, or absent — never a stand-in. */
+  function _factorFor(category) {
+    if (!_factors) return null;
+    const row = _factors[String(category || '').toLowerCase()];
+    return row && typeof row.factor === 'number' ? row.factor : null;
+  }
+
+  /**
+   * The line's figure, or null where the factor is not known.
+   *
+   * Null rather than a default: a line priced at 0.5 because nothing matched
+   * is a measurement nobody made, and it used to be summed into the total the
+   * review step showed. */
   function _kgCO2e(mat) {
-    const factor = ICE_FACTORS[mat.category]?.default || 0.5;
-    const qty    = mat.unit === 'tonnes' ? mat.qty * 1000 : mat.qty;
+    const factor = _factorFor(mat.category);
+    if (factor === null) return null;
+    const qty = mat.unit === 'tonnes' ? mat.qty * 1000 : mat.qty;
     return qty * factor;
   }
 
@@ -68,7 +90,8 @@ const NewProject = (() => {
 
     tbody.innerHTML = _materials.map((m, i) => {
       const co2 = _kgCO2e(m);
-      const catOpts = Object.keys(ICE_FACTORS).map(k =>
+      const factor = _factorFor(m.category);
+      const catOpts = Object.keys(_factors || {}).map(k =>
         `<option value="${k}" ${k === m.category ? 'selected' : ''}>${k}</option>`
       ).join('');
       return `<tr>
@@ -85,8 +108,8 @@ const NewProject = (() => {
             <option value="tonnes" ${m.unit==='tonnes'?'selected':''}>tonnes</option>
           </select>
         </td>
-        <td class="cell-auto">${ICE_FACTORS[m.category]?.default.toFixed(3)}</td>
-        <td class="cell-computed">${_fmtN(co2)}</td>
+        <td class="cell-auto">${factor === null ? '—' : factor.toFixed(3)}</td>
+        <td class="cell-computed">${co2 === null ? '—' : _fmtN(co2)}</td>
         <td><button class="btn-icon-sm" onclick="NewProject._removeMat(${i})">×</button></td>
       </tr>`;
     }).join('');
@@ -95,9 +118,18 @@ const NewProject = (() => {
   }
 
   function _renderBOMTotal() {
-    const total = _materials.reduce((s, m) => s + _kgCO2e(m), 0);
+    /* A line with no factor is not counted as zero, and the count of what was
+       left out travels with the total — a total drawn from six of nine lines
+       means something different from one drawn from all nine. */
+    const priced = _materials.map(_kgCO2e).filter(v => v !== null);
+    const total = priced.reduce((s, v) => s + v, 0);
+    const missing = _materials.length - priced.length;
     const el = $$('np-bom-total');
-    if (el) el.textContent = `${_fmtN(total)} kgCO2e`;
+    if (el) {
+      el.textContent = !_factors
+        ? 'Factors not loaded'
+        : `${_fmtN(total)} kgCO2e${missing > 0 ? ` (${missing} line${missing === 1 ? '' : 's'} unpriced)` : ''}`;
+    }
     return total;
   }
 
@@ -127,33 +159,64 @@ const NewProject = (() => {
   }
 
   // ── Activity code lookup ──────────────────────────────────
-  const ACTIVITY_LOOKUP = {
-    'M1.1': { label: 'Green Buildings — New Construction', eligibility: 'threshold', note: 'Threshold: ≤600 kgCO2e/m²', objective: 'Climate Change Mitigation' },
-    'M1.2': { label: 'Green Buildings — Renovation',       eligibility: 'direct',    note: '≥30% energy performance improvement required', objective: 'Climate Change Mitigation' },
-    'M4.1': { label: 'Solar PV — Electricity Generation',  eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
-    'M4.2': { label: 'Concentrated Solar Power (CSP)',      eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
-    'M4.3': { label: 'Wind Energy',                        eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
-    'M6.1': { label: 'Clean Transportation Infrastructure', eligibility: 'direct',    note: 'Directly eligible — no intensity threshold', objective: 'Climate Change Mitigation' },
-    'A2.1': { label: 'Flood-Resilient Construction',        eligibility: 'direct',    note: 'Directly eligible', objective: 'Climate Change Adaptation' },
-    'A2.2': { label: 'Climate-Resilient Buildings',         eligibility: 'threshold', note: 'Climate risk assessment required', objective: 'Climate Change Adaptation' },
-    'E1.1': { label: 'Coastal & Marine Resource Protection',eligibility: 'direct',    note: 'Directly eligible', objective: 'Ecological Conservation' },
-    'E3.1': { label: 'Sustainable Land Use & Biodiversity', eligibility: 'direct',    note: 'Directly eligible', objective: 'Ecological Conservation' },
-  };
+  /**
+   * Neither the activity table nor the intensity bands are held here.
+   *
+   * This file carried a third copy of the SLGFT activity table, stale in the
+   * same three ways the others were, and — worse — it screened intensity
+   * against **600/900**. Those bands were settled at 520/780 and moved into
+   * the governed baseline registry, so this screen was answering a question
+   * about what a bank may call a green loan differently from the endpoint
+   * beside it, on a page a relationship manager fills in with a client.
+   *
+   * Both now come from `GET /v1/ndc-sdg/framework`, which serves what the
+   * engine screens against and says which baseline version it used. A screen
+   * that cannot reach it says so rather than screening on a guess.
+   */
+  let _slgft = null;
+
+  const esc = (v) => String(v == null ? '' : v)
+    .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /** The activities and the bands in force, loaded once before either is read. */
+  async function loadSlgft() {
+    if (_slgft) return _slgft;
+    const f = await window.CARBONIQ_fetch('/v1/ndc-sdg/framework');
+    const byCode = {};
+    for (const a of (f.activities || [])) if (a.code) byCode[a.code] = a;
+    _slgft = { activities: byCode, screen: f.intensityScreen || null };
+    return _slgft;
+  }
 
   function lookupActivity(code) {
     const el = $$('np-activity-desc');
     if (!el) return;
     const upper = (code || '').trim().toUpperCase();
-    const match = ACTIVITY_LOOKUP[upper];
+
+    if (!_slgft) {
+      el.style.display = upper.length > 1 ? 'block' : 'none';
+      if (upper.length > 1) {
+        el.innerHTML = '<span style="color:var(--text-tertiary);font-size:13px">'
+          + 'The taxonomy has not loaded, so this code is not described.</span>';
+      }
+      return;
+    }
+
+    const match = _slgft.activities[upper];
     if (match) {
       const badge = match.eligibility === 'direct'
         ? '<span class="slgft-code" style="background:var(--blue-50,#eff6ff);color:var(--blue-600,#2563eb)">Direct Eligibility</span>'
         : '<span class="slgft-code" style="background:var(--green-50,#f0fdf4);color:var(--green-600,#16a34a)">Threshold-Based</span>';
       el.style.display = 'block';
-      el.innerHTML = `${badge} <strong>${match.label}</strong> — ${match.objective}<br><small style="color:var(--text-tertiary)">${match.note}</small>`;
+      el.innerHTML = `${badge} <strong>${esc(match.label)}</strong>`
+        + `<br><small style="color:var(--text-tertiary)">${esc(match.criterion || '')}</small>`;
     } else {
       el.style.display = upper.length > 1 ? 'block' : 'none';
-      if (upper.length > 1) el.innerHTML = `<span style="color:var(--text-tertiary);font-size:13px">No matching activity for "${upper}". Try M1.1, M4.1, A2.1, etc.</span>`;
+      if (upper.length > 1) {
+        const known = Object.keys(_slgft.activities).slice(0, 3).join(', ');
+        el.innerHTML = `<span style="color:var(--text-tertiary);font-size:13px">No matching activity for "${esc(upper)}"`
+          + `${known ? `. Try ${esc(known)}…` : '.'}</span>`;
+      }
     }
   }
 
@@ -189,7 +252,11 @@ const NewProject = (() => {
     const equity       = parseFloat($$('np-equity')?.value || 80) * 1e6;
     const debt         = parseFloat($$('np-debt')?.value || 120) * 1e6;
 
-    const totalKgCO2e = _materials.reduce((s, m) => s + _kgCO2e(m), 0);
+    /* Unpriced lines are skipped, not counted as zero — the same rule the
+       running total follows, so the review step and the bill agree. */
+    const pricedLines = _materials.map(_kgCO2e).filter(v => v !== null);
+    const unpricedCount = _materials.length - pricedLines.length;
+    const totalKgCO2e = pricedLines.reduce((sum, v) => sum + v, 0);
     const totalTCO2e  = totalKgCO2e / 1000;
     const intensity   = area > 0 ? (totalKgCO2e / area).toFixed(1) : '—';
     const attribution = outstanding / (equity + debt);
@@ -205,25 +272,34 @@ const NewProject = (() => {
     let lkSection = '';
     if (region === 'LK') {
       const intVal = area > 0 ? (totalKgCO2e / area) : null;
-      const actMatch = ACTIVITY_LOOKUP[activityCode];
+      const actMatch = _slgft ? _slgft.activities[activityCode] : null;
+      /* The bands come from the registry that governs them, never from a
+         constant here. This screen used to carry 600/900 while the endpoint
+         beside it screened on 520/780 — two answers to one question about
+         what a bank may call a green loan. */
+      const bands = _slgft && _slgft.screen ? _slgft.screen : null;
       let lkTier, lkBadge;
       if (actMatch && actMatch.eligibility === 'direct') {
         lkTier = 'Directly Eligible'; lkBadge = 'badge-blue';
-      } else if (intVal !== null && intVal <= 600) {
+      } else if (!bands) {
+        /* Absence is an answer: a tier assigned on a band this screen invented
+           would be quoted as the taxonomy's. */
+        lkTier = 'Not screened — bands unavailable'; lkBadge = 'badge-amber';
+      } else if (intVal !== null && intVal <= bands.green) {
         lkTier = 'Green — Aligned';  lkBadge = 'badge-green';
-      } else if (intVal !== null && intVal <= 900) {
+      } else if (intVal !== null && intVal <= bands.transition) {
         lkTier = 'Transition';        lkBadge = 'badge-amber';
       } else {
         lkTier = intVal === null ? 'Pending (no area)' : 'Not Aligned'; lkBadge = 'badge-red';
       }
-      const actDesc = actMatch ? ` — ${actMatch.label}` : '';
+      const actDesc = actMatch ? ` — ${esc(actMatch.label)}` : '';
       lkSection = `
         <div class="review-section review-section-full slgft-review-section">
           <h4>🇱🇰 Sri Lanka Green Finance Taxonomy (SLGFT)</h4>
           <div class="review-row"><span>SLGFT Tier</span><strong><span class="kpi-badge ${lkBadge}">${lkTier}</span></strong></div>
           ${slsicSector ? `<div class="review-row"><span>SLSIC Sector</span><strong>Sector ${slsicSector}</strong></div>` : ''}
           ${activityCode ? `<div class="review-row"><span>Activity Code</span><strong>${activityCode}${actDesc}</strong></div>` : ''}
-          ${intVal !== null ? `<div class="review-row"><span>Intensity</span><strong>${intVal.toFixed(1)} kgCO2e/m² <span style="color:var(--text-tertiary);font-weight:400">(threshold: ≤600 green, ≤900 transition)</span></strong></div>` : ''}
+          ${intVal !== null ? `<div class="review-row"><span>Intensity</span><strong>${intVal.toFixed(1)} kgCO2e/m²${bands ? ` <span style="color:var(--text-tertiary);font-weight:400">(screen: ≤${bands.green} green, ≤${bands.transition} transition${bands.provisional ? ', provisional' : ''})</span>` : ''}</strong></div>` : ''}
           <div class="review-row"><span>NDC Contribution</span><strong>NDC 3.0 &mdash; 20.09% cumulative GHG reduction vs BAU, 2026–2035</strong></div>
           <div class="review-row"><span>Key SDGs</span><strong>SDG 7 · 9 · 11 · 13 · 14 · 15</strong></div>
           <div style="margin-top:8px">
@@ -249,6 +325,7 @@ const NewProject = (() => {
           <h4>Carbon Footprint</h4>
           <div class="review-row"><span>Total Embodied</span><strong>${_fmtN(totalKgCO2e)} kgCO2e</strong></div>
           <div class="review-row"><span>Intensity</span><strong>${intensity} kgCO2e/m²</strong></div>
+          ${unpricedCount > 0 ? `<div class="review-row"><span>Not counted</span><strong>${unpricedCount} line${unpricedCount === 1 ? '' : 's'} with no factor</strong></div>` : ''}
           <div class="review-row"><span>Materials</span><strong>${_materials.length} items</strong></div>
         </div>
         <div class="review-section">
@@ -375,6 +452,11 @@ const NewProject = (() => {
   function init() {
     if (_initialized) return;
     _initialized = true;
+    /* Loaded before the form is shown, not when a code is first typed: the
+       screen must never describe a code, or assign a tier, from something it
+       has not got. */
+    loadSlgft().catch(() => { _slgft = null; });
+    loadFactors().then(() => _renderBOM()).catch(() => { _factors = null; });
     goTo(1);
   }
 

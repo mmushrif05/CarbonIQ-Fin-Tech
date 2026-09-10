@@ -22,7 +22,9 @@ const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractFromRequest }   = require('../../application/extract');
 const { asError } = require('../../../../shared/types');
-const { doc, body, str, obj, arr } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, obj, arr } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
+const { MATERIAL_CARBON_FACTORS } = require('../../../../shared/models/constants');
 
 const router = Router();
 
@@ -137,5 +139,37 @@ function _computeCarbonTotals(materials) {
     coveragePercent:    parseFloat((valid.length / materials.length * 100).toFixed(1))
   };
 }
+
+/**
+ * The material factor table the engine multiplies by.
+ *
+ * It is served because the screens need it, and a screen that needs it will
+ * otherwise keep its own copy — which is what happened twice. Two browser
+ * files held factor tables of their own, and they disagreed with this one and
+ * with each other: timber at 0.263 and at -1.00, aluminium at 8.240 and at
+ * 6.67. A figure a page computed from its own table is not this product's
+ * figure, however much it looks like one.
+ *
+ * Every row carries the source it came from, because a factor that cannot say
+ * where it came from cannot be defended, and timber's negative value is a
+ * biogenic credit rather than a mistake — which only the source line makes
+ * legible.
+ */
+router.get('/factors', authenticate, extractLimiter, referenceCache(),
+  doc({ summary: 'The A1-A3 material factors the engine multiplies by, with the source of each',
+    description: 'Served so a screen never needs a copy. A negative factor is a biogenic '
+      + 'credit, not an error.',
+    response: body({
+      factors: obj, categories: arr(str), unit: str, note: str,
+    }, ['factors', 'categories']) }),
+  (_req, res) => {
+    res.json({
+      factors: MATERIAL_CARBON_FACTORS,
+      categories: Object.keys(MATERIAL_CARBON_FACTORS),
+      unit: 'kgCO2e/kg',
+      note: 'Defaults used where a material carries no EPD or supplied factor. '
+        + 'An EPD improves the factor; it does not change the data-quality option.',
+    });
+  });
 
 module.exports = router;

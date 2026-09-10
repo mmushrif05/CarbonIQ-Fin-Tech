@@ -205,19 +205,32 @@ const CarbonPricingPage = (() => {
     const pillEl  = document.getElementById('cpClassPill');
     const hintEl  = document.getElementById('cpScoreHint');
 
+    /* Neither the tier boundaries nor the pricing figures are held here. They
+       were, in prose — "≥ 70", "−20 bps", "+12 bps improvement" — beside an
+       engine that owns all three, so changing a tier would have left three
+       sentences a credit officer reads saying something false. `_tiers` is
+       what `GET /v1/carbon-pricing/rates` served. */
     pillEl.className = 'cp-class-pill';
-    if (score >= 70) {
-      pillEl.textContent = 'Green';
-      pillEl.classList.add('status-green');
-      hintEl.textContent = 'Maximum green pricing tier — −20 bps discount active';
-    } else if (score >= 40) {
-      pillEl.textContent = 'Transition';
-      pillEl.classList.add('status-amber');
-      hintEl.textContent = `Raise to ≥ 70 for full green pricing discount (+${20 - 8} bps improvement)`;
+    if (!_tiers) {
+      pillEl.textContent = '—';
+      hintEl.textContent = 'Pricing tiers have not loaded, so no tier is shown.';
+      return;
+    }
+
+    const ordered = [..._tiers].sort((a, b) => (b.minScore || 0) - (a.minScore || 0));
+    const tier = ordered.find(t => score >= (t.minScore || 0)) || ordered[ordered.length - 1];
+    const better = ordered.filter(t => (t.minScore || 0) > score).pop();
+
+    pillEl.textContent = tier.label;
+    pillEl.classList.add(tier.adjustment_bps < 0
+      ? (better ? 'status-amber' : 'status-green') : 'status-red');
+
+    if (!better) {
+      hintEl.textContent = `Best pricing tier — ${tier.adjustment_bps} bps`;
     } else {
-      pillEl.textContent = 'Brown';
-      pillEl.classList.add('status-red');
-      hintEl.textContent = 'Raise to ≥ 40 to enter Transition tier and unlock partial discount';
+      const gain = (tier.adjustment_bps || 0) - (better.adjustment_bps || 0);
+      hintEl.textContent = `Raise to ${better.minScore} for ${better.label}`
+        + (gain > 0 ? ` — ${gain} bps better` : '');
     }
   }
 
@@ -374,13 +387,26 @@ const CarbonPricingPage = (() => {
     return Number(n || 0).toLocaleString('en-US');
   }
 
+  /** The pricing tiers in force, and the score each begins at. */
+  let _tiers = null;
+
+  async function loadTiers() {
+    const res = await window.CARBONIQ_fetch('/v1/carbon-pricing/rates');
+    _tiers = res.loanPricingTiers || null;
+  }
+
   function init() {
     // Wire live score preview
     const scoreInput = document.getElementById('cp-score');
     if (scoreInput) {
       scoreInput.addEventListener('input', _updateScorePreview);
-      _updateScorePreview(); // initial state
     }
+    /* The tiers are fetched before the first preview is drawn, not after it:
+       a preview drawn on a tier table that has not arrived is a preview drawn
+       on nothing. */
+    loadTiers()
+      .catch(() => { _tiers = null; })
+      .then(() => _updateScorePreview());
   }
 
   return { calculate, reset, init };

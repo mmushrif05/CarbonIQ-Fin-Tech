@@ -28,18 +28,11 @@ const ExtractPage = (() => {
   const API_ENDPOINT = '/v1/extract';
   const FETCH_TIMEOUT_MS = 15_000;
 
-  /** ICE Database v3 emission factors (kgCO2e / kg material) */
-  const ICE_FACTORS = Object.freeze({
-    concrete:   0.13,
-    steel:      1.55,
-    timber:    -1.00,
-    aluminium:  6.67,
-    glass:      1.44,
-    insulation: 1.86,
-    masonry:    0.24,
-    plastics:   3.31,
-    other:      0.50,
-  });
+  /* There is no emission factor table here, and there must not be one.
+     A copy lived in this file and the page multiplied by it, handing back rows
+     sourced "ICE v3" that no engine had computed. Densities stay below because
+     converting m3 to kg is a unit conversion the row states on its own face; a
+     factor is a measurement, and measurements come from the engine. */
 
   /** Standard densities for unit conversion (kg / m³) */
   const DENSITIES = Object.freeze({
@@ -293,8 +286,15 @@ Internal fit-out and services:
       try {
         result = await _fetchExtract({ content, format, projectName });
       } catch {
-        // Graceful degradation: offline simulation for demo/development
-        result = _simulateExtraction(content, format, projectName);
+        /* The API did not answer, so the lines are parsed here and **no
+           emission figure is produced**. This used to compute
+           `quantity x factor` from a copy of the factor table held in this
+           file and hand back rows sourced "ICE v3" — figures that look like
+           the engine's, computed by a page, with nothing on the row saying
+           so. The engine does every arithmetic operation; a parallel one in
+           the browser is the same defect as an invented figure, wearing
+           arithmetic. Reading a bill of quantities is a parse and stays. */
+        result = _parseLinesLocally(content, format, projectName);
       }
 
       lastExtractedMaterials = result.extraction.materials;
@@ -334,7 +334,7 @@ Internal fit-out and services:
    * 7. Offline Simulation  (demo / no-API-key fallback)
    * ────────────────────────────────────────────────────────── */
 
-  function _simulateExtraction(content, format, projectName) {
+  function _parseLinesLocally(content, format, projectName) {
     const lines   = content.split('\n').map((l) => l.trim()).filter(Boolean);
     const materials = [];
 
@@ -363,10 +363,6 @@ Internal fit-out and services:
 
       const category  = _detectCategory(name);
       const qtyKg     = _toKilograms(rawQty, rawUnit, category);
-      const factor    = ICE_FACTORS[category] ?? ICE_FACTORS.other;
-      const totalKgCO2e = qtyKg != null
-        ? parseFloat((qtyKg * factor).toFixed(2))
-        : null;
 
       materials.push({
         name,
@@ -379,14 +375,15 @@ Internal fit-out and services:
         notes:            rawUnit.toLowerCase() !== 'kg'
           ? `Converted from ${rawQty} ${rawUnit} using standard density`
           : '',
-        emissionFactor:       factor,
-        emissionFactorUnit:   'kgCO2e/kg',
-        emissionFactorSource: 'ICE v3',
-        totalKgCO2e,
+        /* Absent, not zero. Null is "the engine has not measured this"; zero
+           would be "this material has no impact", which is a different claim
+           and one no line here is entitled to make. */
+        emissionFactor:       null,
+        emissionFactorUnit:   null,
+        emissionFactorSource: null,
+        totalKgCO2e:          null,
       });
     }
-
-    const carbonTotals = _computeCarbonTotals(materials);
 
     return {
       extraction: {
@@ -395,16 +392,20 @@ Internal fit-out and services:
           totalItems:         materials.length,
           lowConfidenceItems: materials.filter((m) => m.confidence === 'low').length,
           unresolvableItems:  0,
-          parseNotes:         'Client-side simulation (demo mode — AI API not available)',
+          parseNotes:         'Read in this browser because the API did not answer. '
+            + 'Lines and quantities only — no emission factor and no total, because '
+            + 'those are the engine\'s to compute.',
         },
       },
-      carbonTotals,
+      /* No totals. A total assembled here would be the sum of figures that
+         were never measured. */
+      carbonTotals: null,
       meta: {
-        model:        'demo-simulation',
+        model:        null,
         tokensUsed:   { input: 0, output: 0 },
         extractedAt:  new Date().toISOString(),
         inputFormat:  format,
-        factorSource: 'ICE v3',
+        factorSource: null,
       },
     };
   }
@@ -423,41 +424,6 @@ Internal fit-out and services:
     if (u === 't' || /tonnes?/.test(u)) return qty * 1000;
     if (u === 'm3')                 return qty * (DENSITIES[category] ?? DENSITIES.other);
     return qty; // m, m2, pieces — return as-is (no density conversion)
-  }
-
-  function _computeCarbonTotals(materials) {
-    const valid = materials.filter((m) => m.totalKgCO2e != null);
-    if (valid.length === 0) {
-      return { totalKgCO2e: 0, totalTCO2e: 0, byCategory: {}, itemsExtracted: materials.length, itemsWithEmissions: 0, coveragePercent: 0 };
-    }
-
-    const totalKgCO2e = valid.reduce((s, m) => s + m.totalKgCO2e, 0);
-    const byCategory  = {};
-
-    for (const m of valid) {
-      if (!byCategory[m.category]) {
-        byCategory[m.category] = { kgCO2e: 0, quantityKg: 0, itemCount: 0 };
-      }
-      byCategory[m.category].kgCO2e    += m.totalKgCO2e;
-      byCategory[m.category].quantityKg += m.quantity ?? 0;
-      byCategory[m.category].itemCount  += 1;
-    }
-
-    for (const cat of Object.keys(byCategory)) {
-      byCategory[cat].kgCO2e = parseFloat(byCategory[cat].kgCO2e.toFixed(2));
-      byCategory[cat].pct    = totalKgCO2e > 0
-        ? parseFloat((byCategory[cat].kgCO2e / totalKgCO2e * 100).toFixed(1))
-        : 0;
-    }
-
-    return {
-      totalKgCO2e:      parseFloat(totalKgCO2e.toFixed(2)),
-      totalTCO2e:       parseFloat((totalKgCO2e / 1000).toFixed(3)),
-      byCategory,
-      itemsExtracted:   materials.length,
-      itemsWithEmissions: valid.length,
-      coveragePercent:  parseFloat((valid.length / materials.length * 100).toFixed(1)),
-    };
   }
 
   /* ──────────────────────────────────────────────────────────
