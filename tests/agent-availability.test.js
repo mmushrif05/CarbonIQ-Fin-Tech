@@ -111,7 +111,7 @@ describe('The gate refuses early, and says what still works', () => {
   });
 
   test('the deterministic half is genuinely unaffected by a dead AI layer', async () => {
-    const fx = require('./fixtures/fisheries');
+    const fx = require('../data/partc/fisheries-reference');
     const res = await request(app).post('/v1/pcaf/part-c/assess').set('x-api-key', KEY)
       .send({
         projectName: 'No-AI run', policy: fx.POLICY_CAR,

@@ -27,6 +27,51 @@ are tagged after a deploy is confirmed, per `docs/RELEASE-AND-ROLLBACK.md`.
   saying which scope the limits actually have.
 - `docs/AUTHENTICATION.md`, including what is deliberately not built yet.
 
+### Added — one storage seam (H2)
+- One adapter per store behind one interface (`src/platform/database/adapters/`),
+  selected once by the resolved mode instead of branched on per verb.
+- `tests/store-conformance.test.js` — the same contract run against every
+  adapter this process can reach, with the deliberate differences between the
+  stores stated rather than left to be discovered.
+- Migration `0005`: `fintech_projects`, `fintech_monitoring`, `agent_runs`,
+  `pipeline_runs` and `webhooks` — the five record types that were written past
+  the seam.
+- `tests/storage-seam.test.js` holds the phase's exit criterion and fails the
+  build when a new record type reaches for the Firebase bridge.
+
+### Changed — one storage seam (H2)
+- `store.transaction(fn, { name, required: true })`. A durable store that
+  cannot commit a group now refuses with 503 `NOT_TRANSACTIONAL` naming
+  `DATABASE_URL`, rather than applying half of a lock-and-supersede on a real
+  book. The three call sites that exist because they need atomicity say so.
+- Client factor overrides are an argument to `runPartC(input, { overrides })`,
+  scoped to that call, instead of a module global set and cleared around it.
+- The Part C run store and the learning store go through the seam. Each used
+  to choose between PostgreSQL, Firebase and a private `Map` of its own.
+- The reference project moved from `tests/fixtures/fisheries.js` to
+  `data/partc/fisheries-reference.js`; `tests/` is no longer a runtime
+  dependency of the methodology statement.
+- `src/platform/bridge/firebase.js` is 417 lines down to 176: the core engine
+  read, and the driver behind the seam's Firebase adapter. Nothing else.
+- The collections registry carries all nineteen generated columns, and the
+  duplicate check in `POST /v1/desk/adopt` uses the origin index rather than
+  reading the whole book.
+
+### Fixed — one storage seam (H2)
+- `POST /v1/projects` returned **201 Created** and stored nothing on a
+  deployment holding its records anywhere but Firebase. The write went past the
+  seam to a bridge function that returned quietly when Firebase was absent.
+  Monitoring entries, agent runs, pipeline runs and webhook subscriptions had
+  the same shape. All five are refused with a 503 naming `DATABASE_URL` where
+  they cannot be kept.
+- `STORAGE_BACKEND=memory` on a deployment with Firebase configured wrote to
+  both and read back from Firebase. One adapter is chosen once, so it cannot.
+- The in-process store dropped its oldest record past 5,000 without a word.
+  It now refuses the write (507 `STORE_FULL`) rather than forgetting one.
+- A monitoring entry was stored under the project id alone, with no
+  organisation anywhere in the path, so two banks financing the same project
+  wrote over each other.
+
 ### Changed
 - The browser is handed no API key. `GET /v1/ui-config.js` serves the build
   stamp only, and the dashboard signs in.

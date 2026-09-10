@@ -91,7 +91,7 @@ describe('The scale direction is stated where a score is shown', () => {
 
   test('the engine carries it on every scored result', () => {
     const { runPartC } = require('../src/domains/pcaf-part-c/domain');
-    const fx = require('./fixtures/fisheries');
+    const fx = require('../data/partc/fisheries-reference');
     const r = runPartC(fx.idiInput());
     expect(r.dataQuality.scaleNote).toBe(SCALE_NOTE);
     expect(r.dqScoring.scale).toBe(SCALE_NOTE);

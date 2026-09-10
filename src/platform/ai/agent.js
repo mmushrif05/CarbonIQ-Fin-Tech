@@ -36,7 +36,7 @@ const crypto    = require('crypto');
 const { fallback } = require('../observability/logger');
 const Anthropic = /** @type {any} */ (require('@anthropic-ai/sdk'));
 const config    = require('../config');
-const { saveAgentRun, updateAgentRun } = require('../bridge/firebase');
+const { saveRun: saveAgentRun, updateRun: updateAgentRun } = require('./run-store');
 const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../../shared/models/agent-run');
 const { Deadline } = require('./deadline');
 

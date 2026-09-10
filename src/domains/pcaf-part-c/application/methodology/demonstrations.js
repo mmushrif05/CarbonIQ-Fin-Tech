@@ -13,7 +13,7 @@ const { buildRegisters } = require('../partc-registers');
  */
 const { _round } = require('./common');
 function _referenceRun() {
-  const fixture = require('../../../../../tests/fixtures/fisheries');
+  const fixture = require('../../../../../data/partc/fisheries-reference');
   const result  = runPartC(fixture.workbookInput());
   return { result, registers: buildRegisters(result) };
 }
@@ -34,7 +34,7 @@ function _referenceRun() {
  * exists at all.
  */
 function _gateDemonstration() {
-  const fixture = require('../../../../../tests/fixtures/fisheries');
+  const fixture = require('../../../../../data/partc/fisheries-reference');
   const car = runPartC(fixture.workbookInput());
   const idi = runPartC(fixture.idiInput());
 
@@ -101,7 +101,7 @@ function _gateDemonstration() {
  * 40ms. The control then reads an answer the engine actually produced.
  */
 function _scenarios() {
-  const fixture = require('../../../../../tests/fixtures/fisheries');
+  const fixture = require('../../../../../data/partc/fisheries-reference');
 
   const run = (policyType, yearsOfCover) => {
     const base = /IDI|PROPERTY/i.test(policyType) ? fixture.idiInput() : fixture.workbookInput();

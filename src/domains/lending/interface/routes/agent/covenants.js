@@ -13,7 +13,7 @@ const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
 const { agentLimiter } = require('../../../../../platform/http/rate-limit');
 const { runAgent } = require('../../../../../platform/ai/agent');
-const { getAgentRun, updateAgentRun, submitHumanReview } = require('../../../../../platform/bridge/firebase');
+const { getRun: getAgentRun, updateRun: updateAgentRun, submitHumanReview } = require('../../../../../platform/ai/run-store');
 const { AGENT_STATUS } = require('../../../../../shared/models/agent-run');
 const {
   covenantsRequestSchema,

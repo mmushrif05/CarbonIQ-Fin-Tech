@@ -15,8 +15,9 @@ process.env.STORAGE_BACKEND = 'memory';
 const request = require('supertest');
 const app = require('../src/server');
 const runStore = require('../src/domains/pcaf-part-c/application/partc-run-store');
+const store = require('../src/platform/database/store');
 const { PARTC_STATUS } = require('../src/shared/models/partc-run');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const KEY = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);
@@ -44,7 +45,7 @@ async function startRun(policyType = 'CAR') {
 }
 
 describe('Part C lifecycle — start', () => {
-  beforeEach(() => runStore._resetMemory());
+  beforeEach(() => store._resetMemory());
 
   test('starting a run returns a paused run with its form', async () => {
     const res = await startRun();
@@ -88,7 +89,7 @@ describe('Part C lifecycle — start', () => {
 });
 
 describe('Part C lifecycle — resume', () => {
-  beforeEach(() => runStore._resetMemory());
+  beforeEach(() => store._resetMemory());
 
   test('resuming with the answers computes the reference figures', async () => {
     const start = await startRun();
@@ -182,9 +183,9 @@ describe('Part C lifecycle — resume', () => {
 });
 
 describe('Part C run store', () => {
-  beforeEach(() => runStore._resetMemory());
+  beforeEach(() => store._resetMemory());
 
-  test('the in-memory fallback round-trips a run when Firebase is absent', async () => {
+  test('a run round-trips through the seam', async () => {
     await runStore.saveRun('org1', { runId: 'r1', createdAt: '2026-01-01T00:00:00Z', status: 'created' });
     expect((await runStore.getRun('org1', 'r1')).runId).toBe('r1');
     expect(await runStore.getRun('org1', 'missing')).toBeNull();
@@ -195,12 +196,26 @@ describe('Part C run store', () => {
     expect(await runStore.getRun('orgB', 'r1')).toBeNull();
   });
 
-  test('the fallback is bounded and evicts the oldest run', async () => {
-    for (let i = 0; i < runStore.MAX_MEMORY_RUNS + 5; i++) {
+  /* This file used to hold a private `Map` that dropped its oldest run past
+     200 without a word, so a pause could outlive its own record and the
+     resume would report a run that had existed as never having existed.
+     There is no private store any more: the seam holds runs like every other
+     record, `durable` is what the seam can actually promise, and the
+     in-process store refuses a write at its ceiling rather than forgetting
+     one. */
+  test('nothing is dropped to make room, and durability is the seam answer', async () => {
+    for (let i = 0; i < 250; i += 1) {
       await runStore.saveRun('org1', { runId: `r${i}`, createdAt: new Date(2026, 0, 1, 0, i).toISOString() });
     }
-    expect(await runStore.getRun('org1', 'r0')).toBeNull();
-    expect(await runStore.getRun('org1', `r${runStore.MAX_MEMORY_RUNS + 4}`)).not.toBeNull();
-    expect((await runStore.listRuns('org1', 1000)).length).toBe(runStore.MAX_MEMORY_RUNS);
+    expect(await runStore.getRun('org1', 'r0')).not.toBeNull();
+    expect((await runStore.listRuns('org1', 1000)).length).toBe(250);
+    expect(runStore.isDurable()).toBe(store.capability().durable);
+  });
+
+  test('the run store keeps no private seam of its own', () => {
+    const src = require('fs').readFileSync(
+      require('path').join(__dirname, '..', 'src/domains/pcaf-part-c/application/partc-run-store.js'), 'utf8');
+    expect(src).not.toMatch(/bridge\/firebase/);
+    expect(src).not.toMatch(/new Map\(/);
   });
 });

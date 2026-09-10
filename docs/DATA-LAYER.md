@@ -34,6 +34,13 @@ roll-up that declares the fields it reads.
 src/platform/database/
   client.js          the pool, the only require('pg') in the tree; withTransaction()
   collections.js     collection → table, indexed keys, references, stored projections
+  store.js           the seam: chooses one adapter once, refuses a write it cannot keep
+  adapters/          one per store, held to one contract
+    index.js         adapterFor(mode) — the single choice
+    postgres.js      delegates to document-store.js
+    firebase.js      · blobs.js   durable, no query engine, no transaction
+    memory.js        in-process; refuses at its ceiling rather than evicting
+    emulated.js      query/page/projection for the stores that cannot do it natively
   document-store.js  put/get/list/query/page/patch/remove/transaction over the tables
   migrate.js         numbered SQL migrations, applied once, checksummed, drift refused
   audit-chain.js     append-only, hash-chained audit events; verify()
@@ -42,6 +49,10 @@ migrations/
   0001_initial.sql   every table, every key, every constraint; a -- down section
   0002_one_database.sql  API keys, Part C runs, learnings and benchmarks — the last
                      four records that lived only in Firebase
+  0003_jobs.sql      the job queue
+  0004_users_and_sessions.sql  accounts, sessions, the shared rate-limit counter
+  0005_lending_records.sql     lending projects, monitoring, agent runs, pipeline
+                     runs and webhooks — the five that were written past the seam
 src/platform/auth/
   key-store.js       where API keys live: the api_keys table on PostgreSQL, else Firebase
 scripts/
@@ -110,6 +121,19 @@ the record.
 | `capital_investments` | `portfolio_id`, `status`, `origin_system`, `origin_record_id` | portfolios |
 | `capital_payments` | `portfolio_id`, `investment_id` | portfolios, investments |
 | `gcf_projects` · `gcf_entity` · `partc_settings` · `assurance_declarations` | | |
+| `api_keys` · `users` · `sessions` | `owner_org_id`, and `email` / `user_id` / `expires_at` | |
+| `fintech_projects` | `region`, `phase` | |
+| `fintech_monitoring` | `project_id`, `year` | — see below |
+| `agent_runs` | `agent`, `status` | |
+| `pipeline_runs` | `status` | |
+| `webhooks` | `active` | |
+
+`fintech_monitoring` deliberately has **no** foreign key to `fintech_projects`:
+a monitoring entry may name a project held in the CarbonIQ core engine and
+never created here, and a constraint that refused it would refuse a legitimate
+entry. What it is scoped by is the organisation — which the path it used to
+live at (`fintech/monitoring/<projectId>/<year>`) did not carry at all, so two
+banks financing the same project wrote over each other.
 
 `ON DELETE RESTRICT` throughout. A client with projects cannot be deleted; a
 project with a bill of quantities cannot be deleted; a BOQ revision an
@@ -142,8 +166,20 @@ in the call tree — in any module — lands on it. Three operations use it:
   write are one transaction, and the unique index on the origin catches the
   race (409 `ALREADY_ADOPTED`).
 
-On the other backends `transaction(fn)` is a plain call and
-`capability().transactional` is `false`.
+A caller that *needs* atomicity says so — `store.transaction(fn, { name,
+required: true })` — and the seam answers honestly rather than degrading in
+silence:
+
+| Store | `required: true` |
+|---|---|
+| PostgreSQL | a real transaction |
+| Firebase, Blobs | **refused**, 503 `NOT_TRANSACTIONAL`, remedy names `DATABASE_URL` |
+| in-process | runs, and logs once per operation |
+
+A durable store that cannot commit a group is refused rather than allowed to
+apply half of a lock-and-supersede on a real book: half is a position nobody
+can reconcile, and it is better not to start. `capability().transactional`
+still says what a caller got.
 
 ## Migrations
 

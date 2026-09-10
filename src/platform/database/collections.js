@@ -50,7 +50,13 @@ const COLLECTIONS = Object.freeze({
       ] },
     } },
   capital_portfolios:  { table: 'capital_portfolios',  keys: {}, dependsOn: [] },
-  capital_investments: { table: 'capital_investments', keys: { portfolioId: 'portfolio_id', status: 'status' },
+  capital_investments: { table: 'capital_investments',
+    /* `origin.system` and `origin.recordId` are generated columns in 0001 and
+       carry the unique index that stops one pipeline record being adopted
+       twice. They were columns the registry did not know about, so a lookup
+       by origin walked the JSONB and the index sat unused. */
+    keys: { portfolioId: 'portfolio_id', status: 'status',
+      'origin.system': 'origin_system', 'origin.recordId': 'origin_record_id' },
     dependsOn: ['capital_portfolios'] },
   capital_payments:    { table: 'capital_payments',    keys: { portfolioId: 'portfolio_id', investmentId: 'investment_id' },
     dependsOn: ['capital_portfolios', 'capital_investments'] },
@@ -69,6 +75,17 @@ const COLLECTIONS = Object.freeze({
   partc_runs:          { table: 'partc_runs',        keys: { status: 'status' }, dependsOn: [] },
   partc_learnings:     { table: 'partc_learnings',   keys: {}, dependsOn: [] },
   partc_benchmarks:    { table: 'partc_benchmarks',  keys: { region: 'region', projectType: 'project_type' }, dependsOn: [] },
+  /* 0005 — the five record types the lending domain and the agent loop used
+     to write straight to Firebase, past this seam. Every one of those writers
+     answered a deployment without Firebase by returning quietly, so the
+     record was discarded and the caller was told it had been saved. */
+  fintech_projects:    { table: 'fintech_projects',   keys: { region: 'region', phase: 'phase' }, dependsOn: [] },
+  /* No dependsOn: a monitoring entry may name a project held in the core
+     engine and never created here, and a foreign key would refuse it. */
+  fintech_monitoring:  { table: 'fintech_monitoring', keys: { projectId: 'project_id', year: 'year' }, dependsOn: [] },
+  agent_runs:          { table: 'agent_runs',         keys: { agent: 'agent', status: 'status' }, dependsOn: [] },
+  pipeline_runs:       { table: 'pipeline_runs',      keys: { status: 'status' }, dependsOn: [] },
+  webhooks:            { table: 'webhooks',           keys: { active: 'active' }, dependsOn: [] },
 });
 
 function definition(collection) {

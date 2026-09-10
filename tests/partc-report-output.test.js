@@ -17,7 +17,7 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 const { handler } = require('../netlify/functions/fintech-api');
 const { winAnsi } = require('../src/domains/pcaf-part-c/reporting/partc-docgen');
 const { pdfText, pdfPageCount, flat } = require('./helpers/pdf-text');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const reportBody = (format, policy = fx.POLICY_IDI) => ({
   projectName: 'Fisheries', policy,

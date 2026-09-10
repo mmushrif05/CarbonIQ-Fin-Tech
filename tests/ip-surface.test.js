@@ -165,7 +165,7 @@ describe('The calculation trace is not on the website', () => {
    * over the built artefact, not over the source that builds it.
    */
   test('no built report carries a traced step, in any format', () => {
-    const fx = require('./fixtures/fisheries');
+    const fx = require('../data/partc/fisheries-reference');
     const { runPartC } = require('../src/domains/pcaf-part-c/domain');
     const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
     const std = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');
@@ -194,7 +194,7 @@ describe('The calculation trace is not on the website', () => {
    * different artefact: 58 steps, each with its inputs and its factors.
    */
   test('the module equations are still given, because the standard requires them', () => {
-    const fx = require('./fixtures/fisheries');
+    const fx = require('../data/partc/fisheries-reference');
     const { runPartC } = require('../src/domains/pcaf-part-c/domain');
     const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
     const std = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');

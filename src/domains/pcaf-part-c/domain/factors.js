@@ -10,7 +10,7 @@
  *   · Seed tables live in-repo as JSON — versioned, git-diffable, citable.
  *     This is what makes the disclosure defensible to a regulator.
  *   · Runtime overrides (client corrections, learned Local-tier values) are
- *     layered on top via setOverrides() without a deploy.
+ *     layered on top for one calculation via withOverrides().
  *
  * Lookup contract: a lookup NEVER throws on a miss. It falls back to the
  * table default, marks the result `fallback: true`, and attaches a gap note.
@@ -22,6 +22,7 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { AsyncLocalStorage } = require('async_hooks');
 
 const FACTOR_DIR = path.join(__dirname, '..', '..', '..', '..', 'data', 'factors');
 
@@ -31,8 +32,28 @@ const TABLE_FILES = [
   'vehicle-ef', 'a5-defaults', 'b1-b4-defaults', 'beyond-pcaf-defaults'
 ];
 
-let _tables    = null;
-let _overrides = {};
+let _tables = null;
+
+/**
+ * Client factor overrides, scoped to one calculation.
+ *
+ * This was a module-level `let` set before a run and cleared in a `finally`.
+ * Two things were wrong with that, and both are the kind that surface once,
+ * in production, on a figure nobody can reproduce. A container serving two
+ * resumes at once had one global for both, so one client's quarry certificate
+ * could price the other client's concrete. And an override outlives its run
+ * whenever the clear does not happen — a throw before the `finally`, a second
+ * `setOverrides` in between, a caller that forgot the pair.
+ *
+ * It is now an `AsyncLocalStorage` scope opened by `runPartC(input, {
+ * overrides })` and closed when that call returns. The engine's lookups read
+ * the scope rather than a global, so there is nothing to clear, nothing to
+ * leak between concurrent calls, and no state left behind by a throw.
+ */
+const overrideScope = new AsyncLocalStorage();
+
+/** The overrides in force for the calculation on this call stack. */
+function currentOverrides() { return overrideScope.getStore() || {}; }
 
 function _load() {
   if (_tables) return _tables;
@@ -48,11 +69,23 @@ function _load() {
 function reload() { _tables = null; return _load(); }
 
 /**
- * Layer runtime overrides on top of the seed tables.
+ * Run `fn` with these overrides layered on top of the seed tables, and only
+ * for the duration of that call.
+ *
  * Shape: { 'densities.rubble_masonry': { value: 2450, tier: 'Local', reference: '...' } }
+ *
+ * @template T
+ * @param {Record<string, any>|null|undefined} overrides
+ * @param {() => T} fn
+ * @returns {T}
  */
-function setOverrides(overrides) { _overrides = overrides || {}; }
-function getOverrides() { return _overrides; }
+function withOverrides(overrides, fn) {
+  if (!overrides || !Object.keys(overrides).length) return fn();
+  return overrideScope.run({ ...overrides }, fn);
+}
+
+/** The overrides in force right now — for a register recording that they were. */
+function getOverrides() { return currentOverrides(); }
 
 /** All tables, for the factor-transparency endpoint. */
 function allTables() { return _load(); }
@@ -80,6 +113,7 @@ function lookup(table, key, opts = {}) {
   }
 
   // Runtime override wins, and records that it did.
+  const _overrides = currentOverrides();
   if (_overrides[fullKey]) {
     const o = _overrides[fullKey];
     return {
@@ -162,7 +196,7 @@ function options() {
 }
 
 module.exports = {
-  reload, setOverrides, getOverrides, allTables, lookup, options,
+  reload, withOverrides, getOverrides, allTables, lookup, options,
   transportEF, density, massFactor, wasteRate, serviceLife,
   leakRate, gwp, waterEF, waterBenchmark, vehicleEF,
   a5Default, b1b4Default, wlcaDefault

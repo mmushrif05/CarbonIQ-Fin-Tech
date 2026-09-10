@@ -21,7 +21,7 @@ const {
 const {
   scoreRun, scopeOptions, inputBasis, disclosureStatement, STRONG, WEAK
 } = require('../src/domains/pcaf-part-c/domain/dq-scoring');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const idiWithCharge = kg => fx.idiInput({ useStage: { ...fx.USE_STAGE, chargeKg: kg } });
 

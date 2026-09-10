@@ -149,7 +149,8 @@ async function createRevision(orgId, projectId, data) {
      with the project's revisions locked for the duration: two variations
      posted together must become R2 and R3, not two R2s each carrying
      mappings forward from R1. */
-  return store.transaction(() => _createRevision(orgId, projectId, data));
+  return store.transaction(() => _createRevision(orgId, projectId, data),
+    { name: 'partc.boq.createRevision', required: true });
 }
 
 async function _createRevision(orgId, projectId, data) {

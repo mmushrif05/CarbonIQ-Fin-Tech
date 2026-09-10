@@ -43,9 +43,17 @@ const factors               = require('./factors');
  * @param {Object} input.useStage     - { equipmentType, refrigerant, chargeKg, capacityKW, hvacServiceLifeYears, occupants, annualVolume_m3 }
  * @param {Object} [input.beyondPcaf] - { b2Allowance, b5Allowance, b8Manual }
  * @param {Object} [input.options]    - { evUsedOnSite }
+ * @param {Object} [opts]
+ * @param {Object} [opts.overrides] - client factor overrides, in force for
+ *   this call only. They are scoped to the call rather than set on the factor
+ *   store, so two calculations running at once cannot see each other's.
  * @returns {Object} PartCResult
  */
-function runPartC(input = {}) {
+function runPartC(input = {}, opts = {}) {
+  return factors.withOverrides(opts.overrides, () => _runPartC(input));
+}
+
+function _runPartC(input = {}) {
   const policy     = input.policy     || {};
   const materials  = input.materials  || [];
   const distances  = input.distances  || {};

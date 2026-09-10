@@ -1,9 +1,18 @@
 /**
- * Fisheries CAR — reference fixture.
+ * Fisheries CAR — the reference project.
  *
  * Mirrors the Fisheries-A4-Calculator.xlsx reference workbook so the engine
  * can be pinned to its numbers. Quantities, distances and previous-project
  * site data are the real values from that workbook.
+ *
+ * It lives in `data/` rather than in `tests/fixtures/` because three shipped
+ * modules read it: the methodology statement's worked demonstrations and the
+ * Part C demo data both require it, so `tests/` was a runtime dependency of
+ * the application. A deployment that excluded the test directory — which is
+ * the ordinary thing to do — would have failed at require time, and the
+ * failure would have been in the one document from which the product could be
+ * rebuilt. The acceptance suites read the same file from here, so there is
+ * still exactly one set of reference numbers.
  */
 
 'use strict';

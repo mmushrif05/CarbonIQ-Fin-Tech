@@ -14,7 +14,7 @@ const { useStageYears } = require('../src/domains/pcaf-part-c/domain/policy-gate
 const { b1Refrigerant } = require('../src/domains/pcaf-part-c/domain/b1-refrigerant');
 const { b4Replacement, replacementCount } = require('../src/domains/pcaf-part-c/domain/b4-replacement');
 const { b7Water } = require('../src/domains/pcaf-part-c/domain/b7-water');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 describe('PCAF Part C — attribution', () => {
   test('exact ratio is carried unrounded', () => {

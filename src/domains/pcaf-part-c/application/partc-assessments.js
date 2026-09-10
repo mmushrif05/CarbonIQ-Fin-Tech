@@ -258,7 +258,7 @@ async function changeStatus(orgId, assessmentId, nextStatus, { note, actor } = {
         });
       }
       return store.patch(COLLECTION, orgId, assessmentId, updates);
-    }).catch(e => {
+    }, { name: 'partc.assessments.lock', required: true }).catch(e => {
       if (e && e.code === 'DUPLICATE') {
         _fail('Another assessment for this policy-year was locked at the same moment. Re-read the book and lock again.', 'LOCK_RACE', 409);
       }

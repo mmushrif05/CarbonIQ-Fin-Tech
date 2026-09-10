@@ -14,7 +14,7 @@ const { buildMethodology } = require('../src/domains/pcaf-part-c/application/par
 const { buildMethodologyPDF, buildMethodologyDOCX } = require('../src/domains/pcaf-part-c/reporting/partc-methodology-doc');
 const { runPartC }       = require('../src/domains/pcaf-part-c/domain');
 const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const auth = req => req.set('x-api-key', process.env.UI_API_KEY);
 

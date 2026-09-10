@@ -7,77 +7,47 @@
  * computes. That pause can span sessions, so the run has to outlive the
  * request that created it.
  *
- * PostgreSQL holds runs where it is the store (collection `partc_runs`,
- * through the seam); Firebase where it is not. When neither is — local
- * development, CI — an in-process fallback keeps the pause/resume flow
- * working rather than failing closed. The fallback is bounded and
- * explicitly non-durable: it does not survive a restart, and `durable` on
- * every result says which store answered.
+ * This file used to be a second storage seam. It asked whether PostgreSQL was
+ * the store; if not it wrote to Firebase directly through the bridge; if not
+ * that, to a private `Map` of its own that evicted its oldest run past 200
+ * without a word. So a run could vanish mid-pause and the resume would say the
+ * run did not exist. Three stores, three code paths, and one of them silently
+ * lossy — inside a module whose whole job is to make a pause survivable.
+ *
+ * It is now one line per verb against `src/platform/database/store.js`, which
+ * makes the same choice once for the whole application. `durable` on a save
+ * comes from `capability()` rather than from this module's own opinion.
  */
 
 'use strict';
 
-const fb = require('../../../platform/bridge/firebase');
-const { fallback } = require('../../../platform/observability/logger');
 const store = require('../../../platform/database/store');
 
 const COLLECTION = 'partc_runs';
-const _pg = () => store.capability().mode === 'postgres';
 
-const MAX_MEMORY_RUNS = 200;
-
-/** orgId -> Map(runId -> run). Insertion-ordered, oldest evicted first. */
-const _memory = new Map();
-
-function _org(orgId) {
-  if (!_memory.has(orgId)) _memory.set(orgId, new Map());
-  return _memory.get(orgId);
-}
-
-function _remember(orgId, run) {
-  const runs = _org(orgId);
-  runs.delete(run.runId);
-  runs.set(run.runId, run);
-  while (runs.size > MAX_MEMORY_RUNS) runs.delete(runs.keys().next().value);
-}
-
-/** True when Firebase is actually available to persist to. */
+/** Whether the store holding these runs survives the process. */
 function isDurable() {
-  if (_pg()) return true;
-  try { return !!fb.getDatabase(); } catch (_) { return false; }
+  return store.capability().durable;
 }
 
 async function saveRun(orgId, run) {
-  if (_pg()) { await store.put(COLLECTION, orgId, run.runId, run); return { durable: true }; }
-  _remember(orgId, run);
-  if (isDurable()) await fb.savePartCRun(orgId, run).catch(fallback('partc.runs.firebase.save'));
+  await store.put(COLLECTION, orgId, String(run.runId), run);
   return { durable: isDurable() };
 }
 
 async function getRun(orgId, runId) {
-  if (_pg()) return store.get(COLLECTION, orgId, runId);
-  const stored = isDurable() ? await fb.getPartCRun(orgId, runId).catch(fallback('partc.runs.firebase.get', null)) : null;
-  if (stored) return stored;
-  return _org(orgId).get(runId) || null;
+  return store.get(COLLECTION, orgId, String(runId));
 }
 
 async function updateRun(orgId, runId, updates) {
-  if (_pg()) { await store.patch(COLLECTION, orgId, runId, updates); return; }
-  const current = _org(orgId).get(runId);
-  if (current) _remember(orgId, { ...current, ...updates });
-  if (isDurable()) await fb.updatePartCRun(orgId, runId, updates).catch(fallback('partc.runs.firebase.update'));
+  await store.patch(COLLECTION, orgId, String(runId), updates);
 }
 
 async function listRuns(orgId, limit = 20) {
-  if (_pg()) return store.query(COLLECTION, orgId, { orderBy: '-created_at', limit });
-  const stored = isDurable() ? await fb.listPartCRuns(orgId, limit).catch(fallback('partc.runs.firebase.list', () => [])) : [];
-  if (stored && stored.length) return stored;
-  return [..._org(orgId).values()]
-    .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+  const rows = await store.list(COLLECTION, orgId);
+  return [...rows]
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
     .slice(0, limit);
 }
 
-/** Test helper — drop the in-process fallback. */
-function _resetMemory() { _memory.clear(); }
-
-module.exports = { saveRun, getRun, updateRun, listRuns, isDurable, _resetMemory, MAX_MEMORY_RUNS };
+module.exports = { COLLECTION, saveRun, getRun, updateRun, listRuns, isDurable };

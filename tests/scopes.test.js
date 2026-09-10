@@ -10,6 +10,13 @@
 
 process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
+/* The Firebase stand-in below exists to answer the API key lookup, which
+   `platform/auth/api-key.js` makes through the bridge. It is not this suite's
+   record store: the seam selects one store and one only, so a stand-in that
+   looked configured would become the store and every seeded assessment would
+   read back null. Pinning the backend says which. */
+if (!process.env.TEST_DATABASE_URL) process.env.STORAGE_BACKEND = 'memory';
+
 const fs = require('fs');
 const path = require('path');
 const request = require('supertest');
@@ -20,8 +27,6 @@ jest.mock('../src/platform/bridge/firebase', () => ({
   getDatabase: () => mockDb,
   getFirebaseAdmin: () => null,
   savePartCRecord: async () => {}, getPartCRecord: async () => null, listPartCRecords: async () => [], deletePartCRecord: async () => {},
-  savePartCRun: async () => {}, updatePartCRun: async () => {}, getPartCRun: async () => null, listPartCRuns: async () => [],
-  savePartCLearnings: async () => {}, listPartCLearnings: async () => [], listPartCBenchmarks: async () => [],
 }));
 
 const app = require('../src/server');
@@ -32,7 +37,7 @@ const registry = require('../src/domains/pcaf-part-c/application/partc-registry'
 const boq = require('../src/domains/pcaf-part-c/application/partc-boq');
 const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
 const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const UI_KEY = process.env.UI_API_KEY;
 const KEY = 'ck_live_ABCDEFGHIJKLMNOPQRSTUVWXYZ123456';
@@ -219,9 +224,14 @@ describe('The platform reads its environment in one place', () => {
 
   test('validation names a problem by variable and never by value', () => {
     const config = require('../src/platform/config');
-    const saved = { salt: process.env.API_KEY_SALT, ui: process.env.UI_API_KEY, url: process.env.DATABASE_URL, dev: process.env.DEV_API_KEY };
+    const saved = { salt: process.env.API_KEY_SALT, ui: process.env.UI_API_KEY, url: process.env.DATABASE_URL,
+      dev: process.env.DEV_API_KEY, backend: process.env.STORAGE_BACKEND };
     try {
       delete process.env.DEV_API_KEY;
+      /* This suite pins the backend to memory so the key stand-in does not
+         become the store; in production that is itself a refusal, and this
+         test is about the other three. */
+      delete process.env.STORAGE_BACKEND;
       process.env.API_KEY_SALT = 'default-dev-salt-change-in-production';
       process.env.UI_API_KEY = 'not-a-key-secret-value';
       process.env.DATABASE_URL = 'mysql://nope';
@@ -234,7 +244,8 @@ describe('The platform reads its environment in one place', () => {
       process.env.DATABASE_URL = 'postgresql://u@h/db';
       expect(config.validate({ env: 'production' }).ok).toBe(true);
     } finally {
-      for (const [k, v] of [['API_KEY_SALT', saved.salt], ['UI_API_KEY', saved.ui], ['DATABASE_URL', saved.url], ['DEV_API_KEY', saved.dev]]) {
+      for (const [k, v] of [['API_KEY_SALT', saved.salt], ['UI_API_KEY', saved.ui], ['DATABASE_URL', saved.url],
+        ['DEV_API_KEY', saved.dev], ['STORAGE_BACKEND', saved.backend]]) {
         if (v === undefined) delete process.env[k]; else process.env[k] = v;
       }
     }

@@ -9,7 +9,7 @@ const { buildForm, formAnswersToEngineInput } = require('../src/domains/pcaf-par
 const { buildLearningRecords, aggregateResearchPriority } = require('../src/domains/pcaf-part-c/application/learning-store');
 const { containsForbiddenLanguage } = require('../src/domains/pcaf-part-c/domain/data-quality');
 const factors = require('../src/domains/pcaf-part-c/domain/factors');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 describe('Part C — factor store', () => {
   test('every factor row carries a tier and a reference', () => {
@@ -30,13 +30,24 @@ describe('Part C — factor store', () => {
     expect(f.gap).toBeTruthy();
   });
 
-  test('runtime overrides win and are marked Local tier', () => {
-    factors.setOverrides({ 'densities.rubble_masonry': { value: 2450, reference: 'Quarry test certificate' } });
-    const f = factors.density('rubble_masonry');
-    expect(f.value).toBe(2450);
-    expect(f.tier).toBe('Local');
-    expect(f.overridden).toBe(true);
-    factors.setOverrides({});
+  test('runtime overrides win, are marked Local tier, and end with the call', () => {
+    const inside = factors.withOverrides(
+      { 'densities.rubble_masonry': { value: 2450, reference: 'Quarry test certificate' } },
+      () => factors.density('rubble_masonry'));
+    expect(inside.value).toBe(2450);
+    expect(inside.tier).toBe('Local');
+    expect(inside.overridden).toBe(true);
+
+    /* There is no clear to forget: the override is scoped to the call, so the
+       next lookup is back on the seed table without anyone resetting it. */
+    expect(factors.density('rubble_masonry').overridden).toBeUndefined();
+  });
+
+  test('an override does not survive a throw inside the calculation', () => {
+    expect(() => factors.withOverrides(
+      { 'densities.rubble_masonry': { value: 2450 } },
+      () => { throw new Error('the run failed'); })).toThrow('the run failed');
+    expect(factors.density('rubble_masonry').overridden).toBeUndefined();
   });
 });
 

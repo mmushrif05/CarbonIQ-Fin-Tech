@@ -98,7 +98,8 @@ async function adoptCandidate(orgId, input = {}) {
      double every figure on the desk. The check and the write run in one
      transaction, and on PostgreSQL a unique index on the origin catches the
      race the check cannot; its refusal is reported as the same 409. */
-  return store.transaction(() => _adopt(orgId, input, project, source, portfolio)).catch(e => {
+  return store.transaction(() => _adopt(orgId, input, project, source, portfolio),
+    { name: 'desk.adopt', required: true }).catch(e => {
     if (e && e.code === 'DUPLICATE') {
       throw err(409, 'ALREADY_ADOPTED',
         `"${project.name}" is already on the book.`,
@@ -110,8 +111,12 @@ async function adoptCandidate(orgId, input = {}) {
 
 async function _adopt(orgId, input, project, source, portfolio) {
   const recordId = input.recordId;
-  const existing = await book.listInvestments(orgId);
-  const already = existing.find(i => i.origin && i.origin.system === 'gcf' && i.origin.recordId === recordId);
+  /* Asked of the store rather than by reading the whole book and filtering:
+     `origin.system` and `origin.recordId` are the generated columns carrying
+     the unique index that makes a second adoption impossible, so the check
+     and the constraint are looking at the same thing. */
+  const [already] = await store.query('capital_investments', orgId,
+    { where: { 'origin.system': 'gcf', 'origin.recordId': recordId }, limit: 1 });
   if (already) {
     throw err(409, 'ALREADY_ADOPTED',
       `"${project.name}" is already on the book as investment ${already.id}.`,
