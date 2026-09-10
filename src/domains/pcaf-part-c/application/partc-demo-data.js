@@ -15,7 +15,7 @@
 
 'use strict';
 
-const fx = require('../../../../tests/fixtures/fisheries');
+const fx = require('../../../../data/partc/fisheries-reference');
 
 /**
  * Haul distances belong ON the BOQ line, not in a separate map keyed by id.

@@ -2,9 +2,25 @@
 /**
  * CarbonIQ FinTech — Firebase Bridge
  *
- * Connects to the SAME Firebase instance as the core platform.
- * Reads project data, tender scenarios, 80% records from existing paths.
- * Writes ONLY to /fintech/ paths (API keys, covenants, webhooks, taxonomy results).
+ * Connects to the SAME Firebase instance as the core platform, and does two
+ * things and no more:
+ *
+ * 1. **Reads the core engine** — `projects`, `tenders`, `entries`. Read-only,
+ *    as `CLAUDE.md` requires: nothing here writes to core engine data.
+ * 2. **Is the driver behind the seam's Firebase adapter** — the record verbs
+ *    at the bottom of this file, and the connection every one of them needs.
+ *
+ * It used to be a third thing as well: a set of write helpers for lending
+ * projects, monitoring entries, agent runs, pipeline runs and webhooks, each
+ * opening with `const db = getDatabase(); if (!db) return;`. That is how a
+ * deployment holding its records in PostgreSQL answered `POST /v1/projects`
+ * with 201 Created and stored nothing — the seam that would have refused the
+ * write was never consulted, because the write did not go through it.
+ *
+ * Those records now go through `src/platform/database/store.js` like every
+ * other record in this repository. Nothing outside the seam and the core
+ * engine reads may require this module, and `tests/data-layer.test.js` fails
+ * the build when something does.
  *
  * IMPORTANT: This module shares the Firebase Admin SDK instance.
  * Do NOT initialize a second Firebase app — reuse the existing one.
@@ -106,249 +122,13 @@ async function getApiKeyData(hashedKey) {
   return snapshot.val();
 }
 
-async function saveCovenantResult(projectId, covenantId, result) {
-  const db = getDatabase();
-  await db.ref(`fintech/covenants/${projectId}/${covenantId}`).update(result);
-}
-
-async function saveTaxonomyResult(projectId, result) {
-  const db = getDatabase();
-  const date = new Date().toISOString().split('T')[0];
-  await db.ref(`fintech/taxonomyResults/${projectId}/${date}`).set(result);
-}
-
-async function savePortfolioSnapshot(orgId, snapshot) {
-  const db = getDatabase();
-  const date = new Date().toISOString().split('T')[0];
-  await db.ref(`fintech/portfolioSnapshots/${orgId}/${date}`).set(snapshot);
-}
-
 // ---------------------------------------------------------------------------
-// Agent Run Persistence (reads/writes to /fintech/agentRuns/ paths)
-// ---------------------------------------------------------------------------
-
-async function saveAgentRun(orgId, run) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/agentRuns/${orgId}/${run.runId}`).set(run);
-}
-
-async function updateAgentRun(orgId, runId, updates) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/agentRuns/${orgId}/${runId}`).update(updates);
-}
-
-async function getAgentRun(orgId, runId) {
-  const db = getDatabase();
-  if (!db) return null;
-  const snapshot = await db.ref(`fintech/agentRuns/${orgId}/${runId}`).once('value');
-  return snapshot.val();
-}
-
-async function listAgentRuns(orgId, limit = 20) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/agentRuns/${orgId}`)
-    .orderByChild('createdAt')
-    .limitToLast(limit)
-    .once('value');
-  const val = snapshot.val();
-  if (!val) return [];
-  return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-async function saveProject(projectId, projectData) {
-  const db = getDatabase();
-  if (!db) return null;
-  await db.ref(`fintech/projects/${projectId}`).set({ ...projectData, updatedAt: new Date().toISOString() });
-  return projectId;
-}
-
-async function getFintechProject(projectId) {
-  const db = getDatabase();
-  if (!db) return null;
-  const snapshot = await db.ref(`fintech/projects/${projectId}`).once('value');
-  return snapshot.val();
-}
-
-async function listFintechProjects(orgId) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/projects`).orderByChild('orgId').equalTo(orgId).once('value');
-  const val = snapshot.val();
-  if (!val) return [];
-  return Object.entries(val).map(([id, data]) => ({ projectId: id, ...data }));
-}
-
-async function saveMonitoringEntry(projectId, year, entry) {
-  const db = getDatabase();
-  if (!db) return null;
-  await db.ref(`fintech/monitoring/${projectId}/${year}`).set({ ...entry, savedAt: new Date().toISOString() });
-}
-
-async function listMonitoringEntries(projectId) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/monitoring/${projectId}`).once('value');
-  const val = snapshot.val();
-  if (!val) return [];
-  return Object.entries(val)
-    .map(([year, data]) => ({ year: parseInt(year), ...data }))
-    .sort((a, b) => a.year - b.year);
-}
-
-// ---------------------------------------------------------------------------
-// EU AI Act Article 22 — Human Review for Covenant Design (Stage 3)
+// The record verbs behind src/platform/database/adapters/firebase.js
 //
-// Covenant Design is a high-risk AI system per EU AI Act Annex III, point 5(b)
-// (AI used for creditworthiness assessment and credit scoring). Banks must
-// maintain mandatory human oversight before AI-recommended covenant terms
-// take legal effect in the facility agreement.
-//
-// This function records the human reviewer's decision and transitions the
-// run from 'pending_human_review' to the final status.
-// ---------------------------------------------------------------------------
-
-/**
- * Submit a human review decision for a covenant design run.
- *
- * @param {string} orgId          - Organisation ID
- * @param {string} runId          - Agent run ID
- * @param {Object} review         - Review payload
- * @param {string} review.decision        - 'approved' | 'modified' | 'rejected'
- * @param {string} review.reviewerId      - Reviewer identifier (email or user ID)
- * @param {string} [review.reason]        - Reason for modification or rejection
- * @param {Object[]} [review.modifications] - If 'modified': array of covenant overrides
- * @returns {Promise<void>}
- */
-async function submitHumanReview(orgId, runId, review) {
-  const db = getDatabase();
-  if (!db) return;
-
-  const { AGENT_STATUS } = require('../../shared/models/agent-run');
-
-  const statusMap = {
-    approved: AGENT_STATUS.HUMAN_APPROVED,
-    modified: AGENT_STATUS.HUMAN_MODIFIED,
-    rejected: AGENT_STATUS.HUMAN_REJECTED
-  };
-
-  const finalStatus = statusMap[review.decision];
-  if (!finalStatus) {
-    throw new Error(`Invalid review decision: ${review.decision}. Must be approved, modified, or rejected.`);
-  }
-
-  await db.ref(`fintech/agentRuns/${orgId}/${runId}`).update({
-    status: finalStatus,
-    humanReview: {
-      decision:      review.decision,
-      reviewerId:    review.reviewerId,
-      reason:        review.reason        || null,
-      modifications: review.modifications || null,
-      reviewedAt:    new Date().toISOString()
-    },
-    completedAt: new Date().toISOString()
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Pipeline Run Persistence (reads/writes to /fintech/pipelineRuns/ paths)
-// ---------------------------------------------------------------------------
-
-async function savePipelineRun(orgId, pipeline) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/pipelineRuns/${orgId}/${pipeline.pipelineId}`).set(pipeline);
-}
-
-async function updatePipelineRun(orgId, pipelineId, updates) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/pipelineRuns/${orgId}/${pipelineId}`).update(updates);
-}
-
-async function getPipelineRun(orgId, pipelineId) {
-  const db = getDatabase();
-  if (!db) return null;
-  const snapshot = await db.ref(`fintech/pipelineRuns/${orgId}/${pipelineId}`).once('value');
-  return snapshot.val();
-}
-
-async function listPipelineRuns(orgId, limit = 20) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/pipelineRuns/${orgId}`)
-    .orderByChild('createdAt')
-    .limitToLast(limit)
-    .once('value');
-  const val = snapshot.val();
-  if (!val) return [];
-  return Object.values(val).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-// ---------------------------------------------------------------------------
-// PCAF Part C Persistence (runs, learnings, per-m2 benchmark library)
-// ---------------------------------------------------------------------------
-
-async function savePartCRun(orgId, run) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/partcRuns/${orgId}/${run.runId}`).set(run);
-}
-
-async function updatePartCRun(orgId, runId, updates) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/partcRuns/${orgId}/${runId}`).update(updates);
-}
-
-async function getPartCRun(orgId, runId) {
-  const db = getDatabase();
-  if (!db) return null;
-  const snapshot = await db.ref(`fintech/partcRuns/${orgId}/${runId}`).once('value');
-  return snapshot.val();
-}
-
-async function listPartCRuns(orgId, limit = 20) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/partcRuns/${orgId}`)
-    .orderByChild('createdAt')
-    .limitToLast(limit)
-    .once('value');
-  const val = snapshot.val();
-  if (!val) return [];
-  return Object.values(val).sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-}
-
-async function savePartCLearnings(orgId, runId, records) {
-  const db = getDatabase();
-  if (!db) return;
-  await db.ref(`fintech/partcLearnings/${orgId}/${runId}`).set(records);
-  if (records && records.perM2Factor) {
-    await db.ref(`fintech/partcBenchmarks/${orgId}/${runId}`).set(records.perM2Factor);
-  }
-}
-
-async function listPartCLearnings(orgId, limit = 200) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/partcLearnings/${orgId}`).limitToLast(limit).once('value');
-  const val = snapshot.val();
-  return val ? Object.values(val) : [];
-}
-
-async function listPartCBenchmarks(orgId, limit = 500) {
-  const db = getDatabase();
-  if (!db) return [];
-  const snapshot = await db.ref(`fintech/partcBenchmarks/${orgId}`).limitToLast(limit).once('value');
-  const val = snapshot.val();
-  return val ? Object.values(val) : [];
-}
-
-// ---------------------------------------------------------------------------
-// PCAF Part C registry — generic collection storage
+// The `fintech/partc/` prefix is historical — these hold every collection the
+// seam knows about, not only Part C's. It is left as it is because renaming
+// it would strand every record an existing Firebase deployment holds, and a
+// path is not worth that.
 // ---------------------------------------------------------------------------
 
 async function savePartCRecord(collection, orgId, id, record) {
@@ -382,36 +162,14 @@ module.exports = {
   initFirebase,
   getFirebaseAdmin,
   getDatabase,
+  /* The core engine, read-only. */
   getProject,
   getProjectTenders,
   getProjectEntries,
   getApiKeyData,
-  saveCovenantResult,
-  saveTaxonomyResult,
-  savePortfolioSnapshot,
-  saveAgentRun,
-  updateAgentRun,
-  getAgentRun,
-  listAgentRuns,
-  saveProject,
-  getFintechProject,
-  listFintechProjects,
-  saveMonitoringEntry,
-  listMonitoringEntries,
-  submitHumanReview,
-  savePipelineRun,
+  /* The driver behind src/platform/database/adapters/firebase.js. */
   savePartCRecord,
   getPartCRecord,
   listPartCRecords,
   deletePartCRecord,
-  savePartCRun,
-  updatePartCRun,
-  getPartCRun,
-  listPartCRuns,
-  savePartCLearnings,
-  listPartCLearnings,
-  listPartCBenchmarks,
-  updatePipelineRun,
-  getPipelineRun,
-  listPipelineRuns
 };

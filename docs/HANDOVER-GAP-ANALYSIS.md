@@ -210,6 +210,29 @@ will flag it.
 
 ## H2 — Data integrity and the storage seam.
 
+> **Delivered** (commit `H2 — one seam`). There is now one adapter per store
+> behind one interface, chosen once by the mode `capability()` resolves, and
+> `tests/store-conformance.test.js` runs the same contract against every
+> adapter the process can reach — so a difference between two stores is a
+> failing test rather than something found in production, and the differences
+> that are real and deliberate are stated there. The five record types that
+> were written past the seam — lending projects, monitoring entries, agent
+> runs, pipeline runs, webhook subscriptions — go through it, in five new
+> tables (migration `0005`). The exit criterion is a test:
+> `POST /v1/projects` on a deployment that cannot persist answers **503
+> naming `DATABASE_URL`**, and never 201. A caller that needs atomicity asks
+> for it by name and is refused rather than silently downgraded on a durable
+> store that cannot commit a group. The in-process store refuses at its
+> ceiling instead of forgetting its oldest record. Factor overrides are an
+> argument to `runPartC()` held in an `AsyncLocalStorage` scope for the
+> duration of that one call. The two private seams inside Part C are gone, the
+> registry knows all nineteen generated columns and the origin lookup uses its
+> index, and the reference project has moved out of `tests/` into `data/`.
+> The bridge is 417 lines down to 176 and is now two things only: the core
+> engine read, and the driver behind the seam's Firebase adapter —
+> `tests/storage-seam.test.js` fails the build when a sixth record type
+> reaches for it.
+
 **H2.1 · A documented endpoint reports success while discarding the record. Critical.**
 `POST /v1/projects` → `saveProject()` → `bridge/firebase.js:163`:
 `const db = getDatabase(); if (!db) return null;` — then the route returns

@@ -1,8 +1,16 @@
 /**
  * CarbonIQ FinTech — Webhook Service
  *
- * Manages webhook subscriptions (register / list / delete) in Firebase,
- * and dispatches signed event payloads to subscriber URLs.
+ * Manages webhook subscriptions (register / list / delete) on the storage
+ * seam, and dispatches signed event payloads to subscriber URLs.
+ *
+ * Subscriptions used to be written straight to Firebase, past the seam, and
+ * every entry point began by asking the bridge for a database handle and
+ * throwing when there was none — so on a deployment holding its records in
+ * PostgreSQL the whole feature answered "Database unavailable", which names
+ * neither what is unavailable nor what to do about it. On the seam a
+ * deployment that cannot persist is refused with a 503 naming DATABASE_URL,
+ * and one on PostgreSQL simply works.
  *
  * Security: payloads are signed with HMAC-SHA256.
  * Delivery: up to 3 retries with exponential backoff (1s, 2s, 4s).
@@ -12,8 +20,10 @@ const crypto = require('crypto');
 const logger = require('../../../platform/observability/logger');
 const { fallback } = logger;
 const log = logger.for('domains/lending/application/webhook');
-const { getDatabase } = require('../../../platform/bridge/firebase');
+const store = require('../../../platform/database/store');
 const config = require('../../../platform/config');
+
+const COLLECTION = 'webhooks';
 
 const MAX_RETRIES = 3;
 const BACKOFF_BASE_MS = 1000;
@@ -30,9 +40,6 @@ const BACKOFF_BASE_MS = 1000;
  * @returns {Object} { subscriptionId, url, events, createdAt }
  */
 async function registerWebhook(orgId, sub) {
-  const db = getDatabase();
-  if (!db) throw new Error('Database unavailable');
-
   const subscriptionId = `wh_${crypto.randomBytes(12).toString('hex')}`;
   const signingSecret = sub.secret || crypto.randomBytes(24).toString('hex');
   const createdAt = new Date().toISOString();
@@ -49,7 +56,7 @@ async function registerWebhook(orgId, sub) {
     failureCount: 0
   };
 
-  await db.ref(`fintech/webhooks/${subscriptionId}`).set(record);
+  await store.put(COLLECTION, orgId, subscriptionId, record);
 
   // Return without exposing signingSecret unless it was user-supplied
   return {
@@ -69,18 +76,8 @@ async function registerWebhook(orgId, sub) {
  * @returns {Object[]}
  */
 async function listWebhooks(orgId) {
-  const db = getDatabase();
-  if (!db) throw new Error('Database unavailable');
-
-  const snap = await db.ref('fintech/webhooks')
-    .orderByChild('orgId')
-    .equalTo(orgId)
-    .once('value');
-
-  const all = snap.val() || {};
-  return Object.values(all)
-    .filter(w => w.active)
-    .map(({ signingSecret: _s, ...safe }) => safe); // never return the secret
+  const rows = await store.query(COLLECTION, orgId, { where: { active: true } });
+  return rows.map(({ signingSecret: _s, ...safe }) => safe); // never return the secret
 }
 
 /**
@@ -91,16 +88,13 @@ async function listWebhooks(orgId) {
  * @returns {boolean}
  */
 async function deleteWebhook(subscriptionId, orgId) {
-  const db = getDatabase();
-  if (!db) throw new Error('Database unavailable');
+  /* The read is scoped to the organisation by the partition, so a
+     subscription belonging to somebody else is simply not found here. */
+  const record = await store.get(COLLECTION, orgId, subscriptionId);
+  if (!record) return false;
 
-  const ref = db.ref(`fintech/webhooks/${subscriptionId}`);
-  const snap = await ref.once('value');
-  const record = snap.val();
-
-  if (!record || record.orgId !== orgId) return false;
-
-  await ref.update({ active: false, deletedAt: new Date().toISOString() });
+  await store.patch(COLLECTION, orgId, subscriptionId,
+    { active: false, deletedAt: new Date().toISOString() });
   return true;
 }
 
@@ -117,21 +111,13 @@ async function deleteWebhook(subscriptionId, orgId) {
  * @param {Object} payload
  */
 async function dispatchEvent(orgId, eventType, payload) {
-  const db = getDatabase();
-  if (!db) return;
+  const subscriptions = await store.query(COLLECTION, orgId, { where: { active: true } })
+    .catch(fallback('webhook.listSubscriptions', []));
 
-  const snap = await db.ref('fintech/webhooks')
-    .orderByChild('orgId')
-    .equalTo(orgId)
-    .once('value');
+  for (const record of subscriptions) {
+    if (!Array.isArray(record.events) || !record.events.includes(eventType)) continue;
 
-  const all = snap.val() || {};
-
-  for (const record of Object.values(all)) {
-    if (!record.active) continue;
-    if (!record.events.includes(eventType)) continue;
-
-    _deliverWithRetry(record, eventType, payload, db).catch(err =>
+    _deliverWithRetry(orgId, record, eventType, payload).catch(err =>
       log.warn({ err, subscriptionId: record.subscriptionId, kind: logger.classify(err) }, 'webhook dispatch failed')
     );
   }
@@ -141,7 +127,7 @@ async function dispatchEvent(orgId, eventType, payload) {
 // Internal delivery
 // ---------------------------------------------------------------------------
 
-async function _deliverWithRetry(record, eventType, payload, db) {
+async function _deliverWithRetry(orgId, record, eventType, payload) {
   const body = JSON.stringify({
     event: eventType,
     sentAt: new Date().toISOString(),
@@ -171,7 +157,7 @@ async function _deliverWithRetry(record, eventType, payload, db) {
 
       if (res.ok) {
         // Update delivery stats (fire-and-forget)
-        db.ref(`fintech/webhooks/${record.subscriptionId}`).update({
+        store.patch(COLLECTION, orgId, record.subscriptionId, {
           deliveryCount: (record.deliveryCount || 0) + 1,
           lastDeliveredAt: new Date().toISOString()
         }).catch(fallback('webhook.recordDelivery'));
@@ -185,7 +171,7 @@ async function _deliverWithRetry(record, eventType, payload, db) {
   }
 
   // All retries exhausted — record failure
-  db.ref(`fintech/webhooks/${record.subscriptionId}`).update({
+  store.patch(COLLECTION, orgId, record.subscriptionId, {
     failureCount: (record.failureCount || 0) + 1,
     lastFailedAt: new Date().toISOString(),
     lastError: lastError ? lastError.message : 'Unknown'

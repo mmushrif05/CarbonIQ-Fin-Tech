@@ -82,8 +82,14 @@ describe('Every collection the services write is registered', () => {
         /* A generated column may normalise on the way in — `lower(...)` for
            an email address, so one account cannot be created twice in two
            cases — as well as cast on the way out. What matters is that the
-           column is generated from that JSON field and from nothing else. */
-        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer|boolean|timestamptz) GENERATED ALWAYS AS \\(\\s*(?:[a-z_]+\\()?\\(?data->>'${field}'`));
+           column is generated from that JSON field and from nothing else.
+           A dotted key is a path into the record and reads as
+           `data->'origin'->>'system'`. */
+        const parts = field.split('.');
+        const source = parts.length === 1
+          ? `data->>'${field}'`
+          : `data${parts.slice(0, -1).map(p => `->'${p}'`).join('')}->>'${parts[parts.length - 1]}'`;
+        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer|boolean|timestamptz) GENERATED ALWAYS AS \\(\\s*(?:[a-z_]+\\()?\\(?${source.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&')}`));
       }
       expect(name).toBeTruthy();
     }

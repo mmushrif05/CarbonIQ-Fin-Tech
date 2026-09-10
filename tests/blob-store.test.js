@@ -193,26 +193,63 @@ describe('The store layer above it — precedence and the refusal rule', () => {
     expect(src).toMatch(/Blobs is now \*\*opt-in\*\*/);
   });
 
-  test('one predicate decides where a write goes, and it is capability()', () => {
+  test('one adapter decides where a write goes, and it is the one capability() named', () => {
     /* This used to re-derive the answer as `!isDurable() && blobs.isAvailable()`,
-       which was a second implementation of the precedence rule and could not
-       see STORAGE_BACKEND at all — so a forced backend would have been
-       reported one way and written another. */
-    expect(src).toMatch(/const _blobsLive = \(\) => capability\(\)\.mode === 'blobs'/);
+       a second implementation of the precedence rule that could not see
+       STORAGE_BACKEND at all. Then it was a predicate per verb. It is now one
+       selection, so a verb cannot reach a store the mode did not choose. */
+    const { adapterFor } = require('../src/platform/database/adapters');
+    for (const mode of ['memory', 'firebase', 'blobs', 'postgres']) {
+      expect(adapterFor(mode).mode).toBe(mode);
+    }
+    expect(adapterFor('none')).toBeNull();
     expect(src).not.toMatch(/!isDurable\(\) && blobs\.isAvailable\(\)/);
   });
 
-  test('the two durable stores are never written together', () => {
-    expect(src).toMatch(/never both/);
-    expect(src).toMatch(/Writing to\s+two durable stores would leave them to diverge/);
+  test('the two durable stores are never written together — and nor are memory and Firebase', async () => {
+    /* The rule was stated for Blobs and broken for memory: every verb wrote to
+       the in-process Map and *then* asked whether Firebase was configured, so
+       STORAGE_BACKEND=memory on a deployment with Firebase set wrote to both.
+       Proved here by making the Firebase bridge fail loudly if it is touched. */
+    const fb = require('../src/platform/bridge/firebase');
+    const saved = fb.savePartCRecord;
+    let reachedFirebase = false;
+    fb.savePartCRecord = async () => { reachedFirebase = true; };
+    const before = process.env.STORAGE_BACKEND;
+    process.env.STORAGE_BACKEND = 'memory';
+    try {
+      const store = require('../src/platform/database/store');
+      await store.put('clients', 'org-dual', 'c1', { id: 'c1', name: 'Only In Memory' });
+      expect(reachedFirebase).toBe(false);
+      expect(await store.get('clients', 'org-dual', 'c1')).toMatchObject({ name: 'Only In Memory' });
+    } finally {
+      fb.savePartCRecord = saved;
+      if (before === undefined) delete process.env.STORAGE_BACKEND;
+      else process.env.STORAGE_BACKEND = before;
+    }
   });
 
-  test('a Blobs failure is not swallowed the way a Firebase failure is', () => {
+  test('a failed write on a durable store is never softened into a success', async () => {
     /* capability() has just promised durability. A silent catch there would be
-       exactly the "saved then gone" this whole layer exists to prevent. */
-    expect(src).toMatch(/await blobs\.put\(collection, orgId, id, record\);/);
+       exactly the "saved then gone" this whole layer exists to prevent. It
+       applied to Blobs and not to Firebase; it now applies to both. */
+    const blobsAdapter = require('../src/platform/database/adapters/blobs');
+    const fbAdapter = require('../src/platform/database/adapters/firebase');
+    const blobStore = require('../src/platform/database/blob-store');
+    const fb = require('../src/platform/bridge/firebase');
+
+    const savedBlob = blobStore.put;
+    const savedFb = fb.savePartCRecord;
+    blobStore.put = async () => { throw new Error('blobs unreachable'); };
+    fb.savePartCRecord = async () => { throw new Error('firebase unreachable'); };
+    try {
+      await expect(blobsAdapter.put('clients', 'o', 'c', {})).rejects.toThrow(/unreachable/);
+      await expect(fbAdapter.put('clients', 'o', 'c', {})).rejects.toThrow(/unreachable/);
+    } finally {
+      blobStore.put = savedBlob;
+      fb.savePartCRecord = savedFb;
+    }
     expect(src).not.toMatch(/blobs\.put\([^)]*\)\.catch/);
-    expect(src).toMatch(/is a broken promise/);
   });
 
   test('R12 survives — every write still asserts it can persist first', () => {

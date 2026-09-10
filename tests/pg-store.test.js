@@ -24,7 +24,7 @@ const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
 const book = require('../src/domains/capital/infrastructure/capital-book');
 const { adoptCandidate } = require('../src/domains/capital/desk/adopt');
 const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const KEY = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);

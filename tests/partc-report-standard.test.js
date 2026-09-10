@@ -24,7 +24,7 @@ const {
 const { completeChecklist, ITEMS } = require('../src/domains/pcaf-part-c/application/partc-checklist');
 const standard = require('../src/domains/pcaf-part-c/reporting/partc-report-standard');
 const { RECALCULATION_TRIGGERS } = require('../src/domains/pcaf-part-c/interface/schemas/partc-registry');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const SETTINGS = {
   currency: 'LKR', insurerName: 'Demo Insurance PLC', reportingYear: 2026,

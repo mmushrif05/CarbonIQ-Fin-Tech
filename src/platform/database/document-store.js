@@ -79,9 +79,12 @@ function whereClause(collection, orgId, where = {}, startAt = 2) {
   let n = startAt;
   for (const [field, value] of Object.entries(where)) {
     if (value === undefined) continue;
-    if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(field)) throw Object.assign(new Error(`Bad query field "${field}".`), { statusCode: 400, code: 'BAD_QUERY_FIELD' });
+    /* A dotted field is a path into the record — `origin.system`. Where the
+       registry lifts that path into a generated column the column answers,
+       index and all; where it does not, the path is read out of the JSONB. */
+    if (!/^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$/.test(field)) throw Object.assign(new Error(`Bad query field "${field}".`), { statusCode: 400, code: 'BAD_QUERY_FIELD' });
     const col = keys[field] ? keys[field] : null;
-    const expr = col ? col : `data->>'${field}'`;
+    const expr = col ? col : (field.includes('.') ? `data#>>'{${field.split('.').join(',')}}'` : `data->>'${field}'`);
     if (value === null) { clauses.push(`${expr} IS NULL`); continue; }
     if (Array.isArray(value)) {
       clauses.push(`${col ? col : expr} = ANY($${n}${col && typeof value[0] === 'number' ? '::integer[]' : '::text[]'})`);

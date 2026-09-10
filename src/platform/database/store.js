@@ -73,20 +73,12 @@
 const fb = require('../bridge/firebase');
 const blobs = require('./blob-store');
 const db = require('.');
+const { adapterFor } = require('./adapters');
+const memoryAdapter = require('./adapters/memory');
 const config = require('../config');
 const { timed } = require('../observability/metrics');
-const { fallback } = require('../observability/logger');
-
-const MAX_MEMORY_RECORDS = 500;
-
-/** collection -> orgId -> Map(id -> record). Insertion-ordered. */
-const _memory = new Map();
-
-function _bucket(collection, orgId) {
-  const key = `${collection}::${orgId}`;
-  if (!_memory.has(key)) _memory.set(key, new Map());
-  return _memory.get(key);
-}
+const logger = require('../observability/logger');
+const log = logger.for('platform/database/store');
 
 /** True when Firebase is configured and reachable. */
 function isDurable() {
@@ -208,49 +200,29 @@ function assertWritable() {
   throw err;
 }
 
-function _remember(collection, orgId, id, record) {
-  const bucket = _bucket(collection, orgId);
-  bucket.delete(id);
-  bucket.set(id, record);
-  while (bucket.size > MAX_MEMORY_RECORDS) bucket.delete(bucket.keys().next().value);
+/* ---------------------------------------------------------------------------
+   The verbs
+   ---------------------------------------------------------------------------
+   Each one asks which store was chosen and hands the call to that adapter,
+   once. There is no per-verb branching left, which is what stops a write
+   reaching two stores. */
+
+/** The adapter for the store this deployment resolved to, or null. */
+function current() {
+  return adapterFor(capability().mode);
 }
 
-// ---------------------------------------------------------------------------
-// CRUD
-// ---------------------------------------------------------------------------
-
-/* Blobs is the live store only when Firebase is not — never both. Writing to
-   two durable stores would leave them to diverge, and nothing here would say
-   which one a figure came from. */
-const _blobsLive = () => capability().mode === 'blobs';
-const _pgLive = () => capability().mode === 'postgres';
+/** A read on a deployment with no store is empty, not an error. */
+const EMPTY = { list: [], query: [], count: 0, page: { items: [], nextCursor: null, limit: 0 } };
 
 async function put(collection, orgId, id, record) {
   assertWritable();
-  if (_pgLive()) return db.documents.put(collection, orgId, id, record);
-  _remember(collection, orgId, id, record);
-  if (_blobsLive()) {
-    /* Not swallowed. A Firebase failure can fall back to memory because
-       Firebase is the optional path here; a Blobs failure on a deployment
-       whose capability() just promised durability is a broken promise, and
-       the caller must hear about it rather than be told the write succeeded. */
-    await blobs.put(collection, orgId, id, record);
-    return record;
-  }
-  if (isDurable()) await fb.savePartCRecord(collection, orgId, id, record).catch(fallback('store.firebase.save'));
-  return record;
+  return current().put(collection, orgId, id, record);
 }
 
 async function get(collection, orgId, id, { forUpdate = false } = {}) {
-  if (_pgLive()) return db.documents.get(collection, orgId, id, { forUpdate });
-  if (_blobsLive()) {
-    const fromBlobs = await blobs.get(collection, orgId, id).catch(fallback('store.blobs.get', null));
-    if (fromBlobs) return fromBlobs;
-    return _bucket(collection, orgId).get(id) || null;
-  }
-  const stored = isDurable() ? await fb.getPartCRecord(collection, orgId, id).catch(fallback('store.firebase.get', null)) : null;
-  if (stored) return stored;
-  return _bucket(collection, orgId).get(id) || null;
+  const a = current();
+  return a ? a.get(collection, orgId, id, { forUpdate }) : null;
 }
 
 /* A ceiling for the stores that cannot page: past it a book needs PostgreSQL. */
@@ -264,144 +236,84 @@ const MAX_LIST_WITHOUT_QUERY = 5000;
  * projects would have rolled up as 200 without a word.
  */
 async function list(collection, orgId, { limit = null } = {}) {
-  if (_pgLive()) return db.documents.list(collection, orgId, { limit });
-  const cap = limit === null || limit === undefined ? MAX_LIST_WITHOUT_QUERY : limit;
-  if (_blobsLive()) {
-    const fromBlobs = await blobs.list(collection, orgId, { limit: cap }).catch(fallback('store.blobs.list', () => []));
-    if (fromBlobs && fromBlobs.length) return fromBlobs;
-    return [..._bucket(collection, orgId).values()].slice(0, cap);
-  }
-  const stored = isDurable() ? await fb.listPartCRecords(collection, orgId, cap).catch(fallback('store.firebase.list', () => [])) : [];
-  if (stored && stored.length) return stored;
-  return [..._bucket(collection, orgId).values()].slice(0, cap);
+  const a = current();
+  return a ? a.list(collection, orgId, { limit }) : EMPTY.list;
 }
 
 async function patch(collection, orgId, id, updates) {
   assertWritable();
-  if (_pgLive()) return db.documents.patch(collection, orgId, id, updates);
-  const current = await get(collection, orgId, id);
-  if (!current) return null;
-  const merged = { ...current, ...updates, updatedAt: new Date().toISOString() };
-  _remember(collection, orgId, id, merged);
-  if (_blobsLive()) {
-    await blobs.put(collection, orgId, id, merged);
-    return merged;
-  }
-  if (isDurable()) await fb.savePartCRecord(collection, orgId, id, merged).catch(fallback('store.firebase.patch'));
-  return merged;
+  return current().patch(collection, orgId, id, updates);
 }
 
 async function remove(collection, orgId, id) {
   assertWritable();
-  if (_pgLive()) { await db.documents.remove(collection, orgId, id); return; }
-  _bucket(collection, orgId).delete(id);
-  if (_blobsLive()) {
-    await blobs.remove(collection, orgId, id);
-    return;
-  }
-  if (isDurable()) await fb.deletePartCRecord(collection, orgId, id).catch(fallback('store.firebase.delete'));
-}
-
-// ---------------------------------------------------------------------------
-// Query, pagination, transactions — native on PostgreSQL, emulated elsewhere
-// ---------------------------------------------------------------------------
-
-const _matches = (rec, where) => Object.entries(where).every(([k, v]) => {
-  if (v === undefined) return true;
-  if (Array.isArray(v)) return v.some(x => String(rec[k]) === String(x));
-  if (v === null) return rec[k] === null || rec[k] === undefined;
-  return String(rec[k]) === String(v);
-});
-
-const _sortBy = (rows, orderBy = 'created_at') => {
-  if (orderBy === null) return [...rows];
-  const desc = orderBy.startsWith('-');
-  const f = orderBy.replace(/^-/, '');
-  const key = f === 'created_at' ? 'createdAt' : f === 'updated_at' ? 'updatedAt' : f;
-  const out = [...rows].sort((a, b) => String(a[key] ?? '').localeCompare(String(b[key] ?? '')));
-  return desc ? out.reverse() : out;
-};
-
-/**
- * Records matching `where` (equality on top-level fields; an array means any
- * of). On PostgreSQL a registered key uses its index; everywhere else this is
- * a list followed by a filter, which is what every caller did by hand before.
- */
-/** The same subset a PostgreSQL projection returns, taken from a whole record. */
-function _pick(record, fields) {
-  const out = {};
-  for (const f of fields) _assign(out, record, f.split('.'));
-  return out;
-}
-
-/* Copies the value at `parts` from src into dst, creating parents as needed.
-   A segment ending in `[]` maps over an array. Returns whether anything was
-   found, so an empty parent is not left behind for an absent child. */
-function _assign(dst, src, parts) {
-  const [head, ...rest] = parts;
-  const isArray = head.endsWith('[]');
-  const key = isArray ? head.slice(0, -2) : head;
-  if (src === null || typeof src !== 'object' || !(key in src)) return false;
-  const val = src[key];
-  if (!rest.length) { dst[key] = val; return true; }
-  if (isArray) {
-    if (!Array.isArray(val)) return false;
-    const target = Array.isArray(dst[key]) ? dst[key] : val.map(() => ({}));
-    val.forEach((item, i) => { if (item && typeof item === 'object') _assign(target[i], item, rest); });
-    dst[key] = target;
-    return true;
-  }
-  const child = (dst[key] && typeof dst[key] === 'object' && !Array.isArray(dst[key])) ? dst[key] : {};
-  const found = _assign(child, val, rest);
-  if (found || key in dst) dst[key] = child;
-  return found;
+  await current().remove(collection, orgId, id);
 }
 
 /**
  * `fields` names the keys (or dotted paths) to return — a projection, so a
  * roll-up over thousands of records reads what it uses and nothing else.
  */
-async function query(collection, orgId, { where = {}, limit = null, orderBy = 'created_at', forUpdate = false, fields = null } = {}) {
-  if (_pgLive()) return db.documents.query(collection, orgId, { where, limit, orderBy, forUpdate, fields });
-  const all = await list(collection, orgId);
-  let rows = _sortBy(all.filter(r => _matches(r, where)), orderBy);
-  if (limit) rows = rows.slice(0, limit);
-  return fields ? rows.map(r => _pick(r, fields)) : rows;
+async function query(collection, orgId, opts = {}) {
+  const a = current();
+  return a ? a.query(collection, orgId, opts) : EMPTY.query;
 }
 
 /** One page and the cursor for the next. The cursor is opaque and store-specific. */
-async function page(collection, orgId, { limit = 50, cursor, where = {} } = /** @type {{limit?: any, cursor?: any, where?: any}} */ ({})) {
-  if (_pgLive()) return db.documents.page(collection, orgId, { limit, cursor, where });
-  const size = Math.min(500, Math.max(1, Number(limit) || 50));
-  let offset = 0;
-  if (cursor) {
-    offset = Number(Buffer.from(String(cursor), 'base64url').toString('utf8'));
-    if (!Number.isInteger(offset) || offset < 0) {
-      const err = /** @type {AppError} */ (new Error('The cursor is not one this store issued.'));
-      err.statusCode = 400; err.code = 'BAD_CURSOR';
-      throw err;
-    }
-  }
-  const all = _sortBy((await list(collection, orgId)).filter(r => _matches(r, where)));
-  const items = all.slice(offset, offset + size);
-  const more = all.length > offset + size;
-  return { items, nextCursor: more ? Buffer.from(String(offset + size)).toString('base64url') : null, limit: size };
-}
-
-/**
- * Run `fn` atomically. On PostgreSQL every store call made inside it — in any
- * module — lands on one connection and commits or rolls back together. On the
- * other stores it is a plain call, and `capability().transactional` is false
- * so a caller that needs the guarantee can say so.
- */
-async function transaction(fn) {
-  if (_pgLive()) return db.documents.transaction(fn);
-  return fn();
+async function page(collection, orgId, opts = {}) {
+  const a = current();
+  return a ? a.page(collection, orgId, opts) : { ...EMPTY.page };
 }
 
 async function count(collection, orgId, where = {}) {
-  if (_pgLive()) return db.documents.count(collection, orgId, where);
-  return (await query(collection, orgId, { where })).length;
+  const a = current();
+  return a ? a.count(collection, orgId, where) : EMPTY.count;
+}
+
+/** Operations that have already asked for atomicity and been told there is none. */
+const _warnedTransactions = new Set();
+
+/**
+ * Run `fn` atomically.
+ *
+ * On PostgreSQL every store call made inside it — in any module — lands on one
+ * connection and commits or rolls back together. No other store can do that,
+ * and what used to happen is that `transaction()` quietly became a plain call:
+ * the comment said a caller needing the guarantee could read
+ * `capability().transactional`, and not one of the three call sites that exist
+ * *because* they need it ever did.
+ *
+ * So the caller declares the need instead, and the seam answers honestly:
+ *
+ *   - PostgreSQL — a real transaction.
+ *   - A durable store without one (Firebase, Blobs) — **refused**. A
+ *     lock-and-supersede that applies half of itself on a real book is a
+ *     position nobody can reconcile, and it is better not to start.
+ *   - The in-process store — allowed, and logged once per operation, because
+ *     development and the test suite are exactly where a non-atomic run is
+ *     acceptable and silence is not.
+ *
+ * @param {Function} fn
+ * @param {{name?: string, required?: boolean}} [opts]
+ */
+async function transaction(fn, { name = 'transaction', required = false } = {}) {
+  const cap = capability();
+  if (cap.transactional) return current().transaction(fn);
+
+  if (required && cap.durable) {
+    const err = /** @type {AppError} */ (new Error(
+      `"${name}" has to apply as one unit, and the ${cap.mode} store cannot do that.`));
+    err.statusCode = 503;
+    err.code = 'NOT_TRANSACTIONAL';
+    err.remedy = 'Set DATABASE_URL. PostgreSQL is the only store here that can commit or roll back a group of writes together.';
+    throw err;
+  }
+  if (required && !_warnedTransactions.has(name)) {
+    _warnedTransactions.add(name);
+    log.warn({ operation: name, mode: cap.mode },
+      `${name} needs to apply as one unit and the ${cap.mode} store cannot; running it unprotected`);
+  }
+  return fn();
 }
 
 /**
@@ -435,8 +347,12 @@ async function probe({ timeoutMs = 1500 } = {}) {
  * `beforeEach(() => store._resetMemory())` waits for it.
  */
 function _resetMemory() {
-  _memory.clear();
-  if (_pgLive() && config.runtime.isTest) return db.documents.truncateAll();
+  /* Every adapter can be emptied; only PostgreSQL's does real work, and only
+     under NODE_ENV=test. Memory is always cleared as well, so a suite that
+     switches backends mid-run does not read what an earlier mode wrote. */
+  memoryAdapter.reset();
+  const a = current();
+  if (a && a.mode === 'postgres' && config.runtime.isTest) return a.reset();
   return undefined;
 }
 
@@ -448,5 +364,5 @@ module.exports = {
   put: timed('put', put), get: timed('get', get), list: timed('list', list), patch: timed('patch', patch), remove: timed('remove', remove),
   query: timed('query', query), page: timed('page', page), transaction: timed('transaction', transaction), count: timed('count', count), probe,
   capability, isDurable, isPostgresConfigured, isEphemeralRuntime, assertWritable, requestedBackend, BACKENDS,
-  _resetMemory, MAX_MEMORY_RECORDS, MAX_LIST_WITHOUT_QUERY
+  _resetMemory, MAX_MEMORY_RECORDS: memoryAdapter.MAX_RECORDS, MAX_LIST_WITHOUT_QUERY, adapterFor, current
 };

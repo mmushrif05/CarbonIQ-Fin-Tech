@@ -26,7 +26,7 @@ const { agentLimiter } = require('../../../../platform/http/rate-limit');
 const { PERMISSIONS }  = require('../../../../shared/policies');
 const { PIPELINE_TEMPLATES, PIPELINE_STATUS } = require('../../../../shared/models/pipeline');
 const { createAndRunPipeline, resumePipeline } = require('../../application/supervisor');
-const { getPipelineRun, listPipelineRuns }     = require('../../../../platform/bridge/firebase');
+const { getPipelineRun, listPipelineRuns }     = require('../../infrastructure/lending-store');
 const { buildSubject } = require('../../../../platform/auth/authorization');
 const { createPipelineSchema, resumePipelineSchema } = require('../schemas/supervisor');
 

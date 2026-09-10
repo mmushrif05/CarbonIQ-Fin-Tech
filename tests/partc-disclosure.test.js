@@ -16,7 +16,7 @@ const registry = require('../src/domains/pcaf-part-c/application/partc-registry'
 const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');
 const store    = require('../src/platform/database/store');
 const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
-const fx       = require('./fixtures/fisheries');
+const fx       = require('../data/partc/fisheries-reference');
 
 const KEY  = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);

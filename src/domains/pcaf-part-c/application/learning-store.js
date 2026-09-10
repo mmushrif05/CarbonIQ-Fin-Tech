@@ -20,18 +20,19 @@
  *                       emissions flowing through them. Produces an
  *                       evidence-ranked list of which factor to research next.
  *
- * Persistence degrades gracefully: with no Firebase configured the store is
- * a no-op and the assessment still completes.
+ * All four go through `src/platform/database/store.js`, like every other
+ * record here. This file used to be a second seam of its own — PostgreSQL if
+ * it was the store, else Firebase through the bridge, else nothing at all —
+ * which meant the benchmark library quietly did not accumulate on any
+ * deployment that was neither, and nothing said so.
  */
 
 'use strict';
 
-const fb = require('../../../platform/bridge/firebase');
 const store = require('../../../platform/database/store');
-const { fallback } = require('../../../platform/observability/logger');
-const _pg = () => store.capability().mode === 'postgres';
-/* Firebase is the home for these records only where it is configured. */
-const _fbLive = () => { try { return !!fb.getDatabase(); } catch (_) { return false; } };
+
+const LEARNINGS = 'partc_learnings';
+const BENCHMARKS = 'partc_benchmarks';
 
 function _now() { return new Date().toISOString(); }
 
@@ -48,12 +49,13 @@ function _now() { return new Date().toISOString(); }
  */
 async function recordLearnings({ orgId, runId, result, context = {}, materials = [], overrides = {} }) {
   const records = buildLearningRecords({ runId, result, context, materials, overrides });
-  if (_pg()) {
-    await store.put('partc_learnings', orgId, runId, { ...records, runId });
-    if (records && records.perM2Factor) await store.put('partc_benchmarks', orgId, runId, { ...records.perM2Factor, runId });
-    return records;
+  await store.put(LEARNINGS, orgId, runId, { ...records, runId });
+  /* The benchmark is written out as its own record because that is what a
+     screening reads: a query over comparable projects, not a walk of every
+     learning record looking for the field inside it. */
+  if (records && records.perM2Factor) {
+    await store.put(BENCHMARKS, orgId, runId, { ...records.perM2Factor, runId });
   }
-  if (_fbLive()) await fb.savePartCLearnings(orgId, runId, records).catch(fallback('partc.learnings.firebase.save'));
   return records;
 }
 
@@ -168,9 +170,9 @@ function aggregateResearchPriority(allLearnings = []) {
  * Returns null until enough comparable projects have been recorded.
  */
 async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
-  const all = _pg()
-    ? await store.query('partc_benchmarks', orgId, { where: { ...(region ? { region } : {}), ...(projectType ? { projectType } : {}) } })
-    : _fbLive() ? await fb.listPartCBenchmarks(orgId).catch(fallback('partc.benchmarks.firebase.list', () => [])) : [];
+  const all = await store.query(BENCHMARKS, orgId, {
+    where: { ...(region ? { region } : {}), ...(projectType ? { projectType } : {}) },
+  });
   const matches = (all || []).filter(b =>
     b && b.perM2_kgCO2e > 0 &&
     (!region || b.region === region) &&
@@ -194,8 +196,7 @@ async function findBenchmark({ orgId, region, projectType, minSamples = 3 }) {
 
 /** Every learning record for an organisation, from whichever store holds them. */
 async function listLearnings(orgId) {
-  if (_pg()) return store.list('partc_learnings', orgId);
-  return _fbLive() ? fb.listPartCLearnings(orgId).catch(fallback('partc.learnings.firebase.list', () => [])) : [];
+  return store.list(LEARNINGS, orgId);
 }
 
-module.exports = { recordLearnings, buildLearningRecords, aggregateResearchPriority, findBenchmark, listLearnings };
+module.exports = { LEARNINGS, BENCHMARKS, recordLearnings, buildLearningRecords, aggregateResearchPriority, findBenchmark, listLearnings };

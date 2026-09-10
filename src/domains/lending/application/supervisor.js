@@ -33,7 +33,7 @@ const { AGENT_PERMISSION_MAP }  = require('../../../shared/policies');
 const { fallback } = require('../../../platform/observability/logger');
 const { checkAccess }           = require('../../../platform/auth/authorization');
 const { runAgent, runAgentSingleCall } = require('../../../platform/ai/agent');
-const { savePipelineRun, updatePipelineRun } = require('../../../platform/bridge/firebase');
+const { savePipelineRun, updatePipelineRun } = require('../infrastructure/lending-store');
 const { AGENT_STATUS } = require('../../../shared/models/agent-run');
 
 // Agent modules — lazy-loaded to avoid circular deps

@@ -25,7 +25,7 @@ const boq = require('../src/domains/pcaf-part-c/application/partc-boq');
 const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
 const P = require('../src/domains/pcaf-part-c/application/partc-portfolio');
 const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const ORG = 'scale-org';
 const PROJECTS = 2000;

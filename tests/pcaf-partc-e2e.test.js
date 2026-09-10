@@ -15,11 +15,11 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 
 const request = require('supertest');
 const app = require('../src/server');
-const runStore = require('../src/domains/pcaf-part-c/application/partc-run-store');
+const store = require('../src/platform/database/store');
 const { PARTC_STATUS } = require('../src/shared/models/partc-run');
 const { runPartC } = require('../src/domains/pcaf-part-c/domain');
 const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const KEY = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);
@@ -36,7 +36,7 @@ const answersFor = (policyType, extra = {}) => ({
 });
 
 describe('Part C E2E — the full client journey', () => {
-  beforeEach(() => runStore._resetMemory());
+  beforeEach(() => store._resetMemory());
 
   test('documents to disclosure: start, pause, resume, report, learn', async () => {
     // ── 1. The agent has read the documents; start the run ──────────────

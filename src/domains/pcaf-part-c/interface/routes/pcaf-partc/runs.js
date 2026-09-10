@@ -16,7 +16,6 @@ const { runPartC }        = require('../../../domain');
 const { buildRegisters }  = require('../../../application/partc-registers');
 const { buildForm, formAnswersToEngineInput } = require('../../../agents/form');
 const runStore            = require('../../../application/partc-run-store');
-const factors             = require('../../../domain/factors');
 const { recordLearnings } = require('../../../application/learning-store');
 const {
   createPartCRun, addStep, generatePartCRunId, isAwaitingInputs,
@@ -101,23 +100,19 @@ router.post('/runs/:runId/resume', authenticate, defaultLimiter,
 
       // Client factor overrides apply for this calculation only.
       const overrides = req.body.overrides || {};
-      const hadOverrides = Object.keys(overrides).length > 0;
-      if (hadOverrides) factors.setOverrides(overrides);
 
-      let result, registers;
-      try {
-        const input = formAnswersToEngineInput({
-          policy:          run.policy || {},
-          materials:       run.materials || [],
-          demolitionItems: run.demolitionItems || [],
-          answers:         req.body.answers
-        });
-        input.hasEPD = req.body.hasEPD;
-        result    = runPartC(input);
-        registers = buildRegisters(result);
-      } finally {
-        if (hadOverrides) factors.setOverrides({});
-      }
+      const input = formAnswersToEngineInput({
+        policy:          run.policy || {},
+        materials:       run.materials || [],
+        demolitionItems: run.demolitionItems || [],
+        answers:         req.body.answers
+      });
+      input.hasEPD = req.body.hasEPD;
+      /* The overrides go in as an argument and are in force for exactly this
+         call; there is no set-and-clear pair to get wrong, and a concurrent
+         resume in the same container cannot see them. */
+      const result    = runPartC(input, { overrides });
+      const registers = buildRegisters(result);
 
       const learnings = await recordLearnings({
         orgId, runId, result,

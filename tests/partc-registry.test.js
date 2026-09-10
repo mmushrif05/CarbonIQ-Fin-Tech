@@ -132,7 +132,7 @@ describe('Registry — assessment context', () => {
 
   test('the context feeds the engine and reproduces the reference figure', async () => {
     const { runPartC } = require('../src/domains/pcaf-part-c/domain');
-    const fx = require('./fixtures/fisheries');
+    const fx = require('../data/partc/fisheries-reference');
 
     const c = await registry.createClient(ORG, aClient());
     const p = await registry.createProject(ORG, aProject(c.clientId, { policies: [aPolicy()] }));

@@ -9,7 +9,7 @@ process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000
 
 const request = require('supertest');
 const app = require('../src/server');
-const fx = require('./fixtures/fisheries');
+const fx = require('../data/partc/fisheries-reference');
 
 const KEY = process.env.UI_API_KEY;
 const auth = req => req.set('x-api-key', KEY);

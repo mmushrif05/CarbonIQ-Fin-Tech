@@ -13,7 +13,7 @@ const { doc } = require('../../../../../platform/http/openapi-hints');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
 const aiStatus      = require('../../../../../platform/ai/ai-status');
-const { getAgentRun, listAgentRuns } = require('../../../../../platform/bridge/firebase');
+const { getRun: getAgentRun, listRuns: listAgentRuns } = require('../../../../../platform/ai/run-store');
 
 const router = Router();
 

@@ -16,7 +16,10 @@ const { doc } = require('../../../../platform/http/openapi-hints');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
+/* The bridge is the CarbonIQ core engine, and read-only. The lending
+   domain's own records go through the storage seam. */
 const { getProject } = require('../../../../platform/bridge/firebase');
+const lendingStore = require('../../infrastructure/lending-store');
 
 const router = Router();
 
@@ -67,7 +70,6 @@ router.post('/',
 
       const orgId = req.orgId;
       const projectId = value.projectId || `${value.region}-${Date.now()}`;
-      const { saveProject } = require('../../../../platform/bridge/firebase');
 
       // Compute attribution if loan data provided
       let attribution = null;
@@ -76,16 +78,16 @@ router.post('/',
         attribution = equity + debt > 0 ? outstanding / (equity + debt) : 0;
       }
 
-      const projectData = {
+      /* The write is awaited and its failure reaches the error handler. It
+         used to be swallowed by the bridge — a deployment without Firebase
+         answered 201 and stored nothing. */
+      const project = await lendingStore.saveProject(orgId, projectId, {
         ...value,
-        orgId,
-        projectId,
         attribution,
         createdAt: new Date().toISOString(),
-      };
-      await saveProject(projectId, projectData);
+      });
 
-      res.status(201).json({ success: true, projectId, message: 'Project saved.', project: projectData });
+      res.status(201).json({ success: true, projectId, message: 'Project saved.', project });
     } catch (err) { next(err); }
   }
 );
@@ -98,9 +100,7 @@ router.get('/',
   doc({ summary: 'List the organisation\'s lending projects' }),
   async (req, res, next) => {
     try {
-      const orgId = req.orgId;
-      const { listFintechProjects } = require('../../../../platform/bridge/firebase');
-      const projects = await listFintechProjects(orgId);
+      const projects = await lendingStore.listProjects(req.orgId);
       sendList(req, res, 'projects', projects, { total: projects.length });
     } catch (err) { next(err); }
   }
@@ -118,13 +118,12 @@ router.post('/:projectId/monitoring',
       if (error) return res.status(400).json({ error: 'VALIDATION_ERROR', message: error.details[0].message });
 
       const { projectId } = req.params;
-      const { saveMonitoringEntry } = require('../../../../platform/bridge/firebase');
 
       const attribution = value.outstanding / (value.equity + value.debt);
       const financed = Math.round(value.emissions * attribution);
       const entry = { ...value, attribution: parseFloat(attribution.toFixed(4)), financed };
 
-      await saveMonitoringEntry(projectId, value.year, entry);
+      await lendingStore.saveMonitoringEntry(req.orgId, projectId, value.year, entry);
       res.json({ success: true, projectId, year: value.year, attribution, financed, message: 'Monitoring entry saved.' });
     } catch (err) { next(err); }
   }
@@ -138,8 +137,7 @@ router.get('/:projectId/monitoring',
   async (req, res, next) => {
     try {
       const { projectId } = req.params;
-      const { listMonitoringEntries } = require('../../../../platform/bridge/firebase');
-      const entries = await listMonitoringEntries(projectId);
+      const entries = await lendingStore.listMonitoringEntries(req.orgId, projectId);
       res.json({ projectId, entries, total: entries.length });
     } catch (err) { next(err); }
   }
