@@ -161,6 +161,11 @@ const config = {
        absent token is never read as "no token needed". The window closes for
        good the moment one account exists. */
     get adminBootstrapToken() { return process.env.ADMIN_BOOTSTRAP_TOKEN || ''; },
+    /* Whether the public preview door is open. On unless an operator sets it
+       to "off": what the route can do is bounded by construction — a read-only
+       session into an organisation holding nothing but a sample book — so the
+       usual reason to default a public door shut does not apply here. */
+    get previewAccess() { return process.env.PREVIEW_ACCESS || ''; },
     get isServerless() { return !!(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT); },
     get isTest() { return process.env.NODE_ENV === 'test'; },
     get databaseUrl() { return process.env.DATABASE_URL || ''; },

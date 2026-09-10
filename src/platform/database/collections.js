@@ -72,6 +72,12 @@ const COLLECTIONS = Object.freeze({
      request by the token it carries. */
   users:               { table: 'users',             keys: { email: 'email', orgId: 'owner_org_id', role: 'role', active: 'active' }, dependsOn: [] },
   sessions:            { table: 'sessions',          keys: { userId: 'user_id', orgId: 'owner_org_id', expiresAt: 'expires_at' }, dependsOn: [] },
+  /* 0007 — the register of who asked to see the product. One partition, like
+     the two above and for the same reason: a signup is found by address,
+     before any organisation is known. It is not the visitor's account —
+     `users` holds that — and the two are kept apart so that removing an
+     account does not erase the fact that the question was asked. */
+  preview_signups:     { table: 'preview_signups',  keys: { email: 'email' }, dependsOn: [] },
   partc_runs:          { table: 'partc_runs',        keys: { status: 'status' }, dependsOn: [] },
   partc_learnings:     { table: 'partc_learnings',   keys: {}, dependsOn: [] },
   partc_benchmarks:    { table: 'partc_benchmarks',  keys: { region: 'region', projectType: 'project_type' }, dependsOn: [] },

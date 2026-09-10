@@ -48,6 +48,12 @@ const Auth = (() => {
       description: 'Read-only access to all runs, reports, and audit trails',
       avatar: '#6366f1',
     },
+    viewer: {
+      label: 'Preview visitor',
+      level: 20,
+      description: 'Read-only access to the sample book',
+      avatar: '#64748b',
+    },
     borrower: {
       label: 'Borrower',
       level: 10,
@@ -77,6 +83,26 @@ const Auth = (() => {
        courtesy rather than the control. */
     'accounts':      100,
   };
+
+  /*
+   * What a preview visitor is shown, named rather than derived from a level.
+   *
+   * The matrix above answers "is this person senior enough to do the work on
+   * this screen", and for a read-only visitor that is the wrong question: the
+   * PCAF screens sit at 60 because an analyst runs assessments on them, not
+   * because reading one is privileged. Bending the visitor's level up to
+   * clear those bars would also clear every other bar set at or below it.
+   *
+   * So a preview session is answered from its own list. This is a courtesy
+   * either way — the server decides what any request may do from the role on
+   * the account, and a preview session holds `read` — but the courtesy should
+   * show the product rather than a sidebar of screens that answer 403.
+   */
+  const PREVIEW_PAGES = [
+    'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'pcaf-partc',
+    'partc-book', 'partc-portfolio', 'gcf', 'taxonomy', 'ndc-sdg',
+    'reports', 'carbon-pricing', 'baselines',
+  ];
 
   const STORAGE_KEY = 'carboniq_session';
 
@@ -148,6 +174,44 @@ const Auth = (() => {
     return true;
   }
 
+  /**
+   * Whether this session is a preview of the sample book.
+   *
+   * Read from the role the server put on the session rather than from a flag
+   * the browser was handed, so it survives a reload and cannot drift from what
+   * the server will actually allow.
+   */
+  function isPreview() {
+    const session = _getSession();
+    return Boolean(session && session.role === 'viewer');
+  }
+
+  /**
+   * Say so, on every screen, for as long as the session lasts.
+   *
+   * A visitor who forgets which book they are looking at is the failure this
+   * guards against — the figures are real arithmetic over invented policies,
+   * which is exactly the combination that reads as somebody's real position.
+   * It is a provenance label rather than a warning, so it is neutral: amber is
+   * for something the reader has to act on.
+   */
+  function applyPreviewMark() {
+    const main = document.getElementById('main');
+    if (!main) return;
+    const existing = document.getElementById('preview-mark');
+    if (!isPreview()) {
+      if (existing) existing.remove();
+      return;
+    }
+    if (existing) return;
+    const strip = document.createElement('div');
+    strip.id = 'preview-mark';
+    strip.className = 'preview-mark';
+    strip.setAttribute('role', 'status');
+    strip.textContent = 'Sample book — illustrative records, read-only.';
+    main.insertBefore(strip, main.firstChild);
+  }
+
   /** True while the account is still on the password an administrator typed. */
   function mustChangePassword() {
     const session = _getSession();
@@ -197,6 +261,7 @@ const Auth = (() => {
     if (!session) return false;
     const role = ROLES[session.role];
     if (!role) return false;
+    if (isPreview()) return PREVIEW_PAGES.indexOf(pageId) !== -1;
     const requiredLevel = PAGE_ACCESS[pageId] ?? 0;
     return role.level >= requiredLevel;
   }
@@ -249,6 +314,7 @@ const Auth = (() => {
       if (toastContainer) toastContainer.style.display = '';
       updateUserBadge();
       applyNavVisibility();
+      applyPreviewMark();
     } else {
       if (loginScreen) loginScreen.style.display = 'flex';
       if (sidebar) sidebar.style.display = 'none';
@@ -282,6 +348,9 @@ const Auth = (() => {
     sessionEnded,
     logout,
     canAccessPage,
+    isPreview,
+    applyPreviewMark,
+    PREVIEW_PAGES,
     mustChangePassword,
     accessDaysRemaining,
     applyNavVisibility,

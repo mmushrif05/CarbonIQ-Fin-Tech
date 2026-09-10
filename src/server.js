@@ -35,6 +35,23 @@ const jobQueue = require('./platform/jobs/queue');
 /* The job handlers: the engines, registered on the platform's queue. */
 require('./jobs');
 const v1Router = require('./platform/http/router');
+
+/*
+ * The sample book a preview visitor is shown, handed to the platform rather
+ * than reached for by it.
+ *
+ * `src/platform/auth/preview.js` decides when the book is installed and knows
+ * nothing about what is in it; the book is Part C's, and the platform never
+ * imports a domain (`tests/architecture.test.js` fails the build on it). This
+ * file is a composition root, so the wiring belongs here — the same shape as
+ * `require('./jobs')` above, which registers the domain engines on the
+ * platform's queue.
+ */
+require('./platform/auth/preview').registerSampleBook(orgId =>
+  require('./domains/pcaf-part-c/application/partc-demo-data').seedDemoBook(
+    require('./domains/pcaf-part-c/application/partc-registry'),
+    orgId,
+    require('./domains/pcaf-part-c/application/partc-boq')));
 const { doc, body, str, obj, orNull } = require('./platform/http/openapi-hints');
 
 /* Express ships no types of its own; the app is untyped here, typed by the routes' Joi schemas at the boundary. */
