@@ -13,6 +13,8 @@
 const { Router } = require('express');
 const Joi = require('joi');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
 const { assessLimiter } = require('../../../../platform/http/rate-limit');
 const { assessNdcSdgAlignment } = require('../../application/ndc-sdg');
@@ -131,7 +133,7 @@ router.post('/certificate/verify',
 // Returns SLGFT framework metadata (NDC targets, SDGs, sectors) — no AI
 // ---------------------------------------------------------------------------
 
-router.get('/framework', apiKeyAuth, (_req, res) => {
+router.get('/framework', apiKeyAuth, referenceCache(), doc({ summary: 'SLGFT framework metadata and the NDC 3.0 targets' }), (_req, res) => {
   const { TAXONOMY_LK } = require('../../../../shared/constants');
   res.json({
     framework:   TAXONOMY_LK.name,

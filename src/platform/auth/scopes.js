@@ -72,6 +72,7 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/extract/, scope: 'assess', why: 'AI extraction' },
   { method: 'POST', pattern: /^\/v1\/ndc-sdg\/assess$/, scope: 'assess', why: 'AI alignment analysis' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-c\//, scope: 'assess', why: 'Part C runs, forms, reports and agents' },
+  { method: 'POST', pattern: /^\/v1\/jobs$/, scope: 'assess', why: 'enqueues an engine run' },
 
   /* The lock itself is decided from the body: see requiredScope(). */
   { method: 'POST', pattern: /^\/v1\/partc\/assessments\/:[A-Za-z]+\/status$/, scope: 'write', why: 'status change; locking needs lock' },

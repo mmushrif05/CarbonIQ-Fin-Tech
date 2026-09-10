@@ -36,6 +36,30 @@
     "migrations/**",
   ]
 
+# The job worker and the sweep render the same reports the API does, so
+# they carry the same files (docs/JOBS.md).
+[functions."jobs-background"]
+  included_files = [
+    "assets/fonts/**",
+    "data/factors/**",
+    "data/gcf/**",
+    "data/capital/**",
+    "data/assurance.json",
+    "build-info.json",
+    "migrations/**",
+  ]
+
+[functions."jobs-sweep"]
+  included_files = [
+    "assets/fonts/**",
+    "data/factors/**",
+    "data/gcf/**",
+    "data/capital/**",
+    "data/assurance.json",
+    "build-info.json",
+    "migrations/**",
+  ]
+
 # ── Caching ──────────────────────────────────────────────────────────────
 #
 # A deploy went out and the browser kept serving the previous build: the screen

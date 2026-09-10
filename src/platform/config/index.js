@@ -121,6 +121,13 @@ const config = {
     /* Error reporting is inert without a DSN; /health says whether one is set, never what it is. */
     get sentryDsn() { return process.env.SENTRY_DSN || ''; },
     get sentryEnvironment() { return process.env.SENTRY_ENVIRONMENT || ''; },
+    /* The job queue: a shared token lets the API poke the background worker,
+       and the site's own URL is where the worker lives. JOBS_INLINE runs a
+       job inside the request that enqueued it — the local-development and
+       test mode, and the honest answer where no database holds a queue. */
+    get jobsToken() { return process.env.JOBS_TOKEN || ''; },
+    get siteUrl() { return process.env.JOBS_URL || process.env.URL || process.env.DEPLOY_PRIME_URL || ''; },
+    get jobsInline() { return process.env.JOBS_INLINE === '1' || process.env.JOBS_INLINE === 'true'; },
     get firebaseConfigured() {
       return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT ||
         (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY));

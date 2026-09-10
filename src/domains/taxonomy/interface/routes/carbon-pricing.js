@@ -10,6 +10,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const { carbonPricingSchema } = require('../schemas/carbon-pricing');
 const { calculateFinancialImpact, CARBON_TAX_RATES, PRICING_TIERS } = require('../../domain/carbon-pricing');
 
@@ -41,7 +43,7 @@ router.post('/calculate', apiKeyAuth, async (req, res, next) => {
 // GET /v1/carbon-pricing/rates  — no auth, reference data
 // ---------------------------------------------------------------------------
 
-router.get('/rates', (_req, res) => {
+router.get('/rates', referenceCache(), doc({ summary: 'Carbon tax rates by jurisdiction' }), (_req, res) => {
   const rates = Object.entries(CARBON_TAX_RATES).map(([code, r]) => ({
     code,
     name:        r.name,

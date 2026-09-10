@@ -25,6 +25,8 @@
 
 const { Router }   = require('express');
 const apiKeyAuth   = require('../../../../platform/auth/api-key');
+const { sendList, paged } = require('../../../../platform/http/pagination');
+const { doc, recordOf, listOf } = require('../../../../platform/http/openapi-hints');
 const validate     = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -72,12 +74,15 @@ router.put('/settings', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // Clients
 // ---------------------------------------------------------------------------
-router.get('/clients', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ clients: await registry.listClients(req.apiKey.orgId) });
-}));
+router.get('/clients', apiKeyAuth, defaultLimiter, paged(),
+  doc({ summary: 'List insured parties', response: listOf('clients', recordOf(clientSchema, 'clientId', {}, 'Client')) }),
+  handle(async (req, res) => {
+    sendList(req, res, 'clients', await registry.listClients(req.apiKey.orgId));
+  }));
 
 router.post('/clients', apiKeyAuth, defaultLimiter,
   validate({ body: clientSchema }),
+  doc({ summary: 'Create an insured party', status: 201, response: { type: 'object', properties: { client: recordOf(clientSchema, 'clientId', {}, 'Client') } } }),
   handle(async (req, res) => {
     res.status(201).json({ client: await registry.createClient(req.apiKey.orgId, req.body) });
   }));
@@ -105,21 +110,26 @@ router.delete('/clients/:clientId', apiKeyAuth, defaultLimiter, handle(async (re
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------
-router.get('/projects', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  /* `limit` asks for a page; without it the whole list comes back as it
-     always has. A page carries the cursor for the next one and nothing else
-     changes shape. Filtering by reporting year is not paged: it reads inside
-     the policies array, which is not a key the store indexes. */
-  if (req.query.limit !== undefined && !req.query.reportingYear) {
-    const where = req.query.clientId ? { clientId: req.query.clientId } : {};
-    const pg = await store.page('projects', req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
-    return res.json({ projects: pg.items, page: { limit: pg.limit, nextCursor: pg.nextCursor } });
-  }
-  const projects = await registry.listProjects(req.apiKey.orgId, {
-    clientId: req.query.clientId, reportingYear: req.query.reportingYear
-  });
-  res.json({ projects });
-}));
+router.get('/projects', apiKeyAuth, defaultLimiter, paged('clientId', 'reportingYear'),
+  doc({ summary: 'List projects, with their policies inline', response: listOf('projects', recordOf(projectSchema, 'projectId', { clientName: { type: 'string' }, policies: { type: 'array', items: recordOf(policySchema, 'policyId', {}, 'Policy') } }, 'Project')) }),
+  handle(async (req, res) => {
+    /* `limit` asks for a page; without it the whole list comes back as it
+       always has. A page carries the cursor for the next one and nothing else
+       changes shape. On the store's own keyset where the filter is a key it
+       indexes; filtering by reporting year reads inside the policies array,
+       so that page is cut from the list. */
+    if (req.query.limit !== undefined && !req.query.reportingYear) {
+      const where = req.query.clientId ? { clientId: req.query.clientId } : {};
+      const pg = await store.page('projects', req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
+      const page = { limit: pg.limit, nextCursor: pg.nextCursor, hasMore: pg.nextCursor !== null };
+      res.locals.page = page;
+      return res.json({ projects: pg.items, page });
+    }
+    const projects = await registry.listProjects(req.apiKey.orgId, {
+      clientId: req.query.clientId, reportingYear: req.query.reportingYear
+    });
+    sendList(req, res, 'projects', projects);
+  }));
 
 router.post('/projects', apiKeyAuth, defaultLimiter,
   validate({ body: projectSchema }),
@@ -179,10 +189,11 @@ router.get('/projects/:projectId/policies/:policyId/context', apiKeyAuth, defaul
 // genuinely new lines need a human.
 // ---------------------------------------------------------------------------
 
-router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, paged(),
+  doc({ summary: 'List the bill-of-quantities revisions of a project, oldest first' }),
+  handle(async (req, res) => {
   const revisions = await boq.listRevisions(req.apiKey.orgId, req.params.projectId);
-  res.json({
-    revisions,
+  sendList(req, res, 'revisions', revisions, {
     summary: {
       count: revisions.length,
       latest: revisions.length ? revisions[revisions.length - 1].label : null,
@@ -190,7 +201,7 @@ router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, handle(async 
         ? revisions[revisions.length - 1].mappingCarryForward.needsReview.length : 0
     }
   });
-}));
+  }));
 
 router.post('/projects/:projectId/boq', apiKeyAuth, defaultLimiter,
   validate({ body: boqRevisionSchema }),
@@ -277,7 +288,9 @@ router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
 // disclosure; a locked assessment is never edited, only superseded.
 // ---------------------------------------------------------------------------
 
-router.get('/assessments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/assessments', apiKeyAuth, defaultLimiter, paged('projectId', 'policyId', 'reportingYear', 'status'),
+  doc({ summary: 'List assessments — each bound to a policy, a BOQ revision and a reporting year' }),
+  handle(async (req, res) => {
   if (req.query.limit !== undefined) {
     const where = {};
     if (req.query.projectId) where.projectId = req.query.projectId;
@@ -285,7 +298,9 @@ router.get('/assessments', apiKeyAuth, defaultLimiter, handle(async (req, res) =
     if (req.query.reportingYear) where.reportingYear = Number(req.query.reportingYear);
     if (req.query.status) where.status = req.query.status;
     const pg = await store.page(assessments.COLLECTION, req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
-    return res.json({ assessments: pg.items, page: { limit: pg.limit, nextCursor: pg.nextCursor } });
+    const page = { limit: pg.limit, nextCursor: pg.nextCursor, hasMore: pg.nextCursor !== null };
+    res.locals.page = page;
+    return res.json({ assessments: pg.items, page });
   }
   const list = await assessments.listAssessments(req.apiKey.orgId, {
     projectId: req.query.projectId, policyId: req.query.policyId,
@@ -298,7 +313,7 @@ router.get('/assessments', apiKeyAuth, defaultLimiter, handle(async (req, res) =
       byStatus: list.reduce((acc, a) => { acc[a.status] = (acc[a.status] || 0) + 1; return acc; }, {})
     }
   });
-}));
+  }));
 
 router.post('/assessments', apiKeyAuth, defaultLimiter,
   validate({ body: createAssessmentSchema }),
@@ -401,15 +416,16 @@ router.get('/disclosure/:year', apiKeyAuth, defaultLimiter, handle(async (req, r
 // ---------------------------------------------------------------------------
 // The flattened book
 // ---------------------------------------------------------------------------
-router.get('/policies', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/policies', apiKeyAuth, defaultLimiter, paged('reportingYear'),
+  doc({ summary: 'The flattened book: every policy with its project and client', response: listOf('policies', recordOf(policySchema, 'policyId', { projectId: { type: 'string' }, clientId: { type: 'string' } }, 'BookPolicy'), { summary: { type: 'object', additionalProperties: true } }) }),
+  handle(async (req, res) => {
   const policies = await registry.listPolicies(req.apiKey.orgId, { reportingYear: req.query.reportingYear });
   const byYear = policies.reduce((acc, p) => {
     const y = p.reportingYear || 'unknown';
     acc[y] = (acc[y] || 0) + 1;
     return acc;
   }, {});
-  res.json({
-    policies,
+  sendList(req, res, 'policies', policies, {
     summary: {
       total: policies.length,
       byReportingYear: byYear,
@@ -417,7 +433,7 @@ router.get('/policies', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
       withUseStage: policies.filter(p => p.scope && p.scope.useStageApplies).length
     }
   });
-}));
+  }));
 
 // ---------------------------------------------------------------------------
 // POST /demo/seed — load the Ceylon Insurance demo book

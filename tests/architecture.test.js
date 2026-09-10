@@ -29,7 +29,8 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
 
-const COMPOSITION_ROOTS = new Set(['src/server.js', 'src/platform/http/router.js', 'src/platform/http/schemas.js']);
+/* src/jobs.js registers the domain engines as job handlers on the platform's queue — a fourth root. */
+const COMPOSITION_ROOTS = new Set(['src/server.js', 'src/platform/http/router.js', 'src/platform/http/schemas.js', 'src/jobs.js']);
 
 function walk(dir, out = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {

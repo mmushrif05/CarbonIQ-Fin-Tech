@@ -11,6 +11,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { sendList, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
 const validate = require('../../../../platform/http/validate');
 const { schemas } = require('../../../../platform/http/validate');
 const { webhookLimiter } = require('../../../../platform/http/rate-limit');
@@ -59,10 +61,12 @@ router.post('/',
 router.get('/',
   apiKeyAuth,
   webhookLimiter,
+  paged(),
+  doc({ summary: 'List webhook subscriptions' }),
   async (req, res, next) => {
     try {
       const subscriptions = await listWebhooks(req.apiKey.orgId);
-      return res.status(200).json({ subscriptions, total: subscriptions.length });
+      return sendList(req, res, 'subscriptions', subscriptions, { total: subscriptions.length });
     } catch (err) {
       if (err.message === 'Database unavailable') {
         return res.status(503).json({

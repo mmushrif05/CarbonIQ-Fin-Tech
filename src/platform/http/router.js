@@ -47,6 +47,8 @@ const deskRouter          = require('../../domains/capital/interface/routes/desk
 const ndcSdgRouter        = require('../../domains/taxonomy/interface/routes/ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
 const metricsRouter       = require('./metrics-route');
+const jobsRouter          = require('./jobs-route');
+const openapiRouter       = require('./openapi-route');
 
 const router = Router();
 
@@ -161,6 +163,8 @@ router.get('/', (_req, res) => {
 // request after it, so it cannot itself require one.
 router.use('/', uiConfigRouter);
 router.use('/', metricsRouter);
+router.use('/', jobsRouter);
+router.use('/', openapiRouter);
 
 // Mount route modules
 router.use('/extract', extractUploadRouter);

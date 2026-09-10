@@ -43,6 +43,19 @@ router.get('/',
         });
       }
 
+      res.json(await aggregateForProjects(projectIds));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+/**
+ * The portfolio roll-up for a set of project ids — the route's answer, and
+ * the `portfolio.aggregate` job's, so a book too large for one request
+ * gets the same figures from the queue.
+ */
+async function aggregateForProjects(projectIds) {
       // Fetch emission summaries for all accessible projects concurrently
       const summaryResults = await Promise.allSettled(
         projectIds.map(async (projectId) => {
@@ -68,19 +81,15 @@ router.get('/',
 
       const result = aggregatePortfolio(projectSummaries);
 
-      res.json({
+      return {
         ...result,
         meta: {
           requestedProjects: projectIds.length,
           resolvedProjects:  projectSummaries.length,
           failedProjects:    failedCount
         }
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+      };
+}
 
 /**
  * Classify a project based on its achieved reduction percentage.
@@ -93,3 +102,4 @@ function _classifyEmissions(reductionPct = 0) {
 }
 
 module.exports = router;
+module.exports.aggregateForProjects = aggregateForProjects;

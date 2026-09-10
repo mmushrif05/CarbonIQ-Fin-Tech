@@ -32,6 +32,8 @@
 
 const { Router }    = require('express');
 const apiKeyAuth    = require('../../../../platform/auth/api-key');
+const { listView, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
 const validate      = require('../../../../platform/http/validate');
 const { authorize } = require('../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../shared/policies');
@@ -836,18 +838,21 @@ router.post('/triage',
 router.get('/runs',
   apiKeyAuth,
   authorize(PERMISSIONS.RUNS_READ),
+  paged(),
+  doc({ summary: 'Recent agent runs, newest first; twenty without a page' }),
   async (req, res, next) => {
     try {
       const orgId = req.apiKey.orgId;
-      const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
-
-      const runs = await listAgentRuns(orgId, limit);
+      const paging = req.query.limit !== undefined || req.query.cursor !== undefined;
+      const runs = await listAgentRuns(orgId, paging ? 500 : 20);
+      const view = listView(req, res, runs);
 
       return res.status(200).json({
         success: true,
         orgId,
-        count: runs.length,
-        runs: runs.map(r => ({
+        count: view.items.length,
+        ...(view.page ? { page: view.page } : {}),
+        runs: view.items.map(r => ({
           runId:       r.runId,
           agentType:   r.agentType,
           status:      r.status,

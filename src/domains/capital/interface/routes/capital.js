@@ -30,6 +30,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { sendList, paged } = require('../../../../platform/http/pagination');
+const { doc, recordOf, listOf } = require('../../../../platform/http/openapi-hints');
 const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -323,9 +325,11 @@ router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
 
 // ── Portfolios ─────────────────────────────────────────────────────────────
 
-router.get('/portfolios', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ portfolios: await book.listPortfolios(req.apiKey.orgId) });
-}));
+router.get('/portfolios', apiKeyAuth, defaultLimiter, paged(),
+  doc({ summary: 'List portfolios', response: listOf('portfolios', recordOf(portfolioSchema, 'portfolioId', {}, 'Portfolio')) }),
+  handle(async (req, res) => {
+    sendList(req, res, 'portfolios', await book.listPortfolios(req.apiKey.orgId));
+  }));
 
 router.post('/portfolios', apiKeyAuth, defaultLimiter,
   validate({ body: portfolioSchema }),
@@ -343,14 +347,14 @@ router.patch('/portfolios/:id', apiKeyAuth, defaultLimiter,
 
 // ── Investments ────────────────────────────────────────────────────────────
 
-router.get('/investments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({
-    investments: await book.listInvestments(req.apiKey.orgId, {
+router.get('/investments', apiKeyAuth, defaultLimiter, paged('portfolioId', 'status'),
+  doc({ summary: 'List investments', response: listOf('investments', recordOf(investmentSchema, 'investmentId', {}, 'Investment')) }),
+  handle(async (req, res) => {
+    sendList(req, res, 'investments', await book.listInvestments(req.apiKey.orgId, {
       portfolioId: req.query.portfolioId,
       status: req.query.status,
-    }),
-  });
-}));
+    }));
+  }));
 
 router.post('/investments', apiKeyAuth, defaultLimiter,
   validate({ body: investmentSchema }),
@@ -368,14 +372,14 @@ router.patch('/investments/:id', apiKeyAuth, defaultLimiter,
 
 // ── Payments ───────────────────────────────────────────────────────────────
 
-router.get('/payments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({
-    payments: await book.listPayments(req.apiKey.orgId, {
+router.get('/payments', apiKeyAuth, defaultLimiter, paged('portfolioId', 'investmentId'),
+  doc({ summary: 'List payments', response: listOf('payments', recordOf(paymentSchema, 'paymentId', {}, 'Payment')) }),
+  handle(async (req, res) => {
+    sendList(req, res, 'payments', await book.listPayments(req.apiKey.orgId, {
       portfolioId: req.query.portfolioId,
       investmentId: req.query.investmentId,
-    }),
-  });
-}));
+    }));
+  }));
 
 router.post('/payments', apiKeyAuth, defaultLimiter,
   validate({ body: paymentSchema }),
