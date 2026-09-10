@@ -39,6 +39,7 @@ const portfolio    = require('./partc-portfolio');
 const registry     = require('./partc-registry');
 const comparatives = require('./partc-comparatives');
 const assessments  = require('./partc-assessments');
+const assurance    = require('./partc-assurance');
 
 const DQ_LABEL = {
   1: 'Option 1a — verified primary data',
@@ -261,13 +262,28 @@ async function buildAnnualDisclosure(orgId, reportingYear, opts = {}) {
     throw new Error(`Disclosure blocked: PCAF endorsement language detected (${offending.join(', ')}). Only conformance language is permitted.`);
   }
 
+  /* The posture this deployment may claim, and why. On the JSON as well as in
+     the document: an API caller integrating this is publishing the figure
+     somewhere, and it carries the same statement wherever it goes. */
+  const settingsForDoc = await registry.getSettings(orgId);
+  const assurancePosition = await assurance.positionFor(orgId, { country: settingsForDoc.region });
+  disclosure.assurance = {
+    mode: assurancePosition.mode,
+    label: assurancePosition.label,
+    statement: assurancePosition.statement,
+    requested: assurancePosition.requested,
+    downgraded: assurancePosition.downgraded,
+    unmet: assurancePosition.unmet,
+  };
+
   /* What the document renderers need, kept off the JSON. See _model(). */
   Object.defineProperty(disclosure, '_source', {
     value: {
       roll,
-      settings: await registry.getSettings(orgId),
+      settings: settingsForDoc,
       factorRows: methodology.allFactorRows(),
-      equations: _moduleEquations()
+      equations: _moduleEquations(),
+      assurance: assurancePosition
     },
     enumerable: false, writable: false
   });
@@ -314,9 +330,9 @@ function _model(d) {
   if (!d._source) {
     throw new Error('This disclosure was not built by buildAnnualDisclosure(), so the document cannot be rendered from it.');
   }
-  const { roll, settings, factorRows, equations } = d._source;
+  const { roll, settings, factorRows, equations, assurance: position } = d._source;
   return standard.buildStandardModel(
-    standard.annualFacts({ disclosure: d, roll, settings, factorRows, equations }));
+    standard.annualFacts({ disclosure: d, roll, settings, factorRows, equations, assurance: position }));
 }
 
 /** @returns {import('pdfkit')} a streaming A4 document in the house style */

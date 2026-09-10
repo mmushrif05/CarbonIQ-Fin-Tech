@@ -43,6 +43,7 @@ const factors             = require('../../domain/factors');
 const { conformanceMatrix } = require('../../domain/conformance');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../reporting/partc-reports');
 const partcRegistry = require('../../application/partc-registry');
+const assurance     = require('../../application/partc-assurance');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { recordLearnings } = require('../../application/learning-store');
 const { _publicRegisters, _shapeResult, _toEngineInput, engineResultSchema } =
@@ -232,8 +233,13 @@ async function reportFor(orgId, body) {
      must state them, and they belong to the entity rather than to the
      request, so the report reads them from the book. */
   const settings  = await partcRegistry.getSettings(orgId).catch(fallback('partc.form.getSettings', () => ({})));
+  /* What this deployment may claim about the figures — read here rather than
+     in the renderer, because the renderer is synchronous and because the
+     annual disclosure resolves it from the same function, so the two
+     documents cannot state different assurance postures for one book. */
+  const position  = await assurance.positionFor(orgId, { country: settings.region });
   const report    = buildPartCReport({
-    result, registers, settings, memo: body.memo,
+    result, registers, settings, assurance: position, memo: body.memo,
     meta: {
       projectName: body.projectName,
       insurer: settings.insurerName || null,

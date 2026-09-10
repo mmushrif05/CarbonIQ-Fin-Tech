@@ -101,6 +101,14 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/baselines\/:[A-Za-z]+\/release$/, scope: 'lock', why: 'puts a baseline in force' },
   { method: 'POST', pattern: /^\/v1\/baselines\/:[A-Za-z]+\/supersede$/, scope: 'lock', why: 'restates a released baseline' },
 
+  /* The assurance operating mode is the tool provider's, never the reporting
+     entity's: an entity that could set its own mode to `verified` would be
+     self-declaring by another name, and every document it produced would say
+     otherwise on its face. `admin` is the only scope no role short of an
+     administrator carries. The entity's own assurance *declaration*, at the
+     same prefix, stays on `write` — that one is the entity's to make. */
+  { method: 'PUT', pattern: /^\/v1\/assurance\/mode$/, scope: 'admin', why: 'sets the operating mode a document prints on its face' },
+
   /* The lock itself is decided from the body: see requiredScope(). */
   { method: 'POST', pattern: /^\/v1\/partc\/assessments\/:[A-Za-z]+\/status$/, scope: 'write', why: 'status change; locking needs lock' },
 ]);

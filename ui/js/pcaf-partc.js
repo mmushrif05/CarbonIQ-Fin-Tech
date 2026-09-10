@@ -1136,7 +1136,13 @@ const PCAFPartCPage = (() => {
     /* The declaration is entity-level and fetched once for the session, so
        every screen shows the same state. Absent until the entity records one —
        never inferred from the run. */
-    if (window.CarbonIQAssurance) window.CarbonIQAssurance.render(document);
+    if (window.CarbonIQAssurance) {
+      window.CarbonIQAssurance.render(document);
+      /* What a generated document will say about its own standing — a
+         provider setting, not the entity's declaration, and a different
+         question from who assured the figures. */
+      window.CarbonIQAssurance.renderMode(document);
+    }
     renderUseStage(d);
     renderDqTile(d);
     renderModuleSplit(d);

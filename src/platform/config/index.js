@@ -149,6 +149,12 @@ const config = {
     get uiApiKey() { return process.env.UI_API_KEY || ''; },
     get devApiKey() { return process.env.DEV_API_KEY || ''; },
     get storageBackend() { return process.env.STORAGE_BACKEND || ''; },
+    /* Which posture this deployment is operated in — the tool provider's
+       choice, never the reporting entity's. `self_declared` is the default
+       and the honest one: claim nothing nobody has checked. Asking for
+       `verified` is not the same as being in it; see
+       src/shared/assurance-mode.js. */
+    get assuranceMode() { return process.env.ASSURANCE_MODE || 'self_declared'; },
     get isServerless() { return !!(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT); },
     get isTest() { return process.env.NODE_ENV === 'test'; },
     get databaseUrl() { return process.env.DATABASE_URL || ''; },

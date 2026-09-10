@@ -141,7 +141,7 @@ flowchart TD
 | Directory | Files | Lines |
 |---|---:|---:|
 | `src/` | 2 | 379 |
-|       `src/domains/baseline/application/` | 1 | 270 |
+|       `src/domains/baseline/application/` | 2 | 322 |
 |       `src/domains/baseline/domain/` | 4 | 671 |
 |       `src/domains/baseline/infrastructure/` | 1 | 56 |
 |         `src/domains/baseline/interface/routes/` | 1 | 160 |
@@ -162,42 +162,42 @@ flowchart TD
 |         `src/domains/lending/application/reports/` | 5 | 881 |
 |       `src/domains/lending/domain/` | 7 | 811 |
 |       `src/domains/lending/infrastructure/` | 1 | 94 |
-|         `src/domains/lending/interface/routes/` | 13 | 1,785 |
+|         `src/domains/lending/interface/routes/` | 13 | 1,830 |
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,043 |
-|         `src/domains/lending/interface/schemas/` | 11 | 667 |
+|         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
 |       `src/domains/pcaf-part-a/domain/` | 10 | 1,710 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 1,388 |
 |         `src/domains/pcaf-part-a/interface/routes/` | 1 | 110 |
 |         `src/domains/pcaf-part-a/interface/schemas/` | 1 | 85 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
-|       `src/domains/pcaf-part-c/application/` | 12 | 3,175 |
+|       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
 |       `src/domains/pcaf-part-c/domain/` | 19 | 3,056 |
-|         `src/domains/pcaf-part-c/interface/routes/` | 2 | 313 |
+|         `src/domains/pcaf-part-c/interface/routes/` | 2 | 319 |
 |           `src/domains/pcaf-part-c/interface/routes/partc-registry/` | 4 | 640 |
 |           `src/domains/pcaf-part-c/interface/routes/pcaf-partc/` | 3 | 467 |
 |         `src/domains/pcaf-part-c/interface/schemas/` | 4 | 471 |
-|       `src/domains/pcaf-part-c/reporting/` | 5 | 639 |
-|         `src/domains/pcaf-part-c/reporting/report-standard/` | 6 | 1,313 |
-|         `src/domains/pcaf-part-c/reporting/theme/` | 4 | 707 |
+|       `src/domains/pcaf-part-c/reporting/` | 5 | 635 |
+|         `src/domains/pcaf-part-c/reporting/report-standard/` | 6 | 1,357 |
+|         `src/domains/pcaf-part-c/reporting/theme/` | 4 | 720 |
 |       `src/domains/taxonomy/application/` | 1 | 229 |
 |       `src/domains/taxonomy/domain/` | 3 | 791 |
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 11 | 1,671 |
+|     `src/platform/auth/` | 11 | 1,679 |
 |     `src/platform/bridge/` | 2 | 367 |
-|     `src/platform/config/` | 3 | 372 |
+|     `src/platform/config/` | 3 | 378 |
 |     `src/platform/database/` | 10 | 1,732 |
 |       `src/platform/database/adapters/` | 6 | 436 |
 |     `src/platform/http/` | 21 | 2,253 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
-|     `src/platform/reporting/` | 2 | 159 |
-|   `src/shared/` | 9 | 1,583 |
+|     `src/platform/reporting/` | 3 | 291 |
+|   `src/shared/` | 10 | 1,762 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **291** | **48,994** |
+| **total** | **295** | **49,520** |
 
 <!-- END MODULE-MAP -->
 

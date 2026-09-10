@@ -147,6 +147,7 @@ fails the build when a path in this table is not one the router serves.
 | `POST` | `/v1/baselines` | Record a draft — not in force until released |
 | `POST` | `/v1/baselines/:id/release` · `/supersede` | Put in force · a new version with its reason |
 | `GET/PUT` | `/v1/baselines/pledge` | The institution's own commitment, and where it stands |
+| `GET/PUT` | `/v1/assurance/mode` | The operating mode a document prints on its face — the tool provider's to set |
 | `POST` | `/v1/projects/:projectId/pcaf` | Attributed embodied carbon for lending (A1-A3). See the note below: this is not Part A. |
 | `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions (A4+A5, B1/B4/B7) |
 | `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
@@ -258,6 +259,7 @@ Copy `.env.example` to `.env` and fill in:
 | `LOG_LEVEL` | `trace` … `fatal`; default `info`, `silent` under test |
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` | Error reporting; inert when unset, `/health` says which (see `docs/OBSERVABILITY.md`) |
 | `JOBS_TOKEN` · `JOBS_URL` · `JOBS_INLINE` | The job queue's background worker token and site URL; inline forces a job to run inside its request (see `docs/JOBS.md`) |
+| `ASSURANCE_MODE` | `self_declared` (default) or `verified` — the deployment-wide operating mode (see `docs/ASSURANCE-MODE.md`) |
 | `ALLOW_UNSCOPED_KEYS` | A migration window for keys issued before scopes existed; refused in production (see `docs/AUTHENTICATION.md`) |
 | `ALLOW_PREVIEW_MIGRATIONS` | Lets a deploy preview run migrations, which it otherwise refuses because it may share the production database |
 | `NODE_ENV` | `development` or `production` |
@@ -586,6 +588,14 @@ Where a published standard sets a figure the standard's value wins and the regis
 
 **Positioning stays: instrument, not software; service, not licence.** The measurement becomes self-service for the client (that is the tool's job and the training's job), while Datum stays for what cannot be automated — the annual independent assurance and the regional-baseline judgement. That is a recurring relationship the client wants, not one they resent, and it is what keeps Datum a consultancy standing behind an instrument rather than a vendor shipping an app.
 
+**Assurance mode — what a document may be taken for (`src/shared/assurance-mode.js`, `docs/ASSURANCE-MODE.md`).** Every document says on its face which of two postures it stands on, and the choice is the **tool provider's**, never the reporting entity's. **Self-declared** states that the figures rest on the entity's own baseline and its own values and that neither the tool provider nor Datum Solutions has confirmed those inputs; it is permitted and it is not recommended, and the caution says why — an assurance provider reading one has to establish the inputs themselves, which is the work the other mode exists to have already done. **Verified** states that every governed value the document reads resolves to a *released* baseline and that the entity has recorded who assured the figures, to what standard and at what level.
+
+**Verified is a request, not an assertion.** Both conditions are checked on every document and either one unmet resolves the position back to self-declared — and prints the reason, both reasons where both are unmet, because a reader who fixes one and finds a second waiting has been told half the answer. A downgraded document says it was *configured* as verified and why it is *reported* self-declared, since a reader is entitled to the cause. The conditions are about **governance**, not about how local a factor is: a provisional emission factor is disclosed as provisional and travels with its manifest, and is no bar to the mode; claiming a governed position nobody has taken is.
+
+**A document built with no position falls back to the honest default rather than to silence.** Absent the check nothing has been checked, and printing nothing reads as the stronger claim — the failure `src/shared/report-integrity.js` exists to prevent.
+
+`PUT /v1/assurance/mode` requires the **`admin`** scope; the entity's own assurance *declaration* at the same prefix stays on `write`. They are different facts with different owners, and an entity that could set its own mode to `verified` would be self-declaring by another name. `ASSURANCE_MODE` on the environment is the deployment-wide default and an organisation's recorded value overrides it; a mode the runtime cannot store is refused rather than accepted, because the next document would print the old one without saying so. The evidence is assembled in exactly one place (`src/domains/baseline/application/assurance-position.js`) and every document builder reads it there, so the per-assessment report and the annual disclosure cannot state different postures for one book.
+
 ---
 
 ## Sri Lanka Green Finance Taxonomy (SLGFT)
@@ -762,6 +772,7 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/ARCHITECTURE.md` | Full bank-facing product architecture (CRS, PCAF, Taxonomy, Covenant) |
 | `docs/DATA-LAYER.md` | PostgreSQL behind the seam: schema, transactions, migrations, audit chain, backfill, backup, measured scale |
 | `docs/BASELINE-GOVERNANCE.md` | The master baseline table: scopes, the lock-and-supersede lifecycle, who may govern what, the pledge |
+| `docs/ASSURANCE-MODE.md` | Self-declared or verified: the two postures, what verified rests on, who sets it, and what a document prints |
 | `docs/API-SCOPES.md` | Every route and the scope it requires — generated from the router, held to the code by a test |
 | `docs/OBSERVABILITY.md` | Logs, the correlation id, the log drain, error reporting and its runbook, metrics, the fallback register |
 | `docs/API-CONTRACT.md` · `docs/API-CHANGELOG.md` · `docs/openapi.json` | The contract: the generated OpenAPI 3.1 document, the two shapes, paging, errors, caching, the policy on change and its record |
