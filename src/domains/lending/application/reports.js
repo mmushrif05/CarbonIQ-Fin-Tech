@@ -2,7 +2,7 @@
  * CarbonIQ FinTech — Financial Reporting Service
  *
  * Generates four regulatory-grade report formats:
- *   1. PCAF Annual Disclosure   (PCAF v3, Dec 2025)
+ *   1. PCAF Annual Disclosure   (PCAF Part A, Third Edition, Dec 2025)
  *   2. GRI 305 Emissions        (GRI Standards 2016)
  *   3. TCFD Climate Risk        (TCFD Recommendations)
  *   4. IFRS S2 / ISSB           (IFRS S2 Climate Disclosures 2023)

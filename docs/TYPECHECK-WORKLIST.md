@@ -19,7 +19,7 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **314**. Remaining: **176**.
+Checked across all three: **314**. Remaining: **177**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
@@ -131,10 +131,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **93** (1243 errors, measured by
+Checked: **42**. Remaining: **94** (1243 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**2 of them raise no errors at all** and can be adopted by adding the
+**3 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -230,5 +230,6 @@ pragma and nothing else.
 | `tests/reports.test.js` | 1 |
 | `tests/score.test.js` | 1 |
 | `tests/v1-info.test.js` | 1 |
+| `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |

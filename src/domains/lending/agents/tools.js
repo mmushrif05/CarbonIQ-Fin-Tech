@@ -122,7 +122,7 @@ function check_taxonomy_alignment({ totalEmission_tCO2e, buildingArea_m2, reduct
 
 // ---------------------------------------------------------------------------
 // Tool 4 — calculate_pcaf_output
-// Generate PCAF v3 financed emissions output from metrics + loan details
+// Generate the attributed embodied-carbon output from metrics + loan details
 // ---------------------------------------------------------------------------
 
 function calculate_pcaf_output({ totalTCO2e, materials80PctItems, loanAmount, projectValue, attributionFactor }) {

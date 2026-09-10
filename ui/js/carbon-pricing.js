@@ -1,8 +1,12 @@
 /* Not yet under `// @ts-check`, and on `docs/TYPECHECK-WORKLIST.md`.
-   It carries real type errors — this code was written inside an HTML file,
-   where no checker ever saw it. A file joins the check when its errors are
-   fixed, never by adding the pragma, so fixing them is its own change rather
-   than something smuggled into the one that moved the file. */
+   These errors are not new. This code was written inside an HTML file, where
+   no checker ever looked at it — so the worklist grew when the file moved,
+   not when the code did. What changed is that the gap is now counted.
+   Almost all of it is one root cause: `document.getElementById` returns
+   `HTMLElement | null`, and this file reads `.value` off the result. A file
+   joins the check when its errors are fixed, never by adding the pragma, so
+   that is its own change rather than something smuggled into the one that
+   made the code reachable. */
 /* ============================================================
    CarbonIQ — Carbon pricing
    ui/js/carbon-pricing.js

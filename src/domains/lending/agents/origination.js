@@ -23,14 +23,14 @@
  *   1. If BOQ available: parse + compute full carbon metrics (DQ Score 2-3)
  *      If no BOQ: benchmark estimate (DQ Score 4)
  *   2. Taxonomy screen across all applicable frameworks (ASEAN/EU/HK/SG)
- *   3. PCAF v3 attribution factor and financed emissions
+ *   3. the attribution factor and attributed embodied carbon (A1–A3)
  *   4. Carbon Finance Score for green loan pricing
  *   5. Preliminary covenant framework (3 scenarios)
  *   6. Origination Decision Package for credit committee
  *
  * Regulatory grounding:
  *   - GLP 2025: green project eligibility must be established before drawdown
- *   - PCAF v3 (Dec 2025): covers construction project finance; banks must
+ *   - PCAF Part A, Third Edition (Dec 2025): covers construction project finance; banks must
  *     report financed emissions with attribution factor at origination
  *   - HKMA GS-1 / MAS ENRM: climate risk assessment mandatory at underwriting
  *   - ECB: Credit Agricole fined EUR 7.6M for inadequate climate materiality
@@ -94,7 +94,7 @@ After all tool calls complete, produce the decision package using EXACTLY this s
 **Building Type:** [type] | **Floor Area:** [X m²] | **Region:** [region]
 **Loan Requested:** [loanAmount or "Not provided"] | **Project Value:** [projectValue or "Not provided"]
 **Assessment Date:** ${new Date().toISOString().split('T')[0]}
-**Origination Assessment System:** CarbonIQ AI | PCAF v3 | GLP 2025 | HKMA GS-1
+**Origination Assessment System:** CarbonIQ AI | GLP 2025 | HKMA GS-1
 
 ---
 
@@ -147,17 +147,23 @@ After all tool calls complete, produce the decision package using EXACTLY this s
 
 ---
 
-### 4. PCAF v3 FINANCED EMISSIONS
+### 4. ATTRIBUTED EMBODIED CARBON (A1–A3)
 
 | Item | Value |
 |---|---|
 | Attribution Factor | X% (Loan [amount] / Project Value [value]) |
-| Bank's Financed Emissions | X tCO2e |
+| Attributed embodied carbon — bank's share | X tCO2e |
 | Project Total Embodied Carbon | X tCO2e |
 | Scope | A1–A3 Cradle-to-Gate |
-| PCAF Data Quality Score | X — [Score label] |
-| PCAF Standard | v3.0 (December 2025) |
-| Reporting Class | Scope 3 Category 15 (Financed Emissions) |
+| Factor-provenance band | X — [Score label] |
+
+**What this figure is.** Attributed embodied carbon: CarbonIQ's A1–A3
+cradle-to-gate assessment of the project, apportioned by the bank's share of
+project value. It is **not** a PCAF financed-emissions figure and must not be
+booked as Scope 3 Category 15 — PCAF Part A financed emissions cover the
+borrower's own emissions on a per-asset-class method, and this deployment
+computes those separately. The band above is CarbonIQ's own and is not a PCAF
+data-quality score.
 
 ---
 
@@ -211,7 +217,7 @@ After all tool calls complete, produce the decision package using EXACTLY this s
 |---|---|---|
 | HKMA GS-1: Climate risk at underwriting | [Met / Pending BOQ] | [action] |
 | MAS ENRM: Transition planning | [Met / Pending] | [action] |
-| PCAF v3: Financed emissions disclosed | [Met / Pending attribution factor] | [action] |
+| Financed emissions disclosed (PCAF Part A — computed separately) | [Met / Not assessed here] | [action] |
 | GLP 2025: Green eligibility documented | [Met / Conditional] | [action] |
 | EU AI Act Art. 22: Human oversight | Required at Stage 3 (Covenant Design) | Submit to /v1/agent/covenants for human review |
 
@@ -284,7 +290,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'calculate_pcaf_output',
-    description: 'Generate PCAF v3 financed emissions, attribution factor, and data quality score. Required for Scope 3 Cat 15 regulatory disclosure.',
+    description: 'Generate attributed embodied carbon (A1-A3), the attribution factor and the CarbonIQ factor-provenance band. This is not a PCAF financed-emissions figure and is not Scope 3 Category 15. Regulatory disclosure.',
     input_schema: {
       type: 'object',
       properties: {

@@ -59,6 +59,38 @@ async function put(collection, orgId, id, record) {
   });
 }
 
+
+/**
+ * Write a record that must not already be there.
+ *
+ * `put` is an upsert, which is right for every caller that owns an id it
+ * generated. It is wrong for the one that derives an id from something else:
+ * `desk.adopt` writes `inv_<recordId>`, so two adoptions of one pipeline
+ * record aimed at the same primary key, the second updated the first instead
+ * of colliding with it, and **both callers were told they had adopted it**.
+ * The unique index on the origin could not fire, because there was never a
+ * second row for it to reject — only the same row, written twice.
+ *
+ * What that cost is the rule the desk is built on: `origin`, the frozen
+ * screening verdict and the pledged mitigation are written once and never
+ * again, and an overwrite rewrote all three silently. It surfaced as a test
+ * that failed about one run in three and was read as database contention.
+ *
+ * A conflict is a `409 DUPLICATE`, the same refusal a unique index raises,
+ * so a caller handles one case rather than two.
+ */
+async function insert(collection, orgId, id, record) {
+  const { table } = definition(collection);
+  return run(async () => {
+    const { rows } = await client.query(
+      `INSERT INTO ${table} (org_id, id, data, created_at, updated_at)
+       VALUES ($1, $2, $3::jsonb, COALESCE($4::timestamptz, now()), now())
+       RETURNING ${COLUMNS}`,
+      [orgId, id, JSON.stringify(record), createdAtOf(record)]);
+    return rowToRecord(rows[0]);
+  });
+}
+
 async function get(collection, orgId, id, { forUpdate = false } = {}) {
   const { table } = definition(collection);
   return run(async () => {
@@ -273,4 +305,4 @@ async function truncateAll() {
   }));
 }
 
-module.exports = { put, get, list, query, count, page, patch, remove, transaction, truncateAll, encodeCursor, decodeCursor, projection };
+module.exports = { put, insert, get, list, query, count, page, patch, remove, transaction, truncateAll, encodeCursor, decodeCursor, projection };

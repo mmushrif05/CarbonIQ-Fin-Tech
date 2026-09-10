@@ -64,7 +64,7 @@ router.get('/types', referenceCache(), doc({ summary: 'The report types this API
       {
         id: 'pcaf',
         name: 'PCAF Annual Disclosure',
-        standard: 'PCAF v3 (December 2025)',
+        standard: 'CarbonIQ attributed embodied carbon (A1-A3)',
         description: 'Portfolio-level financed emissions report with attribution factors, data quality scores, and year-on-year analysis. Required for HKMA GS-1, MAS ENRM, and ISSB S2 compliance.',
         formats: ['json', 'pdf'],
         requiredInputs: ['orgName', 'period'],

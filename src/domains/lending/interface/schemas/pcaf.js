@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * CarbonIQ FinTech — PCAF v3 Output Schema
+ * CarbonIQ FinTech — attributed embodied-carbon output schema (not PCAF Part A)
  *
  * Validates input for the /v1/pcaf endpoint.
  * Banks submit loan + project data and receive PCAF-compliant emissions attribution.

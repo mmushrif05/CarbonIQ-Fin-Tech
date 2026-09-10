@@ -259,6 +259,29 @@ async function put(collection, orgId, id, record) {
 }
 
 /**
+ * Write a record that must not already be there — an insert, not an upsert.
+ *
+ * `put` overwrites, which is right for a caller that owns the id it generated
+ * and wrong for one that derives an id from something else. `desk.adopt`
+ * derives `inv_<recordId>`, so two adoptions of one pipeline record aimed at
+ * the same primary key: the second updated the first, the unique index on the
+ * origin never saw a second row to reject, and both callers were told they had
+ * adopted it — silently rewriting the frozen screening verdict and the pledge
+ * that are meant to be written once and never again.
+ *
+ * Only PostgreSQL closes the race outright, in the primary key. The other
+ * three read and then write, which narrows the window without shutting it;
+ * `tests/store-conformance.test.js` states that difference rather than
+ * letting it be found later.
+ *
+ * @throws {AppError} 409 DUPLICATE where the record is already there
+ */
+async function insert(collection, orgId, id, record) {
+  assertWritable();
+  return current().insert(collection, orgId, id, record);
+}
+
+/**
  * One record, or null. A record that was never written reads as null rather
  * than raising — absence is an answer.
  *
@@ -457,7 +480,7 @@ function _resetMemory() {
    one rather than as slow routes. The raw functions call one another
    internally; only the seam's edge is observed. */
 module.exports = {
-  put: timed('put', put), get: timed('get', get), list: timed('list', list), patch: timed('patch', patch), remove: timed('remove', remove),
+  put: timed('put', put), insert: timed('insert', insert), get: timed('get', get), list: timed('list', list), patch: timed('patch', patch), remove: timed('remove', remove),
   query: timed('query', query), page: timed('page', page), transaction: timed('transaction', transaction), count: timed('count', count), probe,
   capability, isDurable, isPostgresConfigured, isEphemeralRuntime, assertWritable, requestedBackend, BACKENDS,
   _resetMemory, MAX_MEMORY_RECORDS: memoryAdapter.MAX_RECORDS, MAX_LIST_WITHOUT_QUERY, adapterFor, current

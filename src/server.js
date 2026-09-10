@@ -5,7 +5,7 @@
  * Bank-facing API layer for construction carbon intelligence.
  * Wraps the existing CarbonIQ engine and exposes:
  * - Carbon Finance Score (0-100)
- * - PCAF v3 compliant output
+ * - Attributed embodied carbon (A1-A3) for lending
  * - Taxonomy alignment (ASEAN, EU, HK, SG)
  * - Green loan covenant engine
  * - Portfolio aggregation

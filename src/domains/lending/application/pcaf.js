@@ -14,9 +14,13 @@
  * and it must not be quoted as a PCAF data-quality score. `docs/GLOSSARY.md`
  * §1 has the three that are PCAF's or GCF's.
  *
- * The wider correction — the agent prompts and the route summaries that still
- * say "PCAF v3" — is outstanding and is tracked separately; changing what a
- * generated memo says is not a documentation change.
+ * The wider correction is done. The agent prompts and the route summaries no
+ * longer say "PCAF v3": a memo's section is headed for what the figure is, the
+ * row that read "Bank's Financed Emissions" says attributed embodied carbon,
+ * and the row that told a bank to book it as **Scope 3 Category 15** is gone —
+ * that one would have put the embodied carbon of construction materials into
+ * the financed-emissions line of a regulatory inventory. Every memo that
+ * states the figure now states what it is not, beside it.
  *
  * CarbonIQ factor-provenance band (1=best, 5=worst) — NOT a PCAF score:
  *   1: Audited/verified project-specific EPD data
