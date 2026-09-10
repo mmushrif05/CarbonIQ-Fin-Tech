@@ -1213,14 +1213,18 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "agents": {
+                    "ai": {
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "probed": {
-                      "type": "boolean"
+                    "agents": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
                     },
-                    "state": {
+                    "deterministic": {
                       "type": "object",
                       "additionalProperties": true
                     }
@@ -1240,14 +1244,18 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "agents": {
+                        "ai": {
                           "type": "object",
                           "additionalProperties": true
                         },
-                        "probed": {
-                          "type": "boolean"
+                        "agents": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
                         },
-                        "state": {
+                        "deterministic": {
                           "type": "object",
                           "additionalProperties": true
                         }

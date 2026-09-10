@@ -9,7 +9,7 @@ const { Router } = require('express');
 
 const authenticate    = require('../../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../../platform/http/pagination');
-const { doc, body, bool, obj } = require('../../../../../platform/http/openapi-hints');
+const { doc, body, bool, obj, arr } = require('../../../../../platform/http/openapi-hints');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
 const aiStatus      = require('../../../../../platform/ai/ai-status');
@@ -41,7 +41,11 @@ router.get('/health', authenticate,
     description: 'A key that is absent or does not have the shape of an Anthropic key is '
       + 'diagnosed before any call. A failure is classified with its remedy and the endpoints '
       + 'that still work without the AI layer.',
-    response: body({ agents: obj, probed: bool, state: obj }) }), async (req, res, next) => {
+    /* `agents` is a list, not a map. The document said object and nothing
+       caught it, because without a key this route answers 503 and the
+       contract sweep validates successful replies only — so the hint was
+       never checked against a body. */
+    response: body({ ai: obj, agents: arr(obj), deterministic: obj }) }), async (req, res, next) => {
   try {
     const live = req.query.probe === '1' || req.query.probe === 'true';
 
