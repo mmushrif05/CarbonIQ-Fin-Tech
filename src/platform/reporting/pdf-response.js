@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — sending a generated document as bytes
  *
@@ -16,6 +17,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 /** Collect a pdfkit document into one buffer. */
 function toBuffer(doc) {
@@ -38,7 +41,7 @@ function toBuffer(doc) {
  */
 function assertWellFormedPdf(buf, what = 'document') {
   const fail = reason => {
-    const err = new Error(`The generated ${what} is not a valid PDF: ${reason}. It has not been sent — a file that downloads and will not open is worse than a clear failure.`);
+    const err = /** @type {AppError} */ (new Error(`The generated ${what} is not a valid PDF: ${reason}. It has not been sent — a file that downloads and will not open is worse than a clear failure.`));
     err.statusCode = 500;
     err.code = 'PDF_MALFORMED';
     throw err;
@@ -84,7 +87,7 @@ async function sendPdf(res, doc, filename, what = 'document') {
 /** The same guarantees for a Word document, which is a zip container. */
 function sendDocx(res, buf, filename, what = 'document') {
   if (!Buffer.isBuffer(buf) || buf.length < 1000 || buf.subarray(0, 2).toString('latin1') !== 'PK') {
-    const err = new Error(`The generated ${what} is not a valid Word document. It has not been sent.`);
+    const err = /** @type {AppError} */ (new Error(`The generated ${what} is not a valid Word document. It has not been sent.`));
     err.statusCode = 500;
     err.code = 'DOCX_MALFORMED';
     throw err;

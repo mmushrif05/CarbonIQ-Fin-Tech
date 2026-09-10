@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * GET /v1/openapi.json — the contract, from the router that answers it.
  * No credential: it is the document a client is generated from, and it

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Migrations — plain SQL, applied in order, recorded with a checksum.
  *
@@ -18,6 +19,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const fs = require('fs');
 const path = require('path');
@@ -61,11 +64,11 @@ async function ensureLedger() {
 }
 
 /**
- * @returns {{applied: object[], pending: object[], drifted: object[], missing: object[]}}
+ * @returns {Promise<{applied: object[], pending: object[], drifted: object[], missing: object[]}>}
  *  drifted: applied, but the file now hashes differently.
  *  missing: applied, but no file of that version exists any more.
  */
-async function status({ dir } = {}) {
+async function status({ dir } = /** @type {{dir?: any}} */ ({})) {
   await ensureLedger();
   const onDisk = files(dir);
   const { rows } = await client.query('SELECT version, name, checksum, applied_at FROM schema_migrations ORDER BY version');
@@ -84,11 +87,11 @@ async function status({ dir } = {}) {
 }
 
 /** Apply every pending migration, each in its own transaction, under one lock. */
-async function up({ dir, log = () => {} } = {}) {
+async function up({ dir, log = (_message) => {} } = /** @type {{dir?: string, log?: (message: string) => void}} */ ({})) {
   await ensureLedger();
   const s = await status({ dir });
   if (s.drifted.length) {
-    const err = new Error(`Refusing to migrate: ${s.drifted.length} applied migration(s) no longer match their file — ${s.drifted.map(d => d.name).join(', ')}. An applied migration is history; write a new one.`);
+    const err = /** @type {AppError} */ (new Error(`Refusing to migrate: ${s.drifted.length} applied migration(s) no longer match their file — ${s.drifted.map(d => d.name).join(', ')}. An applied migration is history; write a new one.`));
     err.code = 'MIGRATION_DRIFT';
     throw err;
   }
@@ -110,7 +113,7 @@ async function up({ dir, log = () => {} } = {}) {
 }
 
 /** Roll back the most recently applied migration, if its file carries a `-- down` section. */
-async function down({ dir, log = () => {} } = {}) {
+async function down({ dir, log = (_message) => {} } = /** @type {{dir?: string, log?: (message: string) => void}} */ ({})) {
   await ensureLedger();
   const { rows } = await client.query('SELECT version, name FROM schema_migrations ORDER BY version DESC LIMIT 1');
   if (!rows.length) return { rolledBack: null };

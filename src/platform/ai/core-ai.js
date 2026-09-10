@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — AI Service Bridge
  *
@@ -8,6 +9,8 @@
  * function over HTTP, preserving the ECCS 6-step hierarchy,
  * A1-A3 → ICE priority chain, and all classification rules.
  */
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const config = require('../config');
 
@@ -26,9 +29,9 @@ function coreAppUrl() {
 
   const url = config.runtime.coreAppUrl;
   if (!url) {
-    const err = new Error(
+    const err = /** @type {AppError} */ (new Error(
       'The CarbonIQ core platform URL is not configured, so the core engine cannot be reached. '
-      + 'Set CORE_APP_URL to the deployment hosting the parse-boq and carbon-advisor functions.');
+      + 'Set CORE_APP_URL to the deployment hosting the parse-boq and carbon-advisor functions.'));
     err.statusCode = 503;
     err.code = 'CORE_APP_URL_NOT_SET';
     throw err;
@@ -41,7 +44,7 @@ function coreAppUrl() {
  *
  * @param {string} boqContent - Raw BOQ text content
  * @param {Object} options - { projectId, format }
- * @returns {Object} AI classification results
+ * @returns {Promise<Object>} AI classification results
  */
 async function triggerBOQAssessment(boqContent, options = {}) {
   const baseUrl = coreAppUrl();
@@ -70,7 +73,7 @@ async function triggerBOQAssessment(boqContent, options = {}) {
  *
  * @param {string} projectId
  * @param {Object} projectData - { entries, tenderItems, reductionTarget }
- * @returns {Object} AI-powered reduction recommendations
+ * @returns {Promise<Object>} AI-powered reduction recommendations
  */
 async function triggerCarbonAdvisor(projectId, projectData) {
   const baseUrl = coreAppUrl();

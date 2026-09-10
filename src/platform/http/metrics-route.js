@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * GET /v1/metrics — what this process has done since it started.
  *

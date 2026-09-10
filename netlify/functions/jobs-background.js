@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The background worker: drains the job queue for up to twelve minutes.
  *

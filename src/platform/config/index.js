@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Centralized Configuration
  *
@@ -128,6 +129,9 @@ const config = {
     get jobsToken() { return process.env.JOBS_TOKEN || ''; },
     get siteUrl() { return process.env.JOBS_URL || process.env.URL || process.env.DEPLOY_PRIME_URL || ''; },
     get jobsInline() { return process.env.JOBS_INLINE === '1' || process.env.JOBS_INLINE === 'true'; },
+    /* The directory the local server serves as the dashboard: the source
+       tree, or the built output when the browser tests ask for it. */
+    get uiDir() { return process.env.UI_DIR || 'ui'; },
     get firebaseConfigured() {
       return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT ||
         (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY));
@@ -153,7 +157,9 @@ const config = {
  */
 function validate({ env = config.env } = {}) {
   const problems = [];
-  const production = env === 'production';
+  /* Staging is a production-shaped context: the same refusals apply, so a
+     variable that would be unsafe in production is caught one deploy early. */
+  const production = env === 'production' || env === 'staging';
   const salt = process.env.API_KEY_SALT || '';
   if (production && (!salt || salt === 'default-dev-salt-change-in-production')) {
     problems.push({ variable: 'API_KEY_SALT', problem: 'unset or the development default', remedy: "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"" });
@@ -179,6 +185,4 @@ function validate({ env = config.env } = {}) {
   return { ok: problems.length === 0, problems };
 }
 
-config.validate = validate;
-
-module.exports = Object.freeze(config);
+module.exports = Object.freeze({ ...config, validate });

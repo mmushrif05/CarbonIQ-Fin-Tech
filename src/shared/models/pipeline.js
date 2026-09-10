@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Pipeline Run Model
  *

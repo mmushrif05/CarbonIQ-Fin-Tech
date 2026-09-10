@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * PostgreSQL errors, translated into the shape every route already handles:
  * `statusCode`, `code`, `message`, and a `remedy` where one exists.
@@ -11,6 +12,8 @@
 
 'use strict';
 
+/** @typedef {import('../../shared/types').AppError} AppError */
+
 const TABLE_LABELS = {
   partc_clients: 'client', partc_projects: 'project', partc_boq_revisions: 'BOQ revision',
   partc_assessments: 'assessment', partc_settings: 'settings',
@@ -20,7 +23,7 @@ const TABLE_LABELS = {
 const label = t => TABLE_LABELS[t] || t;
 
 function make(statusCode, code, message, remedy, cause) {
-  const err = new Error(message);
+  const err = /** @type {AppError} */ (new Error(message));
   err.statusCode = statusCode;
   err.code = code;
   if (remedy) err.remedy = remedy;

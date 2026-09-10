@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — what a report is allowed to say.
  *

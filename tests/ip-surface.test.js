@@ -142,14 +142,18 @@ describe('The calculation trace is not on the website', () => {
     expect(offenders).toEqual([]);
   });
 
+  /* The route and the report standard are each a barrel over a directory
+     of parts (E5); the rule lives in whichever part holds the code. */
+  const readTree = (barrel, dir) => [barrel, ...fs.readdirSync(path.join(ROOT, dir)).map(f => `${dir}/${f}`)].map(read).join('\n');
+
   test('the route strips it before the response is shaped', () => {
-    const route = read('src/domains/pcaf-part-c/interface/routes/pcaf-partc.js');
+    const route = readTree('src/domains/pcaf-part-c/interface/routes/pcaf-partc.js', 'src/domains/pcaf-part-c/interface/routes/pcaf-partc');
     expect(route).toMatch(/function _publicRegisters/);
     expect(route).toMatch(/registers: _publicRegisters\(registers\)/);
   });
 
   test('the downloadable report carries no trace annex', () => {
-    expect(read('src/domains/pcaf-part-c/reporting/partc-report-standard.js')).toMatch(/auditTrail: \[\],/);
+    expect(readTree('src/domains/pcaf-part-c/reporting/partc-report-standard.js', 'src/domains/pcaf-part-c/reporting/report-standard')).toMatch(/auditTrail: \[\],/);
   });
 
   /*

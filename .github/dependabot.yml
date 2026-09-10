@@ -1,0 +1,27 @@
+# Dependency updates (gap I5). Weekly, grouped, so a week's patch releases
+# arrive as one reviewable pull request rather than fifteen, and a major
+# bump arrives alone where it can be read on its own.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Colombo
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Pinned for the serverless bundle; moved deliberately, not weekly.
+      - dependency-name: firebase-admin
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Asia/Colombo

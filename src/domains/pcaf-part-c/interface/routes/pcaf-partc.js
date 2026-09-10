@@ -27,131 +27,32 @@
 
 'use strict';
 
-const { Router }   = require('express');
+const { Router } = require('express');
+
 const { fallback } = require('../../../../platform/observability/logger');
 const apiKeyAuth   = require('../../../../platform/auth/api-key');
-const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate     = require('../../../../platform/http/validate');
-const { defaultLimiter, agentLimiter } = require('../../../../platform/http/rate-limit');
-
+const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const { runPartC }        = require('../../domain');
 const { buildRegisters }  = require('../../application/partc-registers');
-const { buildForm, formAnswersToEngineInput } = require('../../agents/form');
+const { buildForm } = require('../../agents/form');
 const runStore            = require('../../application/partc-run-store');
 const factors             = require('../../domain/factors');
 const { conformanceMatrix } = require('../../domain/conformance');
 const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../reporting/partc-reports');
 const partcRegistry = require('../../application/partc-registry');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
-const requireAI = require('../../../../platform/http/require-ai');
 const { recordLearnings } = require('../../application/learning-store');
-const { runAgent }        = require('../../../../platform/ai/agent');
-const { forRequest: deadlineFor } = require('../../../../platform/ai/deadline');
 const {
-  createPartCRun, addStep, generatePartCRunId, isAwaitingInputs,
-  PARTC_STATUS, PARTC_STEP_TYPES
+  createPartCRun, addStep, generatePartCRunId, PARTC_STATUS, PARTC_STEP_TYPES
 } = require('../../../../shared/models/partc-run');
-
 const {
-  assessRequestSchema, formRequestSchema, reportRequestSchema,
-  mappingRequestSchema, intakeRequestSchema,
-  startRunRequestSchema, resumeRunRequestSchema, discloseRequestSchema
+  assessRequestSchema, formRequestSchema, reportRequestSchema
 } = require('../schemas/pcaf-partc');
 
-const intakeAgent     = require('../../agents/intake');
-const mappingAgent    = require('../../agents/mapping');
-const disclosureAgent = require('../../agents/disclosure');
-const { documentBlocks } = require('../../agents/documents');
-const config           = require('../../../../platform/config');
-
-/**
- * The agent endpoints need a Claude API key; the engine endpoints never do.
- * Say so plainly rather than surfacing a generic failure — the deterministic
- * half of the product still works without one, and the caller should be told
- * exactly that.
- */
-
 const router = Router();
-
-/**
- * The registers, minus the calculation trace.
- *
- * Annex C is every equation the engine executed, in order, with its inputs and
- * the factor each step consulted. That is the method itself — the same asset
- * `src/domains/pcaf-part-c/application/partc-methodology.js` exists to hold and the same reason nothing on
- * the website serves it. Served to a browser it is copyable by whoever loads
- * the page, which is by construction everybody.
- *
- * It is removed rather than refused, on the rule the methodology statement
- * already follows: a 403 announces that something exists to be taken, and
- * absence announces nothing. The trail is still built — the methodology
- * statement, the GWP basis and the disclosure checklist are all derived from
- * it — it just never reaches the wire.
- */
-function _publicRegisters(registers) {
-  if (!registers) return registers;
-  const { assumptions, dataGaps, badges } = registers;
-  return {
-    assumptions,
-    dataGaps,
-    badges: badges ? { assumptions: badges.assumptions, dataGaps: badges.dataGaps } : badges
-  };
-}
-
-/** Shape the client-facing response from an engine result. */
-function _shapeResult(result, registers, extra = {}) {
-  return {
-    standard: result.standard,
-    scopeModel: result.scopeModel,
-    policy: result.policy,
-    summary: result.summary,
-    modules: {
-      a4: result.modules.a4.value,
-      a5: result.modules.a5.value,
-      a5Breakdown: result.modules.a5Breakdown,
-      b1: result.modules.b1.value,
-      b4: result.modules.b4.value,
-      b7: result.modules.b7.value
-    },
-    paretoVitalFew: result.modules.a4.vitalFew,
-    // A figure, not a step: the tonnage the A4 module carried. It used to be
-    // read off the calculation trace, which is no longer sent.
-    a4MaterialMass_t: (result.modules.a4.inputs && result.modules.a4.inputs.totalMass_t) || null,
-    beyondPcafAnnex: {
-      total: result.beyondPcafAnnex.value,
-      breakdown: result.beyondPcafAnnex.children.map(c => ({ module: c.module, label: c.label, value: c.value })),
-      scopeNote: 'Voluntary whole-life annex — never part of the PCAF figure.'
-    },
-    deMinimis:   result.deMinimis,
-    dataQuality: result.dataQuality,
-    // PCAF requires a score beside any disclosed figure, so the scoring
-    // travels with the figures rather than being fetched separately.
-    dqScoring:  result.dqScoring || null,
-    dqStatement: result.dqDisclosureStatement || null,
-    disclosureNote: result.disclosureNote,
-    sensitivity: result.sensitivity,
-    vehicle:     result.vehicle,
-    registers: _publicRegisters(registers),
-    generatedAt: result.generatedAt,
-    ...extra
-  };
-}
-
-/** Shape the engine input from a validated request body. */
-function _toEngineInput(body) {
-  return {
-    policy:     body.policy,
-    materials:  body.materials,
-    distances:  body.distances,
-    siteInputs: body.siteInputs,
-    useStage:   body.useStage,
-    beyondPcaf: body.beyondPcaf,
-    options:    body.options,
-    hasEPD:     body.hasEPD
-  };
-}
 
 // ---------------------------------------------------------------------------
 // GET /options — dropdowns for the client form
@@ -337,271 +238,9 @@ router.post('/report', apiKeyAuth, defaultLimiter,
     } catch (err) { next(err); }
   });
 
-// ---------------------------------------------------------------------------
-// POST /runs/start — begin a run and pause for client input
-//
-// This is the pause point that makes the flow agentic rather than batch: the
-// documents have been read and mapped, the form is built and gated, and the
-// run now waits for the client. It may wait across sessions.
-// ---------------------------------------------------------------------------
-router.post('/runs/start', apiKeyAuth, defaultLimiter,
-  validate({ body: startRunRequestSchema }),
-  async (req, res, next) => {
-    try {
-      const orgId = req.apiKey.orgId;
-      const runId = generatePartCRunId();
-
-      const form = buildForm({
-        policy:    req.body.policy,
-        materials: req.body.materials,
-        prefill:   req.body.prefill
-      });
-
-      const run = createPartCRun({ runId, orgId, projectName: req.body.projectName });
-      run.policy          = req.body.policy;
-      run.materials       = req.body.materials;
-      run.demolitionItems = req.body.demolitionItems;
-      run.form            = form;
-      run.context         = req.body.context;
-      run.status          = PARTC_STATUS.AWAITING_INPUTS;
-
-      addStep(run, {
-        type: PARTC_STEP_TYPES.FORM,
-        summary: `Form built for a ${form.policyType || 'unclassified'} policy — ` +
-                 `${form.summary.fieldsToAnswer} fields to answer, ` +
-                 `${form.summary.hiddenSections} section(s) hidden by the policy gate.`
-      });
-
-      const { durable } = await runStore.saveRun(orgId, run);
-
-      res.status(201).json({
-        runId,
-        status: run.status,
-        projectName: run.projectName,
-        form,
-        durable,
-        next: `POST /v1/pcaf/part-c/runs/${runId}/resume with the completed answers`,
-        ...(durable ? {} : { warning: 'Firebase is not configured — this run is held in memory only and will not survive a restart.' })
-      });
-    } catch (err) { next(err); }
-  });
-
-// ---------------------------------------------------------------------------
-// POST /runs/:runId/resume — the client has answered; compute and complete
-// ---------------------------------------------------------------------------
-router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
-  validate({ body: resumeRunRequestSchema }),
-  async (req, res, next) => {
-    const orgId = req.apiKey.orgId;
-    const { runId } = req.params;
-    try {
-      const run = await runStore.getRun(orgId, runId);
-      if (!run) {
-        return res.status(404).json({ error: 'RUN_NOT_FOUND', message: `No Part C run ${runId}.` });
-      }
-      if (!isAwaitingInputs(run)) {
-        return res.status(409).json({
-          error: 'RUN_NOT_AWAITING_INPUTS',
-          message: `Run ${runId} is "${run.status}", not awaiting client input. A completed run cannot be resumed; start a new one.`,
-          status: run.status
-        });
-      }
-
-      // Client factor overrides apply for this calculation only.
-      const overrides = req.body.overrides || {};
-      const hadOverrides = Object.keys(overrides).length > 0;
-      if (hadOverrides) factors.setOverrides(overrides);
-
-      let result, registers;
-      try {
-        const input = formAnswersToEngineInput({
-          policy:          run.policy || {},
-          materials:       run.materials || [],
-          demolitionItems: run.demolitionItems || [],
-          answers:         req.body.answers
-        });
-        input.hasEPD = req.body.hasEPD;
-        result    = runPartC(input);
-        registers = buildRegisters(result);
-      } finally {
-        if (hadOverrides) factors.setOverrides({});
-      }
-
-      const learnings = await recordLearnings({
-        orgId, runId, result,
-        context:   run.context || {},
-        materials: run.materials || [],
-        overrides
-      }).catch(fallback('partc.recordLearnings', null));
-
-      const completedAt = new Date().toISOString();
-      const updates = {
-        status:      PARTC_STATUS.COMPLETED,
-        formAnswers: req.body.answers,
-        overrides,
-        result:      result.summary,
-        registers:   _publicRegisters(registers).badges,
-        disclosure:  result.disclosureNote,
-        learnings:   learnings ? learnings.counts : null,
-        completedAt,
-        updatedAt:   completedAt
-      };
-      await runStore.updateRun(orgId, runId, updates);
-
-      res.json(_shapeResult(result, registers, {
-        runId,
-        status: PARTC_STATUS.COMPLETED,
-        projectName: run.projectName || null,
-        learnings: learnings ? learnings.counts : null
-      }));
-    } catch (err) {
-      await runStore.updateRun(orgId, runId, {
-        status: PARTC_STATUS.FAILED, error: err.message, updatedAt: new Date().toISOString()
-      }).catch(fallback('partc.runs.markFailed'));
-      next(err);
-    }
-  });
-
-// ---------------------------------------------------------------------------
-// GET /runs, GET /runs/:runId
-// ---------------------------------------------------------------------------
-router.get('/runs', apiKeyAuth, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page' }), async (req, res, next) => {
-  try {
-    if (req.query.limit === undefined && req.query.cursor === undefined) {
-      return res.json({ runs: await runStore.listRuns(req.apiKey.orgId, 20) });
-    }
-    sendList(req, res, 'runs', await runStore.listRuns(req.apiKey.orgId, 500));
-  } catch (err) { next(err); }
-});
-
-router.get('/runs/:runId', apiKeyAuth, defaultLimiter, async (req, res, next) => {
-  try {
-    const run = await runStore.getRun(req.apiKey.orgId, req.params.runId);
-    if (!run) return res.status(404).json({ error: 'RUN_NOT_FOUND', message: `No Part C run ${req.params.runId}.` });
-    res.json({ run });
-  } catch (err) { next(err); }
-});
-
-// ---------------------------------------------------------------------------
-// Agent endpoints — Claude does classification, extraction and mapping.
-// Every emissions figure still comes from the deterministic engine.
-// ---------------------------------------------------------------------------
-
-router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
-  validate({ body: intakeRequestSchema }),
-  async (req, res, next) => {
-    try {
-      const clock = deadlineFor(req);
-
-      /* Same reasoning as the mapping route: the policy schedule goes to the
-         agent as a document rather than being transcribed first. */
-      const blocks = documentBlocks({
-        text: req.body.documentText, pdfBase64: req.body.pdfBase64,
-        fileId: req.body.fileId, hint: req.body.pageHint
-      });
-
-      const instruction = intakeAgent.buildUserMessage({
-        documentText: blocks ? '(the policy schedule is the attached document)'
-          : (req.body.documentText || ''),
-        documentNote: req.body.documentNote,
-        projectName:  req.body.projectName
-      });
-
-      clock.assertCanStart('read the policy document');
-
-      const run = await runAgent({
-        agentType: 'partc-intake',
-        systemPrompt: intakeAgent.SYSTEM_PROMPT,
-        toolDefinitions: intakeAgent.TOOL_DEFINITIONS,
-        toolFunctions: intakeAgent.TOOL_FUNCTIONS,
-        userMessage: blocks
-          ? [...blocks, { type: 'text', text: instruction }]
-          : instruction,
-        orgId: req.apiKey.orgId,
-        deadline: clock,
-        metadata: { projectName: req.body.projectName || null, stage: 'intake',
-                    documentSource: blocks ? 'pdf' : 'text' }
-      });
-
-      res.json({ runId: run.runId, status: run.status, result: run.result,
-                 documentSource: blocks ? 'pdf' : 'text',
-                 elapsedMs: clock.elapsed(),
-                 steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
-    } catch (err) { next(err); }
-  });
-
-router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
-  validate({ body: mappingRequestSchema }),
-  async (req, res, next) => {
-    try {
-      /* One clock for the whole request — a Netlify function is killed at 26s
-         and nothing here used to know that. */
-      const clock = deadlineFor(req);
-
-      /* A PDF is handed to the mapping agent directly rather than transcribed
-         first. Transcribe-then-map is two sequential model calls, and the
-         first ran non-streamed at 16,000 output tokens; the pair could not fit
-         inside one invocation, so the process was killed and the browser got
-         no body to explain it. Claude reads PDFs natively, so the round-trip
-         is unnecessary. */
-      const blocks = documentBlocks({
-        text: req.body.boqContent, pdfBase64: req.body.pdfBase64,
-        fileId: req.body.fileId, hint: req.body.pageHint
-      });
-
-      const instruction = mappingAgent.buildUserMessage({
-        boqContent:  blocks ? '(the bill of quantities is the attached document)'
-          : (req.body.boqContent || ''),
-        boqFormat:   blocks ? 'PDF document' : (req.body.boqFormat || 'text'),
-        projectName: req.body.projectName
-      });
-
-      clock.assertCanStart('map the bill of quantities');
-
-      const run = await runAgent({
-        agentType: 'partc-mapping',
-        systemPrompt: mappingAgent.SYSTEM_PROMPT,
-        toolDefinitions: mappingAgent.TOOL_DEFINITIONS,
-        toolFunctions: mappingAgent.TOOL_FUNCTIONS,
-        userMessage: blocks
-          ? [...blocks, { type: 'text', text: instruction }]
-          : instruction,
-        orgId: req.apiKey.orgId,
-        deadline: clock,
-        callProfile: mappingAgent.CALL_PROFILE,
-        metadata: { projectName: req.body.projectName || null, stage: 'mapping',
-                    documentSource: blocks ? 'pdf' : 'text' }
-      });
-
-      res.json({ runId: run.runId, status: run.status, result: run.result,
-                 documentSource: blocks ? 'pdf' : 'text',
-                 elapsedMs: clock.elapsed(),
-                 steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
-    } catch (err) { next(err); }
-  });
-
-router.post('/agent/disclose', apiKeyAuth, agentLimiter, requireAI,
-  validate({ body: discloseRequestSchema }),
-  async (req, res, next) => {
-    try {
-      const run = await runAgent({
-        agentType: 'partc-disclosure',
-        systemPrompt: disclosureAgent.SYSTEM_PROMPT,
-        toolDefinitions: disclosureAgent.TOOL_DEFINITIONS,
-        toolFunctions: disclosureAgent.TOOL_FUNCTIONS,
-        userMessage: disclosureAgent.buildUserMessage({
-          projectName:   req.body.projectName,
-          policySummary: req.body.policySummary,
-          materialCount: (req.body.materials || []).length,
-          note:          req.body.note
-        }),
-        orgId: req.apiKey.orgId,
-        metadata: { projectName: req.body.projectName || null, stage: 'disclosure' }
-      });
-      res.json({ runId: run.runId, status: run.status, memo: run.result,
-                 steps: run.steps, tokensUsed: run.tokensUsed, error: run.error });
-    } catch (err) { next(err); }
-  });
+router.use(require('./pcaf-partc/runs'));
+router.use(require('./pcaf-partc/agents'));
+const { _publicRegisters, _shapeResult, _toEngineInput } = require('./pcaf-partc/shared');
 
 module.exports = router;
 /* For the job handlers (src/jobs.js): the same report the route builds. */

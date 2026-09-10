@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Business Constants
  *

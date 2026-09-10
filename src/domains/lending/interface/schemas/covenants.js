@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Green Loan Covenant Schema
  *

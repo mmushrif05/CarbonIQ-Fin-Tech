@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The worker: claim, execute, repeat.
  *
@@ -31,7 +32,7 @@ async function runOnce(workerId = workerName('worker')) {
  * @returns {Promise<{processed: number, succeeded: number, failed: number, stopped: 'empty'|'deadline'}>}
  */
 async function drain({ workerId = workerName('drain'), untilMs = Date.now() + 20_000, maxJobs = Infinity } = {}) {
-  const out = { processed: 0, succeeded: 0, failed: 0, stopped: 'empty' };
+  const out = /** @type {{processed: number, succeeded: number, failed: number, stopped: 'empty'|'deadline'}} */ ({ processed: 0, succeeded: 0, failed: 0, stopped: 'empty' });
   await queue.requeueStale();
   while (out.processed < maxJobs) {
     if (Date.now() >= untilMs) { out.stopped = 'deadline'; break; }

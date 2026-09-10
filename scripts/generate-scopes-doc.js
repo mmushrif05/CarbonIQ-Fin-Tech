@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * docs/API-SCOPES.md — every route the application registers, and the scope
  * it requires, generated from the running router and the scope table.

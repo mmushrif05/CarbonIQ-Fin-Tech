@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * A long-lived worker for the job queue — `npm run worker`.
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * CarbonIQ FinTech — Register UI API Key in Firebase
  *

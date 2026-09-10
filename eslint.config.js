@@ -15,7 +15,7 @@ const js = require('@eslint/js');
 const globals = require('globals');
 
 module.exports = [
-  { ignores: ['node_modules/**', 'coverage/**', 'ui/vendor/**', 'scratchpad/**', 'backups/**', '**/.*.js'] },
+  { ignores: ['node_modules/**', 'coverage/**', 'dist/**', 'playwright-report/**', 'test-results/**', 'ui/vendor/**', 'scratchpad/**', 'backups/**', '**/.*.js'] },
   js.configs.recommended,
   {
     files: ['**/*.js'],
@@ -36,6 +36,11 @@ module.exports = [
     languageOptions: { globals: { ...globals.node, ...globals.jest } },
     /* Sweeps match source text verbatim, and source text has runs of spaces. */
     rules: { 'no-regex-spaces': 'off' },
+  },
+  {
+    /* Browser tests: Node at the top level, the page's globals inside evaluate(). */
+    files: ['e2e/**/*.js', 'playwright.config.js'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
   {
     files: ['ui/**/*.js'],

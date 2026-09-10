@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Scopes — what a credential may do, decided in one place for every route.
  *
@@ -35,6 +36,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const SCOPES = Object.freeze(['read', 'write', 'lock', 'assess', 'admin']);
 
@@ -188,7 +191,7 @@ function normaliseScopes(input) {
   const set = new Set(list.map(s => String(s).trim().toLowerCase()).filter(Boolean));
   const unknown = [...set].filter(s => !SCOPES.includes(s));
   if (unknown.length) {
-    const err = new Error(`Unknown scope(s): ${unknown.join(', ')}. Known: ${SCOPES.join(', ')}.`);
+    const err = /** @type {AppError} */ (new Error(`Unknown scope(s): ${unknown.join(', ')}. Known: ${SCOPES.join(', ')}.`));
     err.code = 'UNKNOWN_SCOPE';
     throw err;
   }

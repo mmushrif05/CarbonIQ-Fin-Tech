@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — is the AI layer actually working?
  *
@@ -84,7 +85,7 @@ async function probe({ timeoutMs = 8000 } = {}) {
   }
 
   let Anthropic;
-  try { Anthropic = require('@anthropic-ai/sdk'); }
+  try { Anthropic = /** @type {any} */ (require('@anthropic-ai/sdk')); }
   catch (err) {
     return { ...base, status: 'sdk_missing', ok: false,
       detail: `The Anthropic SDK could not be loaded: ${err.message}`,

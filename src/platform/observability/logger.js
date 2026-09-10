@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Structured logging (gap D1), with the request threaded through it (D5).
  *
@@ -61,7 +62,7 @@ function mixin() {
   return out;
 }
 
-function build({ level = config.log.level, stream } = {}) {
+function build({ level = config.log.level, stream } = /** @type {{level?: any, stream?: any}} */ ({})) {
   const dest = stream || pino.destination({ fd: 1, sync: config.runtime.isServerless });
   return pino({
     level,

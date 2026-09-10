@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — API v1 Router
  *

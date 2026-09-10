@@ -5,8 +5,9 @@
   # during the build, not in the function's runtime environment, so without
   # this step /health cannot report the running commit — which is the one
   # question it exists to answer.
-  command = "npm install && npm run build:info && node scripts/db-migrate.js up --if-configured"
-  publish = "ui"
+  command = "npm install && npm run build:info && npm run build:ui && node scripts/db-migrate.js up --if-configured"
+  # The built frontend (scripts/build-ui.js): ui/ minified, paths preserved.
+  publish = "dist/ui"
   functions = "netlify/functions"
 
 [functions]
@@ -78,6 +79,16 @@
 # Fonts, images and the brand artwork are exempt: those are addressed by
 # content that does not change under the same name, and they are the files
 # worth caching.
+
+# The Content Security Policy for what the CDN serves — the same string the
+# function sends (src/platform/http/csp.js); tests/frontend.test.js holds
+# the two to each other.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self';script-src 'self' 'unsafe-inline';style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;font-src 'self' https://fonts.gstatic.com data:;img-src 'self' data: blob:;connect-src 'self';frame-ancestors 'none';object-src 'none';base-uri 'self';form-action 'self'"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
 
 [[headers]]
   for = "/*.html"
@@ -170,6 +181,20 @@
 # Portfolio, Taxonomy and Covenant answered 503 FEATURE_DISABLED on every
 # preview while working fine in production. A reviewer had no way to tell
 # that from a broken branch.
+# Staging: a branch deploy of `staging`, production-shaped (docs/ENVIRONMENTS.md).
+# Its own DATABASE_URL, UI_API_KEY and SENTRY_DSN are set on the branch
+# context in the site's environment variables, never here.
+[context.staging.environment]
+  NODE_ENV = "staging"
+  SENTRY_ENVIRONMENT = "staging"
+  LOG_LEVEL = "debug"
+  FINTECH_API_ENABLED = "true"
+  FF_COVENANT_ENGINE = "true"
+  FF_PORTFOLIO_AGGREGATION = "true"
+  FF_TAXONOMY_CHECKER = "true"
+  FF_CERTIFICATE_GENERATION = "false"
+  FF_INSURANCE_OUTPUT = "false"
+
 [context.deploy-preview.environment]
   NODE_ENV = "staging"
   SENTRY_ENVIRONMENT = "deploy-preview"

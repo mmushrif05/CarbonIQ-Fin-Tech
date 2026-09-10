@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Carbon Pricing & Financial Impact Route
  *

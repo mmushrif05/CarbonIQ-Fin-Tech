@@ -4,6 +4,18 @@ The record of every change to the contract (`docs/API-CONTRACT.md`).
 Additive changes ship at any time; a breaking change ships only in a new
 major version, announced here and on the wire first.
 
+## 2026-09-10 — E5: structure
+
+**Added**
+- Every response carries a `Content-Security-Policy` header (the same one
+  the static site carries); `X-Content-Type-Options` and `Referrer-Policy`
+  on the static site.
+
+**Changed**
+- No route, shape or parameter changed. The route files behind
+  `/v1/agent/*` and `/v1/pcaf/part-c/*` were split into modules; the
+  document at `/v1/openapi.json` is unchanged and the contract test holds it.
+
 ## 2026-09-10 — E4: contract and scale
 
 **Added**

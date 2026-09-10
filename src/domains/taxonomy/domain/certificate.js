@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — SLGFT Green Loan Certificate Service
  *

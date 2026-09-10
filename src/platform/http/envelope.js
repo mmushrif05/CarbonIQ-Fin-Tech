@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The response envelope (gap F2), opt-in, with the old shapes kept (F3).
  *

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — AI BOQ Material Extraction Endpoint
  *

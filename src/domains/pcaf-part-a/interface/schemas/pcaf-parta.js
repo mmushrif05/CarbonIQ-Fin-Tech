@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Joi validation for the PCAF Part A endpoints.
  *

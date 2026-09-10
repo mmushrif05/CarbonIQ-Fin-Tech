@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The document store over PostgreSQL — the implementation behind the seam.
  *
@@ -193,7 +194,7 @@ function decodeCursor(cursor) {
   }
 }
 
-async function page(collection, orgId, { limit = 50, cursor, where = {} } = {}) {
+async function page(collection, orgId, { limit = 50, cursor, where = {} } = /** @type {{limit?: any, cursor?: any, where?: any}} */ ({})) {
   const { table } = definition(collection);
   const size = Math.min(500, Math.max(1, Number(limit) || 50));
   const w = whereClause(collection, orgId, where);

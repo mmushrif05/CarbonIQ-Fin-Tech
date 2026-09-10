@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The clock a serverless request actually runs against.
  *
@@ -20,6 +21,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const config = require('../config');
 
@@ -71,9 +74,9 @@ class Deadline {
    */
   assertCanStart(what, minMs = MIN_USEFUL_MS) {
     if (this.canStart(minMs)) return;
-    const err = new Error(
+    const err = /** @type {AppError} */ (new Error(
       `Not enough time left to ${what}: ${Math.round(this.elapsed() / 1000)}s of the `
-      + `${Math.round(this.budgetMs / 1000)}s request budget is already spent.`);
+      + `${Math.round(this.budgetMs / 1000)}s request budget is already spent.`));
     err.statusCode = 504;
     err.code = 'DEADLINE_EXCEEDED';
     err.remedy = 'Paste the document text instead of uploading a PDF, or split it into smaller documents.';
@@ -93,32 +96,26 @@ class Deadline {
 }
 
 /**
- * A deadline for this request, taken from the platform where it can be.
+ * A deadline from what the platform says is left, or the configured budget.
  *
- * `new Deadline()` starts counting when the route handler runs — but the
- * platform's clock started at invocation, and everything before the handler is
- * already spent: a cold start of the bundle, Firebase initialising, and the
- * parse of an 80KB base64 PDF body. A deadline built here therefore believed
- * it had the full 26 seconds when several of them were gone, handed the SDK a
- * timeout longer than the time that actually remained, and was killed by the
- * platform before the SDK could throw something catchable.
+ * `new Deadline()` starts counting when it is built — but the platform's
+ * clock started at invocation, and everything before the handler is already
+ * spent: a cold start of the bundle, Firebase initialising, the parse of an
+ * 80KB base64 PDF body. A deadline built from the handler's own clock
+ * believed it had the full 26 seconds when several were gone, handed the
+ * SDK a timeout longer than the time that remained, and was killed by the
+ * platform before the SDK could throw something catchable. That is how a
+ * request ends with no body. Lambda's `getRemainingTimeInMillis()` is the
+ * authoritative answer; the HTTP layer reads it off the invocation and
+ * hands the figure here (`platform/http/deadline.js`), so this module knows
+ * nothing about a request.
  *
- * That is precisely how a request ends with no body and the browser is left to
- * guess. Lambda's own `getRemainingTimeInMillis()` is the authoritative
- * answer and is attached to the request by the Netlify adapter; the configured
- * budget is the fallback for running outside a function, where nothing is
- * about to be killed anyway.
+ * @param {number} [remainingMs] what the platform says is left
  */
-function forRequest(req) {
-  if (req && req.deadline) return req.deadline;
-
-  const ctx = req && req.lambdaContext;
-  if (ctx && typeof ctx.getRemainingTimeInMillis === 'function') {
-    const remaining = Number(ctx.getRemainingTimeInMillis());
-    if (Number.isFinite(remaining) && remaining > 0) return new Deadline(remaining);
-  }
-
+function fromRemaining(remainingMs) {
+  const remaining = Number(remainingMs);
+  if (Number.isFinite(remaining) && remaining > 0) return new Deadline(remaining);
   return new Deadline();
 }
 
-module.exports = { Deadline, forRequest, RESPONSE_MARGIN_MS, MIN_USEFUL_MS };
+module.exports = { Deadline, fromRemaining, RESPONSE_MARGIN_MS, MIN_USEFUL_MS };

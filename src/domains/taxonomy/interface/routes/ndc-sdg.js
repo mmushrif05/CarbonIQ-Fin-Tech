@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — NDC & SDG Alignment Endpoint
  *

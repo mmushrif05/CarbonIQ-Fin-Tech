@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * /v1/jobs — enqueue, list, read, and download what a job produced.
  */

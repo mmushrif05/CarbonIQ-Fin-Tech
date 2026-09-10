@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Where API keys live — one interface, two homes.
  *
@@ -53,7 +54,7 @@ function firebaseKeyStore(db) {
  * otherwise Firebase, which needs its database handle; otherwise null, and
  * the caller says so.
  */
-function keyStoreFor({ firebaseDb } = {}) {
+function keyStoreFor({ firebaseDb } = /** @type {{firebaseDb?: any}} */ ({})) {
   if (store.capability().mode === 'postgres') return postgresKeyStore();
   if (firebaseDb) return firebaseKeyStore(firebaseDb);
   return null;

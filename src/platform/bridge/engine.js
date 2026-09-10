@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Engine Bridge
  *
@@ -25,7 +26,7 @@ const { getProjectTenders, getProjectEntries } = require('./firebase');
  * Reads from the tender scenario stored by the core engine.
  *
  * @param {string} projectId
- * @returns {Object} { items: [...], totalBaseline, totalTarget, threshold80Pct }
+ * @returns {Promise<Object>} { items: [...], totalBaseline, totalTarget, threshold80Pct }
  */
 async function get80PctMaterials(projectId) {
   const tenders = await getProjectTenders(projectId);
@@ -72,7 +73,7 @@ async function get80PctMaterials(projectId) {
  * Get emission summary for a project.
  *
  * @param {string} projectId
- * @returns {Object} { totalBaseline_tCO2e, totalTarget_tCO2e, reductionPct, materialCount, ... }
+ * @returns {Promise<Object>} { totalBaseline_tCO2e, totalTarget_tCO2e, reductionPct, materialCount, ... }
  */
 async function getEmissionSummary(projectId) {
   const result = await get80PctMaterials(projectId);
@@ -99,7 +100,7 @@ async function getEmissionSummary(projectId) {
  * Get the material breakdown for a project.
  *
  * @param {string} projectId
- * @returns {Object[]} Array of { category, type, totalEmission, count, percentage }
+ * @returns {Promise<Object[]>} Array of { category, type, totalEmission, count, percentage }
  */
 async function getMaterialBreakdown(projectId) {
   const result = await get80PctMaterials(projectId);

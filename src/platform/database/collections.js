@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The collection registry — the one place that says which table a collection
  * lives in, which JSON fields are lifted into indexed columns, and what each
@@ -19,6 +20,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const COLLECTIONS = Object.freeze({
   settings:            { table: 'partc_settings',      keys: {}, dependsOn: [] },
@@ -65,7 +68,7 @@ const COLLECTIONS = Object.freeze({
 function definition(collection) {
   const def = COLLECTIONS[collection];
   if (!def) {
-    const err = new Error(`Collection "${collection}" is not registered in src/platform/database/collections.js.`);
+    const err = /** @type {AppError} */ (new Error(`Collection "${collection}" is not registered in src/platform/database/collections.js.`));
     err.statusCode = 500;
     err.code = 'UNKNOWN_COLLECTION';
     throw err;

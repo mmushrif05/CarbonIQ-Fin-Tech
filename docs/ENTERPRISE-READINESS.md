@@ -329,6 +329,36 @@ Closes E1–E3, E6, G1, G2, H1–H4, I3–I5.
 *Exit criterion: an import from one domain into another's internals fails the
 build.*
 
+> **Delivered** — `docs/FRONTEND.md`, `docs/ENVIRONMENTS.md`,
+> `docs/TYPECHECK-WORKLIST.md`. The domain modules and their boundaries had
+> landed with the layout (E1, E2, E4, E5 of the register); this phase closed
+> the rest. The nine source files over 500 lines are split along their seams
+> into sibling modules behind a barrel with the same path and the same
+> exports — `partc-report-standard.js` into facts, sections, model and two
+> renderers; `reports.js` by standard; the agent routes and schemas by
+> agent; the theme by palette, fonts, PDF writer and Word; the Part C
+> routes by runs and agents; the methodology by demonstrations and factors;
+> the pipeline ranking and the decision tiers into their own modules — and
+> `tests/structure.test.js` refuses a file over 500 lines. Type checking is
+> on by pragma: `// @ts-check` on every file under `src/platform`,
+> `src/shared`, the roots and the functions, and on every clean file
+> elsewhere — 190 of 269 — with the platform's errors fixed (a shared
+> `AppError` type, typed option objects, Promise return docs) and the 79
+> files still to join listed and held to the tree. The frontend has a build
+> (`npm run build:ui`, esbuild, `dist/ui` is what Netlify publishes) and
+> five browser journeys in Playwright, in CI, against the built output. One
+> Content Security Policy, applied by helmet and by `netlify.toml`, held to
+> each other by a test; the markdown library the shell loaded from a CDN is
+> vendored. A `staging` branch context, production-shaped; a CI `gate` job
+> over every check with the audit failing on high; Dependabot weekly. The AI
+> layer no longer reads a request — the HTTP layer hands it the platform's
+> remaining time. The exit criterion is a test: a file that reaches into
+> another domain is written, shown to fail the architecture check, and
+> removed. E3, E6, G1, H1, H3, H4, I3–I5 closed. G2 is carried by the JSDoc
+> types on the service signatures the check now covers; H2 — a component
+> model — is not built, and the inline handlers that keep `'unsafe-inline'`
+> on `script-src` are the next frontend step (`docs/FRONTEND.md`).
+
 ---
 
 ## 4. Target structure

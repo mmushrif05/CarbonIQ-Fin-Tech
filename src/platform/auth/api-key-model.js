@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — API Key Model
  *
@@ -19,6 +20,8 @@
 
 'use strict';
 
+/** @typedef {import('../../shared/types').AppError} AppError */
+
 const crypto = require('crypto');
 const { hashApiKey } = require('./api-key');
 const { normaliseScopes } = require('./scopes');
@@ -35,12 +38,12 @@ function parseExpiry(value) {
   if (value === undefined || value === null || value === '') return null;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) {
-    const err = new Error(`expiresAt "${value}" is not a date.`);
+    const err = /** @type {AppError} */ (new Error(`expiresAt "${value}" is not a date.`));
     err.code = 'BAD_EXPIRY';
     throw err;
   }
   if (d.getTime() <= Date.now()) {
-    const err = new Error(`expiresAt ${d.toISOString()} is already in the past.`);
+    const err = /** @type {AppError} */ (new Error(`expiresAt ${d.toISOString()} is already in the past.`));
     err.code = 'BAD_EXPIRY';
     throw err;
   }
@@ -112,7 +115,7 @@ async function setExpiry(db, hashedKey, expiresAt) {
  * and project list; give the old key a grace period and point it at the new
  * one, so a request on it after expiry says where to go.
  */
-async function rotateApiKey(db, hashedKey, { graceDays = 7, createdBy } = {}) {
+async function rotateApiKey(db, hashedKey, { graceDays = 7, createdBy } = /** @type {{graceDays?: any, createdBy?: any}} */ ({})) {
   const current = await getApiKeyRecord(db, hashedKey);
   if (!current) throw Object.assign(new Error(`No key ${hashedKey.slice(0, 16)}….`), { code: 'KEY_NOT_FOUND' });
   if (!current.active) throw Object.assign(new Error('A revoked key cannot be rotated; issue a new one.'), { code: 'KEY_REVOKED' });

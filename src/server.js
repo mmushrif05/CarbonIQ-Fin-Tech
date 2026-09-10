@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Express Server
  *
@@ -13,7 +14,7 @@
  */
 
 const express = require('express');
-const helmet = require('helmet');
+const helmet = /** @type {any} */ (require('helmet'));
 const cors = require('cors');
 const morgan = require('morgan');
 
@@ -26,20 +27,26 @@ const audit = require('./platform/observability/audit');
 const logger = require('./platform/observability/logger');
 const errors = require('./platform/observability/errors');
 const envelope = require('./platform/http/envelope');
+const deadlineMiddleware = require('./platform/http/deadline');
+const csp = require('./platform/http/csp');
 const jobQueue = require('./platform/jobs/queue');
 /* The job handlers: the engines, registered on the platform's queue. */
 require('./jobs');
 const v1Router = require('./platform/http/router');
 
-const app = express();
+/* Express ships no types of its own; the app is untyped here, typed by the routes' Joi schemas at the boundary. */
+const app = /** @type {any} */ (express());
 
 // ---------------------------------------------------------------------------
 // Global Middleware
 // ---------------------------------------------------------------------------
 
 // Security headers (OWASP baseline)
+/* The Content Security Policy is one string (platform/http/csp.js), applied
+   here to what the function answers and, from netlify.toml, to what the CDN
+   serves; a test holds the two to each other. */
 app.use(helmet({
-  contentSecurityPolicy: false, // Managed by Netlify headers in production
+  contentSecurityPolicy: { useDefaults: false, directives: csp.helmetDirectives() },
   crossOriginEmbedderPolicy: false
 }));
 
@@ -61,12 +68,17 @@ app.use(audit);
 // The response envelope, where the caller asks for it (docs/API-CONTRACT.md)
 app.use(envelope);
 
+// The one clock every call in a request shares, read off the invocation
+app.use(deadlineMiddleware);
+
 // ---------------------------------------------------------------------------
 // Static UI — serves the ui/ directory for local development.
 // In production (Netlify), the publish directory handles this.
 // ---------------------------------------------------------------------------
 
-app.use(express.static(path.join(__dirname, '..', 'ui')));
+/* The source tree for local work; the built output (`npm run build:ui`) when
+   UI_DIR names it, which is what the browser tests drive. */
+app.use(express.static(path.resolve(__dirname, '..', config.runtime.uiDir)));
 
 // ---------------------------------------------------------------------------
 // Routes
@@ -195,7 +207,7 @@ app.use(errorHandler);
    uncaught exception — it is no longer in a state anyone can vouch for — but
    only after the report has been sent. */
 if (!config.runtime.isTest) {
-  process.on('unhandledRejection', reason => { errors.capture(reason, { source: 'unhandledRejection' }); });
+  process.on('unhandledRejection', reason => { errors.capture(/** @type {any} */ (reason), { source: 'unhandledRejection' }); });
   process.on('uncaughtException', err => {
     errors.capture(err, { source: 'uncaughtException' }).finally(() => process.exit(1));
   });

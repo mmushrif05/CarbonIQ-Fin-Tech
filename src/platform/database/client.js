@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — the PostgreSQL connection, and nothing else.
  *
@@ -29,6 +30,8 @@
 
 'use strict';
 
+/** @typedef {import('../../shared/types').AppError} AppError */
+
 const { AsyncLocalStorage } = require('async_hooks');
 const logger = require('../observability/logger');
 const log = logger.for('platform/database/client');
@@ -49,7 +52,7 @@ function isConfigured() {
 function schemaName() {
   const s = String(config.runtime.databaseSchema || 'public').trim();
   if (!/^[a-z_][a-z0-9_]{0,62}$/.test(s)) {
-    const err = new Error(`DATABASE_SCHEMA "${s}" is not a plain lower-case identifier.`);
+    const err = /** @type {AppError} */ (new Error(`DATABASE_SCHEMA "${s}" is not a plain lower-case identifier.`));
     err.code = 'DATABASE_SCHEMA_INVALID';
     throw err;
   }
@@ -78,7 +81,7 @@ function sslConfig() {
 function pool() {
   if (_pool) return _pool;
   if (!isConfigured()) {
-    const err = new Error('PostgreSQL is not configured: DATABASE_URL is unset or the pg driver is missing.');
+    const err = /** @type {AppError} */ (new Error('PostgreSQL is not configured: DATABASE_URL is unset or the pg driver is missing.'));
     err.statusCode = 503;
     err.code = 'DATABASE_NOT_CONFIGURED';
     throw err;

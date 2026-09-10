@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * One async handler for every route.
  *

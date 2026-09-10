@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Error reporting (gap D3): a 500 in production raises an alert naming the
  * request id, the organisation and the failing module.
@@ -26,6 +27,8 @@
  */
 
 'use strict';
+
+/** @typedef {import('../../shared/types').AppError} AppError */
 
 const crypto = require('crypto');
 const path = require('path');
@@ -133,7 +136,7 @@ function buildEvent(err, ctx) {
 /** Default transport: POST the envelope to the DSN's ingest endpoint. */
 async function sendEnvelope(dsn, envelope) {
   if (typeof fetch !== 'function') {
-    const e = new Error('fetch is not available in this runtime'); e.code = 'NO_FETCH'; throw e;
+    const e = /** @type {AppError} */ (new Error('fetch is not available in this runtime')); e.code = 'NO_FETCH'; throw e;
   }
   const res = await fetch(endpoint(dsn), {
     method: 'POST',
@@ -145,7 +148,7 @@ async function sendEnvelope(dsn, envelope) {
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) {
-    const e = new Error(`the error sink answered ${res.status}`); e.code = 'REPORT_REJECTED'; e.statusCode = res.status; throw e;
+    const e = /** @type {AppError} */ (new Error(`the error sink answered ${res.status}`)); e.code = 'REPORT_REJECTED'; e.statusCode = res.status; throw e;
   }
 }
 

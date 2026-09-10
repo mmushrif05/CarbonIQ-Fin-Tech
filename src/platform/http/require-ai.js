@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — the gate in front of every agent endpoint
  *

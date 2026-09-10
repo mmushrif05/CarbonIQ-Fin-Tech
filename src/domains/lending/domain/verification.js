@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Third-Party Verification Service
  *

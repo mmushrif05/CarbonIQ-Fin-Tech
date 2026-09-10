@@ -141,7 +141,9 @@ describe('The request params that actually go to the model', () => {
 });
 
 describe('The clock is the platform\'s, not one that starts late', () => {
-  const { forRequest, Deadline, RESPONSE_MARGIN_MS } = require('../src/platform/ai/deadline');
+  const { Deadline, RESPONSE_MARGIN_MS } = require('../src/platform/ai/deadline');
+  /* The request is read in the HTTP layer; the AI layer only takes the figure. */
+  const { forRequest } = require('../src/platform/http/deadline');
   const config = require('../src/platform/config');
 
   test('Lambda\'s remaining time wins over the configured budget', () => {
