@@ -69,6 +69,33 @@ findings the tree carried; nine moderate remain in transitive
 dependencies and are tracked by Dependabot's weekly pull requests
 (`.github/dependabot.yml`).
 
+## Two things the production runtime will not do
+
+Both were found on the live site, both cost a working day, and neither is
+visible from the code.
+
+**The function environment may not exceed 4 KB.** Netlify Functions are AWS
+Lambdas, and Lambda refuses to create a function whose environment — names,
+values and the platform's own injected variables together — is larger than
+4,096 bytes. The deploy fails at function creation and the site carries on
+serving the previous build, so the symptom is that a merged change does not
+appear. `config.validate()` now measures it and `/health`
+`configured.problems` names the largest variables before a deploy hits the
+ceiling; `docs/DATA-LAYER.md` carries the full account and what to move.
+
+**Netlify Blobs does not resolve in this function runtime, so do not select
+it.** `STORAGE_BACKEND=blobs` is a legitimate setting and the adapter is
+sound, but on this site it does not reach a store. The evidence: a healthy
+deploy with all three functions created, `STORAGE_BACKEND=blobs` set on the
+production context, and every write still refused — `blob-store.js`
+`isAvailable()` resolving false, which is what it is built to do rather than
+assume a store it cannot reach. The mechanism was not established; what is
+established is that the setting does not produce a working store here.
+
+That is a second reason for the rule `auto` already follows: **the store is
+PostgreSQL, provisioned by the operator, and `DATABASE_URL` is what a
+deployment needs.** Blobs is not a shortcut around provisioning one.
+
 ## What each context answers on /health
 
 `build.context` says which context is running; `build.branch` which

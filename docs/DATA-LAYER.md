@@ -103,6 +103,38 @@ records stay in Firebase, exactly where they were, and nothing moves.
 migration was forgotten" are three different failures and they no longer look
 the same from a browser.
 
+### The environment has a ceiling, and it is 4 KB
+
+Netlify Functions are AWS Lambdas, and Lambda refuses to create a function
+whose environment exceeds **4,096 bytes** in total — every variable name,
+every value, and the platform's own injected variables counted together.
+There is no partial application and no warning: the deploy fails at function
+creation, the message names a size limit and not a variable, and the site
+carries on serving the last build that worked. The symptom is therefore *the
+change did not appear*, which reads as a caching problem and is not one.
+
+This deployment hit it. `FIREBASE_SERVICE_ACCOUNT` — a base64 service account
+of roughly 2,400 to 3,000 bytes — was using most of the budget on a site that
+holds nothing in Firebase, and the deploy that added a 32-character bootstrap
+token was the one that failed. Four merges went undeployed before the cause
+was found, and nothing in the repository mentioned the limit.
+
+Two things follow for a PostgreSQL deployment:
+
+- `DATABASE_URL` is about **120 bytes** and buys the whole store. It is the
+  cheapest thing in the budget and the only one that has to be there.
+- `FIREBASE_SERVICE_ACCOUNT` is read only where Firebase is the store. On a
+  deployment with `DATABASE_URL` set, scope it to the **Builds** context alone
+  or remove it. Netlify scopes a variable per context and per stage, and a
+  variable not scoped to Functions is not in the function's environment.
+
+`config.validate()` measures the environment on a serverless runtime and
+raises a problem once three quarters of the ceiling is spent, naming the
+largest variables and their byte counts, so `/health` `configured.problems`
+says which variable to move before a deploy fails rather than after. It
+reports **names and byte counts only** — a value in that block would be a
+published credential.
+
 ## The schema
 
 One table per collection, one spine: `(org_id, id)` primary key, the record
@@ -228,8 +260,11 @@ role that owns it, and TLS.
 3. **Give the site the URL.** In the Netlify site's environment variables set
    `DATABASE_URL` on the context that should use it (and `DATABASE_SSL` if
    step 1 needed it). Leave `STORAGE_BACKEND` unset, or set it to `postgres`
-   to refuse every fallback. Redeploy — an environment change does not
-   restart a running function.
+   to refuse every fallback. At the same time scope `FIREBASE_SERVICE_ACCOUNT`
+   to **Builds** only or remove it — this deployment now holds nothing in
+   Firebase, and on a serverless runtime that one variable is most of the 4 KB
+   the whole environment is allowed (above). Redeploy — an environment change
+   does not restart a running function.
 4. **Confirm from the site.** `GET /health` → `storage` must read
    `requested: auto|postgres`, `chosen: postgres`, `reachable: true`,
    `schema: { pending: 0, drifted: 0 }`, and `configured.problems` must be

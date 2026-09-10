@@ -188,7 +188,7 @@ flowchart TD
 |     `src/platform/ai/` | 5 | 913 |
 |     `src/platform/auth/` | 11 | 1,832 |
 |     `src/platform/bridge/` | 2 | 367 |
-|     `src/platform/config/` | 3 | 384 |
+|     `src/platform/config/` | 3 | 456 |
 |     `src/platform/database/` | 10 | 1,732 |
 |       `src/platform/database/adapters/` | 6 | 436 |
 |     `src/platform/http/` | 21 | 2,433 |
@@ -197,7 +197,7 @@ flowchart TD
 |     `src/platform/reporting/` | 3 | 291 |
 |   `src/shared/` | 10 | 1,762 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **295** | **49,870** |
+| **total** | **295** | **49,942** |
 
 <!-- END MODULE-MAP -->
 
