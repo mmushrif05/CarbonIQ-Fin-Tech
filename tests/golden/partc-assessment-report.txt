@@ -1,0 +1,284 @@
+COVER: Insurance-Associated Emissions Assessment
+  subtitle: Fisheries Complex — CAR policy
+  insurer: Demo Insurance PLC
+  reporting year: 2026
+  standard: PCAF Global GHG Accounting and Reporting Standard — Part C (insurance-associated emissions)
+  prepared by: Prepared by Datum Solutions (Private) Limited
+
+SECTION 2 [coverage] Scope and coverage
+    callout [What this report covers]: This report describes one policy. Portfolio coverage across the book is stated in the annual disclosure for the reporting year.
+    h2: Aggregated emissions by line of business
+    table [7 cols] head: Line of business | No. | Premium LKR | Construction tCO2e | Use stage tCO2e | Attributed IAE tCO2e | Data quality
+      row: CAR | 1 | 24,448.16 | 15.929 | 0.000 | 0.0599 | 3
+    caption: Construction and use stage are separate columns because they are separate lines. No row in this table sums them.
+    h2: Portfolio coverage
+    figure: Share of the inventory assessed = 100.0%
+    body: The inventory in this report is a single policy — CAR CAR-2026-011 on Fisheries Complex — and it is assessed in full. That is not a statement about the share of the insurer's book that has been measured; the annual disclosure reports that.
+    h2: Exclusions, and why
+    table [2 cols] head: Excluded | Justification
+      row: Use stage B1, B4 and B7 | Non-applicable. CAR is construction-only cover, so the policy gate sets the use stage to zero years: these modules are zero by scope rule, not by omission.
+      row: A1-A3 embodied product emissions | Outside the scope PCAF Part C sets for insurance-associated emissions. Reported for lending under Part A by a separate service, never merged with this figure.
+      row: Beyond-PCAF modules B2, B5 and B8 | Voluntary whole-life reporting under RICS and EN 15978. Excluded from every PCAF total; available only as a clearly labelled voluntary annex.
+      row: A5.4 worker transport | Excluded per the scope agreed for this release; disclosed here rather than omitted silently.
+      row: B4.1 component replacement | Deferred. B4 covers refrigerant re-release from HVAC replacement (B4.2) only. Over a typical cover period durable components are replaced zero times, so the omission is small — but it is an omission and is stated.
+    h2: The scope applied
+    table [3 cols] head: Tier | Modules | How it is reported
+      row: Mandatory | A4 + A5 | A4 + A5 (construction) — the PCAF figure
+      row: Optional | B1 + B4 + B7 | B1 + B4 + B7 (use stage) — separate line, policy gated
+      row: Beyond PCAF | B2 + B5 + B8 | B2 + B5 + B8 — voluntary whole-life annex, never in the PCAF figure
+    caption: PCAF Part C v2 §5.3, "Emission scopes covered" (p.51).
+
+SECTION 3 [gases] Gases and units
+    body: The seven greenhouse gases covered by the Kyoto Protocol are accounted for wherever they arise in the value chain of an insured project.
+    table [3 cols] head: Gas | Formula | Where it arises in this value chain
+      row: Carbon dioxide | CO2 | Fuel combustion in freight and site plant; grid electricity; cement and steel production upstream.
+      row: Methane | CH4 | Fuel supply chains and the decomposition of construction waste sent to landfill.
+      row: Nitrous oxide | N2O | Combustion in freight and site plant; wastewater treatment.
+      row: Hydrofluorocarbons | HFCs | Refrigerant leakage from installed cooling plant, and release at replacement (B1 and B4).
+      row: Perfluorocarbons | PFCs | Primary aluminium production upstream of the bill of quantities.
+      row: Sulphur hexafluoride | SF6 | Electrical switchgear on larger sites.
+      row: Nitrogen trifluoride | NF3 | Not expected in a construction value chain; accounted for where it arises.
+    h2: Global warming potential
+    table [2 cols] head: Basis | Applied
+      row: Time horizon | 100-year
+      row: Assessment report | IPCC Fifth Assessment Report (AR5)
+      row: Applied to | Every gas in the table above, converted to carbon dioxide equivalent.
+    body: All gases are converted to carbon dioxide equivalent on a 100-year time horizon using IPCC AR5 global warming potentials.
+    callout [Assessment report used]: Where a source quotes an earlier assessment report the difference is material and is stated rather than reconciled silently: R-410A carries a 100-year GWP of 1,924 under AR5 and 2,088 under AR4. This inventory uses AR5 throughout.
+    h2: Units
+    body: Reported figures are in tonnes of carbon dioxide equivalent (tCO2e). Working tables are in kilogrammes (kgCO2e) because the engine computes in kilogrammes and rounding to tonnes before aggregation would move the total. Intensity is in tCO2e per million units of currency, and per m2 of insured floor area. Every figure carries its unit in its own column rather than glued to the number.
+
+SECTION 4 [absolute] Absolute emissions
+    callout [Whose scope this is]: Every figure in this disclosure is the re/insurer's own scope 3: that is what an insurance-associated emission is. The scope 1, 2 and 3 split below is the insured party's, disclosed because PCAF Part C requires the insured's scope 1 and 2 combined as the headline figure with the insured's scope 3 reported separately. Naming the insured's scope 1 and 2 moves nothing into the re/insurer's scope 1 or 2.
+    h2: The reported figures
+    figure: Construction (A4 + A5) — the PCAF figure = 15.929 tCO2e
+    callout [Use stage]: CAR is construction-only cover. The policy gate sets use_stage_years = 0, so B1, B4 and B7 are zero by scope rule and not by omission. A client-entered cover period applies within the gate and can never override it.
+    h2: The insured's scope 1 and 2, and its scope 3
+    table [5 cols] head: Line | Insured scope | Stage | kgCO2e | tCO2e
+      row: Construction (A4 + A5) | Scope 1 & 2 | A5.2 | 14,672 | 14.672
+      row: Construction (A4 + A5) | Scope 3 | A4 | 418.19 | 0.418
+      row: Construction (A4 + A5) | Scope 3 | A5.1 | 809.76 | 0.810
+      row: Construction (A4 + A5) | Scope 3 | A5.3 | 28.64 | 0.029
+    table [4 cols] head: Reported | Insured scope 1 and 2 (combined) tCO2e | Insured scope 3 tCO2e | Total tCO2e
+      row: Construction — the PCAF figure | 14.672 | 1.257 | 15.929
+    h2: Financed emissions
+    body: This inventory contains insurance-associated emissions only. Financed emissions — the emissions attributed through lending and investment under Part A of the same standard — are a different attribution against a different denominator and are reported separately. The two are never added together, and no figure in this document contains any part of the other.
+    h2: Per policy
+    table [7 cols] head: Policy | Line | Premium LKR | Attribution factor | Project emissions kgCO2e | Attributed tCO2e | DQ
+      row: CAR-2026-011 | CAR | 24,448.16 | 0.003762 | 15,928.59 | 0.0599 | 3
+    h2: What drives the figure
+    table [4 cols] head: Module | kgCO2e | Share | Label
+      row: A5.2 | 14,672 | 92.1% | A5.2 Construction site energy
+      row: A5.1 | 809.76 | 5.1% | A5.1 Pre-construction demolition
+      row: A4 | 418.19 | 2.6% | A4 Transport to site
+      row: A5.3 | 28.64 | 0.2% | A5.3 Waste and waste management
+
+SECTION 5 [methodology] Methodology
+    h2: Attribution
+    callout [Equation]: insurance-associated emissions = attribution factor x project emissions,  where attribution factor = premium / project cost
+    body: Project-specific cover, so the denominator is the insured project's own cost. 24,448.16 / 6,499,442 LKR = 0.0038. Attribution is applied to this project alone; premiums and emissions are never pooled before attribution.
+    h2: The policy gate
+    body: CAR is construction-only cover. The policy gate sets use_stage_years = 0, so B1, B4 and B7 are zero by scope rule and not by omission. A client-entered cover period applies within the gate and can never override it.
+    caption: PCAF Part C v2 §5.3, "Emission scopes covered" (p.51).
+    h2: Every equation this run executed
+    table [3 cols] head: Module | Equation | Result kgCO2e
+      row: attribution | premium / projectCost | 0
+      row: gate | use_stage_years = 0 for CAR/EAR (construction cover only) | 0
+      row: A4 | A4_total = Σ A4_material | 418.19
+      row: A4 | A4 = mass_t × (road_km×EF_road + sea_km×EF_sea + rail_km×EF_rail + air_km×EF_air) | 268.56
+      row: A4 | mass_t = quantity × mass_factor / 1000 | 44.76
+      row: A5 | A5 = A5.1 + A5.2 + A5.3 | 15,510.4
+      row: A5.1 | A5.1 = Σ (mass_t × demolition_km × EF_road) | 809.76
+      row: A5.1 | A5.1 = mass_t × demolition_km × EF_road | 345.6
+      row: A5.2 | A5.2 = ((prev_fuel_L × diesel_EF + prev_elec_kWh × grid_EF) / prev_area_m2) × GIFA | 14,672
+      row: A5.3 | A5.3 = Σ (boq_mass_t × waste_rate × waste_km × EF_road) | 28.64
+      row: A5.3 | A5.3 = boq_mass_t × waste_rate × waste_km × EF_road | 21.48
+      row: B1 | B1 = 0 (no use stage — policy gated) | 0
+      row: B4 | B4 = 0 (no use stage — policy gated) | 0
+      row: B7 | B7 = 0 (no use stage — policy gated) | 0
+    caption: Extracted from the execution that produced the figures above, not transcribed beside it. The factors each equation consulted are listed in Annex A.
+
+SECTION 6 [dataQuality] Data quality
+    callout [The scale]: PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest. A lower score is better.
+    h2: The score, and the option it comes from
+    figure: Data quality score = 3 (Option 2b)
+    body: PCAF assigns one score per project and decides it by which option was used to estimate the emissions. It is not an average across inputs, modules or lifecycle stages.
+    h2: The disclosed weighted score
+    figure: Premium-weighted data quality score = 3.00 on the 1-5 scale
+    body: This report covers one policy, so the premium-weighted score of Box 6-3 reduces to that policy's own score. Across a book the disclosed score is sum(premium x score) / sum(premium), and the annual disclosure reports it on that basis.
+    h2: Scope 3 reported separately from scopes 1 and 2
+    table [3 cols] head: Insured scope | Option used | Data quality score
+      row: Scope 1 and 2 (combined) | Option 2a | 2
+      row: Scope 3 | Option 2b | 3
+    caption: Chapter 6, p.106 requires the score for scope 3 to be reported separately from the score for scopes 1 and 2. The two rest on different data: site energy on energy consumption, the rest on declared quantities.
+    h2: Optional lifetime (use stage) emissions
+    callout [Not scored]: Not applicable to this policy type (scope rule) — construction-only cover carries no use stage.
+    h2: Table 5.3-2 — how the score is assigned
+    table [3 cols] head: Option | Score | Data used to estimate the emissions
+      row: 1a | 1 | Reported emissions — verified (scope 1); market-based verified (scope 2)
+      row: 1b | 2 | Reported emissions — unverified; or location-based reported
+      row: 2a | 2 | Energy consumption × emission factor (intensity per MWh)
+      row: 2b  < | 3 | Declared construction quantities of the project × emission factor (average sector intensity per unit of quantity)
+      row: 3a | 4 | Total project cost × emission factor (construction average intensity per revenue)
+      row: 3b | 5 | Total project cost × the customer's own emission intensity
+    caption: PCAF Part C (2nd ed., December 2025), Table 5.3-2, p.58.  The row marked < is the one this report used.
+    h2: Internal transparency aid — not a PCAF data quality score
+    callout [Read this first]: The table below is not a PCAF data quality score and must not be quoted as one. It records how strong the evidence behind each input is, so effort can be aimed at what is weakest. It is expressed in words, is never averaged, and never enters the score above.
+    table [6 cols] head: Stage | Input | Insured scope | Basis actually used | Evidence | Source
+      row: A4 | Material quantities | Scope 3 | Bill of quantities — measured quantities for the project | Strong | Client BOQ
+      row: A4 | Transport factors and haul distances | Scope 3 | Published freight factors applied over client-stated haul distances | Moderate | DEFRA-aligned freight factors
+      row: A5.1 | Demolition mass and haul | Scope 3 | Estimated demolition mass over a benchmark haul distance | Weak | Project assumption with benchmark distance
+      row: A5.2 | Site energy | Scope 1 & 2 | Contractor fuel and electricity from a comparable previous project, normalised and scaled by floor area | Strong | Client site records
+      row: A5.3 | Waste rates | Scope 3 | Recommended waste rates applied to BOQ quantities | Moderate | RICS WLCA 2nd ed, Table 18
+      row: B1 | Refrigerant charge | Scope 1 & 2 | Not evaluated — the scope rule closes the use stage for construction-only cover | not evaluated | PCAF Part C v2 §5.3 policy gate
+      row: B1 | Leak rate and GWP | Scope 1 & 2 | Not evaluated — the scope rule closes the use stage for construction-only cover | not evaluated | PCAF Part C v2 §5.3 policy gate
+      row: B4 | Service lives | Scope 1 & 2 | Not evaluated — the scope rule closes the use stage for construction-only cover | not evaluated | PCAF Part C v2 §5.3 policy gate
+      row: B7 | Water volume | Scope 3 | Not evaluated — the scope rule closes the use stage for construction-only cover | not evaluated | PCAF Part C v2 §5.3 policy gate
+      row: B7 | Water emission factors | Scope 3 | Not evaluated — the scope rule closes the use stage for construction-only cover | not evaluated | PCAF Part C v2 §5.3 policy gate
+    h2: Generated data-quality statement
+    callout: Calculated in conformance with the PCAF Global GHG Accounting and Reporting Standard — Part C (insurance-associated emissions) (2nd ed., December 2025). Construction emissions (A4+A5, scope 1 and 2 combined with scope 3 reported separately) = 15.929 tCO2e, estimated using Option 2b (Table 5.3-2), data quality score 3 on a scale where 1 is the highest quality and 5 the lowest. Optional lifetime (use stage) emissions are not applicable to this policy type (scope rule). Limitations disclosed: demolition mass estimated against a benchmark haul distance; Global-tier transport and grid factors.
+
+SECTION 7 [recalculation] Recalculation and significance threshold
+    table [2 cols] head: Item | Stated
+      row: Inventory base year | 2025
+      row: Significance threshold — triggers a base-year recalculation | 5% cumulative change in base-year emissions
+      row: Restatement threshold — makes a new version of a locked assessment a restatement | 5% movement in the construction figure
+    h2: What triggers a recalculation of base-year emissions
+    bullet: Structural change to the book — an acquisition, disposal or merger that moves policies into or out of the inventory.
+    bullet: A change of calculation methodology, or of the emission factors relied on, that materially changes reported emissions.
+    bullet: A change in the boundary of what is measured — a line of business, module or policy type entering or leaving the inventory.
+    bullet: Discovery of a material error, or of several errors that are material in aggregate.
+    bullet: A bill of quantities revision that moves a locked assessment by at least the restatement threshold.
+    caption: Triggers follow the GHG Protocol Corporate Value Chain (Scope 3) Standard, phrased for an insurance book.
+
+SECTION 8 [intensity] Emission intensity
+    body: Economic emission intensity, reported per million LKR of premium and per million LKR of insured project cost. Premium is what the re/insurer earns; project cost is what it stands behind. A book can move sharply on one measure while barely moving on the other, so both are given.
+    table [3 cols] head: Measure | Value | Unit
+      row: Construction emissions per million of premium | 651.54 | tCO2e / LKRM premium
+      row: Attributed emissions per million of premium | 2.45 | tCO2e / LKRM premium
+      row: Construction emissions per million of insured project cost | 2.45 | tCO2e / LKRM cost
+      row: Construction emissions per m2 of insured floor area | 15.93 | kgCO2e / m2
+    table [2 cols] head: Denominator | Value
+      row: Premium (LKR) | 24,448.16
+      row: Insured project cost (LKR) | 6,499,442
+      row: Insured floor area (m2) | 1,000
+    caption: Intensity is reported for the construction line. The use-stage line is never added into it.
+
+SECTION 9 [limitations] Limitations and assumptions
+    body: Recorded by the calculation engine at the time each figure was produced, not written afterwards. A limitation that recurs across projects is listed once with the count.
+    table [3 cols] head: Severity | Limitation | Module
+      row: material | Client-derived site energy of 14.67 kgCO2e/m² is 63% below the RICS default of 40 kgCO2e/m². Common causes of an understated figure: plant hired with fuel excluded from the log, or a fuel log covering only part of the programme. Not challenged in MVP — verify before relying on this disclosure. | —
+      row: material | A5.2 accounts for 92.1% of the construction figure. The disclosure rests almost entirely on this one input — verify it before relying on the result. | —
+      row: notable | Site energy derived from a previous project (1000 m², 5000 L fuel, 2400 kWh electricity) normalised to 14.67 kgCO2e/m² and scaled to this project. | —
+    h2: Data gaps and the research priority
+    table [3 cols] head: Factor | Gap | Tier
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Regional
+      row: — | — | Local
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Local
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Global
+      row: — | — | Local
+      row: — | — | Global
+      row: — | — | Global
+
+SECTION 10 [conformance] Conformance statement
+    callout [Statement]: Calculated in conformance with the PCAF Global GHG Accounting and Reporting Standard — Part C (insurance-associated emissions) (2nd ed., December 2025). Construction emissions (A4+A5, scope 1 and 2 combined with scope 3 reported separately) = 15.929 tCO2e, estimated using Option 2b (Table 5.3-2), data quality score 3 on a scale where 1 is the highest quality and 5 the lowest. Optional lifetime (use stage) emissions are not applicable to this policy type (scope rule). Limitations disclosed: demolition mass estimated against a benchmark haul distance; Global-tier transport and grid factors.
+    body: Conformance is a statement by the preparer about the method applied. It is not an endorsement, approval or certification by PCAF, which does not approve or certify software or disclosures. No part of this document claims otherwise.
+
+ANNEX A [annexFactors] Factor register
+    body: Every emission factor the reported figures rest on, with its value, unit, data-quality tier and named source. Local means a Sri Lankan value, Regional a South Asian or comparable one, Global an international default.
+    body: Factor set: 12 tables, checksum f2721990511637d1, SHA-256 over the canonical form. Provisional pending a released regional value: a5-defaults, b1-b4-defaults, beyond-pcaf-defaults, densities, transport-ef, water-ef. A provisional row carries the gap it is standing in for, and the row shows it.
+    table [6 cols] head: Table | Version | Effective from | Status | Rows | Checksum
+      row: a5-defaults | 1.0.0 | <date> | provisional | 5 | d4c2aa83670b1047
+      row: b1-b4-defaults | 1.0.0 | <date> | provisional | 5 | 389e078b1acc8d50
+      row: beyond-pcaf-defaults | 1.0.0 | <date> | provisional | 4 | 0e61c0856ab5fff7
+      row: densities | 1.0.0 | <date> | provisional | 18 | dae7b93fa6920dd1
+      row: mass-factors | 1.0.0 | <date> | released | 8 | 60812c90804f45af
+      row: refrigerant-gwp | 1.0.0 | <date> | released | 9 | 086931ce30ae4e05
+      row: refrigerant-leak | 1.0.0 | <date> | released | 8 | b98ea0ed0fa4798b
+      row: service-lives | 1.0.0 | <date> | released | 12 | 11327d668cb1d7c8
+      row: transport-ef | 1.0.0 | <date> | provisional | 4 | 5d411c20ff946b32
+      row: vehicle-ef | 1.0.0 | <date> | released | 4 | 4ec922d486a4d811
+      row: waste-rates-rics-t18 | 1.0.0 | <date> | released | 28 | 4d2529a9ce2e0432
+      row: water-ef | 1.0.0 | <date> | provisional | 4 | 5c877213d0160948
+    table [5 cols] head: Factor | Value | Unit | Tier | Source
+      row: a5-defaults.dieselEF | 2.68 | kgCO2e/L | Global | DEFRA-aligned diesel combustion factor
+      row: a5-defaults.gridEF | 0.53 | kgCO2e/kWh | Global | Sri Lanka grid placeholder
+      row: densities.brickwork | 1,900 | kg/m3 | Local | Std engineering refs (1600-2000 range)
+      row: densities.concrete_normal | 2,400 | kg/m3 | Regional | Local batching; std engineering refs
+      row: densities.rubble_masonry | 2,300 | kg/m3 | Local | Std engineering refs (2300-2400 range)
+      row: densities.timber | 600 | kg/m3 | Local | Std engineering refs (300-900 range, ~600)
+      row: explicit.Brick-paved floor (demolished) | 100 | kg/unit | Global | Explicit mass factor supplied with the material
+      row: explicit.Glazed tiles (demolished) | 20 | kg/unit | Global | Explicit mass factor supplied with the material
+      row: input.demolitionTransport_km | 100 | km | Local | Client-supplied demolition transport distance
+      row: input.wasteDisposal_km | 40 | km | Local | Client-supplied waste disposal distance
+      row: mass-factors.aluminium_sheet | 12 | kg/m2 | Global | Std engineering refs (~10-25 kg/m2)
+      row: mass-factors.ceramic_tile | 22 | kg/m2 | Global | Std engineering refs (~20-25 kg/m2 at 10mm)
+      row: mass-factors.ms_grill | 15 | kg/m2 | Global | Typical mild-steel grill fabrication weight
+      row: mass-factors.pvc_110mm | 2.5 | kg/m | Global | Std engineering refs
+      row: mass-factors.pvc_63mm | 1.2 | kg/m | Global | Std engineering refs
+      row: mass-factors.steel_mt | 1,000 | kg/MT | Global | Unit conversion (metric tonne to kg)
+      row: mass-factors.timber_door | 18 | kg/m2 | Global | Std engineering refs (~15-20 kg/m2)
+      row: transport-ef.road | 0.24 | kgCO2e/t-km | Global | DEFRA-aligned freight factor (interim; replace with Sri Lanka road factor after motor research)
+      row: transport-ef.sea | 0.02 | kgCO2e/t-km | Global | DEFRA-aligned sea/container freight
+      row: waste-rates-rics-t18.Aluminium extruded profiles/frames | 0.01 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.Concrete in situ | 0.05 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.Floor finish (tile) | 0.06 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.PVC pipework (not in T18) | 0.05 | fraction | Global | RICS WLCA 2nd ed - default 5% where product not listed in Table 18
+      row: waste-rates-rics-t18.Steel frame (beams, columns, braces) | 0.01 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.Steel reinforcement | 0.05 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.Stone (cladding) | 0.05 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+      row: waste-rates-rics-t18.Timber frames (beams, columns, joists, braces) | 0.02 | fraction | Global | RICS Whole Life Carbon Assessment 2nd ed, Table 18 (BRE Global PCR / SmartWaste)
+
+ANNEX B [annexChecklist] PCAF disclosure checklist — completed
+    checklist
+
+CHECKLIST: 31 items, 29 answered Yes
+  COV-1: Yes
+  COV-2: Yes
+  COV-3: Yes
+  COV-4: Yes
+  GAS-1: Yes
+  GAS-2: Yes
+  GAS-3: Yes
+  ABS-1: Yes
+  ABS-2: Yes
+  ABS-3: Yes
+  ABS-4: Not applicable
+  ABS-5: Yes
+  MET-1: Yes
+  MET-2: Yes
+  MET-3: Yes
+  MET-4: Yes
+  DQ-1: Yes
+  DQ-2: Yes
+  DQ-3: Yes
+  DQ-4: Yes
+  DQ-5: Yes
+  REC-1: Yes
+  REC-2: Yes
+  REC-3: Yes
+  INT-1: Yes
+  LIM-1: Yes
+  CNF-1: Yes
+  CNF-2: Yes
+  ANX-1: Yes
+  ANX-2: No
+  ANX-3: Yes

@@ -1,6 +1,10 @@
 {
   "table": "densities",
   "description": "Material densities for volumetric BOQ units (kg/m3)",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "provisional",
+  "provisionalRows": ["concrete_normal", "rubble_masonry", "asphalt", "block", "brickwork", "timber"],
   "unit": "kg/m3",
   "rows": {
     "steel":            { "value": 7850, "tier": "Global",   "reference": "Std engineering refs (The Constructor; Engineering Discoveries; Gray QS)" },

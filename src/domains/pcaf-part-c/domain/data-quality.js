@@ -58,7 +58,11 @@ const TABLE_5_3_2 = Object.keys(OPTION_SCORES).map(option => ({
   option, score: OPTION_SCORES[option], data: OPTION_LABELS[option]
 }));
 
-const FORBIDDEN_PHRASES = ['pcaf approved', 'pcaf endorsed', 'pcaf certified', 'approved by pcaf', 'endorsed by pcaf'];
+/* The guard is declared once, in src/shared/report-integrity.js, because it
+   governs every artefact this system produces and the content layer has to be
+   able to apply it to an override. Re-exported here so every caller that has
+   always read it from the Part C domain still does. */
+const { FORBIDDEN_PHRASES, containsForbiddenLanguage } = require('../../../shared/report-integrity');
 
 /**
  * Which option the estimate was actually built from.
@@ -155,18 +159,6 @@ function disclosureNote({ option, score, limitations = [], scopeSummary }) {
     : 'No material limitations identified.');
   parts.push('This assessment is calculated in conformance with PCAF methodology; it is not approved, endorsed or certified by PCAF.');
   return parts.join(' ');
-}
-
-/** Guard used by tests and by the report builders. */
-function containsForbiddenLanguage(text) {
-  const lower = String(text || '').toLowerCase();
-  return FORBIDDEN_PHRASES.filter(p => {
-    const idx = lower.indexOf(p);
-    if (idx === -1) return false;
-    // "not approved, endorsed or certified by PCAF" is the permitted disclaimer
-    const window = lower.slice(Math.max(0, idx - 40), idx + p.length);
-    return !/\bnot\b[^.]*$/.test(window);
-  });
 }
 
 module.exports = {

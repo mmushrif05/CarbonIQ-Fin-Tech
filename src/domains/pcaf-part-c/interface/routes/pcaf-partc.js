@@ -97,17 +97,22 @@ router.get('/factors', authenticate, defaultLimiter, referenceCache(), doc({ sum
     query: { table: 'One table by name; without it every table.' },
     description: 'Every row carries the quality tier it was drawn at and the source it came '
       + 'from, and a `gap` where a local figure is known to be missing.',
-    response: body({ tables: arr(str), detail: obj, note: str, table: str }) }), (req, res) => {
+    response: body({ tables: arr(str), detail: obj, release: obj, note: str, table: str }) }), (req, res) => {
   const tables = factors.allTables();
+  const release = factors.factorRelease();
   if (req.query.table) {
     const t = tables[req.query.table];
     if (!t) return res.status(404).json({ error: 'TABLE_NOT_FOUND', message: `No factor table "${req.query.table}".` });
-    return res.json({ table: req.query.table, ...t });
+    return res.json({ table: req.query.table, ...t, release: release.tables.find(r => r.table === req.query.table) });
   }
   res.json({
     tables: Object.keys(tables),
     detail: tables,
-    note: 'Seed tables are versioned in-repo so every disclosed factor is citable. Runtime overrides and learned local values layer on top.'
+    /* The set a figure was computed on, so a disclosure can be tied to it:
+       version and effective date per table, a checksum that moves when a
+       value does, and which tables are still provisional. */
+    release,
+    note: 'Each table carries a version, an effective date and a status. A checksum over the set identifies the factors a disclosure was computed on. Runtime overrides and learned local values layer on top.'
   });
 });
 

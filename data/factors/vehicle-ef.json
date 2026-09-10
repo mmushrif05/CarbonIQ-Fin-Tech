@@ -1,6 +1,9 @@
 {
   "table": "vehicle-ef",
   "description": "Site/project vehicle emission factors. INFORMATIONAL ONLY in MVP - captured, never added to any total (avoids double counting with A5.2 site energy).",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "unit": "gCO2e/km",
   "tier": "Global",
   "rows": {

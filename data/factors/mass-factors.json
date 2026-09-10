@@ -1,6 +1,9 @@
 {
   "table": "mass-factors",
   "description": "Non-volumetric mass factors for BOQ units other than m3",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "rows": {
     "ms_grill":        { "value": 15,   "unit": "kg/m2", "tier": "Global", "reference": "Typical mild-steel grill fabrication weight" },
     "aluminium_sheet": { "value": 12,   "unit": "kg/m2", "tier": "Global", "reference": "Std engineering refs (~10-25 kg/m2)" },

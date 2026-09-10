@@ -4,19 +4,37 @@
    ============================================================ */
 
 const NdcSdgPage = (() => {
-  // SLGFT activity lookup (mirrors services/ndc-sdg.js & ui/js/taxonomy.js)
-  const ACTIVITIES = {
-    'M1.1': { label: 'Green Buildings — New Construction',   eligibility: 'threshold', objective: 'M', note: 'Threshold: ≤600 kgCO2e/m²' },
-    'M1.2': { label: 'Green Buildings — Renovation',          eligibility: 'direct',    objective: 'M', note: '≥30% energy performance improvement' },
-    'M4.1': { label: 'Solar PV — Electricity Generation',    eligibility: 'direct',    objective: 'M', note: 'Directly eligible' },
-    'M4.2': { label: 'Concentrated Solar Power (CSP)',         eligibility: 'direct',    objective: 'M', note: 'Directly eligible' },
-    'M4.3': { label: 'Wind Energy',                           eligibility: 'direct',    objective: 'M', note: 'Directly eligible' },
-    'M6.1': { label: 'Clean Transportation Infrastructure',   eligibility: 'direct',    objective: 'M', note: 'Directly eligible' },
-    'A2.1': { label: 'Flood-Resilient Construction',          eligibility: 'direct',    objective: 'A', note: 'Directly eligible' },
-    'A2.2': { label: 'Climate-Resilient Buildings',           eligibility: 'threshold', objective: 'A', note: 'Climate risk assessment required' },
-    'E1.1': { label: 'Coastal & Marine Resource Protection',  eligibility: 'direct',    objective: 'E', note: 'Directly eligible' },
-    'E3.1': { label: 'Sustainable Land Use & Biodiversity',   eligibility: 'direct',    objective: 'E', note: 'Directly eligible' },
-  };
+  /**
+   * The SLGFT activity table is **not** held here.
+   *
+   * A copy lived in this file and went stale, carrying all three errors the
+   * source document disproved: `M1.1` for new construction against an
+   * absolute 600 kgCO2e/m² threshold — it is `M6.3`, and the criterion is
+   * relative, ≥10% below a nearly zero-energy benchmark; `M6.1` labelled
+   * clean transportation — `M6.1` is renovation and electric rail is `M6.7`;
+   * and `A2.1` labelled flood-resilient construction — `A2.1` is a financial
+   * services activity, affordable climate insurance.
+   *
+   * The sibling screen was corrected and this one was not, because nothing
+   * swept the browser. So there is no table here to correct: the codes come
+   * from `GET /v1/ndc-sdg/framework`, which serves the one the engine screens
+   * against, and a stale copy cannot exist because there is no copy.
+   */
+  let _activities = null;
+
+  /** Whatever comes back from the API is text, not markup. */
+  const esc = (v) => String(v == null ? '' : v)
+    .replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  /** Load the activity table once, before anything looks a code up in it. */
+  async function loadActivities() {
+    if (_activities) return _activities;
+    const f = await window.CARBONIQ_fetch('/v1/ndc-sdg/framework');
+    const byCode = {};
+    for (const a of (f.activities || [])) if (a.code) byCode[a.code] = a;
+    _activities = byCode;
+    return _activities;
+  }
 
   const SDG_META = {
     7:  { label: 'Affordable & Clean Energy',        emoji: '⚡', color: '#FCC30B' },
@@ -34,6 +52,10 @@ const NdcSdgPage = (() => {
   function init() {
     if (_initialized) return;
     _initialized = true;
+    /* Loaded before the first lookup, not on the first lookup: anything that
+       changes what a screen shows has to be in place before the screen is
+       asked. */
+    loadActivities().catch(() => { _activities = null; });
   }
 
   // ── Activity code live lookup ─────────────────────────────────
@@ -41,16 +63,35 @@ const NdcSdgPage = (() => {
     const el = $$('ndc-activity-desc');
     if (!el) return;
     const upper = (code || '').trim().toUpperCase();
-    const match = ACTIVITIES[upper];
+
+    /* Nothing is guessed while the table is still in flight, and nothing is
+       guessed if it never arrives. A code described from a stale copy is the
+       defect this screen already shipped once. */
+    if (!_activities) {
+      el.style.display = upper.length > 2 ? 'block' : 'none';
+      if (upper.length > 2) {
+        el.innerHTML = '<span style="color:var(--text-tertiary);font-size:13px">'
+          + 'The taxonomy has not loaded, so this code is not described.</span>';
+      }
+      calcIntensity();
+      return;
+    }
+
+    const match = _activities[upper];
     if (match) {
       const badge = match.eligibility === 'direct'
         ? '<span style="background:var(--blue-50,#eff6ff);color:var(--blue-600,#2563eb);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600">Direct Eligibility</span>'
         : '<span style="background:var(--green-50,#f0fdf4);color:var(--green-600,#16a34a);padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600">Threshold-Based</span>';
       el.style.display = 'block';
-      el.innerHTML = `${badge} <strong>${match.label}</strong><br><small style="color:var(--text-tertiary)">${match.note}</small>`;
+      el.innerHTML = `${badge} <strong>${esc(match.label)}</strong>`
+        + `<br><small style="color:var(--text-tertiary)">${esc(match.criterion || '')}</small>`;
     } else {
       el.style.display = upper.length > 2 ? 'block' : 'none';
-      if (upper.length > 2) el.innerHTML = `<span style="color:var(--text-tertiary);font-size:13px">No match for "${upper}". Try M1.1, M4.1, A2.1, E1.1…</span>`;
+      if (upper.length > 2) {
+        const known = Object.keys(_activities).slice(0, 4).join(', ');
+        el.innerHTML = `<span style="color:var(--text-tertiary);font-size:13px">No match for "${esc(upper)}"`
+          + `${known ? `. Try ${esc(known)}…` : '.'}</span>`;
+      }
     }
     calcIntensity();
   }

@@ -58,6 +58,9 @@ router.get('/rates',
   const pricingTiers = Object.entries(PRICING_TIERS).map(([key, t]) => ({
     classification: key,
     label:         t.label,
+    /* The score a tier begins at travels with the tier, so a screen can say
+       what raising a score would unlock without holding the number itself. */
+    minScore:      t.minScore,
     adjustment_bps: t.bps,
     range_bps:     { min: t.minBps, max: t.maxBps },
     description:   t.description,

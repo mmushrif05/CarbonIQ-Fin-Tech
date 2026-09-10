@@ -18,6 +18,26 @@ function buildAnnexes(f) {
     id: 'annexFactors', annex: 'A', title: 'Factor register',
     blocks: keep([
       b.body('Every emission factor the reported figures rest on, with its value, unit, data-quality tier and named source. Local means a Sri Lankan value, Regional a South Asian or comparable one, Global an international default.'),
+      /* Which factor set produced these figures. A register of values a
+         reader cannot tie to a released version is a list, not a citation:
+         a value can be corrected without the document saying so, and the
+         checksum is what makes that visible. */
+      f.factorRelease ? b.body(
+        `Factor set: ${f.factorRelease.tables.length} tables, `
+        + `checksum ${f.factorRelease.checksum.slice(0, 16)}, `
+        + `SHA-256 over the canonical form. `
+        + (f.factorRelease.provisionalTables.length
+          ? `Provisional pending a released regional value: ${f.factorRelease.provisionalTables.join(', ')}. `
+            + 'A provisional row carries the gap it is standing in for, and the row shows it.'
+          : 'Every table is released.')) : null,
+      f.factorRelease ? b.table({
+        head: ['Table', 'Version', 'Effective from', 'Status', 'Rows', 'Checksum'],
+        widths: [1.9, 0.8, 1.2, 1, 0.6, 2.2],
+        align: ['left', 'left', 'left', 'left', 'right', 'left'],
+        rows: f.factorRelease.tables.map(t => [
+          t.table, t.version, t.effectiveFrom, t.status, String(t.rowCount), t.checksum.slice(0, 16)
+        ])
+      }) : null,
       f.factorRegister.length ? b.table({
         head: ['Factor', 'Value', 'Unit', 'Tier', 'Source'],
         widths: [1.9, 0.9, 0.9, 0.8, 3.2],

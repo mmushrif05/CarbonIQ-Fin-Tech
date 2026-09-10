@@ -26,12 +26,28 @@ const ROOT = path.join(__dirname, '..');
 const auth = r => r.set('x-api-key', process.env.UI_API_KEY);
 const api = () => request(app);
 
-/** The file paths a rule's implementation text references. */
+/**
+ * The file paths a rule's implementation text references.
+ *
+ * The alternation used to list the top-level directories the tree had before
+ * the domains split — `services|data|tests|config|models|routes|schemas|ui` —
+ * and by then every implementation but three lived under `src/`. So this
+ * resolved 3 of the matrix's 38 citations and passed green on the other 35,
+ * which is the exact failure the file's own header says it exists to prevent:
+ * a claim that rots without saying so. `src` is first in the list now, and a
+ * test below asserts the count so a future move cannot quietly shrink it again.
+ */
 function referencedFiles(text) {
   const out = new Set();
+  // Plain paths: src/domains/gcf/domain/record.js
   for (const m of String(text).matchAll(
-    /\b((?:services|data|tests|config|models|routes|schemas|ui)\/[\w./-]*\.\w+)/g)) {
+    /(?<![\w/])((?:src|services|data|tests|config|models|routes|schemas|ui)\/[\w./-]*\.\w+)/g)) {
     out.add(m[1]);
+  }
+  // Brace expansion: src/domains/gcf/domain/{record,emissions}.js
+  for (const m of String(text).matchAll(
+    /(?<![\w/])((?:src|services|data|tests|ui)\/[\w./-]*)\{([^}]+)\}(\.\w+)/g)) {
+    for (const part of m[2].split(',')) out.add(`${m[1]}${part.trim()}${m[3]}`);
   }
   return [...out];
 }
@@ -69,6 +85,22 @@ describe('Every rule is well formed', () => {
 });
 
 describe('The citations resolve — this is what stops the claim rotting', () => {
+  test('the sweep actually resolves a citation for every rule that names one', () => {
+    /* A check that passes because it had nothing to check is worse than no
+       check. This is the assertion that would have failed on the regex this
+       file shipped with: it resolved three paths out of thirty-eight and
+       reported nothing wrong. */
+    const unresolved = RULES
+      .filter(r => r.implementation && referencedFiles(r.implementation).length === 0)
+      .map(r => `${r.id} → ${r.implementation}`);
+    expect(unresolved).toEqual([]);
+
+    /* Rules legitimately share a file, so the floor is the number of citations
+       rather than the number of distinct files behind them. */
+    const citations = RULES.flatMap(r => referencedFiles(r.implementation || ''));
+    expect(citations.length).toBeGreaterThanOrEqual(RULES.filter(r => r.implementation).length);
+  });
+
   test('every file a rule names exists on disk', () => {
     const missing = [];
     for (const r of RULES) {

@@ -1,6 +1,9 @@
 {
   "table": "waste-rates-rics-t18",
   "description": "RICS Table 18 recommended waste rates (WR) for A5.3",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "unit": "fraction",
   "defaultRate": 0.05,
   "defaultReference": "RICS WLCA 2nd ed - default 5% where product not listed in Table 18",

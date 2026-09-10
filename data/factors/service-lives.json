@@ -1,6 +1,9 @@
 {
   "table": "service-lives",
   "description": "Component service lives for B4 replacement counting (years)",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "unit": "years",
   "tier": "Global",
   "reference": "CIBSE Guide M / RICS-BCIS component life data",

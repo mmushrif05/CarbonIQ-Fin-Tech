@@ -310,6 +310,14 @@ const RULES = [
 
 const VALID_STATUS = ['implemented', 'partial', 'excluded'];
 
+/**
+ * How a rule is proved — the same vocabulary the Part C matrix declares.
+ * `execution` (the default) means the cited test runs the cited code, which
+ * `scripts/conformance-evidence.js` measures; `absence` means the rule is that
+ * no path exists, so the cited code must never run here.
+ */
+const VALID_EVIDENCE = ['execution', 'absence'];
+
 function summarise(rules = RULES) {
   const by = {};
   for (const s of VALID_STATUS) by[s] = rules.filter(r => r.status === s).length;
@@ -328,4 +336,4 @@ function conformanceMatrix() {
   };
 }
 
-module.exports = { conformanceMatrix, summarise, RULES, SOURCE, VALID_STATUS };
+module.exports = { conformanceMatrix, summarise, RULES, SOURCE, VALID_STATUS, VALID_EVIDENCE };

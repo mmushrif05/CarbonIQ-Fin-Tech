@@ -87,29 +87,44 @@ const CARBON_TAX_RATES = {
 // Green Loan Pricing Tiers (APAC GLP market practice)
 // ---------------------------------------------------------------------------
 
+/**
+ * The score a tier begins at, declared once.
+ *
+ * These numbers were written three times: in `_classify`, in each tier's
+ * `description` prose, and again in the browser's hint text. Change one and
+ * the other two become false — and the false ones are the two a reader sees.
+ * The classifier reads this, the descriptions are built from it, and the
+ * browser is served it.
+ */
+const TIER_MIN_SCORE = { green: 70, transition: 40, brown: 0 };
+
 const PRICING_TIERS = {
   green: {
     label: 'Green',
+    minScore: TIER_MIN_SCORE.green,
     bps: -20,
     minBps: -25,
     maxBps: -15,
-    description: 'Full green loan discount — CarbonIQ Score ≥ 70',
+    description: `Full green loan discount — CarbonIQ Score ≥ ${TIER_MIN_SCORE.green}`,
     rationale: 'APAC GLP market practice: -15 to -25 bps for verified green-classified projects',
   },
   transition: {
     label: 'Transition (SLL)',
+    minScore: TIER_MIN_SCORE.transition,
     bps: -8,
     minBps: -12,
     maxBps: -5,
-    description: 'Sustainability-Linked Loan ratchet — CarbonIQ Score 40–69',
+    description: `Sustainability-Linked Loan ratchet — CarbonIQ Score `
+      + `${TIER_MIN_SCORE.transition}–${TIER_MIN_SCORE.green - 1}`,
     rationale: 'Partial discount; full discount unlocked when KPIs met at annual review',
   },
   brown: {
     label: 'Standard',
+    minScore: TIER_MIN_SCORE.brown,
     bps: 0,
     minBps: 0,
     maxBps: 25,
-    description: 'Standard pricing — CarbonIQ Score < 40',
+    description: `Standard pricing — CarbonIQ Score < ${TIER_MIN_SCORE.transition}`,
     rationale: 'No green discount; may face +25 bps step-up under pending HKMA/MAS climate-risk pricing rules',
   },
 };
@@ -362,8 +377,8 @@ function _summary(taxExposure, loanPricing, strandedRisk, regionData) {
 // ---------------------------------------------------------------------------
 
 function _classify(score) {
-  if (score >= 70) return 'green';
-  if (score >= 40) return 'transition';
+  if (score >= TIER_MIN_SCORE.green) return 'green';
+  if (score >= TIER_MIN_SCORE.transition) return 'transition';
   return 'brown';
 }
 

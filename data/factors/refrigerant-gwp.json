@@ -1,6 +1,9 @@
 {
   "table": "refrigerant-gwp",
   "description": "Refrigerant global warming potentials, 100-year basis",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "unit": "kgCO2e/kg",
   "tier": "Global",
   "reference": "IPCC AR5, 100-year GWP. Note AR4 gives R-410A = 2088 - basis fixed to AR5 and disclosed.",

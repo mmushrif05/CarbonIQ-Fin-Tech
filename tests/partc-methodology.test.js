@@ -189,7 +189,11 @@ describe('The factor evidence is complete', () => {
 
   test('every factor table in the store appears in the evidence', () => {
     const dir = path.join(__dirname, '..', 'data', 'factors');
-    const onDisk = fs.readdirSync(dir).filter(f => f.endsWith('.json')).map(f => f.replace(/\.json$/, ''));
+    /* MANIFEST.json is the generated record of the set — its versions,
+       effective dates and checksums — not a factor table. */
+    const onDisk = fs.readdirSync(dir)
+      .filter(f => f.endsWith('.json') && f !== 'MANIFEST.json')
+      .map(f => f.replace(/\.json$/, ''));
     const shown = new Set(buildMethodology().factorStore.rows.map(r => r.table));
     // A table whose rows inherit tier and reference from the table header
     // was previously skipped entirely, taking the IPCC GWPs and the RICS

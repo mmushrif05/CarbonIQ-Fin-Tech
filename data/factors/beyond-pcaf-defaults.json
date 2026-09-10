@@ -1,6 +1,10 @@
 {
   "table": "beyond-pcaf-defaults",
   "description": "Beyond-PCAF whole-life allowances (B2/B5/B8). VOLUNTARY ANNEX - never enters the PCAF roll-up.",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "provisional",
+  "provisionalRows": ["b5Refurbishment_kgCO2e_m2"],
   "rows": {
     "referenceStudyPeriod_years": { "value": 60, "unit": "years", "tier": "Global", "reference": "RICS Whole Life Carbon Assessment for the Built Environment, 2nd ed - 60-yr reference study period" },
     "b2Maintenance_kgCO2e_m2":    { "value": 10, "unit": "kgCO2e/m2 GIA", "tier": "Global",

@@ -1,6 +1,9 @@
 {
   "table": "refrigerant-leak",
   "description": "Annual operational refrigerant leak rates by equipment type (B1)",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "released",
   "unit": "fraction/year",
   "tier": "Global",
   "reference": "IPCC 2019 Refinement, Table 7.9 - default annual operational emission factors (mid of range)",

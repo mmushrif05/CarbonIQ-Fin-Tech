@@ -293,7 +293,12 @@ const RULES = [
     rule: 'Financed emissions and insurance-associated emissions are reported separately and never combined.',
     implementation: 'No code path sums the two: financed emissions are produced by src/domains/lending/application/pcaf.js for lending and have no import path into the Part C engine. Section 4 of every report states the separation explicitly.',
     test: 'tests/partc-report-standard.test.js \u203a The section model \u203a states that financed emissions are never combined with these',
-    status: 'implemented'
+    status: 'implemented',
+    /* Proved by there being no path, not by one running. The cited lending
+       module is named to say where financed emissions *do* come from; it must
+       never execute inside a Part C run, so execution evidence would be the
+       wrong evidence here. See docs/CONFORMANCE-EVIDENCE.md. */
+    evidence: 'absence'
   },
 
   // ---- Annual disclosure -------------------------------------------------
@@ -368,4 +373,19 @@ function conformanceMatrix() {
   };
 }
 
-module.exports = { conformanceMatrix, summarise, RULES, STANDARD };
+/**
+ * How a rule is proved.
+ *
+ *   execution - the cited test runs the cited code (the default, and the case
+ *               for all but a handful of rules)
+ *   absence   - the rule is that no path exists, so the cited code must *not*
+ *               run inside this engine; the proving test asserts the absence
+ *
+ * `scripts/conformance-evidence.js` reads this: an `execution` rule whose
+ * proving test executes no statement of its implementation is reported
+ * unproven, and an `absence` rule is not held to a coverage figure it should
+ * never produce.
+ */
+const VALID_EVIDENCE = ['execution', 'absence'];
+
+module.exports = { conformanceMatrix, summarise, RULES, STANDARD, VALID_EVIDENCE };

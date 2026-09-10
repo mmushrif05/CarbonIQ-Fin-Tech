@@ -24,6 +24,7 @@ const fs   = require('fs');
 const path = require('path');
 const { AsyncLocalStorage } = require('async_hooks');
 const { checked, factorTableSchema } = require('../../../shared/reference-data');
+const { checksum } = require('../../../shared/checksum');
 
 const FACTOR_DIR = path.join(__dirname, '..', '..', '..', '..', 'data', 'factors');
 
@@ -97,6 +98,40 @@ function getOverrides() { return currentOverrides(); }
 
 /** All tables, for the factor-transparency endpoint. */
 function allTables() { return _load(); }
+
+/**
+ * The release the reported figures were computed on: every table with its
+ * version, effective date, status and a SHA-256 over its canonical contents,
+ * and one checksum over the set.
+ *
+ * The version says what was intended; the checksum says what was there. Both
+ * are needed, because a version can be edited without the figures moving and
+ * a figure can be edited without the version moving — and a disclosure that
+ * cannot name the factor set behind it is not traceable, whatever else it
+ * carries. The set checksum is over the per-table checksums, so adding a
+ * table moves it as surely as changing a value in one.
+ */
+function factorRelease() {
+  const tables = _load();
+  const rows = Object.keys(tables).sort().map(name => {
+    const t = tables[name];
+    return {
+      table: name,
+      version: t.version,
+      effectiveFrom: t.effectiveFrom,
+      status: t.status,
+      provisionalRows: t.provisionalRows || [],
+      rowCount: Object.keys(t.rows || {}).length + Object.keys(t.benchmarks || {}).length,
+      checksum: checksum(t),
+    };
+  });
+  return {
+    tables: rows,
+    checksum: checksum(rows.map(r => [r.table, r.checksum])),
+    provisionalTables: rows.filter(r => r.status === 'provisional').map(r => r.table),
+    algorithm: 'SHA-256 over the canonical form (keys sorted at every level)',
+  };
+}
 
 /**
  * Core lookup.
@@ -204,7 +239,8 @@ function options() {
 }
 
 module.exports = {
-  reload, withOverrides, getOverrides, allTables, lookup, options,
+  TABLE_FILES,
+  reload, withOverrides, getOverrides, allTables, factorRelease, lookup, options,
   transportEF, density, massFactor, wasteRate, serviceLife,
   leakRate, gwp, waterEF, waterBenchmark, vehicleEF,
   a5Default, b1b4Default, wlcaDefault

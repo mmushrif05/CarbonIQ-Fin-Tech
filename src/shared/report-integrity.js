@@ -123,7 +123,47 @@ function collectGaps(node, path = '', out = []) {
   return out;
 }
 
+/* ---------------------------------------------------------------------------
+   The language guard.
+
+   PCAF does not approve, endorse or certify software, and a document that says
+   otherwise is not a conformance claim but a false one. The guard lived in the
+   Part C data-quality module, which is where it was first needed; it is here
+   because it governs every artefact this system produces, and because the
+   content layer — which lets a deployment supply its own wording — has to be
+   able to refuse an override that would put the claim back.
+   --------------------------------------------------------------------------- */
+
+/* "certified by pcaf" was missing from this list until the content layer was
+   written and a test put it in as an override: the guard caught "PCAF
+   certified" and "approved by PCAF" and let "Certified by PCAF" through. */
+const FORBIDDEN_PHRASES = [
+  'pcaf approved', 'pcaf endorsed', 'pcaf certified',
+  'approved by pcaf', 'endorsed by pcaf', 'certified by pcaf',
+];
+
+/**
+ * The forbidden phrases present in `text`, if any.
+ *
+ * "not approved, endorsed or certified by PCAF" is the permitted disclaimer
+ * and is the one form that must pass, so the check looks back for a negation
+ * before the phrase rather than matching the phrase alone.
+ *
+ * @param {any} text
+ * @returns {string[]}
+ */
+function containsForbiddenLanguage(text) {
+  const lower = String(text || '').toLowerCase();
+  return FORBIDDEN_PHRASES.filter(p => {
+    const idx = lower.indexOf(p);
+    if (idx === -1) return false;
+    const window = lower.slice(Math.max(0, idx - 40), idx + p.length);
+    return !/\bnot\b[^.]*$/.test(window);
+  });
+}
+
 module.exports = {
   NOT_PROVIDED, NOT_MEASURED,
-  notProvided, notMeasured, isPlaceholder, declared, checklistItem, collectGaps
+  notProvided, notMeasured, isPlaceholder, declared, checklistItem, collectGaps,
+  FORBIDDEN_PHRASES, containsForbiddenLanguage
 };

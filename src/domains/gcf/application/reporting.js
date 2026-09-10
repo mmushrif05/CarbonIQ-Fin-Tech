@@ -41,6 +41,7 @@
 const crypto = require('crypto');
 
 const integrity = require('../../../shared/report-integrity');
+const { canonical } = require('../../../shared/checksum');
 const emissions = require('../domain/emissions');
 const ndc = require('../domain/ndc-contribution');
 const record = require('../domain/record');
@@ -332,16 +333,10 @@ function checklist(report) {
  * own canonical form and an import verifies it before anything is written.
  */
 
-/** Canonical JSON — keys sorted at every level, so a re-serialisation of the
- *  same content hashes the same. Without this the checksum would depend on key
- *  order, which nothing guarantees across a store round-trip. */
-function canonical(value) {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
-  }
-  return JSON.stringify(value === undefined ? null : value);
-}
+/* Canonical JSON — keys sorted at every level, so a re-serialisation of the
+   same content hashes the same. It is in src/shared because the factor tables
+   need the identical property and two canonicalisers is two things that can
+   disagree about what a document is. */
 
 const PACKAGE_FORMAT = 'carboniq.gcf.period/1';
 
