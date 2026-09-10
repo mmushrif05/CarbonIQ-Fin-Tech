@@ -19,7 +19,7 @@
 
 const { Router }   = require('express');
 const Anthropic    = require('@anthropic-ai/sdk');
-const apiKeyAuth   = require('../../../../platform/auth/api-key');
+const authenticate   = require('../../../../platform/auth/authenticate');
 const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const config       = require('../../../../platform/config');
 
@@ -29,7 +29,7 @@ const router = Router();
 // POST /v1/extract/upload
 // ---------------------------------------------------------------------------
 router.post('/upload',
-  apiKeyAuth,
+  authenticate,
   extractLimiter,
   async (req, res, next) => {
     try {

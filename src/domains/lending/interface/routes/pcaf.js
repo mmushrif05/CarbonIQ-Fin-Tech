@@ -17,7 +17,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
@@ -26,7 +26,7 @@ const { generatePCAFOutput } = require('../../application/pcaf');
 const router = Router();
 
 router.get('/:projectId/pcaf',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {

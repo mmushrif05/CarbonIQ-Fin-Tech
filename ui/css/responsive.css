@@ -116,6 +116,19 @@
 .partc-scroll,
 .cp-scroll { overflow-x: auto; }
 
+/* And on every screen that does not. The rule above is opt-in by class, so
+   it holds only where whoever wrote the markup remembered it — the Part C
+   book renders six tables into bare containers and set the page to 542px at
+   a 430px viewport as soon as the book had rows. Selecting the container of
+   a known wide table makes the guarantee structural instead: the page never
+   scrolls sideways, the table may. Named classes rather than `> table`,
+   so nothing else on the page acquires a scroll box. */
+:is(div, section):has(> table.partc-table),
+:is(div, section):has(> table.data-table),
+:is(div, section):has(> table.cap-table),
+:is(div, section):has(> table.dk-table),
+:is(div, section):has(> table.gcf-table) { overflow-x: auto; }
+
 @media (max-width: 460px) {
   /* At the narrowest common handset a two-column action grid is
      two truncated labels; one column is two readable ones. */

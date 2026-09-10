@@ -353,15 +353,8 @@ const PCAFCalculator = (() => {
     _clearError();
 
     try {
-      const apiBase = window.CARBONIQ_API_BASE || '';
-      const apiKey  = window.CARBONIQ_API_KEY  || 'ck_test_00000000000000000000000000000000';
-
-      const res = await fetch(`${apiBase}/v1/reports/generate`, {
+      const res = await window.CARBONIQ_fetch('/v1/reports/generate', {
         method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key':    apiKey,
-        },
         body: JSON.stringify({
           type:    'pcaf',
           period:  String(new Date().getFullYear()),

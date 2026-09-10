@@ -10,7 +10,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
@@ -21,7 +21,7 @@ const { getProject } = require('../../../../platform/bridge/firebase');
 const router = Router();
 
 router.get('/:projectId',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {
@@ -57,7 +57,7 @@ router.get('/:projectId',
 
 // POST /v1/projects — create or update a fintech project
 router.post('/',
-  apiKeyAuth,
+  authenticate,
   defaultLimiter,
   async (req, res, next) => {
     try {
@@ -65,7 +65,7 @@ router.post('/',
       const { error, value } = createProjectSchema.validate(req.body);
       if (error) return res.status(400).json({ error: 'VALIDATION_ERROR', message: error.details[0].message });
 
-      const orgId = req.apiKey?.orgId || 'default';
+      const orgId = req.orgId;
       const projectId = value.projectId || `${value.region}-${Date.now()}`;
       const { saveProject } = require('../../../../platform/bridge/firebase');
 
@@ -92,13 +92,13 @@ router.post('/',
 
 // GET /v1/projects — list all projects for this org
 router.get('/',
-  apiKeyAuth,
+  authenticate,
   defaultLimiter,
   paged(),
   doc({ summary: 'List the organisation\'s lending projects' }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey?.orgId || 'default';
+      const orgId = req.orgId;
       const { listFintechProjects } = require('../../../../platform/bridge/firebase');
       const projects = await listFintechProjects(orgId);
       sendList(req, res, 'projects', projects, { total: projects.length });
@@ -108,7 +108,7 @@ router.get('/',
 
 // POST /v1/projects/:projectId/monitoring — submit annual monitoring entry
 router.post('/:projectId/monitoring',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {
@@ -132,7 +132,7 @@ router.post('/:projectId/monitoring',
 
 // GET /v1/projects/:projectId/monitoring — list monitoring history
 router.get('/:projectId/monitoring',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {

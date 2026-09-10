@@ -7,7 +7,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth    = require('../../../../../platform/auth/api-key');
+const authenticate    = require('../../../../../platform/auth/authenticate');
 const validate      = require('../../../../../platform/http/validate');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
@@ -25,13 +25,13 @@ const originationAgent   = require('../../../agents/origination');
 const router = Router();
 
 router.post('/underwrite',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_UNDERWRITE),
   validate({ body: underwritingRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
 
       // Build the initial task message Claude receives
       const userMessage = underwritingAgent.buildUserMessage(req.body);
@@ -102,13 +102,13 @@ router.post('/underwrite',
 // ---------------------------------------------------------------------------
 
 router.post('/originate',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_ORIGINATE),
   validate({ body: originationRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const userMessage = originationAgent.buildUserMessage(req.body);
 
       const run = await runAgent({
@@ -164,13 +164,13 @@ router.post('/originate',
 // ---------------------------------------------------------------------------
 
 router.post('/screen',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_SCREEN),
   validate({ body: screeningRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       // Pre-execute the 3 local tools and embed results into the prompt so that
       // Claude needs only ONE API call to write the memo. This keeps the Netlify
       // function well under the 10-second execution limit.

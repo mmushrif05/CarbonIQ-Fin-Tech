@@ -35,6 +35,9 @@
       "name": "assurance"
     },
     {
+      "name": "auth"
+    },
+    {
       "name": "capital"
     },
     {
@@ -418,6 +421,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -601,6 +607,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -770,6 +779,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -849,6 +861,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1111,6 +1126,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1313,6 +1331,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1524,6 +1545,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1637,6 +1661,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1724,6 +1751,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -1885,6 +1915,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2166,6 +2199,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2339,6 +2375,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2474,6 +2513,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2553,6 +2595,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -2630,6 +2675,1273 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "operationId": "postAuthLogin",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign in",
+        "description": "Exchanges an email address and a password for a session token. Send the token on every later request as `Authorization: Bearer <token>`. This is the only route that needs no credential. No credential required.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254,
+                    "description": "The address the account was created with. Case is not significant."
+                  },
+                  "password": {
+                    "type": "string",
+                    "maxLength": 512
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "idleExpiresAt": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "orgId": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "roleLevel": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "idleExpiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "orgId": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "roleLabel": {
+                              "type": "string"
+                            },
+                            "roleLevel": {
+                              "type": "integer"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": []
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "operationId": "postAuthLogout",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Sign out",
+        "description": "Ends the session the request carried. Idempotent. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/me": {
+      "get": {
+        "operationId": "getAuthMe",
+        "tags": [
+          "auth"
+        ],
+        "summary": "The account this request is acting as",
+        "description": "Answers for a session token. An API key has no account and is told so. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "orgId": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "roleLevel": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    },
+                    "session": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "orgId": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "roleLabel": {
+                              "type": "string"
+                            },
+                            "roleLevel": {
+                              "type": "integer"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          }
+                        },
+                        "session": {
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/password": {
+      "post": {
+        "operationId": "postAuthPassword",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change your own password",
+        "description": "Requires the current password. Every other session that account holds is ended, because a password change is what someone does when they think a session is not theirs. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "maxLength": 512
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 512,
+                    "description": "At least 12 characters."
+                  }
+                },
+                "required": [
+                  "currentPassword",
+                  "newPassword"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/users": {
+      "get": {
+        "operationId": "getAuthUsers",
+        "tags": [
+          "auth"
+        ],
+        "summary": "The accounts in this organisation",
+        "description": "Requires the `admin` scope.",
+        "x-scope": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "users": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "orgId": {
+                            "type": "string"
+                          },
+                          "role": {
+                            "type": "string"
+                          },
+                          "roleLabel": {
+                            "type": "string"
+                          },
+                          "roleLevel": {
+                            "type": "integer"
+                          },
+                          "active": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "lastLoginAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "users": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "orgId": {
+                                "type": "string"
+                              },
+                              "role": {
+                                "type": "string"
+                              },
+                              "roleLabel": {
+                                "type": "string"
+                              },
+                              "roleLevel": {
+                                "type": "integer"
+                              },
+                              "active": {
+                                "type": "boolean"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "lastLoginAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postAuthUsers",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Create an account",
+        "description": "Requires the `admin` scope.",
+        "x-scope": "admin",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254,
+                    "description": "The address the account was created with. Case is not significant."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 160
+                  },
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "credit_officer",
+                      "esg_analyst",
+                      "relationship_manager",
+                      "auditor",
+                      "borrower"
+                    ],
+                    "description": "Which role the account carries. The role decides the scopes every request of theirs holds."
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 512,
+                    "description": "At least 12 characters."
+                  },
+                  "orgId": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "Defaults to the organisation of the account creating this one."
+                  }
+                },
+                "required": [
+                  "email",
+                  "role",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "orgId": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "roleLevel": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "orgId": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "roleLabel": {
+                              "type": "string"
+                            },
+                            "roleLevel": {
+                              "type": "integer"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/users/{userId}": {
+      "patch": {
+        "operationId": "patchAuthUsersByUserId",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Change an account’s role, or disable it",
+        "description": "Requires the `admin` scope.",
+        "x-scope": "admin",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "credit_officer",
+                      "esg_analyst",
+                      "relationship_manager",
+                      "auditor",
+                      "borrower"
+                    ],
+                    "description": "Which role the account carries. The role decides the scopes every request of theirs holds."
+                  },
+                  "active": {
+                    "type": "boolean",
+                    "description": "Setting this false ends every session that account holds."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "orgId": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "roleLevel": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "orgId": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "roleLabel": {
+                              "type": "string"
+                            },
+                            "roleLevel": {
+                              "type": "integer"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/auth/users/{userId}/password": {
+      "post": {
+        "operationId": "postAuthUsersByUserIdPassword",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Reset an account’s password and end its sessions",
+        "description": "Requires the `admin` scope.",
+        "x-scope": "admin",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "newPassword": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 512,
+                    "description": "At least 12 characters."
+                  }
+                },
+                "required": [
+                  "newPassword"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2709,6 +4021,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2788,6 +4103,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2867,6 +4185,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -2946,6 +4267,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -3025,6 +4349,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -3174,6 +4501,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -3420,6 +4750,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -3668,6 +5001,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -3817,6 +5153,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -3945,6 +5284,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4002,6 +5344,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4135,6 +5480,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -4268,6 +5616,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4404,6 +5755,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4483,6 +5837,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4562,6 +5919,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4707,6 +6067,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4786,6 +6149,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4865,6 +6231,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -4944,6 +6313,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5023,6 +6395,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5158,6 +6533,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5237,6 +6615,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5324,6 +6705,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5406,6 +6790,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5485,6 +6872,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5572,6 +6962,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5651,6 +7044,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -5728,6 +7124,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5807,6 +7206,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5886,6 +7288,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -5965,6 +7370,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6052,6 +7460,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6131,6 +7542,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6244,6 +7658,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -6321,6 +7738,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6378,6 +7798,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -6463,6 +7886,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6542,6 +7968,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6621,6 +8050,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6700,6 +8132,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6782,6 +8217,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6861,6 +8299,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -6940,6 +8381,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -7779,6 +9223,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8010,6 +9457,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8089,6 +9539,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8171,6 +9624,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8379,6 +9835,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -8571,6 +10030,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8628,6 +10090,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -8713,6 +10178,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8830,6 +10298,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -8887,6 +10358,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -8972,6 +10446,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9105,6 +10582,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -9234,6 +10714,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9291,6 +10774,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -9376,6 +10862,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -9502,6 +10991,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9581,6 +11073,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9668,6 +11163,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9755,6 +11253,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9904,6 +11405,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -9991,6 +11495,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10078,6 +11585,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10165,6 +11675,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10252,6 +11765,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10339,6 +11855,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10488,6 +12007,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -10702,6 +12224,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -10759,6 +12284,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -10844,6 +12372,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -11060,6 +12591,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -11181,6 +12715,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -11526,6 +13063,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -11688,6 +13228,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -11852,6 +13395,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -11917,6 +13463,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -12012,6 +13561,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -12091,6 +13643,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -12262,6 +13817,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -12341,6 +13899,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -12644,6 +14205,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -12726,6 +14290,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -13269,6 +14836,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -13386,6 +14956,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -13509,6 +15082,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -14044,6 +15620,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -14126,6 +15705,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -14661,6 +16243,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -14751,6 +16336,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -14972,6 +16560,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -15054,6 +16645,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -15635,6 +17229,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -15748,6 +17345,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -15835,6 +17435,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16055,6 +17658,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16402,6 +18008,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16481,6 +18090,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16594,6 +18206,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -16671,6 +18286,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16758,6 +18376,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16898,6 +18519,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -16985,6 +18609,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -17072,6 +18699,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -17157,6 +18787,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -17244,6 +18877,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -17331,6 +18967,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -17418,6 +19057,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -17666,6 +19308,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -18580,6 +20225,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       },
@@ -18700,6 +20348,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -18757,6 +20408,9 @@
         "security": [
           {
             "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -18773,8 +20427,7 @@
       "BearerAuth": {
         "type": "http",
         "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "A signed-in user of the dashboard."
+        "description": "A session token from `POST /v1/auth/login`. The scopes it holds are the ones its role carries."
       }
     },
     "schemas": {

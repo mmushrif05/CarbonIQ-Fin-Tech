@@ -7,7 +7,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth    = require('../../../../../platform/auth/api-key');
+const authenticate    = require('../../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../../platform/http/pagination');
 const { doc } = require('../../../../../platform/http/openapi-hints');
 const { authorize } = require('../../../../../platform/auth/authorization');
@@ -35,7 +35,7 @@ const router = Router();
  * call, which is the only way to tell a rejected key from an unavailable
  * model from a network block.
  */
-router.get('/health', apiKeyAuth, async (req, res, next) => {
+router.get('/health', authenticate, async (req, res, next) => {
   try {
     const live = req.query.probe === '1' || req.query.probe === 'true';
 
@@ -101,13 +101,13 @@ router.get('/health', apiKeyAuth, async (req, res, next) => {
 // ---------------------------------------------------------------------------
 
 router.get('/runs',
-  apiKeyAuth,
+  authenticate,
   authorize(PERMISSIONS.RUNS_READ),
   paged(),
   doc({ summary: 'Recent agent runs, newest first; twenty without a page' }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const paging = req.query.limit !== undefined || req.query.cursor !== undefined;
       const runs = await listAgentRuns(orgId, paging ? 500 : 20);
       const view = listView(req, res, runs);
@@ -141,11 +141,11 @@ router.get('/runs',
 // ---------------------------------------------------------------------------
 
 router.get('/runs/:runId',
-  apiKeyAuth,
+  authenticate,
   authorize(PERMISSIONS.RUNS_READ),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const { runId } = req.params;
 
       const run = await getAgentRun(orgId, runId);

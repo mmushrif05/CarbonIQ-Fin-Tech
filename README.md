@@ -128,4 +128,4 @@ It does **not** modify any core engine data.
 
 ## License
 
-Apache-2.0 — See [LICENSE](../LICENSE)
+Apache-2.0 — see [LICENSE](LICENSE). Copyright 2026 Datum Solutions.

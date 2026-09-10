@@ -60,6 +60,12 @@ const COLLECTIONS = Object.freeze({
   /* 0002 — what still lived only in Firebase. Keys share one partition ('_')
      because they are looked up by hash, not by organisation. */
   api_keys:            { table: 'api_keys',          keys: { orgId: 'owner_org_id', active: 'active' }, dependsOn: [] },
+  /* People and their sessions share the api_keys shape: one partition, the
+     owning organisation inside the record and lifted out by a column. Both
+     are looked up before an organisation is known — a login by email, a
+     request by the token it carries. */
+  users:               { table: 'users',             keys: { email: 'email', orgId: 'owner_org_id', role: 'role', active: 'active' }, dependsOn: [] },
+  sessions:            { table: 'sessions',          keys: { userId: 'user_id', orgId: 'owner_org_id', expiresAt: 'expires_at' }, dependsOn: [] },
   partc_runs:          { table: 'partc_runs',        keys: { status: 'status' }, dependsOn: [] },
   partc_learnings:     { table: 'partc_learnings',   keys: {}, dependsOn: [] },
   partc_benchmarks:    { table: 'partc_benchmarks',  keys: { region: 'region', projectType: 'project_type' }, dependsOn: [] },

@@ -6,7 +6,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth   = require('../../../../../platform/auth/api-key');
+const authenticate   = require('../../../../../platform/auth/authenticate');
 const validate     = require('../../../../../platform/http/validate');
 const { agentLimiter } = require('../../../../../platform/http/rate-limit');
 const requireAI = require('../../../../../platform/http/require-ai');
@@ -28,7 +28,7 @@ const router = Router();
 // Every emissions figure still comes from the deterministic engine.
 // ---------------------------------------------------------------------------
 
-router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
+router.post('/agent/intake', authenticate, agentLimiter, requireAI,
   validate({ body: intakeRequestSchema }),
   async (req, res, next) => {
     try {
@@ -58,7 +58,7 @@ router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
         userMessage: blocks
           ? [...blocks, { type: 'text', text: instruction }]
           : instruction,
-        orgId: req.apiKey.orgId,
+        orgId: req.orgId,
         deadline: clock,
         metadata: { projectName: req.body.projectName || null, stage: 'intake',
                     documentSource: blocks ? 'pdf' : 'text' }
@@ -71,7 +71,7 @@ router.post('/agent/intake', apiKeyAuth, agentLimiter, requireAI,
     } catch (err) { next(err); }
   });
 
-router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
+router.post('/agent/map', authenticate, agentLimiter, requireAI,
   validate({ body: mappingRequestSchema }),
   async (req, res, next) => {
     try {
@@ -107,7 +107,7 @@ router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
         userMessage: blocks
           ? [...blocks, { type: 'text', text: instruction }]
           : instruction,
-        orgId: req.apiKey.orgId,
+        orgId: req.orgId,
         deadline: clock,
         callProfile: mappingAgent.CALL_PROFILE,
         metadata: { projectName: req.body.projectName || null, stage: 'mapping',
@@ -121,7 +121,7 @@ router.post('/agent/map', apiKeyAuth, agentLimiter, requireAI,
     } catch (err) { next(err); }
   });
 
-router.post('/agent/disclose', apiKeyAuth, agentLimiter, requireAI,
+router.post('/agent/disclose', authenticate, agentLimiter, requireAI,
   validate({ body: discloseRequestSchema }),
   async (req, res, next) => {
     try {
@@ -136,7 +136,7 @@ router.post('/agent/disclose', apiKeyAuth, agentLimiter, requireAI,
           materialCount: (req.body.materials || []).length,
           note:          req.body.note
         }),
-        orgId: req.apiKey.orgId,
+        orgId: req.orgId,
         metadata: { projectName: req.body.projectName || null, stage: 'disclosure' }
       });
       res.json({ runId: run.runId, status: run.status, memo: run.result,

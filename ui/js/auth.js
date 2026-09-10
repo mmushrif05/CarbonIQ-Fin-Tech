@@ -2,8 +2,12 @@
    CarbonIQ — Stakeholder Authentication & RBAC Module
    ui/js/auth.js
    ============================================================
-   Manages stakeholder login, session persistence, and role-based
-   page visibility. Mirrors backend ROLES from config/policies.js.
+   Holds the session token the server issued at sign-in, and hides the
+   pages a role cannot use. Mirrors src/shared/policies.js.
+
+   Hiding a page is a courtesy, not a control: the server decides what any
+   request may do from the role on the account behind the token, so a page
+   reached anyway simply answers 403.
 
    Loaded AFTER config.js and BEFORE app.js in index.html.
    ============================================================ */
@@ -90,7 +94,7 @@ const Auth = (() => {
 
   function isLoggedIn() {
     const session = _getSession();
-    return session && session.role && ROLES[session.role];
+    return Boolean(session && session.token && session.role && ROLES[session.role]);
   }
 
   function getSession() {
@@ -107,26 +111,57 @@ const Auth = (() => {
     return session ? session.role : null;
   }
 
-  // ── Login ──────────────────────────────────────────────────
-  function login(name, email, role, organisation) {
-    if (!ROLES[role]) return false;
-
-    const initials = name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-    const session = {
-      name,
-      email,
-      role,
-      organisation: organisation || '',
+  // ── Sign in ────────────────────────────────────────────────
+  /**
+   * Record what POST /v1/auth/login returned. The role and the organisation
+   * come from the server; nothing here decides them.
+   */
+  function startSession({ token, expiresAt, user }) {
+    if (!token || !user) return false;
+    const label = user.name || user.email || '';
+    const initials = label.split(/[\s@.]+/).filter(Boolean)
+      .map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    _saveSession({
+      token,
+      expiresAt: expiresAt || null,
+      userId: user.id,
+      name: label,
+      email: user.email,
+      role: user.role,
+      organisation: user.orgId || '',
       initials,
       loginTime: new Date().toISOString(),
-    };
-
-    _saveSession(session);
+    });
     return true;
   }
 
-  // ── Logout ─────────────────────────────────────────────────
-  function logout() {
+  /** The token every request carries, or null. */
+  function getToken() {
+    const session = _getSession();
+    return session ? session.token || null : null;
+  }
+
+  // ── Sign out ───────────────────────────────────────────────
+  /**
+   * Ends the session on the server as well as in this browser. Clearing
+   * localStorage alone would leave a token that still works, which is the
+   * whole reason a session is a row rather than a signed claim.
+   */
+  async function logout() {
+    const token = getToken();
+    if (token) {
+      try {
+        await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/logout`, {
+          method: 'POST', headers: { Authorization: `Bearer ${token}` },
+        });
+      } catch (_) { /* Signing out locally must succeed even if the server does not answer. */ }
+    }
+    _clearSession();
+    window.location.reload();
+  }
+
+  /** The session ended server-side; drop it and show the sign-in screen. */
+  function sessionEnded() {
     _clearSession();
     window.location.reload();
   }
@@ -216,7 +251,9 @@ const Auth = (() => {
     getSession,
     getRole,
     getRoleKey,
-    login,
+    startSession,
+    getToken,
+    sessionEnded,
     logout,
     canAccessPage,
     applyNavVisibility,

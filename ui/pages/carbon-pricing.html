@@ -196,7 +196,6 @@
 <script>
 const CarbonPricingPage = (() => {
   const API_BASE = window.CARBONIQ_API_BASE || '';
-  const API_KEY  = window.CARBONIQ_API_KEY  || '';
 
   // ── Score preview ──────────────────────────────────────────
   function _updateScorePreview() {
@@ -239,12 +238,8 @@ const CarbonPricingPage = (() => {
     _showLoading();
 
     try {
-      const res = await fetch(`${API_BASE}/v1/carbon-pricing/calculate`, {
+      const res = await window.CARBONIQ_fetch('/v1/carbon-pricing/calculate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(API_KEY ? { 'x-api-key': API_KEY } : {}),
-        },
         body: JSON.stringify(payload),
       });
 

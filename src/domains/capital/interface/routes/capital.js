@@ -29,7 +29,7 @@
 'use strict';
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc, recordOf, listOf } = require('../../../../platform/http/openapi-hints');
 const validate   = require('../../../../platform/http/validate');
@@ -114,11 +114,11 @@ function readOptions(query = {}, body = {}) {
 
 // ---------------------------------------------------------------------------
 
-router.get('/storage', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/storage', authenticate, defaultLimiter, (_req, res) => {
   res.json({ storage: store.capability() });
 });
 
-router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/dashboard', authenticate, defaultLimiter, handle(async (req, res) => {
   /* The weighting and the forecast assumptions ride on the query string
      because each is a question a reader asks of one book, not a property of
      it. They come back in the payload, so a screenshot of a curve always
@@ -128,7 +128,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
   const opts = readOptions(req.query);
   if (opts.error) return res.status(400).json(opts.error);
 
-  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const held = await book.readBook(req.orgId, { portfolioId: req.query.portfolioId });
   const result = metrics.dashboard(held, opts.value);
 
   /* Whether anyone independent has checked these figures is a different
@@ -136,7 +136,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
      them together. It travels with the position rather than being fetched by
      the screen, so the two can never be shown out of step. Declared or
      reported absent — never inferred. */
-  const assured = await assurance.read(req.apiKey.orgId);
+  const assured = await assurance.read(req.orgId);
 
   /* An empty book leaves a correct screen with nothing on it — and where
      storage is not writable (a serverless runtime with no Firebase) the seed
@@ -192,7 +192,7 @@ router.get('/dashboard', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
  * repository baseline where nothing has been recorded — so the funding figures
  * cannot be drawn from a different book than the position they are set against.
  */
-router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/basket', authenticate, defaultLimiter, handle(async (req, res) => {
   const opts = readOptions(req.query);
   if (opts.error) return res.status(400).json(opts.error);
 
@@ -208,7 +208,7 @@ router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
 
-  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const held = await book.readBook(req.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const source = recorded ? held : (baseline.baselineBook() || held);
 
@@ -237,8 +237,8 @@ router.get('/basket', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * tens of rows, and a drawer that paginated would let a reader adjust a figure
  * they could not see the effect of.
  */
-router.get('/book', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+router.get('/book', authenticate, defaultLimiter, handle(async (req, res) => {
+  const held = await book.readBook(req.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const base = recorded ? held : (baseline.baselineBook() || held);
   res.json({
@@ -270,7 +270,7 @@ router.get('/book', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * Every figure in the response is derived by the same functions that derive
  * the recorded dashboard. The overlay changes inputs and nothing else.
  */
-router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.post('/compute', authenticate, defaultLimiter, handle(async (req, res) => {
   const body = req.body || {};
   const opts = readOptions(req.query, body);
   if (opts.error) return res.status(400).json(opts.error);
@@ -289,7 +289,7 @@ router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
 
-  const held = await book.readBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId });
+  const held = await book.readBook(req.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const base = recorded ? held : (baseline.baselineBook() || held);
 
@@ -309,7 +309,7 @@ router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
 
   /* An overlay changes inputs. It cannot change who audited the book, so the
      declaration is read the same way here as on the ordinary dashboard. */
-  result.assurance = await assurance.read(req.apiKey.orgId);
+  result.assurance = await assurance.read(req.orgId);
 
   const selected = Array.isArray(body.select) ? body.select.map(String).filter(Boolean) : [];
   const basket = selected.length > 25
@@ -325,77 +325,77 @@ router.post('/compute', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
 
 // ── Portfolios ─────────────────────────────────────────────────────────────
 
-router.get('/portfolios', apiKeyAuth, defaultLimiter, paged(),
+router.get('/portfolios', authenticate, defaultLimiter, paged(),
   doc({ summary: 'List portfolios', response: listOf('portfolios', recordOf(portfolioSchema, 'portfolioId', {}, 'Portfolio')) }),
   handle(async (req, res) => {
-    sendList(req, res, 'portfolios', await book.listPortfolios(req.apiKey.orgId));
+    sendList(req, res, 'portfolios', await book.listPortfolios(req.orgId));
   }));
 
-router.post('/portfolios', apiKeyAuth, defaultLimiter,
+router.post('/portfolios', authenticate, defaultLimiter,
   validate({ body: portfolioSchema }),
   handle(async (req, res) => {
-    res.status(201).json({ portfolio: await book.createPortfolio(req.apiKey.orgId, req.body) });
+    res.status(201).json({ portfolio: await book.createPortfolio(req.orgId, req.body) });
   }));
 
-router.patch('/portfolios/:id', apiKeyAuth, defaultLimiter,
+router.patch('/portfolios/:id', authenticate, defaultLimiter,
   validate({ body: portfolioUpdateSchema }),
   handle(async (req, res) => {
-    const updated = await book.updatePortfolio(req.apiKey.orgId, req.params.id, req.body);
+    const updated = await book.updatePortfolio(req.orgId, req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No portfolio ${req.params.id}.` });
     res.json({ portfolio: updated });
   }));
 
 // ── Investments ────────────────────────────────────────────────────────────
 
-router.get('/investments', apiKeyAuth, defaultLimiter, paged('portfolioId', 'status'),
+router.get('/investments', authenticate, defaultLimiter, paged('portfolioId', 'status'),
   doc({ summary: 'List investments', response: listOf('investments', recordOf(investmentSchema, 'investmentId', {}, 'Investment')) }),
   handle(async (req, res) => {
-    sendList(req, res, 'investments', await book.listInvestments(req.apiKey.orgId, {
+    sendList(req, res, 'investments', await book.listInvestments(req.orgId, {
       portfolioId: req.query.portfolioId,
       status: req.query.status,
     }));
   }));
 
-router.post('/investments', apiKeyAuth, defaultLimiter,
+router.post('/investments', authenticate, defaultLimiter,
   validate({ body: investmentSchema }),
   handle(async (req, res) => {
-    res.status(201).json({ investment: await book.createInvestment(req.apiKey.orgId, req.body) });
+    res.status(201).json({ investment: await book.createInvestment(req.orgId, req.body) });
   }));
 
-router.patch('/investments/:id', apiKeyAuth, defaultLimiter,
+router.patch('/investments/:id', authenticate, defaultLimiter,
   validate({ body: investmentUpdateSchema }),
   handle(async (req, res) => {
-    const updated = await book.updateInvestment(req.apiKey.orgId, req.params.id, req.body);
+    const updated = await book.updateInvestment(req.orgId, req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No investment ${req.params.id}.` });
     res.json({ investment: updated });
   }));
 
 // ── Payments ───────────────────────────────────────────────────────────────
 
-router.get('/payments', apiKeyAuth, defaultLimiter, paged('portfolioId', 'investmentId'),
+router.get('/payments', authenticate, defaultLimiter, paged('portfolioId', 'investmentId'),
   doc({ summary: 'List payments', response: listOf('payments', recordOf(paymentSchema, 'paymentId', {}, 'Payment')) }),
   handle(async (req, res) => {
-    sendList(req, res, 'payments', await book.listPayments(req.apiKey.orgId, {
+    sendList(req, res, 'payments', await book.listPayments(req.orgId, {
       portfolioId: req.query.portfolioId,
       investmentId: req.query.investmentId,
     }));
   }));
 
-router.post('/payments', apiKeyAuth, defaultLimiter,
+router.post('/payments', authenticate, defaultLimiter,
   validate({ body: paymentSchema }),
   handle(async (req, res) => {
-    res.status(201).json({ payment: await book.createPayment(req.apiKey.orgId, req.body) });
+    res.status(201).json({ payment: await book.createPayment(req.orgId, req.body) });
   }));
 
-router.delete('/payments/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  await book.deletePayment(req.apiKey.orgId, req.params.id);
+router.delete('/payments/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+  await book.deletePayment(req.orgId, req.params.id);
   res.status(204).end();
 }));
 
 // ── A worked book, for a demonstration ─────────────────────────────────────
 
-router.post('/demo', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.status(201).json(await seedCapitalDemo(req.apiKey.orgId));
+router.post('/demo', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.status(201).json(await seedCapitalDemo(req.orgId));
 }));
 
 module.exports = router;

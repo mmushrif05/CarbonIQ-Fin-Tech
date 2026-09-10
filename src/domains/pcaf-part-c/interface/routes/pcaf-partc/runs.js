@@ -7,7 +7,7 @@
 const { Router } = require('express');
 
 const { fallback } = require('../../../../../platform/observability/logger');
-const apiKeyAuth   = require('../../../../../platform/auth/api-key');
+const authenticate   = require('../../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../../platform/http/pagination');
 const { doc } = require('../../../../../platform/http/openapi-hints');
 const validate     = require('../../../../../platform/http/validate');
@@ -36,11 +36,11 @@ const router = Router();
 // documents have been read and mapped, the form is built and gated, and the
 // run now waits for the client. It may wait across sessions.
 // ---------------------------------------------------------------------------
-router.post('/runs/start', apiKeyAuth, defaultLimiter,
+router.post('/runs/start', authenticate, defaultLimiter,
   validate({ body: startRunRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const runId = generatePartCRunId();
 
       const form = buildForm({
@@ -81,10 +81,10 @@ router.post('/runs/start', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // POST /runs/:runId/resume — the client has answered; compute and complete
 // ---------------------------------------------------------------------------
-router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
+router.post('/runs/:runId/resume', authenticate, defaultLimiter,
   validate({ body: resumeRunRequestSchema }),
   async (req, res, next) => {
-    const orgId = req.apiKey.orgId;
+    const orgId = req.orgId;
     const { runId } = req.params;
     try {
       const run = await runStore.getRun(orgId, runId);
@@ -157,18 +157,18 @@ router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // GET /runs, GET /runs/:runId
 // ---------------------------------------------------------------------------
-router.get('/runs', apiKeyAuth, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page' }), async (req, res, next) => {
+router.get('/runs', authenticate, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page' }), async (req, res, next) => {
   try {
     if (req.query.limit === undefined && req.query.cursor === undefined) {
-      return res.json({ runs: await runStore.listRuns(req.apiKey.orgId, 20) });
+      return res.json({ runs: await runStore.listRuns(req.orgId, 20) });
     }
-    sendList(req, res, 'runs', await runStore.listRuns(req.apiKey.orgId, 500));
+    sendList(req, res, 'runs', await runStore.listRuns(req.orgId, 500));
   } catch (err) { next(err); }
 });
 
-router.get('/runs/:runId', apiKeyAuth, defaultLimiter, async (req, res, next) => {
+router.get('/runs/:runId', authenticate, defaultLimiter, async (req, res, next) => {
   try {
-    const run = await runStore.getRun(req.apiKey.orgId, req.params.runId);
+    const run = await runStore.getRun(req.orgId, req.params.runId);
     if (!run) return res.status(404).json({ error: 'RUN_NOT_FOUND', message: `No Part C run ${req.params.runId}.` });
     res.json({ run });
   } catch (err) { next(err); }

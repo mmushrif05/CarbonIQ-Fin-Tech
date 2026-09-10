@@ -148,7 +148,7 @@ function collect(app) {
       if (layer.route) {
         const full = `${prefix}${layer.route.path}`.replace(/\/{2,}/g, '/').replace(/(.)\/$/, '$1') || '/';
         const chain = layer.route.stack;
-        const authNames = chain.map(l => l.name).filter(n => ['apiKeyAuth', 'auth', 'dualAuth'].includes(n));
+        const authNames = chain.map(l => l.name).filter(n => ['authenticate', 'apiKeyAuth', 'auth', 'dualAuth'].includes(n));
         const validateLayer = chain.find(l => l.name === 'validate' && l.handle && l.handle.schema);
         const pagedLayer = chain.find(l => l.name === 'paged');
         const docLayer = chain.find(l => l.name === 'apiDoc');
@@ -263,8 +263,10 @@ function buildSpec(app) {
     op.responses = responsesFor(row, dataSchema);
     if (row.auth.length) {
       op.security = [];
-      if (row.auth.includes('apiKeyAuth') || row.auth.includes('dualAuth')) op.security.push({ ApiKeyAuth: [] });
-      if (row.auth.includes('auth') || row.auth.includes('dualAuth')) op.security.push({ BearerAuth: [] });
+      /* One door takes either credential, so an authenticated operation
+         offers both schemes and a client may satisfy it with either. */
+      if (row.auth.includes('authenticate') || row.auth.includes('apiKeyAuth') || row.auth.includes('dualAuth')) op.security.push({ ApiKeyAuth: [] });
+      if (row.auth.includes('authenticate') || row.auth.includes('auth') || row.auth.includes('dualAuth')) op.security.push({ BearerAuth: [] });
     } else {
       op.security = [];
     }
@@ -296,7 +298,7 @@ function buildSpec(app) {
     paths,
     components: { securitySchemes: {
       ApiKeyAuth: { type: 'apiKey', in: 'header', name: 'X-API-Key', description: 'An organisation key issued with `npm run key:create`. Add `X-Actor` to name the person.' },
-      BearerAuth: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT', description: 'A signed-in user of the dashboard.' },
+      BearerAuth: { type: 'http', scheme: 'bearer', description: 'A session token from `POST /v1/auth/login`. The scopes it holds are the ones its role carries.' },
     }, schemas: { ...SCHEMAS, ...registeredComponents() }, responses: RESPONSES, parameters: PARAMETERS, headers: HEADERS },
   };
 }

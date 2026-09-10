@@ -13,18 +13,8 @@
 const crypto = require('crypto');
 const config = require('../config');
 const { getDatabase } = require('../bridge/firebase');
-const { enforceScope, actorOf, UI_KEY_SCOPES, DEV_KEY_SCOPES } = require('./scopes');
+const { admit, UI_KEY_SCOPES, DEV_KEY_SCOPES } = require('./scopes');
 const { keyStoreFor } = require('./key-store');
-
-/**
- * Every authenticated request ends here: the subject is on the request, the
- * actor is named, and the route's scope is enforced. One exit, so no route
- * can be authenticated without being authorised.
- */
-function admit(req, res, next) {
-  req.actor = actorOf(req);
-  return enforceScope(req, res, next);
-}
 
 /** A key past its expiry is refused with the date, so the fix is obvious. */
 function expired(keyData) {
@@ -32,6 +22,19 @@ function expired(keyData) {
   const at = new Date(keyData.expiresAt);
   if (Number.isNaN(at.getTime())) return null;
   return at.getTime() <= Date.now() ? at.toISOString() : null;
+}
+
+/**
+ * Compare a presented key with a configured one without leaking how far the
+ * comparison got. `===` on a secret is a small window and a free one to
+ * close, and it is the kind of thing a bank's security review looks for.
+ */
+function sameSecret(presented, configured) {
+  if (!configured || !presented) return false;
+  const a = Buffer.from(String(presented));
+  const b = Buffer.from(String(configured));
+  if (a.length !== b.length) return false;
+  return crypto.timingSafeEqual(a, b);
 }
 
 function hashApiKey(key) {
@@ -62,7 +65,7 @@ async function apiKeyAuth(req, res, next) {
   // UI key bypass: UI_API_KEY env var allows the frontend's hardcoded key to work
   // in all environments (dev + production). Set this in Netlify environment variables.
   const uiKey = config.runtime.uiApiKey;
-  if (uiKey && apiKey === uiKey) {
+  if (sameSecret(apiKey, uiKey)) {
     req.apiKey = {
       orgId: 'ui', orgName: 'CarbonIQ Frontend', keyName: 'dashboard', projectIds: [],
       permissions: ['read', 'write', 'assess', 'pcaf', 'taxonomy', 'covenant', 'portfolio', 'agent'],
@@ -75,7 +78,7 @@ async function apiKeyAuth(req, res, next) {
   // Set DEV_API_KEY in .env (development only — never set in production).
   const devKey = config.runtime.devApiKey;
   const db = getDatabase();
-  if (!db && devKey && apiKey === devKey) {
+  if (!db && sameSecret(apiKey, devKey)) {
     // Same permission set as the dashboard key. An empty list here meant the
     // documented local-development bypass authenticated successfully and then
     // failed every authorization check with a 403, which reads as a broken
@@ -190,3 +193,4 @@ module.exports.requireProjectAccess = requireProjectAccess;
 module.exports.requirePermission = requirePermission;
 module.exports.hashApiKey = hashApiKey;
 module.exports.expired = expired;
+module.exports.sameSecret = sameSecret;

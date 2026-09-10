@@ -47,6 +47,7 @@ const gcfRouter           = require('../../domains/gcf/interface/routes/gcf');
 const deskRouter          = require('../../domains/capital/interface/routes/desk');
 const ndcSdgRouter        = require('../../domains/taxonomy/interface/routes/ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
+const authRouter          = require('./auth-routes');
 const metricsRouter       = require('./metrics-route');
 const jobsRouter          = require('./jobs-route');
 const openapiRouter       = require('./openapi-route');
@@ -162,6 +163,8 @@ router.get('/', (_req, res) => {
 
 // No auth — this is the request that supplies the credential for every
 // request after it, so it cannot itself require one.
+router.use('/auth', authRouter);
+
 router.use('/', uiConfigRouter);
 router.use('/', metricsRouter);
 router.use('/', jobsRouter);

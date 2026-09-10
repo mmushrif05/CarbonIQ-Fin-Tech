@@ -6,7 +6,15 @@ const request = require('supertest');
 const app     = require('../src/server');
 const { generateReport } = require('../src/domains/lending/application/reports');
 
-const TEST_KEY = process.env.DEV_API_KEY || 'ck_test_00000000000000000000000000000000';
+/* The credential this suite authenticates with, set here rather than read
+   from the environment. It used to be `process.env.DEV_API_KEY || <a literal>`,
+   which passed on a developer's machine because their .env had one and on the
+   memory job because a deployment with no key store answers 503 — a status
+   this suite accepts. On PostgreSQL there is a key store, the literal is not
+   in it, and the request 401s. That is why these tests were red in CI and
+   green everywhere else, and why they were never really exercising the route. */
+process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_' + 't'.repeat(32);
+const TEST_KEY = process.env.UI_API_KEY;
 const AUTH     = { 'x-api-key': TEST_KEY };
 
 // ---------------------------------------------------------------------------

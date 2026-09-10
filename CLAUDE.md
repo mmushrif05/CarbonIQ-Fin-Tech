@@ -37,6 +37,14 @@ npm run key:expire -- <key-id> --expires YYYY-MM-DD
 npm run key:rotate -- <key-id> [--grace-days 7]          # Replacement issued; old key expires after the grace
 npm run key:revoke -- <key-id>
 npm run key:register-ui  # Register the UI dashboard API key
+
+# Accounts (see docs/AUTHENTICATION.md)
+npm run user:create -- --email you@bank.lk --org <org-id> --role admin   # the first administrator
+npm run user:list        # every account, its role and standing
+npm run user:role   -- <email> --role <role>
+npm run user:passwd -- <email>    # resets, and ends every session that account holds
+npm run user:disable -- <email>   # and ends every session
+npm run user:enable  -- <email>
 npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
 npm run docs:openapi     # Regenerate docs/openapi.json from the router
 npm run worker           # A long-lived job worker beside the database
@@ -106,6 +114,9 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| `POST` | `/v1/auth/login` | Sign in — the only route that needs no credential |
+| `POST` | `/v1/auth/logout` · `GET /v1/auth/me` · `POST /v1/auth/password` | The caller's own session and password |
+| `GET/POST/PATCH` | `/v1/auth/users` | Accounts — requires the `admin` scope |
 | `GET` | `/health` | Health check — no auth required |
 | `POST` | `/v1/assess` | Full project carbon assessment (AI-powered) |
 | `GET/POST` | `/v1/projects` | List projects / create project |
@@ -166,18 +177,21 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 
 ## Authentication
 
-Dual-mode authentication — every request must use one of:
+**One door, two credentials (`src/platform/auth/authenticate.js`, `docs/AUTHENTICATION.md`).** A request arrives as a **person** — a browser carrying a session token the server issued at sign-in — or as a **system**, a bank's integration carrying an API key. Both end at `admit()`, which names the actor, puts the organisation on the request and enforces the route's scope, so no route can be authenticated without being authorised. `POST /v1/auth/login` is the only route on the surface with no credential, because it is the request that establishes one; a test pins that list.
 
-- **JWT** — for bank analyst portals/user sessions; validated via `src/platform/auth/auth.js`
-- **API Key** — for bank system integrations; SHA-256 hashed keys stored in Firestore, validated via `src/platform/auth/api-key.js`
+Before H1 there was no user authentication at all. The sign-in screen was a form that took a name, an email and a self-selected role and wrote them to `localStorage`; every browser was handed the same `UI_API_KEY` carrying `read write lock assess` under the hardcoded organisation `ui`, from an endpoint with no authentication in front of it; and the name that reached `lockedBy` and the audit chain was whatever had been typed into the box. The chain was cryptographically sound and attested to a self-declared identity, which is not evidence.
 
-The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric chars) to bypass Firebase key registration for internal calls.
+**Accounts and sessions are rows in the one database** (`users`, `sessions`, migration `0004`). Passwords are scrypt from Node's standard library, parameters carried in the stored form so the cost can be raised without invalidating anyone, upgraded at the next sign-in. A failed sign-in is byte-identical whether the address exists or not, and costs the same time, because otherwise the form is an address oracle. A session is a row rather than a signed token, so signing out is a delete and "sign that person out now" is a control that works; what is stored is the SHA-256 of the token, so a database read cannot impersonate anyone. Two clocks end it: idle at 60 minutes, absolute at 12 hours.
+
+**A role is on the account, and the scopes follow from it.** `scopesForRoleLevel()` maps the six roles in `src/shared/policies.js` onto the five scopes, which is how all 154 routes acquired role enforcement without a decorator on any of them — closing gaps B1 and B2, which E2's scope work had left open. The role is read from the account on every request rather than kept in the session, so a demotion or a disabled account takes effect on the next call rather than at the next sign-in. `npm run user:create` makes the first administrator; there is no self-service sign-up, and a deployment with nobody in it says so on `/health` and in the sign-in refusal.
+
+**The browser holds no API key.** `GET /v1/ui-config.js` serves the build stamp and nothing that authenticates; `UI_API_KEY` remains an ordinary integration key. `X-API-Key` is unchanged for bank systems, with two adjustments: `X-Actor` is still believed, because a bank's own system is the only thing that knows which of its people pressed the button, and is now recorded `actorVerified: false` beside a name the server established; and a key issued before scopes existed is held to `read` rather than waved through with every scope on every route, with `ALLOW_UNSCOPED_KEYS=true` as a migration window that `config.validate()` refuses in production.
 
 **Scopes (`src/platform/auth/scopes.js`, `docs/API-SCOPES.md`).** Five: `read` (every GET and the computations that store nothing), `write` (create, change, delete a record), `lock` (lock an assessment — it enters the disclosure, so it is kept apart from write), `assess` (run an engine that persists a run or calls an AI agent), `admin` (reserved). The scope a route requires is resolved from the route itself — method, pattern, and for a status change the body — and enforced from the authentication middleware, so all 146 routes carry one without a decorator on any of them. `docs/API-SCOPES.md` is generated from the running router and a test fails the build when it drifts. A refusal is `403 SCOPE_REQUIRED` naming the scope required, the scopes held and the command that grants it. The exit criterion of E2 is a test: a read-only key is refused when it tries to lock an assessment.
 
-**A key issued before scopes existed is unscoped, not broken.** It keeps everything it could do; every response on it carries `X-Key-Scopes: unscoped`; the audit chain records it; `key:list` counts them. `key:scope` applies scopes and the key is held to them from that moment. Keys can carry an `expiresAt` (401 `KEY_EXPIRED` with the date), and `key:rotate` issues a replacement with the same scopes while the old key runs out over a grace period and then points at the new one. The dashboard key holds `read write lock assess`, not `admin`; the local `DEV_API_KEY` holds everything and boot validation refuses it in production.
+**A key issued before scopes existed is held to `read`.** Every response on it carries `X-Key-Scopes: unscoped`, the audit chain records it, and `key:list` counts them; anything beyond a read is refused with the `key:scope` command that fixes it. It used to be waved through with every scope on all 146 routes including `lock`, for as long as the key lived, which is a fair migration story for a week and an open door after that. Keys can carry an `expiresAt` (401 `KEY_EXPIRED` with the date), and `key:rotate` issues a replacement with the same scopes while the old key runs out over a grace period and then points at the new one. The dashboard key holds `read write lock assess`, not `admin`; the local `DEV_API_KEY` holds everything and boot validation refuses it in production.
 
-**The person, not only the organisation.** `X-Actor` on a key request names who is acting; the dashboard sends the signed-in user's email on every request (`ui/config.js`). It reaches `lockedBy` on a lock and `actor` on the audit chain, with `via: header | key | user` saying how it was known.
+**The person, not only the organisation.** A session names the person from the account the server issued it to. `X-Actor` on a *key* request names who an integration is acting for and is believed, because only that bank's system knows. Both reach `lockedBy` on a lock and `actor` on the audit chain, with `via: header | key | user` saying how it was known and `verified` saying whether the server established it or was told.
 
 **One place reads the environment (`src/platform/config/index.js`).** Everything read once at load lives on `config`; the variables a deployment context, an operator or a test changes while the process runs — storage backend, database, dashboard key, build stamp — are live getters on `config.runtime`. A test asserts no `process.env` is read anywhere else under `src/`. `config.validate()` names by variable, never by value, what a production deployment cannot run safely with (a default salt, a malformed dashboard key, a non-Postgres `DATABASE_URL`, `DEV_API_KEY` or `STORAGE_BACKEND=memory` in production); a server refuses to start on it, and a serverless function — which cannot refuse — lists the names under `/health` `configured.problems`.
 
@@ -191,9 +205,9 @@ The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric
 
 **One async handler (`src/platform/http/async-handler.js`).** Four route files carried their own copy and their own `fail()`; the error handler already knew `statusCode`, `code` and `remedy`, so they are gone.
 
-**The deployment hands the browser that key (`src/platform/http/ui-config.js`).** It used to be a literal in `ui/config.js`, so changing `UI_API_KEY` in Netlify left the shipped copy behind and the app's own key check rejected its own dashboard — with *"API key is invalid or has been revoked"*, which reads as a revoked key rather than a mismatched one and cost a great deal of time to see. There is now one value: an unauthenticated `GET /v1/ui-config.js` emits what the environment holds, and `index.html` loads it after `config.js`. Drift is not possible, and no per-machine Settings step is needed.
+**What `GET /v1/ui-config.js` is now for.** It was built to end a real defect: the dashboard's key was a literal in `ui/config.js`, so changing `UI_API_KEY` in Netlify left the shipped copy behind and the app's own check rejected its own dashboard with *"API key is invalid or has been revoked"* — which reads as a revoked key rather than a mismatched one, and cost a great deal of time to see. Serving the value from the environment fixed the drift.
 
-That endpoint carries no auth because it is the request that supplies the credential for every request after it, and it exposes nothing the literal did not — a browser key is readable by whoever loads the page, by construction. What changed is that it is no longer readable by whoever clones a public repository, and rotating it is an environment change rather than a commit. The value is emitted via `JSON.stringify`, so a mis-pasted variable stays inside the string literal instead of becoming executable script; the test proves it by executing the served script. A key typed into Settings is an explicit choice and still wins — which is why `reset()` **removes** the stored override rather than writing the old default back, a reset that would otherwise reintroduce the very mismatch it exists to clear.
+It also left a write-and-lock credential reachable by anyone who could load the page. The defence offered for that was that a browser key is public by construction, which is true only of a page that is itself behind a sign-in, and this one was not. Since H1 the browser signs in and holds a session token, so there is no credential left to serve: the endpoint emits the build stamp, which is not a secret and cannot become one. The value is still emitted via `JSON.stringify`, so a stray character stays inside its string literal instead of becoming executable script, and the test still proves it by executing the served script.
 
 **`GET /health` also reports `configured: { uiKey, anthropicKey, firebase }` as booleans.** "The dashboard shows 401" and "the AI does nothing" are almost always a variable never set on this context, and from a browser neither says so — the same reason `/health` reports the running commit. Names and yes/no only; a test asserts no value can reach the wire.
 
@@ -219,6 +233,8 @@ Copy `.env.example` to `.env` and fill in:
 | `LOG_LEVEL` | `trace` … `fatal`; default `info`, `silent` under test |
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` | Error reporting; inert when unset, `/health` says which (see `docs/OBSERVABILITY.md`) |
 | `JOBS_TOKEN` · `JOBS_URL` · `JOBS_INLINE` | The job queue's background worker token and site URL; inline forces a job to run inside its request (see `docs/JOBS.md`) |
+| `ALLOW_UNSCOPED_KEYS` | A migration window for keys issued before scopes existed; refused in production (see `docs/AUTHENTICATION.md`) |
+| `ALLOW_PREVIEW_MIGRATIONS` | Lets a deploy preview run migrations, which it otherwise refuses because it may share the production database |
 | `NODE_ENV` | `development` or `production` |
 | `FINTECH_API_PORT` | Server port (default: 3001) |
 | `ANTHROPIC_MODEL` | Main agentic loop model (default: `claude-sonnet-4-6`) |
@@ -640,6 +656,9 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/JOBS.md` | The job queue: routes, types, the two modes, who works it, setting it up on Netlify |
 | `docs/FRONTEND.md` | The build, the browser tests, the Content Security Policy, type checking by pragma |
 | `docs/ENVIRONMENTS.md` | Production, staging, preview, local: what each is held to, how a change moves, the deploy gate |
+| `docs/AUTHENTICATION.md` | Signing in: the one door, roles and scopes, the first account, sessions, passwords, what is not built yet |
+| `docs/RELEASE-AND-ROLLBACK.md` | How a release is cut, and the order to reverse code and schema in |
+| `docs/HANDOVER-GAP-ANALYSIS.md` | The seven-phase handover register: what a development team would find, and the plan |
 | `docs/TYPECHECK-WORKLIST.md` | The files not yet under `@ts-check`, generated, held to the tree |
 | `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; all five phases delivered |
 | `docs/SCAFFOLDING.md` | 17-step build plan |

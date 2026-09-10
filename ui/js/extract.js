@@ -26,7 +26,6 @@ const ExtractPage = (() => {
    * ────────────────────────────────────────────────────────── */
 
   const API_ENDPOINT = '/v1/extract';
-  const API_DEMO_KEY = 'ck_test_00000000000000000000000000000000';
   const FETCH_TIMEOUT_MS = 15_000;
 
   /** ICE Database v3 emission factors (kgCO2e / kg material) */
@@ -315,12 +314,8 @@ Internal fit-out and services:
     const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
     try {
-      const response = await fetch(API_ENDPOINT, {
+      const response = await window.CARBONIQ_fetch(API_ENDPOINT, {
         method:  'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key':    window.CARBONIQ_API_KEY || API_DEMO_KEY,
-        },
         body:   JSON.stringify({ content, format, projectName, computeTotal: true }),
         signal: controller.signal,
       });

@@ -79,7 +79,11 @@ describe('Every collection the services write is registered', () => {
     for (const [name, def] of Object.entries(db.collections.COLLECTIONS)) {
       expect(sql).toMatch(new RegExp(`CREATE TABLE ${def.table} \\(`));
       for (const [field, column] of Object.entries(def.keys)) {
-        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer|boolean) GENERATED ALWAYS AS \\(\\(?data->>'${field}'`));
+        /* A generated column may normalise on the way in — `lower(...)` for
+           an email address, so one account cannot be created twice in two
+           cases — as well as cast on the way out. What matters is that the
+           column is generated from that JSON field and from nothing else. */
+        expect(sql).toMatch(new RegExp(`${column}\\s+(?:text|integer|boolean|timestamptz) GENERATED ALWAYS AS \\(\\s*(?:[a-z_]+\\()?\\(?data->>'${field}'`));
       }
       expect(name).toBeTruthy();
     }

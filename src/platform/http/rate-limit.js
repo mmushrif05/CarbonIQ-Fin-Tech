@@ -9,10 +9,19 @@
 
 const rateLimit = /** @type {any} */ (require('express-rate-limit'));
 const { RATE_LIMITS } = require('../../shared/constants');
+const limitStore = require('./rate-limit-store');
 
-function createLimiter(limitConfig = RATE_LIMITS.default) {
+/**
+ * @param {any} limitConfig
+ * @param {string} name the counter's prefix, so two tiers do not share a row
+ */
+function createLimiter(limitConfig = RATE_LIMITS.default, name = 'default') {
   return rateLimit({
     windowMs: limitConfig.windowMs,
+    /* Shared across instances where the database is there to share it;
+       otherwise the library's own per-process store, which limitStore
+       .describe() reports honestly rather than leaving it to be assumed. */
+    store: limitStore.storeFor(name),
     max: (req) => {
       // Use API key's configured rate limit if available
       if (req.apiKey && req.apiKey.rateLimit) {
@@ -22,8 +31,8 @@ function createLimiter(limitConfig = RATE_LIMITS.default) {
     },
     keyGenerator: (req) => {
       // Rate limit by API key or user ID or IP
-      if (req.apiKey) return `apikey:${req.apiKey.orgId}`;
       if (req.user) return `user:${req.user.uid}`;
+      if (req.apiKey) return `apikey:${req.apiKey.orgId}`;
       return req.ip;
     },
     standardHeaders: true,
@@ -37,10 +46,12 @@ function createLimiter(limitConfig = RATE_LIMITS.default) {
 }
 
 module.exports = {
-  defaultLimiter:   createLimiter(RATE_LIMITS.default),
-  assessLimiter:    createLimiter(RATE_LIMITS.assess),
-  extractLimiter:   createLimiter(RATE_LIMITS.extract),
-  portfolioLimiter: createLimiter(RATE_LIMITS.portfolio),
-  webhookLimiter:   createLimiter(RATE_LIMITS.webhook),
-  agentLimiter:     createLimiter(RATE_LIMITS.agent),
+  defaultLimiter:   createLimiter(RATE_LIMITS.default, 'default'),
+  assessLimiter:    createLimiter(RATE_LIMITS.assess, 'assess'),
+  extractLimiter:   createLimiter(RATE_LIMITS.extract, 'extract'),
+  portfolioLimiter: createLimiter(RATE_LIMITS.portfolio, 'portfolio'),
+  webhookLimiter:   createLimiter(RATE_LIMITS.webhook, 'webhook'),
+  agentLimiter:     createLimiter(RATE_LIMITS.agent, 'agent'),
+  createLimiter,
+  describe: limitStore.describe,
 };

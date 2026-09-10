@@ -7,7 +7,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth    = require('../../../../../platform/auth/api-key');
+const authenticate    = require('../../../../../platform/auth/authenticate');
 const validate      = require('../../../../../platform/http/validate');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
@@ -36,13 +36,13 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/coach',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_COACH),
   validate({ body: borrowerCoachingRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
 
       // Pre-compute all tool results and embed in the user message
       const userMessage = borrowerCoaching.buildUserMessageWithResults(req.body);
@@ -112,13 +112,13 @@ router.post('/coach',
 // ---------------------------------------------------------------------------
 
 router.post('/triage',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_TRIAGE),
   validate({ body: decisionTriageRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const body = req.body;
 
       // Step 1 — deterministic tier classification (no AI call, always fast)

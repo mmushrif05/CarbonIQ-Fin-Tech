@@ -13,7 +13,7 @@
 'use strict';
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
@@ -31,7 +31,7 @@ const router = Router();
  * the UI, so a screen cannot offer an option the engine would then reject, and
  * the two cannot drift.
  */
-router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Part A asset classes, archetypes and the data-quality options for each' }), (_req, res, next) => {
+router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Part A asset classes, archetypes and the data-quality options for each' }), (_req, res, next) => {
   try {
     res.json({
       standard: parta.STANDARD,
@@ -87,7 +87,7 @@ router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ sum
   } catch (err) { next(err); }
 });
 
-router.post('/assess', apiKeyAuth, defaultLimiter,
+router.post('/assess', authenticate, defaultLimiter,
   validate({ body: assessRequestSchema }),
   (req, res, next) => {
     try {

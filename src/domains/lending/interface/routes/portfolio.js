@@ -12,7 +12,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { portfolioLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
 const engine = require('../../../../platform/bridge/engine');
@@ -21,7 +21,7 @@ const { aggregatePortfolio } = require('../../domain/portfolio');
 const router = Router();
 
 router.get('/',
-  apiKeyAuth,
+  authenticate,
   portfolioLimiter,
   async (req, res, next) => {
     try {
@@ -32,7 +32,7 @@ router.get('/',
         });
       }
 
-      const projectIds = req.apiKey?.projectIds || [];
+      const projectIds = (req.apiKey && req.apiKey.projectIds) || [];
 
       if (projectIds.length === 0) {
         return res.json({

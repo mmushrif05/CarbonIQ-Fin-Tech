@@ -37,6 +37,8 @@
 
 'use strict';
 
+const config = require('../config');
+
 /** @typedef {import('../../shared/types').AppError} AppError */
 
 const SCOPES = Object.freeze(['read', 'write', 'lock', 'assess', 'admin']);
@@ -53,6 +55,17 @@ const DEV_KEY_SCOPES = SCOPES;
  * segments match themselves. Order matters: first match wins.
  */
 const OVERRIDES = Object.freeze([
+  /* Your own account. Ending your own session or changing your own password
+     must not need a scope over the book — an auditor holds `read` and still
+     has to be able to sign out. Administering *other* accounts is the first
+     thing on this surface to require `admin`, which is why that scope stopped
+     being reserved. */
+  { method: 'POST', pattern: /^\/v1\/auth\/logout$/, scope: 'read', why: 'ends the caller\'s own session' },
+  { method: 'POST', pattern: /^\/v1\/auth\/password$/, scope: 'read', why: 'changes the caller\'s own password' },
+  { method: 'GET', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'reads other people\'s accounts' },
+  { method: 'POST', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'creates or resets another account' },
+  { method: 'PATCH', pattern: /^\/v1\/auth\/users/, scope: 'admin', why: 'changes another account\'s role or standing' },
+
   /* Computations that store nothing — a read-only key may ask a question. */
   { method: 'POST', pattern: /^\/v1\/score$/, scope: 'read', why: 'Carbon Finance Score, stateless' },
   { method: 'POST', pattern: /^\/v1\/pcaf$/, scope: 'read', why: 'financed-emissions formatter, stateless' },
@@ -147,6 +160,23 @@ function enforceScope(req, res, next) {
   if (held.unscoped) {
     res.setHeader('X-Key-Scopes', 'unscoped');
     if (req.apiKey) req.apiKey.unscoped = true;
+    /* A key issued before scopes existed used to be waved through here —
+       every scope on all 146 routes, including `lock`, for as long as the key
+       lived. "It keeps what it could always do" is a fair migration story for
+       a week and an open door after that, so an unscoped key now holds `read`
+       and nothing else. A deployment that still has an integration to move
+       can set ALLOW_UNSCOPED_KEYS=true for the grace period; the refusal
+       names the command that ends the need for it. */
+    if (!config.runtime.allowUnscopedKeys) {
+      if (need.scope === 'read') return next();
+      return res.status(403).json({
+        error: 'SCOPE_REQUIRED',
+        message: `This key was issued before scopes existed and is held to "read". It cannot ${req.method} ${routePattern(req)}.`,
+        required: need.scope,
+        held: ['read'],
+        remedy: `Apply the scopes it needs: npm run key:scope -- <key-id> --scopes read,${need.scope}`,
+      });
+    }
     return next();
   }
   if (!held.scopes.includes(need.scope)) {
@@ -173,16 +203,47 @@ function actorOf(req) {
   const header = req.headers && (req.headers['x-actor'] || req.headers['x-actor-id']);
   const clean = v => String(v).replace(/[\r\n\t]/g, ' ').trim().slice(0, 120);
   if (req.user) {
-    return { id: req.user.uid, label: req.user.email || req.user.uid, via: 'user' };
+    /* Verified: this name came from a session the server issued against an
+       account it holds, not from something the caller wrote down. */
+    return { id: req.user.uid, label: req.user.email || req.user.uid, via: 'user', verified: true };
   }
   if (header && clean(header)) {
-    return { id: clean(header), label: clean(header), via: 'header', key: req.apiKey && req.apiKey.keyName };
+    /* Asserted by the integration and believed, because a bank's own system
+       is the only thing that knows which of its people pressed the button.
+       It is recorded as unverified so a reader of the audit chain can tell
+       the two apart — a name the server established, and a name it was told. */
+    return { id: clean(header), label: clean(header), via: 'header', verified: false, key: req.apiKey && req.apiKey.keyName };
   }
   if (req.apiKey) {
     const label = req.apiKey.keyName || req.apiKey.orgName || req.apiKey.orgId;
-    return { id: label, label, via: 'key' };
+    return { id: label, label, via: 'key', verified: true };
   }
-  return { id: null, label: 'anonymous', via: 'none' };
+  return { id: null, label: 'anonymous', via: 'none', verified: false };
+}
+
+/**
+ * Every authenticated request ends here: the subject is on the request, the
+ * actor is named, and the route's scope is enforced. One exit, so no route
+ * can be authenticated without being authorised.
+ */
+function admit(req, res, next) {
+  req.actor = actorOf(req);
+  /* The organisation a request belongs to, whichever credential carried it.
+     Before this, 110 route handlers read `req.apiKey.orgId` directly, which
+     is both a crash under any other credential and 110 chances for one of
+     them to reach for a different value. A credential that names no
+     organisation reads nothing: there is no default tenant to fall into. */
+  req.orgId = (req.user && req.user.organizationId)
+    || (req.apiKey && req.apiKey.orgId)
+    || null;
+  if (!req.orgId) {
+    return res.status(403).json({
+      error: 'NO_ORGANISATION',
+      message: 'This credential is not attached to an organisation, so it can read nothing.',
+      remedy: 'Reissue the key against an organisation, or sign in with an account that has one.',
+    });
+  }
+  return enforceScope(req, res, next);
 }
 
 /** Normalise a scope list from a CLI or a record: known scopes only, unique, in canonical order. */
@@ -200,5 +261,5 @@ function normaliseScopes(input) {
 
 module.exports = {
   SCOPES, UI_KEY_SCOPES, DEV_KEY_SCOPES, OVERRIDES, DEFAULT_BY_METHOD,
-  requiredScope, requiredScopeFor, routePattern, heldScopes, scopesForRoleLevel, enforceScope, actorOf, normaliseScopes,
+  requiredScope, requiredScopeFor, routePattern, heldScopes, scopesForRoleLevel, enforceScope, admit, actorOf, normaliseScopes,
 };

@@ -8,7 +8,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { reportGenerateSchema } = require('../schemas/reports');
@@ -21,7 +21,7 @@ const router = Router();
 // POST /v1/reports/generate
 // ---------------------------------------------------------------------------
 
-router.post('/generate', apiKeyAuth, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }), async (req, res, next) => {
+router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }), async (req, res, next) => {
   try {
     // Validate request body
     const { error, value } = reportGenerateSchema.validate(req.body, { abortEarly: false });

@@ -37,6 +37,11 @@ module.exports = defineConfig({
       STORAGE_BACKEND: 'memory',
       LOG_LEVEL: 'silent',
       UI_API_KEY: 'ck_test_e2e00000000000000000000000000000',
+      /* The account the journeys sign in as has to be created by something
+         holding `admin`, and the dashboard key deliberately stops short of
+         it. The development key holds everything and is refused in
+         production by config.validate(). */
+      DEV_API_KEY: 'ck_test_e2eadmin000000000000000000000000',
       UI_DIR: 'dist/ui',
       API_KEY_SALT: 'e2e-salt-not-for-production',
       ALLOWED_ORIGINS: `http://127.0.0.1:${PORT}`,

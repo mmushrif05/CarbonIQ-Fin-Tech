@@ -30,6 +30,9 @@ const errors = require('../src/platform/observability/errors');
 const audit = require('../src/platform/observability/audit');
 const errorHandler = require('../src/platform/http/error-handler');
 const store = require('../src/platform/database/store');
+/* Loaded once, at module scope: requiring the app inside a test body charges
+   the cost of loading the whole tree to that test's timer. */
+const app = require('../src/server');
 
 const DSN = 'https://abc123def@o1.ingest.sentry.io/99';
 
@@ -261,7 +264,6 @@ describe('Metrics: request rate, latency, error rate, store latency, by route pa
   });
 
   test('GET /v1/metrics answers JSON, or the Prometheus exposition, and needs a key', async () => {
-    const app = require('../src/server');
     await request(app).get('/v1/metrics').expect(401);
     const json = await request(app).get('/v1/metrics').set('x-api-key', process.env.UI_API_KEY).expect(200);
     expect(json.body).toMatchObject({ instance: expect.any(String), since: expect.any(String) });
@@ -346,7 +348,6 @@ describe('Swallowed errors are gone (C5): a failure answered with a fallback is 
 describe('/health says how the deployment can be watched, and never what the sink is', () => {
   test('the observability block is closed, boolean where it matters, and carries no DSN', async () => {
     process.env.SENTRY_DSN = DSN;
-    const app = require('../src/server');
     const res = await request(app).get('/health').expect(200);
     expect(Object.keys(res.body.observability).sort()).toEqual(['errorTracking', 'logLevel', 'logging', 'metrics']);
     expect(res.body.observability).toMatchObject({ logging: 'json', errorTracking: true, metrics: '/v1/metrics' });
