@@ -154,9 +154,18 @@ app.get('/health',
          itself never reaches the wire, here or anywhere. */
       bootstrap: Boolean((await require('./platform/http/auth-routes').bootstrapState()
         .catch(logger.fallback('health.bootstrap', { available: false }))).available),
-      /* Boot validation, by variable name only. A serverless function cannot
-         refuse to start, so it says here what a server would have refused on. */
-      ...(() => { const v = config.validate(); return v.ok ? {} : { problems: v.problems.map(p => p.variable) }; })()
+      /* Boot validation, by variable name only. A problem is what the
+         function refuses every other route on, so this is where the cause is
+         read; a warning is what nothing refuses on and an operator should
+         still see — the environment-size estimate is one. Either key is
+         present only when it has something in it. */
+      ...(() => {
+        const v = config.validate();
+        return {
+          ...(v.problems.length ? { problems: v.problems.map(p => p.variable) } : {}),
+          ...(v.warnings.length ? { warnings: v.warnings.map(p => p.variable) } : {}),
+        };
+      })()
     },
     /* What this deployment can actually persist, on the one endpoint that
        needs no key. "The data did not save" and "this deployment cannot save"
