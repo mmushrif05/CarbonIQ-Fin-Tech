@@ -16,10 +16,27 @@
  */
 
 const { getProjectTenders } = require('./firebase');
+const Joi = require('joi');
+const { strictNumber } = require('../../shared/reference-data');
+const log = require('../observability/logger').for('bridge/engine');
 
 // ---------------------------------------------------------------------------
 // Tender / BOQ Analysis Results
 // ---------------------------------------------------------------------------
+
+/**
+ * One tender line as the core engine reports it.
+ *
+ * `baselineEmission` is strict: it is summed, and `"12" + 5` is `"125"`.
+ * Unknown fields are admitted and passed through — the core engine owns this
+ * record's shape and may add to it — but the three fields this side computes
+ * from have to be numbers or the line is not computable.
+ */
+const tenderItemSchema = Joi.object({
+  baselineEmission: strictNumber.required(),
+  targetEmission: strictNumber.optional(),
+  quantity: strictNumber.optional(),
+}).unknown(true);
 
 /**
  * Get the 80% significant materials for a project.
@@ -37,7 +54,28 @@ async function get80PctMaterials(projectId) {
   const active = scenarios.find(s => s.active) || scenarios[0];
   if (!active || !active.items) return null;
 
-  const items = Object.values(active.items);
+  /* The core engine is a separate deployment with its own release cycle, so
+     what arrives here is an external boundary however familiar it looks. It
+     was read straight into the arithmetic: `sum + item.baselineEmission`
+     concatenates rather than adds when that field arrives as a string, and the
+     total then coerces back to a number at the next multiplication — so a
+     wrong figure reaches the top-20%-of-materials calculation with nothing
+     anywhere reporting a fault. Each item is checked, and one that cannot be
+     computed from is dropped with its id counted rather than silently summed. */
+  const raw = Object.values(active.items);
+  const items = [];
+  const rejected = [];
+  for (const item of raw) {
+    const { error, value } = tenderItemSchema.validate(item, {
+      abortEarly: true, convert: false, stripUnknown: false, allowUnknown: true,
+    });
+    if (error) { rejected.push({ id: item && item.id, why: error.message }); continue; }
+    items.push(value);
+  }
+  if (rejected.length) {
+    log.warn({ projectId, rejected: rejected.length, first: rejected[0], kind: 'invalid' },
+      'core engine tender items dropped: not computable');
+  }
 
   // Sort by baseline emission descending (same as recalcTender80Pct)
   const sorted = items
@@ -65,7 +103,11 @@ async function get80PctMaterials(projectId) {
     totalTarget: items.reduce((sum, item) => sum + (item.targetEmission || 0), 0),
     threshold80Pct: threshold,
     totalItems: items.length,
-    significantCount: significant.filter(i => i.inTop80Pct).length
+    significantCount: significant.filter(i => i.inTop80Pct).length,
+    /* Travels with the figure rather than being logged and forgotten: a
+       total drawn from 90 of 100 lines means something different from one
+       drawn from all of them, and the reader is entitled to know which. */
+    rejectedItems: rejected.length
   };
 }
 

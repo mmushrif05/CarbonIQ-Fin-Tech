@@ -9,7 +9,7 @@
  * and is mandated by ISO 21930. Do NOT duplicate or override it here.
  */
 
-const NDC3 = require('../../data/gcf/ndc3.json');
+const { NDC3 } = require('./ndc');
 
 // ---------------------------------------------------------------------------
 // Carbon Finance Score (CFS) — 0 to 100

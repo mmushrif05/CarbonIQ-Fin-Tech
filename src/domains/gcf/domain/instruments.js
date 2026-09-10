@@ -35,7 +35,7 @@
 
 'use strict';
 
-const CATALOGUE = require('../../../../data/gcf/instruments.json');
+const { INSTRUMENT_CATALOGUE: CATALOGUE } = require('./reference');
 const { numberOrNull } = require('../../../shared/numbers');
 
 const INSTRUMENTS = CATALOGUE.instruments;

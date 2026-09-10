@@ -52,10 +52,8 @@ const conformance = require('../../domain/conformance');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const partcStore = require('../../../../platform/database/store');
 
-const AREAS = require('../../../../../data/gcf/results-areas.json');
-const IRMF = require('../../../../../data/gcf/irmf.json');
-const NDC3 = require('../../../../../data/gcf/ndc3.json');
-const INSTRUMENTS = require('../../../../../data/gcf/instruments.json');
+const { RESULTS_AREAS: AREAS, IRMF, INSTRUMENT_CATALOGUE: INSTRUMENTS } = require('../../domain/reference');
+const { NDC3 } = require('../../../../shared/ndc');
 
 const router = Router();
 

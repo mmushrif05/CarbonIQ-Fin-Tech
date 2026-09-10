@@ -33,7 +33,7 @@
 
 'use strict';
 
-const NDC = require('../../../../data/gcf/ndc3.json');
+const { NDC3: NDC } = require('../../../shared/ndc');
 const emissions = require('./emissions');
 
 const PERIOD_YEARS = 10;                       // 2026-2035 inclusive

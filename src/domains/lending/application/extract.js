@@ -16,6 +16,8 @@
 const Anthropic = require('@anthropic-ai/sdk');
 const config    = require('../../../platform/config');
 const { MATERIAL_CARBON_FACTORS } = require('../../../shared/models/constants');
+const Joi = require('joi');
+const { maybeNumber } = require('../../../shared/numbers');
 
 const SUPPORTED_CATEGORIES = Object.keys(MATERIAL_CARBON_FACTORS);
 
@@ -252,6 +254,40 @@ async function extractFromRequest({ content, format = 'text', pdfBase64, fileId,
 // ---------------------------------------------------------------------------
 
 /**
+ * What the model is allowed to hand the engine.
+ *
+ * **The division of labour is the rule this enforces.** Claude classifies,
+ * extracts and maps BOQ lines; the engine performs every arithmetic operation,
+ * because an LLM must never compute a figure that reaches a regulatory
+ * disclosure. So `emissionFactor`, `totalKgCO2e` and anything else the model
+ * might have multiplied for itself are **not in this schema** and are stripped
+ * if returned — the engine recomputes them from the factor table, and a model
+ * that had done the sum could not have its answer quietly preferred.
+ *
+ * `quantity` is nullable on purpose and the prompt asks for null where the
+ * line could not be read. Null is not zero: a zero is a claim that the line
+ * carries no material, and an unread line is a claim about the document.
+ *
+ * `convert: false` at the call site is what makes this worth having. Joi would
+ * otherwise turn the string `"1200"` into `1200` and the shape would pass —
+ * hiding exactly the case where the model returned text where a number
+ * belonged, which is the failure this boundary exists to catch.
+ */
+const extractionOutputSchema = Joi.object({
+  materials: Joi.array().items(Joi.object({
+    name: Joi.string().max(400).required(),
+    category: Joi.string().max(60).optional(),
+    quantity: Joi.number().min(0).allow(null).required(),
+    originalQuantity: Joi.any().optional(),
+    unit: Joi.string().max(40).allow('', null).optional(),
+    confidence: Joi.string().valid('high', 'medium', 'low').optional(),
+    note: Joi.string().max(2000).allow('', null).optional(),
+    source: Joi.string().max(400).allow('', null).optional(),
+  }).unknown(false)).required(),
+  summary: Joi.object().unknown(true).optional(),
+}).unknown(false);
+
+/**
  * Parse Claude's JSON response and enrich each material with ICE v3 factor.
  */
 function _parseAndEnrich(response) {
@@ -267,11 +303,24 @@ function _parseAndEnrich(response) {
     throw new Error('AI returned invalid JSON. Raw response: ' + rawText.slice(0, 300));
   }
 
-  if (!parsed.materials || !Array.isArray(parsed.materials)) {
-    throw new Error('AI response missing materials array.');
+  /* The model's output is validated before a single multiplication.
+     `Array.isArray(parsed.materials)` was the whole check, and then
+     `mat.quantity * factorData.factor` — so a quantity of `""` multiplied to
+     zero, `true` multiplied to the factor itself, and a negative quantity
+     produced a negative emission, none of them announcing anything. */
+  const { error, value } = extractionOutputSchema.validate(parsed, {
+    abortEarly: false, convert: false, stripUnknown: true,
+  });
+  if (error) {
+    const err = /** @type {any} */ (new Error(
+      `AI extraction returned a shape the engine will not compute from: `
+      + error.details.map(d => `${d.path.join('.')}: ${d.message}`).join('; ')));
+    err.statusCode = 502;
+    err.code = 'INVALID_EXTRACTION';
+    throw err;
   }
 
-  const enriched = parsed.materials.map(mat => _enrichWithFactor(mat));
+  const enriched = value.materials.map((/** @type {any} */ mat) => _enrichWithFactor(mat));
 
   return {
     materials:  enriched,
@@ -301,11 +350,15 @@ function _enrichWithFactor(mat) {
     emissionFactorSource: factorData.source
   };
 
-  if (mat.quantity != null && !isNaN(mat.quantity)) {
-    enriched.totalKgCO2e = parseFloat((mat.quantity * factorData.factor).toFixed(2));
-  } else {
-    enriched.totalKgCO2e = null;
-  }
+  /* Absence before number, and the engine does the arithmetic. A quantity the
+     model could not read is `null`, and null is not zero: a line reported as
+     zero kgCO2e reads as a material with no impact, where an unread line is a
+     material nobody has measured. */
+  const quantity = maybeNumber(mat.quantity);
+  enriched.quantity = quantity === undefined ? null : quantity;
+  enriched.totalKgCO2e = quantity === undefined
+    ? null
+    : parseFloat((quantity * factorData.factor).toFixed(2));
 
   return enriched;
 }

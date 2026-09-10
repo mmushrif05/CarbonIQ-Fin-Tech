@@ -32,13 +32,34 @@
 
 'use strict';
 
+const Joi = require('joi');
+const { checked } = require('../../../shared/reference-data');
 const store = require('../../../platform/database/store');
 
 const COLLECTION = 'assurance';
 const DOC = 'default';
 
 /** Deep-frozen, read once. A baseline has no business changing under a read. */
-const BASELINE = Object.freeze(require('../../../../data/assurance.json'));
+/**
+ * The shipped baseline, checked at load.
+ *
+ * It declares nothing — every scope is `not_declared` — and the schema keeps
+ * it that way. A shipped file that arrived carrying `assured` would state, on
+ * a deployment nobody had configured, that an audit had happened. That is the
+ * one thing this file must never be able to say.
+ */
+const baselineSchema = Joi.object({
+  _comment: Joi.string().max(4000).optional(),
+  version: Joi.string().max(20).required(),
+  source: Joi.string().valid('baseline').required(),
+  scopes: Joi.object().pattern(Joi.string().max(60), Joi.object({
+    status: Joi.string().valid('not_declared').required(),
+    label: Joi.string().max(200).required(),
+  }).unknown(false)).min(1).required(),
+}).unknown(false);
+
+const BASELINE = Object.freeze(checked('data/assurance.json',
+  require('../../../../data/assurance.json'), baselineSchema));
 
 const STATES = ['assured', 'not_assured', 'not_declared'];
 const LEVELS = ['limited', 'reasonable'];

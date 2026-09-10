@@ -18,7 +18,7 @@
 
 'use strict';
 
-const table = require('../../../../../data/pcaf-parta/dq-listed-equity-corporate-bonds.json');
+const table = require('../reference').DQ_LISTED_EQUITY;
 
 const REF = 'PCAF Part A Third Edition §5.1, Table 5.1-2 (p.46) and p.47 (data providers)';
 

@@ -24,7 +24,7 @@
 const store = require('../../../platform/database/store');
 const { fallback } = require('../../../platform/observability/logger');
 const record = require('../domain/record');
-const SEED = require('../../../../data/gcf/pipeline.seed.json');
+const SEED = require('../domain/reference').PIPELINE_SEED;
 
 const COLLECTION = 'gcf_projects';
 const SETTINGS_COLLECTION = 'gcf_entity';

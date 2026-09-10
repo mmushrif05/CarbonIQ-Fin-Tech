@@ -23,7 +23,7 @@
 
 const { absent } = require('./provenance');
 
-const CONFIG = require('../../../../data/pcaf-parta/country-config.json');
+const CONFIG = require('./reference').COUNTRY_CONFIG;
 
 const TECHNOLOGIES = {
   solar_pv:  { id: 'solar_pv',  label: 'Solar PV' },

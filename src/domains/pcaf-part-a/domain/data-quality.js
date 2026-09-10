@@ -18,8 +18,8 @@
 'use strict';
 
 const TABLES = {
-  'project-finance': require('../../../../data/pcaf-parta/dq-project-finance.json'),
-  'listed-equity-corporate-bonds': require('../../../../data/pcaf-parta/dq-listed-equity-corporate-bonds.json'),
+  'project-finance': require('./reference').DQ_PROJECT_FINANCE,
+  'listed-equity-corporate-bonds': require('./reference').DQ_LISTED_EQUITY,
 };
 
 /** The data-quality table for an asset class, or an error naming the gap. */
