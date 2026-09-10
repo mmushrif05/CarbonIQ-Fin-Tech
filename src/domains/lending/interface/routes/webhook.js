@@ -11,7 +11,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const validate = require('../../../../platform/http/validate');
@@ -25,13 +25,13 @@ const router = Router();
 // POST /v1/webhooks — Register subscription
 // ---------------------------------------------------------------------------
 router.post('/',
-  apiKeyAuth,
+  authenticate,
   validate({ body: schemas.webhookRegister }),
   webhookLimiter,
   async (req, res, next) => {
     try {
       const { url, events, secret } = req.body;
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
 
       const subscription = await registerWebhook(orgId, { url, events, secret });
 
@@ -60,13 +60,13 @@ router.post('/',
 // GET /v1/webhooks — List active subscriptions
 // ---------------------------------------------------------------------------
 router.get('/',
-  apiKeyAuth,
+  authenticate,
   webhookLimiter,
   paged(),
   doc({ summary: 'List webhook subscriptions' }),
   async (req, res, next) => {
     try {
-      const subscriptions = await listWebhooks(req.apiKey.orgId);
+      const subscriptions = await listWebhooks(req.orgId);
       return sendList(req, res, 'subscriptions', subscriptions, { total: subscriptions.length });
     } catch (err) {
       if (err.message === 'Database unavailable') {
@@ -84,11 +84,11 @@ router.get('/',
 // DELETE /v1/webhooks/:subscriptionId — Deactivate subscription
 // ---------------------------------------------------------------------------
 router.delete('/:subscriptionId',
-  apiKeyAuth,
+  authenticate,
   webhookLimiter,
   async (req, res, next) => {
     try {
-      const deleted = await deleteWebhook(req.params.subscriptionId, req.apiKey.orgId);
+      const deleted = await deleteWebhook(req.params.subscriptionId, req.orgId);
       if (!deleted) {
         return res.status(404).json({
           error: 'NOT_FOUND',

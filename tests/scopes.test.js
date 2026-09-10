@@ -187,11 +187,14 @@ describe('Every route carries a scope, and the document says which', () => {
     expect(pick('POST', '/v1/desk/adopt').scope).toBe('write');
   });
 
-  test('every /v1 route is authenticated except the five reads that are public on purpose', () => {
+  test('every /v1 route is authenticated except the reads that are public on purpose, and sign-in', () => {
     /* The OpenAPI document joins them: it is what a client is generated from,
        and it describes nothing docs/API-SCOPES.md does not already say. */
     const open = rows.filter(r => r.path.startsWith('/v1') && !r.authenticated).map(r => `${r.method} ${r.path}`);
-    expect(open.sort()).toEqual(['GET /v1', 'GET /v1/carbon-pricing/rates', 'GET /v1/openapi.json', 'GET /v1/reports/types', 'GET /v1/ui-config.js']);
+    /* POST /v1/auth/login carries no credential because it is the request
+       that establishes one. It is the only write on this list, and it is rate
+       limited per address as well as per caller. */
+    expect(open.sort()).toEqual(['GET /v1', 'GET /v1/carbon-pricing/rates', 'GET /v1/openapi.json', 'GET /v1/reports/types', 'GET /v1/ui-config.js', 'POST /v1/auth/login']);
   });
 
   test('docs/API-SCOPES.md is what the code runs', () => {

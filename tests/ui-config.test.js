@@ -1,12 +1,15 @@
 /**
  * CarbonIQ FinTech — UI runtime configuration
  *
- * The dashboard used to ship the key it authenticates with as a literal in
- * ui/config.js. Changing UI_API_KEY in Netlify then broke every screen with a
- * 401, because nothing kept the two in step. These tests pin the properties
- * that stop that recurring: the key comes from the environment, the endpoint
- * that supplies it needs no key itself, and a value is never interpolated
- * into the page as executable script.
+ * This endpoint used to hand every browser an API key. First it was a literal
+ * in ui/config.js, which drifted from the deployment and 401'd every screen;
+ * then it was served from the environment, which fixed the drift and left a
+ * write-and-lock credential reachable by anyone who could load the page.
+ *
+ * Since H1 the browser signs in and holds a session token, so there is no
+ * credential to serve. What these tests pin now is that there is none — and
+ * that everything the endpoint still exists for, the build stamp and the
+ * stale-shell reload, survived losing it.
  */
 
 const request = require('supertest');
@@ -28,17 +31,16 @@ describe('GET /v1/ui-config.js', () => {
     else process.env.UI_API_KEY = original;
   });
 
-  test('serves the key held by the deployment, not one committed to the repo', async () => {
+  test('serves no credential, even when the deployment holds one', async () => {
     process.env.UI_API_KEY = 'ck_test_abcdefghijklmnopqrstuvwxyz123456';
     const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
 
-    expect(res.text).toContain('ck_test_abcdefghijklmnopqrstuvwxyz123456');
+    expect(res.text).not.toContain('ck_test_abcdefghijklmnopqrstuvwxyz123456');
+    expect(res.text).not.toMatch(/API_KEY/);
     expect(res.headers['content-type']).toMatch(/javascript/);
   });
 
-  test('requires no API key — it is what supplies one', async () => {
-    process.env.UI_API_KEY = 'ck_test_abcdefghijklmnopqrstuvwxyz123456';
-    // No x-api-key header at all.
+  test('needs no credential itself, because it carries nothing worth guarding', async () => {
     await request(buildApp()).get('/v1/ui-config.js').expect(200);
   });
 
@@ -57,25 +59,19 @@ describe('GET /v1/ui-config.js', () => {
     expect(() => new Function(res.text)).not.toThrow();
   });
 
-  test('a mis-pasted value cannot become executable script', async () => {
-    process.env.UI_API_KEY = 'ck_test_x";window.pwned=1;//';
+  test('an emitted value cannot become executable script', async () => {
+    /* Executing it is the proof, not the shape of the escaping. The build
+       stamp is the only value left, and a stray character in it must stay
+       inside its string literal rather than run. */
+    process.env.COMMIT_REF = 'abc";window.pwned=1;//';
     const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
 
-    // Executing it is the proof, not the shape of the escaping: the payload
-    // must stay inside the string literal rather than run.
     const win = {};
-    const store = { getItem: () => null };
-    new Function('window', 'localStorage', res.text)(win, store);
+    const store = { getItem: () => null, setItem: () => undefined };
+    new Function('window', 'localStorage', 'sessionStorage', res.text)(win, store, store);
 
     expect(win.pwned).toBeUndefined();
-    expect(win.CARBONIQ_API_KEY).toBe('ck_test_x";window.pwned=1;//');
-  });
-
-  test('a stored key set by an operator wins over the served one', async () => {
-    process.env.UI_API_KEY = 'ck_test_abcdefghijklmnopqrstuvwxyz123456';
-    const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
-
-    expect(res.text).toContain('if (stored.apiKey) return;');
+    delete process.env.COMMIT_REF;
   });
 });
 
@@ -219,13 +215,9 @@ describe('A stale shell reloads itself, once', () => {
     expect(res.text).toMatch(/if \(build\) \{/);
   });
 
-  /* The reload must not cost the credential: the key is assigned after it, so
-     a page that is about to be replaced never half-initialises. */
-  test('the key is still handed over on a page that is not reloading', async () => {
+  test('the build is recorded on a page that is not reloading', async () => {
     const res = await request(buildApp()).get('/v1/ui-config.js').expect(200);
-    const reloadAt = res.text.indexOf('location.replace(');
-    const keyAt = res.text.indexOf('window.CARBONIQ_SERVER_API_KEY');
-    expect(reloadAt).toBeGreaterThan(-1);
-    expect(keyAt).toBeGreaterThan(reloadAt);
+    expect(res.text).toContain('location.replace(');
+    expect(res.text).toContain('window.CARBONIQ_BUILD');
   });
 });

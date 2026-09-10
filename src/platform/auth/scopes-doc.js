@@ -41,7 +41,7 @@ function routeTable(app) {
           if (method === '_all') continue;
           const m = method.toUpperCase();
           /* dualAuth (supervisor) delegates to one of the two, so it counts. */
-          const authenticated = layer.route.stack.some(l => ['apiKeyAuth', 'auth', 'dualAuth'].includes(l.name));
+          const authenticated = layer.route.stack.some(l => ['authenticate', 'apiKeyAuth', 'auth', 'dualAuth'].includes(l.name));
           const { scope, why } = requiredScopeFor(m, full);
           const lockVariant = /\/status$/.test(full) && m === 'POST'
             ? requiredScopeFor(m, full, { status: 'locked' }).scope : null;

@@ -7,7 +7,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth    = require('../../../../../platform/auth/api-key');
+const authenticate    = require('../../../../../platform/auth/authenticate');
 const validate      = require('../../../../../platform/http/validate');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
@@ -45,13 +45,13 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/covenants',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_COVENANTS),
   validate({ body: covenantsRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const userMessage = covenantsAgent.buildUserMessage(req.body);
 
       const run = await runAgent({
@@ -135,12 +135,12 @@ router.post('/covenants',
 // ---------------------------------------------------------------------------
 
 router.post('/covenants/:runId/review',
-  apiKeyAuth,
+  authenticate,
   authorize(PERMISSIONS.AGENT_REVIEW),
   validate({ body: covenantReviewSchema }),
   async (req, res, next) => {
     try {
-      const orgId  = req.apiKey.orgId;
+      const orgId  = req.orgId;
       const { runId } = req.params;
 
       // Fetch the run and confirm it belongs to this org and is awaiting review

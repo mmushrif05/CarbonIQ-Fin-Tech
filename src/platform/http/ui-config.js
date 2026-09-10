@@ -45,15 +45,21 @@ function _buildId() {
 }
 
 router.get('/ui-config.js', (_req, res) => {
-  const key = require('../config').runtime.uiApiKey;
   const build = _buildId();
 
-  // JSON.stringify, not interpolation: the value reaches the browser as a
-  // string literal, so a stray quote in a mis-pasted variable cannot become
-  // executable script.
+  /* This endpoint used to hand the browser an API key — the same one for
+     every visitor, carrying read, write, lock and assess under a single
+     organisation, from a route with no authentication in front of it. Its
+     defence was that a browser key is public by construction, which is true
+     only of a page that is itself behind a sign-in, and this one was not.
+     The browser now signs in and holds a session token issued to one
+     account, so there is no credential left to serve here. What remains is
+     the build stamp, which is not a secret and cannot be one.
+
+     JSON.stringify, not interpolation: a value reaches the browser as a
+     string literal, so a stray quote cannot become executable script. */
   const body = `/* served by the deployment — do not edit */
 (function () {
-  var key = ${JSON.stringify(key)};
   var build = ${JSON.stringify(build)};
   window.CARBONIQ_BUILD = build;
 
@@ -91,15 +97,6 @@ router.get('/ui-config.js', (_req, res) => {
     } catch (e) { /* no storage: the check is skipped, never retried in a loop */ }
   }
 
-  window.CARBONIQ_SERVER_API_KEY = key;
-  if (!key) return;
-
-  // A key the operator typed into Settings is an explicit choice and wins.
-  var stored = {};
-  try { stored = JSON.parse(localStorage.getItem('carboniq_config') || '{}'); } catch (e) { stored = {}; }
-  if (stored.apiKey) return;
-
-  window.CARBONIQ_API_KEY = key;
 })();
 `;
 

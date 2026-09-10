@@ -1,53 +1,55 @@
 /* ============================================================
    CarbonIQ — Global API Configuration
    ============================================================
-   Every page module reads from window.CARBONIQ_API_BASE and
-   window.CARBONIQ_API_KEY. Users can override via localStorage.
+   Every page module reaches the API through window.CARBONIQ_fetch,
+   which carries the session token the server issued at sign-in.
 
    Loaded FIRST in index.html, before app.js or any page module.
+
+   The browser holds no API key. It used to be handed one — the same
+   key for every visitor, carrying read, write, lock and assess under a
+   single organisation — and the name on the audit trail was whatever
+   had been typed into the sign-in form. A session token is issued to
+   one account, carries that account's role, and can be withdrawn.
    ============================================================ */
 
 (function () {
-  // 1) Default config — works when UI is served by the same Express server
-  const DEFAULTS = {
-    apiBase: '',                                         // relative to current origin
-    apiKey:  'ck_test_00000000000000000000000000000000',  // demo key
-  };
+  const DEFAULTS = { apiBase: '' };   // relative to the current origin
 
-  // 2) Read overrides from localStorage (set by the Settings popover)
   const stored = JSON.parse(localStorage.getItem('carboniq_config') || '{}');
-
   window.CARBONIQ_API_BASE = stored.apiBase ?? DEFAULTS.apiBase;
-  window.CARBONIQ_API_KEY  = stored.apiKey  ?? DEFAULTS.apiKey;
 
-  // 3) Helper: save config from the Settings UI
-  window.CARBONIQ_saveConfig = function (apiBase, apiKey) {
-    const cfg = { apiBase: apiBase || '', apiKey: apiKey || '' };
+  window.CARBONIQ_saveConfig = function (apiBase) {
+    const cfg = { apiBase: apiBase || '' };
     localStorage.setItem('carboniq_config', JSON.stringify(cfg));
     window.CARBONIQ_API_BASE = cfg.apiBase;
-    window.CARBONIQ_API_KEY  = cfg.apiKey;
   };
 
-  // The signed-in person, named on every request so a lock and the audit
-  // trail carry who, not only which organisation.
-  function actorHeader() {
+  /* Read at call time, not at load: a page module may be loaded before
+     anyone has signed in, and the token changes when they do. */
+  function authHeader() {
     try {
       const s = JSON.parse(localStorage.getItem('carboniq_session') || 'null');
-      const who = s && (s.email || s.name);
-      return who ? { 'x-actor': String(who).slice(0, 120) } : {};
+      return s && s.token ? { Authorization: `Bearer ${s.token}` } : {};
     } catch (_) { return {}; }
   }
 
-  // 4) Shared fetch helper (every page can use this)
   window.CARBONIQ_fetch = async function (path, opts = {}) {
     const url = `${window.CARBONIQ_API_BASE}${path}`;
     const headers = {
       'Content-Type': 'application/json',
-      ...(window.CARBONIQ_API_KEY ? { 'x-api-key': window.CARBONIQ_API_KEY } : {}),
-      ...(actorHeader()),
+      ...(authHeader()),
       ...(opts.headers || {}),
     };
-    return fetch(url, { ...opts, headers });
+    const res = await fetch(url, { ...opts, headers });
+
+    /* A session the server has ended — expired, idle, revoked, or the
+       account disabled — must not leave the shell showing a signed-in
+       screen that answers 401 to everything it asks. */
+    if (res.status === 401 && typeof Auth !== 'undefined' && Auth.getToken()) {
+      Auth.sessionEnded();
+    }
+    return res;
   };
 })();
 
@@ -96,11 +98,8 @@ const Settings = (() => {
   function open() {
     const drawer = document.getElementById('settings-drawer');
     if (!drawer) return;
-    // Populate current values
     const baseEl = document.getElementById('cfg-api-base');
-    const keyEl  = document.getElementById('cfg-api-key');
     if (baseEl) baseEl.value = window.CARBONIQ_API_BASE || '';
-    if (keyEl)  keyEl.value  = window.CARBONIQ_API_KEY  || '';
     drawer.style.display = 'block';
   }
 
@@ -111,8 +110,7 @@ const Settings = (() => {
 
   function save() {
     const base = document.getElementById('cfg-api-base')?.value?.trim() || '';
-    const key  = document.getElementById('cfg-api-key')?.value?.trim()  || '';
-    window.CARBONIQ_saveConfig(base, key);
+    window.CARBONIQ_saveConfig(base);
     const msg = document.getElementById('cfg-msg');
     if (msg) { msg.textContent = 'Saved.'; msg.style.color = 'var(--green)'; }
     Toast.success('API settings saved. Data will refresh on next navigation.');
@@ -120,22 +118,17 @@ const Settings = (() => {
   }
 
   function reset() {
-    // Reset means "stop overriding", not "write the old literal back". Storing
-    // a key here would win over the one the deployment serves, so a reset would
-    // silently reintroduce the mismatch it is supposed to clear.
+    /* Reset means "stop overriding", not "write a default back". There is no
+       credential here to restore: the browser holds a session token issued at
+       sign-in, and the only thing this drawer can override is where the API
+       lives. */
     localStorage.removeItem('carboniq_config');
-    const serverKey = window.CARBONIQ_SERVER_API_KEY || '';
     window.CARBONIQ_API_BASE = '';
-    window.CARBONIQ_API_KEY  = serverKey;
     const baseEl = document.getElementById('cfg-api-base');
-    const keyEl  = document.getElementById('cfg-api-key');
     if (baseEl) baseEl.value = '';
-    if (keyEl)  keyEl.value  = serverKey;
     const msg = document.getElementById('cfg-msg');
     if (msg) {
-      msg.textContent = serverKey
-        ? 'Reset — using the key this deployment provides.'
-        : 'Reset. This deployment provides no key; enter one above.';
+      msg.textContent = 'Reset — using this origin.';
       msg.style.color = 'var(--text-secondary)';
     }
   }

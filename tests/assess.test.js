@@ -29,7 +29,7 @@ describe('POST /v1/assess — authentication', () => {
       .post('/v1/assess')
       .send(VALID_BODY);
     expect(res.status).toBe(401);
-    expect(res.body.error).toBe('API_KEY_REQUIRED');
+    expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
   test('returns 401 when X-API-Key format is invalid', async () => {

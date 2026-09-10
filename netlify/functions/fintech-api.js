@@ -14,6 +14,7 @@
 const serverless = require('serverless-http');
 const app = require('../../src/server');
 const errors = require('../../src/platform/observability/errors');
+const config = require('../../src/platform/config');
 
 /**
  * Response types that must survive as bytes.
@@ -52,6 +53,45 @@ const handler = serverless(app, {
   request(req, _event, context) { req.lambdaContext = context; }
 });
 
+/**
+ * A production deployment that is not safe to run refuses to serve.
+ *
+ * `config.validate()` names, by variable, what a deployment cannot run
+ * safely with — a default API-key salt, DEV_API_KEY, an in-memory store in
+ * production. `src/server.js` acts on it and exits. This function never
+ * called it, so on the platform that actually serves production the check
+ * did nothing: the problems were listed under /health and the site carried
+ * on. On a public repository a default salt means the key hashes are
+ * computable from a constant anyone can read, which is not a thing to report
+ * and continue past.
+ *
+ * A serverless function cannot exit, so it answers 503 on every route
+ * instead, naming the variables and never their values. /health stays
+ * reachable, because the first question anyone asks is what is wrong.
+ */
+const problems = config.validate().problems;
+const blocked = problems.length > 0;
+if (blocked) {
+  /* One line at boot, so the cause is in the log drain as well as the reply. */
+  // eslint-disable-next-line no-console
+  errors.capture(new Error(`refusing to serve: ${problems.map(p => p.variable).join(', ')}`),
+    { source: 'boot' });
+}
+
+function refuse(event) {
+  return {
+    statusCode: 503,
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+    body: JSON.stringify({
+      error: 'DEPLOYMENT_UNSAFE',
+      message: 'This deployment is not configured safely enough to serve requests.',
+      variables: problems.map(p => ({ variable: p.variable, problem: p.problem, remedy: p.remedy })),
+      remedy: 'Set these in the site environment for this context and redeploy.',
+      path: event && event.path,
+    }),
+  };
+}
+
 exports.handler = async (event, context) => {
   // Netlify may provide rawPath instead of path depending on invocation method.
   // Normalise to event.path so serverless-http always has a valid string.
@@ -67,6 +107,9 @@ exports.handler = async (event, context) => {
   /* Express reports its own failures; this catches the adapter's, which
      would otherwise reach the platform as a bare invocation error with no
      request id, no module and no release. */
+  /* /health always answers, so "why is everything 503" has an answer. */
+  if (blocked && !/^\/health\/?$/.test(event.path)) return refuse(event);
+
   try {
     return await handler(event, context);
   } catch (err) {

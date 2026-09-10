@@ -90,9 +90,10 @@ function audit(req, res, next) {
 
     // Auth context, without sensitive data
     if (req.user) {
-      entry.authType = 'jwt';
+      entry.authType = 'session';
       entry.userId = req.user.uid;
       entry.role = req.user.role;
+      entry.orgId = req.user.organizationId;
     } else if (req.apiKey) {
       entry.authType = 'api_key';
       entry.orgId = req.apiKey.orgId;
@@ -102,6 +103,10 @@ function audit(req, res, next) {
     /* The person, where one was named (X-Actor), else the key. "Who locked
        this assessment" is answerable to a person, not only to an organisation. */
     if (req.actor && req.actor.id) entry.actor = req.actor.id;
+    /* Whether the name above is one the server established or one it was
+       told. An integration asserts its operator in X-Actor and is believed;
+       a reader of the chain has to be able to tell the two apart. */
+    if (req.actor) entry.actorVerified = req.actor.verified === true;
     if (req.requiredScope) entry.scope = req.requiredScope;
 
     const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';

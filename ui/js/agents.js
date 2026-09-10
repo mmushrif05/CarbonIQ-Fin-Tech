@@ -11,7 +11,6 @@
 const AgentsPage = (() => {
   'use strict';
 
-  const API_KEY    = 'ck_test_00000000000000000000000000000000';
   const ENDPOINTS  = {
     coach:      '/v1/agent/coach',
     originate:  '/v1/agent/originate',
@@ -1024,9 +1023,8 @@ const AgentsPage = (() => {
     abortCtrl = new AbortController();
 
     try {
-      const res = await fetch(ENDPOINTS[currentStage], {
+      const res = await window.CARBONIQ_fetch(ENDPOINTS[currentStage], {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': window.CARBONIQ_API_KEY || API_KEY },
         body:    JSON.stringify(payload),
         signal:  abortCtrl.signal,
       });
@@ -1220,9 +1218,7 @@ const AgentsPage = (() => {
   // ── Recent runs ───────────────────────────────────────────
   async function loadRecentRuns() {
     try {
-      const res = await fetch('/v1/agent/runs?limit=5', {
-        headers: { 'X-API-Key': window.CARBONIQ_API_KEY || API_KEY }
-      });
+      const res = await window.CARBONIQ_fetch('/v1/agent/runs?limit=5');
       if (!res.ok) return;
       const data = await res.json();
       renderRecentRuns(data.runs || []);

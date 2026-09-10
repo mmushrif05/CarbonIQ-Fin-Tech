@@ -30,7 +30,7 @@
 const { Router } = require('express');
 
 const { fallback } = require('../../../../platform/observability/logger');
-const apiKeyAuth   = require('../../../../platform/auth/api-key');
+const authenticate   = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate     = require('../../../../platform/http/validate');
@@ -57,7 +57,7 @@ const router = Router();
 // ---------------------------------------------------------------------------
 // GET /options — dropdowns for the client form
 // ---------------------------------------------------------------------------
-router.get('/options', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Dropdown options for the client form' }), (_req, res) => {
+router.get('/options', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Dropdown options for the client form' }), (_req, res) => {
   res.json({ options: factors.options() });
 });
 
@@ -80,14 +80,14 @@ router.get('/options', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summa
 // Published so a reviewer can check the claim rather than take it on trust:
 // every rule names the code that enforces it and the test that proves it.
 // ---------------------------------------------------------------------------
-router.get('/conformance', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'PCAF Part C rule → implementation → proving test' }), (_req, res) => {
+router.get('/conformance', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'PCAF Part C rule → implementation → proving test' }), (_req, res) => {
   res.json(conformanceMatrix());
 });
 
 // ---------------------------------------------------------------------------
 // GET /factors — every factor, with tier and source
 // ---------------------------------------------------------------------------
-router.get('/factors', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Every factor table, with tier and source per row', query: { table: 'One table by name; without it every table.' } }), (req, res) => {
+router.get('/factors', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Every factor table, with tier and source per row', query: { table: 'One table by name; without it every table.' } }), (req, res) => {
   const tables = factors.allTables();
   if (req.query.table) {
     const t = tables[req.query.table];
@@ -104,7 +104,7 @@ router.get('/factors', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summa
 // ---------------------------------------------------------------------------
 // POST /form — the pre-filled, policy-gated client form
 // ---------------------------------------------------------------------------
-router.post('/form', apiKeyAuth, defaultLimiter,
+router.post('/form', authenticate, defaultLimiter,
   validate({ body: formRequestSchema }),
   (req, res, next) => {
     try {
@@ -115,11 +115,11 @@ router.post('/form', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // POST /assess — the full calculation
 // ---------------------------------------------------------------------------
-router.post('/assess', apiKeyAuth, defaultLimiter,
+router.post('/assess', authenticate, defaultLimiter,
   validate({ body: assessRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const result    = runPartC(_toEngineInput(req.body));
       const registers = buildRegisters(result);
 
@@ -163,7 +163,7 @@ router.post('/assess', apiKeyAuth, defaultLimiter,
 // rather than guessing, and the answer on screen is the answer that would be
 // disclosed.
 // ---------------------------------------------------------------------------
-router.post('/dq-preview', apiKeyAuth, defaultLimiter,
+router.post('/dq-preview', authenticate, defaultLimiter,
   validate({ body: assessRequestSchema }),
   (req, res, next) => {
     try {
@@ -219,12 +219,12 @@ async function reportFor(orgId, body) {
   return { report, safeName };
 }
 
-router.post('/report', apiKeyAuth, defaultLimiter,
+router.post('/report', authenticate, defaultLimiter,
   validate({ body: reportRequestSchema }),
   doc({ summary: 'The assessment report for one policy — JSON, PDF or Word', produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] }),
   async (req, res, next) => {
     try {
-      const { report, safeName } = await reportFor(req.apiKey.orgId, req.body);
+      const { report, safeName } = await reportFor(req.orgId, req.body);
 
       if (req.body.format === 'json') return res.json({ report });
 

@@ -32,7 +32,7 @@
 'use strict';
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
@@ -60,7 +60,7 @@ const router = Router();
 const handle = require('../../../../platform/http/async-handler');
 
 /** The frameworks this tab is built on, so a screen never restates them. */
-router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Results areas, IRMF core indicators, NDC 3.0 and the instrument catalogue' }), (_req, res) => {
+router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Results areas, IRMF core indicators, NDC 3.0 and the instrument catalogue' }), (_req, res) => {
   res.json({
     resultsAreas: AREAS,
     irmf: IRMF,
@@ -73,10 +73,10 @@ router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ sum
   });
 });
 
-router.get('/pipeline', apiKeyAuth, defaultLimiter, paged(),
+router.get('/pipeline', authenticate, defaultLimiter, paged(),
   doc({ summary: 'The GCF candidate pipeline — recorded, or the shipped illustrative set, never both' }),
   handle(async (req, res) => {
-  const { projects, source, sample, meta } = await store.list(req.apiKey.orgId);
+  const { projects, source, sample, meta } = await store.list(req.orgId);
   const view = listView(req, res, projects);
   res.json({
     pipeline: {
@@ -92,8 +92,8 @@ router.get('/pipeline', apiKeyAuth, defaultLimiter, paged(),
   });
   }));
 
-router.get('/pipeline/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
+router.get('/pipeline/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.orgId, req.params.id);
   if (!project) {
     return res.status(404).json({
       error: 'PROJECT_NOT_FOUND',
@@ -116,7 +116,7 @@ router.get('/pipeline/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) 
   });
 }));
 
-router.post('/pipeline', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.post('/pipeline', authenticate, defaultLimiter, handle(async (req, res) => {
   const body = req.body || {};
   if (!body.id) {
     return res.status(400).json({
@@ -124,12 +124,12 @@ router.post('/pipeline', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
       message: 'A project record needs an id. Ids are chosen by the caller so a record can be updated in place.',
     });
   }
-  const saved = await store.put(req.apiKey.orgId, body, { by: req.apiKey.name || req.apiKey.orgId });
+  const saved = await store.put(req.orgId, body, { by: (req.actor && req.actor.label) || req.orgId });
   res.status(201).json({ project: saved, storage: partcStore.capability() });
 }));
 
-router.delete('/pipeline/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  await store.remove(req.apiKey.orgId, req.params.id);
+router.delete('/pipeline/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+  await store.remove(req.orgId, req.params.id);
   res.status(204).end();
 }));
 
@@ -139,8 +139,8 @@ router.delete('/pipeline/:id', apiKeyAuth, defaultLimiter, handle(async (req, re
  * that silently populated itself would leave nobody sure whether a figure was
  * theirs.
  */
-router.post('/pipeline/adopt', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const written = await store.adoptSeed(req.apiKey.orgId, { by: req.apiKey.name || req.apiKey.orgId });
+router.post('/pipeline/adopt', authenticate, defaultLimiter, handle(async (req, res) => {
+  const written = await store.adoptSeed(req.orgId, { by: (req.actor && req.actor.label) || req.orgId });
   res.status(201).json({
     adopted: written.length,
     note: 'The shipped pipeline is now recorded against your organisation and can be edited. '
@@ -156,8 +156,8 @@ router.post('/pipeline/adopt', apiKeyAuth, defaultLimiter, handle(async (req, re
  * boundary, and financed emissions named as belonging to the capital book
  * rather than quietly missing.
  */
-router.get('/emissions', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+router.get('/emissions', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.orgId);
   const result = emissions.portfolioEmissions(projects, { label: source });
   res.json({
     emissions: result,
@@ -167,8 +167,8 @@ router.get('/emissions', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
   });
 }));
 
-router.get('/emissions/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
+router.get('/emissions/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.orgId, req.params.id);
   if (!project) {
     return res.status(404).json({
       error: 'PROJECT_NOT_FOUND',
@@ -186,7 +186,7 @@ router.get('/emissions/:id', apiKeyAuth, defaultLimiter, handle(async (req, res)
  * supplies the BAU tonnage it needs — `?bau=` — because the NDC targets are
  * percentages and this system does not hold the scenario behind them.
  */
-router.get('/ndc', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/ndc', authenticate, defaultLimiter, handle(async (req, res) => {
   const raw = req.query.bau;
   if (raw !== undefined && raw !== '' && !Number.isFinite(Number(raw))) {
     return res.status(400).json({
@@ -195,7 +195,7 @@ router.get('/ndc', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
   const bau = raw === undefined || raw === '' ? undefined : Number(raw);
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     ndc: ndc.portfolioContribution(projects, { bauCumulative_tCO2e: bau }),
     source,
@@ -208,8 +208,8 @@ router.get('/ndc', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * missing and which clause asks for each — so the gaps list is a worklist
  * rather than an apology.
  */
-router.get('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const entity = await store.entityDisclosures(req.apiKey.orgId);
+router.get('/entity', authenticate, defaultLimiter, handle(async (req, res) => {
+  const entity = await store.entityDisclosures(req.orgId);
   res.json({
     entity: entity || null,
     recorded: Boolean(entity),
@@ -218,9 +218,9 @@ router.get('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
   });
 }));
 
-router.put('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const saved = await store.setEntityDisclosures(req.apiKey.orgId, req.body, {
-    by: req.apiKey.name || req.apiKey.orgId,
+router.put('/entity', authenticate, defaultLimiter, handle(async (req, res) => {
+  const saved = await store.setEntityDisclosures(req.orgId, req.body, {
+    by: (req.actor && req.actor.label) || req.orgId,
   });
   res.json({ entity: saved, storage: partcStore.capability() });
 }));
@@ -234,7 +234,7 @@ router.put('/entity', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * its face that it is one input to an SLFRS S2 disclosure rather than the
  * disclosure itself.
  */
-router.get('/report', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/report', authenticate, defaultLimiter, handle(async (req, res) => {
   const year = req.query.year === undefined ? undefined : Number(req.query.year);
   if (year !== undefined && !Number.isInteger(year)) {
     return res.status(400).json({
@@ -249,8 +249,8 @@ router.get('/report', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
       message: 'bau must be the absolute business-as-usual emissions for 2026-2035 in tCO2e.',
     });
   }
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
-  const settings = await store.entityDisclosures(req.apiKey.orgId);
+  const { projects, source, sample } = await store.list(req.orgId);
+  const settings = await store.entityDisclosures(req.orgId);
   res.json({
     report: reporting.buildDisclosure(projects, {
       reportingYear: year,
@@ -264,11 +264,11 @@ router.get('/report', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
 }));
 
 /** A period, exported whole, with a checksum over its canonical form. */
-router.get('/export', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { projects, sample } = await store.list(req.apiKey.orgId);
+router.get('/export', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { projects, sample } = await store.list(req.orgId);
   res.json(reporting.exportPeriod(projects, {
     reportingYear: req.query.year === undefined ? undefined : Number(req.query.year),
-    orgId: req.apiKey.orgId,
+    orgId: req.orgId,
     sample,
     sampleNote: store.seedMeta().sampleNote,
   }));
@@ -280,11 +280,11 @@ router.get('/export', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * Verified before anything is written, and refused whole on any failure —
  * half an imported period is a position nobody can reconcile.
  */
-router.post('/import', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.post('/import', authenticate, defaultLimiter, handle(async (req, res) => {
   const pkg = reporting.importPeriod(req.body);
   const written = [];
   for (const p of pkg.projects) {
-    written.push(await store.put(req.apiKey.orgId, p, { by: req.apiKey.name || req.apiKey.orgId }));
+    written.push(await store.put(req.orgId, p, { by: (req.actor && req.actor.label) || req.orgId }));
   }
   res.status(201).json({
     imported: written.length,
@@ -324,8 +324,8 @@ function readWeights(req) {
 }
 
 /** The gate. Runs before any ranking, and its output is three sets. */
-router.get('/screening', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+router.get('/screening', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     screening: screening.screen(projects, { accreditation: store.seedMeta().accreditation }),
     source,
@@ -334,9 +334,9 @@ router.get('/screening', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
 }));
 
 /** Two ranked lists, never merged, on the weighting the reader set. */
-router.get('/ranking', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/ranking', authenticate, defaultLimiter, handle(async (req, res) => {
   const weights = readWeights(req);
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     ranking: screening.rank(projects, {
       accreditation: store.seedMeta().accreditation,
@@ -355,7 +355,7 @@ router.get('/ranking', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * selection — because a recommendation that hides its own limits is worth
  * nothing to the person who has to defend it.
  */
-router.get('/recommendation', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/recommendation', authenticate, defaultLimiter, handle(async (req, res) => {
   const weights = readWeights(req);
   const take = req.query.take === undefined ? undefined : Number(req.query.take);
   if (take !== undefined && (!Number.isInteger(take) || take < 1 || take > 10)) {
@@ -364,7 +364,7 @@ router.get('/recommendation', apiKeyAuth, defaultLimiter, handle(async (req, res
       message: 'take must be a whole number between 1 and 10. The ToR asks for up to two.',
     });
   }
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+  const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     recommendation: screening.recommend(projects, {
       accreditation: store.seedMeta().accreditation,
@@ -377,8 +377,8 @@ router.get('/recommendation', apiKeyAuth, defaultLimiter, handle(async (req, res
 }));
 
 /** The seven structures across the pipeline, with the barrier nothing covers. */
-router.get('/instruments', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { projects, source, sample } = await store.list(req.apiKey.orgId);
+router.get('/instruments', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     instruments: instruments.structurePipeline(projects, {
       accreditation: store.seedMeta().accreditation,
@@ -388,8 +388,8 @@ router.get('/instruments', apiKeyAuth, defaultLimiter, handle(async (req, res) =
   });
 }));
 
-router.get('/instruments/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
+router.get('/instruments/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.orgId, req.params.id);
   if (!project) {
     return res.status(404).json({
       error: 'PROJECT_NOT_FOUND',
@@ -414,7 +414,7 @@ router.get('/instruments/:id', apiKeyAuth, defaultLimiter, handle(async (req, re
  * commitments behind it, and software that drafted one would produce something
  * fluent and unsupported.
  */
-router.get('/cn/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/cn/:id', authenticate, defaultLimiter, handle(async (req, res) => {
   const format = String(req.query.format || 'json').toLowerCase();
   if (!['json', 'pdf', 'docx'].includes(format)) {
     return res.status(400).json({
@@ -423,7 +423,7 @@ router.get('/cn/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
     });
   }
 
-  const { project, sample } = await store.get(req.apiKey.orgId, req.params.id);
+  const { project, sample } = await store.get(req.orgId, req.params.id);
   if (!project) {
     return res.status(404).json({
       error: 'PROJECT_NOT_FOUND',
@@ -454,7 +454,7 @@ router.get('/cn/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * a test. tests/gcf-conformance.test.js fails the build if either citation
  * stops resolving, which is what keeps the claim from quietly rotting.
  */
-router.get('/conformance', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'ToR clause → implementation → proving test' }), (_req, res) => {
+router.get('/conformance', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'ToR clause → implementation → proving test' }), (_req, res) => {
   res.json(conformance.conformanceMatrix());
 });
 

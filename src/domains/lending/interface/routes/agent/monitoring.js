@@ -7,7 +7,7 @@
 
 const { Router } = require('express');
 
-const apiKeyAuth    = require('../../../../../platform/auth/api-key');
+const authenticate    = require('../../../../../platform/auth/authenticate');
 const validate      = require('../../../../../platform/http/validate');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
@@ -31,13 +31,13 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/monitor',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_MONITOR),
   validate({ body: monitoringRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const userMessage = monitoringAgent.buildUserMessage(req.body);
 
       const run = await runAgent({
@@ -89,13 +89,13 @@ router.post('/monitor',
 // ---------------------------------------------------------------------------
 
 router.post('/portfolio',
-  apiKeyAuth,
+  authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_PORTFOLIO),
   validate({ body: portfolioReportRequestSchema }),
   async (req, res, next) => {
     try {
-      const orgId = req.apiKey.orgId;
+      const orgId = req.orgId;
       const userMessage = portfolioAgent.buildUserMessage(req.body);
 
       const run = await runAgent({

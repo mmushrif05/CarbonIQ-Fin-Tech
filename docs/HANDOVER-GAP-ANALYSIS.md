@@ -70,6 +70,17 @@ frontend and the report layer were audited directly.
 
 ## H0 — Build and delivery. The first impression.
 
+> **Delivered** (commit `H0 — green the build`). The type check now stamps
+> `build-info.json` first, the metrics test loads the app once at module scope
+> and the suite carries a 30-second timeout, and the browser job was failing on
+> a real defect rather than a flake — the Part C book set the page to 542px at
+> a 430px viewport once it had rows, because the rule keeping a wide table in
+> its own scroll box was opt-in by a class nobody applied there. `LICENSE`
+> carries the Apache-2.0 text, and `docs/RELEASE-AND-ROLLBACK.md` records the
+> order to reverse code and schema in. **Outstanding: H0.5** — requiring the
+> `gate` check in branch protection is an account-level action no commit can
+> perform.
+
 **H0.1 · CI has been red on `main` since E3. Critical.**
 Last green run: PR #95 (E2). Every run since has failed. On `96ce567`, four of
 seven jobs fail: `typecheck`, `test (22)`, `test-postgres`, `ui`. `test (20)` is
@@ -106,6 +117,22 @@ undocumented and would not revert an applied migration.
 ---
 
 ## H1 — Identity and the perimeter. The part a bank stops at.
+
+> **Delivered** (commit `H1 — one door`). Accounts and sessions are rows in the
+> one database; passwords are scrypt; a session is revocable and ends the
+> moment an account is disabled; the browser holds no API key; roles decide
+> scopes on all 154 routes through the existing resolver, closing B1 and B2;
+> unscoped keys are held to `read`; the serverless function refuses to serve a
+> production deployment `config.validate()` rejects; rate limits share one
+> counter where PostgreSQL is present and say so where it is not; secrets are
+> compared in constant time; and a deploy preview will not migrate a database
+> it may share with production. `tests/authentication.test.js` holds the exit
+> criterion and the five browser journeys sign in for real.
+> **Outstanding: H1.10 and H1.11** — a rehearsed restore, a retention policy
+> and a configured error sink are operator decisions, not code. See
+> `docs/AUTHENTICATION.md` for what authentication deliberately does not do
+> yet: no password reset by mail, no second factor, no single sign-on, and
+> roles that are coarse until the product has a borrower portal.
 
 **H1.1 · There is no user authentication. Critical.**
 `ui/js/auth.js:110` — `login(name, email, role, organisation)` accepts any name,

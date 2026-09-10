@@ -13,7 +13,7 @@
 
 const { Router } = require('express');
 const Joi = require('joi');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
@@ -64,7 +64,7 @@ const ndcSdgSchema = Joi.object({
 // ---------------------------------------------------------------------------
 
 router.post('/assess',
-  apiKeyAuth,
+  authenticate,
   validate({ body: ndcSdgSchema }),
   assessLimiter,
   async (req, res, next) => {
@@ -96,7 +96,7 @@ router.post('/assess',
 // ---------------------------------------------------------------------------
 
 router.post('/certificate',
-  apiKeyAuth,
+  authenticate,
   validate({ body: certSchema }),
   async (req, res, next) => {
     try {
@@ -114,7 +114,7 @@ router.post('/certificate',
 // ---------------------------------------------------------------------------
 
 router.post('/certificate/verify',
-  apiKeyAuth,
+  authenticate,
   async (req, res, next) => {
     try {
       const cert = req.body;
@@ -134,7 +134,7 @@ router.post('/certificate/verify',
 // Returns SLGFT framework metadata (NDC targets, SDGs, sectors) — no AI
 // ---------------------------------------------------------------------------
 
-router.get('/framework', apiKeyAuth, referenceCache(), doc({ summary: 'SLGFT framework metadata and the NDC 3.0 targets' }), (_req, res) => {
+router.get('/framework', authenticate, referenceCache(), doc({ summary: 'SLGFT framework metadata and the NDC 3.0 targets' }), (_req, res) => {
   const { TAXONOMY_LK } = require('../../../../shared/constants');
   res.json({
     framework:   TAXONOMY_LK.name,

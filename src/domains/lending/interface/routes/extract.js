@@ -16,7 +16,7 @@
 'use strict';
 
 const { Router } = require('express');
-const apiKeyAuth  = require('../../../../platform/auth/api-key');
+const authenticate  = require('../../../../platform/auth/authenticate');
 const validate    = require('../../../../platform/http/validate');
 const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
@@ -28,7 +28,7 @@ const router = Router();
 // POST /v1/extract — extract materials from text, CSV, JSON, or PDF
 // ---------------------------------------------------------------------------
 router.post('/',
-  apiKeyAuth,
+  authenticate,
   validate({ body: extractRequestSchema }),
   extractLimiter,
   async (req, res, next) => {

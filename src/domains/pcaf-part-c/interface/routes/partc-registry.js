@@ -25,7 +25,7 @@
 'use strict';
 
 const { Router }   = require('express');
-const apiKeyAuth   = require('../../../../platform/auth/api-key');
+const authenticate   = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc, recordOf, listOf } = require('../../../../platform/http/openapi-hints');
 const validate     = require('../../../../platform/http/validate');
@@ -55,63 +55,63 @@ const handle = require('../../../../platform/http/async-handler');
 // ---------------------------------------------------------------------------
 // Storage capability
 // ---------------------------------------------------------------------------
-router.get('/storage', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/storage', authenticate, defaultLimiter, (_req, res) => {
   res.json({ storage: store.capability() });
 });
 
 // ---------------------------------------------------------------------------
 // Settings
 // ---------------------------------------------------------------------------
-router.get('/settings', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ settings: await registry.getSettings(req.apiKey.orgId) });
+router.get('/settings', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ settings: await registry.getSettings(req.orgId) });
 }));
 
-router.put('/settings', apiKeyAuth, defaultLimiter,
+router.put('/settings', authenticate, defaultLimiter,
   validate({ body: settingsSchema }),
   handle(async (req, res) => {
-    res.json({ settings: await registry.saveSettings(req.apiKey.orgId, req.body) });
+    res.json({ settings: await registry.saveSettings(req.orgId, req.body) });
   }));
 
 // ---------------------------------------------------------------------------
 // Clients
 // ---------------------------------------------------------------------------
-router.get('/clients', apiKeyAuth, defaultLimiter, paged(),
+router.get('/clients', authenticate, defaultLimiter, paged(),
   doc({ summary: 'List insured parties', response: listOf('clients', recordOf(clientSchema, 'clientId', {}, 'Client')) }),
   handle(async (req, res) => {
-    sendList(req, res, 'clients', await registry.listClients(req.apiKey.orgId));
+    sendList(req, res, 'clients', await registry.listClients(req.orgId));
   }));
 
-router.post('/clients', apiKeyAuth, defaultLimiter,
+router.post('/clients', authenticate, defaultLimiter,
   validate({ body: clientSchema }),
   doc({ summary: 'Create an insured party', status: 201, response: { type: 'object', properties: { client: recordOf(clientSchema, 'clientId', {}, 'Client') } } }),
   handle(async (req, res) => {
-    res.status(201).json({ client: await registry.createClient(req.apiKey.orgId, req.body) });
+    res.status(201).json({ client: await registry.createClient(req.orgId, req.body) });
   }));
 
-router.get('/clients/:clientId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const orgId = req.apiKey.orgId;
+router.get('/clients/:clientId', authenticate, defaultLimiter, handle(async (req, res) => {
+  const orgId = req.orgId;
   const client = await registry.getClient(orgId, req.params.clientId);
   if (!client) return res.status(404).json({ error: 'CLIENT_NOT_FOUND', message: `No client ${req.params.clientId}.` });
   const projects = await registry.listProjects(orgId, { clientId: req.params.clientId });
   res.json({ client, projects });
 }));
 
-router.patch('/clients/:clientId', apiKeyAuth, defaultLimiter,
+router.patch('/clients/:clientId', authenticate, defaultLimiter,
   validate({ body: clientUpdateSchema }),
   handle(async (req, res) => {
-    const client = await registry.updateClient(req.apiKey.orgId, req.params.clientId, req.body);
+    const client = await registry.updateClient(req.orgId, req.params.clientId, req.body);
     if (!client) return res.status(404).json({ error: 'CLIENT_NOT_FOUND', message: `No client ${req.params.clientId}.` });
     res.json({ client });
   }));
 
-router.delete('/clients/:clientId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json(await registry.deleteClient(req.apiKey.orgId, req.params.clientId));
+router.delete('/clients/:clientId', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json(await registry.deleteClient(req.orgId, req.params.clientId));
 }));
 
 // ---------------------------------------------------------------------------
 // Projects
 // ---------------------------------------------------------------------------
-router.get('/projects', apiKeyAuth, defaultLimiter, paged('clientId', 'reportingYear'),
+router.get('/projects', authenticate, defaultLimiter, paged('clientId', 'reportingYear'),
   doc({ summary: 'List projects, with their policies inline', response: listOf('projects', recordOf(projectSchema, 'projectId', { clientName: { type: 'string' }, policies: { type: 'array', items: recordOf(policySchema, 'policyId', {}, 'Policy') } }, 'Project')) }),
   handle(async (req, res) => {
     /* `limit` asks for a page; without it the whole list comes back as it
@@ -121,63 +121,63 @@ router.get('/projects', apiKeyAuth, defaultLimiter, paged('clientId', 'reporting
        so that page is cut from the list. */
     if (req.query.limit !== undefined && !req.query.reportingYear) {
       const where = req.query.clientId ? { clientId: req.query.clientId } : {};
-      const pg = await store.page('projects', req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
+      const pg = await store.page('projects', req.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
       const page = { limit: pg.limit, nextCursor: pg.nextCursor, hasMore: pg.nextCursor !== null };
       res.locals.page = page;
       return res.json({ projects: pg.items, page });
     }
-    const projects = await registry.listProjects(req.apiKey.orgId, {
+    const projects = await registry.listProjects(req.orgId, {
       clientId: req.query.clientId, reportingYear: req.query.reportingYear
     });
     sendList(req, res, 'projects', projects);
   }));
 
-router.post('/projects', apiKeyAuth, defaultLimiter,
+router.post('/projects', authenticate, defaultLimiter,
   validate({ body: projectSchema }),
   handle(async (req, res) => {
-    res.status(201).json({ project: await registry.createProject(req.apiKey.orgId, req.body) });
+    res.status(201).json({ project: await registry.createProject(req.orgId, req.body) });
   }));
 
-router.get('/projects/:projectId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const project = await registry.getProject(req.apiKey.orgId, req.params.projectId);
+router.get('/projects/:projectId', authenticate, defaultLimiter, handle(async (req, res) => {
+  const project = await registry.getProject(req.orgId, req.params.projectId);
   if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${req.params.projectId}.` });
   res.json({ project });
 }));
 
-router.patch('/projects/:projectId', apiKeyAuth, defaultLimiter,
+router.patch('/projects/:projectId', authenticate, defaultLimiter,
   validate({ body: projectUpdateSchema }),
   handle(async (req, res) => {
-    const project = await registry.updateProject(req.apiKey.orgId, req.params.projectId, req.body);
+    const project = await registry.updateProject(req.orgId, req.params.projectId, req.body);
     if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${req.params.projectId}.` });
     res.json({ project });
   }));
 
-router.delete('/projects/:projectId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json(await registry.deleteProject(req.apiKey.orgId, req.params.projectId));
+router.delete('/projects/:projectId', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json(await registry.deleteProject(req.orgId, req.params.projectId));
 }));
 
 // ---------------------------------------------------------------------------
 // Policies on a project
 // ---------------------------------------------------------------------------
-router.post('/projects/:projectId/policies', apiKeyAuth, defaultLimiter,
+router.post('/projects/:projectId/policies', authenticate, defaultLimiter,
   validate({ body: policySchema }),
   handle(async (req, res) => {
-    const project = await registry.addPolicy(req.apiKey.orgId, req.params.projectId, req.body);
+    const project = await registry.addPolicy(req.orgId, req.params.projectId, req.body);
     res.status(201).json({ project });
   }));
 
-router.delete('/projects/:projectId/policies/:policyId', apiKeyAuth, defaultLimiter,
+router.delete('/projects/:projectId/policies/:policyId', authenticate, defaultLimiter,
   handle(async (req, res) => {
-    const project = await registry.removePolicy(req.apiKey.orgId, req.params.projectId, req.params.policyId);
+    const project = await registry.removePolicy(req.orgId, req.params.projectId, req.params.policyId);
     if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${req.params.projectId}.` });
     res.json({ project });
   }));
 
 /** Everything the engine needs to assess this policy, assembled from the book. */
-router.get('/projects/:projectId/policies/:policyId/context', apiKeyAuth, defaultLimiter,
+router.get('/projects/:projectId/policies/:policyId/context', authenticate, defaultLimiter,
   handle(async (req, res) => {
     const ctx = await registry.buildAssessmentContext(
-      req.apiKey.orgId, req.params.projectId, req.params.policyId);
+      req.orgId, req.params.projectId, req.params.policyId);
     if (!ctx) return res.status(404).json({ error: 'CONTEXT_NOT_FOUND', message: 'No such project or policy.' });
     res.json({ context: ctx });
   }));
@@ -190,10 +190,10 @@ router.get('/projects/:projectId/policies/:policyId/context', apiKeyAuth, defaul
 // genuinely new lines need a human.
 // ---------------------------------------------------------------------------
 
-router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, paged(),
+router.get('/projects/:projectId/boq', authenticate, defaultLimiter, paged(),
   doc({ summary: 'List the bill-of-quantities revisions of a project, oldest first' }),
   handle(async (req, res) => {
-  const revisions = await boq.listRevisions(req.apiKey.orgId, req.params.projectId);
+  const revisions = await boq.listRevisions(req.orgId, req.params.projectId);
   sendList(req, res, 'revisions', revisions, {
     summary: {
       count: revisions.length,
@@ -204,33 +204,33 @@ router.get('/projects/:projectId/boq', apiKeyAuth, defaultLimiter, paged(),
   });
   }));
 
-router.post('/projects/:projectId/boq', apiKeyAuth, defaultLimiter,
+router.post('/projects/:projectId/boq', authenticate, defaultLimiter,
   validate({ body: boqRevisionSchema }),
   handle(async (req, res) => {
-    const project = await registry.getProject(req.apiKey.orgId, req.params.projectId);
+    const project = await registry.getProject(req.orgId, req.params.projectId);
     if (!project) return res.status(404).json({ error: 'PROJECT_NOT_FOUND', message: `No project ${req.params.projectId}.` });
-    const revision = await boq.createRevision(req.apiKey.orgId, req.params.projectId, req.body);
+    const revision = await boq.createRevision(req.orgId, req.params.projectId, req.body);
     res.status(201).json({ revision });
   }));
 
-router.get('/boq/:revisionId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const revision = await boq.getRevision(req.apiKey.orgId, req.params.revisionId);
+router.get('/boq/:revisionId', authenticate, defaultLimiter, handle(async (req, res) => {
+  const revision = await boq.getRevision(req.orgId, req.params.revisionId);
   if (!revision) return res.status(404).json({ error: 'REVISION_NOT_FOUND', message: `No BOQ revision ${req.params.revisionId}.` });
   res.json({ revision });
 }));
 
-router.delete('/boq/:revisionId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json(await boq.deleteRevision(req.apiKey.orgId, req.params.revisionId));
+router.delete('/boq/:revisionId', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json(await boq.deleteRevision(req.orgId, req.params.revisionId));
 }));
 
 /**
  * Compare two revisions with every non-BOQ input held constant, so the
  * movement is attributable to the bill of quantities and nothing else.
  */
-router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
+router.post('/projects/:projectId/boq/compare', authenticate, defaultLimiter,
   validate({ body: compareRequestSchema }),
   handle(async (req, res) => {
-    const orgId = req.apiKey.orgId;
+    const orgId = req.orgId;
     const { projectId } = req.params;
 
     const project = await registry.getProject(orgId, projectId);
@@ -289,7 +289,7 @@ router.post('/projects/:projectId/boq/compare', apiKeyAuth, defaultLimiter,
 // disclosure; a locked assessment is never edited, only superseded.
 // ---------------------------------------------------------------------------
 
-router.get('/assessments', apiKeyAuth, defaultLimiter, paged('projectId', 'policyId', 'reportingYear', 'status'),
+router.get('/assessments', authenticate, defaultLimiter, paged('projectId', 'policyId', 'reportingYear', 'status'),
   doc({ summary: 'List assessments — each bound to a policy, a BOQ revision and a reporting year' }),
   handle(async (req, res) => {
   if (req.query.limit !== undefined) {
@@ -298,12 +298,12 @@ router.get('/assessments', apiKeyAuth, defaultLimiter, paged('projectId', 'polic
     if (req.query.policyId) where.policyId = req.query.policyId;
     if (req.query.reportingYear) where.reportingYear = Number(req.query.reportingYear);
     if (req.query.status) where.status = req.query.status;
-    const pg = await store.page(assessments.COLLECTION, req.apiKey.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
+    const pg = await store.page(assessments.COLLECTION, req.orgId, { limit: req.query.limit, cursor: req.query.cursor, where });
     const page = { limit: pg.limit, nextCursor: pg.nextCursor, hasMore: pg.nextCursor !== null };
     res.locals.page = page;
     return res.json({ assessments: pg.items, page });
   }
-  const list = await assessments.listAssessments(req.apiKey.orgId, {
+  const list = await assessments.listAssessments(req.orgId, {
     projectId: req.query.projectId, policyId: req.query.policyId,
     reportingYear: req.query.reportingYear, status: req.query.status
   });
@@ -316,67 +316,67 @@ router.get('/assessments', apiKeyAuth, defaultLimiter, paged('projectId', 'polic
   });
   }));
 
-router.post('/assessments', apiKeyAuth, defaultLimiter,
+router.post('/assessments', authenticate, defaultLimiter,
   validate({ body: createAssessmentSchema }),
   handle(async (req, res) => {
-    const { assessment, registers } = await assessments.createAssessment(req.apiKey.orgId, req.body);
+    const { assessment, registers } = await assessments.createAssessment(req.orgId, req.body);
     res.status(201).json({ assessment, registers });
   }));
 
-router.get('/assessments/:assessmentId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const a = await assessments.getAssessment(req.apiKey.orgId, req.params.assessmentId);
+router.get('/assessments/:assessmentId', authenticate, defaultLimiter, handle(async (req, res) => {
+  const a = await assessments.getAssessment(req.orgId, req.params.assessmentId);
   if (!a) return res.status(404).json({ error: 'ASSESSMENT_NOT_FOUND', message: `No assessment ${req.params.assessmentId}.` });
   res.json({ assessment: a });
 }));
 
 /** Move through draft → under review → locked. */
-router.post('/assessments/:assessmentId/status', apiKeyAuth, defaultLimiter,
+router.post('/assessments/:assessmentId/status', authenticate, defaultLimiter,
   validate({ body: statusChangeSchema }),
   handle(async (req, res) => {
     const a = await assessments.changeStatus(
-      req.apiKey.orgId, req.params.assessmentId, req.body.status,
-      { note: req.body.note, actor: (req.actor && req.actor.label) || req.apiKey.orgName || req.apiKey.orgId });
+      req.orgId, req.params.assessmentId, req.body.status,
+      { note: req.body.note, actor: (req.actor && req.actor.label) || req.orgId });
     res.json({ assessment: a });
   }));
 
-router.delete('/assessments/:assessmentId', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json(await assessments.deleteAssessment(req.apiKey.orgId, req.params.assessmentId));
+router.delete('/assessments/:assessmentId', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json(await assessments.deleteAssessment(req.orgId, req.params.assessmentId));
 }));
 
 /** Quick per-year counts. The full position is /portfolio/:year. */
-router.get('/periods/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ period: await assessments.yearSummary(req.apiKey.orgId, req.params.year) });
+router.get('/periods/:year', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ period: await assessments.yearSummary(req.orgId, req.params.year) });
 }));
 
 // ---------------------------------------------------------------------------
 // Portfolio — what the insurer discloses for a reporting year
 // ---------------------------------------------------------------------------
 
-router.get('/portfolio/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ portfolio: await portfolio.rollUp(req.apiKey.orgId, req.params.year) });
+router.get('/portfolio/:year', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ portfolio: await portfolio.rollUp(req.orgId, req.params.year) });
 }));
 
 /** What to fix first, ranked by how much of the disclosed figure it moves. */
-router.get('/portfolio/:year/dq-plan', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ plan: await portfolio.improvementPlan(req.apiKey.orgId, req.params.year) });
+router.get('/portfolio/:year/dq-plan', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ plan: await portfolio.improvementPlan(req.orgId, req.params.year) });
 }));
 
 /** Which emission factors to localise first, across the whole book. */
-router.get('/portfolio/:year/factor-gaps', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ gaps: await portfolio.factorGapPriority(req.apiKey.orgId, req.params.year) });
+router.get('/portfolio/:year/factor-gaps', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ gaps: await portfolio.factorGapPriority(req.orgId, req.params.year) });
 }));
 
 /**
  * This year against last year, with the prior figure stated on both bases
  * where it has since been restated.
  */
-router.get('/portfolio/:year/comparatives', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ comparatives: await comparatives.compare(req.apiKey.orgId, req.params.year) });
+router.get('/portfolio/:year/comparatives', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ comparatives: await comparatives.compare(req.orgId, req.params.year) });
 }));
 
 /** Every restatement recorded against a reporting year. */
-router.get('/portfolio/:year/restatements', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  res.json({ restatements: await comparatives.restatementsFor(req.apiKey.orgId, req.params.year) });
+router.get('/portfolio/:year/restatements', authenticate, defaultLimiter, handle(async (req, res) => {
+  res.json({ restatements: await comparatives.restatementsFor(req.orgId, req.params.year) });
 }));
 
 // ---------------------------------------------------------------------------
@@ -386,8 +386,8 @@ router.get('/portfolio/:year/restatements', apiKeyAuth, defaultLimiter, handle(a
 // none, because an empty disclosure would read as a position of zero rather
 // than as no position at all.
 // ---------------------------------------------------------------------------
-router.get('/disclosure/:year', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const orgId  = req.apiKey.orgId;
+router.get('/disclosure/:year', authenticate, defaultLimiter, handle(async (req, res) => {
+  const orgId  = req.orgId;
   const year   = req.params.year;
   const format = String(req.query.format || 'json').toLowerCase();
 
@@ -417,10 +417,10 @@ router.get('/disclosure/:year', apiKeyAuth, defaultLimiter, handle(async (req, r
 // ---------------------------------------------------------------------------
 // The flattened book
 // ---------------------------------------------------------------------------
-router.get('/policies', apiKeyAuth, defaultLimiter, paged('reportingYear'),
+router.get('/policies', authenticate, defaultLimiter, paged('reportingYear'),
   doc({ summary: 'The flattened book: every policy with its project and client', response: listOf('policies', recordOf(policySchema, 'policyId', { projectId: { type: 'string' }, clientId: { type: 'string' } }, 'BookPolicy'), { summary: { type: 'object', additionalProperties: true } }) }),
   handle(async (req, res) => {
-  const policies = await registry.listPolicies(req.apiKey.orgId, { reportingYear: req.query.reportingYear });
+  const policies = await registry.listPolicies(req.orgId, { reportingYear: req.query.reportingYear });
   const byYear = policies.reduce((acc, p) => {
     const y = p.reportingYear || 'unknown';
     acc[y] = (acc[y] || 0) + 1;
@@ -443,8 +443,8 @@ router.get('/policies', apiKeyAuth, defaultLimiter, paged('reportingYear'),
 // when the organisation already holds clients, so it can never quietly
 // duplicate a real book.
 // ---------------------------------------------------------------------------
-router.post('/demo/seed', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
-  const orgId = req.apiKey.orgId;
+router.post('/demo/seed', authenticate, defaultLimiter, handle(async (req, res) => {
+  const orgId = req.orgId;
   const existing = await registry.listClients(orgId);
   if (existing.length > 0 && req.body.force !== true) {
     return res.status(409).json({

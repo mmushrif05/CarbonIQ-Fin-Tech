@@ -13,7 +13,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const validate = require('../../../../platform/http/validate');
 const { assessLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
@@ -22,7 +22,7 @@ const { extractMaterials } = require('../../application/extract');
 const router = Router();
 
 router.post('/',
-  apiKeyAuth,
+  authenticate,
   validate({ body: extractRequestSchema }),
   assessLimiter,
   async (req, res, next) => {

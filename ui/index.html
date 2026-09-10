@@ -49,121 +49,29 @@
 
       <div class="login-card">
         <h2>Sign In</h2>
-        <p class="login-subtitle">Select your stakeholder role to access the platform with role-appropriate views and permissions.</p>
+        <p class="login-subtitle">Sign in with the account your administrator issued.</p>
 
         <div class="login-form-grid">
           <div class="form-group">
-            <label for="login-name">Full Name</label>
-            <input id="login-name" type="text" class="login-input" placeholder="e.g. Kamal Perera" />
+            <label for="login-email">Email address</label>
+            <input id="login-email" type="email" class="login-input" autocomplete="username"
+                   placeholder="you@bank.lk" />
           </div>
           <div class="form-group">
-            <label for="login-email">Email Address</label>
-            <input id="login-email" type="email" class="login-input" placeholder="e.g. kamal@dfcc.lk" />
-          </div>
-          <div class="form-group">
-            <label for="login-org">Organisation</label>
-            <input id="login-org" type="text" class="login-input" placeholder="e.g. DFCC Bank" />
+            <label for="login-password">Password</label>
+            <input id="login-password" type="password" class="login-input" autocomplete="current-password"
+                   placeholder="Your password" />
           </div>
         </div>
 
-        <div class="login-section-label">Select Your Role</div>
-
-        <div class="stakeholder-grid" id="stakeholder-grid">
-
-          <!-- Bank Administrator -->
-          <label class="stakeholder-card" data-role="admin">
-            <input type="radio" name="stakeholder-role" value="admin" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#8b5cf6">
-              <svg viewBox="0 0 18 18" fill="none"><path d="M9 2l1.5 3 3.5.5-2.5 2.5.6 3.5L9 10l-3.1 1.5.6-3.5L4 5.5l3.5-.5L9 2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-card-title">Bank Administrator</div>
-            <div class="stakeholder-card-desc">Full platform control — users, API keys, all operations</div>
-            <div class="stakeholder-card-level">Level 100 — Full Access</div>
-          </label>
-
-          <!-- Credit Officer -->
-          <label class="stakeholder-card" data-role="credit_officer">
-            <input type="radio" name="stakeholder-role" value="credit_officer" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#3b82f6">
-              <svg viewBox="0 0 18 18" fill="none"><path d="M3 15V7l4-4h4l4 4v8a1 1 0 01-1 1H4a1 1 0 01-1-1z" stroke="currentColor" stroke-width="1.3"/><path d="M7 16v-5h4v5" stroke="currentColor" stroke-width="1.3"/></svg>
-            </div>
-            <div class="stakeholder-card-title">Credit Officer</div>
-            <div class="stakeholder-card-desc">Loan origination, covenant approval, monitoring</div>
-            <div class="stakeholder-card-level">Level 80 — Origination</div>
-          </label>
-
-          <!-- ESG Analyst -->
-          <label class="stakeholder-card" data-role="esg_analyst">
-            <input type="radio" name="stakeholder-role" value="esg_analyst" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#10b981">
-              <svg viewBox="0 0 18 18" fill="none"><path d="M2 13l4-4 3 3 7-8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-card-title">ESG Analyst</div>
-            <div class="stakeholder-card-desc">Carbon assessment, taxonomy, PCAF, portfolio analysis</div>
-            <div class="stakeholder-card-level">Level 60 — Analysis</div>
-          </label>
-
-          <!-- Relationship Manager -->
-          <label class="stakeholder-card" data-role="relationship_manager">
-            <input type="radio" name="stakeholder-role" value="relationship_manager" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#f59e0b">
-              <svg viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M3 16c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            </div>
-            <div class="stakeholder-card-title">Relationship Manager</div>
-            <div class="stakeholder-card-desc">Client-facing — screening, coaching, read-only on assessments</div>
-            <div class="stakeholder-card-level">Level 40 — Client Facing</div>
-          </label>
-
-          <!-- Auditor -->
-          <label class="stakeholder-card" data-role="auditor">
-            <input type="radio" name="stakeholder-role" value="auditor" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#6366f1">
-              <svg viewBox="0 0 18 18" fill="none"><path d="M4 2h7l4 4v10a1 1 0 01-1 1H4a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3"/><path d="M10 2v4h4M6 10h6M6 13h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            </div>
-            <div class="stakeholder-card-title">Auditor</div>
-            <div class="stakeholder-card-desc">Read-only access to all runs, reports, and audit trails</div>
-            <div class="stakeholder-card-level">Level 30 — Read Only</div>
-          </label>
-
-          <!-- Borrower -->
-          <label class="stakeholder-card" data-role="borrower">
-            <input type="radio" name="stakeholder-role" value="borrower" />
-            <div class="stakeholder-check">
-              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-            <div class="stakeholder-avatar" style="background:#ec4899">
-              <svg viewBox="0 0 18 18" fill="none"><rect x="3" y="8" width="12" height="7" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M6 8V5.5a3 3 0 016 0V8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            </div>
-            <div class="stakeholder-card-title">Borrower</div>
-            <div class="stakeholder-card-desc">Self-service coaching and application status visibility</div>
-            <div class="stakeholder-card-level">Level 10 — Self Service</div>
-          </label>
-
-        </div>
-
-        <div class="login-error" id="login-error">Please enter your name and select a role.</div>
+        <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
 
         <div class="login-actions">
           <button class="login-btn" id="login-btn" onclick="LoginPage.submit()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Sign In
           </button>
-          <span class="login-hint">Demo mode — no password required</span>
+          <span class="login-hint">Your role and organisation come from your account.</span>
         </div>
       </div>
 
@@ -173,52 +81,65 @@
   <!-- =================== LOGIN PAGE CONTROLLER =================== -->
   <script>
   const LoginPage = (() => {
-    function _wireCards() {
-      document.querySelectorAll('.stakeholder-card').forEach(card => {
-        card.addEventListener('click', () => {
-          document.querySelectorAll('.stakeholder-card').forEach(c => c.classList.remove('selected'));
-          card.classList.add('selected');
-          card.querySelector('input[type="radio"]').checked = true;
-        });
-      });
-    }
-
-    function submit() {
-      const name  = document.getElementById('login-name').value.trim();
+    /* Sign-in is a request, not a decision the browser makes. Until H1 this
+       form wrote a self-selected role into localStorage and every visitor was
+       handed the same write-and-lock key; the role and the organisation now
+       come back from the server, which is the only place that knows them. */
+    async function submit() {
       const email = document.getElementById('login-email').value.trim();
-      const org   = document.getElementById('login-org').value.trim();
-      const roleInput = document.querySelector('input[name="stakeholder-role"]:checked');
+      const password = document.getElementById('login-password').value;
       const errEl = document.getElementById('login-error');
+      const btn = document.getElementById('login-btn');
 
-      if (!name || !roleInput) {
-        errEl.textContent = 'Please enter your name and select a role.';
+      if (!email || !password) {
+        errEl.textContent = 'Enter your email address and password.';
         errEl.classList.add('visible');
         return;
       }
-
       errEl.classList.remove('visible');
+      btn.disabled = true;
 
-      const role = roleInput.value;
-      if (typeof Auth !== 'undefined' && Auth.login(name, email, role, org)) {
+      try {
+        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          errEl.textContent = body.message || 'Sign-in failed.';
+          if (body.remedy) errEl.textContent += ` ${body.remedy}`;
+          errEl.classList.add('visible');
+          return;
+        }
+        Auth.startSession(body);
         Auth.enforceAuth();
-        // Navigate to default page for role
         const defaultPage = Auth.getDefaultPage();
-        // Call the router directly. Synthesising a click depended on the nav
-        // item being present in the DOM, which role visibility can change.
         if (typeof window.CARBONIQ_navigateTo === 'function') {
           window.CARBONIQ_navigateTo(defaultPage);
         } else {
           const navItem = document.querySelector(`.nav-item[data-page="${defaultPage}"]`);
           if (navItem) navItem.click();
         }
+      } catch (err) {
+        errEl.textContent = 'Could not reach the server. Check your connection and try again.';
+        errEl.classList.add('visible');
+      } finally {
+        btn.disabled = false;
       }
     }
 
-    // Wire cards on DOM ready
+    /* Enter submits, which is what a two-field sign-in form should do. */
+    function _wireEnter() {
+      ['login-email', 'login-password'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+      });
+    }
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', _wireCards);
+      document.addEventListener('DOMContentLoaded', _wireEnter);
     } else {
-      _wireCards();
+      _wireEnter();
     }
 
     return { submit };
@@ -507,12 +428,6 @@
           <input id="cfg-api-base" type="text" class="form-input form-input-sm"
             placeholder="https://your-api.example.com (leave blank for local)" />
           <span class="form-hint">Leave blank to use same origin</span>
-        </div>
-        <div class="form-group">
-          <label>API Key</label>
-          <input id="cfg-api-key" type="text" class="form-input form-input-sm"
-            placeholder="ck_..." autocomplete="off" />
-          <span class="form-hint">Your CarbonIQ x-api-key</span>
         </div>
         <div id="cfg-msg" style="font-size:12px;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">

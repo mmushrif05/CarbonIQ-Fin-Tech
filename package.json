@@ -43,7 +43,13 @@
     "typecheck": "tsc -p jsconfig.json",
     "build:ui": "node scripts/build-ui.js",
     "test:e2e": "npm run build:ui && playwright test",
-    "pretypecheck": "node scripts/build-info.js"
+    "pretypecheck": "node scripts/build-info.js",
+    "user:create": "node scripts/manage-users.js create",
+    "user:list": "node scripts/manage-users.js list",
+    "user:role": "node scripts/manage-users.js role",
+    "user:passwd": "node scripts/manage-users.js passwd",
+    "user:disable": "node scripts/manage-users.js disable",
+    "user:enable": "node scripts/manage-users.js enable"
   },
   "keywords": [
     "carbon",

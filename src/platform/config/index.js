@@ -129,6 +129,11 @@ const config = {
     get jobsToken() { return process.env.JOBS_TOKEN || ''; },
     get siteUrl() { return process.env.JOBS_URL || process.env.URL || process.env.DEPLOY_PRIME_URL || ''; },
     get jobsInline() { return process.env.JOBS_INLINE === '1' || process.env.JOBS_INLINE === 'true'; },
+    /* A grace period for keys issued before scopes existed. Unset, such a
+       key is held to `read`; set, it keeps everything it could always do.
+       It is a migration switch, and config.validate() refuses it in
+       production so the grace cannot become the arrangement. */
+    get allowUnscopedKeys() { return process.env.ALLOW_UNSCOPED_KEYS === '1' || process.env.ALLOW_UNSCOPED_KEYS === 'true'; },
     /* The directory the local server serves as the dashboard: the source
        tree, or the built output when the browser tests ask for it. */
     get uiDir() { return process.env.UI_DIR || 'ui'; },

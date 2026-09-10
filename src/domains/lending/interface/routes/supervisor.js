@@ -16,7 +16,7 @@
 'use strict';
 
 const { Router }      = require('express');
-const apiKeyAuth      = require('../../../../platform/auth/api-key');
+const authenticate      = require('../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const auth            = require('../../../../platform/auth/auth');
@@ -39,7 +39,7 @@ const router = Router();
 function dualAuth(req, res, next) {
   // Try API key first (X-API-Key header), then JWT (Authorization: Bearer)
   if (req.headers['x-api-key']) {
-    return apiKeyAuth(req, res, next);
+    return authenticate(req, res, next);
   }
   if (req.headers.authorization) {
     return auth(req, res, next);

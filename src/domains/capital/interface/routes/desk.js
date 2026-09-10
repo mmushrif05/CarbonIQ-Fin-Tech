@@ -36,7 +36,7 @@
 'use strict';
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { fallback } = require('../../../../platform/observability/logger');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -51,7 +51,7 @@ const router = Router();
 const handle = require('../../../../platform/http/async-handler');
 
 /** The position over both books. */
-router.get('/position', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/position', authenticate, defaultLimiter, handle(async (req, res) => {
   const basis = req.query.attributionBasis || 'outstanding';
   if (!attribution.BASES.includes(basis)) {
     return res.status(400).json({
@@ -59,7 +59,7 @@ router.get('/position', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
       message: `attributionBasis must be one of ${attribution.BASES.join(', ')}; received "${basis}".`,
     });
   }
-  const position = await desk.read(req.apiKey.orgId, {
+  const position = await desk.read(req.orgId, {
     attributionBasis: basis,
     portfolioId: req.query.portfolioId,
   });
@@ -93,11 +93,11 @@ function readWeights(req) {
 }
 
 /** What is waiting, gated and ranked, and whether it is already on the book. */
-router.get('/candidates', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/candidates', authenticate, defaultLimiter, handle(async (req, res) => {
   const weights = readWeights(req);
   const [pipeline, effective] = await Promise.all([
-    gcfStore.list(req.apiKey.orgId),
-    desk.effectiveBook(req.apiKey.orgId, { portfolioId: req.query.portfolioId }),
+    gcfStore.list(req.orgId),
+    desk.effectiveBook(req.orgId, { portfolioId: req.query.portfolioId }),
   ]);
 
   res.json({
@@ -114,7 +114,7 @@ router.get('/candidates', apiKeyAuth, defaultLimiter, handle(async (req, res) =>
 }));
 
 /** Year end: what cannot be stated, and how far each candidate is from a submission. */
-router.get('/readiness', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/readiness', authenticate, defaultLimiter, handle(async (req, res) => {
   const year = req.query.year === undefined || req.query.year === ''
     ? new Date().getUTCFullYear()
     : Number(req.query.year);
@@ -125,8 +125,8 @@ router.get('/readiness', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
     });
   }
 
-  const pipeline = await gcfStore.list(req.apiKey.orgId);
-  const entityDisclosures = await gcfStore.entityDisclosures(req.apiKey.orgId).catch(fallback('desk.readiness.entityDisclosures', null));
+  const pipeline = await gcfStore.list(req.orgId);
+  const entityDisclosures = await gcfStore.entityDisclosures(req.orgId).catch(fallback('desk.readiness.entityDisclosures', null));
 
   res.json({
     readiness: {
@@ -156,7 +156,7 @@ router.get('/readiness', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
  * written this morning has drawn nothing — on that basis the answer would be
  * "this changes nothing" from a question that had not been asked.
  */
-router.post('/scenario', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.post('/scenario', authenticate, defaultLimiter, handle(async (req, res) => {
   const body = req.body || {};
   const raw = Array.isArray(body.select) ? body.select : String(body.select || '').split(',');
   const select = raw.map(s => String(s).trim()).filter(Boolean);
@@ -175,7 +175,7 @@ router.post('/scenario', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
     });
   }
 
-  const effective = await desk.effectiveBook(req.apiKey.orgId, { portfolioId: body.portfolioId });
+  const effective = await desk.effectiveBook(req.orgId, { portfolioId: body.portfolioId });
   const result = basket(effective.book, select, { attributionBasis: basis });
 
   res.json({
@@ -199,16 +199,16 @@ router.post('/scenario', apiKeyAuth, defaultLimiter, handle(async (req, res) => 
  * follows. The candidate lands at `pipeline`, which is a position on the book
  * and not yet a decision to lend.
  */
-router.post('/adopt', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.post('/adopt', authenticate, defaultLimiter, handle(async (req, res) => {
   const body = req.body || {};
-  const result = await desk.adoptCandidate(req.apiKey.orgId, {
+  const result = await desk.adoptCandidate(req.orgId, {
     recordId: body.recordId,
     portfolioId: body.portfolioId,
     commitment: body.commitment,
     startYear: body.startYear,
     phasing: body.phasing,
     notes: body.notes,
-    by: req.apiKey.orgId,
+    by: req.orgId,
   });
   res.status(201).json({
     investment: result.investment,

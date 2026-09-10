@@ -15,6 +15,31 @@ are tagged after a deploy is confirmed, per `docs/RELEASE-AND-ROLLBACK.md`.
   from a bad one, including the order to reverse code and schema in.
 - `docs/HANDOVER-GAP-ANALYSIS.md` — the seven-phase register this work follows.
 
+### Added — authentication (H1)
+- Accounts and sessions in the database (migration `0004`), with scrypt
+  passwords, revocable sessions on two clocks, and a first administrator
+  created with `npm run user:create`.
+- One authentication middleware taking either a session token or an API key,
+  so a role now decides what every one of the 154 routes will do.
+- `POST /v1/auth/login`, `logout`, `me`, `password`, and `admin`-scoped account
+  administration under `/v1/auth/users`.
+- A shared rate-limit counter where PostgreSQL is present, and `GET /health`
+  saying which scope the limits actually have.
+- `docs/AUTHENTICATION.md`, including what is deliberately not built yet.
+
+### Changed
+- The browser is handed no API key. `GET /v1/ui-config.js` serves the build
+  stamp only, and the dashboard signs in.
+- An API key issued before scopes existed is held to `read` rather than granted
+  every scope on every route. `ALLOW_UNSCOPED_KEYS=true` is a migration window
+  that production refuses.
+- The serverless function refuses to serve a deployment `config.validate()`
+  rejects, instead of listing the problems under `/health` and carrying on.
+- A deploy preview no longer runs migrations, because it may share whatever
+  `DATABASE_URL` is set at site scope.
+- `X-Actor` from an integration is still believed and now recorded
+  `actorVerified: false`, beside a name the server established.
+
 ### Fixed
 - The type check could not pass on a clean checkout. `build-info.json` is a
   build artifact three files require, and TypeScript resolves that require

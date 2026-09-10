@@ -10,7 +10,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const validate = require('../../../../platform/http/validate');
 const { schemas } = require('../../../../platform/http/validate');
@@ -56,7 +56,7 @@ const REMEDIATION_GUIDANCE = {
 // Body: { metric, operator, threshold, buildingArea_m2? }
 // ---------------------------------------------------------------------------
 router.post('/:projectId/covenant',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   validate({ body: schemas.covenantCheck, params: schemas.projectId }),
   defaultLimiter,
@@ -134,7 +134,7 @@ router.post('/:projectId/covenant',
 // Returns all standard SLL covenant checks for the project in one call.
 // ---------------------------------------------------------------------------
 router.get('/:projectId/covenants',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {

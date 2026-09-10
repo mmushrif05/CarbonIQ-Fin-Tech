@@ -10,7 +10,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { carbonPricingSchema } = require('../schemas/carbon-pricing');
@@ -22,7 +22,7 @@ const router = Router();
 // POST /v1/carbon-pricing/calculate
 // ---------------------------------------------------------------------------
 
-router.post('/calculate', apiKeyAuth, async (req, res, next) => {
+router.post('/calculate', authenticate, async (req, res, next) => {
   try {
     const { error, value } = carbonPricingSchema.validate(req.body, { abortEarly: false });
     if (error) {

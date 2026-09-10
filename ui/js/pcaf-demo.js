@@ -241,10 +241,6 @@ const PCAFDemoPage = (() => {
 
   /* A key is a credential, not a demonstration: only its prefix and length
      are ever drawn, so the log can be opened on a projector. */
-  function maskKey(k) {
-    const s = String(k || '');
-    return s ? `${s.slice(0, 11)}… (${s.length} characters)` : '(none)';
-  }
 
   function engine(state, text) {
     const el = $('pdEngine');
@@ -325,7 +321,7 @@ const PCAFDemoPage = (() => {
         </summary>
         <pre class="pd-log-pre">${esc(
           `${c.method} ${base}${c.path}\n`
-          + `x-api-key: ${maskKey(window.CARBONIQ_API_KEY)}\n`
+          + 'Authorization: Bearer <your session token>\n'
           + `at ${c.at.toLocaleTimeString()}\n\n`
           + String(c.text || '').slice(0, 8000)
           + (String(c.text || '').length > 8000 ? '\n\n… truncated for display …' : '')

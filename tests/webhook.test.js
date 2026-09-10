@@ -25,7 +25,7 @@ describe('POST /v1/webhooks — authentication', () => {
       .post('/v1/webhooks')
       .send({ url: VALID_URL, events: VALID_EVENTS });
     expect(res.status).toBe(401);
-    expect(res.body.error).toBe('API_KEY_REQUIRED');
+    expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
   test('returns 401 when X-API-Key format is invalid', async () => {
@@ -51,7 +51,7 @@ describe('GET /v1/webhooks — authentication', () => {
   test('returns 401 when X-API-Key is missing', async () => {
     const res = await request(app).get('/v1/webhooks');
     expect(res.status).toBe(401);
-    expect(res.body.error).toBe('API_KEY_REQUIRED');
+    expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
   test('returns 503 when Firebase is unconfigured', async () => {

@@ -123,6 +123,12 @@ app.get('/health', async (_req, res) => {
       uiKey: Boolean(config.runtime.uiApiKey),
       anthropicKey: Boolean(config.runtime.anthropicApiKey),
       firebase: config.runtime.firebaseConfigured,
+      /* Whether anyone can sign in at all. A deployment with no accounts
+         answers 503 to every sign-in naming the command that fixes it, and
+         "nobody has been created yet" is otherwise indistinguishable from
+         "the password is wrong" from a browser. A count, never a name. */
+      accounts: Boolean(await require('./platform/auth/users').countUsers()
+        .catch(logger.fallback('health.accounts', 0))),
       /* Boot validation, by variable name only. A serverless function cannot
          refuse to start, so it says here what a server would have refused on. */
       ...(() => { const v = config.validate(); return v.ok ? {} : { problems: v.problems.map(p => p.variable) }; })()
@@ -143,6 +149,10 @@ app.get('/health', async (_req, res) => {
     /* The job queue: which mode, how deep, and how a queued job gets worked. */
     jobs: await jobQueue.health(),
     contract: { openapi: '/v1/openapi.json', envelope: 'opt-in; see docs/API-CONTRACT.md' },
+    /* Whether a rate limit covers the deployment or only this process. On a
+       platform that runs many instances the second is not a limit, and from
+       a response the two look identical. */
+    rateLimits: require('./platform/http/rate-limit').describe(),
     storage: await (async () => {
       const store = require('./platform/database/store');
       /* On PostgreSQL the probe also answers the async half — reachable, and

@@ -15,7 +15,7 @@
  */
 
 const { Router } = require('express');
-const apiKeyAuth = require('../../../../platform/auth/api-key');
+const authenticate = require('../../../../platform/auth/authenticate');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
@@ -25,7 +25,7 @@ const { checkAllTaxonomies } = require('../../domain/taxonomy');
 const router = Router();
 
 router.get('/:projectId/taxonomy',
-  apiKeyAuth,
+  authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {

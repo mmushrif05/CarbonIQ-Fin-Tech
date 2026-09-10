@@ -20,7 +20,36 @@ const migrate = require('../src/platform/database/migrate');
 const cmd = process.argv[2] || 'up';
 const ifConfigured = process.argv.includes('--if-configured');
 
+/**
+ * A deploy preview never migrates.
+ *
+ * The build command ends with `db-migrate up --if-configured`, and
+ * `--if-configured` only skips when DATABASE_URL is *unset*. Neither the
+ * staging nor the preview context defines its own, so both inherit whatever
+ * is set at site scope — and if the operator set DATABASE_URL site-wide
+ * rather than per context, every pull-request build would run migrations
+ * against production and preview traffic would read and write production
+ * records. docs/ENVIRONMENTS.md instructs otherwise; instruction is not
+ * enforcement, and the cost of being wrong once is the whole book.
+ *
+ * A preview that genuinely has its own database can say so with
+ * ALLOW_PREVIEW_MIGRATIONS=true.
+ */
+function previewGuard() {
+  const context = process.env.CONTEXT || '';
+  if (context !== 'deploy-preview' && context !== 'branch-deploy') return null;
+  if (process.env.ALLOW_PREVIEW_MIGRATIONS === 'true' || process.env.ALLOW_PREVIEW_MIGRATIONS === '1') return null;
+  return context;
+}
+
 (async () => {
+  const preview = previewGuard();
+  if (preview && (cmd === 'up' || cmd === 'down')) {
+    console.log(`Context is "${preview}" — not migrating.`);
+    console.log('  A preview shares whatever DATABASE_URL is set at site scope, which may be production.');
+    console.log('  Give this context its own database, or set ALLOW_PREVIEW_MIGRATIONS=true if it already has one.');
+    process.exit(0);
+  }
   if (!client.isConfigured()) {
     if (ifConfigured) { console.log('DATABASE_URL not set — skipping migrations.'); process.exit(0); }
     console.error('DATABASE_URL is not set. Nothing to migrate against.');
