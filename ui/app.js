@@ -28,6 +28,7 @@ const PAGE_META = {
   'gcf':             { title: 'GCF Pipeline', subtitle: 'DFCC post-accreditation — candidate screening, emissions, disclosure and Concept Note inputs' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
   'baselines':       { title: 'Baselines', subtitle: 'The governed figures this product screens against — in force, by country and by institution, with the version behind each' },
+  'accounts':        { title: 'Accounts', subtitle: 'Who can sign in, under which role, and until when' },
 };
 
 /**
@@ -92,6 +93,13 @@ const DYNAMIC_PAGES = {
     // pipeline changes this position, so a return visit re-reads it rather
     // than showing what it said last time.
     refresh: () => typeof DeskPage !== 'undefined' && DeskPage.refresh(),
+  },
+  'accounts': {
+    src:  'pages/accounts.html',
+    init: () => typeof AccountsPage !== 'undefined' && AccountsPage.init(),
+    /* An account issued, ended or reset elsewhere changes this list, so a
+       return visit re-reads it rather than showing what it said last time. */
+    refresh: () => typeof AccountsPage !== 'undefined' && AccountsPage.refresh(),
   },
   'baselines': {
     src:  'pages/baselines.html',

@@ -147,6 +147,13 @@ app.get('/health',
          "the password is wrong" from a browser. A count, never a name. */
       accounts: Boolean(await require('./platform/auth/users').countUsers()
         .catch(logger.fallback('health.accounts', 0))),
+      /* Whether the first administrator can still be created over HTTP. An
+         operator setting up a serverless deployment has no shell beside the
+         database, so `npm run user:create` is not open to them; this says
+         whether the one route that is, still answers. A boolean — the token
+         itself never reaches the wire, here or anywhere. */
+      bootstrap: Boolean((await require('./platform/http/auth-routes').bootstrapState()
+        .catch(logger.fallback('health.bootstrap', { available: false }))).available),
       /* Boot validation, by variable name only. A serverless function cannot
          refuse to start, so it says here what a server would have refused on. */
       ...(() => { const v = config.validate(); return v.ok ? {} : { problems: v.problems.map(p => p.variable) }; })()

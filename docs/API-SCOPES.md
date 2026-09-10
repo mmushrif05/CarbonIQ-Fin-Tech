@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-165 routes.
+167 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -39,6 +39,8 @@ relationship manager read, write, assess; auditor and borrower read.
 | PUT | `/v1/assurance` | `write` | changes a record |
 | GET | `/v1/assurance/mode` | `read` | read |
 | PUT | `/v1/assurance/mode` | `admin` | sets the operating mode a document prints on its face |
+| GET | `/v1/auth/bootstrap` (no credential) | `read` | read |
+| POST | `/v1/auth/bootstrap` (no credential) | `write` | changes a record |
 | POST | `/v1/auth/login` (no credential) | `write` | changes a record |
 | POST | `/v1/auth/logout` | `read` | ends the caller's own session |
 | GET | `/v1/auth/me` | `read` | read |

@@ -196,9 +196,17 @@ describe('Every route carries a scope, and the document says which', () => {
        and it describes nothing docs/API-SCOPES.md does not already say. */
     const open = rows.filter(r => r.path.startsWith('/v1') && !r.authenticated).map(r => `${r.method} ${r.path}`);
     /* POST /v1/auth/login carries no credential because it is the request
-       that establishes one. It is the only write on this list, and it is rate
-       limited per address as well as per caller. */
-    expect(open.sort()).toEqual(['GET /v1', 'GET /v1/carbon-pricing/rates', 'GET /v1/openapi.json', 'GET /v1/reports/types', 'GET /v1/ui-config.js', 'POST /v1/auth/login']);
+       that establishes one, and it is rate limited per address as well as per
+       caller. The two /v1/auth/bootstrap routes carry none because they run
+       before any credential exists on this deployment: they answer only while
+       it holds no accounts at all and only against ADMIN_BOOTSTRAP_TOKEN, so
+       the window closes with the account they create and cannot be reopened.
+       These three are the only writes on this list. */
+    expect(open.sort()).toEqual([
+      'GET /v1', 'GET /v1/auth/bootstrap', 'GET /v1/carbon-pricing/rates',
+      'GET /v1/openapi.json', 'GET /v1/reports/types', 'GET /v1/ui-config.js',
+      'POST /v1/auth/bootstrap', 'POST /v1/auth/login',
+    ]);
   });
 
   test('docs/API-SCOPES.md is what the code runs', () => {

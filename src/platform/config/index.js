@@ -155,6 +155,12 @@ const config = {
        `verified` is not the same as being in it; see
        src/shared/assurance-mode.js. */
     get assuranceMode() { return process.env.ASSURANCE_MODE || 'self_declared'; },
+    /* The one-time secret that lets the first administrator be created over
+       HTTP, because `npm run user:create` needs a shell beside the database
+       and a serverless deployment has none. Unset, the route refuses — an
+       absent token is never read as "no token needed". The window closes for
+       good the moment one account exists. */
+    get adminBootstrapToken() { return process.env.ADMIN_BOOTSTRAP_TOKEN || ''; },
     get isServerless() { return !!(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.LAMBDA_TASK_ROOT); },
     get isTest() { return process.env.NODE_ENV === 'test'; },
     get databaseUrl() { return process.env.DATABASE_URL || ''; },

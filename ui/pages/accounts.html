@@ -1,0 +1,160 @@
+<!-- Accounts — who can sign in, under which role, and until when.
+
+     Three facts about an account are shown apart because they are three
+     different questions with three different answers, and folding any two
+     together sends somebody to the wrong person: the role says what they may
+     do, the standing says whether an administrator has switched them off, and
+     the access window says whether a date agreed in advance has passed.
+
+     Copy rule for this page, as for every other: state what the figure is,
+     cite the standard that governs it, and stop. -->
+
+<style>
+  /* Tokens first, so all three theme states resolve as a set: bare :root is
+     the complete light palette, the media query covers the un-stamped system
+     default, and [data-theme] lets an explicit choice win in both directions. */
+  .ac {
+    --ac-ink: #14202e;
+    --ac-muted: #5b6b7c;
+    --ac-line: #dde4ec;
+    --ac-surface: #ffffff;
+    --ac-sunk: #f4f7fa;
+    --ac-accent: #1e4d78;
+    --ac-accent-soft: #dceafa;
+    --ac-live: #15803d;
+    --ac-live-soft: #dcfce7;
+    --ac-warn: #b45309;
+    --ac-warn-soft: #fef3c7;
+    --ac-past: #6b7a8a;
+    --ac-past-soft: #eef2f6;
+    color: var(--ac-ink);
+    min-width: 0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .ac {
+      --ac-ink: #e6edf5; --ac-muted: #93a3b5; --ac-line: #2c3a4b;
+      --ac-surface: #16212e; --ac-sunk: #0e1721;
+      --ac-accent: #7cb2e8; --ac-accent-soft: #14324f;
+      --ac-live: #86efac; --ac-live-soft: #0d2f1a;
+      --ac-warn: #fbbf24; --ac-warn-soft: #3d2606;
+      --ac-past: #94a3b8; --ac-past-soft: #1c2836;
+    }
+  }
+  :root[data-theme="dark"] .ac {
+    --ac-ink: #e6edf5; --ac-muted: #93a3b5; --ac-line: #2c3a4b;
+    --ac-surface: #16212e; --ac-sunk: #0e1721;
+    --ac-accent: #7cb2e8; --ac-accent-soft: #14324f;
+    --ac-live: #86efac; --ac-live-soft: #0d2f1a;
+    --ac-warn: #fbbf24; --ac-warn-soft: #3d2606;
+    --ac-past: #94a3b8; --ac-past-soft: #1c2836;
+  }
+
+  .ac-band { display: grid; gap: 14px; margin-bottom: 22px; }
+  .ac-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+  .ac-card {
+    background: var(--ac-surface); border: 1px solid var(--ac-line);
+    border-radius: 10px; padding: 16px 18px; min-width: 0;
+  }
+  .ac-h { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--ac-muted); margin: 0 0 10px; }
+  .ac-v { font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .ac-u { font-size: 12px; color: var(--ac-muted); line-height: 1.5; }
+
+  .ac-pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; letter-spacing: .02em; white-space: nowrap;
+  }
+  .ac-pill.live { background: var(--ac-live-soft); color: var(--ac-live); }
+  .ac-pill.warn { background: var(--ac-warn-soft); color: var(--ac-warn); }
+  .ac-pill.past { background: var(--ac-past-soft); color: var(--ac-past); }
+  .ac-pill.trial { background: var(--ac-accent-soft); color: var(--ac-accent); }
+
+  .ac-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .ac-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 820px; }
+  .ac-table th {
+    text-align: left; font-weight: 600; color: var(--ac-muted);
+    font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+    padding: 8px 10px; border-bottom: 1px solid var(--ac-line); white-space: nowrap;
+  }
+  .ac-table td { padding: 9px 10px; border-bottom: 1px solid var(--ac-line); vertical-align: top; }
+  .ac-table tr.off td { color: var(--ac-muted); }
+  .ac-email { font-weight: 600; }
+  .ac-sub { font-size: 11.5px; color: var(--ac-muted); }
+
+  .ac-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+  .ac-row-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+  .ac-btn {
+    font: inherit; font-size: 12px; padding: 5px 10px; border-radius: 7px;
+    border: 1px solid var(--ac-line); background: var(--ac-surface); color: var(--ac-ink); cursor: pointer;
+  }
+  .ac-btn.primary { background: var(--ac-accent); border-color: var(--ac-accent); color: #fff; }
+  .ac-btn:disabled { opacity: .5; cursor: not-allowed; }
+  /* A select sizes to its widest option, not its container, so one long role
+     name would set the page width without these two. */
+  .ac-form select, .ac-form input, .ac-table select { max-width: 100%; min-width: 0; }
+  .ac-form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
+  .ac-form label { display: grid; gap: 4px; font-size: 11.5px; color: var(--ac-muted); min-width: 0; }
+  .ac-form input, .ac-form select {
+    font: inherit; font-size: 13px; padding: 7px 9px; min-width: 0;
+    border: 1px solid var(--ac-line); border-radius: 7px;
+    background: var(--ac-sunk); color: var(--ac-ink);
+  }
+  .ac-msg { font-size: 12.5px; margin-top: 10px; line-height: 1.5; }
+  .ac-msg.bad { color: var(--ac-warn); }
+  .ac-secret {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px;
+    background: var(--ac-sunk); border: 1px solid var(--ac-line); border-radius: 7px;
+    padding: 8px 10px; margin-top: 10px; word-break: break-all;
+  }
+  .ac-empty { font-size: 13px; color: var(--ac-muted); padding: 14px 0; }
+</style>
+
+<div class="ac">
+  <section class="ac-band">
+    <div class="ac-grid" id="ac-summary"></div>
+  </section>
+
+  <section class="ac-band">
+    <div class="ac-card">
+      <h3 class="ac-h">Accounts</h3>
+      <div class="ac-scroll">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Account</th><th>Role</th><th>Standing</th>
+              <th>Access</th><th>Last signed in</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="ac-rows"></tbody>
+        </table>
+      </div>
+      <div class="ac-empty" id="ac-empty" hidden>No accounts in this organisation.</div>
+      <div class="ac-msg" id="ac-msg" hidden></div>
+    </div>
+  </section>
+
+  <section class="ac-band">
+    <div class="ac-card">
+      <h3 class="ac-h">Issue an account</h3>
+      <div class="ac-form">
+        <label>Email address
+          <input id="ac-email" type="email" placeholder="name@customer.lk" autocomplete="off" />
+        </label>
+        <label>Name
+          <input id="ac-name" placeholder="Full name" autocomplete="off" />
+        </label>
+        <label>Role
+          <select id="ac-role"></select>
+        </label>
+        <label>Access ends
+          <input id="ac-until" type="date" />
+        </label>
+      </div>
+      <div class="ac-actions">
+        <button class="ac-btn primary" id="ac-create">Issue</button>
+        <span class="ac-u">Leave the end date empty for an account with no end. The password is shown once, here, and is stored only as a hash.</span>
+      </div>
+      <div class="ac-secret" id="ac-secret" hidden></div>
+      <div class="ac-msg" id="ac-create-msg" hidden></div>
+    </div>
+  </section>
+</div>

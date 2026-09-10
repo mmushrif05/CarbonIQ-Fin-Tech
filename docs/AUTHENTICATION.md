@@ -61,20 +61,118 @@ A deployment starts empty and there is no self-service sign-up. `POST
 command below, and `GET /health` reports `configured.accounts` as a boolean, so
 "nobody has been created yet" is never mistaken for "the password is wrong".
 
+Where there is a shell beside the database:
+
 ```bash
-npm run user:create -- --email you@bank.lk --org dfcc --role admin
+npm run user:create -- --email you@bank.lk --org dfcc --role admin --own-password
 ```
 
-The password is printed once and stored only as a scrypt hash. After that,
-accounts are created from the dashboard by anyone holding `admin`.
+The password is printed once and stored only as a scrypt hash.
+
+**Where there is no shell, there is `POST /v1/auth/bootstrap`.** A serverless
+deployment has no terminal beside its database, so the command above was not
+open to the person setting one up and the first administrator could not be
+created at all. The route closes that, and it is bounded three ways:
+
+| Condition | Why |
+|---|---|
+| The deployment holds **no accounts at all** | Not "no administrators", not "none in this organisation". One account anywhere closes the window for good, so the route cannot add a second administrator to a live deployment. |
+| `ADMIN_BOOTSTRAP_TOKEN` is set | A bootstrap route that works without one is an open door on every deployment nobody has set up yet, which is exactly the state it exists to serve. Compared in constant time. |
+| It can persist | An account nothing kept is worse than none. |
+
+`GET /v1/auth/bootstrap` answers whether the window is open and, where it is
+not, which condition failed — so an operator is told rather than guessing from
+a refusal. Neither answer ever carries the token, and `/health` reports
+`configured.bootstrap` as a boolean beside `configured.accounts`. Once the
+window has closed, the route answers **410 Gone** rather than 403: a 403
+invites someone to go looking for a credential that would open it, and there is
+not one. The sign-in screen offers the form only where the server says the
+window is open.
+
+After the first administrator, accounts are issued from the Accounts screen or
+the API by anyone holding `admin`.
 
 ```bash
-npm run user:list                       # every account, its role and standing
+npm run user:list                       # every account, its role, standing and window
 npm run user:role   -- ana@bank.lk --role esg_analyst
 npm run user:passwd -- ana@bank.lk      # resets, and ends every session
+npm run user:trial  -- guest@customer.lk --until 2026-03-31
 npm run user:disable -- ana@bank.lk     # and ends every session
 npm run user:enable  -- ana@bank.lk
 ```
+
+---
+
+## Trial access — a window, not a role and not a flag
+
+An account may carry `accessEndsAt`: an instant after which it can no longer
+sign in. That is what a trial is, and it is deliberately a third thing rather
+than a reuse of either of the two that already exist.
+
+| | What it answers | Who decides it |
+|---|---|---|
+| **Role** | what this account may do | an administrator, at any time |
+| **Standing** (`active`) | whether somebody switched it off | an administrator, at a moment |
+| **Access window** (`accessEndsAt`) | until when | a date agreed in advance, which then passes on its own |
+
+Folding the window into the role would mean a trial customer could not hold the
+same role as a paying one, and on the day they convert their permissions would
+change for a reason nobody recorded. Folding it into `active` would tell a
+customer whose trial ran out that their account "has been disabled" — which
+sends them to the wrong person and gets them the wrong answer.
+
+So the two refusals are separate and both are named:
+
+| | Code | Status |
+|---|---|---|
+| Somebody switched the account off | `ACCOUNT_DISABLED` | 403 |
+| A date agreed in advance has passed | `ACCESS_ENDED` | 403 |
+
+Both are reachable **only after the password has verified**, so neither tells an
+attacker which addresses exist; a wrong password on an ended account is still
+`401 SIGN_IN_FAILED`. The generic answer is kept for the case that needs it and
+dropped for the case where it would only confuse the customer it is shown to.
+
+A bare date means *through the end of that day* — `2026-03-31` becomes
+`2026-03-31T23:59:59.999Z` — because "the trial runs to the 31st" means through
+the 31st, and reading it as midnight cuts a customer off a day early.
+
+**A session never outlives the window it was issued under.** `sessions.issue()`
+caps the absolute clock at `accessEndsAt`, so a twelve-hour session opened an
+hour before a trial closes ends when the trial does rather than eleven hours
+later. And the window is re-read from the account on every request, exactly as
+the role is, so an administrator who ends a trial has ended it now rather than
+at that customer's next sign-in — the session stops working on its next call
+and `ACCESS_ENDED` says why.
+
+**Removing the window converts the account.** `accessEndsAt: null` leaves the
+same id, the same history and everything it recorded; there is no second
+account and no migration.
+
+---
+
+## An issued password is the administrator's until it is replaced
+
+An account created by an administrator carries `mustChangePassword`. Until the
+account holder replaces the password, the request is refused at the door with
+`403 PASSWORD_CHANGE_REQUIRED` on **every route except three**:
+
+```
+GET  /v1/auth/me
+POST /v1/auth/password
+POST /v1/auth/logout
+```
+
+The password is one an administrator typed: they know it, it may have travelled
+by email, and until it is replaced it is not evidence of who is at the keyboard.
+Advisory enforcement — a banner asking nicely — would leave every other route
+open, which is the whole surface.
+
+`POST /v1/auth/password` is the moment it becomes theirs, so it is the moment
+the flag is cleared and not a moment sooner. An administrator resetting a
+password sets it again, because a reset is another temporary password.
+`--own-password` on the CLI, and `mustChangePassword: false` on the API, are for
+the case where the person typing the password is the person who will use it.
 
 ---
 
@@ -155,8 +253,13 @@ of source addresses does not buy more attempts at one account.
 ## What this does not do yet
 
 - **No password reset by email.** An administrator resets a password with
-  `npm run user:passwd`. There is no mail transport in this system and adding
-  one is a decision about a vendor, not a line of code.
+  `npm run user:passwd` or from the Accounts screen, and reads the new one out
+  once. There is no mail transport in this system and adding one is a decision
+  about a vendor, not a line of code.
+- **No notice before a trial ends.** The days remaining are on the account and
+  on the Accounts screen, and the refusal on the day names the date — but
+  nothing reaches the customer beforehand, for the same reason: there is no
+  mail transport.
 - **No second factor.** The place it belongs is `POST /v1/auth/login`, between
   the password check and `sessions.issue()`.
 - **No single sign-on.** The Firebase JWT path in `src/platform/auth/auth.js`

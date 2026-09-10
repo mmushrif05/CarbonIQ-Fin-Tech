@@ -48,6 +48,7 @@
     "user:list": "node scripts/manage-users.js list",
     "user:role": "node scripts/manage-users.js role",
     "user:passwd": "node scripts/manage-users.js passwd",
+    "user:trial": "node scripts/manage-users.js trial",
     "user:disable": "node scripts/manage-users.js disable",
     "user:enable": "node scripts/manage-users.js enable",
     "docs:typecheck-worklist": "node scripts/generate-typecheck-worklist.js",
