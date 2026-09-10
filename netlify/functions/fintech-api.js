@@ -16,6 +16,7 @@
 const serverless = require('serverless-http');
 const app = require('../../src/server');
 const errors = require('../../src/platform/observability/errors');
+const logger = require('../../src/platform/observability/logger');
 const config = require('../../src/platform/config');
 const { asError } = require('../../src/shared/types');
 
@@ -71,14 +72,22 @@ const handler = serverless(app, {
  * A serverless function cannot exit, so it answers 503 on every route
  * instead, naming the variables and never their values. /health stays
  * reachable, because the first question anyone asks is what is wrong.
+ *
+ * Only a **problem** refuses. `validate()` also returns warnings — the
+ * environment-size estimate is one — and a warning is logged and served
+ * past. The distinction is load-bearing: one build treated an estimate as a
+ * refusal and every route on the site answered 503 until the next deploy.
  */
-const problems = config.validate().problems;
+const { problems, warnings } = config.validate();
 const blocked = problems.length > 0;
 if (blocked) {
   /* One line at boot, so the cause is in the log drain as well as the reply. */
    
   errors.capture(new Error(`refusing to serve: ${problems.map(p => p.variable).join(', ')}`),
     { source: 'boot' });
+}
+for (const w of warnings) {
+  logger.for('netlify/functions/fintech-api').warn({ variable: w.variable, remedy: w.remedy }, `${w.variable}: ${w.problem}`);
 }
 
 function refuse(event) {

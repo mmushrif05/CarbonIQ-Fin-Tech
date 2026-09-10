@@ -106,8 +106,10 @@ the same from a browser.
 ### The environment has a ceiling, and it is 4 KB
 
 Netlify Functions are AWS Lambdas, and Lambda refuses to create a function
-whose environment exceeds **4,096 bytes** in total — every variable name,
-every value, and the platform's own injected variables counted together.
+whose configured environment exceeds **4,096 bytes** in total — every
+variable name and value set on the function, the operator's and the ones
+Netlify sets beside them. The runtime's own variables — its credentials, its
+paths — are outside that count.
 There is no partial application and no warning: the deploy fails at function
 creation, the message names a size limit and not a variable, and the site
 carries on serving the last build that worked. The symptom is therefore *the
@@ -128,12 +130,25 @@ Two things follow for a PostgreSQL deployment:
   or remove it. Netlify scopes a variable per context and per stage, and a
   variable not scoped to Functions is not in the function's environment.
 
-`config.validate()` measures the environment on a serverless runtime and
-raises a problem once three quarters of the ceiling is spent, naming the
-largest variables and their byte counts, so `/health` `configured.problems`
+`config.validate()` estimates the environment on a serverless runtime and
+raises a **warning** once three quarters of the ceiling is spent, naming the
+largest variables and their byte counts, so `/health` `configured.warnings`
 says which variable to move before a deploy fails rather than after. It
 reports **names and byte counts only** — a value in that block would be a
 published credential.
+
+A warning, and deliberately not a problem. The first version of the check
+was a problem, and it summed the whole of `process.env` inside the running
+function — the Lambda runtime's session token, paths and trace id included,
+none of which count against the ceiling. That sum passed the warning line on
+an ordinary deployment, the function treated a problem as a refusal, and
+every route on the site answered 503 until the next deploy. The estimate now
+leaves the runtime's own variables out, and `validate()` keeps two lists:
+**problems**, which a server refuses to start on and the function refuses
+every route but `/health` on, and **warnings**, which nothing refuses on. A
+figure that is an estimate can only ever be the second, and
+`tests/netlify-function.test.js` drives the adapter under a Lambda-shaped
+environment so the distinction cannot lapse again unseen.
 
 ## The schema
 

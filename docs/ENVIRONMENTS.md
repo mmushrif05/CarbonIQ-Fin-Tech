@@ -75,13 +75,15 @@ Both were found on the live site, both cost a working day, and neither is
 visible from the code.
 
 **The function environment may not exceed 4 KB.** Netlify Functions are AWS
-Lambdas, and Lambda refuses to create a function whose environment — names,
-values and the platform's own injected variables together — is larger than
-4,096 bytes. The deploy fails at function creation and the site carries on
-serving the previous build, so the symptom is that a merged change does not
-appear. `config.validate()` now measures it and `/health`
-`configured.problems` names the largest variables before a deploy hits the
-ceiling; `docs/DATA-LAYER.md` carries the full account and what to move.
+Lambdas, and Lambda refuses to create a function whose configured environment
+— the operator's variables and the ones Netlify sets beside them — is larger
+than 4,096 bytes. The deploy fails at function creation and the site carries
+on serving the previous build, so the symptom is that a merged change does
+not appear. `config.validate()` now estimates it and `/health`
+`configured.warnings` names the largest variables before a deploy hits the
+ceiling. A warning, never a refusal: the first version refused on it, counted
+the runtime's own variables, and took every route down. `docs/DATA-LAYER.md`
+carries the full account and what to move.
 
 **Netlify Blobs does not resolve in this function runtime, so do not select
 it.** `STORAGE_BACKEND=blobs` is a legitimate setting and the adapter is

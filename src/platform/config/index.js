@@ -223,13 +223,13 @@ const config = {
 };
 
 /**
- * AWS Lambda's hard ceiling on the whole function environment.
+ * AWS Lambda's hard ceiling on the function's configured environment.
  *
  * Netlify Functions are Lambdas, and Lambda refuses to create a function whose
- * environment — every key, every value, the platform's own injected variables
- * included — exceeds 4 KB. There is no warning and no partial application: the
- * deploy fails at function creation with a message about a size limit and
- * nothing about which variable is responsible.
+ * configured environment — the variables set on the function: the operator's,
+ * and the ones Netlify sets beside them — exceeds 4 KB. There is no warning
+ * and no partial application: the deploy fails at function creation with a
+ * message about a size limit and nothing about which variable is responsible.
  *
  * This deployment hit it. One base64 service account was using roughly
  * two-thirds of the budget; the deploy that added a 32-character token was the
@@ -243,6 +243,31 @@ const LAMBDA_ENV_LIMIT_BYTES = 4096;
 const LAMBDA_ENV_WARN_BYTES = Math.floor(LAMBDA_ENV_LIMIT_BYTES * 0.75);
 
 /**
+ * What the Lambda runtime itself puts on the process, which is not part of the
+ * configured environment and does not count against the ceiling: its
+ * credentials (`AWS_SESSION_TOKEN` alone is close to a kilobyte), its own
+ * names and paths, the trace id, the shell's inheritance.
+ *
+ * This list exists because the first version of the measurement did not have
+ * it. It summed the whole of `process.env` inside the running function, which
+ * is the runtime's environment and not the one Lambda measured; that sum
+ * passed the warning line on an ordinary deployment, and the function treated
+ * the warning as a refusal. Every route answered 503 for as long as that
+ * build was live. A measurement of the wrong thing is worse than none, and
+ * this one is now an estimate of the right thing, stated as such.
+ */
+const LAMBDA_RUNTIME_OWN = Object.freeze({
+  prefixes: ['AWS_', '_AWS_', '_X_AMZN_', 'LAMBDA_', 'NODE_', 'LC_'],
+  names: ['_HANDLER', '_', 'PATH', 'LD_LIBRARY_PATH', 'LANG', 'TZ', 'PWD', 'SHLVL', 'HOME'],
+});
+
+/** @param {string} variable */
+function isRuntimeOwn(variable) {
+  return LAMBDA_RUNTIME_OWN.names.includes(variable)
+    || LAMBDA_RUNTIME_OWN.prefixes.some(p => variable.startsWith(p));
+}
+
+/**
  * How much of that budget this process's environment occupies, and which
  * variables account for most of it.
  *
@@ -251,15 +276,21 @@ const LAMBDA_ENV_WARN_BYTES = Math.floor(LAMBDA_ENV_LIMIT_BYTES * 0.75);
  * rather than printed: "FIREBASE_SERVICE_ACCOUNT is 2,847 bytes" is the whole
  * of what an operator needs, and the value would be a leaked credential.
  *
- * Lambda counts the key, the value and a separator per variable. The figure is
- * therefore an estimate of the same order rather than the platform's exact
- * accounting, and the warning threshold leaves room for that.
+ * **An estimate, and only ever a warning.** Read inside the running function
+ * this is the runtime's environment less what the runtime is known to add,
+ * not the platform's own accounting: Netlify sets variables of its own on the
+ * function, the runtime's list above may be incomplete, and Lambda counts a
+ * separator per variable. It is close enough to say which variable is most
+ * of the budget, which is the question, and not close enough to refuse on —
+ * so `validate()` reports it as a warning and nothing refuses on a warning.
  *
  * @param {NodeJS.ProcessEnv} [env]
- * @returns {{bytes: number, count: number, limit: number, largest: {variable: string, bytes: number}[]}}
+ * @returns {{bytes: number, count: number, excluded: number, limit: number, largest: {variable: string, bytes: number}[]}}
  */
 function environmentSize(env = process.env) {
-  const entries = Object.entries(env)
+  const all = Object.entries(env);
+  const entries = all
+    .filter(([variable]) => !isRuntimeOwn(variable))
     .map(([variable, value]) => ({
       variable,
       bytes: Buffer.byteLength(variable, 'utf8') + Buffer.byteLength(String(value ?? ''), 'utf8') + 1,
@@ -268,6 +299,7 @@ function environmentSize(env = process.env) {
   return {
     bytes: entries.reduce((n, e) => n + e.bytes, 0),
     count: entries.length,
+    excluded: all.length - entries.length,
     limit: LAMBDA_ENV_LIMIT_BYTES,
     largest: entries.slice(0, 3),
   };
@@ -278,10 +310,23 @@ function environmentSize(env = process.env) {
  * without, or cannot run safely with. Names only in the result — never a
  * value — because /health prints it.
  *
- * @returns {{ ok: boolean, problems: {variable: string, problem: string, remedy: string}[] }}
+ * Two lists, and the difference is what a deployment does with each. A
+ * **problem** is what it cannot run safely with: a server refuses to start,
+ * the function refuses every route but /health. A **warning** is what an
+ * operator should know and nothing refuses on; `ok` does not read it. The
+ * environment-size estimate is a warning because it is an estimate — the one
+ * time it was a problem it took the site down (see LAMBDA_RUNTIME_OWN).
+ *
+ * @typedef {{variable: string, problem: string, remedy: string}} Finding
+ * @param {{ env?: string, environment?: NodeJS.ProcessEnv }} [options] `environment` is
+ *   what the size estimate measures — the process's own unless a test hands in one
+ * @returns {{ ok: boolean, problems: Finding[], warnings: Finding[] }}
  */
-function validate({ env = config.env } = {}) {
+function validate({ env = config.env, environment = process.env } = {}) {
+  /** @type {Finding[]} */
   const problems = [];
+  /** @type {Finding[]} */
+  const warnings = [];
   /* Staging is a production-shaped context: the same refusals apply, so a
      variable that would be unsafe in production is caught one deploy early. */
   const production = env === 'production' || env === 'staging';
@@ -322,26 +367,29 @@ function validate({ env = config.env } = {}) {
   }
   /* The environment's own size, on the runtime where it is a hard limit.
      Reported before the deploy fails rather than after: Lambda's refusal names
-     a number and not a variable, and the largest is almost always the answer. */
+     a number and not a variable, and the largest is almost always the answer.
+     A warning, never a problem: the figure is an estimate (environmentSize),
+     and a site that refuses every request on an estimate is a site that is
+     down on a guess. */
   if (config.runtime.isServerless) {
-    const size = environmentSize();
+    const size = environmentSize(environment);
     if (size.bytes > LAMBDA_ENV_WARN_BYTES) {
       const over = size.bytes > LAMBDA_ENV_LIMIT_BYTES;
-      problems.push({
+      warnings.push({
         variable: size.largest[0] ? size.largest[0].variable : 'STORAGE_BACKEND',
-        problem: `the function environment is ${size.bytes} bytes across ${size.count} variables, `
+        problem: `the function environment is about ${size.bytes} bytes across ${size.count} variables, `
           + `against AWS Lambda's ${LAMBDA_ENV_LIMIT_BYTES}-byte ceiling`
-          + (over ? ' — a deploy will fail at function creation' : ' — a deploy is close to failing at function creation')
+          + (over ? ' — the next deploy may fail at function creation' : ' — the next deploy is close to failing at function creation')
           + `. Largest: ${size.largest.map(l => `${l.variable} (${l.bytes} bytes)`).join(', ')}`,
         remedy: 'Scope the largest to Builds only, or remove it. A base64 service account is '
           + 'usually most of the budget and is needed only where Firebase is the store.',
       });
     }
   }
-  return { ok: problems.length === 0, problems };
+  return { ok: problems.length === 0, problems, warnings };
 }
 
 module.exports = Object.freeze({
   ...config, validate, KEY_SHAPES, firebaseServiceAccountUsable,
-  environmentSize, LAMBDA_ENV_LIMIT_BYTES, LAMBDA_ENV_WARN_BYTES,
+  environmentSize, LAMBDA_ENV_LIMIT_BYTES, LAMBDA_ENV_WARN_BYTES, LAMBDA_RUNTIME_OWN,
 });
