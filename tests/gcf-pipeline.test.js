@@ -278,14 +278,26 @@ describe('The register over HTTP', () => {
 
   test('an invalid record is refused with a reason, not stored', async () => {
     const r = await auth(api().post('/v1/gcf/pipeline')).send({ id: 'x', code: 'X', name: 'no tiers' }).expect(400);
-    expect(r.body.error).toBe('INVALID_GCF_PROJECT');
+    /* GCF used to validate inside its own handler and answer with a code of
+       its own. It is refused at the door now, like every other write on the
+       surface — and the reason has to survive the move, so the response is
+       checked for the field it actually objected to rather than only for the
+       fact that it objected. */
+    expect(r.body.error).toBe('VALIDATION_ERROR');
+    expect(Array.isArray(r.body.details)).toBe(true);
+    expect(r.body.details.length).toBeGreaterThan(0);
+    expect(r.body.details.every(d => typeof d.field === 'string' && d.message)).toBe(true);
     const list = (await auth(api().get('/v1/gcf/pipeline')).expect(200)).body.pipeline;
     expect(list.source).toBe('seed');
   });
 
   test('a record with no id is refused before it reaches the store', async () => {
     const r = await auth(api().post('/v1/gcf/pipeline')).send({ name: 'nameless' }).expect(400);
-    expect(r.body.error).toBe('MISSING_ID');
+    expect(r.body.error).toBe('VALIDATION_ERROR');
+    /* Ids are chosen by the caller so a record can be updated in place, so the
+       missing one has to be named — a refusal that does not say which field is
+       missing sends the caller back to the source to guess. */
+    expect(r.body.details.map(d => d.field)).toContain('id');
   });
 
   test('adopting the seed makes it the organisation’s own, origin recorded', async () => {

@@ -15,6 +15,7 @@ const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { carbonPricingSchema } = require('../schemas/carbon-pricing');
 const { calculateFinancialImpact, CARBON_TAX_RATES, PRICING_TIERS } = require('../../domain/carbon-pricing');
+const validate = require('../../../../platform/http/validate');
 
 const router = Router();
 
@@ -22,17 +23,9 @@ const router = Router();
 // POST /v1/carbon-pricing/calculate
 // ---------------------------------------------------------------------------
 
-router.post('/calculate', authenticate, async (req, res, next) => {
+router.post('/calculate', authenticate, validate({ body: carbonPricingSchema }), async (req, res, next) => {
   try {
-    const { error, value } = carbonPricingSchema.validate(req.body, { abortEarly: false });
-    if (error) {
-      return res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: error.details.map(d => d.message).join('; '),
-      });
-    }
-
-    const result = calculateFinancialImpact(value);
+    const result = calculateFinancialImpact(req.body);
     res.json({ success: true, ...result });
 
   } catch (err) {

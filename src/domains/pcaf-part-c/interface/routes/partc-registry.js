@@ -52,6 +52,7 @@ const router = Router();
 
 const handle = require('../../../../platform/http/async-handler');
 const { numberOr } = require('../../../../shared/numbers');
+const { emptyBody } = require('../../../../platform/http/validate').schemas;
 
 // ---------------------------------------------------------------------------
 // Storage capability
@@ -450,7 +451,7 @@ router.get('/policies', authenticate, defaultLimiter, paged('reportingYear'),
 // when the organisation already holds clients, so it can never quietly
 // duplicate a real book.
 // ---------------------------------------------------------------------------
-router.post('/demo/seed', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/demo/seed', authenticate, validate({ body: emptyBody }), defaultLimiter, handle(async (req, res) => {
   const orgId = req.orgId;
   const existing = await registry.listClients(orgId);
   if (existing.length > 0 && req.body.force !== true) {

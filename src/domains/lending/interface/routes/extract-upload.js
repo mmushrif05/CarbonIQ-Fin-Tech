@@ -23,6 +23,8 @@ const Anthropic    = require('@anthropic-ai/sdk').default || require('@anthropic
 const authenticate   = require('../../../../platform/auth/authenticate');
 const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const config       = require('../../../../platform/config');
+const validate = require('../../../../platform/http/validate');
+const { extractUploadSchema } = require('../schemas/extract');
 
 const router = Router();
 
@@ -32,6 +34,7 @@ const router = Router();
 router.post('/upload',
   authenticate,
   extractLimiter,
+  validate({ body: extractUploadSchema }),
   async (req, res, next) => {
     try {
       if (!config.anthropicApiKey) {

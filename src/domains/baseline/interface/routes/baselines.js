@@ -31,6 +31,7 @@ const { doc } = require('../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const registry = require('../../application/registry');
 const { heldScopes } = require('../../../../platform/auth/scopes');
+const { emptyBody } = require('../../../../platform/http/validate').schemas;
 const {
   createBaselineSchema, supersedeSchema, pledgeSchema, listQuerySchema,
 } = require('../schemas/baselines');
@@ -107,7 +108,7 @@ router.post('/',
   }));
 
 router.post('/:baselineId/release',
-  authenticate, defaultLimiter,
+  authenticate, validate({ body: emptyBody }), defaultLimiter,
   doc({ summary: 'Put a draft in force, superseding the version it replaces in one transaction' }),
   handle(async (req, res) => {
     res.json({ baseline: await registry.releaseDraft(req.params.baselineId, ctxOf(req)) });

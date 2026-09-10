@@ -15,6 +15,8 @@ const { sendList, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
+const validate = require('../../../../platform/http/validate');
+const { createProjectSchema, monitoringEntrySchema } = require('../schemas/projects');
 const engine = require('../../../../platform/bridge/engine');
 /* The bridge is the CarbonIQ core engine, and read-only. The lending
    domain's own records go through the storage seam. */
@@ -62,12 +64,10 @@ router.get('/:projectId',
 router.post('/',
   authenticate,
   defaultLimiter,
+  validate({ body: createProjectSchema }),
   async (req, res, next) => {
     try {
-      const { createProjectSchema } = require('../schemas/projects');
-      const { error, value } = createProjectSchema.validate(req.body);
-      if (error) return res.status(400).json({ error: 'VALIDATION_ERROR', message: error.details[0].message });
-
+      const value = req.body;
       const orgId = req.orgId;
       const projectId = value.projectId || `${value.region}-${Date.now()}`;
 
@@ -111,12 +111,10 @@ router.post('/:projectId/monitoring',
   authenticate,
   requireProjectAccess,
   defaultLimiter,
+  validate({ body: monitoringEntrySchema }),
   async (req, res, next) => {
     try {
-      const { monitoringEntrySchema } = require('../schemas/projects');
-      const { error, value } = monitoringEntrySchema.validate(req.body);
-      if (error) return res.status(400).json({ error: 'VALIDATION_ERROR', message: error.details[0].message });
-
+      const value = req.body;
       const { projectId } = req.params;
 
       const attribution = value.outstanding / (value.equity + value.debt);

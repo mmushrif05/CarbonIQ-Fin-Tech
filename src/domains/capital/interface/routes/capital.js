@@ -48,11 +48,13 @@ const {
   portfolioSchema, portfolioUpdateSchema,
   investmentSchema, investmentUpdateSchema,
   paymentSchema,
+  computeSchema,
 } = require('../schemas/capital');
 
 const router = Router();
 
 const handle = require('../../../../platform/http/async-handler');
+const { emptyBody } = require('../../../../platform/http/validate').schemas;
 
 
 /* The baseline note, declared once. Three endpoints say it, and three copies
@@ -270,7 +272,8 @@ router.get('/book', authenticate, defaultLimiter, handle(async (req, res) => {
  * Every figure in the response is derived by the same functions that derive
  * the recorded dashboard. The overlay changes inputs and nothing else.
  */
-router.post('/compute', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/compute', authenticate, defaultLimiter,
+  validate({ body: computeSchema }), handle(async (req, res) => {
   const body = req.body || {};
   const opts = readOptions(req.query, body);
   if (opts.error) return res.status(400).json(opts.error);
@@ -394,7 +397,7 @@ router.delete('/payments/:id', authenticate, defaultLimiter, handle(async (req, 
 
 // ── A worked book, for a demonstration ─────────────────────────────────────
 
-router.post('/demo', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/demo', authenticate, validate({ body: emptyBody }), defaultLimiter, handle(async (req, res) => {
   res.status(201).json(await seedCapitalDemo(req.orgId));
 }));
 

@@ -2617,7 +2617,39 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "scopes": {
+                    "type": "object"
+                  },
+                  "declaredBy": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 160
+                  },
+                  "declaredAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -2895,6 +2927,16 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Success",
@@ -2939,6 +2981,9 @@
                 }
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
           },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
@@ -4258,7 +4303,20 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -5071,7 +5129,88 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "carbonWeight": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  },
+                  "attributionBasis": {
+                    "type": "string",
+                    "enum": [
+                      "outstanding",
+                      "commitment"
+                    ]
+                  },
+                  "horizonYears": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 30
+                  },
+                  "gridDeclinePct": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 20
+                  },
+                  "drawdownYears": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 15
+                  },
+                  "portfolioId": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "select": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "maxItems": 50
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 3000
+                      }
+                    ]
+                  },
+                  "overlay": {
+                    "type": "object",
+                    "properties": {
+                      "portfolios": {
+                        "type": "object"
+                      },
+                      "investments": {
+                        "type": "object"
+                      },
+                      "payments": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "maxItems": 500
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -5235,7 +5374,20 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -6805,7 +6957,69 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "emissions_tCO2e": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "loanAmount": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "projectValue": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "region": {
+                    "type": "string",
+                    "enum": [
+                      "SG",
+                      "EU",
+                      "MY",
+                      "HK",
+                      "SL"
+                    ],
+                    "default": "SG"
+                  },
+                  "cfsScore": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "default": 50
+                  },
+                  "buildingArea_m2": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "exclusiveMinimum": 0
+                  },
+                  "loanTerm_years": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30,
+                    "default": 5
+                  }
+                },
+                "required": [
+                  "emissions_tCO2e",
+                  "loanAmount",
+                  "projectValue"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -6953,7 +7167,50 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "recordId": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "portfolioId": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "commitment": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "startYear": {
+                    "type": "integer",
+                    "minimum": 1900,
+                    "maximum": 2200
+                  },
+                  "phasing": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "notes": {
+                    "type": "string",
+                    "maxLength": 1000
+                  }
+                },
+                "required": [
+                  "recordId"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -7281,7 +7538,49 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "select": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 60
+                        },
+                        "maxItems": 50
+                      },
+                      {
+                        "type": "string",
+                        "maxLength": 3000
+                      }
+                    ]
+                  },
+                  "attributionBasis": {
+                    "type": "string",
+                    "enum": [
+                      "outstanding",
+                      "commitment"
+                    ]
+                  },
+                  "portfolioId": {
+                    "type": "string",
+                    "maxLength": 60
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -7501,7 +7800,35 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "pdfBase64": {
+                    "type": "string",
+                    "description": "Base64-encoded PDF file containing the Bill of Quantities"
+                  },
+                  "filename": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "description": "Name recorded against the upload; shown back in run history",
+                    "default": "boq.pdf"
+                  }
+                },
+                "required": [
+                  "pdfBase64"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -8010,7 +8337,72 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityName": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "climateGovernance": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "managementRole": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 4000
+                  },
+                  "strategyNarrative": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 6000
+                  },
+                  "riskManagementProcess": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 6000
+                  },
+                  "climateTargets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 1000
+                    }
+                  },
+                  "updatedBy": {
+                    "type": "string",
+                    "maxLength": 160
+                  },
+                  "updatedAt": {
+                    "type": "string",
+                    "maxLength": 40
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -8174,7 +8566,45 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "format": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "checksum": {
+                    "type": "string",
+                    "maxLength": 128
+                  },
+                  "projects": {
+                    "type": "array"
+                  },
+                  "reportingYear": {},
+                  "orgId": {},
+                  "sample": {},
+                  "sampleNote": {},
+                  "exportedAt": {},
+                  "checksumNote": {}
+                },
+                "required": [
+                  "format",
+                  "checksum",
+                  "projects"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -8624,7 +9054,756 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "maxLength": 80
+                  },
+                  "code": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "name": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "location": {
+                    "type": "object",
+                    "properties": {
+                      "province": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "districts": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 80
+                        }
+                      },
+                      "country": {
+                        "type": "string",
+                        "maxLength": 8,
+                        "default": "LK"
+                      }
+                    }
+                  },
+                  "sector": {
+                    "type": "string",
+                    "maxLength": 120
+                  },
+                  "resultsArea": {
+                    "type": "string",
+                    "enum": [
+                      "EP",
+                      "LT",
+                      "BA",
+                      "FL",
+                      "VC",
+                      "HW",
+                      "IB",
+                      "EE"
+                    ]
+                  },
+                  "stream": {
+                    "type": "string",
+                    "enum": [
+                      "mitigation",
+                      "adaptation"
+                    ]
+                  },
+                  "stage": {
+                    "type": "string",
+                    "enum": [
+                      "concept",
+                      "pre_feasibility",
+                      "cn_drafted",
+                      "cn_submitted",
+                      "ppf",
+                      "fp",
+                      "board"
+                    ]
+                  },
+                  "selectedForCN": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "selectionReason": {
+                    "type": "string",
+                    "maxLength": 1200
+                  },
+                  "essCategory": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "I-1",
+                      "I-2",
+                      "I-3"
+                    ]
+                  },
+                  "essFlags": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 60
+                    }
+                  },
+                  "essNote": {
+                    "type": "string",
+                    "maxLength": 800
+                  },
+                  "taxonomy": {
+                    "type": "object",
+                    "properties": {
+                      "framework": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "band": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "objective": {
+                        "type": "string",
+                        "maxLength": 8
+                      }
+                    },
+                    "required": [
+                      "framework",
+                      "band"
+                    ]
+                  },
+                  "ndcSectorTargets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  },
+                  "barriers": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "maxLength": 40
+                    }
+                  },
+                  "technical": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "financing": {
+                    "type": "object",
+                    "properties": {
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 8,
+                        "default": "USD"
+                      },
+                      "totalCost": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "gcfAsk": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "dfcc": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "other": {
+                        "type": "number",
+                        "minimum": 0,
+                        "default": 0
+                      },
+                      "otherLabel": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 120
+                      },
+                      "instrument": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "gcfInstrumentDetail": {
+                        "type": "string",
+                        "maxLength": 800
+                      },
+                      "grantEquivalentPct": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "modalityGap": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "viabilityWithoutGcf": {
+                        "type": "object",
+                        "properties": {
+                          "viable": {
+                            "type": "boolean"
+                          },
+                          "reason": {
+                            "type": "string",
+                            "maxLength": 800
+                          }
+                        },
+                        "required": [
+                          "viable",
+                          "reason"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "totalCost",
+                      "gcfAsk",
+                      "dfcc",
+                      "instrument",
+                      "viabilityWithoutGcf"
+                    ]
+                  },
+                  "mitigation": {
+                    "type": "object",
+                    "properties": {
+                      "annual_tCO2e": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "lifetime_tCO2e": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "baseline": {
+                        "type": "object",
+                        "properties": {
+                          "description": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "counterfactual": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "reduced",
+                              "avoided",
+                              "removal"
+                            ]
+                          },
+                          "gridEF_tCO2e_per_mwh": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "tier": {
+                                "type": "string",
+                                "enum": [
+                                  "measured",
+                                  "modelled",
+                                  "benchmark",
+                                  "declared"
+                                ]
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 400
+                              },
+                              "definition": {
+                                "type": "string",
+                                "maxLength": 400
+                              },
+                              "note": {
+                                "type": "string",
+                                "maxLength": 600
+                              }
+                            },
+                            "required": [
+                              "value",
+                              "tier"
+                            ]
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "description",
+                          "counterfactual",
+                          "type"
+                        ]
+                      },
+                      "isCoBenefit": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "coBenefitNote": {
+                        "type": "string",
+                        "maxLength": 600
+                      },
+                      "uncertaintyPct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 100
+                      }
+                    },
+                    "required": [
+                      "annual_tCO2e",
+                      "lifetime_tCO2e",
+                      "baseline"
+                    ]
+                  },
+                  "embodiedCarbon": {
+                    "type": "object",
+                    "properties": {
+                      "a1a5_tCO2e": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "paybackYears": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "note": {
+                        "type": "string",
+                        "maxLength": 800
+                      }
+                    },
+                    "required": [
+                      "a1a5_tCO2e"
+                    ]
+                  },
+                  "beneficiaries": {
+                    "type": "object",
+                    "properties": {
+                      "direct": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "indirect": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      },
+                      "womenPct": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "direct",
+                      "indirect"
+                    ]
+                  },
+                  "area": {
+                    "type": "object",
+                    "properties": {
+                      "hectares": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      }
+                    }
+                  },
+                  "assets": {
+                    "type": "object",
+                    "properties": {
+                      "valueProtected_usd": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "value": {
+                            "type": [
+                              "number",
+                              "null"
+                            ]
+                          },
+                          "tier": {
+                            "type": "string",
+                            "enum": [
+                              "measured",
+                              "modelled",
+                              "benchmark",
+                              "declared"
+                            ]
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "definition": {
+                            "type": "string",
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 600
+                          }
+                        },
+                        "required": [
+                          "value",
+                          "tier"
+                        ]
+                      }
+                    }
+                  },
+                  "provenance": {
+                    "type": "object",
+                    "properties": {
+                      "enteredBy": {
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "enteredAt": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "updatedBy": {
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 400
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "id",
+                  "code",
+                  "name",
+                  "location",
+                  "sector",
+                  "resultsArea",
+                  "stream",
+                  "stage",
+                  "selectionReason",
+                  "essCategory",
+                  "taxonomy",
+                  "financing",
+                  "mitigation",
+                  "beneficiaries"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -8854,7 +10033,20 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -10425,7 +11617,35 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "certId": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "hash": {
+                    "type": "string",
+                    "maxLength": 256
+                  }
+                },
+                "required": [
+                  "certId",
+                  "hash"
+                ],
+                "additionalProperties": true
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -11956,7 +13176,20 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -19169,7 +20402,134 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 120
+                  },
+                  "projectId": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Commercial",
+                      "Residential",
+                      "Industrial",
+                      "Mixed-Use",
+                      "Data Centre",
+                      "Hospitality"
+                    ],
+                    "default": "Commercial"
+                  },
+                  "region": {
+                    "type": "string",
+                    "enum": [
+                      "SG",
+                      "MY",
+                      "HK",
+                      "EU",
+                      "TH",
+                      "US",
+                      "LK"
+                    ],
+                    "default": "SG"
+                  },
+                  "phase": {
+                    "type": "string",
+                    "enum": [
+                      "Construction",
+                      "Operational",
+                      "Demolition"
+                    ],
+                    "default": "Construction"
+                  },
+                  "floorArea_m2": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "materials": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "category": {
+                          "type": "string"
+                        },
+                        "qty": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "tonnes"
+                          ],
+                          "default": "kg"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "category",
+                        "qty"
+                      ]
+                    }
+                  },
+                  "loan": {
+                    "type": "object",
+                    "properties": {
+                      "outstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "equity": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "debt": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 5,
+                        "default": "USD"
+                      }
+                    },
+                    "required": [
+                      "outstanding",
+                      "equity",
+                      "debt"
+                    ]
+                  },
+                  "totalEmbodiedCarbon_kgCO2e": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -19670,7 +21030,56 @@
             "$ref": "#/components/parameters/envelope"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "year": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "outstanding": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "equity": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "debt": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "emissions": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "dq": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5,
+                    "default": 2
+                  }
+                },
+                "required": [
+                  "year",
+                  "outstanding",
+                  "equity",
+                  "debt",
+                  "emissions"
+                ]
+              }
+            }
+          }
+        },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -20186,6 +21595,9 @@
           }
         },
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },

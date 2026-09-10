@@ -14,6 +14,7 @@ const referenceCache = require('../../../../platform/http/reference-cache');
 const { reportGenerateSchema } = require('../schemas/reports');
 const { generateReport, buildPDF } = require('../../application/reports');
 const { sendPdf } = require('../../../../platform/reporting/pdf-response');
+const validate = require('../../../../platform/http/validate');
 
 const router = Router();
 
@@ -21,18 +22,10 @@ const router = Router();
 // POST /v1/reports/generate
 // ---------------------------------------------------------------------------
 
-router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }), async (req, res, next) => {
-  try {
-    // Validate request body
-    const { error, value } = reportGenerateSchema.validate(req.body, { abortEarly: false });
-    if (error) {
-      return res.status(400).json({
-        error: 'VALIDATION_ERROR',
-        message: error.details.map(d => d.message).join('; '),
-      });
-    }
-
-    const { type, period, format, orgName, portfolioData, slgftData } = value;
+router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }),
+  validate({ body: reportGenerateSchema }), async (req, res, next) => {
+    try {
+      const { type, period, format, orgName, portfolioData, slgftData } = req.body;
 
     // Build the structured report object
     const report = generateReport({ type, period, orgName, portfolioData, slgftData });

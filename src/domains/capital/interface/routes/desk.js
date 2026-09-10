@@ -39,6 +39,8 @@ const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { fallback } = require('../../../../platform/observability/logger');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
+const validate = require('../../../../platform/http/validate');
+const { deskScenarioSchema, deskAdoptSchema } = require('../schemas/capital');
 
 const desk = require('../../desk');
 const attribution = require('../../domain/capital-attribution');
@@ -156,7 +158,8 @@ router.get('/readiness', authenticate, defaultLimiter, handle(async (req, res) =
  * written this morning has drawn nothing — on that basis the answer would be
  * "this changes nothing" from a question that had not been asked.
  */
-router.post('/scenario', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/scenario', authenticate, defaultLimiter,
+  validate({ body: deskScenarioSchema }), handle(async (req, res) => {
   const body = req.body || {};
   const raw = Array.isArray(body.select) ? body.select : String(body.select || '').split(',');
   const select = raw.map(s => String(s).trim()).filter(Boolean);
@@ -199,7 +202,8 @@ router.post('/scenario', authenticate, defaultLimiter, handle(async (req, res) =
  * follows. The candidate lands at `pipeline`, which is a position on the book
  * and not yet a decision to lend.
  */
-router.post('/adopt', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/adopt', authenticate, defaultLimiter,
+  validate({ body: deskAdoptSchema }), handle(async (req, res) => {
   const body = req.body || {};
   const result = await desk.adoptCandidate(req.orgId, {
     recordId: body.recordId,

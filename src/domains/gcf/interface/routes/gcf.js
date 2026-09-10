@@ -37,6 +37,8 @@ const { listView, paged } = require('../../../../platform/http/pagination');
 const { doc } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
+const validate = require('../../../../platform/http/validate');
+const { gcfProjectSchema, gcfEntitySchema, gcfImportSchema } = require('../schemas/gcf');
 
 const store = require('../../infrastructure/store');
 const record = require('../../domain/record');
@@ -58,6 +60,7 @@ const INSTRUMENTS = require('../../../../../data/gcf/instruments.json');
 const router = Router();
 
 const handle = require('../../../../platform/http/async-handler');
+const { emptyBody } = require('../../../../platform/http/validate').schemas;
 
 /** The frameworks this tab is built on, so a screen never restates them. */
 router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Results areas, IRMF core indicators, NDC 3.0 and the instrument catalogue' }), (_req, res) => {
@@ -116,15 +119,16 @@ router.get('/pipeline/:id', authenticate, defaultLimiter, handle(async (req, res
   });
 }));
 
-router.post('/pipeline', authenticate, defaultLimiter, handle(async (req, res) => {
-  const body = req.body || {};
-  if (!body.id) {
-    return res.status(400).json({
-      error: 'MISSING_ID',
-      message: 'A project record needs an id. Ids are chosen by the caller so a record can be updated in place.',
-    });
-  }
-  const saved = await store.put(req.orgId, body, { by: (req.actor && req.actor.label) || req.orgId });
+router.post('/pipeline', authenticate, defaultLimiter,
+  validate({ body: gcfProjectSchema }, { stripUnknown: false }), handle(async (req, res) => {
+  /* The id check and the record check both used to live here, each answering
+     with its own code. They are one gate at the door now — the same
+     `VALIDATION_ERROR` with a field-level reason that every other write on this
+     surface returns — so GCF stops being the one domain that refuses
+     differently, and the router carries a contract the generated document can
+     read. The schema is still the domain's own; only where it is applied
+     changed. */
+  const saved = await store.put(req.orgId, req.body, { by: (req.actor && req.actor.label) || req.orgId });
   res.status(201).json({ project: saved, storage: partcStore.capability() });
 }));
 
@@ -139,7 +143,7 @@ router.delete('/pipeline/:id', authenticate, defaultLimiter, handle(async (req, 
  * that silently populated itself would leave nobody sure whether a figure was
  * theirs.
  */
-router.post('/pipeline/adopt', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/pipeline/adopt', authenticate, validate({ body: emptyBody }), defaultLimiter, handle(async (req, res) => {
   const written = await store.adoptSeed(req.orgId, { by: (req.actor && req.actor.label) || req.orgId });
   res.status(201).json({
     adopted: written.length,
@@ -218,7 +222,8 @@ router.get('/entity', authenticate, defaultLimiter, handle(async (req, res) => {
   });
 }));
 
-router.put('/entity', authenticate, defaultLimiter, handle(async (req, res) => {
+router.put('/entity', authenticate, defaultLimiter,
+  validate({ body: gcfEntitySchema }, { stripUnknown: false }), handle(async (req, res) => {
   const saved = await store.setEntityDisclosures(req.orgId, req.body, {
     by: (req.actor && req.actor.label) || req.orgId,
   });
@@ -280,7 +285,8 @@ router.get('/export', authenticate, defaultLimiter, handle(async (req, res) => {
  * Verified before anything is written, and refused whole on any failure —
  * half an imported period is a position nobody can reconcile.
  */
-router.post('/import', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/import', authenticate, defaultLimiter,
+  validate({ body: gcfImportSchema }, { stripUnknown: false }), handle(async (req, res) => {
   const pkg = reporting.importPeriod(req.body);
   const written = [];
   for (const p of pkg.projects) {

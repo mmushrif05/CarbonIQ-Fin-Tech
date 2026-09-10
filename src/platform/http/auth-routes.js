@@ -30,6 +30,7 @@ const validate = require('./validate');
 const { doc } = require('./openapi-hints');
 const handle = require('./async-handler');
 const { ROLES } = require('../../shared/policies');
+const { emptyBody } = require('./validate').schemas;
 
 /** @typedef {import('../../shared/types').AppError} AppError */
 
@@ -144,7 +145,7 @@ router.post('/login',
   }));
 
 router.post('/logout',
-  authenticate,
+  authenticate, validate({ body: emptyBody }),
   doc({ summary: 'Sign out', description: 'Ends the session the request carried. Idempotent.', status: 200 }),
   handle(async (req, res) => {
     const header = String(req.headers.authorization || '');

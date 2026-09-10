@@ -22,6 +22,7 @@ const { assessNdcSdgAlignment } = require('../../application/ndc-sdg');
 const { generateCertificate, verifyCertificate } = require('../../domain/certificate');
 const baselines = require('../../../baseline/application/registry');
 const { asError } = require('../../../../shared/types');
+const { certificateVerifySchema } = require('../schemas/taxonomy');
 
 const router = Router();
 
@@ -128,13 +129,10 @@ router.post('/certificate',
 
 router.post('/certificate/verify',
   authenticate,
+  validate({ body: certificateVerifySchema }, { stripUnknown: false }),
   async (req, res, next) => {
     try {
-      const cert = req.body;
-      if (!cert || !cert.certId || !cert.hash) {
-        return res.status(400).json({ error: 'INVALID_CERTIFICATE', message: 'Provide a full certificate object with certId and hash.' });
-      }
-      const result = verifyCertificate(cert);
+      const result = verifyCertificate(req.body);
       return res.status(200).json({ success: true, ...result });
     } catch (err) {
       next(err);
