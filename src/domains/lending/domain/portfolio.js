@@ -5,8 +5,9 @@
  * Aggregates carbon metrics across multiple projects for bank-level reporting.
  * Supports total financed emissions, PCAF weighted score, taxonomy distribution.
  *
- * Implementation: Step 9
  */
+
+'use strict';
 
 /**
  * Aggregate carbon metrics across a set of projects.

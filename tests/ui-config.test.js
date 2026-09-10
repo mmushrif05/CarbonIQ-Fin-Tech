@@ -12,6 +12,8 @@
  * stale-shell reload, survived losing it.
  */
 
+'use strict';
+
 const request = require('supertest');
 const express = require('express');
 

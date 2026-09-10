@@ -41,7 +41,8 @@ const PartCPortfolio = (() => {
 
   /** Offer the years the book actually contains, plus the settings year. */
   async function loadYears() {
-    let years = [], settingsYear = null;
+    const years = [];
+    let settingsYear = null;
     try {
       const { settings } = await call('/settings');
       currency = settings.currency || 'LKR';

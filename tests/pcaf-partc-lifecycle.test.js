@@ -6,6 +6,8 @@
  */
 
 
+'use strict';
+
 /* These tests mock Firebase as the home of API keys. On a PostgreSQL run
    the keys would be looked up in the database instead, so this suite pins
    the in-memory store: it is about the middleware, not about where keys live

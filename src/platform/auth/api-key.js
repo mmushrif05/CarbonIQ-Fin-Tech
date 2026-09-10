@@ -10,6 +10,8 @@
  * API Key format: ck_live_<32-char-random> (production) or ck_test_<32-char-random> (sandbox)
  */
 
+'use strict';
+
 const crypto = require('crypto');
 const config = require('../config');
 const { getDatabase } = require('../bridge/firebase');

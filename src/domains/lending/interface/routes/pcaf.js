@@ -1,10 +1,13 @@
 // @ts-check
 /**
- * CarbonIQ FinTech — PCAF v3 Output Endpoint
+ * CarbonIQ FinTech — lending-side attributed embodied carbon, per project
+ *
+ * Not PCAF Part A — that is `/v1/pcaf/part-a/assess`. See the note at the top
+ * of `src/domains/lending/application/pcaf.js`.
  *
  * GET /v1/projects/:projectId/pcaf
  *
- * Returns financed emissions formatted per PCAF v3 methodology including:
+ * Returns attributed A1-A3 embodied carbon for a lending conversation, including:
  *   - Attribution factor (bank's share of project value)
  *   - Data quality score (1-5, lower is better)
  *   - Scope A1-A3 breakdown
@@ -15,6 +18,8 @@
  *   ?projectValue=20000000   Total project value (used to compute attribution factor)
  *   ?attributionFactor=0.25  Override direct attribution (0-1, takes precedence)
  */
+
+'use strict';
 
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');

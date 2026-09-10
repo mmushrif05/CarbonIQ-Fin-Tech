@@ -16,7 +16,8 @@
 const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, HeadingLevel, AlignmentType } = require('docx');
 
-const { N, pdfWriter, winAnsiSafe, _p, _h, _table } = require('./partc-docgen');
+const {N, pdfWriter, winAnsiSafe} = require('./partc-docgen');
+const { para: _p, heading: _h, table: _table } = require('../../../platform/reporting/docx');
 const { containsForbiddenLanguage } = require('../domain/data-quality');
 
 const _inputs = o => Object.entries(o || {})

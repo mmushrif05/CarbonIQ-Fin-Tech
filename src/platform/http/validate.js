@@ -6,6 +6,8 @@
  * Returns structured error responses with field-level details.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 /**

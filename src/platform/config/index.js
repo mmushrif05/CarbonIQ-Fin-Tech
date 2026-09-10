@@ -6,12 +6,46 @@
  * Import this module instead of reading process.env directly.
  */
 
+'use strict';
+
 const path = require('path');
 /* One coercion for every environment variable that is a number. `parseInt`
    of an unset variable is NaN, and `NaN || 3001` happens to give the default —
    which is the right answer arrived at by accident, and reads as though the
    variable were being parsed. */
 const { intOr, numberOr } = require('../../shared/numbers');
+
+/* The shapes a credential has to have to be able to work.
+ *
+ * `/health` and the boot banner reported these as *presence* checks, so a
+ * deployment that had run `npm run setup:env` — which writes literal
+ * placeholders — printed `Firebase: ✓ connected` and `AI: ✓ ready` and
+ * answered all three booleans true, while the same process logged that the
+ * service account was not valid base64. A block built to tell "the variable
+ * was never set" from "the service is down" could not tell either from "the
+ * variable is a placeholder", which is the most common of the three on a
+ * fresh checkout.
+ *
+ * Declared here because `config.validate()` already holds the same rule for
+ * the dashboard key, and two copies of a shape are two answers to one
+ * question. `platform/ai/ai-status.js` imports the Anthropic one. */
+const KEY_SHAPES = Object.freeze({
+  /** `ck_test_`/`ck_live_` plus 32 alphanumerics — what `key:create` issues. */
+  uiApiKey: /^ck_(live|test)_[a-zA-Z0-9]{32}$/,
+  /** `sk-ant-…`, far longer than a UUID and never a placeholder. */
+  anthropicApiKey: /^sk-ant-[A-Za-z0-9_-]{20,}$/,
+});
+
+/** A Firebase service account is usable only if it decodes to JSON naming a project. */
+function firebaseServiceAccountUsable(raw) {
+  if (!raw) return false;
+  try {
+    const json = JSON.parse(Buffer.from(String(raw), 'base64').toString('utf8'));
+    return Boolean(json && json.project_id && json.client_email && json.private_key);
+  } catch (_) {
+    return false;
+  }
+}
 
 // Load .env in development (not in Netlify production)
 if (process.env.NODE_ENV !== 'production') {
@@ -146,6 +180,24 @@ const config = {
       return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT ||
         (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY));
     },
+    /**
+     * What this deployment can actually do — shape, not presence.
+     *
+     * `firebaseConfigured` above stays as it is because callers use it to
+     * decide whether to *attempt* Firebase; this says whether the attempt can
+     * succeed, which is the question `/health` and the banner are asking.
+     */
+    get capabilities() {
+      const ui = process.env.UI_API_KEY || '';
+      const anthropic = process.env.ANTHROPIC_API_KEY || '';
+      const account = process.env.FIREBASE_SERVICE_ACCOUNT;
+      const parts = process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY;
+      return {
+        uiKey: KEY_SHAPES.uiApiKey.test(ui),
+        anthropicKey: KEY_SHAPES.anthropicApiKey.test(anthropic),
+        firebase: account ? firebaseServiceAccountUsable(account) : Boolean(parts),
+      };
+    },
     /* What the platform stamped on this build, where it did. */
     get build() {
       return {
@@ -175,8 +227,21 @@ function validate({ env = config.env } = {}) {
     problems.push({ variable: 'API_KEY_SALT', problem: 'unset or the development default', remedy: "node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"" });
   }
   const ui = process.env.UI_API_KEY;
-  if (ui && !/^ck_(live|test)_[a-zA-Z0-9]{32}$/.test(ui)) {
+  if (ui && !KEY_SHAPES.uiApiKey.test(ui)) {
     problems.push({ variable: 'UI_API_KEY', problem: 'set, but not of the form ck_test_ or ck_live_ plus 32 alphanumerics', remedy: 'Issue one with npm run key:create -- --test and set it here.' });
+  }
+  /* A service account that does not decode is a problem only where Firebase is
+     the store this deployment is going to use. Every PostgreSQL deployment
+     carries the variable and never reads it — `npm run setup:env` writes a
+     placeholder — and refusing to serve on that would stop a deployment that
+     does not need Firebase at all. What it must not do is report itself as
+     configured, and `runtime.capabilities.firebase` no longer does. */
+  const account = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const firebaseIsTheStore = !process.env.DATABASE_URL
+    && (process.env.STORAGE_BACKEND || 'auto') !== 'memory'
+    && (process.env.STORAGE_BACKEND || 'auto') !== 'blobs';
+  if (account && firebaseIsTheStore && !firebaseServiceAccountUsable(account)) {
+    problems.push({ variable: 'FIREBASE_SERVICE_ACCOUNT', problem: 'set, but does not decode to a service-account JSON with project_id, client_email and private_key — and this deployment has no DATABASE_URL, so Firebase is the store', remedy: 'base64 the service account JSON: base64 -w0 service-account.json' });
   }
   const url = process.env.DATABASE_URL;
   if (url && !/^postgres(ql)?:\/\//.test(url)) {
@@ -195,4 +260,4 @@ function validate({ env = config.env } = {}) {
   return { ok: problems.length === 0, problems };
 }
 
-module.exports = Object.freeze({ ...config, validate });
+module.exports = Object.freeze({ ...config, validate, KEY_SHAPES, firebaseServiceAccountUsable });

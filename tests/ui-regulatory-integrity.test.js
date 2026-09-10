@@ -21,6 +21,8 @@
  * a third file cannot acquire the same shape.
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 

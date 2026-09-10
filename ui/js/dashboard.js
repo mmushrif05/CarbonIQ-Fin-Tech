@@ -797,7 +797,7 @@ const Dashboard = (() => {
     reduction: { key: 'reduction_tCO2e', label: 'Reduction',  colour: '#c77700', cls: 'is-reduction' },
     avoided:   { key: 'avoided_tCO2e',   label: 'Avoided',    colour: '#1f6fb2', cls: 'is-avoided' },
   };
-  let _fcOn = { forward: true, reduction: true, avoided: true };
+  const _fcOn = { forward: true, reduction: true, avoided: true };
 
   function _renderCurve(f, cur = 'USD') {
     const host = document.getElementById('fc-chart');

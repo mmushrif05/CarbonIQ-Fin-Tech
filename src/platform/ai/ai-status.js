@@ -24,8 +24,10 @@
 const config = require('../config');
 const { asError } = require('../../shared/types');
 
-/** An Anthropic key looks like sk-ant-… and is far longer than a UUID. */
-const KEY_SHAPE = /^sk-ant-[A-Za-z0-9_-]{20,}$/;
+/* An Anthropic key looks like sk-ant-… and is far longer than a UUID.
+   Declared once, in config, because `/health` and the boot banner hold the
+   same credential to the same rule and two copies are two answers. */
+const KEY_SHAPE = config.KEY_SHAPES.anthropicApiKey;
 
 const AGENTS = [
   { id: 'partc-intake',     endpoint: 'POST /v1/pcaf/part-c/agent/intake',   purpose: 'Read a policy document and classify the cover' },

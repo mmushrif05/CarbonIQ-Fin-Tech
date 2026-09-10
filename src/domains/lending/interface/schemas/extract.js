@@ -12,6 +12,8 @@
  * At least one of content, pdfBase64, or fileId must be present.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const extractRequestSchema = Joi.object({

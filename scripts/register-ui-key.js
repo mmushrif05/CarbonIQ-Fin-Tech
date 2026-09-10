@@ -10,6 +10,8 @@
  *   node scripts/register-ui-key.js
  */
 
+'use strict';
+
 const crypto = require('crypto');
 const path   = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });

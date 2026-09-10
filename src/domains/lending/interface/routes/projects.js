@@ -9,6 +9,8 @@
  * GET    /v1/projects/:projectId/monitoring   — List monitoring history
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');

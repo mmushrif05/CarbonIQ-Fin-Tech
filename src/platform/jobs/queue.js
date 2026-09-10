@@ -147,7 +147,7 @@ async function execute(job, { inline = false, workerId = null } = {}) {
     const error = { message: err.message, code: err.code || null, kind, attempts };
     log.warn({ jobId: job.jobId, type: job.type, err, kind, retry, durationMs: Date.now() - t0 }, `job ${retry ? 'failed; will retry' : 'failed'}`);
     if (!retry && (kind === 'unknown' || kind === 'unreachable' || kind === 'timeout')) await errors.capture(err, { source: 'job', requestId: job.requestId, status: 500 });
-    return await _fail(job, error, retry, started, inline, workerId, attempts);
+    return _fail(job, error, retry, started, inline, workerId, attempts);
   }
   const result = (out && out.result !== undefined) ? out.result : (out && !out.artifact ? out : null);
   const artifact = out && out.artifact ? out.artifact : null;

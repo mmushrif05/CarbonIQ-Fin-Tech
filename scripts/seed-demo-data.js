@@ -11,6 +11,8 @@
  *   node scripts/seed-demo-data.js --clear   ← wipes existing demo data first
  */
 
+'use strict';
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
@@ -244,13 +246,7 @@ async function seed(clearFirst = false) {
   const db = await getDb();
 
   if (clearFirst) {
-    console.log('  Clearing existing demo data...');
-    await db.ref('fintech/projects').remove();
-    await db.ref('fintech/pcaf').remove();
-    await db.ref('fintech/scores').remove();
-    await db.ref('fintech/monitoring').remove();
-    await db.ref('fintech/taxonomyResults').remove();
-    console.log('  \x1b[32m✓\x1b[0m  Cleared\n');
+    await clearDemoData(db);
   }
 
   let seeded = 0;
@@ -369,10 +365,93 @@ async function seed(clearFirst = false) {
   console.log('\n  Now run: npm start  and open http://localhost:3001\n');
 }
 
+// ── Clearing, which is the destructive half ───────────────────────────────────
+
+/**
+ * The five paths `--clear` removes.
+ *
+ * This is deliberately a named list rather than a loop over a prefix: a
+ * `remove()` on `fintech` would take the API keys, the accounts and the audit
+ * chain with it, and the difference between the two is one string.
+ */
+const CLEARED_PATHS = [
+  'fintech/projects',
+  'fintech/pcaf',
+  'fintech/scores',
+  'fintech/monitoring',
+  'fintech/taxonomyResults',
+];
+
+/**
+ * Remove them, once the caller has said which database and meant it.
+ * @param {any} db
+ */
+async function clearDemoData(db) {
+  console.log('  Clearing existing demo data...');
+  for (const p of CLEARED_PATHS) await db.ref(p).remove();
+  console.log('  \x1b[32m✓\x1b[0m  Cleared\n');
+}
+
+/**
+ * What `--clear` is about to do, and whether it may.
+ *
+ * `npm run setup:seed-clear` called `.remove()` on five live Firebase paths
+ * with no confirmation, no dry run and no check on which database it was
+ * pointed at — one keystroke from the non-destructive `setup:seed`, in an
+ * onboarding list that had just told the developer to put real credentials in
+ * `.env`. The paths themselves are demo data; the database they are in may not
+ * be a demo database, and nothing here could tell.
+ *
+ * So it says what it will delete and where, refuses a production database
+ * outright, and requires the operator to name the target back. `--dry-run`
+ * shows the same summary and removes nothing; `--yes I-understand` is the way
+ * a script runs it unattended.
+ */
+function guardClear(argv) {
+  const url = process.env.FIREBASE_DATABASE_URL || '(not set)';
+  const host = String(url).replace(/^https?:\/\//, '').split(/[/?]/)[0] || url;
+  const dryRun = argv.includes('--dry-run');
+  const confirmed = argv.includes('--yes') && argv.includes('I-understand');
+
+  console.log('\n\x1b[33m  --clear will delete these paths:\x1b[0m');
+  for (const p of CLEARED_PATHS) console.log(`    ${p}`);
+  console.log(`\n  from  ${url}\n`);
+
+  if (process.env.NODE_ENV === 'production') {
+    console.error('\x1b[31m  Refused: NODE_ENV is production.\x1b[0m');
+    console.error('  This command exists for a demo database. It has no safe use against a real one.\n');
+    return { proceed: false, code: 1 };
+  }
+
+  if (dryRun) {
+    console.log('  --dry-run: nothing was deleted.\n');
+    return { proceed: false, code: 0 };
+  }
+
+  if (!confirmed) {
+    console.error('\x1b[31m  Refused: this is destructive and was not confirmed.\x1b[0m\n');
+    console.error('  See what it would remove:');
+    console.error('    npm run setup:seed-clear -- --dry-run\n');
+    console.error(`  Or confirm, having read the paths and the host (${host}):`);
+    console.error('    npm run setup:seed-clear -- --yes I-understand\n');
+    return { proceed: false, code: 1 };
+  }
+
+  return { proceed: true, code: 0 };
+}
+
 // ── Run ──────────────────────────────────────────────────────────────────────
 
-const clearFirst = process.argv.includes('--clear');
-seed(clearFirst).then(() => process.exit(0)).catch(err => {
-  console.error('\x1b[31m  Error:\x1b[0m', err.message);
-  process.exit(1);
-});
+if (require.main === module) {
+  const clearFirst = process.argv.includes('--clear');
+  if (clearFirst) {
+    const { proceed, code } = guardClear(process.argv);
+    if (!proceed) process.exit(code);
+  }
+  seed(clearFirst).then(() => process.exit(0)).catch(err => {
+    console.error('\x1b[31m  Error:\x1b[0m', err.message);
+    process.exit(1);
+  });
+}
+
+module.exports = { CLEARED_PATHS, guardClear, clearDemoData };

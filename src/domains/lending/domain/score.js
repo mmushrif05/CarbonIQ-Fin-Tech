@@ -10,8 +10,9 @@
  * Classification:
  *   Green (>=70) | Transition (40-69) | Brown (<40)
  *
- * Implementation: Step 5
  */
+
+'use strict';
 
 const { CFS_WEIGHTS, CFS_THRESHOLDS } = require('../../../shared/constants');
 
@@ -103,7 +104,7 @@ function calculateCertificationScore(certification) {
 
 function calculateDataCompleteness(projectData) {
   let filled = 0;
-  let total = 5;
+  const total = 5;
   if (projectData.materials80Pct && projectData.materials80Pct.items) filled++;
   if (projectData.approvalStatus) filled++;
   if (projectData.verification) filled++;

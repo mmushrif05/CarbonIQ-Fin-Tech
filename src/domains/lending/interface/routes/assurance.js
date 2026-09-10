@@ -7,6 +7,8 @@
  * See src/domains/lending/application/assurance.js for why there are three states and not two.
  */
 
+'use strict';
+
 const { Router } = require('express');
 
 const authenticate = require('../../../../platform/auth/authenticate');

@@ -164,7 +164,7 @@ async function seedDemoBook(registry, orgId, boqService = null) {
 
   // BOQ revisions on the reference project only — the others stand at tender
   // or, in the weighbridge's case, with no BOQ at all.
-  let boqRevisions = [];
+  const boqRevisions = [];
   if (boqService) {
     const negombo = projects.find(p => /Negombo/.test(p.name));
     if (negombo) {

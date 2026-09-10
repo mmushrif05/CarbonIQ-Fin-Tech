@@ -12,6 +12,8 @@
  * 6-step classification pipeline, suitable for storing against a project.
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const validate = require('../../../../platform/http/validate');

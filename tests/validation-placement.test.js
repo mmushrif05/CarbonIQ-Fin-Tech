@@ -19,6 +19,8 @@
  * sends a client author hunting through source for fields that do not exist.
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 

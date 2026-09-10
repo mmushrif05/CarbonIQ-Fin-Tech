@@ -92,7 +92,7 @@ const DeskPage = (() => {
     not_started: 'dk-chip', under_construction: 'dk-chip dk-chip-build', completed: 'dk-chip dk-chip-done',
   };
 
-  let state = {
+  const state = {
     basis: 'outstanding',
     portfolioId: '',
     position: null,
@@ -250,7 +250,7 @@ const DeskPage = (() => {
   function visibleRows() {
     const f = state.filters;
     const q = f.search.trim().toLowerCase();
-    let rows = (state.position.rows || []).filter(r =>
+    const rows = (state.position.rows || []).filter(r =>
       (!q || String(r.name).toLowerCase().includes(q) || String(r.sector || '').toLowerCase().includes(q))
       && (!f.status || r.status === f.status)
       && (!f.delivery || r.delivery === f.delivery));

@@ -13,6 +13,8 @@
  */
 
 
+'use strict';
+
 const { handler } = require('../netlify/functions/fintech-api');
 const { winAnsi } = require('../src/domains/pcaf-part-c/reporting/partc-docgen');
 const { pdfText, pdfPageCount, flat } = require('./helpers/pdf-text');

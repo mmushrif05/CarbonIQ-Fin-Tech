@@ -15,6 +15,8 @@
  * modules that use them.
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 

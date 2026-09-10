@@ -9,6 +9,8 @@
  *   node scripts/verify-setup.js
  */
 
+'use strict';
+
 const path = require('path');
 const { asError } = require('../src/shared/types');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });

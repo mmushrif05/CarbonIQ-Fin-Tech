@@ -32,7 +32,11 @@
 const PDFDocument = require('pdfkit');
 const { Document, Packer, Paragraph, HeadingLevel } = require('docx');
 
-const { N, pdfWriter, winAnsiSafe, _p, _h, _table } = require('../../pcaf-part-c/reporting/partc-docgen');
+const { N, pdfWriter, winAnsiSafe } = require('../../pcaf-part-c/reporting/partc-docgen');
+/* The Word primitives are platform, not Part C: this used to import them by
+   their private names across the boundary between two of the three scopes that
+   must never merge. */
+const { para: _p, heading: _h, table: _table } = require('../../../platform/reporting/docx');
 
 const emissions = require('../domain/emissions');
 const ndc = require('../domain/ndc-contribution');

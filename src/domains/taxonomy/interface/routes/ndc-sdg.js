@@ -11,6 +11,8 @@
  * Powered by Claude claude-sonnet-4-6 with prompt caching.
  */
 
+'use strict';
+
 const { Router } = require('express');
 const Joi = require('joi');
 const authenticate = require('../../../../platform/auth/authenticate');

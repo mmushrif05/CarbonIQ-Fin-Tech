@@ -9,6 +9,8 @@
  * In test environments, returns a mock database reference.
  */
 
+'use strict';
+
 const admin = require('firebase-admin');
 const config = require('./index');
 

@@ -13,6 +13,8 @@
  * Runs locally via `npm start` or as a Netlify Function via fintech-api.js adapter.
  */
 
+'use strict';
+
 const express = require('express');
 const helmet = /** @type {any} */ (require('helmet'));
 const cors = require('cors');
@@ -132,9 +134,13 @@ app.get('/health',
        variable that was never set on this context, and neither says so from a
        browser. Names and yes/no only — never a value. */
     configured: {
-      uiKey: Boolean(config.runtime.uiApiKey),
-      anthropicKey: Boolean(config.runtime.anthropicApiKey),
-      firebase: config.runtime.firebaseConfigured,
+      /* Shape, not presence. These were `Boolean(…)` on the raw variable, so
+         a deployment that had run `npm run setup:env` — which writes literal
+         placeholders — answered all three true while the same process logged
+         that the service account was not valid base64. */
+      uiKey: config.runtime.capabilities.uiKey,
+      anthropicKey: config.runtime.capabilities.anthropicKey,
+      firebase: config.runtime.capabilities.firebase,
       /* Whether anyone can sign in at all. A deployment with no accounts
          answers 503 to every sign-in naming the command that fixes it, and
          "nobody has been created yet" is otherwise indistinguishable from
@@ -256,15 +262,24 @@ if (require.main === module) {
     console.log(`Health check: http://localhost:${port}/health`);
     console.log(`API v1: http://localhost:${port}/v1`);
 
-    // Startup diagnostics
-    const hasFirebase = !!config.firebase.serviceAccount;
-    const hasUiKey    = !!config.runtime.uiApiKey;
-    const hasDevKey   = !!config.runtime.devApiKey;
-    const hasAI       = !!config.anthropicApiKey;
-    console.log(`Firebase: ${hasFirebase ? '✓ connected' : '✗ not configured (503 on DB routes)'}`);
-    console.log(`UI Key:   ${hasUiKey   ? '✓ set (frontend auth enabled)' : '✗ not set (frontend will get 401)'}`);
-    console.log(`Dev Key:  ${hasDevKey  ? '✓ set' : '— not set'}`);
-    console.log(`AI:       ${hasAI      ? '✓ ready' : '✗ no ANTHROPIC_API_KEY'}`);
+    /* Startup diagnostics, on the same shape checks /health uses.
+       `✓ connected` on a placeholder service account, and `✓ ready` on a key
+       that is not an Anthropic key, are worse than saying nothing: the first
+       thing a developer does with a banner is believe it. Three states, not
+       two — absent, present but unusable, and usable. */
+    const cap = config.runtime.capabilities;
+    const state = (usable, present, ready, missing, malformed) =>
+      (usable ? ready : present ? malformed : missing);
+    console.log(`Firebase: ${state(cap.firebase, !!config.firebase.serviceAccount,
+      '✓ connected', '✗ not configured (503 on DB routes)',
+      '✗ set but unusable — FIREBASE_SERVICE_ACCOUNT is not base64 service-account JSON')}`);
+    console.log(`UI Key:   ${state(cap.uiKey, !!config.runtime.uiApiKey,
+      '✓ set (frontend auth enabled)', '✗ not set (frontend will get 401)',
+      '✗ set but not of the form ck_test_/ck_live_ + 32 — the dashboard will get 401')}`);
+    console.log(`Dev Key:  ${config.runtime.devApiKey ? '✓ set' : '— not set'}`);
+    console.log(`AI:       ${state(cap.anthropicKey, !!config.anthropicApiKey,
+      '✓ ready', '✗ no ANTHROPIC_API_KEY',
+      '✗ set but not an Anthropic key — every agent fails at the first call')}`);
   });
 }
 

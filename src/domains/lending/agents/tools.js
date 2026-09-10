@@ -14,6 +14,8 @@
  *   - Never throws unhandled — errors are caught and returned as { error: ... }
  */
 
+'use strict';
+
 const { extractMaterials }         = require('../application/extract');
 const { calculateCarbonFinanceScore } = require('../domain/score');
 const { generatePCAFOutput }        = require('../application/pcaf');

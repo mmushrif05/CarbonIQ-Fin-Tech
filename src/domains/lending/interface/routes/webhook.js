@@ -10,6 +10,8 @@
  * Delivery: up to 3 retries with exponential backoff.
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');

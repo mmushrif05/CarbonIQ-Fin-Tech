@@ -670,6 +670,79 @@ zero snapshots, no outbound network calls.
 
 ## H6 — Documentation and governance.
 
+> **Delivered — all twelve gaps closed.** The findings below stand as the
+> record of what was found; each is answered here.
+>
+> **H6.1** `CONTRIBUTING.md`, `SECURITY.md`, `CODEOWNERS`, a PR template, two
+> issue templates, and `docs/adr/` — eight records, one decision per file, each
+> stating **what went wrong** that made the decision necessary. A record that
+> omits the failure is a record the next person overturns, because the
+> reasoning looks like taste until you know what it cost.
+> **H6.2** `docs/CODE-TOUR.md`: the request lifecycle as a sequence diagram
+> (the real middleware order, and why `authenticate` precedes `validate`), a
+> layering flowchart, a module map and an ERD — the last two **generated** from
+> `src/` and `collections.js`, because a hand-drawn diagram of either is wrong
+> within a month and believed for a year.
+> **H6.3, H6.4** Ten falsifiable errors corrected, and the checkable ones are
+> now checked. `tests/docs-currency.test.js` fails the build when a document
+> names a path the router does not serve, when a top-level directory the split
+> removed is cited, when Firestore is named as the store the code uses, or when
+> a stated test count is not the suite's. The README's endpoint table is
+> generated from `docs/openapi.json` — all 163 operations, so a route that is
+> not there does not exist.
+> **H6.5** `docker compose config` failed outright on a fresh clone because
+> `env_file: ../.env` is required by default; the API ran a path that had not
+> existed since the `src/` move; and the only backing service was a Firebase
+> emulator while every deployment holds its records in PostgreSQL. All three
+> fixed, and the image is two stages so the container can run the checks rather
+> than only the server.
+> **H6.6** `docs/GLOSSARY.md`, whose §1 is the three 1–5 scales and why they
+> are not interchangeable. Writing it found a **fourth**:
+> `lending/application/pcaf.js` defined its own 1–5 band under a header reading
+> "PCAF v3 Output Service", which is the likeliest source of a wrong regulatory
+> figure in the repository. The header now says what it is; the wider rename is
+> outstanding and named below.
+> **H6.7** `--clear` prints the five paths and the host, refuses without
+> `--yes I-understand`, offers `--dry-run`, and refuses outright when
+> `NODE_ENV=production`. The paths stay a named list rather than a prefix,
+> because a `remove()` on `fintech` would take the API keys, the accounts and
+> the audit chain with it and the difference is one string.
+> **H6.8** `/health` and the boot banner report **shape, not presence**: a
+> deployment that had run `npm run setup:env` printed `Firebase: ✓ connected`
+> and `AI: ✓ ready` on literal placeholders while the same process logged that
+> the service account was not valid base64. Three states now — absent, present
+> but unusable, usable — from one declaration in `config`, which `ai-status.js`
+> imports rather than restating.
+> **H6.9** `CONTRIBUTING.md` states the house style and why, and the seven
+> `Implementation: Step N` scaffold headers are gone.
+> **H6.10** The one that mattered: `gcf/application/cn-package.js` imported
+> `_p`, `_h` and `_table` — private Word builders — from Part C's reporting
+> layer, across the boundary between two of the three scopes that must never
+> merge. They know nothing about emissions, so they are
+> `src/platform/reporting/docx.js`; Part C re-exports them under their old
+> names so nothing else changed. The rest are barrels talking to their own
+> parts, held to a named list by `tests/module-boundaries.test.js` that may
+> shrink and nothing else.
+> **H6.11** One Node version. `.nvmrc` is the source; `engines`, the
+> Dockerfile, `netlify.toml` and the CI matrix follow it, and a test holds all
+> five together. `.editorconfig` added.
+> **H6.12** `'use strict'` in all 318 source files and 43 test files that
+> lacked it — in a non-strict module a typo in an assignment creates a global
+> instead of throwing. `varsIgnorePattern: '^_'` is gone, so an unused private
+> is visible. `eqeqeq`, `no-var`, `prefer-const`, `no-throw-literal` and
+> `no-return-await` are on at zero violations, and reading `process.env`
+> outside `config` is a lint error rather than only a test failure.
+>
+> Adding strict mode made two tests honest by accident: "the config object is
+> frozen" and "the constants are frozen" asserted that a write was *silently
+> ignored*, which is also true of a write that never happened. They assert the
+> `TypeError` now.
+>
+> **Outstanding, and named rather than quietly closed:** "PCAF v3" appears in
+> nine agent prompts and two route summaries, and those generate narrative a
+> bank reads. Correcting them changes what a memo says, which is not a
+> documentation change; it is tracked separately.
+
 **H6.1 · Zero governance files. Critical.**
 Missing: `CONTRIBUTING.md`, `CODEOWNERS`, `SECURITY.md`, `CHANGELOG.md`, a PR
 template, an issue template, and any ADR directory. `.github/` contains two files.

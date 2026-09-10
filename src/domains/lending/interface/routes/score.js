@@ -14,6 +14,8 @@
  *   ?certificationLevel=gold  Green certification level achieved
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');

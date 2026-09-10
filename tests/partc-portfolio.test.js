@@ -4,6 +4,8 @@
  */
 
 
+'use strict';
+
 const request  = require('supertest');
 const app      = require('../src/server');
 const P        = require('../src/domains/pcaf-part-c/application/partc-portfolio');

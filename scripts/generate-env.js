@@ -11,6 +11,8 @@
  * Then fill in the Firebase and Anthropic values manually.
  */
 
+'use strict';
+
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');

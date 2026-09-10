@@ -2,6 +2,8 @@
  * PCAF Part C — registers, reports, form and learning store.
  */
 
+'use strict';
+
 const { runPartC } = require('../src/domains/pcaf-part-c/domain');
 const { buildRegisters } = require('../src/domains/pcaf-part-c/application/partc-registers');
 const { buildPartCReport, buildPartCDOCX } = require('../src/domains/pcaf-part-c/reporting/partc-reports');

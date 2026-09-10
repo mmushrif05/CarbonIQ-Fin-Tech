@@ -187,7 +187,8 @@ function equityPlusDebt(d = {}) {
   const assumptions = [];
   if (!d.asOf) throw refuse('ED_DATE_REQUIRED', 'State the balance-sheet date the figures are taken at (p.41).');
 
-  let equity = num(d.totalEquity), debt = num(d.totalDebt);
+  let equity = num(d.totalEquity);
+  const debt = num(d.totalDebt);
   const assets = num(d.totalAssets);
 
   if (equity === undefined || debt === undefined) {

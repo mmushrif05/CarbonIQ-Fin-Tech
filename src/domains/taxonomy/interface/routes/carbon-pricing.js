@@ -9,6 +9,8 @@
  *     Reference table of current carbon tax rates by region
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { doc, body, bool, arr } = require('../../../../platform/http/openapi-hints');

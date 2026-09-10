@@ -2,6 +2,8 @@
  * CarbonIQ FinTech — SLGFT Report & Certificate Route Tests
  */
 
+'use strict';
+
 const request = require('supertest');
 const app     = require('../src/server');
 const { generateReport } = require('../src/domains/lending/application/reports');

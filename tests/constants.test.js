@@ -1,3 +1,5 @@
+'use strict';
+
 const {
   MATERIAL_CARBON_FACTORS,
   REGIONAL_BENCHMARKS,
@@ -52,7 +54,9 @@ describe('Domain Constants', () => {
   });
 
   it('constants are frozen (immutable)', () => {
-    MATERIAL_CARBON_FACTORS.newMaterial = { factor: 999 };
+    /* Strict mode turns the silent no-op into a throw. A factor table that
+       could be written at runtime is a factor table a request could change. */
+    expect(() => { MATERIAL_CARBON_FACTORS.newMaterial = { factor: 999 }; }).toThrow(TypeError);
     expect(MATERIAL_CARBON_FACTORS.newMaterial).toBeUndefined();
   });
 });

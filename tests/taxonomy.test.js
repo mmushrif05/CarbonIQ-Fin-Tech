@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — Taxonomy Alignment Tests
  */
 
+'use strict';
+
 const { checkAllTaxonomies } = require('../src/domains/taxonomy/domain/taxonomy');
 
 describe('Taxonomy Alignment', () => {

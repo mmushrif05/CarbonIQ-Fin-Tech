@@ -1,36 +1,82 @@
-# CarbonIQ FinTech — Local Development Stack
+# CarbonIQ FinTech — the local stack.
 #
-# Usage:
-#   docker-compose -f docker/docker-compose.yml up
+#   docker compose -f docker/docker-compose.yml up
 #
-# Services:
-#   fintech-api    — Express API on port 3001
-#   firebase-emu   — Firebase emulator on ports 9000 (DB), 9099 (Auth), 4000 (UI)
+# Three things were wrong with the version this replaces, and the first meant
+# a fresh clone could not run it at all:
+#
+#   `env_file: ../.env` is required, not optional, so `docker compose config`
+#   failed outright on a checkout that has no `.env` — before any service
+#   started, with an error about a missing file rather than about setup.
+#
+#   The API ran `node --watch server.js`, a path that has not existed since
+#   the move to `src/`.
+#
+#   The only backing service was a Firebase emulator. Every deployment holds
+#   its records in PostgreSQL, so the stack modelled a store the application
+#   no longer uses and omitted the one it does — which is how a developer
+#   learns about foreign-key failures from CI.
+#
+# `postgres` is the store here, on the port the test suite uses, so
+# `npm run test:postgres` works against the same service.
 
 services:
-  fintech-api:
+  api:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      target: dev
     ports:
       - "3001:3001"
+    # Optional: a checkout with no .env still starts. Anything the application
+    # genuinely cannot run without is named by config.validate() at boot.
     env_file:
-      - ../.env
+      - path: ../.env
+        required: false
     environment:
-      - NODE_ENV=development
-      - FIREBASE_DATABASE_URL=http://firebase-emu:9000
+      NODE_ENV: development
+      # The database is this stack's, not the operator's production one.
+      DATABASE_URL: postgresql://carboniq:carboniq@postgres:5432/carboniq_dev
+      STORAGE_BACKEND: postgres
+      FINTECH_API_PORT: "3001"
+      # Enough to boot; a real key is only needed for the AI routes, and
+      # /v1/agent/health says so rather than failing silently.
+      UI_API_KEY: ${UI_API_KEY:-ck_test_00000000000000000000000000000000}
+      API_KEY_SALT: ${API_KEY_SALT:-0000000000000000000000000000000000000000000000000000000000000000}
     depends_on:
-      firebase-emu:
+      postgres:
         condition: service_healthy
     volumes:
       - ..:/app
       - /app/node_modules
-    command: ["node", "--watch", "server.js"]
+    command: ["npm", "run", "dev"]
 
-  firebase-emu:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: carboniq
+      POSTGRES_PASSWORD: carboniq
+      POSTGRES_DB: carboniq_dev
+    ports:
+      # The port the suite's TEST_DATABASE_URL defaults to, so one service
+      # answers both. `npm run db:test-up` starts a separate container for a
+      # developer who does not want the whole stack.
+      - "54329:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carboniq -d carboniq_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - carboniq-pgdata:/var/lib/postgresql/data
+
+  # The Firebase emulator, for the deployments that still keep their records
+  # there. Not started by default: `docker compose --profile firebase up`.
+  firebase:
+    profiles: ["firebase"]
     image: andreysenov/firebase-tools:latest
     ports:
-      - "9000:9000"   # Realtime Database
+      - "9000:9000"   # Realtime Database — the code calls admin.database()
       - "9099:9099"   # Authentication
       - "4000:4000"   # Emulator UI
     command: >
@@ -43,3 +89,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 15s
+
+volumes:
+  carboniq-pgdata:

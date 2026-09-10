@@ -5,6 +5,8 @@
  * Firebase-dependent tests are skipped in CI without credentials.
  */
 
+'use strict';
+
 const request = require('supertest');
 const app = require('../src/server');
 

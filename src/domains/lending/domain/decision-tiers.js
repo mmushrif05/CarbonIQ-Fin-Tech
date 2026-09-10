@@ -1,10 +1,11 @@
 // @ts-check
-const { DECISION_TIERS, DECISION_VERDICTS, DECISION_TRACKS, TRACK_LABELS, AUTO_APPROVE_LOAN_LIMIT, MANUAL_REVIEW_LOAN_LIMIT, TIER_DISTRIBUTION } = require('./decision-constants');
 /**
  * The shape of a decision at each tier.
  */
 
 'use strict';
+
+const { DECISION_TIERS, DECISION_VERDICTS, DECISION_TRACKS, TRACK_LABELS, AUTO_APPROVE_LOAN_LIMIT, MANUAL_REVIEW_LOAN_LIMIT, TIER_DISTRIBUTION } = require('./decision-constants');
 
 // ---------------------------------------------------------------------------
 // Tier builder helpers

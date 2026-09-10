@@ -5,6 +5,8 @@
  * The AI call is mocked to avoid external API dependency in CI.
  */
 
+'use strict';
+
 const request = require('supertest');
 
 // ---------------------------------------------------------------------------

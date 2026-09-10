@@ -7,6 +7,8 @@
  * (e.g., score updates, covenant breaches, report generation).
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const webhookCreateSchema = Joi.object({

@@ -5,8 +5,9 @@
  * Manages external verification workflow for carbon assessments.
  * Verifiers can review, approve, or request changes on 80% material records.
  *
- * Implementation: Step 12
  */
+
+'use strict';
 
 // Placeholder — will be implemented in Step 12
 module.exports = {};

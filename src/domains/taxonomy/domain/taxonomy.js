@@ -8,8 +8,9 @@
  * - HK Green Classification Framework (Dark/Light Green, Transitioning)
  * - Singapore TSC (Green Mark alignment)
  *
- * Implementation: Step 6
  */
+
+'use strict';
 
 const {
   TAXONOMY_ASEAN, TAXONOMY_EU, TAXONOMY_HK, TAXONOMY_SG, TAXONOMY_SL

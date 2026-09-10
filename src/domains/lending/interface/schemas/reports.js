@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — Report Generation Validation Schema
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const reportGenerateSchema = Joi.object({

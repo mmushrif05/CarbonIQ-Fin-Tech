@@ -1,3 +1,5 @@
+'use strict';
+
 const request = require('supertest');
 const express = require('express');
 const audit = require('../src/platform/observability/audit');

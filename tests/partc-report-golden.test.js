@@ -196,7 +196,7 @@ describe('The PDF draws the whole model', () => {
      is equally true of a PDF with a section missing. */
   const theme = require('../src/domains/pcaf-part-c/reporting/partc-theme');
 
-  let drawn = [];
+  const drawn = [];
   let pages = 0;
 
   beforeAll(() => {

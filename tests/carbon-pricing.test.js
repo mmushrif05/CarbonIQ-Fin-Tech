@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — Carbon Pricing Service Tests
  */
 
+'use strict';
+
 const { calculateFinancialImpact } = require('../src/domains/taxonomy/domain/carbon-pricing');
 
 describe('Carbon Pricing Service', () => {

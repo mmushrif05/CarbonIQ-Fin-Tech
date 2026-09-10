@@ -18,6 +18,8 @@
  * rotating it is an environment change rather than a commit and a deploy.
  */
 
+'use strict';
+
 const { Router } = require('express');
 const { doc, body } = require('./openapi-hints');
 
@@ -38,7 +40,7 @@ const router = Router();
  */
 function _buildId() {
   try {
-    // eslint-disable-next-line global-require
+     
     const info = require('../../../build-info.json');
     if (info && info.commit) return String(info.commit).slice(0, 7);
   } catch (_) { /* not a Netlify build */ }

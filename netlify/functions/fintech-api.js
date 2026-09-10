@@ -11,6 +11,8 @@
  *   /v1/*    → fintech-api (via netlify.toml redirects)
  */
 
+'use strict';
+
 const serverless = require('serverless-http');
 const app = require('../../src/server');
 const errors = require('../../src/platform/observability/errors');
@@ -74,7 +76,7 @@ const problems = config.validate().problems;
 const blocked = problems.length > 0;
 if (blocked) {
   /* One line at boot, so the cause is in the log drain as well as the reply. */
-  // eslint-disable-next-line no-console
+   
   errors.capture(new Error(`refusing to serve: ${problems.map(p => p.variable).join(', ')}`),
     { source: 'boot' });
 }

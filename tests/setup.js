@@ -5,6 +5,8 @@
  * Configures test environment: mock Firebase, set env vars.
  */
 
+'use strict';
+
 // Set test environment
 process.env.NODE_ENV = 'test';
 process.env.FINTECH_API_PORT = '3099';

@@ -8,6 +8,8 @@
  * Usage: app.use('/v1/protected', auth, routeHandler)
  */
 
+'use strict';
+
 const { getFirebaseAdmin } = require('../bridge/firebase');
 const { enforceScope, actorOf } = require('./scopes');
 const { ROLES, DEFAULT_ROLE } = require('../../shared/policies');

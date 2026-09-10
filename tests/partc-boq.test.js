@@ -3,6 +3,8 @@
  */
 
 
+'use strict';
+
 const request  = require('supertest');
 const app      = require('../src/server');
 const boq      = require('../src/domains/pcaf-part-c/application/partc-boq');

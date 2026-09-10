@@ -1,19 +1,33 @@
 // @ts-check
 /**
- * CarbonIQ FinTech — PCAF v3 Output Service
+ * CarbonIQ FinTech — lending-side attributed embodied carbon
  *
- * Formats CarbonIQ assessment output per PCAF v3 methodology.
- * Calculates data quality scores and attribution factors.
+ * **This is not PCAF Part A.** It was headed "PCAF v3 Output Service", and it
+ * is not: Part A is `src/domains/pcaf-part-a/`, whose data-quality score
+ * resolves as *(asset class, option) → score* from a table per class. This
+ * module formats CarbonIQ's own A1–A3 assessment output for a lending
+ * conversation, with an attribution factor and a quality band of its own.
  *
- * PCAF Data Quality (1=best, 5=worst):
+ * The band below is a **fourth** 1–5 scale in this repository, and the one
+ * most likely to be mistaken for a PCAF score because it sat under a PCAF
+ * heading. It is CarbonIQ's, it is about the provenance of the A1–A3 factors,
+ * and it must not be quoted as a PCAF data-quality score. `docs/GLOSSARY.md`
+ * §1 has the three that are PCAF's or GCF's.
+ *
+ * The wider correction — the agent prompts and the route summaries that still
+ * say "PCAF v3" — is outstanding and is tracked separately; changing what a
+ * generated memo says is not a documentation change.
+ *
+ * CarbonIQ factor-provenance band (1=best, 5=worst) — NOT a PCAF score:
  *   1: Audited/verified project-specific EPD data
  *   2: Project-specific data from CarbonIQ with A1-A3 factors
  *   3: Assessment using ICE v3.0 generic database factors
  *   4: Building-type average proxy
  *   5: Sector-level average with no project-specific data
  *
- * Implementation: Step 7
  */
+
+'use strict';
 
 const { PCAF_DATA_QUALITY } = require('../../../shared/constants');
 const { isNumeric } = require('../../../shared/numbers');

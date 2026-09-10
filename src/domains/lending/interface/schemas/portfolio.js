@@ -6,6 +6,8 @@
  * Banks submit multiple loans/projects for aggregated emissions reporting.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const portfolioAssetSchema = Joi.object({

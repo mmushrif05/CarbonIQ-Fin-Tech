@@ -10,11 +10,6 @@
 
 'use strict';
 
-const {
-  Paragraph, TextRun, Table, TableRow, TableCell,
-  WidthType, BorderStyle
-} = require('docx');
-
 /** Numbers as a reader expects them: grouped, at most two decimals. */
 const N = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 
@@ -75,35 +70,11 @@ function pdfWriter(doc) {
 // Word
 // ---------------------------------------------------------------------------
 
-const _p = (text, opts = {}) => new Paragraph({
-  children: [new TextRun({ text: String(text), ...opts })],
-  spacing: { after: 80 },
-  ...(opts.paraOpts || {})
-});
-
-const _h = (text, level) => new Paragraph({
-  text: String(text), heading: level, spacing: { before: 240, after: 120 }
-});
-
-const _cell = (text, bold = false) => new TableCell({
-  children: [new Paragraph({ children: [new TextRun({ text: String(text), bold, size: 18 })] })],
-  margins: { top: 60, bottom: 60, left: 80, right: 80 }
-});
-
-const _table = (header, rows) => new Table({
-  width: { size: 100, type: WidthType.PERCENTAGE },
-  borders: {
-    top:    { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    left:   { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    right:  { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' },
-    insideHorizontal: { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
-    insideVertical:   { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' }
-  },
-  rows: [
-    new TableRow({ children: header.map(h => _cell(h, true)) }),
-    ...rows.map(r => new TableRow({ children: r.map(c => _cell(c)) }))
-  ]
-});
+/* The Word primitives are `src/platform/reporting/docx.js` now — they are
+   `docx` builders that know nothing about emissions, and the GCF Concept Note
+   package was importing them from here across a domain boundary, by their
+   private names. Re-exported so every caller that has always read them from
+   this module still can. */
+const { para: _p, heading: _h, cell: _cell, table: _table } = require('../../../platform/reporting/docx');
 
 module.exports = { N, pdfWriter, winAnsi, winAnsiSafe, _p, _h, _cell, _table };

@@ -1,4 +1,6 @@
 // @ts-check
+'use strict';
+
 const Joi = require('joi');
 
 const createProjectSchema = Joi.object({

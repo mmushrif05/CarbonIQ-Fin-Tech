@@ -15,6 +15,8 @@
  *   fintech/audit/{id}             — Persistent audit log entries
  */
 
+'use strict';
+
 const { v4: uuidv4 } = require('uuid');
 
 class DataStore {

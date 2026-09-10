@@ -1,131 +1,368 @@
-# CarbonIQ FinTech — Bank-Facing API Layer
+# CarbonIQ FinTech
 
-> **Construction Carbon Intelligence for Green Loan Compliance**
+The bank-facing layer of CarbonIQ: a Node/Express API that computes carbon
+figures for financial institutions and renders them as the documents those
+institutions file under a published standard.
 
-A standalone Express.js API that exposes the CarbonIQ carbon engine to banks, lenders, and financial institutions for:
+It is a **measurement instrument** before it is software. A figure it produces
+ends up in a regulatory disclosure, and the person reading it will not be able
+to check it against anything else. Most of how this repository is built is
+downstream of that.
 
-- **Carbon Finance Score (CRS 0–100)** — loan origination risk assessment
-- **PCAF v2.0 financed emissions** — standardised carbon accounting for real estate/construction assets
-- **Green loan covenant monitoring** — SLL compliance tracking (LMA/APLMA GLP 2021)
-- **EU/ASEAN Taxonomy alignment** — regulatory eligibility screening
-- **Portfolio aggregation** — cross-project carbon risk exposure
+**Production:** <https://carboniqfintech.netlify.app>
+**Licence:** see [LICENSE](LICENSE) · **Security:** see [SECURITY.md](SECURITY.md)
 
 ---
 
-## Architecture
+## Start here
 
-```
-CarbonIQ-Fin-Tech/
-├── src/server.js               Express entry point + /health
-├── src/domains/           six bounded contexts — pcaf-part-a, pcaf-part-c, gcf, capital, taxonomy, lending — each domain/ · application/ · interface/
-├── src/platform/          auth, config, database (the storage seam and PostgreSQL), http, observability, ai, bridge, reporting
-├── src/shared/            constants, policies, report-integrity, models
-├── tests/                  26 tests across 6 suites (score, taxonomy, covenant, pcaf, api)
-├── docker/                 Local development container
-├── netlify/functions/      Serverless adapter (production deployment)
-└── docs/                   Architecture, strategy, and scaffolding documentation
-```
+| If you want to | Read |
+|---|---|
+| understand what happens when a request arrives | **[docs/CODE-TOUR.md](docs/CODE-TOUR.md)** |
+| know what a word means | **[docs/GLOSSARY.md](docs/GLOSSARY.md)** — read §1 before touching a data-quality score |
+| know why something is the way it is | **[docs/adr/](docs/adr/)** |
+| change something | **[CONTRIBUTING.md](CONTRIBUTING.md)** |
+| call the API | the endpoint table below, and [docs/openapi.json](docs/openapi.json) |
 
-## API Endpoints (v1)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET`  | `/health` | Health check — no auth |
-| `POST` | `/v1/assess` | Full project carbon assessment (Claude AI) |
-| `POST/GET` | `/v1/projects` | Project list / create |
-| `GET`  | `/v1/projects/:id/score` | Carbon Finance Score (CFS 0-100) |
-| `GET`  | `/v1/projects/:id/taxonomy` | Taxonomy alignment — 5 frameworks incl. SLGFT |
-| `GET`  | `/v1/projects/:id/pcaf` | PCAF v3 financed emissions |
-| `POST` | `/v1/projects/:id/covenant` | Green loan covenant check |
-| `POST/GET` | `/v1/projects/:id/monitoring` | Annual monitoring entries |
-| `GET`  | `/v1/portfolio` | Portfolio carbon risk aggregation |
-| `POST` | `/v1/carbon-pricing/calculate` | Carbon tax exposure + loan pricing + stranded risk |
-| `GET`  | `/v1/carbon-pricing/rates` | Carbon tax rates (SG, EU, MY, HK, LK) |
-| `POST` | `/v1/reports/generate` | PCAF / GRI 305 / TCFD / IFRS S2 reports |
-| `POST` | `/v1/ndc-sdg/assess` | **AI-powered NDC/SDG alignment — Sri Lanka SLGFT** |
-| `POST` | `/v1/ndc-sdg/certificate` | Generate SLGFT Green Loan Certificate (SHA-256 tamper-evident) |
-| `POST` | `/v1/ndc-sdg/certificate/verify` | Verify certificate hash |
-| `GET`  | `/v1/ndc-sdg/framework` | SLGFT framework metadata (sectors, activities, NDC) |
-| `POST` | `/v1/agent/screen` | AI agent — green loan screening |
-| `POST` | `/v1/agent/underwrite` | AI agent — underwriting analysis |
-| `POST` | `/v1/webhooks` | Webhook subscription management |
-
-### Sri Lanka Green Finance Taxonomy (SLGFT)
-
-Regions supported: **SG · EU · MY · HK · LK (Sri Lanka)**
-
-Sri Lanka-specific fields on `/v1/projects` and `/v1/ndc-sdg/assess`:
-- `slsicSector` — SLSIC sector code (A–M, e.g. `F` = Construction)
-- `activityCode` — SLGFT activity code (e.g. `M1.1` = Green Buildings, `M4.1` = Solar PV)
-
-NDC targets assessed:
-- Reduction: 20.09% cumulative GHG reduction against BAU, 2026-2035 (8.11% unconditional, 11.98% conditional)
-- Removal: 4.49% increase in net carbon removal over the same period (0.96% unconditional, 3.53% conditional)
-- The two are separate commitments and are never added together
-- Key SDGs: 7, 9, 11, 13, 14, 15
-
-## Authentication
-
-Dual-mode auth:
-- **JWT** — for bank analyst portals (user sessions)
-- **API Key** — for bank system integrations (SHA-256 hashed, stored in Firebase)
-
-## Quick Start
+## Getting it running
 
 ```bash
-# Install dependencies
+nvm use            # .nvmrc — Node 22
 npm install
-
-# Configure environment
-cp .env.example .env
-# Fill in: FIREBASE_*, JWT_SECRET, ANTHROPIC_API_KEY
-
-# Run locally
-npm run dev
-
-# Run tests
-npm test
-
-# Docker (with Firebase emulator)
-docker-compose -f docker/docker-compose.yml up
+npm run setup:env  # writes .env from the template, with placeholders
+npm run dev        # http://localhost:3001
 ```
 
-## Deployment
+`GET /health` will tell you what this deployment can actually do — the running
+commit, the store it chose and why, and whether the dashboard key, the
+Anthropic key and Firebase are *usable* rather than merely set.
 
-Production runs as a Netlify Function via `netlify/functions/fintech-api.js`.
+Nobody can sign in until an administrator exists. There is no self-service
+sign-up:
 
-Add to your `netlify.toml`:
-```toml
-[[redirects]]
-  from = "/v1/*"
-  to = "/.netlify/functions/fintech-api/:splat"
-  status = 200
-
-[[redirects]]
-  from = "/bank/*"
-  to = "/.netlify/functions/fintech-api/:splat"
-  status = 200
+```bash
+npm run user:create -- --email you@bank.lk --org <org-id> --role admin
 ```
 
-## Carbon Engine Bridge
+The whole stack, with PostgreSQL and the built frontend:
 
-This API is **read-only** from the CarbonIQ core engine (Carbon-Management repo). It reads:
-- Project data and emission entries from Firebase
-- Pre-calculated 80% Pareto results
-- Approved GWP factors and audit trails
+```bash
+docker compose -f docker/docker-compose.yml up
+```
 
-It does **not** modify any core engine data.
+## Testing
+
+```bash
+npm test                 # the whole suite, in-memory store, with coverage
+npm test tests/x.test.js # one file, no coverage — the exit code means what it says
+
+npm run db:test-up       # PostgreSQL in Docker, migrated
+npm run test:postgres    # the same suite on the real store
+
+npm run lint · npm run typecheck · npm run test:e2e
+```
+
+**The two suites are not the same run.** The in-memory store permits things a
+foreign key does not, and the first PostgreSQL run this project ever did failed
+27 tests for exactly that reason. Run both.
+
+At the time of writing: 117 suites, 2,373 tests on PostgreSQL.
+
+## Architecture, in one paragraph
+
+One Express app, deployed as a single Netlify Function, with a static frontend
+beside it. `src/domains/` holds one directory per bounded context and
+dependencies point inward — a `domain/` engine imports only its own domain,
+`src/shared` and `data/`; `src/platform/` never imports a domain.
+`tests/architecture.test.js` fails the build when an edge points the wrong way.
+
+Three bodies of regulated work sit here and produce three different tonnes of
+CO2e — **PCAF Part A** (financed emissions, attributed on outstanding amount),
+**PCAF Part C** (insurance-associated emissions, attributed on premium), and
+the **GCF pipeline** (project mitigation against a counterfactual). Their
+engines never import one another. Summing any two produces a figure no standard
+defines.
+
+Records live in PostgreSQL behind one storage seam. A write that cannot persist
+is refused with a 503 rather than accepted and lost.
+
+## The rules that shape the code
+
+Each is enforced by a test, and each is here because breaking it produced a
+defect that reached a screen or a document. The long form is in
+[CONTRIBUTING.md](CONTRIBUTING.md) and [docs/adr/](docs/adr/).
+
+- **The engine does every arithmetic operation.** Claude classifies, extracts,
+  maps and writes narrative. An LLM never computes a figure that reaches a
+  disclosure.
+- **Absence is an answer.** A figure this system does not hold is reported
+  absent with the clause that requires it — never estimated, never zero.
+- **Conformance is shown, not asserted.** Every rule cites the code that
+  enforces it and a test that is proved to execute that code.
+- **A regulatory constant carries its provenance** — version, effective date,
+  status, checksum.
+- **Output claims PCAF conformance, never endorsement.**
+
+## The API
+
+Two shapes, and every response says which in `X-Api-Envelope`:
+`application/json` is the shape v1 has always answered, and
+`application/vnd.carboniq.v1+json` is the same body inside
+`{ data, meta, error }`. Lists take `limit` and `cursor`. Full contract:
+[docs/API-CONTRACT.md](docs/API-CONTRACT.md).
+
+Authentication is one door, two credentials: a browser carries a session token
+issued at sign-in; a bank's integration carries an `X-API-Key`. Both end at the
+same admission check, which names the actor, puts the organisation on the
+request and enforces the route's scope. `POST /v1/auth/login` is the only route
+on the surface with no credential.
+
+<!-- BEGIN ENDPOINTS — generated by npm run docs:readme -->
+_163 operations across 138 paths. Generated from `docs/openapi.json`, which is itself generated from the router — so a route that is not here does not exist. `docs/API-SCOPES.md` has the scope each one requires._
+
+### Getting in
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/health` | Health check — no credential required |
+| `GET` | `/v1` | What this API offers, and where each scope lives |
+| `POST` | `/v1/auth/login` | Sign in |
+| `POST` | `/v1/auth/logout` | Sign out |
+| `GET` | `/v1/auth/me` | The account this request is acting as |
+| `POST` | `/v1/auth/password` | Change the caller's own password |
+| `GET` | `/v1/auth/users` | The accounts in this organisation |
+| `POST` | `/v1/auth/users` | Create an account |
+| `PATCH` | `/v1/auth/users/{userId}` | Change an account’s role, or disable it |
+| `POST` | `/v1/auth/users/{userId}/password` | Reset another account's password — requires the admin scope |
+| `GET` | `/v1/ui-config.js` | The build stamp, as an executable script the shell loads |
+
+### PCAF Part C — insurance-associated emissions
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/v1/partc/assessments` | List assessments — each bound to a policy, a BOQ revision and a reporting year |
+| `POST` | `/v1/partc/assessments` | Create an assessment bound to a policy, BOQ revision and reporting year |
+| `DELETE` | `/v1/partc/assessments/{assessmentId}` | Remove an assessment |
+| `GET` | `/v1/partc/assessments/{assessmentId}` | One assessment, bound to its policy, BOQ revision and reporting year |
+| `POST` | `/v1/partc/assessments/{assessmentId}/status` | Move an assessment through draft, under review and locked |
+| `DELETE` | `/v1/partc/boq/{revisionId}` | Remove a BOQ revision |
+| `GET` | `/v1/partc/boq/{revisionId}` | One BOQ revision |
+| `GET` | `/v1/partc/clients` | List insured parties |
+| `POST` | `/v1/partc/clients` | Record an insured party |
+| `DELETE` | `/v1/partc/clients/{clientId}` | Remove an insured party |
+| `GET` | `/v1/partc/clients/{clientId}` | One insured party, with its projects |
+| `PATCH` | `/v1/partc/clients/{clientId}` | Change an insured party |
+| `POST` | `/v1/partc/demo/seed` | Seed a worked insurer book, for a demonstration |
+| `GET` | `/v1/partc/disclosure/{year}` | The annual disclosure — JSON, PDF or Word |
+| `GET` | `/v1/partc/periods/{year}` | Locked totals, coverage and emissions-weighted data quality for a year |
+| `GET` | `/v1/partc/policies` | The flattened book: every policy with its project and client |
+| `GET` | `/v1/partc/portfolio/{year}` | The reporting-year position, with the DQ improvement plan and factor gaps |
+| `GET` | `/v1/partc/portfolio/{year}/comparatives` | This year against last, on a basis that survives a change of book |
+| `GET` | `/v1/partc/portfolio/{year}/dq-plan` | What to fix first, ranked by how much of the disclosed figure it moves |
+| `GET` | `/v1/partc/portfolio/{year}/factor-gaps` | Which emission factors to localise first, across the whole book |
+| `GET` | `/v1/partc/portfolio/{year}/restatements` | As previously reported against as restated, with the reason |
+| `GET` | `/v1/partc/projects` | List projects, with their policies inline |
+| `POST` | `/v1/partc/projects` | Record an insured project |
+| `DELETE` | `/v1/partc/projects/{projectId}` | Remove a project |
+| `GET` | `/v1/partc/projects/{projectId}` | One insured project, with its policies inline |
+| `PATCH` | `/v1/partc/projects/{projectId}` | Change an insured project |
+| `GET` | `/v1/partc/projects/{projectId}/boq` | List the bill-of-quantities revisions of a project, oldest first |
+| `POST` | `/v1/partc/projects/{projectId}/boq` | Add a BOQ revision |
+| `POST` | `/v1/partc/projects/{projectId}/boq/compare` | Line diff, emissions delta and restatement check between two revisions |
+| `POST` | `/v1/partc/projects/{projectId}/policies` | Add a policy to a project |
+| `DELETE` | `/v1/partc/projects/{projectId}/policies/{policyId}` | DELETE /v1/partc/projects/:projectId/policies/:policyId |
+| `GET` | `/v1/partc/projects/{projectId}/policies/{policyId}/context` | Everything a run needs about one policy, resolved |
+| `GET` | `/v1/partc/settings` | Insurer settings: reporting year, premium basis, restatement threshold |
+| `PUT` | `/v1/partc/settings` | Change the insurer settings |
+| `GET` | `/v1/partc/storage` | What this deployment can actually persist |
+| `POST` | `/v1/pcaf/part-c/agent/disclose` | Write the disclosure narrative around figures the engine computed |
+| `POST` | `/v1/pcaf/part-c/agent/intake` | Extract the policy from a document. Claude classifies; the engine computes. |
+| `POST` | `/v1/pcaf/part-c/agent/map` | Map BOQ lines to factor keys |
+| `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions — the regulatory figure |
+| `GET` | `/v1/pcaf/part-c/conformance` | PCAF Part C rule → implementation → proving test |
+| `POST` | `/v1/pcaf/part-c/dq-preview` | Data-quality scoring alone — nothing is persisted |
+| `GET` | `/v1/pcaf/part-c/factors` | Every factor table, with tier and source per row |
+| `POST` | `/v1/pcaf/part-c/form` | The pre-filled, policy-gated client form |
+| `GET` | `/v1/pcaf/part-c/options` | Dropdown options for the client form |
+| `POST` | `/v1/pcaf/part-c/report` | The disclosure report — PDF, Word or JSON |
+| `GET` | `/v1/pcaf/part-c/runs` | Recent Part C runs, newest first; twenty without a page |
+| `POST` | `/v1/pcaf/part-c/runs/start` | Begin a run, pausing for the client to complete the form |
+| `GET` | `/v1/pcaf/part-c/runs/{runId}` | One run, with its state across the pause |
+| `POST` | `/v1/pcaf/part-c/runs/{runId}/resume` | Supply the answers, compute, complete the run |
+
+### PCAF Part A — financed emissions
+
+| Method | Path | What it does |
+|---|---|---|
+| `POST` | `/v1/pcaf/part-a/assess` | PCAF Part A financed emissions for one asset |
+| `GET` | `/v1/pcaf/part-a/reference` | Part A asset classes, archetypes and the data-quality options for each |
+
+### The GCF pipeline
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/v1/gcf/cn/{id}` | Concept Note input package — JSON, PDF or Word |
+| `GET` | `/v1/gcf/conformance` | ToR clause → implementation → proving test |
+| `GET` | `/v1/gcf/emissions` | The pipeline on three boundaries that never merge |
+| `GET` | `/v1/gcf/emissions/{id}` | One candidate on the three boundaries |
+| `GET` | `/v1/gcf/entity` | The facts only the reporting entity can state |
+| `PUT` | `/v1/gcf/entity` | Record the entity's own disclosures |
+| `GET` | `/v1/gcf/export` | A period package, checksummed over its own canonical form |
+| `POST` | `/v1/gcf/import` | Verify and import a period package |
+| `GET` | `/v1/gcf/instruments` | Seven structures, and the pipeline's mandate gap |
+| `GET` | `/v1/gcf/instruments/{id}` | The structure that fits one candidate, and the barrier it leaves standing |
+| `GET` | `/v1/gcf/ndc` | Contribution against NDC 3.0 — two ledgers, never summed |
+| `GET` | `/v1/gcf/pipeline` | The GCF candidate pipeline — recorded, or the shipped illustrative set, never both |
+| `POST` | `/v1/gcf/pipeline` | Record a candidate. Ids are chosen by the caller so a record updates in place. |
+| `POST` | `/v1/gcf/pipeline/adopt` | Copy the shipped illustrative pipeline into this organisation, to edit |
+| `DELETE` | `/v1/gcf/pipeline/{id}` | Remove a candidate |
+| `GET` | `/v1/gcf/pipeline/{id}` | One candidate, with its evidence tiers and where it sits against accreditation |
+| `GET` | `/v1/gcf/ranking` | Two ranked lists, never merged, on the weighting the reader set |
+| `GET` | `/v1/gcf/recommendation` | Which two, why, and what could not be weighed |
+| `GET` | `/v1/gcf/reference` | Results areas, IRMF core indicators, NDC 3.0 and the instrument catalogue |
+| `GET` | `/v1/gcf/report` | SLFRS S1/S2 and GRI lines, with what it could not state |
+| `GET` | `/v1/gcf/screening` | The accreditation gate: eligible, flagged, excluded |
+
+### The capital book and the Fund Desk
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/v1/capital/basket` | What writing a selection of pipeline projects would do |
+| `GET` | `/v1/capital/book` | The effective base book, for the adjust drawer to edit against |
+| `POST` | `/v1/capital/compute` | The dashboard and basket from the book as the reader adjusted it |
+| `GET` | `/v1/capital/dashboard` | The anchor position: capital, emissions, pipeline and forecast |
+| `POST` | `/v1/capital/demo` | Seed a worked book, for a demonstration |
+| `GET` | `/v1/capital/investments` | List investments |
+| `POST` | `/v1/capital/investments` | Record an investment |
+| `PATCH` | `/v1/capital/investments/{id}` | Change an investment |
+| `GET` | `/v1/capital/payments` | List payments |
+| `POST` | `/v1/capital/payments` | Record a payment |
+| `DELETE` | `/v1/capital/payments/{id}` | Remove a payment |
+| `GET` | `/v1/capital/portfolios` | List portfolios |
+| `POST` | `/v1/capital/portfolios` | Record a portfolio |
+| `PATCH` | `/v1/capital/portfolios/{id}` | Change a portfolio |
+| `GET` | `/v1/capital/storage` | What this deployment can actually persist |
+| `POST` | `/v1/desk/adopt` | Put a GCF candidate on the capital book |
+| `GET` | `/v1/desk/candidates` | What is waiting: the gate, the two rankings, and the barrier each structure leaves standing |
+| `GET` | `/v1/desk/position` | The book a committee reads, over the capital book and the GCF pipeline at once |
+| `GET` | `/v1/desk/readiness` | Year end: outstanding disclosure items, entity facts and Concept Note inputs |
+| `POST` | `/v1/desk/scenario` | If these were written: funding, shortfall and the three impact figures |
+
+### Baselines
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/v1/baselines` | The master table: every baseline version this caller can see, with the shipped seed beside it |
+| `POST` | `/v1/baselines` | Record a baseline as a draft. A draft is not in force. |
+| `GET` | `/v1/baselines/effective` | The baselines in force for this caller, each with the provenance behind it |
+| `GET` | `/v1/baselines/metrics` | The metrics a baseline can govern, and what in the product reads each |
+| `GET` | `/v1/baselines/pledge` | Where the organisation stands against its own pledge |
+| `PUT` | `/v1/baselines/pledge` | Record the organisation's own pledge against its baseline |
+| `POST` | `/v1/baselines/{baselineId}/release` | Put a draft in force, superseding the version it replaces in one transaction |
+| `POST` | `/v1/baselines/{baselineId}/supersede` | A new version of a released baseline, carrying the movement and the reason |
+
+### Lending — assessment, scoring, covenants
+
+| Method | Path | What it does |
+|---|---|---|
+| `POST` | `/v1/agent/coach` | Borrower coaching agent |
+| `POST` | `/v1/agent/covenants` | Covenant agent — SLL terms, held for human review before use |
+| `POST` | `/v1/agent/covenants/{runId}/review` | The human review gate on covenant terms |
+| `GET` | `/v1/agent/health` | Whether each agent can actually run, and why not where it cannot |
+| `POST` | `/v1/agent/monitor` | Monitoring agent |
+| `POST` | `/v1/agent/originate` | Origination agent |
+| `POST` | `/v1/agent/portfolio` | Portfolio agent |
+| `GET` | `/v1/agent/runs` | Recent agent runs, newest first; twenty without a page |
+| `GET` | `/v1/agent/runs/{runId}` | One agent run, with its full step trail |
+| `POST` | `/v1/agent/screen` | Screening agent — a single call, sized for speed over depth |
+| `POST` | `/v1/agent/triage` | Decision triage — automatic, AI-reviewed or manual |
+| `POST` | `/v1/agent/underwrite` | Underwriting agent — live carbon tax rates and green bond pricing |
+| `POST` | `/v1/assess` | Full project carbon assessment |
+| `GET` | `/v1/assurance` | The entity's own declaration about external assurance |
+| `PUT` | `/v1/assurance` | Record the entity's assurance declaration |
+| `POST` | `/v1/extract` | Extract construction materials from a BOQ |
+| `GET` | `/v1/extract/factors` | The A1-A3 material factors the engine multiplies by, with the source of each |
+| `POST` | `/v1/extract/upload` | Upload a BOQ PDF once and reuse its file id across extractions |
+| `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation across the key's projects |
+| `GET` | `/v1/projects` | List the organisation's lending projects |
+| `POST` | `/v1/projects` | Record a lending project |
+| `GET` | `/v1/projects/{projectId}` | One lending project, with its carbon summary and material breakdown |
+| `POST` | `/v1/projects/{projectId}/covenant` | Check a green loan covenant against the project |
+| `GET` | `/v1/projects/{projectId}/covenants` | The full SLL covenant suite for a project |
+| `GET` | `/v1/projects/{projectId}/monitoring` | Every monitoring entry recorded against a project |
+| `POST` | `/v1/projects/{projectId}/monitoring` | Record a monitoring entry for a reporting year |
+| `GET` | `/v1/projects/{projectId}/pcaf` | PCAF financed-emissions output for a project |
+| `GET` | `/v1/projects/{projectId}/score` | The Carbon Finance Score (0-100) for a construction loan |
+| `GET` | `/v1/projects/{projectId}/taxonomy` | EU, ASEAN, Hong Kong, Singapore and Sri Lanka alignment for one project |
+| `POST` | `/v1/reports/generate` | Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF |
+| `GET` | `/v1/reports/types` | The report types this API generates |
+| `POST` | `/v1/supervisor/pipeline` | Run a multi-agent supervisor pipeline |
+| `GET` | `/v1/supervisor/pipeline/{pipelineId}` | One pipeline run, with every stage |
+| `POST` | `/v1/supervisor/pipeline/{pipelineId}/resume` | Resume a pipeline paused at a human review gate |
+| `GET` | `/v1/supervisor/pipelines` | Recent agent pipelines, newest first; twenty without a page |
+| `GET` | `/v1/supervisor/templates` | The pipeline templates this API can run |
+| `GET` | `/v1/webhooks` | List webhook subscriptions |
+| `POST` | `/v1/webhooks` | Register a webhook subscription |
+| `DELETE` | `/v1/webhooks/{subscriptionId}` | DELETE /v1/webhooks/:subscriptionId |
+
+### Sri Lanka — taxonomy, NDC and carbon pricing
+
+| Method | Path | What it does |
+|---|---|---|
+| `POST` | `/v1/carbon-pricing/calculate` | Financial impact of a carbon price on a project |
+| `GET` | `/v1/carbon-pricing/rates` | Carbon tax rates by jurisdiction, and the loan pricing tiers they set |
+| `POST` | `/v1/ndc-sdg/assess` | NDC and SDG alignment for a project |
+| `POST` | `/v1/ndc-sdg/certificate` | Generate an SLGFT Green Loan Certificate |
+| `POST` | `/v1/ndc-sdg/certificate/verify` | Verify a certificate against its own audit hash |
+| `GET` | `/v1/ndc-sdg/framework` | SLGFT framework metadata, and the intensity screen in force |
+
+### Operating the service
+
+| Method | Path | What it does |
+|---|---|---|
+| `GET` | `/v1/jobs` | List this organisation's jobs, newest first |
+| `POST` | `/v1/jobs` | Enqueue a job |
+| `GET` | `/v1/jobs/types` | The job types this deployment runs |
+| `GET` | `/v1/jobs/{jobId}` | One job |
+| `GET` | `/v1/jobs/{jobId}/artifact` | Download what the job produced |
+| `GET` | `/v1/metrics` | This process's counters — JSON or Prometheus text |
+| `GET` | `/v1/openapi.json` | The OpenAPI 3.1 document, generated from the router |
+
+<!-- END ENDPOINTS -->
+
+## Environment
+
+Copy `.env.example` to `.env`. `config.validate()` names, by variable, what a
+production deployment cannot run safely with — and refuses to start on it.
+Never commit `.env`.
+
+The variables that decide what the service can do:
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | PostgreSQL. When set, it is the store. |
+| `STORAGE_BACKEND` | `auto` · `postgres` · `firebase` · `blobs` · `memory` |
+| `UI_API_KEY` | the dashboard's integration key (`ck_test_`/`ck_live_` + 32) |
+| `API_KEY_SALT` | 64 hex characters; refused in production if it is the default |
+| `ANTHROPIC_API_KEY` | the AI layer. Absent, the engines still run and `/v1/agent/health` says so. |
+| `FIREBASE_SERVICE_ACCOUNT` | base64 service-account JSON — only where Firebase is the store |
+| `SENTRY_DSN` | error reporting; inert when unset |
+
+The full list, and what each is read for, is in
+[CLAUDE.md](CLAUDE.md#environment-variables).
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| `docs/ARCHITECTURE.md` | Full bank-facing product architecture (CRS, PCAF, Taxonomy, Covenant) |
-| `docs/SCAFFOLDING.md` | Step-by-step build plan for the 17-step scaffolding |
-| `docs/STRATEGY.md` | FinTech Innovation Lab APAC 2026 strategy |
-| `docs/PIVOT_ANALYSIS.md` | Green finance pivot analysis |
-| `docs/FILAP_2026.md` | FILAP 2026 repositioning and multi-theme positioning |
-
-## License
-
-Apache-2.0 — see [LICENSE](LICENSE). Copyright 2026 Datum Solutions.
+| | |
+|---|---|
+| [docs/CODE-TOUR.md](docs/CODE-TOUR.md) | request lifecycle, module map, ERD |
+| [docs/GLOSSARY.md](docs/GLOSSARY.md) | the vocabulary, and the three 1–5 scales |
+| [docs/adr/](docs/adr/) | why the decisions were taken |
+| [docs/DATA-LAYER.md](docs/DATA-LAYER.md) | schema, transactions, migrations, audit chain |
+| [docs/AUTHENTICATION.md](docs/AUTHENTICATION.md) | the one door, roles, scopes, sessions |
+| [docs/API-CONTRACT.md](docs/API-CONTRACT.md) · [docs/API-SCOPES.md](docs/API-SCOPES.md) | the contract, and the scope each route needs |
+| [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) | logs, correlation, error reporting, metrics |
+| [docs/ENVIRONMENTS.md](docs/ENVIRONMENTS.md) · [docs/RELEASE-AND-ROLLBACK.md](docs/RELEASE-AND-ROLLBACK.md) | how a change reaches production, and how to reverse it |
+| [docs/BASELINE-GOVERNANCE.md](docs/BASELINE-GOVERNANCE.md) | the master baseline table and its lifecycle |
+| [docs/CONFORMANCE-EVIDENCE.md](docs/CONFORMANCE-EVIDENCE.md) | which conformance rules are proved by execution |
+| [CLAUDE.md](CLAUDE.md) | the operating detail, domain by domain |
