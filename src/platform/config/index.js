@@ -46,7 +46,7 @@ const config = {
      Pro), so an SDK call must give up before that and say why. Without a
      ceiling the platform kills the request instead, the browser sees a
      truncated response, and the screen sits on "working…" for ever. */
-  anthropicTimeoutMs: Number(process.env.ANTHROPIC_TIMEOUT_MS) || 20000,
+  anthropicTimeoutMs: numberOr(process.env.ANTHROPIC_TIMEOUT_MS, 20000),
   /* Zero on purpose. A retry doubles the wall clock, and a serverless request
      has none to spare: 20s per call with one retry is 40s against a function
      killed at 26s, so the process died before the SDK ever gave up and the
@@ -55,7 +55,7 @@ const config = {
   /* The wall clock a request actually runs against — netlify.toml sets the
      function timeout to 26s (Netlify Pro maximum). Everything in a request
      shares this budget; see src/platform/ai/deadline.js. */
-  functionTimeoutMs: Number(process.env.FUNCTION_TIMEOUT_MS) || 26000,
+  functionTimeoutMs: numberOr(process.env.FUNCTION_TIMEOUT_MS, 26000),
 
   // --- Security ---
   encryptionKey: process.env.DATA_ENCRYPTION_KEY,

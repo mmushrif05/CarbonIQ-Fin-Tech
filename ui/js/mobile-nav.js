@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    Mobile navigation drawer
 
@@ -57,6 +58,10 @@ const MobileNav = (() => {
     toggle = bar.querySelector('.mobile-nav-toggle');
     title  = bar.querySelector('.mobile-navbar-title');
 
+    /* Both are drawn by this module a few lines above, so a null here is a
+       markup change rather than an absent page — worth returning on rather
+       than throwing inside a listener nobody is watching. */
+    if (!toggle || !scrim) return;
     toggle.addEventListener('click', toggleD);
     scrim.addEventListener('click', close);
 

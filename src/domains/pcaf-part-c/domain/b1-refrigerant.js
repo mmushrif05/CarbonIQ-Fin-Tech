@@ -22,9 +22,10 @@
 
 const { traced, assumption } = require('./provenance');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 function b1Refrigerant({ equipmentType, refrigerant, chargeKg, capacityKW, gifa_m2, useStageYears } = {}) {
-  const years = Number(useStageYears) || 0;
+  const years = numberOr(useStageYears);
   const assumptions = [];
 
   if (years <= 0) {
@@ -80,7 +81,7 @@ function b1Refrigerant({ equipmentType, refrigerant, chargeKg, capacityKW, gifa_
       'No refrigerant charge, cooling capacity or floor area supplied. B1 set to zero.', 'material', {}));
   }
 
-  const value = charge * (Number(leak.value) || 0) * (Number(gwp.value) || 0) * years;
+  const value = charge * numberOr(leak.value) * numberOr(gwp.value) * years;
 
   return traced({
     value, unit: 'kgCO2e', module: 'B1', label: 'B1 Refrigerant (use stage)',
@@ -99,7 +100,7 @@ function b1Refrigerant({ equipmentType, refrigerant, chargeKg, capacityKW, gifa_
  */
 function deMinimisCheck(b1Value, constructionValue) {
   const thresholdRef = factors.b1b4Default('deMinimisThreshold');
-  const threshold = Number(thresholdRef.value) || 0.05;
+  const threshold = numberOr(thresholdRef.value, 0.05);
   if (!constructionValue || constructionValue <= 0) {
     return { applicable: false, threshold, reference: thresholdRef.reference };
   }

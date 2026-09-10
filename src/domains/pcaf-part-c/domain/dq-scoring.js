@@ -43,11 +43,10 @@ const {
   SCOPE_1_2, SCOPE_3, SCOPE_OF, SCOPE_META,
   CONSTRUCTION_STAGES, USE_STAGE_STAGES, stageEmissions
 } = require('./ghg-scopes');
-
-const _num = v => Number(v) || 0;
+const { numberOr } = require('../../../shared/numbers');
 
 /** Two decimals, as the disclosure prints them. */
-const _dp2 = n => (n === null || n === undefined) ? null : Math.round(Number(n) * 100) / 100;
+const _dp2 = n => (n === null || n === undefined) ? null : Math.round(numberOr(n, 0) * 100) / 100;
 
 // ---------------------------------------------------------------------------
 // Reading the run
@@ -86,8 +85,8 @@ function _traced(result, code) {
 /** Did A5.2 rest on the client's own energy consumption, or on a benchmark? */
 function _siteEnergyFromConsumption(result) {
   const i = (_traced(result, 'A5.2') || {}).inputs || {};
-  const prevArea = _num(i.prevArea_m2);
-  const prevEnergy = _num(i.prevFuel_L) + _num(i.prevElectricity_kWh);
+  const prevArea = numberOr(i.prevArea_m2);
+  const prevEnergy = numberOr(i.prevFuel_L) + numberOr(i.prevElectricity_kWh);
   return /client/i.test(String(i.method || '')) || (prevArea > 0 && prevEnergy > 0);
 }
 
@@ -170,14 +169,14 @@ function inputBasis(result) {
 
     { stage: 'B1', input: 'Refrigerant charge', strength: chargeIsActual ? STRONG : WEAK,
       basis: chargeIsActual
-        ? `Measured refrigerant charge of ${_num(b1i.charge_kg)} kg`
+        ? `Measured refrigerant charge of ${numberOr(b1i.charge_kg)} kg`
         : 'Charge from a per-m2 literature assumption — no HVAC design data supplied',
       source: chargeIsActual ? 'Client plant schedule' : 'Literature assumption — not a formal standard' },
     { stage: 'B1', input: 'Leak rate and GWP', strength: MODERATE,
-      basis: `Annual leak rate ${_num(b1i.leakRate)} and 100-year GWP ${_num(b1i.gwp)} for ${b1i.refrigerant || 'the refrigerant'}`,
+      basis: `Annual leak rate ${numberOr(b1i.leakRate)} and 100-year GWP ${numberOr(b1i.gwp)} for ${b1i.refrigerant || 'the refrigerant'}`,
       source: 'IPCC 2019 leak rates; IPCC AR5 100-year GWP' },
     { stage: 'B4', input: 'Service lives', strength: MODERATE,
-      basis: `Service life of ${_num(b4i.hvacServiceLife_years)} years against ${_num(b4i.useStageYears)} years of cover`,
+      basis: `Service life of ${numberOr(b4i.hvacServiceLife_years)} years against ${numberOr(b4i.useStageYears)} years of cover`,
       source: 'CIBSE Guide M / RICS-BCIS' },
     { stage: 'B7', input: 'Water volume', strength: b7Metered ? STRONG : b7Occupants ? MODERATE : WEAK,
       basis: b7Metered ? 'Metered annual water volume'
@@ -185,11 +184,11 @@ function inputBasis(result) {
           : 'Volume derived from floor area — neither a meter reading nor a supplied occupancy',
       source: b7Metered ? 'Client meter' : 'Typical non-domestic water use benchmark' },
     { stage: 'B7', input: 'Water emission factors', strength: WEAK,
-      basis: `Supply ${_num(b7i.supplyEF)} and wastewater ${_num(b7i.wastewaterEF)} kgCO2e/m3`,
+      basis: `Supply ${numberOr(b7i.supplyEF)} and wastewater ${numberOr(b7i.wastewaterEF)} kgCO2e/m3`,
       source: 'DEFRA (UK) — proxy, no Sri Lankan water factor exists' }
   ];
 
-  const useStageApplies = _num(result.policy && result.policy.useStageYears) > 0;
+  const useStageApplies = numberOr(result.policy && result.policy.useStageYears) > 0;
   for (const r of rows) {
     r.ghgScope = SCOPE_OF[r.stage] || null;
     r.line = USE_STAGE_STAGES.includes(r.stage) ? 'useStage' : 'construction';
@@ -211,7 +210,7 @@ function inputBasis(result) {
  * is produced here and none should be produced anywhere downstream.
  */
 function useStageBasis(result, rows) {
-  const applies = _num(result.policy && result.policy.useStageYears) > 0;
+  const applies = numberOr(result.policy && result.policy.useStageYears) > 0;
   if (!applies) {
     return {
       scored: false,
@@ -257,7 +256,7 @@ function scoreRun(result) {
       scoreText: `Data quality score: ${score} (Option ${option})`,
       basis: 'Assigned from the option used to estimate the emissions, per Table 5.3-2. Not an average of anything.',
       overridden: !!(result.dataQuality && result.dataQuality.optionOverridden),
-      emissions_kgCO2e: Math.round(_num(result.summary.construction_kgCO2e) * 100) / 100
+      emissions_kgCO2e: Math.round(numberOr(result.summary.construction_kgCO2e) * 100) / 100
     },
 
     /* Chapter 6 p.106: where scope 3 is reported, its score is reported
@@ -268,14 +267,14 @@ function scoreRun(result) {
         stages: CONSTRUCTION_STAGES.filter(st => SCOPE_OF[st] === SCOPE_1_2),
         emissions_kgCO2e: Math.round(
           CONSTRUCTION_STAGES.filter(st => SCOPE_OF[st] === SCOPE_1_2)
-            .reduce((n, st) => n + _num(em[st]), 0) * 100) / 100
+            .reduce((n, st) => n + numberOr(em[st]), 0) * 100) / 100
       },
       [SCOPE_3]: {
         ...scopes[SCOPE_3],
         stages: CONSTRUCTION_STAGES.filter(st => SCOPE_OF[st] === SCOPE_3),
         emissions_kgCO2e: Math.round(
           CONSTRUCTION_STAGES.filter(st => SCOPE_OF[st] === SCOPE_3)
-            .reduce((n, st) => n + _num(em[st]), 0) * 100) / 100
+            .reduce((n, st) => n + numberOr(em[st]), 0) * 100) / 100
       },
       note: 'Reported separately because the standard requires it and because the two rest on different data: site energy on energy consumption, the rest on declared quantities.'
     },
@@ -307,7 +306,7 @@ function scoreRun(result) {
  */
 function disclosureStatement(result, scoring) {
   const s = result.summary;
-  const t = n => (_num(n) / 1000).toFixed(3);
+  const t = n => (numberOr(n) / 1000).toFixed(3);
   const c = scoring.construction;
 
   const parts = [

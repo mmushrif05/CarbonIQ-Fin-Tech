@@ -24,6 +24,8 @@
 
 'use strict';
 
+const { numberOr } = require('../../../shared/numbers');
+
 const BASES = ['outstanding', 'commitment'];
 
 /**
@@ -34,7 +36,7 @@ const BASES = ['outstanding', 'commitment'];
  * over-drawing cannot attribute more than the whole share.
  */
 function drawnShare(inv, payments = []) {
-  const commitment = Number(inv.commitment) || 0;
+  const commitment = numberOr(inv.commitment);
   if (commitment <= 0) return { share: 0, outstanding: 0, commitment: 0 };
   const outstanding = payments
     .filter(p => p.investmentId === inv.id && p.kind !== 'fee')
@@ -53,7 +55,7 @@ function splitEmissions(inv, payments, basis) {
   const e = inv.emissions || {};
   const f = factorFor(inv, payments, basis);
   const line = (v) => {
-    const full = Number(v) || 0;
+    const full = numberOr(v);
     return { attributed: full * f, pending: full * (1 - f), full };
   };
   return {

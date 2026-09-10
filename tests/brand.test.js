@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The Datum Solutions mark.
  *

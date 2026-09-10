@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The assurance badge — one declaration, read once, rendered the same
  * everywhere.

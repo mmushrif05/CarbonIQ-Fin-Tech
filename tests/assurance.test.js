@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Whether anyone independent has checked these figures.
  *

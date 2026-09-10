@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C demo book
  *

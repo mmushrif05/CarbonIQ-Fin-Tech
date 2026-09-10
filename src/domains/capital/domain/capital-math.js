@@ -5,11 +5,13 @@
 
 'use strict';
 
+const { numberOr } = require('../../../shared/numbers');
+
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n) * f) / f;
 };
-const sum = (rows, pick) => rows.reduce((t, r) => t + (Number(pick(r)) || 0), 0);
+const sum = (rows, pick) => rows.reduce((t, r) => t + numberOr(pick(r)), 0);
 
 // ---------------------------------------------------------------------------
 // The pipeline, and how to choose from it

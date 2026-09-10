@@ -18,6 +18,7 @@
 const client = require('./client');
 const { definition, storedProjection } = require('./collections');
 const { translate } = require('./errors');
+const { intOr } = require('../../shared/numbers');
 
 const COLUMNS = 'data, version, created_at, updated_at';
 
@@ -199,7 +200,7 @@ function decodeCursor(cursor) {
 
 async function page(collection, orgId, { limit = 50, cursor, where = {} } = /** @type {{limit?: any, cursor?: any, where?: any}} */ ({})) {
   const { table } = definition(collection);
-  const size = Math.min(500, Math.max(1, Number(limit) || 50));
+  const size = Math.min(500, Math.max(1, intOr(limit, 50)));
   const w = whereClause(collection, orgId, where);
   const params = [...w.params];
   let sql = `SELECT id, ${COLUMNS} FROM ${table} WHERE ${w.sql}`;

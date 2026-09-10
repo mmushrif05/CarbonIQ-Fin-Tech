@@ -1,0 +1,33 @@
+{
+  "//": "The browser half of the type check. It is a separate configuration and not an addition to the root one for one reason: `lib: dom` would put `document`, `window` and `fetch` into scope for every file under src/, and a server module that reached for one of them would then type-check clean. The frontend is where four mechanical defects have shipped, so it is checked \u2014 but on its own globals.",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "skipLibCheck": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "lib": [
+      "es2022",
+      "dom",
+      "dom.iterable"
+    ],
+    "types": []
+  },
+  "include": [
+    "js/*.js",
+    "app.js",
+    "config.js",
+    "globals.d.ts"
+  ],
+  "exclude": [
+    "../node_modules",
+    "../dist"
+  ]
+}

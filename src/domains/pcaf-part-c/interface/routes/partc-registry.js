@@ -51,6 +51,7 @@ const { createAssessmentSchema, statusChangeSchema } = require('../schemas/partc
 const router = Router();
 
 const handle = require('../../../../platform/http/async-handler');
+const { numberOr } = require('../../../../shared/numbers');
 
 // ---------------------------------------------------------------------------
 // Storage capability
@@ -436,7 +437,7 @@ router.get('/policies', authenticate, defaultLimiter, paged('reportingYear'),
     summary: {
       total: policies.length,
       byReportingYear: byYear,
-      totalPremium: policies.reduce((n, p) => n + (Number(p.premium) || 0), 0),
+      totalPremium: policies.reduce((n, p) => n + numberOr(p.premium), 0),
       withUseStage: policies.filter(p => p.scope && p.scope.useStageApplies).length
     }
   });

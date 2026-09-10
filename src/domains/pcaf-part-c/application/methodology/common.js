@@ -5,6 +5,8 @@
 
 'use strict';
 
+const { numberOr } = require('../../../../shared/numbers');
+
 /**
  * CarbonIQ FinTech — PCAF Part C: the methodology statement
  *
@@ -55,7 +57,7 @@ const MODULE_NARRATIVE = {
 
 function _round(n, dp = 2) {
   const f = Math.pow(10, dp);
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n) * f) / f;
 }
 
 /** Order modules as a reader meets them, unknown ones last but stable. */

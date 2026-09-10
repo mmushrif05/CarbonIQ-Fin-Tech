@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * H2 — one contract, four stores.
  *

@@ -19,9 +19,10 @@
 
 const { traced, assumption } = require('./provenance');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 function b7Water({ occupants, gifa_m2, annualVolume_m3, useStageYears } = {}) {
-  const years = Number(useStageYears) || 0;
+  const years = numberOr(useStageYears);
 
   if (years <= 0) {
     return traced({
@@ -39,11 +40,11 @@ function b7Water({ occupants, gifa_m2, annualVolume_m3, useStageYears } = {}) {
   const assumptions = [];
 
   // --- occupants ---
-  let occ = Number(occupants) || 0;
+  let occ = numberOr(occupants);
   if (occ <= 0) {
     const densityRef = factors.waterBenchmark('occupantDensity_m2_per_person');
     usedFactors.push(densityRef);
-    const gifa = Number(gifa_m2) || 0;
+    const gifa = numberOr(gifa_m2);
     occ = gifa > 0 && Number(densityRef.value) > 0 ? gifa / Number(densityRef.value) : 0;
     if (occ > 0) {
       assumptions.push(assumption('B7_OCCUPANT_BENCHMARK',
@@ -53,7 +54,7 @@ function b7Water({ occupants, gifa_m2, annualVolume_m3, useStageYears } = {}) {
   }
 
   // --- volume ---
-  let volume = Number(annualVolume_m3) || 0;
+  let volume = numberOr(annualVolume_m3);
   let volumeBasis = 'actual';
   if (volume <= 0) {
     const useRef = factors.waterBenchmark('waterUse_L_per_person_day');
@@ -76,7 +77,7 @@ function b7Water({ occupants, gifa_m2, annualVolume_m3, useStageYears } = {}) {
     'Water supply and wastewater factors are DEFRA (UK) interim values. No Sri Lankan water-supply or wastewater-treatment carbon factor exists; local values (grid mix, pumping heads, any desalination) would likely differ.',
     'notable', { supplyEF: supply.value, wastewaterEF: wastewater.value }));
 
-  const combinedEF = (Number(supply.value) || 0) + (Number(wastewater.value) || 0);
+  const combinedEF = numberOr(supply.value) + numberOr(wastewater.value);
   const value = volume * combinedEF * years;
 
   return traced({

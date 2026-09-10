@@ -45,6 +45,7 @@ const forecast = require('./capital-forecast');
 const attribution = require('./capital-attribution');
 const { round, sum } = require('./capital-math');
 const { _normalise, pipeline } = require('./capital-pipeline');
+const { numberOr } = require('../../../shared/numbers');
 
 // ---------------------------------------------------------------------------
 // Capital
@@ -157,7 +158,7 @@ function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
    * two must never share one.
    */
   const weightOf = (i) => basis === 'commitment'
-    ? Math.abs(Number(i.commitment) || 0)
+    ? Math.abs(numberOr(i.commitment))
     : Math.abs(attribution.drawnShare(i, payments).outstanding || 0);
 
   const scored = held.filter(i => e(i).dataQuality && Number.isFinite(e(i).dataQuality.score));
@@ -326,7 +327,7 @@ function portfolioRows(book) {
     const repaid    = sum(pays.filter(x => x.kind === 'repayment'),    x => x.amount);
     const paid      = disbursed - repaid;
     const committed = sum(held, i => i.commitment);
-    const allocated = Number(p.allocatedBudget) || 0;
+    const allocated = numberOr(p.allocatedBudget);
 
     const incurred = sum(held, i => (i.emissions || {}).incurred_tCO2e);
     const forward  = sum(held, i => (i.emissions || {}).forward_tCO2e);

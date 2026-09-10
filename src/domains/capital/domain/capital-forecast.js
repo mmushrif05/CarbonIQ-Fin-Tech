@@ -39,10 +39,11 @@
 
 const { DEPLOYING_STATUSES } = require('./book-model');
 const attribution = require('./capital-attribution');
+const { numberOr } = require('../../../shared/numbers');
 
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n) * f) / f;
 };
 
 /**
@@ -146,9 +147,9 @@ function investmentSeries(inv, {
   const factor = attribution.factorFor(inv, payments, attributionBasis);
   const stored = inv.emissions || {};
   const e = {
-    forward_tCO2e:   (Number(stored.forward_tCO2e)   || 0) * factor,
-    reduction_tCO2e: (Number(stored.reduction_tCO2e) || 0) * factor,
-    avoided_tCO2e:   (Number(stored.avoided_tCO2e)   || 0) * factor,
+    forward_tCO2e:   numberOr(stored.forward_tCO2e) * factor,
+    reduction_tCO2e: numberOr(stored.reduction_tCO2e) * factor,
+    avoided_tCO2e:   numberOr(stored.avoided_tCO2e) * factor,
   };
   const first = fromYear || new Date().getFullYear();
 
@@ -160,14 +161,14 @@ function investmentSeries(inv, {
      series reconciling with the roll-up. `startYear` is kept as context and
      shown; it does not move the forward figure. */
   const started = Number(inv.startYear) || first;
-  const term = Math.max(1, Math.round(Number(inv.tenorYears) || 1));
+  const term = Math.max(1, Math.round(numberOr(inv.tenorYears, 1)));
   const remaining = Math.max(1, Math.min(term, started + term - first));
 
   const profileId = PROFILES[inv.phasing] ? inv.phasing : DEFAULT_PROFILE;
   const w = weightsFor(profileId, remaining);
 
   const span = Math.max(1, Math.round(years || remaining));
-  const decline = Math.max(0, Number(gridDeclinePctPerYear) || 0) / 100;
+  const decline = Math.max(0, numberOr(gridDeclinePctPerYear)) / 100;
 
   const rows = [];
   for (let k = 0; k < span; k++) {
@@ -185,9 +186,9 @@ function investmentSeries(inv, {
       /* Full precision. Rounding every year and then adding them up drifts —
          it put the series 0.1 tCO2e away from the roll-up it has to reconcile
          with. Rounding happens once, where a figure is displayed. */
-      forward_tCO2e:   (Number(e.forward_tCO2e)   || 0) * share,
-      reduction_tCO2e: (Number(e.reduction_tCO2e) || 0) * share,
-      avoided_tCO2e:   (Number(e.avoided_tCO2e)   || 0) * share * gridFactor,
+      forward_tCO2e:   numberOr(e.forward_tCO2e) * share,
+      reduction_tCO2e: numberOr(e.reduction_tCO2e) * share,
+      avoided_tCO2e:   numberOr(e.avoided_tCO2e) * share * gridFactor,
     });
   }
 
@@ -301,7 +302,7 @@ function _longestTerm(investments, first) {
   let span = 1;
   for (const i of investments) {
     const started = Number(i.startYear) || first;
-    const term = Math.max(1, Math.round(Number(i.tenorYears) || 1));
+    const term = Math.max(1, Math.round(numberOr(i.tenorYears, 1)));
     span = Math.max(span, Math.max(1, Math.min(term, started + term - first)));
   }
   return Math.min(30, span);
@@ -323,7 +324,7 @@ function capitalSeries(book, { fromYear, years, drawdownYears = 3 } = {}) {
      the whole of it — $66.3M where $199M was committed and undrawn. Only the
      screen showed it: the unit test called this function directly, where the
      default did apply. */
-  const span = Math.max(1, Math.round(Number(years) || 10));
+  const span = Math.max(1, Math.round(numberOr(years, 10)));
   const pace = Math.max(1, Math.round(drawdownYears));
 
   const held = book.investments.filter(i => DEPLOYING_STATUSES.includes(i.status));
@@ -335,7 +336,7 @@ function capitalSeries(book, { fromYear, years, drawdownYears = 3 } = {}) {
      been over-drawn cannot lend its excess to another one's undrawn balance,
      and netting them would report capital as available that nobody can call. */
   const undrawnTotal = held.reduce(
-    (t, inv) => t + Math.max(0, (Number(inv.commitment) || 0) - paidFor(inv.id)), 0);
+    (t, inv) => t + Math.max(0, numberOr(inv.commitment) - paidFor(inv.id)), 0);
 
   const rows = [];
   let exactPlanned = 0;

@@ -44,6 +44,7 @@ const book = require('../infrastructure/capital-book');
 const gcfStore = require('../../gcf/infrastructure/store');
 const screening = require('../../gcf/domain/screening');
 const store = require('../../../platform/database/store');
+const { numberOr } = require('../../../shared/numbers');
 
 const err = (statusCode, code, message, remedy) => {
   const e = new Error(message);
@@ -135,7 +136,7 @@ async function _adopt(orgId, input, project, source, portfolio) {
      this book would report a position the bank does not hold. An explicit
      override wins, because a term sheet is what actually decides it. */
   const commitment = input.commitment === undefined || input.commitment === null || input.commitment === ''
-    ? Number(fin.dfcc) || 0
+    ? numberOr(fin.dfcc)
     : Number(input.commitment);
   if (!Number.isFinite(commitment) || commitment < 0) {
     throw err(400, 'BAD_COMMITMENT', `commitment must be a number of zero or more; received "${input.commitment}".`);
@@ -151,7 +152,7 @@ async function _adopt(orgId, input, project, source, portfolio) {
     status: 'pipeline',
     delivery: 'not_started',
     commitment,
-    projectCost: Number(fin.totalCost) || 0,
+    projectCost: numberOr(fin.totalCost),
     startYear: input.startYear === undefined ? null : input.startYear,
     phasing: input.phasing || null,
     taxonomy: (project.taxonomy && project.taxonomy.band) || null,

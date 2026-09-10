@@ -25,6 +25,7 @@
 /** @typedef {import('../../shared/types').AppError} AppError */
 
 const config = require('../config');
+const { numberOr } = require('../../shared/numbers');
 
 /** Time reserved to serialise and return a response after the last call. */
 const RESPONSE_MARGIN_MS = 2500;
@@ -63,7 +64,7 @@ class Deadline {
    * catchable error while this process is still alive to explain it.
    */
   timeoutFor(preferredMs = config.anthropicTimeoutMs) {
-    return Math.max(1000, Math.min(Number(preferredMs) || 0, this.remaining()));
+    return Math.max(1000, Math.min(numberOr(preferredMs), this.remaining()));
   }
 
   /**

@@ -43,13 +43,10 @@
 
 const record = require('./record');
 const emissions = require('./emissions');
+const { numberOr, numberOrNull } = require('../../../shared/numbers');
 
 /** Absence before number, everywhere. `Number(null)` is 0 and 0 is finite. */
-const _num = (v) => {
-  if (v === null || v === undefined || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+const _num = numberOrNull;
 const _traced = (t) => (t && typeof t === 'object' ? _num(t.value) : null);
 
 const round = (n, dp = 3) => (n === null ? null : Math.round(n * 10 ** dp) / 10 ** dp);
@@ -376,7 +373,7 @@ function recommend(projects = [], { accreditation, weights, take = 2 } = {}) {
     .filter(r => r.score !== null)
     .sort((a, b) => b.score - a.score);
 
-  const n = Math.max(1, Math.min(Number(take) || 2, all.length));
+  const n = Math.max(1, Math.min(numberOr(take, 2), all.length));
   const selected = all.slice(0, n);
   const runnersUp = all.slice(n);
   const byId = new Map(projects.map(p => [p.id, p]));

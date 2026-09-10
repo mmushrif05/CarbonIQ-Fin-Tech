@@ -28,6 +28,7 @@
 const registry    = require('./partc-registry');
 const { fallback } = require('../../../platform/observability/logger');
 const { splitStageTotals } = require('../domain/ghg-scopes');
+const { numberOr } = require('../../../shared/numbers');
 const assessments = require('./partc-assessments');
 
 /** The best data-quality score a physical-activity assessment can reach. */
@@ -35,14 +36,23 @@ const BEST_ACHIEVABLE_SCORE = 2;   // Option 2a — primary emission factors
 
 function _round(n, dp = 2) {
   const f = Math.pow(10, dp);
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n, 0) * f) / f;
 }
 
-/** A number from the book, or zero when the policy has since been removed. */
-const _policyNum = (policy, field) => (policy ? Number(policy[field]) || 0 : 0);
+/**
+ * A number from the book, or zero when the policy has since been removed.
+ *
+ * Zero is a defensible default here and not a silent one: `premium`,
+ * `projectCost` and `gifa_m2` are `required()` on the registry schema and
+ * `reinsuranceCeded` defaults to 0, so the only way this returns a stand-in is
+ * a row whose policy is no longer on the book. That case is not left to be
+ * inferred from a zero — the row carries `policyOnBook: false` and the count
+ * travels with the disclosed score.
+ */
+const _policyNum = (policy, field) => (policy ? numberOr(policy[field], 0) : 0);
 
 /** Two decimals, as a disclosed weighted score is printed. */
-const _dp2 = n => (n === null || n === undefined) ? null : Math.round(Number(n) * 100) / 100;
+const _dp2 = n => (n === null || n === undefined) ? null : Math.round(numberOr(n, 0) * 100) / 100;
 
 /** One GHG-scope score from a locked assessment, null where it was never recorded. */
 function _scopeScore(assessment, scope) {
@@ -66,20 +76,22 @@ function _scopeScore(assessment, scope) {
  */
 function _premiumWeighted(rows, field, { premiumField = 'premium' } = {}) {
   const scored = rows.filter(r =>
-    r[field] !== null && r[field] !== undefined && _num(r[premiumField]) > 0);
-  const premium = scored.reduce((n, r) => n + _num(r[premiumField]), 0);
+    r[field] !== null && r[field] !== undefined && numberOr(r[premiumField]) > 0);
+  const premium = scored.reduce((n, r) => n + numberOr(r[premiumField]), 0);
   return {
     weighted: premium > 0
-      ? _dp2(scored.reduce((n, r) => n + _num(r[premiumField]) * r[field], 0) / premium)
+      ? _dp2(scored.reduce((n, r) => n + numberOr(r[premiumField]) * r[field], 0) / premium)
       : null,
     premiumBasis: premiumField === 'cededPremium' ? 'ceded premium (treaty)' : 'premium',
     premiumTotal: _round(premium),
     policiesScored: scored.length,
-    policiesWithoutScore: rows.length - scored.length
+    policiesWithoutScore: rows.length - scored.length,
+    /* Excluded by the weight rather than by the score: a policy off the book
+       weighs zero, so it cannot reach the disclosed figure at all. */
+    policiesNotOnBook: rows.filter(r => r.policyOnBook === false).length
   };
 }
 
-const _num = v => Number(v) || 0;
 
 /**
  * The full reporting-year position.
@@ -131,6 +143,11 @@ async function rollUp(orgId, reportingYear, { fields = ROLLUP_FIELDS } = {}) {
     dataQualityScore:    a.dataQuality.score,
     dqScope1and2: _scopeScore(a, 'scope1and2'),
     dqScope3:     _scopeScore(a, 'scope3'),
+    /* Whether the policy this assessment was locked against is still on the
+       book. A removed policy leaves every figure below reading zero, and a
+       zero premium and an unrecorded one are the same number; this is the
+       field that tells them apart, and its count travels with the score. */
+    policyOnBook: policyById.has(a.policyId),
     premium:     _policyNum(policyById.get(a.policyId), 'premium'),
     /* Box 6-4 (p.108) weights treaty reinsurance by ceded premium instead of
        premium. The field is `reinsuranceCeded` on the policy; the roll-up
@@ -169,13 +186,13 @@ async function rollUp(orgId, reportingYear, { fields = ROLLUP_FIELDS } = {}) {
   const stageTotals = { A4: 0, 'A5.1': 0, 'A5.2': 0, 'A5.3': 0, B1: 0, B4: 0, B7: 0 };
   for (const a of locked) {
     const mv = a.moduleValues || {};
-    stageTotals.A4 += Number(mv.a4) || 0;
+    stageTotals.A4 += numberOr(mv.a4);
     for (const sub of (mv.a5Breakdown || [])) {
-      if (stageTotals[sub.module] !== undefined) stageTotals[sub.module] += Number(sub.value) || 0;
+      if (stageTotals[sub.module] !== undefined) stageTotals[sub.module] += numberOr(sub.value);
     }
-    stageTotals.B1 += Number(mv.b1) || 0;
-    stageTotals.B4 += Number(mv.b4) || 0;
-    stageTotals.B7 += Number(mv.b7) || 0;
+    stageTotals.B1 += numberOr(mv.b1);
+    stageTotals.B4 += numberOr(mv.b4);
+    stageTotals.B7 += numberOr(mv.b7);
   }
   const ghgScopes = splitStageTotals(stageTotals, useStage > 0);
 
@@ -224,7 +241,7 @@ async function rollUp(orgId, reportingYear, { fields = ROLLUP_FIELDS } = {}) {
     scope3:     _premiumWeighted(rows, 'dqScope3'),
     /* Treaty reinsurance weights by ceded premium instead (Box 6-4, p.108).
        Reported only where the book actually carries ceded premium. */
-    ceded: rows.some(r => _num(r.cededPremium) > 0)
+    ceded: rows.some(r => numberOr(r.cededPremium) > 0)
       ? _premiumWeighted(rows, 'dataQualityScore', { premiumField: 'cededPremium' })
       : null
   };

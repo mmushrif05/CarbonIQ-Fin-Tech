@@ -22,6 +22,7 @@
 
 const { traced, assumption, sumValues } = require('./provenance');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 const MODES = ['road', 'sea', 'rail', 'air'];
 
@@ -32,7 +33,7 @@ const MODES = ['road', 'sea', 'rail', 'air'];
  * @returns {Object} traced value in tonnes
  */
 function massTonnes(material) {
-  const qty = Number(material.quantity) || 0;
+  const qty = numberOr(material.quantity);
   const assumptions = [];
   let factorRef = null;
 
@@ -61,7 +62,7 @@ function massTonnes(material) {
       'notable', { material: material.name, factorKey: factorRef.key }));
   }
 
-  const value = qty * (Number(factorRef.value) || 0) / 1000;
+  const value = qty * numberOr(factorRef.value) / 1000;
 
   return traced({
     value, unit: 't', module: 'A4', label: `Mass — ${material.name}`,
@@ -86,12 +87,12 @@ function a4Material(material, distance = {}) {
   const legs = {};
 
   for (const mode of MODES) {
-    const km = Number(distance[mode]) || 0;
+    const km = numberOr(distance[mode]);
     legs[`${mode}_km`] = km;
     if (km <= 0) continue;
     const ef = factors.transportEF(mode);
     usedFactors.push(ef);
-    perTonne += km * (Number(ef.value) || 0);
+    perTonne += km * numberOr(ef.value);
   }
 
   if (perTonne === 0) {

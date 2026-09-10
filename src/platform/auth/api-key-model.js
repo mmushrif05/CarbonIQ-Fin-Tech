@@ -26,6 +26,7 @@ const crypto = require('crypto');
 const { hashApiKey } = require('./api-key');
 const { normaliseScopes } = require('./scopes');
 const { firebaseKeyStore, FIREBASE_PATH: KEYS_PATH } = require('./key-store');
+const { numberOr } = require('../../shared/numbers');
 
 /** A key store, or a raw Firebase handle for callers that still hold one. */
 const ks = s => (s && typeof s.ref === 'function' ? firebaseKeyStore(s) : s);
@@ -119,7 +120,7 @@ async function rotateApiKey(db, hashedKey, { graceDays = 7, createdBy } = /** @t
   const current = await getApiKeyRecord(db, hashedKey);
   if (!current) throw Object.assign(new Error(`No key ${hashedKey.slice(0, 16)}….`), { code: 'KEY_NOT_FOUND' });
   if (!current.active) throw Object.assign(new Error('A revoked key cannot be rotated; issue a new one.'), { code: 'KEY_REVOKED' });
-  const days = Math.max(0, Number(graceDays) || 0);
+  const days = Math.max(0, numberOr(graceDays));
   const graceEnd = new Date(Date.now() + days * 86_400_000).toISOString();
   const issued = await createApiKey(db, {
     orgId: current.orgId, orgName: current.orgName, keyName: current.keyName,

@@ -40,6 +40,7 @@ const { saveRun: saveAgentRun, updateRun: updateAgentRun } = require('./run-stor
 const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../../shared/models/agent-run');
 const { Deadline } = require('./deadline');
 const { asError } = require('../../shared/types');
+const { numberOr } = require('../../shared/numbers');
 
 // Safety guard: never run more than this many loop iterations per agent run
 const MAX_ITERATIONS = 20;
@@ -218,7 +219,7 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
          declare what a turn should cost it. */
       const params = {
         model:      config.anthropicModel,
-        max_tokens: Number(profile.maxTokens) || 32000,
+        max_tokens: numberOr(profile.maxTokens, 32000),
         system:     cachedSystem,
         tools:      cachedTools,
         messages:   cachedMessages

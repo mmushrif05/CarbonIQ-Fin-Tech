@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    CarbonIQ — the Datum Solutions mark
 
@@ -92,7 +93,8 @@ const Brand = (() => {
    */
   function render(root = document) {
     const nodes = root.querySelectorAll('[data-brand]');
-    nodes.forEach((el) => {
+    nodes.forEach((node) => {
+      const el = /** @type {HTMLElement} */ (node);
       if (el.dataset.brandRendered === 'true') return;
       const build = VARIANTS[el.dataset.brand] || VARIANTS.footer;
       el.innerHTML = build();

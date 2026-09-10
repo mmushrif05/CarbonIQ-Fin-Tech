@@ -1,0 +1,21 @@
+{
+  "//": "The suite is checked on its own globals too. `types: [jest]` puts describe/test/expect in scope; adding them to the root configuration would put them in scope for src/, where a production file calling `expect()` would then type-check clean. checkJs stays false here as it does everywhere: a file joins by carrying // @ts-check, never by configuration.",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "target": "es2022",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["**/*.js"],
+  "exclude": ["../node_modules", "../dist"]
+}

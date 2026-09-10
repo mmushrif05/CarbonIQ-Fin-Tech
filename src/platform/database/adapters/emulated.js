@@ -14,6 +14,8 @@
 
 'use strict';
 
+const { intOr } = require('../../../shared/numbers');
+
 /** @typedef {import('../../../shared/types').AppError} AppError */
 
 /** The value at a field name, which may be a dotted path into the record. */
@@ -106,7 +108,7 @@ function queryOver(rows, { where = {}, limit = null, orderBy = 'created_at', fie
  * @param {{limit?: number, cursor?: string, where?: Record<string, any>}} [opts]
  */
 function pageOver(rows, { limit = 50, cursor = undefined, where = {} } = {}) {
-  const size = Math.min(500, Math.max(1, Number(limit) || 50));
+  const size = Math.min(500, Math.max(1, intOr(limit, 50)));
   let offset = 0;
   if (cursor) {
     offset = Number(Buffer.from(String(cursor), 'base64url').toString('utf8'));

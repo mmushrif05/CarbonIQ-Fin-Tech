@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * A report states what was measured, attributes what the entity declared, and
  * names what is missing. It never invents.

@@ -23,17 +23,18 @@
 
 const { traced, assumption } = require('./provenance');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 /** replacements within the window, excluding the original installation */
 function replacementCount(useStageYears, serviceLifeYears) {
-  const years = Number(useStageYears) || 0;
-  const life  = Number(serviceLifeYears) || 0;
+  const years = numberOr(useStageYears);
+  const life  = numberOr(serviceLifeYears);
   if (years <= 0 || life <= 0) return 0;
   return Math.max(Math.ceil(years / life) - 1, 0);
 }
 
 function b4Replacement({ useStageYears, chargeKg, gwpValue, hvacServiceLifeYears } = {}) {
-  const years = Number(useStageYears) || 0;
+  const years = numberOr(useStageYears);
 
   if (years <= 0) {
     return traced({
@@ -51,11 +52,11 @@ function b4Replacement({ useStageYears, chargeKg, gwpValue, hvacServiceLifeYears
     : factors.b1b4Default('hvacServiceLife_years');
 
   const eolRef = factors.b1b4Default('eolLossRate');
-  const life   = Number(lifeRef.value) || 20;
+  const life   = numberOr(lifeRef.value, 20);
   const reps   = replacementCount(years, life);
-  const charge = Number(chargeKg) || 0;
-  const gwp    = Number(gwpValue) || 0;
-  const value  = reps * charge * gwp * (Number(eolRef.value) || 0);
+  const charge = numberOr(chargeKg);
+  const gwp    = numberOr(gwpValue);
+  const value  = reps * charge * gwp * numberOr(eolRef.value);
 
   const assumptions = [
     assumption('B4_HVAC_ONLY',

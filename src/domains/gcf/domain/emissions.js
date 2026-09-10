@@ -51,17 +51,12 @@
 'use strict';
 
 const record = require('./record');
+const { numberOrNull } = require('../../../shared/numbers');
 
 /** A figure is present only if it is actually a number. `Number(null)` is 0
  *  and 0 is finite; that mistake has produced three defects in this codebase
  *  already, so absence is tested before the number is. */
-const _num = (t) => {
-  if (!t || typeof t !== 'object') return null;
-  const v = t.value;
-  if (v === null || v === undefined || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+const _num = (t) => (t && typeof t === 'object' ? numberOrNull(t.value) : null);
 const _tier = (t) => (t && typeof t.tier === 'string' ? t.tier : null);
 
 const TIER_RANK = { measured: 1, modelled: 2, benchmark: 3, declared: 4 };

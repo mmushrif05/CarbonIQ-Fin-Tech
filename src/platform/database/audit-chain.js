@@ -23,6 +23,7 @@
 const crypto = require('crypto');
 const client = require('./client');
 const { translate } = require('./errors');
+const { intOr } = require('../../shared/numbers');
 
 const GENESIS = '0'.repeat(64);
 const LOCK_KEY = 7_364_002;
@@ -104,7 +105,7 @@ async function verify({ batch = 1000 } = {}) {
 }
 
 async function tail({ orgId, limit = 50 } = /** @type {{orgId?: any, limit?: any}} */ ({})) {
-  const params = [Math.min(500, Math.max(1, Number(limit) || 50))];
+  const params = [Math.min(500, Math.max(1, intOr(limit, 50)))];
   let sql = `SELECT seq, org_id, ${ISO} AS at, actor, action, resource, request_id, detail, hash FROM audit_events`;
   if (orgId) { sql += ' WHERE org_id = $2'; params.push(orgId); }
   sql += ' ORDER BY seq DESC LIMIT $1';

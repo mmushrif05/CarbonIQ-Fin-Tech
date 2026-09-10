@@ -33,6 +33,8 @@
 
 'use strict';
 
+const { numberOr } = require('../../../shared/numbers');
+
 const SCOPE_1_2 = 'scope1and2';
 const SCOPE_3   = 'scope3';
 
@@ -87,10 +89,10 @@ const INSURER_NOTE =
 /** Emissions by stage, as the engine reported them. */
 function stageEmissions(result) {
   const m = result.modules;
-  const val = x => (x ? Number(x.value) || 0 : 0);
+  const val = x => (x ? numberOr(x.value) : 0);
   const sub = code => {
     const b = (m.a5Breakdown || []).find(x => x.module === code);
-    return b ? Number(b.value) || 0 : 0;
+    return b ? numberOr(b.value) : 0;
   };
   return {
     A4:     val(m.a4),
@@ -106,7 +108,7 @@ function stageEmissions(result) {
 const CONSTRUCTION_STAGES = ['A4', 'A5.1', 'A5.2', 'A5.3'];
 const USE_STAGE_STAGES    = ['B1', 'B4', 'B7'];
 
-const _r2 = n => Math.round((Number(n) || 0) * 100) / 100;
+const _r2 = n => Math.round(numberOr(n) * 100) / 100;
 
 /**
  * Split a finished run into the insured's scope 1 and 2 combined, and the
@@ -119,7 +121,7 @@ const _r2 = n => Math.round((Number(n) || 0) * 100) / 100;
 function splitByGhgScope(result) {
   return splitStageTotals(
     stageEmissions(result),
-    (Number(result.policy && result.policy.useStageYears) || 0) > 0);
+    numberOr(result.policy && result.policy.useStageYears) > 0);
 }
 
 /**

@@ -33,6 +33,7 @@ const sensitivity           = require('./sensitivity');
 const { runChecks }         = require('./checks');
 const { collectAssumptions, collectFactors } = require('./provenance');
 const factors               = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 /**
  * @param {Object} input
@@ -62,7 +63,7 @@ function _runPartC(input = {}) {
   const beyond     = input.beyondPcaf || {};
   const opts       = input.options    || {};
 
-  const gifa = Number(site.gifa_m2) || 0;
+  const gifa = numberOr(site.gifa_m2);
 
   // --- 1. attribution -------------------------------------------------------
   const attribution = attributionFactor(policy);
@@ -124,7 +125,7 @@ function _runPartC(input = {}) {
     hasBoq: materials.length > 0,
     hasEPD: !!input.hasEPD,
     reportedEmissions: input.reportedEmissions || null,
-    projectCost: Number(policy.projectCost) || 0,
+    projectCost: numberOr(policy.projectCost),
     customerIntensity: !!input.customerIntensity,
     annualBasis: /annual|blanket/i.test(String(policy.basis || '')),
     option: input.dataQualityOption || null,

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// @ts-check
 /**
  * Seed the PCAF Part C demo book — Ceylon Insurance PLC, FY2026.
  *

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Key provisioning — issue, scope, expire, rotate, revoke — against a
  * Firebase stand-in that records what was written.

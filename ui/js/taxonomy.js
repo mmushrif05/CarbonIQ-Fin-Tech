@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    CarbonIQ — Taxonomy Alignment Module
    ============================================================
@@ -108,7 +109,6 @@ const Taxonomy = (() => {
     grid.innerHTML = FRAMEWORKS.map(fw => {
       const tier = _classify(fw, intensity);
       const nextThreshold = fw.tiers.find(t => t.max !== Infinity)?.max ?? 500;
-      const topThreshold  = fw.tiers[fw.tiers.length - 2]?.max ?? nextThreshold;
       const barPct = Math.min(Math.round((intensity / maxThreshold) * 100), 100);
       const limitPct = Math.min(Math.round((nextThreshold / maxThreshold) * 100), 100);
 
@@ -187,8 +187,8 @@ const Taxonomy = (() => {
           || null;
         if (intensity) {
           _currentIntensity = Math.round(intensity);
-          const inp = $$('tax-intensity-input');
-          if (inp) inp.value = _currentIntensity;
+          const inp = /** @type {HTMLInputElement|null} */ ($$('tax-intensity-input'));
+          if (inp) inp.value = String(_currentIntensity);
           _renderCards(_currentIntensity);
           return;
         }
@@ -199,8 +199,8 @@ const Taxonomy = (() => {
     const demo = DEMO_PROJECTS.find(p => p.id === projectId);
     if (demo?.intensity) {
       _currentIntensity = demo.intensity;
-      const inp = $$('tax-intensity-input');
-      if (inp) inp.value = _currentIntensity;
+      const inp = /** @type {HTMLInputElement|null} */ ($$('tax-intensity-input'));
+      if (inp) inp.value = String(_currentIntensity);
       _renderCards(_currentIntensity);
     }
   }
@@ -227,12 +227,13 @@ const Taxonomy = (() => {
       sel.innerHTML = projects.map(p =>
         `<option value="${p.id}">${p.name}</option>`
       ).join('');
-      sel.addEventListener('change', (e) => selectProject(e.target.value));
+      sel.addEventListener('change', (e) =>
+        selectProject(/** @type {HTMLSelectElement} */ (e.target).value));
     }
 
     // Set initial intensity input
-    const inp = $$('tax-intensity-input');
-    if (inp) inp.value = _currentIntensity;
+    const inp = /** @type {HTMLInputElement|null} */ ($$('tax-intensity-input'));
+    if (inp) inp.value = String(_currentIntensity);
 
     _renderCards(_currentIntensity);
   }

@@ -158,16 +158,45 @@ describe('The type check covers the platform and never regresses (G1)', () => {
      (`npm run docs:typecheck-worklist`) and this holds the document to the
      tree in both directions: every unchecked file is listed, and every listed
      file is genuinely unchecked. */
-  test('the worklist names exactly the files still to join', () => {
-    const src = walk(path.join(ROOT, 'src'));
-    const unchecked = src.filter(f => !/^\s*\/\/ @ts-check/m.test(fs.readFileSync(f, 'utf8').slice(0, 400))).map(rel).sort();
+  test('the worklist names exactly the files still to join, across all three trees', () => {
+    const TREES = [
+      ['src', 'netlify/functions', 'scripts'],   // the server, on Node's globals
+      ['ui/js'],                                 // the browser, on its own
+      ['tests'],                                 // the suite, on Jest's
+    ];
+    const all = TREES.flatMap(dirs => dirs.flatMap(d => walk(path.join(ROOT, d))));
+    const carries = f => /^\s*\/\/ @ts-check/m.test(fs.readFileSync(f, 'utf8').slice(0, 400));
+    const unchecked = all.filter(f => !carries(f)).map(rel).sort();
+
     const doc = fs.readFileSync(path.join(ROOT, 'docs/TYPECHECK-WORKLIST.md'), 'utf8');
     const listed = [...doc.matchAll(/^\| `([^`]+)` \| \d+ \|$/gm)].map(m => m[1]).sort();
     expect(listed).toEqual(unchecked);
 
-    const claimed = Number((doc.match(/Checked: \*\*(\d+)\*\*/) || [])[1]);
-    expect(claimed).toBe(src.length - unchecked.length);
-    expect(claimed).toBeGreaterThan(unchecked.length);
+    const headline = Number((doc.match(/Checked across all three: \*\*(\d+)\*\*/) || [])[1]);
+    const perTree = [...doc.matchAll(/^Checked: \*\*(\d+)\*\*/gm)].map(m => Number(m[1]));
+    expect(perTree.length).toBe(TREES.length);
+    expect(headline).toBe(all.length - unchecked.length);
+    expect(perTree.reduce((a, b) => a + b, 0)).toBe(headline);
+  });
+
+  /* The generator measures each file by writing the pragma into it and running
+     that tree's own check. Five scripts start with a shebang, and `#!` is only
+     legal on line one — a pragma pushed above it makes the file a syntax
+     error, which tsc reports *instead of* the type errors, so every other file
+     in the tree measures as clean. That is how the src tree briefly reported
+     10 errors where it has 416, and it is the same failure mode as the stale
+     counts this document was rewritten to end: wrong, and reading as measured. */
+  test('the pragma goes after a shebang, never above it', () => {
+    const gen = fs.readFileSync(path.join(ROOT, 'scripts/generate-typecheck-worklist.js'), 'utf8');
+    expect(gen).toMatch(/startsWith\('#!'\)/);
+
+    for (const f of walk(path.join(ROOT, 'scripts'))) {
+      const lines = fs.readFileSync(f, 'utf8').split('\n');
+      if (!lines[0].startsWith('#!')) continue;
+      expect(lines.slice(1).join('\n')).not.toMatch(/^#!/m);
+      const pragma = lines.findIndex(l => /^\s*\/\/ @ts-check/.test(l));
+      if (pragma !== -1) expect(pragma).toBeGreaterThan(0);
+    }
   });
 
   test('the check is strict everywhere it is affordable, and that cannot quietly relax', () => {
@@ -186,6 +215,41 @@ describe('The type check covers the platform and never regresses (G1)', () => {
     }
     const ci = fs.readFileSync(path.join(ROOT, '.github/workflows/fintech-ci.yml'), 'utf8');
     expect(ci).toMatch(/npm run typecheck/);
+  });
+
+  /* `ui/js` (12,741 lines) and `tests` (22,048) used to be outside the check
+     entirely — the frontend being the largest consumer of these API responses
+     and the place four mechanical defects have shipped. They are in now, on
+     three configurations rather than one, and that separation is the point:
+     `lib: dom` in the server's configuration would let a server module reach
+     for `document` and still check clean, and `types: [jest]` there would do
+     the same for a production file calling `expect()`. */
+  test('the browser and the suite are checked too, each on its own globals', () => {
+    const read = f => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8')).compilerOptions;
+    const server = read('jsconfig.json');
+    const browser = read('ui/jsconfig.json');
+    const suite = read('tests/jsconfig.json');
+
+    for (const cfg of [browser, suite]) {
+      expect(cfg.checkJs).toBe(false);      // a file joins by pragma, never by configuration
+      expect(cfg.strict).toBe(true);
+      expect(cfg.noImplicitAny).toBe(false);
+    }
+
+    expect(browser.lib).toContain('dom');
+    expect(server.lib || []).not.toContain('dom');
+    expect(suite.types).toContain('jest');
+    expect(server.types).not.toContain('jest');
+    expect(browser.types).toEqual([]);
+
+    /* The application's own global surface is declared once rather than
+       rediscovered by every adopting file. */
+    expect(fs.existsSync(path.join(ROOT, 'ui/globals.d.ts'))).toBe(true);
+
+    const script = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).scripts.typecheck;
+    for (const cfg of ['jsconfig.json', 'ui/jsconfig.json', 'tests/jsconfig.json']) {
+      expect(script).toContain(cfg);
+    }
   });
 });
 
