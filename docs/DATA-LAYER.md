@@ -237,7 +237,7 @@ deployment's runbook; do not quote these until measured there.
 ## Testing
 
 `npm test` runs against the in-memory store. `npm run test:postgres` runs the
-**same 98 suites** against PostgreSQL — every test that touches storage runs
+**same 100 suites** against PostgreSQL — every test that touches storage runs
 on the relational store, and each Jest worker gets its own schema
 (`test_w1`, `test_w2` …) so suites stay parallel. `npm run test:scale` runs
 the ten-thousand-row roll-up alone, in band, and enforces the second. CI runs

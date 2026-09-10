@@ -25,6 +25,10 @@ const errorHandler = require('./platform/http/error-handler');
 const audit = require('./platform/observability/audit');
 const logger = require('./platform/observability/logger');
 const errors = require('./platform/observability/errors');
+const envelope = require('./platform/http/envelope');
+const jobQueue = require('./platform/jobs/queue');
+/* The job handlers: the engines, registered on the platform's queue. */
+require('./jobs');
 const v1Router = require('./platform/http/router');
 
 const app = express();
@@ -53,6 +57,9 @@ if (config.env !== 'test') {
 
 // Audit trail — logs every request for compliance
 app.use(audit);
+
+// The response envelope, where the caller asks for it (docs/API-CONTRACT.md)
+app.use(envelope);
 
 // ---------------------------------------------------------------------------
 // Static UI — serves the ui/ directory for local development.
@@ -121,6 +128,9 @@ app.get('/health', async (_req, res) => {
       errorTracking: errors.configured(),
       metrics: '/v1/metrics'
     },
+    /* The job queue: which mode, how deep, and how a queued job gets worked. */
+    jobs: await jobQueue.health(),
+    contract: { openapi: '/v1/openapi.json', envelope: 'opt-in; see docs/API-CONTRACT.md' },
     storage: await (async () => {
       const store = require('./platform/database/store');
       /* On PostgreSQL the probe also answers the async half — reachable, and

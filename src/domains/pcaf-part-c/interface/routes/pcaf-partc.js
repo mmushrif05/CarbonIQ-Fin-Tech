@@ -30,6 +30,9 @@
 const { Router }   = require('express');
 const { fallback } = require('../../../../platform/observability/logger');
 const apiKeyAuth   = require('../../../../platform/auth/api-key');
+const { sendList, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const validate     = require('../../../../platform/http/validate');
 const { defaultLimiter, agentLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -153,7 +156,7 @@ function _toEngineInput(body) {
 // ---------------------------------------------------------------------------
 // GET /options — dropdowns for the client form
 // ---------------------------------------------------------------------------
-router.get('/options', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/options', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Dropdown options for the client form' }), (_req, res) => {
   res.json({ options: factors.options() });
 });
 
@@ -176,14 +179,14 @@ router.get('/options', apiKeyAuth, defaultLimiter, (_req, res) => {
 // Published so a reviewer can check the claim rather than take it on trust:
 // every rule names the code that enforces it and the test that proves it.
 // ---------------------------------------------------------------------------
-router.get('/conformance', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/conformance', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'PCAF Part C rule → implementation → proving test' }), (_req, res) => {
   res.json(conformanceMatrix());
 });
 
 // ---------------------------------------------------------------------------
 // GET /factors — every factor, with tier and source
 // ---------------------------------------------------------------------------
-router.get('/factors', apiKeyAuth, defaultLimiter, (req, res) => {
+router.get('/factors', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Every factor table, with tier and source per row', query: { table: 'One table by name; without it every table.' } }), (req, res) => {
   const tables = factors.allTables();
   if (req.query.table) {
     const t = tables[req.query.table];
@@ -278,38 +281,49 @@ router.post('/dq-preview', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // POST /report — PDF, Word or JSON
 // ---------------------------------------------------------------------------
+/**
+ * The assessment report for a validated request body — the engine run, the
+ * registers, the entity's settings, the content model. Shared by the route
+ * and the `partc.report` job, so a document produced by either is the same
+ * document.
+ */
+async function reportFor(orgId, body) {
+  const result    = runPartC(_toEngineInput(body));
+  const registers = buildRegisters(result);
+  /* The reporting entity's own settings — base year, significance
+     threshold, recalculation protocol, currency. A Part C disclosure
+     must state them, and they belong to the entity rather than to the
+     request, so the report reads them from the book. */
+  const settings  = await partcRegistry.getSettings(orgId).catch(fallback('partc.form.getSettings', () => ({})));
+  const report    = buildPartCReport({
+    result, registers, settings, memo: body.memo,
+    meta: {
+      projectName: body.projectName,
+      insurer: settings.insurerName || null,
+      reportingYear: settings.reportingYear,
+      currency: settings.currency,
+      /* The economics the report needs for attribution, per-policy detail
+         and intensity are already in the request as the engine's inputs;
+         carrying them into the meta means an intensity section that is
+         real rather than "not available". */
+      premium:     (body.policy || {}).premium,
+      projectCost: (body.policy || {}).projectCost,
+      gifa_m2:     (body.siteInputs || {}).gifa_m2,
+      ...body.meta
+    },
+    includeWlcaAnnex: body.includeWlcaAnnex
+  });
+  const safeName = String(body.projectName || 'pcaf-part-c')
+    .replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'pcaf-part-c';
+  return { report, safeName };
+}
+
 router.post('/report', apiKeyAuth, defaultLimiter,
   validate({ body: reportRequestSchema }),
+  doc({ summary: 'The assessment report for one policy — JSON, PDF or Word', produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] }),
   async (req, res, next) => {
     try {
-      const result    = runPartC(_toEngineInput(req.body));
-      const registers = buildRegisters(result);
-      /* The reporting entity's own settings — base year, significance
-         threshold, recalculation protocol, currency. A Part C disclosure
-         must state them, and they belong to the entity rather than to the
-         request, so the report reads them from the book. */
-      const settings  = await partcRegistry.getSettings(req.apiKey.orgId).catch(fallback('partc.form.getSettings', () => ({})));
-      const report    = buildPartCReport({
-        result, registers, settings, memo: req.body.memo,
-        meta: {
-          projectName: req.body.projectName,
-          insurer: settings.insurerName || null,
-          reportingYear: settings.reportingYear,
-          currency: settings.currency,
-          /* The economics the report needs for attribution, per-policy detail
-             and intensity are already in the request as the engine's inputs;
-             carrying them into the meta means an intensity section that is
-             real rather than "not available". */
-          premium:     (req.body.policy || {}).premium,
-          projectCost: (req.body.policy || {}).projectCost,
-          gifa_m2:     (req.body.siteInputs || {}).gifa_m2,
-          ...req.body.meta
-        },
-        includeWlcaAnnex: req.body.includeWlcaAnnex
-      });
-
-      const safeName = String(req.body.projectName || 'pcaf-part-c')
-        .replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'pcaf-part-c';
+      const { report, safeName } = await reportFor(req.apiKey.orgId, req.body);
 
       if (req.body.format === 'json') return res.json({ report });
 
@@ -451,10 +465,12 @@ router.post('/runs/:runId/resume', apiKeyAuth, defaultLimiter,
 // ---------------------------------------------------------------------------
 // GET /runs, GET /runs/:runId
 // ---------------------------------------------------------------------------
-router.get('/runs', apiKeyAuth, defaultLimiter, async (req, res, next) => {
+router.get('/runs', apiKeyAuth, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page' }), async (req, res, next) => {
   try {
-    const limit = Math.min(parseInt(req.query.limit, 10) || 20, 100);
-    res.json({ runs: await runStore.listRuns(req.apiKey.orgId, limit) });
+    if (req.query.limit === undefined && req.query.cursor === undefined) {
+      return res.json({ runs: await runStore.listRuns(req.apiKey.orgId, 20) });
+    }
+    sendList(req, res, 'runs', await runStore.listRuns(req.apiKey.orgId, 500));
   } catch (err) { next(err); }
 });
 
@@ -588,3 +604,6 @@ router.post('/agent/disclose', apiKeyAuth, agentLimiter, requireAI,
   });
 
 module.exports = router;
+/* For the job handlers (src/jobs.js): the same report the route builds. */
+module.exports.reportFor = reportFor;
+module.exports.reportRequestSchema = reportRequestSchema;

@@ -13,6 +13,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -28,7 +30,7 @@ const router = Router();
  * the UI, so a screen cannot offer an option the engine would then reject, and
  * the two cannot drift.
  */
-router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res, next) => {
+router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Part A asset classes, archetypes and the data-quality options for each' }), (_req, res, next) => {
   try {
     res.json({
       standard: parta.STANDARD,

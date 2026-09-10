@@ -289,6 +289,31 @@ Closes A6, A8, F1–F4, I1, I2.
 *Exit criterion: a bank's integration team can generate a working client from
 the spec alone.*
 
+> **Delivered** — `docs/API-CONTRACT.md`, `docs/JOBS.md`, `docs/openapi.json`.
+> The OpenAPI 3.1 document is generated from the router — every operation a
+> registered route, its request schema the `validate()` Joi schema in that
+> route's chain converted from `describe()`, its scope from `scopes.js`, its
+> paging and caching from markers in the chain — served at
+> `GET /v1/openapi.json`, committed, and held to the code by
+> `tests/api-contract.test.js`, which also validates the document as OpenAPI
+> 3.1, validates live responses against it in both media types, and proves
+> the exit criterion by generating a client from the document alone and
+> driving the API with it. The envelope `{ data, meta, error }` is opt-in by
+> `Accept`, header or query, every response says which shape it is in, and
+> the legacy shapes stay for the whole of v1 under a written deprecation
+> policy and a changelog (`docs/API-CHANGELOG.md`). Paging on every list
+> with `limit` / `cursor`, unchanged without them. The job queue is the
+> `jobs` table on the one database — `FOR UPDATE SKIP LOCKED`, retry with
+> backoff for transient failures only, stale jobs returned by a sweep —
+> worked by a Netlify background function the API pokes, a ten-minute
+> scheduled sweep, or `npm run worker`; five job types, each calling the
+> function the synchronous route calls; inline mode where no database holds
+> a queue, and the response says so. Reference data answers with
+> `Cache-Control`, `ETag` and `304`. pg-boss was not used: the queue is a
+> table this repository owns, on the same rules as the rest of the schema.
+> A6, A8, F1–F4, I1, I2 closed. Tests: `tests/api-contract.test.js`,
+> `tests/jobs.test.js`.
+
 ### Phase E5 — Structure (2 weeks) · Medium
 
 Closes E1–E3, E6, G1, G2, H1–H4, I3–I5.

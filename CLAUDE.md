@@ -38,6 +38,8 @@ npm run key:rotate -- <key-id> [--grace-days 7]          # Replacement issued; o
 npm run key:revoke -- <key-id>
 npm run key:register-ui  # Register the UI dashboard API key
 npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
+npm run docs:openapi     # Regenerate docs/openapi.json from the router
+npm run worker           # A long-lived job worker beside the database
 
 # Database (PostgreSQL — see docs/DATA-LAYER.md)
 npm run db:migrate      # Apply pending SQL migrations to DATABASE_URL
@@ -60,6 +62,7 @@ docker-compose -f docker/docker-compose.yml up
 ```
 src/
   server.js                 Express entry point + /health
+  jobs.js                   the job handlers — the engines registered on the platform's queue (a composition root)
   domains/                  one directory per bounded context; dependencies point inward
     pcaf-part-a/            domain/ (attribution, denominators, options, estimation, listed-equity/) · interface/{routes,schemas}
     pcaf-part-c/            domain/ (A4, A5, gate, B1/B4/B7, roll-up, DQ, conformance) · application/ (registry, BOQ,
@@ -77,7 +80,9 @@ src/
     config/                 env, CORS, Firebase config
     database/               the storage seam (store.js), PostgreSQL client/document store/migrator/audit chain,
                             Blobs adapter, Firebase DAL — the only require('pg')
-    http/                   router (composition root), schemas barrel, validate, error handler, rate limit, require-ai, ui-config
+    http/                   router (composition root), schemas barrel, validate, error handler, rate limit, require-ai, ui-config,
+                            openapi generator + joi-to-schema, envelope, pagination, reference cache, jobs + metrics routes
+    jobs/                   the queue (a table on the one database, or inline), registry, worker
     observability/          request context, pino logger, error reporter, metrics, audit middleware (JSON line + hash chain)
     ai/                     agent loop, core AI bridge, ai-status, deadline
     bridge/                 Firebase + CarbonIQ core engine bridge (READ-ONLY)
@@ -165,7 +170,7 @@ Dual-mode authentication — every request must use one of:
 
 The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric chars) to bypass Firebase key registration for internal calls.
 
-**Scopes (`src/platform/auth/scopes.js`, `docs/API-SCOPES.md`).** Five: `read` (every GET and the computations that store nothing), `write` (create, change, delete a record), `lock` (lock an assessment — it enters the disclosure, so it is kept apart from write), `assess` (run an engine that persists a run or calls an AI agent), `admin` (reserved). The scope a route requires is resolved from the route itself — method, pattern, and for a status change the body — and enforced from the authentication middleware, so all 140 routes carry one without a decorator on any of them. `docs/API-SCOPES.md` is generated from the running router and a test fails the build when it drifts. A refusal is `403 SCOPE_REQUIRED` naming the scope required, the scopes held and the command that grants it. The exit criterion of E2 is a test: a read-only key is refused when it tries to lock an assessment.
+**Scopes (`src/platform/auth/scopes.js`, `docs/API-SCOPES.md`).** Five: `read` (every GET and the computations that store nothing), `write` (create, change, delete a record), `lock` (lock an assessment — it enters the disclosure, so it is kept apart from write), `assess` (run an engine that persists a run or calls an AI agent), `admin` (reserved). The scope a route requires is resolved from the route itself — method, pattern, and for a status change the body — and enforced from the authentication middleware, so all 146 routes carry one without a decorator on any of them. `docs/API-SCOPES.md` is generated from the running router and a test fails the build when it drifts. A refusal is `403 SCOPE_REQUIRED` naming the scope required, the scopes held and the command that grants it. The exit criterion of E2 is a test: a read-only key is refused when it tries to lock an assessment.
 
 **A key issued before scopes existed is unscoped, not broken.** It keeps everything it could do; every response on it carries `X-Key-Scopes: unscoped`; the audit chain records it; `key:list` counts them. `key:scope` applies scopes and the key is held to them from that moment. Keys can carry an `expiresAt` (401 `KEY_EXPIRED` with the date), and `key:rotate` issues a replacement with the same scopes while the old key runs out over a grace period and then points at the new one. The dashboard key holds `read write lock assess`, not `admin`; the local `DEV_API_KEY` holds everything and boot validation refuses it in production.
 
@@ -174,6 +179,10 @@ The UI dashboard uses `UI_API_KEY` env var (format: `ck_test_` + 32 alphanumeric
 **One place reads the environment (`src/platform/config/index.js`).** Everything read once at load lives on `config`; the variables a deployment context, an operator or a test changes while the process runs — storage backend, database, dashboard key, build stamp — are live getters on `config.runtime`. A test asserts no `process.env` is read anywhere else under `src/`. `config.validate()` names by variable, never by value, what a production deployment cannot run safely with (a default salt, a malformed dashboard key, a non-Postgres `DATABASE_URL`, `DEV_API_KEY` or `STORAGE_BACKEND=memory` in production); a server refuses to start on it, and a serverless function — which cannot refuse — lists the names under `/health` `configured.problems`.
 
 **Observability (`src/platform/observability/`, `docs/OBSERVABILITY.md`).** One pino root writes JSON lines to stdout; the audit middleware runs each request inside an `AsyncLocalStorage` context (`context.js`) holding the request id and the request, and the logger's mixin reads it at write time — so a line written three calls deep carries `requestId`, `orgId` and `actor` without being handed them. `logger.for(module)` names the file on every line; keys, tokens, service accounts and auth headers are redacted by name. A 500, an unhandled rejection, an uncaught exception or a failed invocation is reported through `errors.capture()`: logged with the failing module (the innermost `src/` frame), and sent to Sentry over its envelope API when `SENTRY_DSN` is set — no SDK in the bundle — **awaited before the response goes out**, because a serverless container is frozen the moment the response is sent. Without a DSN it is inert and `/health` → `observability.errorTracking` says so; the DSN itself never reaches the wire. `GET /v1/metrics` is this process's counters — requests by route *pattern* with latency histogram and percentiles, 5xx rate, every store verb timed — as JSON or Prometheus text, and the payload says it is one process's view; the platform log drain is the cross-instance one. Every `.catch(() => …)` in the tree — 33, not the 13 the register counted, once `() => null` and `() => []` were included — is now `.catch(fallback('site', value))`: same value to the caller, the failure logged at warn with a `kind` (`unreachable · timeout · refused · not_found · conflict · invalid · unknown`), and counted by site. `tests/observability.test.js` proves the exit criterion and refuses a new swallowed catch or a `console` call under `src/`.
+
+**The contract (`src/platform/http/openapi.js`, `docs/API-CONTRACT.md`, `docs/openapi.json`).** The OpenAPI 3.1 document is generated from the router and never written: every operation is a route Express registered, its request schema is the `validate()` Joi schema in that route's chain (`joi-to-schema.js` converts `describe()`), its scope is what `scopes.js` resolves, its paging is the `paged()` marker, its caching the `referenceCache()` marker, its words the `doc()` hints — all in the route's own chain, so the document has one source. `GET /v1/openapi.json` serves it, `npm run docs:openapi` commits it, and `tests/api-contract.test.js` fails the build when file and router disagree, validates it as OpenAPI 3.1, validates live responses against it in both media types, and proves the phase's exit criterion by generating a client from the document alone and driving the API with it. **Two shapes, never a break:** `application/json` is the shape every route has always answered; `application/vnd.carboniq.v1+json` (or `X-Envelope: 1`, or `?envelope=1`) is the same body inside `{ data, meta, error }`. Every response says which in `X-Api-Envelope`; the legacy shape stays for the whole of v1 and the envelope becomes the default in v2, under the policy in `docs/API-CONTRACT.md` and the record in `docs/API-CHANGELOG.md`. **Paging on every list** (`pagination.js`): `limit` and `cursor`, answered with `page { limit, nextCursor, hasMore, total? }`; without them a list answers exactly as before. A cursor that could not have been issued is refused rather than decoded to page one. **Reference data is cached** (`reference-cache.js`): factor tables, the references, the conformance matrices answer with `Cache-Control`, a strong `ETag` and `304`, keyed by URL and release; nothing a write can change carries a `Cache-Control`, and a test asserts it.
+
+**The job queue (`src/platform/jobs/`, `src/jobs.js`, `docs/JOBS.md`).** Work that does not fit inside a 26-second request — a portfolio roll-up over a real book, a disclosure rendered to PDF, a document extraction — is enqueued at `POST /v1/jobs` (scope `assess`), answered 202, and read back by id with its result or its downloadable artifact. The queue is the `jobs` table on the one database (migration 0003): `FOR UPDATE SKIP LOCKED` claims, backoff retries for transient failures only (an invalid payload, a missing record, a refusal or a conflict fails at once), stale jobs returned by a sweep. Worked by the Netlify background function the API pokes (`JOBS_TOKEN`, `JOBS_URL`), the ten-minute scheduled sweep, or `npm run worker`. Where no database holds a queue the mode is **inline** — the job runs inside the request and the response says so. The handlers live in `src/jobs.js`, a fourth composition root, and each calls **the same function the synchronous route calls**, so a document from a job is the route's document; `tests/jobs.test.js` proves it on both stores. pg-boss was not used: the queue is a table this repository owns, on the same rules as the rest of the schema.
 
 **One async handler (`src/platform/http/async-handler.js`).** Four route files carried their own copy and their own `fail()`; the error handler already knew `statusCode`, `code` and `remedy`, so they are gone.
 
@@ -204,6 +213,7 @@ Copy `.env.example` to `.env` and fill in:
 | `STORAGE_BACKEND` | `auto` · `postgres` · `firebase` · `blobs` · `memory` — a forced store that is unreachable refuses writes |
 | `LOG_LEVEL` | `trace` … `fatal`; default `info`, `silent` under test |
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` | Error reporting; inert when unset, `/health` says which (see `docs/OBSERVABILITY.md`) |
+| `JOBS_TOKEN` · `JOBS_URL` · `JOBS_INLINE` | The job queue's background worker token and site URL; inline forces a job to run inside its request (see `docs/JOBS.md`) |
 | `NODE_ENV` | `development` or `production` |
 | `FINTECH_API_PORT` | Server port (default: 3001) |
 | `ANTHROPIC_MODEL` | Main agentic loop model (default: `claude-sonnet-4-6`) |
@@ -620,7 +630,9 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/DATA-LAYER.md` | PostgreSQL behind the seam: schema, transactions, migrations, audit chain, backfill, backup, measured scale |
 | `docs/API-SCOPES.md` | Every route and the scope it requires — generated from the router, held to the code by a test |
 | `docs/OBSERVABILITY.md` | Logs, the correlation id, the log drain, error reporting and its runbook, metrics, the fallback register |
-| `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; E1–E3 delivered |
+| `docs/API-CONTRACT.md` · `docs/API-CHANGELOG.md` · `docs/openapi.json` | The contract: the generated OpenAPI 3.1 document, the two shapes, paging, errors, caching, the policy on change and its record |
+| `docs/JOBS.md` | The job queue: routes, types, the two modes, who works it, setting it up on Netlify |
+| `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; E1–E4 delivered |
 | `docs/SCAFFOLDING.md` | 17-step build plan |
 | `docs/STRATEGY.md` | FinTech Innovation Lab APAC 2026 strategy |
 | `docs/PIVOT_ANALYSIS.md` | Green finance pivot analysis |

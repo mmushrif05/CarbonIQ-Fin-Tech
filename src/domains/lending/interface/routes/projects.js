@@ -10,6 +10,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { sendList, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
@@ -91,12 +93,14 @@ router.post('/',
 router.get('/',
   apiKeyAuth,
   defaultLimiter,
+  paged(),
+  doc({ summary: 'List the organisation\'s lending projects' }),
   async (req, res, next) => {
     try {
       const orgId = req.apiKey?.orgId || 'default';
       const { listFintechProjects } = require('../../../../platform/bridge/firebase');
       const projects = await listFintechProjects(orgId);
-      res.json({ projects, total: projects.length });
+      sendList(req, res, 'projects', projects, { total: projects.length });
     } catch (err) { next(err); }
   }
 );

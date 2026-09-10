@@ -16,6 +16,8 @@
 
 const { Router }      = require('express');
 const apiKeyAuth      = require('../../../../platform/auth/api-key');
+const { listView, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
 const auth            = require('../../../../platform/auth/auth');
 const validate        = require('../../../../platform/http/validate');
 const { authorize }   = require('../../../../platform/auth/authorization');
@@ -244,19 +246,22 @@ router.get('/pipeline/:pipelineId',
 router.get('/pipelines',
   dualAuth,
   authorize(PERMISSIONS.PIPELINE_READ),
+  paged(),
+  doc({ summary: 'Recent agent pipelines, newest first; twenty without a page' }),
   async (req, res, next) => {
     try {
       const subject = buildSubject(req);
       const orgId   = subject.orgId || 'unknown';
-      const limit   = Math.min(parseInt(req.query.limit, 10) || 20, 50);
-
-      const pipelines = await listPipelineRuns(orgId, limit);
+      const paging  = req.query.limit !== undefined || req.query.cursor !== undefined;
+      const pipelines = await listPipelineRuns(orgId, paging ? 500 : 20);
+      const view = listView(req, res, pipelines);
 
       return res.status(200).json({
         success: true,
         orgId,
-        count:   pipelines.length,
-        pipelines: pipelines.map(p => ({
+        count:   view.items.length,
+        ...(view.page ? { page: view.page } : {}),
+        pipelines: view.items.map(p => ({
           pipelineId:  p.pipelineId,
           templateId:  p.templateId,
           status:      p.status,

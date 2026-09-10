@@ -18,7 +18,7 @@ const Joi = require('joi');
  *   router.post('/assess', validate({ body: assessSchema }), handler);
  */
 function validate(schema) {
-  return (req, res, next) => {
+  const middleware = (req, res, next) => {
     const errors = [];
 
     for (const [source, sourceSchema] of Object.entries(schema)) {
@@ -55,6 +55,11 @@ function validate(schema) {
 
     next();
   };
+  /* The schema stays on the middleware, so the OpenAPI generator can read
+     the request contract off the router — one source, no second copy. */
+  middleware.schema = schema;
+  Object.defineProperty(middleware, 'name', { value: 'validate' });
+  return middleware;
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-140 routes.
+146 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -82,11 +82,17 @@ relationship manager read, write, assess; auditor and borrower read.
 | GET | `/v1/gcf/reference` | `read` | read |
 | GET | `/v1/gcf/report` | `read` | read |
 | GET | `/v1/gcf/screening` | `read` | read |
+| GET | `/v1/jobs` | `read` | read |
+| POST | `/v1/jobs` | `assess` | enqueues an engine run |
+| GET | `/v1/jobs/:jobId` | `read` | read |
+| GET | `/v1/jobs/:jobId/artifact` | `read` | read |
+| GET | `/v1/jobs/types` | `read` | read |
 | GET | `/v1/metrics` | `read` | read |
 | POST | `/v1/ndc-sdg/assess` | `assess` | AI alignment analysis |
 | POST | `/v1/ndc-sdg/certificate` | `write` | changes a record |
 | POST | `/v1/ndc-sdg/certificate/verify` | `read` | certificate verification |
 | GET | `/v1/ndc-sdg/framework` | `read` | read |
+| GET | `/v1/openapi.json` (no credential) | `read` | read |
 | GET | `/v1/partc/assessments` | `read` | read |
 | POST | `/v1/partc/assessments` | `write` | changes a record |
 | GET | `/v1/partc/assessments/:assessmentId` | `read` | read |

@@ -33,6 +33,9 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { listView, paged } = require('../../../../platform/http/pagination');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
 const store = require('../../infrastructure/store');
@@ -57,7 +60,7 @@ const router = Router();
 const handle = require('../../../../platform/http/async-handler');
 
 /** The frameworks this tab is built on, so a screen never restates them. */
-router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/reference', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'Results areas, IRMF core indicators, NDC 3.0 and the instrument catalogue' }), (_req, res) => {
   res.json({
     resultsAreas: AREAS,
     irmf: IRMF,
@@ -70,20 +73,24 @@ router.get('/reference', apiKeyAuth, defaultLimiter, (_req, res) => {
   });
 });
 
-router.get('/pipeline', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
+router.get('/pipeline', apiKeyAuth, defaultLimiter, paged(),
+  doc({ summary: 'The GCF candidate pipeline — recorded, or the shipped illustrative set, never both' }),
+  handle(async (req, res) => {
   const { projects, source, sample, meta } = await store.list(req.apiKey.orgId);
+  const view = listView(req, res, projects);
   res.json({
     pipeline: {
       count: projects.length,
-      projects,
+      projects: view.items,
       source,
       sample,
       sampleNote: sample ? meta.sampleNote : null,
       meta,
       storage: partcStore.capability(),
     },
+    ...(view.page ? { page: view.page } : {}),
   });
-}));
+  }));
 
 router.get('/pipeline/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
   const { project, source, sample } = await store.get(req.apiKey.orgId, req.params.id);
@@ -447,7 +454,7 @@ router.get('/cn/:id', apiKeyAuth, defaultLimiter, handle(async (req, res) => {
  * a test. tests/gcf-conformance.test.js fails the build if either citation
  * stops resolving, which is what keeps the claim from quietly rotting.
  */
-router.get('/conformance', apiKeyAuth, defaultLimiter, (_req, res) => {
+router.get('/conformance', apiKeyAuth, defaultLimiter, referenceCache(), doc({ summary: 'ToR clause → implementation → proving test' }), (_req, res) => {
   res.json(conformance.conformanceMatrix());
 });
 

@@ -8,6 +8,8 @@
 
 const { Router } = require('express');
 const apiKeyAuth = require('../../../../platform/auth/api-key');
+const { doc } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
 const { reportGenerateSchema } = require('../schemas/reports');
 const { generateReport, buildPDF } = require('../../application/reports');
 const { sendPdf } = require('../../../../platform/reporting/pdf-response');
@@ -18,7 +20,7 @@ const router = Router();
 // POST /v1/reports/generate
 // ---------------------------------------------------------------------------
 
-router.post('/generate', apiKeyAuth, async (req, res, next) => {
+router.post('/generate', apiKeyAuth, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }), async (req, res, next) => {
   try {
     // Validate request body
     const { error, value } = reportGenerateSchema.validate(req.body, { abortEarly: false });
@@ -55,7 +57,7 @@ router.post('/generate', apiKeyAuth, async (req, res, next) => {
 // GET /v1/reports/types  — list available report types (no auth required)
 // ---------------------------------------------------------------------------
 
-router.get('/types', (_req, res) => {
+router.get('/types', referenceCache(), doc({ summary: 'The report types this API generates' }), (_req, res) => {
   res.json({
     types: [
       {
