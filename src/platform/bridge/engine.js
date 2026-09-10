@@ -15,6 +15,8 @@
  * that cannot be imported into Node.js without adaptation.
  */
 
+'use strict';
+
 const { getProjectTenders } = require('./firebase');
 const Joi = require('joi');
 const { strictNumber } = require('../../shared/reference-data');

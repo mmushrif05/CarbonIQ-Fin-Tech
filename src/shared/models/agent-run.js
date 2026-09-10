@@ -9,6 +9,8 @@
  * request, through all tool calls and reasoning steps, to the final output.
  */
 
+'use strict';
+
 const AGENT_TYPES = {
   SCREENING:         'screening',
   UNDERWRITING:      'underwriting',

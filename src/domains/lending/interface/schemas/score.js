@@ -6,6 +6,8 @@
  * A bank submits a construction project and receives a 0-100 carbon finance score.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const materialEntrySchema = Joi.object({

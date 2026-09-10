@@ -65,7 +65,7 @@ function _pdfSummaryTable(doc, report) {
 
   const colW = (doc.page.width - 112) / 2;
   let col = 0;
-  let startX = 56;
+  const startX = 56;
   let rowY = doc.y;
 
   for (const [key, val] of entries) {

@@ -16,6 +16,8 @@
  * Delivery: up to 3 retries with exponential backoff (1s, 2s, 4s).
  */
 
+'use strict';
+
 const crypto = require('crypto');
 const logger = require('../../../platform/observability/logger');
 const { fallback } = logger;

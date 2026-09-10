@@ -12,6 +12,14 @@
   publish = "dist/ui"
   functions = "netlify/functions"
 
+[build.environment]
+  # The one Node version, and the only place a deployment learns it.
+  # It was declared four times and disagreed with itself: `engines: >=18`,
+  # a `node:18-alpine` image, a CI matrix of 20 and 22, and a function
+  # runtime of nodejs22.x. `.nvmrc` is the source; this and the Dockerfile
+  # follow it, and `tests/repo-hygiene.test.js` holds all four together.
+  NODE_VERSION = "22"
+
 [functions]
   node_bundler = "nft"
   # Keep firebase-admin as a real node_module rather than inlining it.

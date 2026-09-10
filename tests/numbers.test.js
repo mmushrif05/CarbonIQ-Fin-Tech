@@ -15,6 +15,8 @@
  * test happens to walk.
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 const { maybeNumber, numberOr, numberOrNull, intOr, isNumeric, sumNumeric } =

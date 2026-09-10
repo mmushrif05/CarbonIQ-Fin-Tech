@@ -4,7 +4,10 @@
 
 CarbonIQ FinTech is a **Node.js/Express REST API** that serves as the bank-facing layer for construction carbon intelligence. It bridges the CarbonIQ core engine (Carbon-Management repo, Firebase) with financial institutions to enable green loan compliance, carbon risk scoring, and regulatory reporting.
 
-**Key integrations:** Firebase Admin (Firestore), Anthropic Claude API (`@anthropic-ai/sdk`), Netlify Functions (production deployment).
+**Key integrations:** Firebase Admin — **Realtime Database**, `admin.database()`, not
+Firestore — Anthropic Claude API (`@anthropic-ai/sdk`), Netlify Functions (production
+deployment). Records live in PostgreSQL on every deployment that has a `DATABASE_URL`;
+Firebase is the fallback where one is not configured.
 
 ---
 
@@ -26,7 +29,7 @@ npm run lint:fix     # ESLint auto-fix
 # Setup
 npm run setup:env    # Generate .env from template
 npm run setup:verify # Verify environment & Firebase connection
-npm run setup:seed   # Seed demo data into Firestore
+npm run setup:seed   # Seed demo data into the Firebase Realtime Database
 npm run setup:seed-clear  # Clear seeded demo data
 
 # API Key Management (see docs/API-SCOPES.md)
@@ -49,6 +52,9 @@ npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
 npm run docs:openapi     # Regenerate docs/openapi.json from the router
 npm run docs:conformance-evidence  # Run each matrix rule's own test under coverage; a rule whose code never runs fails
 npm run docs:factor-manifest       # Rewrite data/factors/MANIFEST.json — version, effective date, checksum per table
+npm run docs:readme                # The README's endpoint table, from docs/openapi.json
+npm run docs:code-tour             # The ERD and the module map in docs/CODE-TOUR.md
+npm run db:test-up · db:test-down · db:test-status   # The PostgreSQL the second suite needs
 npm run worker           # A long-lived job worker beside the database
 npm run typecheck        # The TypeScript compiler over every file carrying // @ts-check
 npm run build:ui         # ui/ → dist/ui, minified, what Netlify publishes
@@ -117,6 +123,14 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 
 ### API Endpoints (v1)
 
+**This table is a reader's selection, not the surface.** The surface is 163
+operations across 138 paths, generated from the router into `docs/openapi.json`
+and listed in full in the README. Five rows here used to name paths that return
+404 — `/v1/score`, `/v1/taxonomy`, `/v1/pcaf`, `/v1/covenant` and `/v1/webhook`
+are all project-scoped or plural in the router — so a reader following this got
+a 404 from the first four things they tried. `tests/docs-currency.test.js` now
+fails the build when a path in this table is not one the router serves.
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | `POST` | `/v1/auth/login` | Sign in — the only route that needs no credential |
@@ -125,15 +139,15 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 | `GET` | `/health` | Health check — no auth required |
 | `POST` | `/v1/assess` | Full project carbon assessment (AI-powered) |
 | `GET/POST` | `/v1/projects` | List projects / create project |
-| `POST` | `/v1/score` | Carbon Finance Score (CRS 0–100) |
-| `GET` | `/v1/taxonomy` | EU/ASEAN/HK taxonomy alignment check |
+| `GET` | `/v1/projects/:projectId/score` | Carbon Finance Score (CRS 0–100) |
+| `GET` | `/v1/projects/:projectId/taxonomy` | EU/ASEAN/HK taxonomy alignment check |
 | `GET` | `/v1/baselines` | The master baseline table — every version, with what it replaced and why |
 | `GET` | `/v1/baselines/effective` | What is in force for this caller, and the version behind it |
 | `GET` | `/v1/baselines/metrics` | What may be governed, and what in the product reads each |
 | `POST` | `/v1/baselines` | Record a draft — not in force until released |
 | `POST` | `/v1/baselines/:id/release` · `/supersede` | Put in force · a new version with its reason |
 | `GET/PUT` | `/v1/baselines/pledge` | The institution's own commitment, and where it stands |
-| `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output (A1-A3, lending) |
+| `POST` | `/v1/projects/:projectId/pcaf` | Attributed embodied carbon for lending (A1-A3). See the note below: this is not Part A. |
 | `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions (A4+A5, B1/B4/B7) |
 | `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
 | `POST` | `/v1/pcaf/part-c/report` | Disclosure report — PDF, Word or JSON |
@@ -180,9 +194,9 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 | `GET` | `/v1/gcf/cn/:id` | Concept Note input package — JSON, PDF or Word |
 | `GET` | `/v1/gcf/conformance` | ToR clause → implementation → proving test |
 | `GET` | `/v1/gcf/reference` | Results areas, IRMF core indicators, NDC 3.0, instruments |
-| `POST/GET` | `/v1/covenant` | Green loan covenant check / full SLL suite |
+| `POST/GET` | `/v1/projects/:projectId/covenant` · `/covenants` | Green loan covenant check / full SLL suite |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation |
-| `POST/DELETE` | `/v1/webhook` | Webhook subscription management |
+| `GET/POST/DELETE` | `/v1/webhooks` · `/webhooks/:subscriptionId` | Webhook subscription management |
 
 ---
 
@@ -231,7 +245,7 @@ Copy `.env.example` to `.env` and fill in:
 | Variable | Purpose |
 |----------|---------|
 | `FIREBASE_API_KEY` | Firebase project API key |
-| `FIREBASE_DATABASE_URL` | Firestore database URL |
+| `FIREBASE_DATABASE_URL` | Firebase Realtime Database URL (`admin.database()`, not Firestore) |
 | `FIREBASE_SERVICE_ACCOUNT` | Base64-encoded service account JSON |
 | `ANTHROPIC_API_KEY` | Claude API key for AI analysis |
 | `DATA_ENCRYPTION_KEY` | 64-char hex key for data encryption |
@@ -325,7 +339,7 @@ Three tiers, enforced structurally rather than by convention:
 
 **The insurer's book (`src/domains/pcaf-part-c/application/partc-registry.js`):** organisation → client → project, deliberately flat — no broker, reinsurer or class-of-business level. Policies live on the project because one building typically carries CAR through construction and then IDI for ten years. The reporting year of a policy is its **inception year**. Cover basis is project-specific only; annual/blanket is deferred.
 
-**PCAF Part A (financed emissions) — planned, not built.** `docs/PCAF-PART-A-SOURCES.md` holds the working reference: the Chapter 6 reporting requirements extracted from PCAF's **Disclosure Checklist (May 2025)** with page cites, the avoided-emissions and forward-looking-metrics supplement (Dec 2025), and a list of what is still missing. The **Third Edition (2 Dec 2025)** expands Part A from seven to ten asset classes and adds Use of Proceeds, Securitizations, Sub-Sovereign Debt and IFRS-aligned undrawn commitments; the DCL we hold predates it and still says seven. The **Third Edition is now in the repository** (`PCAF-PartA-2025-V3-15012026.pdf`) and `docs/PCAF-PART-A-BUILD-SPEC.md` holds the Chapter 5 study and the module structure. **The finding that matters most: Part A's option-to-score mapping is not uniform across asset classes** — Option 2b is score 2 in one class and score 3 in another, Option 3 is score 3 in one and score 4 in another. There is therefore no global option→score lookup; the score resolves as **(asset class, option) → score** from a table per class. Reusing Part C's `2b = 3` here would be wrong for some classes, silently. Also: the six original asset classes carry the *Built on GHG Protocol* mark, but the second- and third-edition additions **have not been reviewed by the GHG Protocol**, so a conformance statement must not blur the two. Two more things not to get wrong: Part A weights the disclosed data-quality score by **outstanding amount** (p.128) where Part C weights by **premium**, so the two engines must not share a weighting function; and avoided emissions are reported **separately** from the scope 1/2/3 inventory and never netted against it (p.126). When Part A is built it goes in `src/domains/pcaf-part-a/domain/`, separate from `src/domains/pcaf-part-c/domain/` — three scopes, never merged. `src/domains/lending/application/pcaf.js` currently labels attributed embodied carbon as "PCAF v3" output; once Part A exists properly that file must stop claiming to be PCAF.
+**PCAF Part A (financed emissions) — built, and the surface is live.** This paragraph read *"planned, not built"* over 3,271 routed lines: `src/domains/pcaf-part-a/domain/` holds attribution, denominators, options, estimation, generation, impact, provenance and the listed-equity denominators, and `GET /v1/pcaf/part-a/reference` and `POST /v1/pcaf/part-a/assess` have been serving them. What follows is the reference material it was built from, and it stands. `docs/PCAF-PART-A-SOURCES.md` holds the working reference: the Chapter 6 reporting requirements extracted from PCAF's **Disclosure Checklist (May 2025)** with page cites, the avoided-emissions and forward-looking-metrics supplement (Dec 2025), and a list of what is still missing. The **Third Edition (2 Dec 2025)** expands Part A from seven to ten asset classes and adds Use of Proceeds, Securitizations, Sub-Sovereign Debt and IFRS-aligned undrawn commitments; the DCL we hold predates it and still says seven. The **Third Edition is now in the repository** (`PCAF-PartA-2025-V3-15012026.pdf`) and `docs/PCAF-PART-A-BUILD-SPEC.md` holds the Chapter 5 study and the module structure. **The finding that matters most: Part A's option-to-score mapping is not uniform across asset classes** — Option 2b is score 2 in one class and score 3 in another, Option 3 is score 3 in one and score 4 in another. There is therefore no global option→score lookup; the score resolves as **(asset class, option) → score** from a table per class. Reusing Part C's `2b = 3` here would be wrong for some classes, silently. Also: the six original asset classes carry the *Built on GHG Protocol* mark, but the second- and third-edition additions **have not been reviewed by the GHG Protocol**, so a conformance statement must not blur the two. Two more things not to get wrong: Part A weights the disclosed data-quality score by **outstanding amount** (p.128) where Part C weights by **premium**, so the two engines must not share a weighting function; and avoided emissions are reported **separately** from the scope 1/2/3 inventory and never netted against it (p.126). Part A lives in `src/domains/pcaf-part-a/domain/`, separate from `src/domains/pcaf-part-c/domain/` — three scopes, never merged, and `tests/architecture.test.js` fails the build on an import between them. **Still outstanding:** `src/domains/lending/application/pcaf.js` labels attributed embodied carbon as "PCAF v3" output and is not Part A. Now that Part A exists, that file has to stop claiming to be PCAF — it is a lending-side embodied-carbon attribution, and the route above says so, but the module's own header does not.
 
 **Report honesty (`src/shared/report-integrity.js`):** a disclosure contains exactly three kinds of statement — **measured** (computed from data held here, and traceable to it), **declared** (a fact only the reporting entity can know), and **absent** (required by the standard, not available). The portfolio reports in `src/domains/lending/application/reports.js` used to emit the first and third as though they were the second: the scope 1/2/3 split was the financed-emissions total × 0.08 / 0.14 / 0.78, printed under GRI 305 and IFRS S2 §29; TCFD carried a board meeting quarterly, a three-person ESG team reporting to the CRO, a $340M pipeline and 12% of the book in flood zones; the CBSL disclosure asserted `'Compliant'` to the regulator that decides compliance; and the PCAF checklist hardcoded every item `met: true`, including the scope breakdown that was only "present" because it had been invented.
 
@@ -413,7 +427,7 @@ One detail found by driving it: an `<img>` in a flex row needs `display: block`,
 
 **Narrow viewports (`ui/css/responsive.css`).** A sweep of every page at 430px and 360px found horizontal page overflow on nine of them, worst 439px on Portfolio. Two shapes accounted for all of it, and both are CSS defaults rather than mistakes. A grid or flex item's `min-width` is `auto`, which refuses to shrink the item below its content, so one long label sets the page width. And `repeat(auto-fit, minmax(330px, 1fr))` is 330px wide whatever the container is — `minmax(min(100%, 330px), 1fr)` keeps the intent and lets it collapse. Wide tables now always scroll inside their own container: the page must never scroll sideways, the table may. The corrections load last so they win without raising the specificity of the rules they correct, and `tests/ui-tone.test.js` pins the pattern and the load order. All twenty pages are clean at 430px and 360px.
 
-**The anchor dashboard (`services/capital-*.js`, `ui/js/dashboard.js`).** The Dashboard is the capital book: portfolios, investments, payments, and the four emission lines against each. It is deliberately **not** connected to Firebase — the baseline lives in `data/capital/book.json`, deep-frozen and read once, because a demonstration book has no business depending on a network round trip and every change to it is then a reviewable commit. If an organisation has recorded anything of its own, its records win **entirely** and the baseline is not read; the two are never merged, and the payload says which is showing.
+**The anchor dashboard (`src/domains/capital/domain/capital-*.js`, `ui/js/dashboard.js`).** The Dashboard is the capital book: portfolios, investments, payments, and the four emission lines against each. It is deliberately **not** connected to Firebase — the baseline lives in `data/capital/book.json`, deep-frozen and read once, because a demonstration book has no business depending on a network round trip and every change to it is then a reviewable commit. If an organisation has recorded anything of its own, its records win **entirely** and the baseline is not read; the two are never merged, and the payload says which is showing.
 
 Attribution is PCAF Part A's: outstanding ÷ (project equity + debt). The stored figures are at full commitment, so `attributed = stored × (outstanding ÷ commitment)`. `src/domains/capital/domain/capital-attribution.js` exists as its own module because the roll-up *and* the forecast both need it — when only the roll-up knew about attribution, the curve was drawn from unattributed figures and stopped adding up to the total printed above it, which is the one thing a curve must never do.
 
@@ -518,6 +532,28 @@ The GCF half of this was checking almost nothing: its cited-file regex listed th
 **The content layer (`src/shared/content.js`, `data/content/`).** A compliance officer changing a sentence needed a developer and a deploy. What they may reword is an **allow-list**, each key naming its purpose and its owner, resolved at boot from `data/content/report-text.json` where a deployment has one. It is deliberately short, and the reason is the more important half: most of the prose here is not wording. *"No row in this table sums them"* states a scope rule PCAF sets, and a sentence a compliance officer can edit out of a disclosure is a rule they can edit out of a disclosure. Those stay in source, where the tests that hold them to the standard can reach them. Two refusals, both loud: a key not on the list is refused **by name with the list**, because an operator whose edit is silently dropped concludes the feature does not work; and an override carrying endorsement language is refused, so the content layer cannot be the route by which *"PCAF approved"* returns to a page.
 
 That guard is now in `src/shared/report-integrity.js` rather than the Part C domain, because it governs every artefact and the content layer has to be able to apply it — and writing the first test for it found that it caught *"PCAF certified"* and *"approved by PCAF"* but let *"Certified by PCAF"* through.
+
+**The handover pack (`docs/CODE-TOUR.md`, `docs/GLOSSARY.md`, `docs/adr/`, `CONTRIBUTING.md`, `SECURITY.md`, `CODEOWNERS`).** There were no governance files at all: no contributing guide, no security contact, no code owners, no PR or issue template, and no record of why any decision was taken. A team of three cannot divide review, agree conventions or receive a vulnerability report on that.
+
+`docs/CODE-TOUR.md` is what a new developer reads first — the request lifecycle as a sequence diagram, the layering, a module map and an ERD. The last two are **generated** (`npm run docs:code-tour`) from `src/` and `collections.js`, because a hand-drawn diagram of either is wrong within a month and believed for a year. The eight ADRs each record **what went wrong** that made the decision necessary; a record that omits the failure is one the next person overturns, because the reasoning looks like taste until you know what it cost.
+
+**The documents contradicted the code on ten checkable claims, and the checkable ones are now checked.** Five rows of the endpoint table named routes that return 404 — `/v1/score`, `/v1/taxonomy`, `/v1/pcaf`, `/v1/covenant` and `/v1/webhook` are all project-scoped or plural in the router — so a reader following the table got a 404 from the first four things they tried. Part A was described as *"planned, not built"* over 3,271 routed lines and two live routes. Firestore was named throughout where the code calls `admin.database()`, which is the Realtime Database — a developer told to open the Firestore console will not find the data. `services/` was cited twice and has not existed since the domains split. The README claimed "26 tests across 6 suites" against 118 and 2,416.
+
+`tests/docs-currency.test.js` fails the build on a path a document names that the router does not serve, a removed top-level directory cited in prose, Firestore named as the store, or a stated test count that is not the suite's. The README's endpoint table is generated from `docs/openapi.json`, so a route that is not in it does not exist. A `docs` job in the CI gate regenerates every generated document and fails on a diff.
+
+**The glossary found a fourth 1–5 scale.** Three were known and are documented as non-interchangeable: Part C's `(option) → score`, Part A's `(asset class, option) → score`, and GCF's four evidence tiers, which are deliberately words rather than numerals. Writing §1 turned up a fourth — `src/domains/lending/application/pcaf.js` defined its own 1–5 band under a header reading *"PCAF v3 Output Service"*, which is the likeliest source in this repository of a figure quoted as a PCAF score that is not one. The header says what it is now. **Still outstanding:** "PCAF v3" appears in nine agent prompts and two route summaries that generate narrative a bank reads, and correcting those changes what a memo says rather than what a document claims.
+
+**The local stack could not be started from a fresh clone.** `env_file: ../.env` is required rather than optional, so `docker compose config` failed outright — before any service started, with an error about a missing file rather than about setup. The API ran `node --watch server.js`, a path that has not existed since the move to `src/`. And the only backing service was a Firebase emulator, while every deployment holds its records in PostgreSQL — so the stack modelled a store the application no longer uses and omitted the one it does, which is how a developer learns about foreign-key failures from CI. The image is two stages now, because `npm ci --production` left a container with no jest, no eslint and no tsc, and a container a developer cannot test in is one they stop using.
+
+**`npm run setup:seed-clear` is guarded.** It called `.remove()` on five live Firebase paths with no confirmation, no dry run and no environment check — one keystroke from the non-destructive `setup:seed`, in an onboarding list that had just told the developer to put real credentials in `.env`. It prints the paths and the host, refuses without `--yes I-understand`, offers `--dry-run`, and refuses outright under `NODE_ENV=production`. The paths stay a **named list** rather than a prefix: a `remove()` on `fintech` would take the API keys, the accounts and the audit chain with it, and the difference is one string.
+
+**`/health` and the boot banner report shape, not presence.** `npm run setup:env` writes literal placeholders; the server then printed `Firebase: ✓ connected` and `AI: ✓ ready` and answered all three booleans true, while the same process logged that the service account was not valid base64. A block built to tell "the variable was never set" from "the service is down" could tell neither from "the variable is a placeholder", which is the most common of the three on a fresh checkout. Three states now — absent, present but unusable, usable — resolved from one declaration in `config` that `ai-status.js` imports rather than restating. A service account that does not decode is a boot problem only where Firebase is actually the store, because every PostgreSQL deployment carries the variable and never reads it.
+
+**One private name crossed a boundary that mattered.** `gcf/application/cn-package.js` imported `_p`, `_h` and `_table` from Part C's `partc-docgen` — private Word builders, across the edge between two of the three scopes that must never merge. They know nothing about emissions: they are `docx` primitives and they are `src/platform/reporting/docx.js` now, with Part C re-exporting them under their old names so nothing else changed. The other thirty-three are barrels talking to their own parts, and `tests/module-boundaries.test.js` holds them to a named list that may shrink and nothing else.
+
+**One Node version, and a lint that enforces something.** Node was declared four times and disagreed with itself — `engines: >=18`, a `node:18-alpine` image, a CI matrix of 20 and 22, and a function runtime of `nodejs22.x`. `.nvmrc` is the source and a test holds all five together. `'use strict'` was missing from 63 source files and 43 test files; in a non-strict module a typo in an assignment creates a global instead of throwing, which is the failure mode hardest to see and easiest to ship. `varsIgnorePattern: '^_'` is gone, so an unused private — the name most likely to be left behind by a refactor — is visible again. Reading `process.env` outside `config` is a lint error rather than only a test failure.
+
+Adding strict mode made two tests honest by accident: *"the config object is frozen"* and *"the constants are frozen"* asserted that a write was **silently ignored**, which is equally true of a write that never happened. They assert the `TypeError` now.
 
 ---
 
@@ -657,12 +693,12 @@ This replaced the 2021 NDC (4.5% / 14.5% by 2030, net zero 2050) that seven sour
 
 ## Code Conventions
 
-- **Validation:** All request bodies are validated via Joi schemas in `schemas/` before reaching route handlers; use `src/platform/http/validate.js`
+- **Validation:** All request bodies are validated via Joi schemas in each domain's `interface/schemas/` before reaching route handlers; use `src/platform/http/validate.js`
 - **Error handling:** Centralized in `src/platform/http/error-handler.js`; throw structured errors with `statusCode` and `message`
 - **Audit logging:** Compliance-sensitive operations log via `src/platform/observability/audit.js`
 - **Rate limiting:** Configured per API key tier in `src/platform/http/rate-limit.js`
 - **Feature flags:** Use `FF_*` env vars (e.g., `FF_COVENANT_ENGINE`) to gate incomplete features
-- **AI agents:** Claude API usage lives in `services/agents/`; uses `@anthropic-ai/sdk`
+- **AI agents:** Claude API usage lives in `src/platform/ai/` (the loop) and `src/domains/*/agents/` (the agents); uses `@anthropic-ai/sdk`
 
 ---
 
@@ -734,6 +770,10 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/ENVIRONMENTS.md` | Production, staging, preview, local: what each is held to, how a change moves, the deploy gate |
 | `docs/AUTHENTICATION.md` | Signing in: the one door, roles and scopes, the first account, sessions, passwords, what is not built yet |
 | `docs/RELEASE-AND-ROLLBACK.md` | How a release is cut, and the order to reverse code and schema in |
+| `docs/CODE-TOUR.md` | Request lifecycle, module map, ERD — the first thing a new developer reads |
+| `docs/GLOSSARY.md` | The vocabulary, and §1: the three 1–5 scales and why they are not interchangeable |
+| `docs/adr/` | One architecture decision per file, each recording the failure that made it necessary |
+| `CONTRIBUTING.md` · `SECURITY.md` · `CODEOWNERS` | How to change this, how to report a vulnerability, and who reviews what |
 | `docs/HANDOVER-GAP-ANALYSIS.md` | The seven-phase handover register: what a development team would find, and the plan |
 | `docs/TYPECHECK-WORKLIST.md` | The files not yet under `@ts-check`, generated, held to the tree |
 | `docs/CONFORMANCE-EVIDENCE.md` | Each conformance rule's own test run under coverage: what executed, what is out of scope, what is unproven |

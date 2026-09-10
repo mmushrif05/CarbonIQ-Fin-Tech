@@ -2,6 +2,8 @@
  * CarbonIQ FinTech — Carbon Finance Score Tests
  */
 
+'use strict';
+
 const { calculateCarbonFinanceScore } = require('../src/domains/lending/domain/score');
 
 describe('Carbon Finance Score', () => {

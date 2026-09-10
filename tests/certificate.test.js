@@ -2,6 +2,8 @@
  * CarbonIQ FinTech — SLGFT Green Loan Certificate Tests
  */
 
+'use strict';
+
 const { generateCertificate, verifyCertificate } = require('../src/domains/taxonomy/domain/certificate');
 
 const BASE_OPTS = {

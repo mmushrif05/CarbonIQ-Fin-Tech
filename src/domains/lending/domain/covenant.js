@@ -6,8 +6,9 @@
  * Supports: total tCO2e, intensity (kgCO2e/m2), EPD coverage,
  * reduction %, and material substitution rate.
  *
- * Implementation: Steps 10-11
  */
+
+'use strict';
 
 /**
  * Check a single covenant against project data.

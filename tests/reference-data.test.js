@@ -20,6 +20,8 @@
  * guard, and that the guard actually refuses what it claims to.
  */
 
+'use strict';
+
 const fs = require('fs');
 const path = require('path');
 

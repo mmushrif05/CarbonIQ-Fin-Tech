@@ -30,7 +30,7 @@ const NewProject = (() => {
   }
 
   let _step = 1;
-  let _materials = [
+  const _materials = [
     { name: 'Concrete C30/37', category: 'Concrete', qty: 850000, unit: 'kg' },
     { name: 'Rebar Steel',     category: 'Steel',    qty: 120000, unit: 'kg' },
     { name: 'Float Glass',     category: 'Glass',    qty: 45000,  unit: 'kg' },

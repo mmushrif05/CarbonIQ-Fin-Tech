@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — Carbon Pricing Request Validation Schema
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const carbonPricingSchema = Joi.object({

@@ -154,9 +154,31 @@ jobs:
       - name: The committed evidence matches what the run produced
         run: git diff --exit-code -- docs/CONFORMANCE-EVIDENCE.md
 
+  # The generated documentation. A code tour whose diagram is a month old, or a
+  # README naming routes that 404, is worse than none: it reads as current.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Regenerate everything that is generated
+        run: |
+          npm run docs:openapi
+          npm run docs:scopes
+          npm run docs:readme
+          npm run docs:code-tour
+          npm run docs:factor-manifest
+          npm run docs:typecheck-worklist
+      - name: The committed documents match what the code produces
+        run: git diff --exit-code -- docs/ README.md data/factors/MANIFEST.json
+
   # The one status to require before merging to main.
   gate:
     runs-on: ubuntu-latest
-    needs: [test, test-postgres, lint, typecheck, audit, ui, conformance-evidence]
+    needs: [test, test-postgres, lint, typecheck, audit, ui, conformance-evidence, docs]
     steps:
       - run: echo "every check passed"

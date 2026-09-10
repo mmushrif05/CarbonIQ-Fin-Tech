@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "main": "src/server.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "scripts": {
     "start": "node src/server.js",
@@ -55,7 +55,9 @@
     "docs:factor-manifest": "node scripts/generate-factor-manifest.js",
     "db:test-up": "node scripts/test-db.js up",
     "db:test-down": "node scripts/test-db.js down",
-    "db:test-status": "node scripts/test-db.js status"
+    "db:test-status": "node scripts/test-db.js status",
+    "docs:code-tour": "node scripts/generate-code-tour.js",
+    "docs:readme": "node scripts/generate-readme-endpoints.js"
   },
   "keywords": [
     "carbon",

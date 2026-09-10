@@ -7,6 +7,8 @@
  *   Returns JSON by default; pass format=pdf for a downloadable PDF.
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { doc, body, bool, obj, arr } = require('../../../../platform/http/openapi-hints');

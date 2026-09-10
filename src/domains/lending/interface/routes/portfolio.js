@@ -12,6 +12,8 @@
  *   ?projectValue[projectId]=20M     Per-project total values for attribution
  */
 
+'use strict';
+
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { portfolioLimiter } = require('../../../../platform/http/rate-limit');

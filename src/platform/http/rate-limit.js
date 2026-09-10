@@ -7,6 +7,8 @@
  * JWT-authenticated requests use the default limit.
  */
 
+'use strict';
+
 const rateLimit = /** @type {any} */ (require('express-rate-limit'));
 const { RATE_LIMITS } = require('../../shared/constants');
 const limitStore = require('./rate-limit-store');

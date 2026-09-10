@@ -38,7 +38,7 @@ const GCFPage = (() => {
   const WEIGHT_KEY = 'carboniq.gcf.weights';
   const TIERS = ['measured', 'modelled', 'benchmark', 'declared'];
 
-  let state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false };
+  const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false };
 
   async function call(path, opts) {
     const res = await window.CARBONIQ_fetch('/v1/gcf' + path, opts);

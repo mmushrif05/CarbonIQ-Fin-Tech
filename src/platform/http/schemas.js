@@ -6,6 +6,8 @@
  * Every new schema file MUST be registered here.
  */
 
+'use strict';
+
 const { scoreRequestSchema, materialEntrySchema } = require('../../domains/lending/interface/schemas/score');
 const { pcafRequestSchema } = require('../../domains/lending/interface/schemas/pcaf');
 const { taxonomyRequestSchema } = require('../../domains/taxonomy/interface/schemas/taxonomy');

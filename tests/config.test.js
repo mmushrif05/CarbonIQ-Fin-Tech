@@ -1,3 +1,5 @@
+'use strict';
+
 const config = require('../src/platform/config');
 
 describe('Config', () => {
@@ -8,8 +10,11 @@ describe('Config', () => {
   });
 
   it('has frozen config object', () => {
-    config.env = 'production';
-    // Object.freeze silently ignores writes in non-strict mode
+    /* In strict mode a write to a frozen object throws rather than being
+       silently ignored, and the suite is strict now — which is the stronger
+       assertion, because "the value did not change" is also true of a write
+       that never happened. */
+    expect(() => { config.env = 'production'; }).toThrow(TypeError);
     expect(config.env).toBe('test');
   });
 

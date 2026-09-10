@@ -6,6 +6,8 @@
  * Banks define carbon covenants for green loans; CarbonIQ evaluates compliance.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const covenantRuleSchema = Joi.object({

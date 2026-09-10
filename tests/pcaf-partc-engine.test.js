@@ -6,6 +6,8 @@
  * reason is stated in the test.
  */
 
+'use strict';
+
 const { runPartC } = require('../src/domains/pcaf-part-c/domain');
 const { a4Total }  = require('../src/domains/pcaf-part-c/domain/a4-transport');
 const { a51Demolition, a52SiteEnergy, a53Waste } = require('../src/domains/pcaf-part-c/domain/a5-construction');

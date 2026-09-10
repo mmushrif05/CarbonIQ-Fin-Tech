@@ -6,6 +6,8 @@
  * Banks submit loan + project data and receive PCAF-compliant emissions attribution.
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const pcafRequestSchema = Joi.object({

@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — Covenant Engine Tests
  */
 
+'use strict';
+
 const { checkCovenant } = require('../src/domains/lending/domain/covenant');
 
 describe('Covenant Engine', () => {

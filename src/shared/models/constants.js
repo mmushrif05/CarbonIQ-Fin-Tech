@@ -10,6 +10,8 @@
  *   - Score band definitions
  */
 
+'use strict';
+
 /**
  * A default embodied-carbon factor. `source` is not decoration: a figure that
  * cannot say where it came from cannot be defended to an assurer, and timber's

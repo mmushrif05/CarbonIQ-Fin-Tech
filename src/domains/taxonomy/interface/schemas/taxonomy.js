@@ -7,6 +7,8 @@
  * (ASEAN, EU, HK, SG).
  */
 
+'use strict';
+
 const Joi = require('joi');
 
 const taxonomyRequestSchema = Joi.object({

@@ -10,6 +10,8 @@
  * A1-A3 → ICE priority chain, and all classification rules.
  */
 
+'use strict';
+
 /** @typedef {import('../../shared/types').AppError} AppError */
 
 const config = require('../config');

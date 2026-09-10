@@ -9,6 +9,8 @@
  * and is mandated by ISO 21930. Do NOT duplicate or override it here.
  */
 
+'use strict';
+
 const { NDC3 } = require('./ndc');
 
 // ---------------------------------------------------------------------------

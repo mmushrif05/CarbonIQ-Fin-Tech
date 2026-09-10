@@ -26,6 +26,8 @@
  * Do NOT initialize a second Firebase app — reuse the existing one.
  */
 
+'use strict';
+
 const admin = require('firebase-admin');
 /* Required lazily: the logger reads config, and this file is loaded early. */
 const log = () => require('../observability/logger').for('platform/bridge/firebase');

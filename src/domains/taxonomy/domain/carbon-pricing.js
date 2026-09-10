@@ -14,6 +14,8 @@
  * Green loan pricing follows APAC Green Loan Principles (GLP) market practice.
  */
 
+'use strict';
+
 // ---------------------------------------------------------------------------
 // Carbon Tax Rates by Region
 // ---------------------------------------------------------------------------

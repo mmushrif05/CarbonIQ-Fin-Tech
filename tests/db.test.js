@@ -1,3 +1,5 @@
+'use strict';
+
 const DataStore = require('../src/platform/database/firebase-dal');
 
 // Mock Firebase database

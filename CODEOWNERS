@@ -1,0 +1,34 @@
+# Who has to look at a change before it lands.
+#
+# GitHub reads this from the repository root, .github/ or docs/. It is here so
+# it sits beside the licence and the contributing guide rather than inside the
+# workflow directory.
+#
+# A team of three cannot divide review by memory. These are the areas where a
+# wrong change is expensive and quiet: the engines that produce a regulatory
+# figure, the data behind them, the perimeter, and the storage seam.
+
+# Everything, unless something below is more specific.
+*                                   @mmushrif05
+
+# ── The engines. A change here moves a disclosed figure. ─────────────────────
+/src/domains/pcaf-part-c/domain/    @mmushrif05
+/src/domains/pcaf-part-a/domain/    @mmushrif05
+/src/domains/gcf/domain/            @mmushrif05
+/src/domains/baseline/              @mmushrif05
+
+# ── Regulatory data. Versioned, checksummed, and quoted by a report. ─────────
+/data/                              @mmushrif05
+/migrations/                        @mmushrif05
+
+# ── The perimeter and the seam. ──────────────────────────────────────────────
+/src/platform/auth/                 @mmushrif05
+/src/platform/database/             @mmushrif05
+/src/platform/config/               @mmushrif05
+
+# ── The rules that hold the rest of it. ──────────────────────────────────────
+/tests/architecture.test.js         @mmushrif05
+/tests/structure.test.js            @mmushrif05
+/tests/report-integrity.test.js     @mmushrif05
+/.github/workflows/                 @mmushrif05
+/netlify.toml                       @mmushrif05

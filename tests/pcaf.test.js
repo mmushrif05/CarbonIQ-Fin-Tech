@@ -3,6 +3,8 @@
  * CarbonIQ FinTech — PCAF Output Tests
  */
 
+'use strict';
+
 const { generatePCAFOutput } = require('../src/domains/lending/application/pcaf');
 
 describe('PCAF v3 Output', () => {

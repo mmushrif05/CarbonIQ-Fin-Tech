@@ -1,3 +1,5 @@
+'use strict';
+
 const request = require('supertest');
 const express = require('express');
 const errorHandler = require('../src/platform/http/error-handler');

@@ -5,6 +5,8 @@
  * Schema for green loan carbon KPI definitions.
  */
 
+'use strict';
+
 const { COVENANT_DEFAULTS } = require('../constants');
 
 /**

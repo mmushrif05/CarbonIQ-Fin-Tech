@@ -6,6 +6,8 @@
  * No wildcard (*) allowed — every origin must be explicitly permitted.
  */
 
+'use strict';
+
 const config = require('./index');
 
 const corsOptions = {

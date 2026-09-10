@@ -21,6 +21,8 @@
  *   POST /v1/webhooks                               → Webhook registration
  */
 
+'use strict';
+
 const { Router } = require('express');
 const config = require('../config');
 

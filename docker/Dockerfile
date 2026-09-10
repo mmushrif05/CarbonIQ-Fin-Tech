@@ -1,29 +1,39 @@
-# CarbonIQ FinTech — API Container
+# CarbonIQ FinTech — the API container.
 #
-# For local development only. Production uses Netlify Functions.
+# Local development only; production is a Netlify Function.
 #
-# Build:  docker build -t carboniq-fintech -f docker/Dockerfile .
-# Run:    docker run -p 3001:3001 --env-file .env carboniq-fintech
+#   docker compose -f docker/docker-compose.yml up
+#
+# Two stages, because one image cannot be both. `npm ci --production` omits
+# devDependencies, so the previous single-stage image could run the server and
+# not one check — no jest, no eslint, no tsc. A container a developer cannot
+# test in is a container they stop using.
+#
+# The Node version comes from .nvmrc and is stated in exactly one other place
+# (netlify.toml NODE_VERSION); tests/repo-hygiene.test.js holds them together.
 
-FROM node:18-alpine
-
+FROM node:22-alpine AS base
 WORKDIR /app
-
-# Copy package files and install dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci --production
 
-# Copy all source files
+# ── dev: everything, so the suite and the linters run in here ────────────────
+FROM base AS dev
+RUN npm ci
 COPY . .
-
-# Set environment
-ENV NODE_ENV=production
+ENV NODE_ENV=development
 ENV FINTECH_API_PORT=3001
-
 EXPOSE 3001
-
-# Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3001/health || exit 1
+CMD ["npm", "run", "dev"]
 
+# ── prod: the runtime only ───────────────────────────────────────────────────
+FROM base AS prod
+RUN npm ci --omit=dev
+COPY . .
+ENV NODE_ENV=production
+ENV FINTECH_API_PORT=3001
+EXPOSE 3001
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3001/health || exit 1
 CMD ["node", "src/server.js"]
