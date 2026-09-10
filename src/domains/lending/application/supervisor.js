@@ -237,9 +237,10 @@ async function createAndRunPipeline({ templateId, input, subject, orgId, metadat
   try {
     while (true) {
       // Check for blocking failures
-      if (_hasBlockingFailure(pipeline.stages)) {
+      // One lookup: `some` then `find` used the second result unchecked.
+      const failedStage = pipeline.stages.find(s => s.status === STAGE_STATUS.FAILED && !s.optional);
+      if (failedStage) {
         pipeline.status = PIPELINE_STATUS.FAILED;
-        const failedStage = pipeline.stages.find(s => s.status === STAGE_STATUS.FAILED && !s.optional);
         pipeline.error  = `Pipeline failed: required stage '${failedStage.stageId}' failed — ${failedStage.error}`;
 
         // Mark pending stages as skipped
@@ -271,7 +272,7 @@ async function createAndRunPipeline({ templateId, input, subject, orgId, metadat
 
       // Dispatch ready stages in parallel
       const dispatches = readyStages.map(async (stage) => {
-        const stageRef = pipeline.stages.find(s => s.stageId === stage.stageId);
+        const stageRef = stage;   // already the record's stage; a re-find may miss
         stageRef.status    = STAGE_STATUS.RUNNING;
         stageRef.startedAt = new Date().toISOString();
 

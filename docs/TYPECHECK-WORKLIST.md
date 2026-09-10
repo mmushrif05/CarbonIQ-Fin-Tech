@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **257**. Remaining: **169**.
+Checked across all three: **259**. Remaining: **169**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **231**. Remaining: **63** (416 errors, measured by
+Checked: **232**. Remaining: **63** (416 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -78,6 +78,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/application/learning-store.js` | 3 |
 | `src/domains/pcaf-part-c/application/partc-registers.js` | 3 |
 | `src/domains/pcaf-part-c/domain/index.js` | 3 |
+| `src/domains/pcaf-part-c/interface/routes/pcaf-partc/runs.js` | 3 |
 | `src/domains/capital/desk/position.js` | 2 |
 | `src/domains/capital/domain/capital-pipeline.js` | 2 |
 | `src/domains/lending/application/reports.js` | 2 |
@@ -89,10 +90,9 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/application/methodology/factors.js` | 2 |
 | `src/domains/pcaf-part-c/application/partc-methodology.js` | 2 |
 | `src/domains/pcaf-part-c/domain/conformance.js` | 2 |
-| `src/domains/pcaf-part-c/interface/routes/pcaf-partc.js` | 2 |
 | `src/domains/pcaf-part-c/interface/routes/pcaf-partc/agents.js` | 2 |
-| `src/domains/pcaf-part-c/interface/routes/pcaf-partc/runs.js` | 2 |
 | `scripts/generate-conformance-doc.js` | 1 |
+| `src/domains/pcaf-part-c/interface/routes/pcaf-partc.js` | 1 |
 
 ## The browser — `ui/`
 
@@ -124,7 +124,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **20**. Remaining: **90** (1227 errors, measured by
+Checked: **21**. Remaining: **90** (1227 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |

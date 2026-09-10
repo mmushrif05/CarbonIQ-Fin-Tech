@@ -10,6 +10,26 @@
  *   - Score band definitions
  */
 
+/**
+ * A default embodied-carbon factor. `source` is not decoration: a figure that
+ * cannot say where it came from cannot be defended to an assurer, and timber's
+ * negative factor is a biogenic credit rather than an error — which only the
+ * source line makes legible.
+ *
+ * @typedef {object} MaterialFactor
+ * @property {number} factor  kgCO2e per kg; negative where biogenic
+ * @property {string} unit
+ * @property {string} source
+ */
+
+/**
+ * A carbon-intensity benchmark band, in kgCO2e/m2.
+ * @typedef {object} BenchmarkBand
+ * @property {number} residential
+ * @property {number} commercial
+ * @property {number} [industrial]
+ */
+
 // ---------------------------------------------------------------------------
 // Default embodied carbon factors (kgCO2e per kg)
 // Used when a material's EPD / custom factor is not provided.
@@ -68,13 +88,12 @@ const TAXONOMY_THRESHOLDS = Object.freeze({
 // ---------------------------------------------------------------------------
 // PCAF Data Quality Scores
 // ---------------------------------------------------------------------------
-const PCAF_DATA_QUALITY = Object.freeze({
-  1: { label: 'Reported', description: 'Verified emissions data from the borrower' },
-  2: { label: 'Physical activity', description: 'Emissions derived from physical activity data' },
-  3: { label: 'Economic activity', description: 'Emissions derived from economic data' },
-  4: { label: 'Estimated', description: 'Emissions estimated from proxy data' },
-  5: { label: 'Default', description: 'Emissions from sector averages or default factors' },
-});
+/* Declared in `src/shared/constants.js`, which is the file production reads,
+   and re-exported here rather than restated. It used to be declared in both
+   with different content and different key names; production read one and a
+   test asserted the other, so the table nobody read was the one that was
+   proved. There is one now, and this line is what keeps it one. */
+const { PCAF_DATA_QUALITY } = require('../constants');
 
 // ---------------------------------------------------------------------------
 // Carbon Finance Score Bands

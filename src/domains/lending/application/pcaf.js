@@ -58,7 +58,7 @@ function generatePCAFOutput({ emissionSummary, materials80Pct, attributionFactor
 
     dataQuality: {
       score: dataQuality.score,
-      label: PCAF_DATA_QUALITY[dataQuality.score].name,
+      label: PCAF_DATA_QUALITY[dataQuality.score].label,
       description: PCAF_DATA_QUALITY[dataQuality.score].description,
       justification: dataQuality.justification,
       improvementPath: dataQuality.improvementPath

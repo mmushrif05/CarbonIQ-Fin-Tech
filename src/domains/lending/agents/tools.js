@@ -181,7 +181,7 @@ function estimate_preliminary_carbon({ buildingType, buildingArea_m2, region }) 
       asean_transition_kgCO2e_m2: TAXONOMY_ASEAN.tiers.transition.construction.maxEmbodiedCarbon_kgCO2e_per_m2
     },
     pcafDataQualityScore: 4,
-    pcafDataQualityLabel: PCAF_DATA_QUALITY[4].name,
+    pcafDataQualityLabel: PCAF_DATA_QUALITY[4].label,
     note: 'Preliminary estimate using sector benchmarks. Submit full BOQ to improve to PCAF Score 2-3.'
   };
 }
@@ -285,7 +285,7 @@ function assess_data_quality_gaps({ materials }) {
     withEPD:          withEPD.length,
     missingEPD:       missingEPD.length,
     currentPCAFScore: currentScore,
-    currentPCAFLabel: PCAF_DATA_QUALITY[currentScore].name,
+    currentPCAFLabel: PCAF_DATA_QUALITY[currentScore].label,
     potentialPCAFScore: potentialScore,
     prioritisedActions: prioritised,
     summaryMessage: missingEPD.length === 0

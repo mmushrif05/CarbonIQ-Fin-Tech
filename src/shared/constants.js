@@ -30,16 +30,38 @@ const CFS_THRESHOLDS = {
 };
 
 // ---------------------------------------------------------------------------
-// PCAF Data Quality Scores (1 = best, 5 = worst)
+// PCAF data quality — what a score means. One table, and the only one.
 // ---------------------------------------------------------------------------
 
-const PCAF_DATA_QUALITY = {
-  1: { name: 'Audited', description: 'Third-party verified, project-specific EPD data' },
-  2: { name: 'Verified', description: 'Project-specific data from CarbonIQ assessment with A1-A3 factors' },
-  3: { name: 'Estimated', description: 'Assessment using ICE v3.0 generic database factors' },
-  4: { name: 'Proxy', description: 'Building-type average (tCO2e/m2) from sector benchmarks' },
-  5: { name: 'Unknown', description: 'Sector-level average with no project-specific data' }
-};
+/**
+ * The meaning of a PCAF data-quality score.
+ *
+ * There were two of these, with different content and different key names
+ * (`name:` against `label:`). Production read one; a test asserted the other,
+ * so the table nobody read was the one that was proved. Neither described
+ * PCAF's own data hierarchy, and neither matched the two authoritative option
+ * tables the engines actually score against.
+ *
+ * **1 is the highest quality and 5 the lowest**, and the direction is the
+ * point. A score is a category, never a mark out of five: written as a
+ * fraction it inverts the meaning for anyone who has not opened the standard.
+ * Every rendering states the option and the scale beside it.
+ *
+ * **This is not an option-to-score lookup, and there is no global one.** How
+ * an option maps to a score is decided per engine and per asset class:
+ * PCAF Part C uses Table 5.3-2 (`src/domains/pcaf-part-c/domain/dq-scoring.js`),
+ * and Part A's mapping is **not uniform across asset classes** — Option 2b is
+ * score 2 in one class and score 3 in another. Reusing one lookup across both
+ * would be wrong for some classes, silently. This table says only what a score
+ * means once something else has decided it.
+ */
+const PCAF_DATA_QUALITY = Object.freeze({
+  1: { label: 'Reported',          description: 'Verified emissions reported by the borrower or the insured' },
+  2: { label: 'Physical activity', description: 'Emissions derived from primary physical activity data' },
+  3: { label: 'Economic activity', description: 'Emissions derived from economic activity data' },
+  4: { label: 'Estimated',         description: 'Emissions estimated from proxy data' },
+  5: { label: 'Default',           description: 'Emissions from sector averages or default factors' },
+});
 
 // ---------------------------------------------------------------------------
 // Taxonomy Classification Criteria
