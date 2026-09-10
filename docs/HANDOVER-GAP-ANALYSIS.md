@@ -298,6 +298,32 @@ deployed function.
 
 ## H3 — Contracts and types. Can a developer know the shape of the data?
 
+> **Delivered — all eleven gaps closed.** The findings below stand as the
+> record of what was found; each is answered here.
+>
+> **H3.1** Every one of the 157 operations documents its reply, and
+> `tests/api-contract.test.js` calls every GET needing no path parameter and
+> validates the body against what the document claims — so a wrong schema
+> cannot survive. The count is pinned as an equality, not a threshold.
+> **H3.2** The storage seam is typed, verb by verb. **H3.3** `strict: true`
+> with `noImplicitAny` the single exception. **H3.4** All 23 reference files,
+> the Carbon-Management bridge and the model's extraction output are held to a
+> schema at load, and the process refuses to start on a bad one.
+> **H3.5** `src/shared/models/entities.js` declares each core entity once and
+> names the three unrelated "projects" apart; one PCAF data-quality table
+> where there were two. **H3.6** One numeric guard, and a sweep refuses the
+> raw coercion anywhere under `src/`. **H3.7** Every write carries a schema
+> the router can read; no handler calls a Joi schema directly.
+> **H3.8** One intensity screen, governed by the baseline registry.
+> **H3.9** No placeholder remains; each model file declares a shape and a
+> vocabulary. **H3.10** The worklist measures by adopting the pragma and
+> running the tree's own check, so its counts are the real cost.
+> **H3.11** `ui/js` and `tests` are inside the check, on three configurations
+> so a server file cannot reach for `document` or `expect()` and pass.
+>
+> Two files crossed the 500-line cap and are split behind barrels
+> (`gcf/`, `partc-registry/`), the pattern this repository already uses.
+
 **H3.1 · The published contract types 13% of its replies. Critical.**
 `docs/openapi.json`: 146 operations, 19 with a real response schema, 119 returning
 `{"type":"object","additionalProperties":true}`, 8 with no content.
