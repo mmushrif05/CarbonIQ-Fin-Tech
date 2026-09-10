@@ -27,57 +27,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const ROOT = path.join(__dirname, '..');
-const SRC = path.join(ROOT, 'src');
+const { ROOT, SRC, COMPOSITION_ROOTS, walk, classify, edges, files, violations, DOMAIN_ISOLATION } =
+  require('./helpers/architecture');
 
-/* src/jobs.js registers the domain engines as job handlers on the platform's queue — a fourth root. */
-const COMPOSITION_ROOTS = new Set(['src/server.js', 'src/platform/http/router.js', 'src/platform/http/schemas.js', 'src/jobs.js']);
+void SRC; void COMPOSITION_ROOTS; void walk; void edges; void fs; void path; void DOMAIN_ISOLATION;
 
-function walk(dir, out = []) {
-  for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, e.name);
-    if (e.isDirectory()) walk(p, out);
-    else if (p.endsWith('.js')) out.push(p);
-  }
-  return out;
-}
-
-function classify(rel) {
-  let m = rel.match(/^src\/domains\/([^/]+)\/([^/]+)\//);
-  if (m) return { kind: 'domain', domain: m[1], layer: m[2] };
-  m = rel.match(/^src\/platform\/([^/]+)\//);
-  if (m) return { kind: 'platform', area: m[1] };
-  if (rel.startsWith('src/shared/')) return { kind: 'shared' };
-  if (rel.startsWith('src/')) return { kind: 'root' };
-  if (rel.startsWith('data/')) return { kind: 'data' };
-  return { kind: 'outside' };
-}
-
-/** Every relative require in a file, resolved to a repo-relative path. */
-function edges(file) {
-  const src = fs.readFileSync(file, 'utf8');
-  const out = [];
-  for (const m of src.matchAll(/require\(\s*['"](\.\.?\/[^'"]+)['"]\s*\)/g)) {
-    let target;
-    try { target = require.resolve(path.resolve(path.dirname(file), m[1])); } catch (_) { continue; }
-    out.push(path.relative(ROOT, target).split(path.sep).join('/'));
-  }
-  return out;
-}
-
-const files = walk(SRC).map(f => path.relative(ROOT, f).split(path.sep).join('/'));
-
-function violations(rule) {
-  const found = [];
-  for (const rel of files) {
-    const from = classify(rel);
-    for (const to of edges(path.join(ROOT, rel))) {
-      const reason = rule(rel, from, to, classify(to));
-      if (reason) found.push(`${rel} -> ${to}  (${reason})`);
-    }
-  }
-  return found;
-}
 
 describe('The layout is the one the readiness plan named', () => {
   test('every domain has a domain/ layer, and the platform has its areas', () => {

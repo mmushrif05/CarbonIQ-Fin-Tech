@@ -28,9 +28,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
-const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
+const read = (...p) => source(p.join('/'));
 
 const css = read('ui', 'styles.css');
 const html = read('ui', 'index.html');
@@ -74,9 +75,9 @@ describe('A column count that does not divide the tiles is a count that leaves w
   });
 
   test('the position band declares 1, 2 and 3 columns — five tiles, six cells', () => {
-    expect(css).toMatch(/\.anch-grid \{[\s\S]*?grid-template-columns: 1fr;/);
-    expect(css).toMatch(/min-width: 620px\)[\s\S]{0,120}\.anch-grid \{ grid-template-columns: repeat\(2, 1fr\)/);
-    expect(css).toMatch(/min-width: 1000px\)[\s\S]{0,120}\.anch-grid \{ grid-template-columns: repeat\(3, 1fr\)/);
+    must(css, /\.anch-grid \{[\s\S]*?grid-template-columns: 1fr;/, "the position band declares 1, 2 and 3 columns — five tiles, six cells");
+    must(css, /min-width: 620px\)[\s\S]{0,120}\.anch-grid \{ grid-template-columns: repeat\(2, 1fr\)/, "the position band declares 1, 2 and 3 columns — five tiles, six cells");
+    must(css, /min-width: 1000px\)[\s\S]{0,120}\.anch-grid \{ grid-template-columns: repeat\(3, 1fr\)/, "the position band declares 1, 2 and 3 columns — five tiles, six cells");
   });
 
   test('only the lead tile spans — a second spanning tile brings the fragmentation back', () => {
@@ -85,18 +86,18 @@ describe('A column count that does not divide the tiles is a count that leaves w
   });
 
   test('the capital tiles use two or four columns and never three', () => {
-    expect(css).toMatch(/\.cap-kpis \{ grid-template-columns: repeat\(2, 1fr\)/);
-    expect(css).toMatch(/\.cap-kpis \{ grid-template-columns: repeat\(4, 1fr\)/);
-    expect(css).not.toMatch(/\.cap-kpis \{ grid-template-columns: repeat\(3, 1fr\)/);
+    must(css, /\.cap-kpis \{ grid-template-columns: repeat\(2, 1fr\)/, "the capital tiles use two or four columns and never three");
+    must(css, /\.cap-kpis \{ grid-template-columns: repeat\(4, 1fr\)/, "the capital tiles use two or four columns and never three");
+    mustNot(css, /\.cap-kpis \{ grid-template-columns: repeat\(3, 1fr\)/, "the capital tiles use two or four columns and never three");
   });
 
   test('the assumptions use one column or three and never two', () => {
-    expect(css).toMatch(/\.asm-grid \{ grid-template-columns: repeat\(3, 1fr\)/);
-    expect(css).not.toMatch(/\.asm-grid \{ grid-template-columns: repeat\(2, 1fr\)/);
+    must(css, /\.asm-grid \{ grid-template-columns: repeat\(3, 1fr\)/, "the assumptions use one column or three and never two");
+    mustNot(css, /\.asm-grid \{ grid-template-columns: repeat\(2, 1fr\)/, "the assumptions use one column or three and never two");
   });
 
   test('the reason is recorded, so the next auto-fit is a deliberate choice', () => {
-    expect(css).toMatch(/a column count that does not divide the items is\s*\n?\s*a column count that leaves white/i);
+    must(css, /a column count that does not divide the items is\s*\n?\s*a column count that leaves white/i, "the reason is recorded, so the next auto-fit is a deliberate choice");
   });
 });
 
@@ -107,25 +108,25 @@ describe('Nothing is allowed to widen the page', () => {
   });
 
   test('the reason is recorded with the measurement that found it', () => {
-    expect(css).toMatch(/872px inside 794px/);
+    must(css, /872px inside 794px/, "the reason is recorded with the measurement that found it");
   });
 
   test('the header rows shrink and wrap rather than pushing the layout out', () => {
     for (const rule of ['.topbar', '.topbar-right', '.cap-head', '.cap-head-actions', '.search-box']) {
       const re = new RegExp(`\\${rule} \\{[^}]*min-width: 0`);
-      expect(css).toMatch(re);
+      must(css, re, "the header rows shrink and wrap rather than pushing the layout out");
     }
   });
 });
 
 describe('The position band reads as a dashboard, and loses no provenance', () => {
   test('the tile note is clamped rather than deleted', () => {
-    expect(css).toMatch(/\.anch-note \{[\s\S]*?-webkit-line-clamp: 2/);
+    must(css, /\.anch-note \{[\s\S]*?-webkit-line-clamp: 2/, "the tile note is clamped rather than deleted");
   });
 
   test('every note is still on the page in full, one click away', () => {
-    expect(html).toContain('id="anch-defs-body"');
-    expect(html).toMatch(/What each of these figures means, in full/);
+    must(html, 'id="anch-defs-body"', "every note is still on the page in full, one click away");
+    must(html, /What each of these figures means, in full/, "every note is still on the page in full, one click away");
   });
 
   test('the full notes are built from the same payload the tiles render', () => {
@@ -138,7 +139,8 @@ describe('The position band reads as a dashboard, and loses no provenance', () =
   });
 
   test('the trade is stated — a figure without its provenance is not shown', () => {
-    expect(read('ui', 'js', 'dashboard.js'))
-      .toMatch(/a figure without its provenance is not a figure this/);
+    must(read('ui', 'js', 'dashboard.js'),
+      /a figure without its provenance is not a figure this/,
+      'the trade is stated — a figure without its provenance is not shown');
   });
 });

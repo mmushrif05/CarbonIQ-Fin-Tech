@@ -17,11 +17,9 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
-const ROOT = path.join(__dirname, '..');
-const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
+const read = (...p) => source(p.join('/'));
 
 const html   = read('ui', 'index.html');
 const dashJs = read('ui', 'js', 'dashboard.js');
@@ -35,19 +33,19 @@ const renderScatter   = dashJs.slice(dashJs.indexOf('function _renderScatter'));
 
 describe('The Dashboard reads the capital book', () => {
   test('it fetches the derived dashboard rather than assembling one', () => {
-    expect(dashJs).toContain('/v1/capital/dashboard?');
-    expect(dashJs).toContain('async function _fetchCapital');
+    must(dashJs, '/v1/capital/dashboard?', "it fetches the derived dashboard rather than assembling one");
+    must(dashJs, 'async function _fetchCapital', "it fetches the derived dashboard rather than assembling one");
   });
 
   test('the four capital figures are on the page', () => {
     for (const id of ['cap-allocated', 'cap-paid', 'cap-undrawn', 'cap-balance']) {
-      expect(html).toContain(`id="${id}"`);
+      must(html, `id="${id}"`, "the four capital figures are on the page");
     }
   });
 
   test('committed and paid are separate tiles, not one figure', () => {
-    expect(html).toMatch(/Committed, not yet drawn/);
-    expect(html).toMatch(/Paid out/);
+    must(html, /Committed, not yet drawn/, "committed and paid are separate tiles, not one figure");
+    must(html, /Paid out/, "committed and paid are separate tiles, not one figure");
     expect(renderCapital).toMatch(/A commitment is a promise; a payment is a movement/);
   });
 
@@ -58,23 +56,24 @@ describe('The Dashboard reads the capital book', () => {
   });
 
   test('the three parts of the allocation are one bar, because they are one whole', () => {
-    expect(html).toContain('id="cap-deploy-bar"');
+    must(html, 'id="cap-deploy-bar"', "the three parts of the allocation are one bar, because they are one whole");
     expect(renderCapital).toContain('cap-stack-seg');
-    expect(css).toMatch(/\.cap-stack \{[\s\S]*?gap: 2px;/);   // a surface gap between fills
+    must(css, /\.cap-stack \{[\s\S]*?gap: 2px;/,
+      'the three fills are separated by a surface gap rather than a border');
   });
 
   test('percentages that are parts of one whole sum to 100', () => {
     // Rounding each on its own gave 43 + 27 + 31 = 101, and a reader who adds
     // them up and gets 101 is right to stop trusting the screen.
-    expect(dashJs).toContain('function _wholePercents');
+    must(dashJs, 'function _wholePercents', "percentages that are parts of one whole sum to 100");
     expect(renderCapital).toContain('_wholePercents');
   });
 });
 
 describe('The emissions ledger keeps its four lines apart on screen', () => {
   test('two blocks with a rule between them, and the rule says what it is for', () => {
-    expect(html).toMatch(/cap-ledger-rule[\s\S]{0,120}never netted against the figures on the left/);
-    expect(css).toMatch(/\.cap-ledger-rule \{[\s\S]*?border-left: 2px dashed/);
+    must(html, /cap-ledger-rule[\s\S]{0,120}never netted against the figures on the left/, "two blocks with a rule between them, and the rule says what it is for");
+    must(css, /\.cap-ledger-rule \{[\s\S]*?border-left: 2px dashed/, "two blocks with a rule between them, and the rule says what it is for");
   });
 
   test('measured and projected are separate rows, never stacked', () => {
@@ -85,7 +84,7 @@ describe('The emissions ledger keeps its four lines apart on screen', () => {
 
   test('the projection is hatched, and that texture means only that', () => {
     expect(renderEmissions).toContain('hatch: true');
-    expect(css).toMatch(/\.cap-row-fill\.is-projected \{[\s\S]*?repeating-linear-gradient/);
+    must(css, /\.cap-row-fill\.is-projected \{[\s\S]*?repeating-linear-gradient/, "the projection is hatched, and that texture means only that");
     /* One texture, one meaning. Every rule that uses it must be a
        `.is-projected` rule — the hatch says "this is a forecast" and must
        never come to mean anything else. */
@@ -123,8 +122,8 @@ describe('The evidence band states three things, not one', () => {
     dashJsAll.indexOf('function _renderEvidence') + 3500);
 
   test('the section exists and is drawn from the payload', () => {
-    expect(html).toContain('id="cap-evidence"');
-    expect(dashJsAll).toMatch(/_renderEvidence\(d\);/);
+    must(html, 'id="cap-evidence"', "the section exists and is drawn from the payload");
+    must(dashJsAll, /_renderEvidence\(d\);/, 'the section exists and is drawn from the payload');
   });
 
   test('an unscored holding is named as excluded rather than counted as zero', () => {
@@ -137,10 +136,10 @@ describe('The evidence band states three things, not one', () => {
    * the direction, and both ends are named.
    */
   test('the score is drawn on its scale, with the direction stated', () => {
-    for (const n of [1, 2, 3, 4, 5]) expect(html).toContain(`data-band="${n}"`);
-    expect(html).toMatch(/best evidence/);
-    expect(html).toMatch(/weakest/);
-    expect(html).toMatch(/1 is the best of 1–5/);
+    for (const n of [1, 2, 3, 4, 5]) must(html, `data-band="${n}"`, "the score is drawn on its scale, with the direction stated");
+    must(html, /best evidence/, "the score is drawn on its scale, with the direction stated");
+    must(html, /weakest/, "the score is drawn on its scale, with the direction stated");
+    must(html, /1 is the best of 1–5/, "the score is drawn on its scale, with the direction stated");
     expect(renderEvidence).toMatch(/is-here/);
   });
 
@@ -152,7 +151,7 @@ describe('The evidence band states three things, not one', () => {
   });
 
   test('coverage says what share of the book the score speaks for', () => {
-    expect(html).toContain('id="cap-dq-coverage"');
+    must(html, 'id="cap-dq-coverage"', "coverage says what share of the book the score speaks for");
     expect(renderEvidence).toMatch(/investmentsScored/);
     expect(renderEvidence).toMatch(/investmentsWithoutScore/);
   });
@@ -160,11 +159,11 @@ describe('The evidence band states three things, not one', () => {
   /* A bar drawn on an inline element renders as nothing, which reads as a
      coverage of zero rather than a missing element. */
   test('the coverage bar is a block', () => {
-    expect(css).toMatch(/\.cap-ev-bar > span \{[^}]*display: block/);
+    must(css, /\.cap-ev-bar > span \{[^}]*display: block/, "the coverage bar is a block");
   });
 
   test('the assurance state is shown beside the score, never inferred', () => {
-    expect(html).toMatch(/data-assurance="financed"/);
+    must(html, /data-assurance="financed"/, "the assurance state is shown beside the score, never inferred");
     expect(renderEvidence).toMatch(/CarbonIQAssurance/);
     // Declared or absent. Nothing in the renderer decides it from the figures.
     expect(renderEvidence).not.toMatch(/assured\s*=\s*(true|false)/);
@@ -174,27 +173,27 @@ describe('The evidence band states three things, not one', () => {
      container is, which is one of the two shapes that put horizontal overflow
      on nine pages of this application. */
   test('the band collapses on a narrow screen', () => {
-    expect(css).toMatch(/\.cap-evidence \{[\s\S]*?minmax\(min\(100%, 240px\), 1fr\)/);
+    must(css, /\.cap-evidence \{[\s\S]*?minmax\(min\(100%, 240px\), 1fr\)/, "the band collapses on a narrow screen");
   });
 });
 
 describe('The pipeline and its weighting', () => {
   test('the slider is a real control with both ends labelled', () => {
-    expect(html).toContain('id="cap-weight"');
-    expect(html).toMatch(/cap-weight-end">Financial return/);
-    expect(html).toMatch(/cap-weight-end">Carbon impact/);
+    must(html, 'id="cap-weight"', "the slider is a real control with both ends labelled");
+    must(html, /cap-weight-end">Financial return/, "the slider is a real control with both ends labelled");
+    must(html, /cap-weight-end">Carbon impact/, "the slider is a real control with both ends labelled");
   });
 
   test('the ranking is recomputed by the engine, never in the browser', () => {
     // A screen that scored differently from the API would show one thing and
     // disclose another.
-    expect(dashJs).toMatch(/_carbonWeight = Number\(weight\.value\) \/ 100/);
-    expect(dashJs).toContain('refreshCapital');
-    expect(dashJs).not.toMatch(/carbonWeight\s*\*\s*\w+\s*\+\s*\(1 - carbonWeight\)/);
+    must(dashJs, /_carbonWeight = Number\(weight\.value\) \/ 100/, "the ranking is recomputed by the engine, never in the browser");
+    must(dashJs, 'refreshCapital', "the ranking is recomputed by the engine, never in the browser");
+    mustNot(dashJs, /carbonWeight\s*\*\s*\w+\s*\+\s*\(1 - carbonWeight\)/, "the ranking is recomputed by the engine, never in the browser");
   });
 
   test('the slider is debounced, because it fires continuously', () => {
-    expect(dashJs).toMatch(/clearTimeout\(_weightTimer\)/);
+    must(dashJs, /clearTimeout\(_weightTimer\)/, "the slider is debounced, because it fires continuously");
   });
 
   test('the weighting note from the engine is printed beside the rank', () => {
@@ -204,7 +203,7 @@ describe('The pipeline and its weighting', () => {
   test('an unscoreable project is shown unscored, with what is missing', () => {
     expect(renderPipeline).toMatch(/not scored/);
     expect(renderPipeline).toContain('r.missing.join');
-    expect(html).toContain('id="cap-unrankable-note"');
+    must(html, 'id="cap-unrankable-note"', "an unscoreable project is shown unscored, with what is missing");
   });
 
   test('an unpriced return is named as unpriced, not shown as 0%', () => {
@@ -212,7 +211,7 @@ describe('The pipeline and its weighting', () => {
   });
 
   test('what is waiting is grouped by type, with capital and contribution', () => {
-    expect(html).toContain('id="cap-bytype-rows"');
+    must(html, 'id="cap-bytype-rows"', "what is waiting is grouped by type, with capital and contribution");
     expect(renderPipeline).toContain('p.byType.map');
   });
 });
@@ -229,8 +228,8 @@ describe('The scatter', () => {
   });
 
   test('colour follows the entity — rank is a ring and a label, not a repaint', () => {
-    expect(css).toMatch(/\.cap-dot \{[\s\S]*?fill: #00875a;/);
-    expect(css).toMatch(/\.cap-dot\.is-lead \{[\s\S]*?stroke: #00875a;/);
+    must(css, /\.cap-dot \{[\s\S]*?fill: #00875a;/, "colour follows the entity — rank is a ring and a label, not a repaint");
+    must(css, /\.cap-dot\.is-lead \{[\s\S]*?stroke: #00875a;/, "colour follows the entity — rank is a ring and a label, not a repaint");
     expect(renderScatter).toMatch(/r\.rank <= 2/);                // selective labels
   });
 
@@ -239,7 +238,7 @@ describe('The scatter', () => {
   });
 
   test('overlapping marks stay countable', () => {
-    expect(css).toMatch(/\.cap-dot \{[\s\S]*?stroke: var\(--surface\); stroke-width: 2;/);
+    must(css, /\.cap-dot \{[\s\S]*?stroke: var\(--surface\); stroke-width: 2;/, "overlapping marks stay countable");
   });
 
   test('fewer than two points is said, not drawn as an empty frame', () => {
@@ -264,8 +263,8 @@ describe('The palette is the validated one', () => {
   });
 
   test('text wears text tokens, never a series colour', () => {
-    expect(css).toMatch(/\.cap-row-value \{[\s\S]*?color: var\(--text-primary\)/);
-    expect(css).toMatch(/\.cap-axis-label \{[\s\S]*?fill: var\(--text-tertiary\)/);
+    must(css, /\.cap-row-value \{[\s\S]*?color: var\(--text-primary\)/, "text wears text tokens, never a series colour");
+    must(css, /\.cap-axis-label \{[\s\S]*?fill: var\(--text-tertiary\)/, "text wears text tokens, never a series colour");
   });
 });
 
@@ -279,7 +278,7 @@ describe('Empty and failed states are distinguished', () => {
 
   test('a worked example says so beside the figures, not only in a banner', () => {
     expect(render).toContain("_capitalMessage(d.sampleNote, 'sample')");
-    expect(css).toContain('.cap-message.is-sample');
+    must(css, '.cap-message.is-sample', "a worked example says so beside the figures, not only in a banner");
   });
 
   test('a failed read says the figures are blank because the request failed', () => {
@@ -294,8 +293,8 @@ describe('Empty and failed states are distinguished', () => {
   });
 
   test('a book that cannot be persisted says so', () => {
-    expect(dashJs).toMatch(/durable === false/);
-    expect(html).toContain('id="cap-storage"');
+    must(dashJs, /durable === false/, "a book that cannot be persisted says so");
+    must(html, 'id="cap-storage"', "a book that cannot be persisted says so");
   });
 
   test('the sample banner no longer stamps the Dashboard', () => {
@@ -310,29 +309,29 @@ describe('Empty and failed states are distinguished', () => {
 describe('Recording the book', () => {
   test('the drawer covers allocation, investments and payments', () => {
     for (const id of ['crd-pf-save', 'crd-budget-save', 'crd-inv-save', 'crd-pay-save', 'crd-seed']) {
-      expect(html).toContain(`id="${id}"`);
+      must(html, `id="${id}"`, "the drawer covers allocation, investments and payments");
     }
   });
 
   test('nothing in it computes a total', () => {
     // Balance and every roll-up come back from the engine, so a figure on the
     // dashboard cannot disagree with the records behind it.
-    expect(recJs).not.toMatch(/allocated\s*-\s*paid/);
-    expect(recJs).toContain('Dashboard.refreshCapital');
+    mustNot(recJs, /allocated\s*-\s*paid/, "nothing in it computes a total");
+    must(recJs, 'Dashboard.refreshCapital', "nothing in it computes a total");
   });
 
   test('a blank return is recorded as unpriced, not as zero', () => {
-    expect(recJs).toMatch(/expectedReturnPct: _num\('crd-inv-return'\)/);
-    expect(recJs).toMatch(/A blank[\s\S]{0,60}stored as zero would rank the project as the worst return/);
-    expect(html).toMatch(/blank → not yet priced/);
+    must(recJs, /expectedReturnPct: _num\('crd-inv-return'\)/, "a blank return is recorded as unpriced, not as zero");
+    must(recJs, /A blank[\s\S]{0,60}stored as zero would rank the project as the worst return/, "a blank return is recorded as unpriced, not as zero");
+    must(html, /blank → not yet priced/, "a blank return is recorded as unpriced, not as zero");
   });
 
   test('the form says the four emission lines are never netted', () => {
-    expect(html).toMatch(/never netted against the inventory/);
+    must(html, /never netted against the inventory/, "the form says the four emission lines are never netted");
   });
 
   test('a refusal names the cause and the remedy', () => {
-    expect(recJs).toContain('function _fail');
-    expect(recJs).toMatch(/err\.remedy/);
+    must(recJs, 'function _fail', "a refusal names the cause and the remedy");
+    must(recJs, /err\.remedy/, "a refusal names the cause and the remedy");
   });
 });

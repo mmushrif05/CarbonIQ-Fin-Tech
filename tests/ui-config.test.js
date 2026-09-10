@@ -16,6 +16,7 @@ const request = require('supertest');
 const express = require('express');
 
 const uiConfigRouter = require('../src/platform/http/ui-config');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 function buildApp() {
   const app = express();
@@ -80,12 +81,12 @@ describe('the repository no longer carries the deployment key', () => {
   const path = require('path');
 
   test('ui/config.js ships no ck_live_ literal', () => {
-    const src = fs.readFileSync(path.join(__dirname, '..', 'ui', 'config.js'), 'utf8');
-    expect(src).not.toMatch(/ck_live_[a-zA-Z0-9]{32}/);
+    const src = source('ui/config.js');
+    mustNot(src, /ck_live_[a-zA-Z0-9]{32}/, "ui/config.js ships no ck_live_ literal");
   });
 
   test('index.html loads the served config after the static one', () => {
-    const html = fs.readFileSync(path.join(__dirname, '..', 'ui', 'index.html'), 'utf8');
+    const html = source('ui/index.html');
     const staticAt = html.indexOf('src="config.js"');
     const servedAt = html.indexOf('src="/v1/ui-config.js"');
 
@@ -158,9 +159,9 @@ describe('The build stamp', () => {
   test('the footer prints it, and prints nothing where there is no build', () => {
     const fs = require('fs');
     const path = require('path');
-    const brand = fs.readFileSync(path.join(__dirname, '..', 'ui', 'js', 'brand.js'), 'utf8');
-    expect(brand).toMatch(/window\.CARBONIQ_BUILD\s*\?/);
-    expect(brand).toMatch(/build \$\{esc\(window\.CARBONIQ_BUILD\)\}/);
+    const brand = source('ui/js/brand.js');
+    must(brand, /window\.CARBONIQ_BUILD\s*\?/, "the footer prints it, and prints nothing where there is no build");
+    must(brand, /build \$\{esc\(window\.CARBONIQ_BUILD\)\}/, "the footer prints it, and prints nothing where there is no build");
   });
 });
 

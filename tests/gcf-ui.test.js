@@ -22,42 +22,43 @@
 
 const fs = require('fs');
 const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
-const HTML = fs.readFileSync(path.join(ROOT, 'ui/pages/gcf.html'), 'utf8');
-const JS = fs.readFileSync(path.join(ROOT, 'ui/js/gcf.js'), 'utf8');
-const INDEX = fs.readFileSync(path.join(ROOT, 'ui/index.html'), 'utf8');
-const APP = fs.readFileSync(path.join(ROOT, 'ui/app.js'), 'utf8');
+const HTML = source('ui/pages/gcf.html');
+const JS = source('ui/js/gcf.js');
+const INDEX = source('ui/index.html');
+const APP = source('ui/app.js');
 
 describe('The page is reachable and named', () => {
   test('the nav carries an entry, the shell a container, and the head a script', () => {
-    expect(INDEX).toContain('data-page="gcf"');
-    expect(INDEX).toContain('id="page-gcf" data-src="pages/gcf.html"');
-    expect(INDEX).toContain('js/gcf.js');
+    must(INDEX, 'data-page="gcf"', "the nav carries an entry, the shell a container, and the head a script");
+    must(INDEX, 'id="page-gcf" data-src="pages/gcf.html"', "the nav carries an entry, the shell a container, and the head a script");
+    must(INDEX, 'js/gcf.js', "the nav carries an entry, the shell a container, and the head a script");
   });
 
   test('it is registered with a real title, not left to show its own id', () => {
-    expect(APP).toMatch(/'gcf':\s*\{[\s\S]*?title: 'GCF Pipeline'/);
-    expect(APP).toMatch(/'gcf':\s*\{[\s\S]*?init:/);
+    must(APP, /'gcf':\s*\{[\s\S]*?title: 'GCF Pipeline'/, "it is registered with a real title, not left to show its own id");
+    must(APP, /'gcf':\s*\{[\s\S]*?init:/, "it is registered with a real title, not left to show its own id");
   });
 
   test('a return visit re-reads rather than showing what it said last time', () => {
-    expect(APP).toMatch(/'gcf':\s*\{[\s\S]*?refresh:/);
+    must(APP, /'gcf':\s*\{[\s\S]*?refresh:/, "a return visit re-reads rather than showing what it said last time");
   });
 });
 
 describe('Layout rules that were broken before they were written down', () => {
   test('[hidden] beats any class rule that sets display', () => {
-    expect(HTML).toMatch(/\.gcf-panel\[hidden\]\s*\{\s*display:\s*none\s*!important/);
+    must(HTML, /\.gcf-panel\[hidden\]\s*\{\s*display:\s*none\s*!important/, "[hidden] beats any class rule that sets display");
   });
 
   test('the score bar is a block, or its height and background do not apply', () => {
-    expect(HTML).toMatch(/\.gcf-bar\s*\{[^}]*display:\s*block/);
+    must(HTML, /\.gcf-bar\s*\{[^}]*display:\s*block/, "the score bar is a block, or its height and background do not apply");
   });
 
   test('a select may shrink below its widest option', () => {
-    expect(HTML).toMatch(/\.gcf-actions select\s*\{[^}]*max-width:\s*100%/);
-    expect(HTML).toMatch(/\.gcf-actions select\s*\{[^}]*min-width:\s*0/);
+    must(HTML, /\.gcf-actions select\s*\{[^}]*max-width:\s*100%/, "a select may shrink below its widest option");
+    must(HTML, /\.gcf-actions select\s*\{[^}]*min-width:\s*0/, "a select may shrink below its widest option");
   });
 
   test('grids use explicit column counts, never auto-fit with a spanning child', () => {
@@ -67,13 +68,13 @@ describe('Layout rules that were broken before they were written down', () => {
     const decls = HTML.match(/grid-template-columns:[^;]+;/g) || [];
     expect(decls.length).toBeGreaterThan(2);
     expect(decls.join(' ')).not.toMatch(/auto-fit|auto-fill/);
-    expect(HTML).toMatch(/\.gcf-figures\s*\{[^}]*grid-template-columns:\s*1fr/);
-    expect(HTML).toMatch(/repeat\(2, 1fr\)/);
-    expect(HTML).toMatch(/repeat\(3, 1fr\)/);
+    must(HTML, /\.gcf-figures\s*\{[^}]*grid-template-columns:\s*1fr/, "grids use explicit column counts, never auto-fit with a spanning child");
+    must(HTML, /repeat\(2, 1fr\)/, "grids use explicit column counts, never auto-fit with a spanning child");
+    must(HTML, /repeat\(3, 1fr\)/, "grids use explicit column counts, never auto-fit with a spanning child");
   });
 
   test('wide content scrolls inside its own container', () => {
-    expect(HTML).toMatch(/\.gcf-scroll\s*\{\s*overflow-x:\s*auto/);
+    must(HTML, /\.gcf-scroll\s*\{\s*overflow-x:\s*auto/, "wide content scrolls inside its own container");
     const tables = HTML.match(/<table class="gcf-table"/g) || [];
     const wrapped = HTML.match(/<div class="gcf-scroll"><table class="gcf-table"/g) || [];
     // Every table rendered into the page is wrapped by its renderer or its markup.
@@ -82,7 +83,7 @@ describe('Layout rules that were broken before they were written down', () => {
   });
 
   test('the root sets min-width 0 so it can shrink inside a flex parent', () => {
-    expect(HTML).toMatch(/\.gcf\s*\{[\s\S]*?min-width:\s*0/);
+    must(HTML, /\.gcf\s*\{[\s\S]*?min-width:\s*0/, "the root sets min-width 0 so it can shrink inside a flex parent");
   });
 });
 
@@ -96,11 +97,11 @@ describe('Both themes resolve as a set', () => {
   });
 
   test('the dark media query is guarded so an explicit light choice wins', () => {
-    expect(HTML).toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*?:root:not\(\[data-theme="light"\]\) \.gcf/);
+    must(HTML, /@media \(prefers-color-scheme: dark\)[\s\S]*?:root:not\(\[data-theme="light"\]\) \.gcf/, "the dark media query is guarded so an explicit light choice wins");
   });
 
   test('an explicit dark choice wins in the other direction too', () => {
-    expect(HTML).toMatch(/:root\[data-theme="dark"\] \.gcf/);
+    must(HTML, /:root\[data-theme="dark"\] \.gcf/, "an explicit dark choice wins in the other direction too");
   });
 });
 
@@ -116,47 +117,47 @@ describe('The renderer obeys the engine rules', () => {
   });
 
   test('reset removes the stored override rather than writing defaults back', () => {
-    expect(JS).toMatch(/removeItem\(WEIGHT_KEY\)/);
-    expect(JS).toMatch(/Removes the override rather than writing the defaults back/);
+    must(JS, /removeItem\(WEIGHT_KEY\)/, "reset removes the stored override rather than writing defaults back");
+    must(JS, /Removes the override rather than writing the defaults back/, "reset removes the stored override rather than writing defaults back");
   });
 
   test('only a changed weight is sent', () => {
-    expect(JS).toMatch(/v !== state\.defaults\[k\]/);
+    must(JS, /v !== state\.defaults\[k\]/, "only a changed weight is sent");
   });
 
   test('documents are fetched as a blob, never opened as a plain link', () => {
     /* A plain link arrives unauthenticated, which reads to a user as a broken
        download rather than a rejected one. */
-    expect(JS).toMatch(/URL\.createObjectURL/);
-    expect(JS).not.toMatch(/window\.open\(/);
+    must(JS, /URL\.createObjectURL/, "documents are fetched as a blob, never opened as a plain link");
+    mustNot(JS, /window\.open\(/, "documents are fetched as a blob, never opened as a plain link");
   });
 
   test('the adaptation co-benefit is never folded into the mitigation headline', () => {
-    expect(JS).toMatch(/Adaptation co-benefit/);
-    expect(JS).not.toMatch(/headline\.annual_tCO2e\s*\+\s*adaptationCoBenefit/);
-    expect(JS).not.toMatch(/annual_tCO2e\s*-\s*.*embodied/i);
+    must(JS, /Adaptation co-benefit/, "the adaptation co-benefit is never folded into the mitigation headline");
+    mustNot(JS, /headline\.annual_tCO2e\s*\+\s*adaptationCoBenefit/, "the adaptation co-benefit is never folded into the mitigation headline");
+    mustNot(JS, /annual_tCO2e\s*-\s*.*embodied/i, "the adaptation co-benefit is never folded into the mitigation headline");
   });
 
   test('financed emissions are named as living elsewhere, not omitted', () => {
-    expect(JS).toMatch(/Financed emissions', 'in the capital book'/);
+    must(JS, /Financed emissions', 'in the capital book'/, "financed emissions are named as living elsewhere, not omitted");
   });
 
   test('every figure entered carries an evidence tier control beside it', () => {
-    expect(JS).toMatch(/const tierSelect =/);
-    expect(JS).toMatch(/kind: 'tiered'/);
+    must(JS, /const tierSelect =/, "every figure entered carries an evidence tier control beside it");
+    must(JS, /kind: 'tiered'/, "every figure entered carries an evidence tier control beside it");
     const tiered = (JS.match(/kind: 'tiered'/g) || []).length;
     expect(tiered).toBeGreaterThanOrEqual(4);
   });
 
   test('the sample banner is shown whenever the shipped pipeline is showing', () => {
-    expect(JS).toMatch(/gcfSampleBanner/);
-    expect(JS).toMatch(/pipeline\.sampleNote/);
+    must(JS, /gcfSampleBanner/, "the sample banner is shown whenever the shipped pipeline is showing");
+    must(JS, /pipeline\.sampleNote/, "the sample banner is shown whenever the shipped pipeline is showing");
   });
 
   test('a write re-reads every open panel rather than leaving stale rows', () => {
     /* Stale rows after a write are what made an earlier agent look static. */
-    expect(JS).toMatch(/function refreshAll\(\)/);
-    expect(JS).toMatch(/refreshAll\(\);/);
+    must(JS, /function refreshAll\(\)/, "a write re-reads every open panel rather than leaving stale rows");
+    must(JS, /refreshAll\(\);/, "a write re-reads every open panel rather than leaving stale rows");
   });
 });
 
@@ -165,9 +166,9 @@ describe('Every sub-tab exists in both the markup and the router', () => {
 
   test('each has a tab button, a panel and a loader', () => {
     for (const p of PANELS) {
-      expect(HTML).toContain(`data-panel="${p}"`);
-      expect(HTML).toContain(`id="gcfPanel-${p}"`);
-      expect(JS).toMatch(new RegExp(`\\b${p}:\\s*load`));
+      must(HTML, `data-panel="${p}"`, "each has a tab button, a panel and a loader");
+      must(HTML, `id="gcfPanel-${p}"`, "each has a tab button, a panel and a loader");
+      must(JS, new RegExp(`\\b${p}:\\s*load`), "each has a tab button, a panel and a loader");
     }
   });
 

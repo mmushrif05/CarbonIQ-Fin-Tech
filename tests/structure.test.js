@@ -18,6 +18,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.resolve(__dirname, '..');
 const walk = (dir, out = []) => {
@@ -110,7 +111,9 @@ describe('The frontend build (H1) and the browser tests (H3)', () => {
       expect(fs.existsSync(path.join(out, `${k}.map`))).toBe(true);
     }
     expect(manifest.files['vendor/marked.min.js']).toMatchObject({ minified: false });
-    expect(fs.readFileSync(path.join(ROOT, 'ui/index.html'), 'utf8')).not.toMatch(/<script src="https?:\/\//);
+    mustNot(source('ui/index.html'), /<script src="https?:\/\//,
+      'no page fetches a script from another origin — the markdown library is vendored',
+      'vendor it under ui/vendor/ and reference it by path');
     expect(fs.existsSync(path.join(out, 'index.html'))).toBe(true);
     expect(fs.readFileSync(path.join(out, 'index.html'), 'utf8')).toBe(fs.readFileSync(path.join(ROOT, 'ui/index.html'), 'utf8'));
     /* Top-level names survive: the modules reach one another through globals. */
@@ -299,17 +302,25 @@ describe('The layering leak is closed (E6)', () => {
 
 describe('The exit criterion: an import from one domain into another\'s internals fails the build', () => {
   test('a file that reaches into another domain is caught by the architecture checker', () => {
-    const offender = path.join(ROOT, 'src/domains/gcf/domain/__violation_probe.js');
-    fs.writeFileSync(offender, "'use strict';\nmodule.exports = require('../../pcaf-part-c/domain/rollup');\n");
-    try {
-      const out = execFileSync('npx', ['jest', 'tests/architecture.test.js', '--silent', '-t', 'domain/ layer imports only'], { cwd: ROOT, env: { ...process.env, CI: '1' }, encoding: 'utf8', stdio: 'pipe' });
-      throw new Error(`the checker let it through:\n${out}`);
-    } catch (err) {
-      const text = `${err.stdout || ''}${err.stderr || ''}${err.message || ''}`;
-      expect(text).toMatch(/__violation_probe\.js -> src\/domains\/pcaf-part-c\/domain\/rollup\.js/);
-      expect(text).toMatch(/domain layer reaching outside/);
-    } finally {
-      fs.rmSync(offender, { force: true });
-    }
-  }, 120_000);
+    /* The checker is called with one synthetic edge rather than a probe file
+       written into `src/` and a nested Jest run. The old shape left a stray
+       module in the source tree on any interrupt, and cost two minutes each
+       run to prove something a function call proves in a millisecond. The rule
+       under test is the real one the suite enforces, imported from it. */
+    const { violations, DOMAIN_ISOLATION } = require('./helpers/architecture');
+
+    expect(violations(DOMAIN_ISOLATION)).toEqual([]);
+
+    const probe = [{
+      rel: 'src/domains/gcf/domain/__violation_probe.js',
+      to: 'src/domains/pcaf-part-c/domain/rollup.js',
+    }];
+    const caught = violations(DOMAIN_ISOLATION, probe);
+    expect(caught).toHaveLength(1);
+    expect(caught[0]).toMatch(/__violation_probe\.js -> src\/domains\/pcaf-part-c\/domain\/rollup\.js/);
+    expect(caught[0]).toMatch(/domain layer reaching outside/);
+
+    /* And nothing was written: the source tree is untouched. */
+    expect(fs.existsSync(path.join(ROOT, 'src/domains/gcf/domain/__violation_probe.js'))).toBe(false);
+  });
 });

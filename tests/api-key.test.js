@@ -10,7 +10,12 @@
    the keys would be looked up in the database instead, so this suite pins
    the in-memory store: it is about the middleware, not about where keys live
    (tests/pg-store.test.js covers keys in PostgreSQL). */
+/* This suite mocks Firebase as the home of API keys, so it is about the
+   middleware rather than about where keys live — on PostgreSQL the lookup
+   goes to the database and the mock is not consulted. tests/pg-store.test.js
+   covers keys in PostgreSQL. */
 process.env.STORAGE_BACKEND = 'memory';
+
 const request  = require('supertest');
 const express  = require('express');
 

@@ -23,8 +23,6 @@
 
 'use strict';
 
-process.env.STORAGE_BACKEND = 'memory';
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
 const app = require('../src/server');
@@ -325,7 +323,10 @@ describe('The register over HTTP', () => {
 
   test('every response says what the deployment can persist', async () => {
     const r = (await auth(api().get('/v1/gcf/pipeline')).expect(200)).body.pipeline;
-    expect(['firebase', 'blobs', 'memory', 'none']).toContain(r.storage.mode);
+    /* The seam's own list, not a copy of it. The literal here omitted
+       `postgres` — the store every deployment actually runs on — and passed,
+       because the suite was pinned to memory and never met one. */
+    expect([...partcStore.BACKENDS, 'none']).toContain(r.storage.mode);
   });
 
   test('the register needs a key, like everything else that reads the book', async () => {

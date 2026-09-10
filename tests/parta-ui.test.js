@@ -21,9 +21,10 @@
 const fs   = require('fs');
 const path = require('path');
 const vm   = require('vm');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
-const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
+const read = (...p) => source(p.join('/'));
 
 const html   = read('ui', 'index.html');
 const appJs  = read('ui', 'app.js');
@@ -38,17 +39,17 @@ const PartA = vm.runInNewContext(`${moduleSrc}\n;PCAFPartAPage`, {}, { timeout: 
 
 describe('The Part A screen is reachable', () => {
   test('the sidebar carries a nav item for it', () => {
-    expect(html).toContain('data-page="pcaf-parta"');
-    expect(html).toMatch(/data-page="pcaf-parta"[\s\S]{0,600}?PCAF Part A/);
+    must(html, 'data-page="pcaf-parta"', "the sidebar carries a nav item for it");
+    must(html, /data-page="pcaf-parta"[\s\S]{0,600}?PCAF Part A/, "the sidebar carries a nav item for it");
   });
 
   test('the page container exists and names its fragment', () => {
-    expect(html).toContain('id="page-pcaf-parta" data-src="pages/pcaf-parta.html"');
+    must(html, 'id="page-pcaf-parta" data-src="pages/pcaf-parta.html"', "the page container exists and names its fragment");
   });
 
   test('the module and its stylesheet are loaded', () => {
-    expect(html).toContain('<script src="js/pcaf-parta.js"></script>');
-    expect(html).toContain('<link rel="stylesheet" href="css/pcaf-parta.css">');
+    must(html, '<script src="js/pcaf-parta.js"></script>', "the module and its stylesheet are loaded");
+    must(html, '<link rel="stylesheet" href="css/pcaf-parta.css">', "the module and its stylesheet are loaded");
   });
 
   test('the script tag is present for every asset the page needs', () => {
@@ -58,9 +59,9 @@ describe('The Part A screen is reachable', () => {
   });
 
   test('the router knows how to title it and how to load it', () => {
-    expect(appJs).toMatch(/'pcaf-parta':\s*\{\s*title:\s*'PCAF Part A'/);
-    expect(appJs).toContain("src:  'pages/pcaf-parta.html'");
-    expect(appJs).toContain('PCAFPartAPage.init()');
+    must(appJs, /'pcaf-parta':\s*\{\s*title:\s*'PCAF Part A'/, "the router knows how to title it and how to load it");
+    must(appJs, "src:  'pages/pcaf-parta.html'", "the router knows how to title it and how to load it");
+    must(appJs, 'PCAFPartAPage.init()', "the router knows how to title it and how to load it");
   });
 
   test('the role gate holds it to the same bar as the other PCAF screens', () => {
@@ -105,16 +106,16 @@ describe('Every field the module reads exists in the fragment', () => {
 describe('The screen renders the engine rather than repeating it', () => {
   test('it does not compute an attribution factor of its own', () => {
     // The one number a browser is most tempted to work out for itself.
-    expect(moduleSrc).not.toMatch(/outstanding\w*\s*\/\s*(total|denominator)/i);
+    mustNot(moduleSrc, /outstanding\w*\s*\/\s*(total|denominator)/i, "it does not compute an attribution factor of its own");
   });
 
   test('it does not multiply emissions by a factor of its own', () => {
-    expect(moduleSrc).not.toMatch(/Scope[12]\w*\s*\*\s*\w*[aA][fF]/);
+    mustNot(moduleSrc, /Scope[12]\w*\s*\*\s*\w*[aA][fF]/, "it does not multiply emissions by a factor of its own");
   });
 
   test('the data-quality label comes from the engine, not from a template here', () => {
-    expect(moduleSrc).toContain('inv.dataQuality.label');
-    expect(moduleSrc).not.toMatch(/Data quality score:\s*\$\{/);
+    must(moduleSrc, 'inv.dataQuality.label', "the data-quality label comes from the engine, not from a template here");
+    mustNot(moduleSrc, /Data quality score:\s*\$\{/, "the data-quality label comes from the engine, not from a template here");
   });
 });
 
@@ -219,7 +220,8 @@ describe('A hidden element stays hidden', () => {
      screen for a general-purpose exposure — announcing a section that was
      correctly not rendered. Every toggle on this page is el.hidden. */
   test('the stylesheet overrides its own display rules for [hidden]', () => {
-    expect(css).toMatch(/\.parta \[hidden\]\s*\{[^}]*display:\s*none\s*!important/);
+    must(css, /\.parta \[hidden\]\s*\{[^}]*display:\s*none\s*!important/,
+      'the stylesheet overrides its own display rules for [hidden]');
   });
 
   test('the guard is declared before the rules it has to beat', () => {
@@ -311,30 +313,30 @@ describe('A hidden element stays hidden', () => {
   /* The chart must read the attributed series. Reading the generation block
      instead is what drew the project's figures under a financed caption. */
   test('the lifetime chart reads the attributed series, not the project one', () => {
-    expect(moduleSrc).toMatch(/const life = r\.impact && r\.impact\.lifetime/);
-    expect(moduleSrc).not.toMatch(/const life = r\.generation && r\.generation\.lifetime/);
+    must(moduleSrc, /const life = r\.impact && r\.impact\.lifetime/, "the lifetime chart reads the attributed series, not the project one");
+    mustNot(moduleSrc, /const life = r\.generation && r\.generation\.lifetime/, "the lifetime chart reads the attributed series, not the project one");
   });
 
   test('the chart caption names both levels rather than one labelled wrongly', () => {
-    expect(moduleSrc).toContain('tCO2e financed over');
-    expect(moduleSrc).toContain('at project level, of which this bank finances');
+    must(moduleSrc, 'tCO2e financed over', "the chart caption names both levels rather than one labelled wrongly");
+    must(moduleSrc, 'at project level, of which this bank finances', "the chart caption names both levels rather than one labelled wrongly");
   });
 
 describe('The page keeps the two containers apart', () => {
   test('the impact block is reached past a labelled break', () => {
-    expect(page).toContain('id="paBreak"');
-    expect(page).toMatch(/paBreak[\s\S]{0,200}?Not Part A/);
+    must(page, 'id="paBreak"', "the impact block is reached past a labelled break");
+    must(page, /paBreak[\s\S]{0,200}?Not Part A/, "the impact block is reached past a labelled break");
   });
 
   test('an absent scope 3 is shown as absent, not as nought', () => {
-    expect(moduleSrc).toContain("'Not reported'");
-    expect(page).toContain('id="paScope3Absent"');
+    must(moduleSrc, "'Not reported'", "an absent scope 3 is shown as absent, not as nought");
+    must(page, 'id="paScope3Absent"', "an absent scope 3 is shown as absent, not as nought");
   });
 
   test('removals are drawn outside the figure grid', () => {
     const grid = page.slice(page.indexOf('class="parta-figures"'), page.indexOf('id="paRemovalsBox"'));
     expect(grid).not.toContain('paRemovals"');
-    expect(page).toContain('Removals — reported separately');
+    must(page, 'Removals — reported separately', "removals are drawn outside the figure grid");
   });
 
   test('the prohibited estimation bases are no longer reachable at all', () => {
@@ -346,7 +348,7 @@ describe('The page keeps the two containers apart', () => {
     for (const banned of impact.PROHIBITED_BASES) {
       expect(page.includes(`value="${banned}"`)).toBe(false);
     }
-    expect(moduleSrc).not.toContain('ESTIMATION_BASES');
+    mustNot(moduleSrc, 'ESTIMATION_BASES', "the prohibited estimation bases are no longer reachable at all");
   });
 });
 
@@ -361,10 +363,10 @@ describe('A money field prints back what it holds', () => {
 
   test('both attribution amounts carry an echo element', () => {
     for (const id of ['pa-outstandingAmount', 'pa-totalProjectEquityPlusDebt']) {
-      expect(page).toContain(`id="${id}-echo"`);
+      must(page, `id="${id}-echo"`, "both attribution amounts carry an echo element");
       /* Described by it rather than announced live: an aria-live region on a
          field that changes every keystroke reads the value back on each one. */
-      expect(page).toContain(`aria-describedby="${id}-echo"`);
+      must(page, `aria-describedby="${id}-echo"`, "both attribution amounts carry an echo element");
     }
   });
 
@@ -372,31 +374,31 @@ describe('A money field prints back what it holds', () => {
     /* One place writes the field and one place refreshes the echo, so a value
        put there by a preset carries the same echo and the two cannot
        disagree. */
-    expect(moduleSrc).toMatch(/function writeField[\s\S]{0,300}MONEY_FIELDS\.includes\(id\)[\s\S]{0,60}_renderMoneyEcho\(id\)/);
+    must(moduleSrc, /function writeField[\s\S]{0,300}MONEY_FIELDS\.includes\(id\)[\s\S]{0,60}_renderMoneyEcho\(id\)/, "the echo is refreshed from writeField, not only from the keystroke");
   });
 
   test('the magnitude is named from a million up', () => {
     /* An order-of-magnitude slip is the one this exists to make obvious, so
        12M beside 400M is the signal. Below a million the grouped digits read
        on their own. */
-    expect(moduleSrc).toMatch(/if \(a >= 1e9\)/);
-    expect(moduleSrc).toMatch(/if \(a >= 1e6\)/);
-    expect(moduleSrc).toMatch(/return null;/);
+    must(moduleSrc, /if \(a >= 1e9\)/, "the magnitude is named from a million up");
+    must(moduleSrc, /if \(a >= 1e6\)/, "the magnitude is named from a million up");
+    must(moduleSrc, /return null;/, "the magnitude is named from a million up");
   });
 
   test('an empty field says nothing rather than zero', () => {
     /* "USD 0" beside a blank input is an assertion nobody made. */
-    expect(moduleSrc).toMatch(/if \(raw === '' \|\| !Number\.isFinite\(n\)\) \{ echo\.textContent = ''; return; \}/);
+    must(moduleSrc, /if \(raw === '' \|\| !Number\.isFinite\(n\)\) \{ echo\.textContent = ''; return; \}/, "an empty field says nothing rather than zero");
   });
 
   test('changing the currency re-renders both echoes', () => {
-    expect(moduleSrc).toMatch(/ccy\.addEventListener\('input', _renderMoneyEchoes\)/);
+    must(moduleSrc, /ccy\.addEventListener\('input', _renderMoneyEchoes\)/, "changing the currency re-renders both echoes");
   });
 
   test('the echo holds its line whether or not it has content', () => {
     /* Without a min-height the two fields jump as one of them is filled. */
-    expect(partaCss).toMatch(/\.parta-echo\s*\{[\s\S]*?min-height/);
-    expect(partaCss).toMatch(/\.parta-echo\s*\{[\s\S]*?tabular-nums/);
+    must(partaCss, /\.parta-echo\s*\{[\s\S]*?min-height/, "the echo holds its line whether or not it has content");
+    must(partaCss, /\.parta-echo\s*\{[\s\S]*?tabular-nums/, "the echo holds its line whether or not it has content");
   });
 
   test('the attribution equation is untouched', () => {
@@ -424,7 +426,7 @@ describe('The hero separates the bank\u2019s share from the project\u2019s total
   });
 
   test('the project total is present, and quieter', () => {
-    expect(page).toContain('id="paHeroBaseValue"');
+    must(page, 'id="paHeroBaseValue"', "the project total is present, and quieter");
     expect(hero).toContain("el('paHeroBaseValue').textContent");
     const heroRule = /\.parta-hero-value \{([^}]*)\}/.exec(partaCss);
     const baseRule = /\.parta-hero-base-value \{([^}]*)\}/.exec(partaCss);

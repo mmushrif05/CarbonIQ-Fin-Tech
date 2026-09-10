@@ -12,7 +12,6 @@
 
 'use strict';
 
-process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = 'ck_test_' + 'o'.repeat(32);
 
 const fs = require('fs');
@@ -257,9 +256,14 @@ describe('Metrics: request rate, latency, error rate, store latency, by route pa
   });
 
   test('every verb on the storage seam is timed', async () => {
-    await store.put('partc_clients', 'org_metrics', 'c1', { name: 'Metrics Client', country: 'LK' });
-    await store.get('partc_clients', 'org_metrics', 'c1');
-    await store.list('partc_clients', 'org_metrics');
+    /* A registered collection, because on PostgreSQL an unregistered one is a
+       500 and this test is about the metrics, not about the registry. It read
+       `partc_clients`, which is not a collection anywhere — the memory store
+       accepted it and the test passed for as long as it never ran on a real
+       store. */
+    await store.put('clients', 'org_metrics', 'c1', { name: 'Metrics Client', country: 'LK' });
+    await store.get('clients', 'org_metrics', 'c1');
+    await store.list('clients', 'org_metrics');
     const s = metrics.snapshot().store;
     expect(s.map(x => x.verb)).toEqual(expect.arrayContaining(['put', 'get', 'list']));
     expect(s.find(x => x.verb === 'put')).toMatchObject({ total: 1, errors: 0 });

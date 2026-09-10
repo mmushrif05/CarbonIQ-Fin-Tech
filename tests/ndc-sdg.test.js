@@ -157,7 +157,6 @@ describe('NDC/SDG Service', () => {
    this suite accepts. On PostgreSQL there is a key store, the literal is not
    in it, and the request 401s. That is why these tests were red in CI and
    green everywhere else, and why they were never really exercising the route. */
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_' + 't'.repeat(32);
 const TEST_KEY = process.env.UI_API_KEY;
 const AUTH     = { 'x-api-key': TEST_KEY };
 

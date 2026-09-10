@@ -27,6 +27,12 @@
 
 'use strict';
 
+/* This suite is about one adapter — Netlify Blobs — so it holds the store to
+   it. On PostgreSQL the seam picks the database and every assertion here would
+   be measuring a different adapter than the one under test. The seam's own
+   contract across every adapter is tests/store-conformance.test.js. */
+process.env.STORAGE_BACKEND = 'memory';
+
 /* An in-memory stand-in with the shape of a Netlify Blobs store, including the
    cursor pagination the real one does. Its page size is deliberately tiny so
    the multi-page path is exercised by a handful of records rather than a

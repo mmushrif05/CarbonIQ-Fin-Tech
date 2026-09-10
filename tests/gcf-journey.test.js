@@ -17,12 +17,11 @@
 
 'use strict';
 
-process.env.STORAGE_BACKEND = 'memory';
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
 const app = require('../src/server');
-const partcStore = require('../src/platform/database/store');
+const store = require('../src/platform/database/store');
+const partcStore = store;
 const SEED = require('../data/gcf/pipeline.seed.json');
 
 const KEY = process.env.UI_API_KEY;
@@ -261,8 +260,12 @@ describe('/health answers the question a browser actually asks', () => {
        look identical from a browser without this, and the first is far more
        common. It cost this project a round trip once already. */
     const res = await api().get('/health').expect(200);
-    expect(res.body.storage.requested).toBe('memory');
-    expect(res.body.storage.mode).toBe('memory');
+    /* Whichever store this run is on — the point is that the answer names what
+       was *asked for* as well as what is running, so "the variable never took"
+       and "the store is unreachable" stop looking identical. */
+    const expected = process.env.TEST_DATABASE_URL ? 'postgres' : 'memory';
+    expect(res.body.storage.requested).toBe(expected);
+    expect(res.body.storage.mode).toBe(expected);
     expect(typeof res.body.storage.chosen).toBe('boolean');
     expect(res.body.storage.reason.length).toBeGreaterThan(20);
   });
@@ -273,7 +276,9 @@ describe('/health answers the question a browser actually asks', () => {
     expect(flat).not.toMatch(/BEGIN [A-Z ]*PRIVATE KEY/);
     expect(flat).not.toMatch(/ck_(test|live)_[A-Za-z0-9]{8}/);
     expect(flat).not.toMatch(/sk-ant-/);
-    /* `requested` is one of four literals and nothing else is interpolated. */
-    expect(['auto', 'blobs', 'firebase', 'memory']).toContain(res.body.storage.requested);
+    /* `requested` is one of the seam's own literals and nothing else is
+       interpolated. Read from the seam rather than copied: the copy here left
+       out `postgres`, the store every deployment runs on. */
+    expect(store.BACKENDS).toContain(res.body.storage.requested);
   });
 });
