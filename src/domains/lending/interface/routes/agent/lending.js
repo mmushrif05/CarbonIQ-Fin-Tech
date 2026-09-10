@@ -21,6 +21,7 @@ const {
 const underwritingAgent  = require('../../../agents/underwriting');
 const screeningAgent     = require('../../../agents/screening');
 const originationAgent   = require('../../../agents/origination');
+const { asError } = require('../../../../../shared/types');
 
 const router = Router();
 
@@ -72,7 +73,8 @@ router.post('/underwrite',
         ...(run.error && { error: run.error })
       });
 
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({
           error:   'AI_SERVICE_UNAVAILABLE',
@@ -146,7 +148,8 @@ router.post('/originate',
         ...(run.error && { error: run.error })
       });
 
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured. Contact your administrator.' });
       }
@@ -203,7 +206,8 @@ router.post('/screen',
         completedAt: run.completedAt,
         ...(run.error && { error: run.error })
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }

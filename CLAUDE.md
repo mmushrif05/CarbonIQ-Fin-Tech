@@ -83,6 +83,8 @@ src/
                             (reporting, CN package) · infrastructure/store · interface/routes
     capital/                domain/ (book-model, attribution, metrics, forecast, basket, adjust) · infrastructure/
                             (book, baseline, demo) · desk/ · interface/{routes,schemas}
+    baseline/               domain/ (metrics vocabulary, record + lock/supersede, resolver, pledge) ·
+                            application/registry · infrastructure/store · interface/{routes,schemas}
     taxonomy/               domain/ (SLGFT, certificate, carbon pricing) · application/ndc-sdg · interface/{routes,schemas}
     lending/                domain/ (score, covenant, portfolio, decision, verification) · application/ (pcaf A1–A3,
                             reports, supervisor, extract, assurance, webhook) · agents/ · interface/{routes,schemas}
@@ -123,6 +125,12 @@ docker/ · docs/             local stack; architecture, strategy, sources, confo
 | `GET/POST` | `/v1/projects` | List projects / create project |
 | `POST` | `/v1/score` | Carbon Finance Score (CRS 0–100) |
 | `GET` | `/v1/taxonomy` | EU/ASEAN/HK taxonomy alignment check |
+| `GET` | `/v1/baselines` | The master baseline table — every version, with what it replaced and why |
+| `GET` | `/v1/baselines/effective` | What is in force for this caller, and the version behind it |
+| `GET` | `/v1/baselines/metrics` | What may be governed, and what in the product reads each |
+| `POST` | `/v1/baselines` | Record a draft — not in force until released |
+| `POST` | `/v1/baselines/:id/release` · `/supersede` | Put in force · a new version with its reason |
+| `GET/PUT` | `/v1/baselines/pledge` | The institution's own commitment, and where it stands |
 | `POST` | `/v1/pcaf` | PCAF v2.0 financed emissions output (A1-A3, lending) |
 | `POST` | `/v1/pcaf/part-c/assess` | PCAF Part C insurance-associated emissions (A4+A5, B1/B4/B7) |
 | `POST` | `/v1/pcaf/part-c/form` | Pre-filled, policy-gated client form |
@@ -514,7 +522,11 @@ This section is strategic intent, recorded here so that every part of the tool i
 
 **The regional-baseline authority — the honest moat.** PCAF sets the *method*; it does not set Sri Lanka's *baseline*. Someone credible and in-region must, and that is CarbonIQ: the regional baselines, local emission factors, and taxonomy/regulatory alignment (the SLGFT, CBSL Direction 05, NDC 3.0 work already in this repo) are regional judgement, and whoever holds them becomes the reference the market quotes. This is the position to build toward, and it is truthful — "PCAF-conformant method, localised and maintained by the people who defined it here" — in a way "PCAF-certified" never would be.
 
-**Baseline governance is a market-integrity rule, not a feature.** A baseline anyone can change without a recorded reason is worth nothing: if one institution can move its number silently, every number in the market becomes negotiable. So a baseline **locks**, and changes only through a recorded, reasoned restatement, above a stated threshold, traceable to the source figure — the discipline the Part C locked-assessment / restatement / audit-hash path already follows. As the tool grows, this rule holds everywhere a baseline is set, not only in Part C.
+**Baseline governance is a market-integrity rule, not a feature — and it is built (`src/domains/baseline/`, `docs/BASELINE-GOVERNANCE.md`).** A baseline anyone can change without a recorded reason is worth nothing: if one institution can move its number silently, every number in the market becomes negotiable. So a baseline **locks**, and changes only through a recorded, reasoned restatement, above a stated threshold, traceable to the source figure — the discipline the Part C locked-assessment / restatement / audit-hash path already follows.
+
+The master table is where regional judgement lives. Values are scoped **global → country → organisation** and the most specific released one wins, so a deployment can hold a country-wide figure and an institution's own without either overwriting the other; a country baseline needs `admin` because it is the market's figure, an organisation's own needs only that organisation's `lock`. The shipped set is **provisional** and says so on every screen that reads it, which is what lets a demonstration run before an operator has released anything; a released baseline replaces it entirely and the two are never merged. Absence is an answer: a country with no baseline is reported absent with what it needs, because a number invented to fill that gap would be quoted as regional judgement. An organisation-scoped baseline carries the institution's **pledge** — declared, with who stated it and where it can be read — and the position against it is computed and labelled apart, never as a forecast.
+
+Where a published standard sets a figure the standard's value wins and the registry holds only the citation; where no standard sets one, the figure belongs here. That is the line that decides what is governed and what is quoted.
 
 **The PCAF provider path — sequence it after revenue, never front it.** PCAF operates a provider/partner registration: they review how the tool works and list it publicly as a regional provider, for an annual subscription (reported to us as ~USD 13,500/yr). **The exact programme term PCAF uses must be confirmed and then quoted verbatim** — "registered provider", "partner", "listed solution" are not interchangeable and the wrong word is the whole risk; do not invent one. Sequencing: the listing is an accelerant, not a gate — land the first one or two clients on what is already true (conformance, assurability, locked regional baseline, verifier-led), let that revenue fund the registration, and let the listing then strengthen the *next* sale. Do not pay the fee on spec, and do not print "PCAF-listed" as a held credential before it is granted; "registration underway" is the most that may be said in the interim, and only if it has actually begun.
 
@@ -575,9 +587,28 @@ bio-energy were added with their full criteria. Solar and wind are kept with
 M4.1–M4.4 and they are likely in the full taxonomy under codes we cannot
 confirm: unevidenced, not excluded.
 
-The 520/780 and 600/900 numbers are **unchanged** — changing them would rescore
-live projects — but they are relabelled as this product's own intensity screen,
-and `Green (CBSL Compliant)` is now `Green (intensity screen)`.
+**The two band sets are now one, and it is governed (`src/domains/baseline/`,
+`docs/BASELINE-GOVERNANCE.md`).** 520/780 screened `GET /v1/taxonomy` while
+600/900 assigned the tier on the SHA-256-hashed Green Loan Certificate, so a
+building at 560 kgCO2e/m² was Green from one endpoint and Transition from the
+other — two answers to one question about what a bank may call a green loan.
+**520/780 is the answer**, and it no longer lives in a constants file.
+
+Because the taxonomy sets no absolute figure, the bands are regional judgement
+rather than a published threshold — which is precisely what has to be governed.
+They are a **baseline** now: scoped global → country → organisation, released
+by an administrator, versioned, and superseded only with a recorded reason once
+the movement reaches the stated threshold, exactly as a locked Part C
+assessment is restated. The shipped values are marked provisional so a
+demonstration runs; a released baseline replaces them entirely and the two are
+never merged. Every endpoint that screens against them resolves from the one
+registry and reports the version it used, so no two screens can disagree again.
+
+The change does **not** invalidate a certificate already issued: the audit hash
+covers the tier that was assigned, not the bands that assigned it. What changes
+is the tier a new certificate carries, which is the correction. And
+`Green (CBSL Compliant)` is `Green (intensity screen)`, because compliance is
+determined by the Central Bank and not by this software.
 
 The certificate stamp derives from the constant, so it cannot drift from the
 document again; because the stamp sits **inside** the SHA-256 hash, the verifier
@@ -659,6 +690,7 @@ reach the core engine read `CORE_APP_URL`.
 |------|---------|
 | `docs/ARCHITECTURE.md` | Full bank-facing product architecture (CRS, PCAF, Taxonomy, Covenant) |
 | `docs/DATA-LAYER.md` | PostgreSQL behind the seam: schema, transactions, migrations, audit chain, backfill, backup, measured scale |
+| `docs/BASELINE-GOVERNANCE.md` | The master baseline table: scopes, the lock-and-supersede lifecycle, who may govern what, the pledge |
 | `docs/API-SCOPES.md` | Every route and the scope it requires — generated from the router, held to the code by a test |
 | `docs/OBSERVABILITY.md` | Logs, the correlation id, the log drain, error reporting and its runbook, metrics, the fallback register |
 | `docs/API-CONTRACT.md` · `docs/API-CHANGELOG.md` · `docs/openapi.json` | The contract: the generated OpenAPI 3.1 document, the two shapes, paging, errors, caching, the policy on change and its record |

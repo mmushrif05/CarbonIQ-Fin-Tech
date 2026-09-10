@@ -15,7 +15,7 @@
  * that cannot be imported into Node.js without adaptation.
  */
 
-const { getProjectTenders, getProjectEntries } = require('./firebase');
+const { getProjectTenders } = require('./firebase');
 
 // ---------------------------------------------------------------------------
 // Tender / BOQ Analysis Results
@@ -100,7 +100,8 @@ async function getEmissionSummary(projectId) {
  * Get the material breakdown for a project.
  *
  * @param {string} projectId
- * @returns {Promise<Object[]>} Array of { category, type, totalEmission, count, percentage }
+ * @returns {Promise<Object[]|null>} Array of { category, type, totalEmission, count, percentage },
+ *   or null where the core engine holds no 80% record for this project.
  */
 async function getMaterialBreakdown(projectId) {
   const result = await get80PctMaterials(projectId);

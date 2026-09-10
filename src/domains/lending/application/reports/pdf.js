@@ -162,7 +162,6 @@ function _pdfValue(doc, value, depth) {
 }
 
 function _pdfFooterNote(doc, report) {
-  const pageCount = doc.bufferedPageRange ? doc.bufferedPageRange().count : 1;
   doc.moveDown(2);
   doc.moveTo(56, doc.y).lineTo(doc.page.width - 56, doc.y).lineWidth(0.5).strokeColor('#e5e5e7').stroke();
   doc.moveDown(0.5);

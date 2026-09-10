@@ -21,6 +21,7 @@ const validate    = require('../../../../platform/http/validate');
 const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractFromRequest }   = require('../../application/extract');
+const { asError } = require('../../../../shared/types');
 
 const router = Router();
 
@@ -73,7 +74,8 @@ router.post('/',
           factorSource: 'ICE Database v3'
         }
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({
           error:   'AI_SERVICE_UNAVAILABLE',

@@ -253,6 +253,9 @@ function projectEmissions(project) {
  * removed, which that indicator defines as one quantity — with the split
  * carried beside it so the NDC module can read reduction and removal
  * separately, as NDC 3.0 requires.
+ *
+ * @param {any[]} [projects]
+ * @param {{label?: string|null}} [opts]
  */
 function portfolioEmissions(projects = [], { label = null } = {}) {
   const rows = projects.map(projectEmissions);

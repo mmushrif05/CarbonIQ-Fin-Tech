@@ -44,6 +44,7 @@ const partcRegistryRouter = require('../../domains/pcaf-part-c/interface/routes/
 const capitalRouter       = require('../../domains/capital/interface/routes/capital');
 const assuranceRouter     = require('../../domains/lending/interface/routes/assurance');
 const gcfRouter           = require('../../domains/gcf/interface/routes/gcf');
+const baselineRouter      = require('../../domains/baseline/interface/routes/baselines');
 const deskRouter          = require('../../domains/capital/interface/routes/desk');
 const ndcSdgRouter        = require('../../domains/taxonomy/interface/routes/ndc-sdg');
 const uiConfigRouter      = require('./ui-config');
@@ -193,6 +194,10 @@ router.use('/partc', partcRegistryRouter);
 router.use('/capital', capitalRouter);
 router.use('/assurance', assuranceRouter);
 router.use('/gcf', gcfRouter);
+/* The master baseline table. Every band, threshold and regional factor the
+   product screens against resolves from here, so no two screens can hold a
+   different figure for the same question. */
+router.use('/baselines', baselineRouter);
 router.use('/desk', deskRouter);
 router.use('/ndc-sdg', ndcSdgRouter);
 

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C: the methodology statement as a document
  *

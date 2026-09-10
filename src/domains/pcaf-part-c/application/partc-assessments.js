@@ -60,6 +60,14 @@ function _fail(message, code, statusCode = 400) {
 // Reads
 // ---------------------------------------------------------------------------
 
+/**
+ * @param {string} orgId
+ * @param {{projectId?: string, policyId?: string, reportingYear?: number, status?: string}} [filter]
+ * @param {{fields?: readonly string[]|null}} [opts]
+ *   `fields` asks the store for a projection. Where it matches a collection's
+ *   stored projection exactly, the store answers from the generated column
+ *   rather than serialising the whole record.
+ */
 async function listAssessments(orgId, { projectId, policyId, reportingYear, status } = {}, { fields = null } = {}) {
   /* Every one of these is an indexed column on PostgreSQL, so a book of
      thousands is answered by the index rather than by reading the book. */

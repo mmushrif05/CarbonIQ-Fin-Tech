@@ -15,6 +15,7 @@ const serverless = require('serverless-http');
 const app = require('../../src/server');
 const errors = require('../../src/platform/observability/errors');
 const config = require('../../src/platform/config');
+const { asError } = require('../../src/shared/types');
 
 /**
  * Response types that must survive as bytes.
@@ -113,7 +114,7 @@ exports.handler = async (event, context) => {
   try {
     return await handler(event, context);
   } catch (err) {
-    await errors.capture(err, { source: 'invocation', requestId: event.headers && event.headers['x-request-id'] });
+    await errors.capture(asError(err), { source: 'invocation', requestId: event.headers && event.headers['x-request-id'] });
     throw err;
   }
 };

@@ -70,7 +70,7 @@ function calculateMaterialScore(materials) {
 
 function calculateComplianceScore(approval) {
   if (!approval) return 0;
-  const { total, approved, pending, rejected } = approval;
+  const { total, approved } = approval;
   if (!total || total === 0) return 0;
   return Math.round((approved / total) * 100);
 }

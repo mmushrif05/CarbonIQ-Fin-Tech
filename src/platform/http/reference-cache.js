@@ -45,7 +45,6 @@ function referenceCache({ maxAge = 3600, ttlMs = 3600_000 } = {}) {
       res.type('json');
       return res.status(hit.status).send(hit.text);
     }
-    const json = res.json.bind(res);
     res.json = body => {
       const text = JSON.stringify(body);
       const etag = etagOf(text);

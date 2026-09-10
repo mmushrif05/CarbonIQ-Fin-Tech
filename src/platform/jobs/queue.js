@@ -36,6 +36,7 @@ const registry = require('./registry');
 const logger = require('../observability/logger');
 const errors = require('../observability/errors');
 const context = require('../observability/context');
+const { asError } = require('../../shared/types');
 
 const log = logger.for('platform/jobs/queue');
 const MAX_MEMORY_JOBS = 200;
@@ -116,7 +117,11 @@ async function enqueue({ orgId, type, payload = {}, requestId = null, actor = nu
   return bucket.get(id);
 }
 
-/** Run one job to its outcome. Never throws: the outcome is on the job. */
+/**
+ * Run one job to its outcome. Never throws: the outcome is on the job.
+ * @param {any} job
+ * @param {{inline?: boolean, workerId?: string|null}} [opts]
+ */
 async function execute(job, { inline = false, workerId = null } = {}) {
   const handler = registry.get(job.type);
   const started = new Date().toISOString();
@@ -131,7 +136,8 @@ async function execute(job, { inline = false, workerId = null } = {}) {
   let out;
   try {
     out = await context.run({ requestId: job.requestId, req: null, jobId: job.jobId }, run);
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     const kind = logger.classify(err);
     /* Only a failure that may pass next time is retried: a store or provider
        that did not answer. An invalid payload, a missing record, a refusal

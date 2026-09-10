@@ -40,6 +40,7 @@ const state = {
   errors: { total: 0, byModule: new Map() },
 };
 
+/** @returns {{count: number, sum: number, buckets: number[], recent: number[]}} */
 function _hist() {
   return { count: 0, sum: 0, buckets: BUCKETS_MS.map(() => 0), recent: [] };
 }
@@ -109,9 +110,22 @@ function errorCaptured(module) {
   state.errors.byModule.set(m, (state.errors.byModule.get(m) || 0) + 1);
 }
 
-/** Wrap an async function so every call is observed under `verb`. */
+/**
+ * Wrap an async function so every call is observed under `verb`.
+ *
+ * Generic in the function it wraps, so the wrapper keeps the signature.
+ * It did not: every verb on the storage seam is wrapped here, and each one
+ * emitted as `(...args: any[]) => Promise<any>` — so every persisted entity
+ * entered the application as `any`, and not even the arity survived.
+ *
+ * @template {(...args: any[]) => Promise<any>} F
+ * @param {string} verb
+ * @param {F} fn
+ * @returns {F}
+ */
 function timed(verb, fn) {
-  return async function timedCall(...args) {
+  /** @this {any} */
+  const wrapped = async function timedCall(...args) {
     const t0 = process.hrtime.bigint();
     let ok = true;
     try {
@@ -123,6 +137,7 @@ function timed(verb, fn) {
       observeStore(verb, Number(process.hrtime.bigint() - t0) / 1e6, ok);
     }
   };
+  return /** @type {F} */ (/** @type {unknown} */ (wrapped));
 }
 
 function _uptimeSeconds() {

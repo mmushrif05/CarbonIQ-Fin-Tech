@@ -61,7 +61,17 @@ const _dp2 = n => (n === null || n === undefined) ? null : Math.round(Number(n) 
  * tree carries them, and it is a forest rather than a single root, so the
  * walk starts from an array.
  */
+/**
+ * The traced node for a module code, or null. The engine's trace is the one
+ * source for what a run actually consumed, so the option is inferred from it
+ * rather than from what the caller believes it supplied.
+ *
+ * @param {any} result
+ * @param {string} code
+ * @returns {{module?: string, inputs?: Record<string, any>, children?: any[]}|null}
+ */
 function _traced(result, code) {
+  /** @type {any} */
   let hit = null;
   const visit = node => {
     if (hit || !node || typeof node !== 'object') return;
@@ -127,7 +137,6 @@ function scopeOptions(result) {
  * no number, is never averaged, and is never presented as a PCAF score.
  */
 function inputBasis(result) {
-  const a52i = (_traced(result, 'A5.2') || {}).inputs || {};
   const b1i  = (_traced(result, 'B1') || {}).inputs || {};
   const b7i  = (_traced(result, 'B7') || {}).inputs || {};
   const b4i  = (_traced(result, 'B4') || {}).inputs || {};
@@ -186,7 +195,7 @@ function inputBasis(result) {
     r.line = USE_STAGE_STAGES.includes(r.stage) ? 'useStage' : 'construction';
     if (r.line === 'useStage' && !useStageApplies) {
       r.applies = false;
-      r.strength = null;
+      r.strength = /** @type {any} */ (null);
       r.basis = 'Not evaluated — the scope rule closes the use stage for construction-only cover';
       r.source = 'PCAF Part C v2 §5.3 policy gate';
     }

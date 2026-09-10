@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C Registry Schemas
  *
@@ -91,7 +92,7 @@ const policySchema = Joi.object({
     .description('Use-stage window for IDI/Property. Ignored for CAR/EAR by the scope gate.')
 }).custom((value, helpers) => {
   if (new Date(value.expiry) <= new Date(value.inception)) {
-    return helpers.message('expiry must be after inception');
+    return helpers.message(/** @type {any} */ ('expiry must be after inception'));
   }
   return value;
 });

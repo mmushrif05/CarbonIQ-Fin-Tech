@@ -39,9 +39,11 @@ describe('Certificate Service — generateCertificate()', () => {
     expect(cert.classification.tierLabel).toBe('Green — SLGFT Aligned');
   });
 
-  test('classifies as transition when intensity 601-900 kgCO2e/m²', () => {
-    // 8000 tCO2e * 1000 / 10000 m² = 800 kgCO2e/m² → transition
-    const cert = generateCertificate({ ...BASE_OPTS, emissions_tCO2e: 8000 });
+  test('classifies as transition between the green and transition bands', () => {
+    /* 7000 tCO2e * 1000 / 10000 m² = 700 kgCO2e/m². The bands are 520/780
+       now, one screen for every endpoint; 800 used to be transition under a
+       second set of 600/900 that only the certificate read. */
+    const cert = generateCertificate({ ...BASE_OPTS, emissions_tCO2e: 7000 });
     expect(cert.classification.tier).toBe('transition');
     expect(cert.loanDetails.loanClassification).toContain('Sustainability-Linked');
     expect(cert.loanDetails.pricingAdjustment_bps).toBe(-8);

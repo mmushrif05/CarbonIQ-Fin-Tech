@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C: BOQ Revision Schemas
  *
@@ -26,7 +27,7 @@ const boqRevisionSchema = Joi.object({
   createdBy: Joi.string().trim().max(120).allow('').optional()
 }).custom((value, helpers) => {
   if ((value.materials || []).length === 0 && (value.demolitionItems || []).length === 0) {
-    return helpers.message('A revision needs at least one material or demolition line.');
+    return helpers.message(/** @type {any} */ ('A revision needs at least one material or demolition line.'));
   }
   return value;
 });

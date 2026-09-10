@@ -6,11 +6,25 @@
     "target": "es2022",
     "module": "commonjs",
     "moduleResolution": "node",
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"]
+    "types": [
+      "node"
+    ],
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true
   },
-  "include": ["src/**/*.js", "netlify/functions/*.js", "scripts/*.js"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "include": [
+    "src/**/*.js",
+    "netlify/functions/*.js",
+    "scripts/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage"
+  ]
 }

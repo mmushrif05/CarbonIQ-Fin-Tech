@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PDF Pre-Upload Endpoint
  *
@@ -18,7 +19,7 @@
 'use strict';
 
 const { Router }   = require('express');
-const Anthropic    = require('@anthropic-ai/sdk');
+const Anthropic    = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
 const authenticate   = require('../../../../platform/auth/authenticate');
 const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const config       = require('../../../../platform/config');

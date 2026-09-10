@@ -16,6 +16,7 @@
 require('dotenv').config();
 const client = require('../src/platform/database/client');
 const migrate = require('../src/platform/database/migrate');
+const { asError } = require('../src/shared/types');
 
 const cmd = process.argv[2] || 'up';
 const ifConfigured = process.argv.includes('--if-configured');
@@ -80,7 +81,8 @@ function previewGuard() {
       console.error(`Unknown command "${cmd}". Use up | status | down.`);
       process.exitCode = 2;
     }
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     console.error(`Migration failed: ${err.message}`);
     process.exitCode = 1;
   } finally {

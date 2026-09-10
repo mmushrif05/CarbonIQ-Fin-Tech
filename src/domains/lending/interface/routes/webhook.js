@@ -18,6 +18,7 @@ const validate = require('../../../../platform/http/validate');
 const { schemas } = require('../../../../platform/http/validate');
 const { webhookLimiter } = require('../../../../platform/http/rate-limit');
 const { registerWebhook, listWebhooks, deleteWebhook } = require('../../application/webhook');
+const { asError } = require('../../../../shared/types');
 
 const router = Router();
 
@@ -44,7 +45,8 @@ router.post('/',
         signatureFormat: 'sha256=<hex>',
         retryPolicy: '3 retries, exponential backoff (1s / 2s / 4s)'
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message === 'Database unavailable') {
         return res.status(503).json({
           error: 'SERVICE_UNAVAILABLE',
@@ -68,7 +70,8 @@ router.get('/',
     try {
       const subscriptions = await listWebhooks(req.orgId);
       return sendList(req, res, 'subscriptions', subscriptions, { total: subscriptions.length });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message === 'Database unavailable') {
         return res.status(503).json({
           error: 'SERVICE_UNAVAILABLE',
@@ -96,7 +99,8 @@ router.delete('/:subscriptionId',
         });
       }
       return res.status(200).json({ deleted: true, subscriptionId: req.params.subscriptionId });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message === 'Database unavailable') {
         return res.status(503).json({
           error: 'SERVICE_UNAVAILABLE',

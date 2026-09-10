@@ -26,6 +26,7 @@ const PAGE_META = {
   'desk':            { title: 'Fund Desk', subtitle: 'Position, delivery, attributed emissions and the GCF pipeline' },
   'gcf':             { title: 'GCF Pipeline', subtitle: 'DFCC post-accreditation — candidate screening, emissions, disclosure and Concept Note inputs' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
+  'baselines':       { title: 'Baselines', subtitle: 'The governed figures this product screens against — in force, by country and by institution, with the version behind each' },
 };
 
 /**
@@ -90,6 +91,13 @@ const DYNAMIC_PAGES = {
     // pipeline changes this position, so a return visit re-reads it rather
     // than showing what it said last time.
     refresh: () => typeof DeskPage !== 'undefined' && DeskPage.refresh(),
+  },
+  'baselines': {
+    src:  'pages/baselines.html',
+    init: () => typeof BaselinesPage !== 'undefined' && BaselinesPage.init(),
+    /* A baseline released on another screen changes every figure that rests
+       on it, so a return visit re-reads rather than showing what it said. */
+    refresh: () => typeof BaselinesPage !== 'undefined' && BaselinesPage.refresh(),
   },
   'gcf': {
     src:  'pages/gcf.html',

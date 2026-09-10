@@ -36,6 +36,7 @@ const { AsyncLocalStorage } = require('async_hooks');
 const logger = require('../observability/logger');
 const log = logger.for('platform/database/client');
 const config = require('../config');
+const { asError } = require('../../shared/types');
 
 let pgLib = null;
 try { pgLib = require('pg'); } catch (_) { pgLib = null; }
@@ -150,7 +151,8 @@ async function ping({ timeoutMs = 1500 } = {}) {
   try {
     await Promise.race([pool().query('SELECT 1'), timeout]);
     return { reachable: true, latencyMs: Date.now() - started };
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     return { reachable: false, latencyMs: Date.now() - started, error: err.message };
   } finally {
     clearTimeout(timer);

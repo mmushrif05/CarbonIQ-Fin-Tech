@@ -143,7 +143,7 @@ function splitStageTotals(em, useStageApplies) {
         stages: mine.map(st => ({
           stage: st,
           kgCO2e: _r2(em[st]),
-          basis: STAGE_SCOPE.find(s => s.stage === st).basis
+          basis: (STAGE_SCOPE.find(s => s.stage === st) || {}).basis || null
         })),
         kgCO2e: _r2(mine.reduce((n, st) => n + em[st], 0)),
         applies

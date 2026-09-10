@@ -41,7 +41,7 @@ const { TOOL_FUNCTIONS } = require('./tools');
 function assessApplicationCompleteness(body) {
   const {
     buildingType, buildingArea_m2, region, loanAmount, projectValue,
-    boqContent, hasBOQ, targetCertification, reductionTarget, hasLCA, hasEPD,
+    boqContent, hasBOQ, targetCertification, reductionTarget, hasLCA,
     verificationStatus
   } = body;
 

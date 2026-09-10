@@ -10,6 +10,7 @@
  */
 
 const path = require('path');
+const { asError } = require('../src/shared/types');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 let passed = 0;
@@ -45,7 +46,8 @@ async function checkFirebase() {
     JSON.parse(decoded);
     console.log('  \x1b[32m✓\x1b[0m  FIREBASE_SERVICE_ACCOUNT (valid base64-encoded JSON)');
     passed++;
-  } catch (e) {
+  } catch (thrown) {
+    const e = asError(thrown);
     console.log('  \x1b[31m✗\x1b[0m  FIREBASE_SERVICE_ACCOUNT is NOT valid base64-encoded JSON');
     console.log(`     Hint: ${e.message}`);
     console.log('     Encode with: cat your-key.json | base64 -w 0');
@@ -80,7 +82,8 @@ async function checkFirebase() {
       passed++;
     }
     await testRef.remove();
-  } catch (e) {
+  } catch (thrown) {
+    const e = asError(thrown);
     console.log('  \x1b[31m✗\x1b[0m  Firebase connection failed:', e.message);
     failed++;
   }

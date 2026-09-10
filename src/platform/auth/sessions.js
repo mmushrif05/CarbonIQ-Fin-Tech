@@ -53,7 +53,7 @@ function mint() {
 /**
  * Open a session for an account.
  * @param {any} user a public user record
- * @param {{userAgent?: string, ip?: string}} [context]
+ * @param {{userAgent?: string|null, ip?: string|null}} [context]
  */
 async function issue(user, { userAgent = null, ip = null } = {}) {
   const token = mint();

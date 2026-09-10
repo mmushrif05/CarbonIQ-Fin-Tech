@@ -140,7 +140,10 @@ const SETTINGS = {
 
 /**
  * Create the whole demo book against a registry instance.
- * @returns {Promise<{settings, clients, projects, summary}>}
+ * @param {any} registry
+ * @param {string} orgId
+ * @param {any} [boqService] the BOQ service, where the caller wants revisions seeded too
+ * @returns {Promise<{settings, clients, projects, boqRevisions, summary}>}
  */
 async function seedDemoBook(registry, orgId, boqService = null) {
   const settings = await registry.saveSettings(orgId, SETTINGS);

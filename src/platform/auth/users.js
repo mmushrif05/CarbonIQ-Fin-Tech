@@ -87,6 +87,9 @@ async function countUsers() {
  * Create an account. The email is unique across the deployment; on
  * PostgreSQL a unique index enforces that, because a check in code cannot
  * stop two sign-ups racing.
+ *
+ * @param {{orgId: string, email: string, name?: string, role?: string,
+ *          password: string, createdBy?: string|null}} spec
  */
 async function createUser({ orgId, email, name, role, password: secret, createdBy = null }) {
   const address = normaliseEmail(email);

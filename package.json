@@ -1,7 +1,7 @@
 {
   "name": "carboniq-fintech",
   "version": "0.1.0",
-  "description": "CarbonIQ FinTech \u2014 Bank-facing API layer for construction carbon intelligence",
+  "description": "CarbonIQ FinTech — Bank-facing API layer for construction carbon intelligence",
   "license": "Apache-2.0",
   "main": "src/server.js",
   "engines": {
@@ -49,7 +49,8 @@
     "user:role": "node scripts/manage-users.js role",
     "user:passwd": "node scripts/manage-users.js passwd",
     "user:disable": "node scripts/manage-users.js disable",
-    "user:enable": "node scripts/manage-users.js enable"
+    "user:enable": "node scripts/manage-users.js enable",
+    "docs:typecheck-worklist": "node scripts/generate-typecheck-worklist.js"
   },
   "keywords": [
     "carbon",
@@ -87,6 +88,7 @@
     "@apidevtools/swagger-parser": "^10.1.1",
     "@playwright/test": "^1.63.0",
     "@types/node": "^22.20.2",
+    "@types/pdfkit": "^0.17.6",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "eslint": "^9.20.0",

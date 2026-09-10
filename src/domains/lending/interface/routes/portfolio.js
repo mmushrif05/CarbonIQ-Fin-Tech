@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — Portfolio Aggregation Endpoint
  *
@@ -71,13 +72,12 @@ async function aggregateForProjects(projectIds) {
         })
       );
 
-      const projectSummaries = summaryResults
-        .filter((r) => r.status === 'fulfilled' && r.value !== null)
-        .map((r) => r.value);
-
-      const failedCount = summaryResults.filter(
-        (r) => r.status === 'rejected' || r.value === null
-      ).length;
+      /* `.value` exists only on a fulfilled result; reading it off the union
+         is how a rejected settlement reads as a null summary. */
+      const fulfilled = summaryResults.filter(
+        /** @returns {r is PromiseFulfilledResult<any>} */ (r) => r.status === 'fulfilled');
+      const projectSummaries = fulfilled.map(r => r.value).filter(v => v !== null);
+      const failedCount = summaryResults.length - projectSummaries.length;
 
       const result = aggregatePortfolio(projectSummaries);
 

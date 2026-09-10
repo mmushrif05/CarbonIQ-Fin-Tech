@@ -138,6 +138,10 @@ function pcafWriter(doc, meta = {}) {
   };
 
   /** Section title: transitional serif, bold, in the standard's green. */
+  /**
+   * @param {string} text
+   * @param {{numbered?: number|null}} [opts]
+   */
   function h1(text, { numbered = null } = {}) {
     room(64);
     doc.moveDown(0.9);
@@ -244,6 +248,12 @@ function pcafWriter(doc, meta = {}) {
    * the header is redrawn, so a table read across a page break still has its
    * column names.
    */
+  /**
+   * @param {{head: string[], rows: any[][], widths?: number[]|null,
+   *          align?: ('left'|'right'|'center')[], zebra?: boolean, fontSize?: number}} spec
+   *   `widths` are relative proportions, not points; a set whose length does
+   *   not match the header is ignored rather than half-applied.
+   */
   function table({ head, rows, widths = null, align = [], zebra = false, fontSize = 8.6 }) {
     const avail = width();
     const n = head.length;
@@ -284,7 +294,7 @@ function pcafWriter(doc, meta = {}) {
 
     room(64);
     drawRow(head, { header: true });
-    rows.forEach((r, i) => drawRow(r, { index: i, total: r._total === true }));
+    rows.forEach((r, i) => drawRow(r, { index: i, total: /** @type {any} */ (r)._total === true }));
     doc.y += 6;
     doc.x = left;
   }

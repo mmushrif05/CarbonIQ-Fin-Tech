@@ -68,7 +68,34 @@
 
 'use strict';
 
-/** @typedef {import('../../shared/types').AppError} AppError */
+/**
+ * @typedef {import('../../shared/types').AppError} AppError
+ *
+ * @typedef {Record<string, any>} StoredRecord
+ *   A record as the store holds it: JSON, with the fields the registry lifts
+ *   into generated columns present at the top level. The store does not know
+ *   a client from an investment — the collection does, and the service that
+ *   owns the collection declares the shape. What the seam guarantees is that
+ *   what went in is what comes back.
+ *
+ * @typedef {string|number|boolean|null|undefined|Array<string|number>} WhereValue
+ *   A filter value. An array means any-of; `null` matches absent; `undefined`
+ *   is **no filter on that field at all**, so a caller can spread an optional
+ *   query parameter in without deciding whether to include the key.
+ *
+ * @typedef {Object} QueryOptions
+ * @property {Record<string, WhereValue>} [where] equality on a field or a dotted path
+ * @property {number|null} [limit]
+ * @property {string|null} [orderBy] a field, `-field` for descending, or null to leave the order to the caller
+ * @property {readonly string[]|null} [fields] a projection: the keys, or dotted paths, to return
+ *
+ * @typedef {Object} PageOptions
+ * @property {number} [limit]
+ * @property {string} [cursor] opaque, and store-specific — one store will not decode another's
+ * @property {Record<string, WhereValue>} [where]
+ *
+ * @typedef {{items: StoredRecord[], nextCursor: string|null, limit: number}} Page
+ */
 
 const fb = require('../bridge/firebase');
 const blobs = require('./blob-store');
@@ -78,6 +105,7 @@ const memoryAdapter = require('./adapters/memory');
 const config = require('../config');
 const { timed } = require('../observability/metrics');
 const logger = require('../observability/logger');
+const { asError } = require('../../shared/types');
 const log = logger.for('platform/database/store');
 
 /** True when Firebase is configured and reachable. */
@@ -215,11 +243,34 @@ function current() {
 /** A read on a deployment with no store is empty, not an error. */
 const EMPTY = { list: [], query: [], count: 0, page: { items: [], nextCursor: null, limit: 0 } };
 
+/**
+ * Write a record, replacing any record already at that id.
+ * Refused with a 503 where this deployment cannot persist.
+ *
+ * @param {string} collection a name registered in `collections.js`
+ * @param {string} orgId the partition; `'_'` for the records looked up before an organisation is known
+ * @param {string} id
+ * @param {StoredRecord} record
+ * @returns {Promise<StoredRecord>}
+ */
 async function put(collection, orgId, id, record) {
   assertWritable();
   return current().put(collection, orgId, id, record);
 }
 
+/**
+ * One record, or null. A record that was never written reads as null rather
+ * than raising — absence is an answer.
+ *
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {string} id
+ * @param {{forUpdate?: boolean}} [opts] `forUpdate` locks the row for the
+ *   rest of the transaction. Only PostgreSQL can honour it; elsewhere it is
+ *   accepted and does nothing, which is why the operations that need it ask
+ *   for a transaction with `required: true`.
+ * @returns {Promise<StoredRecord|null>}
+ */
 async function get(collection, orgId, id, { forUpdate = false } = {}) {
   const a = current();
   return a ? a.get(collection, orgId, id, { forUpdate }) : null;
@@ -235,16 +286,42 @@ const MAX_LIST_WITHOUT_QUERY = 5000;
  * query. A default cap of 200 used to apply everywhere, and a book of 201
  * projects would have rolled up as 200 without a word.
  */
+/**
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {{limit?: number|null}} [opts]
+ * @returns {Promise<StoredRecord[]>}
+ */
 async function list(collection, orgId, { limit = null } = {}) {
   const a = current();
   return a ? a.list(collection, orgId, { limit }) : EMPTY.list;
 }
 
+/**
+ * Merge `updates` into the record at `id`, or null where there is none.
+ * It does not create: a patch to a record that does not exist is an answer,
+ * not a write.
+ *
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {string} id
+ * @param {Partial<StoredRecord>} updates
+ * @returns {Promise<StoredRecord|null>}
+ */
 async function patch(collection, orgId, id, updates) {
   assertWritable();
   return current().patch(collection, orgId, id, updates);
 }
 
+/**
+ * Delete a record. On PostgreSQL a record something else references is
+ * refused (`ON DELETE RESTRICT`) and the refusal names what is attached.
+ *
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {string} id
+ * @returns {Promise<void>}
+ */
 async function remove(collection, orgId, id) {
   assertWritable();
   await current().remove(collection, orgId, id);
@@ -254,17 +331,35 @@ async function remove(collection, orgId, id) {
  * `fields` names the keys (or dotted paths) to return — a projection, so a
  * roll-up over thousands of records reads what it uses and nothing else.
  */
+/**
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {QueryOptions} [opts]
+ * @returns {Promise<StoredRecord[]>}
+ */
 async function query(collection, orgId, opts = {}) {
   const a = current();
   return a ? a.query(collection, orgId, opts) : EMPTY.query;
 }
 
 /** One page and the cursor for the next. The cursor is opaque and store-specific. */
+/**
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {PageOptions} [opts]
+ * @returns {Promise<Page>}
+ */
 async function page(collection, orgId, opts = {}) {
   const a = current();
   return a ? a.page(collection, orgId, opts) : { ...EMPTY.page };
 }
 
+/**
+ * @param {string} collection
+ * @param {string} orgId
+ * @param {Record<string, WhereValue>} [where]
+ * @returns {Promise<number>}
+ */
 async function count(collection, orgId, where = {}) {
   const a = current();
   return a ? a.count(collection, orgId, where) : EMPTY.count;
@@ -332,7 +427,8 @@ async function probe({ timeoutMs = 1500 } = {}) {
   try {
     const s = await db.migrate.status();
     schema = { applied: s.applied.length, pending: s.pending.length, drifted: s.drifted.length };
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     schema = { applied: 0, pending: null, drifted: null, error: err.code || 'status_failed' };
   }
   const out = { ...cap, reachable: true, schema };

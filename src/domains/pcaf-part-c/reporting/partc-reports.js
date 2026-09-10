@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C: the per-assessment report
  *
@@ -30,6 +31,7 @@ const standard = require('./partc-report-standard');
  * @param {Object} params.registers  - buildRegisters() output
  * @param {string} [params.memo]     - narrative from the disclosure agent
  * @param {Object} [params.meta]     - { projectName, insurer, insured, orgName, runId }
+ * @param {Object} [params.settings] - the reporting entity's settings, printed in every report
  * @param {boolean} [params.includeWlcaAnnex]
  */
 function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, includeWlcaAnnex = false }) {

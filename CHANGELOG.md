@@ -27,6 +27,36 @@ are tagged after a deploy is confirmed, per `docs/RELEASE-AND-ROLLBACK.md`.
   saying which scope the limits actually have.
 - `docs/AUTHENTICATION.md`, including what is deliberately not built yet.
 
+### Added — the master baseline table
+- `src/domains/baseline/` — a governed registry for the figures this product
+  screens against: scoped global → country → organisation, released by an
+  administrator, versioned, and superseded only with a recorded reason once the
+  movement reaches the threshold. `docs/BASELINE-GOVERNANCE.md` is the rule.
+- Migration `0006`: one row per version, with a unique index enforcing one
+  released version per baseline.
+- `GET/POST /v1/baselines`, `/effective`, `/metrics`, `/:id/release`,
+  `/:id/supersede`, `GET/PUT /v1/baselines/pledge`.
+- A **Baselines** screen: what is in force with the version behind it, the
+  institution's pledge and its direction of travel, and the master table.
+- A line on the Dashboard naming the baseline its screened figures rest on.
+- An organisation's **pledge** — declared, with who stated it and where it can
+  be read. The position against it is computed and labelled apart; it is
+  deliberately not a forecast.
+
+### Fixed — two answers to one question
+- `GET /v1/taxonomy` screened Sri Lankan construction on 520/780 while the
+  SHA-256-hashed Green Loan Certificate assigned its tier on 600/900. A
+  building at 560 kgCO2e/m² was **Green from one endpoint and Transition from
+  the other** — a difference in what a bank may call a green loan. **520/780 is
+  now the single answer**, resolved from the baseline registry by every reader,
+  each reporting the version it used.
+  A certificate already issued still verifies: the audit hash covers the tier
+  that was assigned, not the bands that assigned it. What changes is the tier a
+  **new** certificate carries.
+- `GET /v1/ndc-sdg/framework` reported the bands as taxonomy `thresholds`. The
+  taxonomy sets no absolute kgCO2e/m² figure, so they are reported apart, as
+  the intensity screen they are, with the baseline behind them.
+
 ### Added — one storage seam (H2)
 - One adapter per store behind one interface (`src/platform/database/adapters/`),
   selected once by the resolved mode instead of branched on per verb.

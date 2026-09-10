@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The Word styles and building blocks.
  */
@@ -123,7 +124,7 @@ function wTable(head, rows, opts = {}) {
         children: head.map((h, i) => wCell(h, { header: true, align: al[i] }))
       }),
       ...rows.map(r => new TableRow({
-        children: r.map((c, i) => wCell(c, { align: al[i], bold: r._total === true }))
+        children: r.map((c, i) => wCell(c, { align: al[i], bold: /** @type {any} */ (r)._total === true }))
       }))
     ]
   });

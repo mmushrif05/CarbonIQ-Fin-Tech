@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — NDC & SDG Alignment Service (Claude AI-powered)
  *
@@ -29,7 +30,7 @@
 
 'use strict';
 
-const Anthropic = require('@anthropic-ai/sdk');
+const Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
 const config    = require('../../../platform/config');
 const { TAXONOMY_LK } = require('../../../shared/constants');
 
@@ -169,7 +170,11 @@ Based on the SLGFT thresholds (≤600 kgCO2e/m² = Green, ≤900 = Transition) a
     messages: [{ role: 'user', content: userMessage }],
   });
 
-  const raw = response.content[0]?.text || '{}';
+  /* A reply is a list of blocks and only a text block carries text — a
+     thinking block does not, and reading `.text` off the union is how an
+     answer becomes "{}" with nothing saying why. */
+  const first = response.content[0];
+  const raw = (first && first.type === 'text' && first.text) || '{}';
 
   // Extract JSON from response (handle markdown code blocks)
   const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, raw];

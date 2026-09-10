@@ -27,6 +27,7 @@ const crypto = require('crypto');
 const LEGACY_STAMP = 'SLGFT v2024';
 const TAXONOMY_STAMP = `SLGFT ${require('../../../shared/constants').TAXONOMY_LK.edition}`;
 const { TAXONOMY_LK } = require('../../../shared/constants');
+const { asError } = require('../../../shared/types');
 
 const CERT_VERSION = '1.0';
 
@@ -40,7 +41,26 @@ function generateCertificate(opts) {
     emissions_tCO2e, buildingArea_m2,
     ndcTier, ndcContrib_pct, sdgs = [], dnshStatus = 'pass',
     classificationTier, loanAmount_M, currency = 'LKR', validUntil,
+    screen,
   } = opts;
+
+  /* The intensity bands the tier is assigned from.
+   *
+   * They used to be `TAXONOMY_LK.thresholds` — 600/900 — while `GET
+   * /v1/taxonomy` screened on 520/780, so the same building could be Green on
+   * one endpoint and Transition on the other and a bank had two answers to
+   * one question. There is one set now and it is governed: the caller
+   * resolves it from the master baseline table and hands it in, so a
+   * certificate can say which baseline version assigned its tier.
+   *
+   * The bands are NOT inside the audit hash — the hash covers the tier that
+   * was assigned, not the rule that assigned it — so changing them does not
+   * invalidate a single certificate already issued. What changes is what a
+   * new certificate says, which is the correction. */
+  const bands = {
+    green: Number.isFinite(Number(screen && screen.green)) ? Number(screen.green) : TAXONOMY_LK.thresholds.green,
+    transition: Number.isFinite(Number(screen && screen.transition)) ? Number(screen.transition) : TAXONOMY_LK.thresholds.transition,
+  };
 
   if (!projectName) throw new Error('projectName is required.');
   if (!bankName)    throw new Error('bankName is required.');
@@ -57,9 +77,9 @@ function generateCertificate(opts) {
   if (!tier) {
     if (actMatch && actMatch.eligibility === 'direct') {
       tier = 'directly_eligible';
-    } else if (intensity !== null && intensity <= TAXONOMY_LK.thresholds.green) {
+    } else if (intensity !== null && intensity <= bands.green) {
       tier = 'green';
-    } else if (intensity !== null && intensity <= TAXONOMY_LK.thresholds.transition) {
+    } else if (intensity !== null && intensity <= bands.transition) {
       tier = 'transition';
     } else {
       tier = 'conditional';
@@ -109,8 +129,13 @@ function generateCertificate(opts) {
     classification: {
       tier, tierLabel: _tierLabel(tier), description: _tierDescription(tier, intensity),
       thresholds: {
-        green: `\u2264${TAXONOMY_LK.thresholds.green} kgCO2e/m\xb2`,
-        transition: `\u2264${TAXONOMY_LK.thresholds.transition} kgCO2e/m\xb2`,
+        green: `\u2264${bands.green} kgCO2e/m\xb2`,
+        transition: `\u2264${bands.transition} kgCO2e/m\xb2`,
+        /* Where the figures came from, printed on the certificate itself, so
+           a reader can check the tier against the rule that assigned it. */
+        basis: (screen && screen.basis) || "CarbonIQ FinTech intensity screen — this product's own banding, not a taxonomy threshold.",
+        provisional: screen ? screen.provisional !== false : true,
+        baselineVersion: (screen && screen.version) || null,
       },
     },
 
@@ -195,7 +220,8 @@ function verifyCertificate(cert) {
       message: valid ? 'Certificate hash verified successfully.' : 'Hash mismatch — document may have been tampered with.',
       computedHash: hash, storedHash: cert.hash,
     };
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     return { valid: false, message: `Verification failed: ${err.message}` };
   }
 }

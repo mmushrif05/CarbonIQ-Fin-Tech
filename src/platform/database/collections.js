@@ -86,6 +86,13 @@ const COLLECTIONS = Object.freeze({
   agent_runs:          { table: 'agent_runs',         keys: { agent: 'agent', status: 'status' }, dependsOn: [] },
   pipeline_runs:       { table: 'pipeline_runs',      keys: { status: 'status' }, dependsOn: [] },
   webhooks:            { table: 'webhooks',           keys: { active: 'active' }, dependsOn: [] },
+  /* 0006 — the master baseline table. A global or country baseline lives in
+     the shared partition because it is the market's figure and every
+     organisation resolves against it; an organisation's own lives under its
+     own id. `key` identifies which baseline a row is a version of. */
+  baselines:           { table: 'baselines',
+    keys: { key: 'baseline_key', metric: 'metric', scope: 'scope', country: 'country', status: 'status' },
+    dependsOn: [] },
 });
 
 function definition(collection) {

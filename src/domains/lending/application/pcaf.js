@@ -16,6 +16,7 @@
  */
 
 const { PCAF_DATA_QUALITY } = require('../../../shared/constants');
+const { isNumeric } = require('../../../shared/numbers');
 const config = require('../../../platform/config');
 
 /**
@@ -29,8 +30,19 @@ const config = require('../../../platform/config');
  * @param {number} params.projectValue - Total project value
  * @returns {Object} PCAF-compliant output
  */
+/**
+ * @param {{emissionSummary: any, materials80Pct?: any,
+ *          attributionFactor?: number, loanAmount?: number, projectValue?: number}} input
+ *   `attributionFactor`, `loanAmount` and `projectValue` are absent when the
+ *   caller did not supply them — which is a different fact from zero.
+ */
 function generatePCAFOutput({ emissionSummary, materials80Pct, attributionFactor, loanAmount, projectValue }) {
-  const attribution = attributionFactor || calculateAttribution(loanAmount, projectValue);
+  /* A supplied attribution factor of zero is a claim — a facility with
+     nothing outstanding attributes no emissions — and `||` discarded it in
+     favour of a computed figure. Absence is checked before the number is. */
+  const attribution = isNumeric(attributionFactor)
+    ? Number(attributionFactor)
+    : calculateAttribution(loanAmount, projectValue);
   const dataQuality = calculateDataQualityScore(materials80Pct);
   const financedEmissions = emissionSummary.totalBaseline_tCO2e * attribution;
 

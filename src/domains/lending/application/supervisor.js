@@ -29,12 +29,12 @@ const {
   generatePipelineId,
 } = require('../../../shared/models/pipeline');
 
-const { AGENT_PERMISSION_MAP }  = require('../../../shared/policies');
 const { fallback } = require('../../../platform/observability/logger');
 const { checkAccess }           = require('../../../platform/auth/authorization');
 const { runAgent, runAgentSingleCall } = require('../../../platform/ai/agent');
 const { savePipelineRun, updatePipelineRun } = require('../infrastructure/lending-store');
 const { AGENT_STATUS } = require('../../../shared/models/agent-run');
+const { asError } = require('../../../shared/types');
 
 // Agent modules — lazy-loaded to avoid circular deps
 const AGENT_MODULES = {
@@ -306,7 +306,8 @@ async function createAndRunPipeline({ templateId, input, subject, orgId, metadat
             stageRef.status = STAGE_STATUS.FAILED;
             stageRef.error  = run.error || 'Agent run did not complete successfully';
           }
-        } catch (err) {
+        } catch (thrown) {
+          const err = asError(thrown);
           stageRef.status      = STAGE_STATUS.FAILED;
           stageRef.error       = err.message;
           stageRef.completedAt = new Date().toISOString();
@@ -322,7 +323,8 @@ async function createAndRunPipeline({ templateId, input, subject, orgId, metadat
         status:     pipeline.status,
       }).catch(fallback('supervisor.updatePipelineRun'));
     }
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     pipeline.status = PIPELINE_STATUS.FAILED;
     pipeline.error  = err.message;
   }
@@ -452,7 +454,8 @@ createAndRunPipeline._continueExecution = async function _continueExecution(pipe
             stageRef.status = STAGE_STATUS.FAILED;
             stageRef.error  = run.error || 'Agent run did not complete successfully';
           }
-        } catch (err) {
+        } catch (thrown) {
+          const err = asError(thrown);
           stageRef.status      = STAGE_STATUS.FAILED;
           stageRef.error       = err.message;
           stageRef.completedAt = new Date().toISOString();
@@ -467,7 +470,8 @@ createAndRunPipeline._continueExecution = async function _continueExecution(pipe
         status:     pipeline.status,
       }).catch(fallback('supervisor.updatePipelineRun'));
     }
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     pipeline.status = PIPELINE_STATUS.FAILED;
     pipeline.error  = err.message;
   }

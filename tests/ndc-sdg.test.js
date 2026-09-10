@@ -251,9 +251,17 @@ describe('GET /v1/ndc-sdg/framework', () => {
       expect(res.body.ndcTargets).toBeDefined();
       expect(res.body.sectors).toBeDefined();
       expect(res.body.activities).toBeInstanceOf(Array);
-      expect(res.body.thresholds).toBeDefined();
-      expect(res.body.thresholds.green).toBe(600);
-      expect(res.body.thresholds.transition).toBe(900);
+
+      /* The intensity screen is not part of the published taxonomy — the
+         document sets no absolute kgCO2e/m² figure — so it is reported apart
+         from the framework, saying so, and carrying the baseline it resolved
+         from. It used to be `thresholds: 600/900` here while the taxonomy
+         endpoint screened on 520/780. */
+      expect(res.body.thresholds).toBeUndefined();
+      expect(res.body.intensityScreen.green).toBe(520);
+      expect(res.body.intensityScreen.transition).toBe(780);
+      expect(res.body.intensityScreen.isTaxonomyThreshold).toBe(false);
+      expect(res.body.intensityScreen.basis).toBeTruthy();
     }
   });
 

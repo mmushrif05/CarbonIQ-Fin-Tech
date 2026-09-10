@@ -39,6 +39,7 @@ const config    = require('../config');
 const { saveRun: saveAgentRun, updateRun: updateAgentRun } = require('./run-store');
 const { createRunRecord, AGENT_STATUS, STEP_TYPES } = require('../../shared/models/agent-run');
 const { Deadline } = require('./deadline');
+const { asError } = require('../../shared/types');
 
 // Safety guard: never run more than this many loop iterations per agent run
 const MAX_ITERATIONS = 20;
@@ -288,7 +289,8 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
             throw new Error(`Tool "${toolUse.name}" is not registered for this agent.`);
           }
           output = await toolFn(toolUse.input);
-        } catch (err) {
+        } catch (thrown) {
+          const err = asError(thrown);
           toolError = err.message;
           output    = { error: err.message };
         }
@@ -329,7 +331,8 @@ async function runAgent({ agentType, systemPrompt, toolDefinitions, toolFunction
       run.completedAt = new Date().toISOString();
     }
 
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     run.status      = AGENT_STATUS.FAILED;
     run.error       = err.message;
     run.completedAt = new Date().toISOString();
@@ -401,7 +404,8 @@ async function runAgentSingleCall({ agentType, systemPrompt, userMessage, orgId,
       timestamp: run.completedAt
     });
 
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     run.status      = AGENT_STATUS.FAILED;
     run.error       = err.message;
     run.completedAt = new Date().toISOString();

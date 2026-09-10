@@ -162,11 +162,32 @@ describe('No activity claims an absolute carbon-intensity threshold', () => {
     expect(TAXONOMY_SL.intensityScreenSource).toMatch(/not a taxonomy\s+threshold/);
   });
 
-  test('the numbers are unchanged, because changing them would rescore projects', () => {
-    expect(TAXONOMY_LK.thresholds.green).toBe(600);
-    expect(TAXONOMY_LK.thresholds.transition).toBe(900);
+  /* This test used to assert both band sets, which is how the disagreement
+     survived: 600/900 here and 520/780 there, each pinned, so a building at
+     560 was Green from one endpoint and Transition from another and nothing
+     failed. There is one screen now — 520/780 — and the test's job is to
+     prove there is only one. */
+  test('there is one intensity screen, and every reader of it agrees', () => {
     expect(TAXONOMY_SL.criteria.construction.maxEmbodiedCarbon_kgCO2e_per_m2_green).toBe(520);
     expect(TAXONOMY_SL.criteria.construction.maxEmbodiedCarbon_kgCO2e_per_m2_transition).toBe(780);
+    expect(TAXONOMY_SL.classifications.green.maxIntensity).toBe(520);
+    expect(TAXONOMY_SL.classifications.transition.maxIntensity).toBe(780);
+
+    // The certificate engine's fallback is the same screen, not a second one.
+    expect(TAXONOMY_LK.thresholds.green).toBe(TAXONOMY_SL.classifications.green.maxIntensity);
+    expect(TAXONOMY_LK.thresholds.transition).toBe(TAXONOMY_SL.classifications.transition.maxIntensity);
+  });
+
+  test('the live figure is governed, not hardcoded', () => {
+    /* The bands are the product's own regional judgement — the taxonomy sets
+       no absolute figure — so they are a baseline in the master table, where
+       they can be released, versioned and superseded with a recorded reason.
+       The constant is only what a pure engine falls back to. */
+    const seed = require('../data/baselines/seed.json');
+    const lk = seed.baselines.find(b =>
+      b.metric === 'construction_intensity_kgCO2e_m2' && b.country === 'LK');
+    expect(lk.values).toEqual({ green: 520, transition: 780 });
+    expect(lk.source).toMatch(/sets no absolute kgCO2e\/m²/);
   });
 });
 
