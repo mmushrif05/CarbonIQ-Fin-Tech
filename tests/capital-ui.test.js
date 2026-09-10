@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The Dashboard, as the capital book.
  *

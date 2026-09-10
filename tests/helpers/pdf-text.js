@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Recover the text of a generated PDF, the way a reader's search box would.
  *

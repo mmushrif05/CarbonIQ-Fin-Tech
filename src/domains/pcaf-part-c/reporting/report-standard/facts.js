@@ -8,6 +8,7 @@ const { containsForbiddenLanguage } = require('../../domain/data-quality');
 const { splitByGhgScope, INSURER_NOTE } = require('../../domain/ghg-scopes');
 const { TABLE_5_3_2, TABLE_CITATION } = require('../../domain/data-quality');
 const { N, T, F4, SCALE_QUALIFIER, PREPARED_BY, KYOTO_GASES, UNITS_STATEMENT, FINANCED_EMISSIONS_STATEMENT } = require('./common');
+const { numberOr } = require('../../../../shared/numbers');
 
 // ---------------------------------------------------------------------------
 // Facts — what the sections and the checklist both read
@@ -78,9 +79,9 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
   const dq = result.dqScoring || null;
   const useStageApplies = Number(result.policy.useStageYears) > 0;
   const lineType = result.policy.policyType || 'Not stated';
-  const premium = Number(meta.premium) || 0;
-  const projectCost = Number(meta.projectCost) || 0;
-  const area = Number(meta.gifa_m2) || 0;
+  const premium = numberOr(meta.premium);
+  const projectCost = numberOr(meta.projectCost);
+  const area = numberOr(meta.gifa_m2);
   const currency = settings.currency || meta.currency || 'LKR';
 
   const exclusions = [

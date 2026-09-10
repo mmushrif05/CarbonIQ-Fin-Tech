@@ -158,6 +158,70 @@ const STAGE_STATUS = {
  * @param {Object} [params.metadata]   - Extra context
  * @returns {Object} Pipeline run record
  */
+/**
+ * A multi-agent pipeline run: a supervisor delegating to stages and
+ * aggregating what they return.
+ *
+ * `templateLabel` is copied onto the record rather than resolved from the
+ * template at read time, so a run stays readable after its template is renamed
+ * or retired — a run is a record of what happened, not a view of what the
+ * catalogue says today.
+ *
+ * @typedef {object} PipelineRun
+ * @property {string} pipelineId
+ * @property {string} templateId
+ * @property {string} templateLabel  frozen at creation
+ * @property {string} orgId
+ * @property {string} status         one of `PIPELINE_STATUS`
+ * @property {any} input
+ * @property {PipelineSubject} subject
+ * @property {PipelineStage[]} stages
+ * @property {{input: number, output: number, cacheRead: number, cacheCreated: number}} tokensUsed
+ * @property {Record<string, any>} metadata
+ * @property {string} createdAt      ISO 8601
+ * @property {string|null} startedAt
+ * @property {string|null} completedAt
+ * @property {string|null} error
+ */
+
+/**
+ * Who the pipeline is running for, and under what authority. The stage's own
+ * `permission` is checked against this, so a pipeline cannot reach further
+ * than the actor who started it.
+ *
+ * @typedef {object} PipelineSubject
+ * @property {string} type
+ * @property {string} role
+ * @property {string} orgId
+ * @property {string|null} uid
+ * @property {string|null} email
+ */
+
+/**
+ * One stage. `requires` names the stages that must have finished first, and
+ * `optional` says whether this one failing takes the pipeline down with it —
+ * an optional stage that fails is recorded and stepped over.
+ *
+ * @typedef {object} PipelineStage
+ * @property {string} stageId
+ * @property {string} agentType
+ * @property {string[]} requires
+ * @property {boolean} optional
+ * @property {string} permission
+ * @property {string} status      one of `STAGE_STATUS`
+ * @property {string|null} runId  the agent run this stage produced
+ * @property {any} result
+ * @property {string|null} error
+ * @property {string|null} startedAt
+ * @property {string|null} completedAt
+ */
+
+/**
+ * @param {{pipelineId: string, templateId: string, orgId: string, input: any,
+ *          subject: {type: string, role: string, orgId: string, uid?: string|null, email?: string|null},
+ *          metadata?: Record<string, any>}} init
+ * @returns {PipelineRun}
+ */
 function createPipelineRecord({ pipelineId, templateId, orgId, input, subject, metadata = {} }) {
   const template = PIPELINE_TEMPLATES[templateId];
   if (!template) {

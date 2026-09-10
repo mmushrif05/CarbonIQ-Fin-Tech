@@ -39,6 +39,10 @@ const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { fallback } = require('../../../../platform/observability/logger');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
+const validate = require('../../../../platform/http/validate');
+const { doc, body, str, num, bool, obj, arr } =
+  require('../../../../platform/http/openapi-hints');
+const { deskScenarioSchema, deskAdoptSchema } = require('../schemas/capital');
 
 const desk = require('../../desk');
 const attribution = require('../../domain/capital-attribution');
@@ -51,7 +55,12 @@ const router = Router();
 const handle = require('../../../../platform/http/async-handler');
 
 /** The position over both books. */
-router.get('/position', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/position', authenticate, defaultLimiter,
+  doc({ summary: 'The book a committee reads, over the capital book and the GCF pipeline at once',
+    description: 'The desk computes nothing: every figure is returned by the engine that already '
+      + 'owns it. Three emission claims are carried separately and never presented as one number.',
+    response: body({ position: obj }, ['position']) }),
+  handle(async (req, res) => {
   const basis = req.query.attributionBasis || 'outstanding';
   if (!attribution.BASES.includes(basis)) {
     return res.status(400).json({
@@ -93,7 +102,18 @@ function readWeights(req) {
 }
 
 /** What is waiting, gated and ranked, and whether it is already on the book. */
-router.get('/candidates', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/candidates', authenticate, defaultLimiter,
+  doc({ summary: 'What is waiting: the gate, the two rankings, and the barrier each structure leaves standing',
+    description: 'There is no overall rank to sort on. The two streams rank on different impact '
+      + 'metrics, so two candidates legitimately hold rank 1 — one merged league table on carbon '
+      + 'per dollar puts every adaptation project last.',
+    response: body({
+      candidates: body({
+        source: str, sample: bool, bookSource: str,
+      }),
+      accreditation: obj,
+    }, ['candidates']) }),
+  handle(async (req, res) => {
   const weights = readWeights(req);
   const [pipeline, effective] = await Promise.all([
     gcfStore.list(req.orgId),
@@ -114,7 +134,13 @@ router.get('/candidates', authenticate, defaultLimiter, handle(async (req, res) 
 }));
 
 /** Year end: what cannot be stated, and how far each candidate is from a submission. */
-router.get('/readiness', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/readiness', authenticate, defaultLimiter,
+  doc({ summary: 'Year end: outstanding disclosure items, entity facts and Concept Note inputs',
+    response: body({
+      readiness: body({ source: str }),
+      accreditation: obj, reportingYear: num, sample: bool, sampleNote: str,
+    }, ['readiness']) }),
+  handle(async (req, res) => {
   const year = req.query.year === undefined || req.query.year === ''
     ? new Date().getUTCFullYear()
     : Number(req.query.year);
@@ -156,7 +182,16 @@ router.get('/readiness', authenticate, defaultLimiter, handle(async (req, res) =
  * written this morning has drawn nothing — on that basis the answer would be
  * "this changes nothing" from a question that had not been asked.
  */
-router.post('/scenario', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/scenario', authenticate, defaultLimiter,
+  validate({ body: deskScenarioSchema }),
+  doc({ summary: 'If these were written: funding, shortfall and the three impact figures',
+    description: 'A read. It issues no id, stores nothing and is idempotent — `storedNote` says '
+      + 'so in the payload as well as on the screen. Both sides run on the commitment basis '
+      + 'whatever the desk is displaying, or a facility written this morning would move nothing.',
+    response: body({
+      scenario: body({ source: str, sample: bool, storedNote: str }, ['storedNote']),
+    }, ['scenario']) }),
+  handle(async (req, res) => {
   const body = req.body || {};
   const raw = Array.isArray(body.select) ? body.select : String(body.select || '').split(',');
   const select = raw.map(s => String(s).trim()).filter(Boolean);
@@ -199,7 +234,19 @@ router.post('/scenario', authenticate, defaultLimiter, handle(async (req, res) =
  * follows. The candidate lands at `pipeline`, which is a position on the book
  * and not yet a decision to lend.
  */
-router.post('/adopt', authenticate, defaultLimiter, handle(async (req, res) => {
+router.post('/adopt', authenticate, defaultLimiter,
+  validate({ body: deskAdoptSchema }),
+  doc({ summary: 'Put a GCF candidate on the capital book', status: 201,
+    description: 'Writes the origin link, the screening verdict as it stood today and the pledged '
+      + 'mitigation once and never again. No emission line is copied across: the investment\'s '
+      + 'lines are the bank\'s own attributed inventory, and the record\'s mitigation is a '
+      + 'project-level claim against a counterfactual.',
+    response: body({
+      investment: obj, screening: obj,
+      from: body({ recordId: str, code: str, source: str }),
+      note: str,
+    }, ['investment']) }),
+  handle(async (req, res) => {
   const body = req.body || {};
   const result = await desk.adoptCandidate(req.orgId, {
     recordId: body.recordId,

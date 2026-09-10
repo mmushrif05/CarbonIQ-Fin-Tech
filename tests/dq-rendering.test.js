@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * How a data-quality score is allowed to be written.
  *

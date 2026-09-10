@@ -21,6 +21,7 @@ const {
 } = require('../../schemas/agent');
 const covenantsAgent     = require('../../../agents/covenants');
 const { asError } = require('../../../../../shared/types');
+const { doc, body, str, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -46,6 +47,12 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/covenants',
+  doc({ summary: 'Covenant agent — SLL terms, held for human review before use',
+    response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_COVENANTS),
@@ -137,6 +144,13 @@ router.post('/covenants',
 // ---------------------------------------------------------------------------
 
 router.post('/covenants/:runId/review',
+  doc({ summary: 'The human review gate on covenant terms',
+    description: 'Terms are not usable in a facility agreement until a person has approved, '
+      + 'modified or rejected them.',
+    response: body({
+      success: bool, runId: str, status: str, decision: str,
+      reviewerId: str, reviewedAt: str, message: str,
+    }, ['success', 'runId', 'decision']) }),
   authenticate,
   authorize(PERMISSIONS.AGENT_REVIEW),
   validate({ body: covenantReviewSchema }),

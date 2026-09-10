@@ -45,6 +45,58 @@ function generatePartCRunId() {
  * @param {string} [params.projectName]
  * @param {Object} [params.metadata]
  */
+/**
+ * A Part C run, which is not one request and one response.
+ *
+ * The agent ingests documents, then **pauses** for the client to complete the
+ * form, then resumes and computes. Everything the pause has to survive is on
+ * this record — the extracted policy, the mapped materials, the form and its
+ * answers — because the client may answer through the UI, through the API, or
+ * in a session days later, and none of those share a process.
+ *
+ * `overrides` are the client's own factor prices. They are held here and
+ * passed into `runPartC(input, { overrides })` as an argument for the duration
+ * of that one call. They used to be a module-level variable set before the
+ * calculation and cleared in a `finally`, so a throw left them standing and
+ * two resumes in one container shared one global — which is one insured
+ * party's quarry certificate pricing another party's concrete.
+ *
+ * @typedef {object} PartCRun
+ * @property {string} runId
+ * @property {string} orgId
+ * @property {string|null} projectName
+ * @property {string} status       one of `PARTC_STATUS`
+ * @property {string} createdAt    ISO 8601
+ * @property {string} updatedAt    ISO 8601
+ * @property {string|null} completedAt
+ * @property {object|null} policy          extracted by the intake agent
+ * @property {object[]} materials          mapped by the mapping agent
+ * @property {object[]} demolitionItems
+ * @property {object|null} form            what the client is asked
+ * @property {object|null} formAnswers     what the client answered
+ * @property {Record<string, any>} overrides  the client's own factor prices
+ * @property {object|null} result          the engine's output, once it has run
+ * @property {object|null} registers       assumptions, data gaps, audit trail
+ * @property {object|null} disclosure
+ * @property {object|null} learnings
+ * @property {PartCRunStep[]} steps
+ * @property {string|null} error
+ * @property {{input: number, output: number, cacheRead: number, cacheCreated: number}} tokensUsed
+ */
+
+/**
+ * One step in a run's history.
+ * @typedef {object} PartCRunStep
+ * @property {string} type     one of `PARTC_STEP_TYPES`
+ * @property {string} [summary]
+ * @property {any} [data]
+ * @property {string} [at]     ISO 8601
+ */
+
+/**
+ * @param {{runId?: string, orgId: string, projectName?: string|null, metadata?: any}} init
+ * @returns {PartCRun}
+ */
 function createPartCRun({ runId, orgId, projectName, metadata }) {
   const now = new Date().toISOString();
   return {

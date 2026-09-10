@@ -19,6 +19,7 @@
  */
 
 const { Router } = require('express');
+const { doc, body } = require('./openapi-hints');
 
 const router = Router();
 
@@ -44,7 +45,16 @@ function _buildId() {
   return '';
 }
 
-router.get('/ui-config.js', (_req, res) => {
+router.get('/ui-config.js',
+  doc({ summary: 'The build stamp, as an executable script the shell loads',
+    produces: ['application/javascript'],
+    description: 'It carries the build stamp and nothing that authenticates. It used to serve '
+      + "the dashboard's API key, which put a write-and-lock credential within reach of "
+      + 'anyone who could load the page; since the browser signs in there is no credential '
+      + 'left to serve. The value is emitted through JSON.stringify, so a stray character '
+      + 'stays inside its string literal instead of becoming executable script.',
+    response: body({}) }),
+  (_req, res) => {
   const build = _buildId();
 
   /* This endpoint used to hand the browser an API key — the same one for

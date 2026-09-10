@@ -37,6 +37,7 @@ const logger = require('../observability/logger');
 const log = logger.for('platform/database/client');
 const config = require('../config');
 const { asError } = require('../../shared/types');
+const { intOr } = require('../../shared/numbers');
 
 let pgLib = null;
 try { pgLib = require('pg'); } catch (_) { pgLib = null; }
@@ -97,7 +98,7 @@ function pool() {
        only when a schema was asked for: a connection pooler in front of an
        external database may refuse startup options it does not know. */
     ...(schema === 'public' ? {} : { options: `-c search_path=${schema}` }),
-    max: Math.max(1, Number(config.runtime.databasePoolMax) || 3),
+    max: Math.max(1, intOr(config.runtime.databasePoolMax, 3)),
     idleTimeoutMillis: 10_000,
     connectionTimeoutMillis: 5_000,
     /* A serverless function is killed at 26 s; a statement must give up first. */

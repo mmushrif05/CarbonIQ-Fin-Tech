@@ -12,7 +12,7 @@ const validate = require('./validate');
 const handle = require('./async-handler');
 const { defaultLimiter } = require('./rate-limit');
 const { sendList, paged } = require('./pagination');
-const { doc } = require('./openapi-hints');
+const { doc, body, str } = require('./openapi-hints');
 const { sendDocument } = require('../reporting/pdf-response');
 const queue = require('../jobs/queue');
 const registry = require('../jobs/registry');
@@ -54,7 +54,12 @@ router.get('/jobs/:jobId', apiKeyAuth, defaultLimiter,
   }));
 
 router.get('/jobs/:jobId/artifact', apiKeyAuth, defaultLimiter,
-  doc({ summary: 'Download what the job produced', produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] }),
+  doc({ summary: 'Download what the job produced',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    description: 'Refused with a 409 while the job is still queued or running, and with a 404 '
+      + 'where it produced no document — the refusal says which and where the result is. A '
+      + 'document is collected in full and checked before it is sent, never streamed.',
+    response: body({ error: str, message: str, remedy: str }) }),
   handle(async (req, res) => {
     const job = await queue.get(req.apiKey.orgId, req.params.jobId);
     if (!job) return res.status(404).json({ error: 'NOT_FOUND', message: `No job ${req.params.jobId}.` });

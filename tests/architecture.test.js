@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The dependency direction — the rule that makes the layout enterprise rather
  * than tidy.

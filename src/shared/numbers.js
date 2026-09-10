@@ -59,6 +59,24 @@ function numberOr(value, fallback = 0) {
 }
 
 /**
+ * The same absence test, answered with `null` instead of `undefined`.
+ *
+ * Two sentinels for one idea is how a guard gets bypassed, so this exists for
+ * exactly one reason: a figure that is **stored or serialised**. JSON has no
+ * `undefined` — `JSON.stringify({a: undefined})` is `{}` — so a domain that
+ * writes absence into a record or answers it on the wire has to write `null`
+ * or the field disappears, and a disappeared field reads as one nobody thought
+ * about. Inside a calculation, prefer `maybeNumber`.
+ *
+ * @param {unknown} value
+ * @returns {number|null}
+ */
+function numberOrNull(value) {
+  const n = maybeNumber(value);
+  return n === undefined ? null : n;
+}
+
+/**
  * A finite integer, or `fallback`. Truncates towards zero, as `parseInt` does.
  * @param {unknown} value
  * @param {number} [fallback]
@@ -94,4 +112,4 @@ function sumNumeric(values) {
   return { total, counted, skipped };
 }
 
-module.exports = { maybeNumber, numberOr, intOr, isNumeric, sumNumeric };
+module.exports = { maybeNumber, numberOr, numberOrNull, intOr, isNumeric, sumNumeric };

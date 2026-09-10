@@ -35,7 +35,8 @@
 
 'use strict';
 
-const CATALOGUE = require('../../../../data/gcf/instruments.json');
+const { INSTRUMENT_CATALOGUE: CATALOGUE } = require('./reference');
+const { numberOrNull } = require('../../../shared/numbers');
 
 const INSTRUMENTS = CATALOGUE.instruments;
 const BARRIERS = CATALOGUE.barriers;
@@ -46,11 +47,7 @@ const _instrumentById = new Map(INSTRUMENTS.map(i => [i.id, i]));
 const MOBILISATION_RANK = { low: 1, moderate: 2, high: 3, 'very high': 4 };
 const CONCESSIONALITY_RANK = { low: 1, moderate: 2, high: 3 };
 
-const _num = (v) => {
-  if (v === null || v === undefined || v === '') return null;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : null;
-};
+const _num = numberOrNull;
 const round = (n, dp = 3) => (n === null ? null : Math.round(n * 10 ** dp) / 10 ** dp);
 
 /** The reference tables, for a screen that should never restate them. */

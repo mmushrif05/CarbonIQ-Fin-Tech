@@ -35,6 +35,7 @@
 const { CFS_THRESHOLDS } = require('../../../shared/constants');
 const { _common, _tier1, _tier3 } = require('./decision-tiers');
 const { DECISION_TIERS, DECISION_VERDICTS, DECISION_TRACKS, AUTO_APPROVE_LOAN_LIMIT, MANUAL_REVIEW_LOAN_LIMIT, EPD_ADEQUATE_PCT, EPD_THIN_PCT, TIER_DISTRIBUTION } = require('./decision-constants');
+const { numberOr } = require('../../../shared/numbers');
 
 // ---------------------------------------------------------------------------
 // Taxonomy alignment helper
@@ -102,7 +103,7 @@ function classifyDecisionTier({
   const isGreenCFS      = hasCfs && cfsScore >= CFS_THRESHOLDS.green;        // ≥ 70
   const isTransitionCFS = hasCfs && cfsScore >= CFS_THRESHOLDS.transition && cfsScore < CFS_THRESHOLDS.green;
   const isBrownCFS      = hasCfs && cfsScore < CFS_THRESHOLDS.transition;    // < 40
-  const epd             = Number(epdCoveragePct) || 0;
+  const epd             = numberOr(epdCoveragePct);
   const epdAdequate     = epd >= EPD_ADEQUATE_PCT;
   const evidenceThin    = hasBOQ === false && epd < EPD_THIN_PCT;
 

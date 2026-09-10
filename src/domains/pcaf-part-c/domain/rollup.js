@@ -19,6 +19,7 @@
 'use strict';
 
 const { traced } = require('./provenance');
+const { numberOr } = require('../../../shared/numbers');
 
 function rollup({ a4, a5, b1, b4, b7, attributionFactor, gifa_m2 }) {
   const a4v = a4 ? a4.value : 0;
@@ -61,7 +62,7 @@ function rollup({ a4, a5, b1, b4, b7, attributionFactor, gifa_m2 }) {
     inputs: { usestage_tCO2e: useStage.value / 1000, attributionFactor: af }
   });
 
-  const gifa = Number(gifa_m2) || 0;
+  const gifa = numberOr(gifa_m2);
   const perM2 = traced({
     value: gifa > 0 ? construction.value / gifa : 0,
     unit: 'kgCO2e/m2', module: 'rollup',

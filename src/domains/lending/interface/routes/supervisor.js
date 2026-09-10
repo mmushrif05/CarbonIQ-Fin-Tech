@@ -18,7 +18,7 @@
 const { Router }      = require('express');
 const authenticate      = require('../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../platform/http/pagination');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, bool, obj, arr } = require('../../../../platform/http/openapi-hints');
 const auth            = require('../../../../platform/auth/auth');
 const validate        = require('../../../../platform/http/validate');
 const { authorize }   = require('../../../../platform/auth/authorization');
@@ -56,6 +56,8 @@ function dualAuth(req, res, next) {
 // ---------------------------------------------------------------------------
 
 router.get('/templates',
+  doc({ summary: 'The pipeline templates this API can run',
+    response: body({ success: bool, templates: arr() }, ['success', 'templates']) }),
   dualAuth,
   (_req, res) => {
     const templates = Object.entries(PIPELINE_TEMPLATES).map(([id, t]) => ({
@@ -79,6 +81,12 @@ router.get('/templates',
 // ---------------------------------------------------------------------------
 
 router.post('/pipeline',
+  doc({ summary: 'Run a multi-agent supervisor pipeline',
+    description: 'A stage names the stages that must finish first, and whether its own failure '
+      + 'takes the pipeline down: an optional stage that fails is recorded and stepped over.',
+    response: body({
+      success: bool, pipelineId: str, status: str, stages: arr(),
+    }, ['success', 'pipelineId', 'status']) }),
   dualAuth,
   agentLimiter,
   authorize(PERMISSIONS.PIPELINE_CREATE),
@@ -158,6 +166,10 @@ router.post('/pipeline',
 // ---------------------------------------------------------------------------
 
 router.post('/pipeline/:pipelineId/resume',
+  doc({ summary: 'Resume a pipeline paused at a human review gate',
+    response: body({
+      success: bool, pipelineId: str, status: str, stages: arr(),
+    }, ['success', 'pipelineId', 'status']) }),
   dualAuth,
   authorize(PERMISSIONS.AGENT_REVIEW),
   validate({ body: resumePipelineSchema }),
@@ -218,6 +230,8 @@ router.post('/pipeline/:pipelineId/resume',
 // ---------------------------------------------------------------------------
 
 router.get('/pipeline/:pipelineId',
+  doc({ summary: 'One pipeline run, with every stage',
+    response: body({ success: bool, pipeline: obj }, ['success', 'pipeline']) }),
   dualAuth,
   authorize(PERMISSIONS.PIPELINE_READ),
   async (req, res, next) => {

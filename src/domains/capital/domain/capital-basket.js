@@ -32,12 +32,13 @@
 
 const { capitalPosition } = require('./capital-metrics');
 const { bookSeries } = require('./capital-forecast');
+const { numberOr } = require('../../../shared/numbers');
 
 const round = (n, dp = 2) => {
   const f = 10 ** dp;
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n) * f) / f;
 };
-const sum = (rows, f) => rows.reduce((t, r) => t + (Number(f(r)) || 0), 0);
+const sum = (rows, f) => rows.reduce((t, r) => t + numberOr(f(r)), 0);
 
 const SCENARIO_NOTE =
   'Scenario only. Nothing selected has been committed and no figure below is in '
@@ -62,7 +63,7 @@ function basket(book, selectedIds = [], {
 
   const position = capitalPosition(book);
   const available = position.uncommitted;
-  const needed = round(sum(chosen, i => Number(i.commitment) || 0));
+  const needed = round(sum(chosen, i => numberOr(i.commitment)));
   const remaining = round(available - needed);
 
   const rows = chosen.map((i) => {
@@ -71,12 +72,12 @@ function basket(book, selectedIds = [], {
       id: i.id,
       name: i.name,
       sector: i.sector,
-      commitment: round(Number(i.commitment) || 0),
+      commitment: round(numberOr(i.commitment)),
       expectedReturnPct: i.expectedReturnPct ?? null,
-      forward_tCO2e: round(Number(e.forward_tCO2e) || 0),
-      incurred_tCO2e: round(Number(e.incurred_tCO2e) || 0),
-      reduction_tCO2e: round(Number(e.reduction_tCO2e) || 0),
-      avoided_tCO2e: round(Number(e.avoided_tCO2e) || 0),
+      forward_tCO2e: round(numberOr(e.forward_tCO2e)),
+      incurred_tCO2e: round(numberOr(e.incurred_tCO2e)),
+      reduction_tCO2e: round(numberOr(e.reduction_tCO2e)),
+      avoided_tCO2e: round(numberOr(e.avoided_tCO2e)),
     };
   });
 

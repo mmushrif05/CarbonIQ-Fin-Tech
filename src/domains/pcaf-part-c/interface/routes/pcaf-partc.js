@@ -31,7 +31,7 @@ const { Router } = require('express');
 
 const { fallback } = require('../../../../platform/observability/logger');
 const authenticate   = require('../../../../platform/auth/authenticate');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate     = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
@@ -45,6 +45,8 @@ const { buildPartCReport, buildPartCPDF, buildPartCDOCX } = require('../../repor
 const partcRegistry = require('../../application/partc-registry');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { recordLearnings } = require('../../application/learning-store');
+const { _publicRegisters, _shapeResult, _toEngineInput, engineResultSchema } =
+  require('./pcaf-partc/shared');
 const {
   createPartCRun, addStep, generatePartCRunId, PARTC_STATUS, PARTC_STEP_TYPES
 } = require('../../../../shared/models/partc-run');
@@ -57,7 +59,8 @@ const router = Router();
 // ---------------------------------------------------------------------------
 // GET /options — dropdowns for the client form
 // ---------------------------------------------------------------------------
-router.get('/options', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Dropdown options for the client form' }), (_req, res) => {
+router.get('/options', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Dropdown options for the client form',
+    response: body({ options: obj }, ['options']) }), (_req, res) => {
   res.json({ options: factors.options() });
 });
 
@@ -80,14 +83,21 @@ router.get('/options', authenticate, defaultLimiter, referenceCache(), doc({ sum
 // Published so a reviewer can check the claim rather than take it on trust:
 // every rule names the code that enforces it and the test that proves it.
 // ---------------------------------------------------------------------------
-router.get('/conformance', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'PCAF Part C rule → implementation → proving test' }), (_req, res) => {
+router.get('/conformance', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'PCAF Part C rule → implementation → proving test',
+    description: 'Output claims PCAF conformance and never endorsement: no artefact may say '
+      + 'PCAF approved, certified or endorsed.',
+    response: body({ rules: arr(), summary: obj, source: str, generatedAt: str }) }), (_req, res) => {
   res.json(conformanceMatrix());
 });
 
 // ---------------------------------------------------------------------------
 // GET /factors — every factor, with tier and source
 // ---------------------------------------------------------------------------
-router.get('/factors', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Every factor table, with tier and source per row', query: { table: 'One table by name; without it every table.' } }), (req, res) => {
+router.get('/factors', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Every factor table, with tier and source per row',
+    query: { table: 'One table by name; without it every table.' },
+    description: 'Every row carries the quality tier it was drawn at and the source it came '
+      + 'from, and a `gap` where a local figure is known to be missing.',
+    response: body({ tables: arr(str), detail: obj, note: str, table: str }) }), (req, res) => {
   const tables = factors.allTables();
   if (req.query.table) {
     const t = tables[req.query.table];
@@ -105,6 +115,12 @@ router.get('/factors', authenticate, defaultLimiter, referenceCache(), doc({ sum
 // POST /form — the pre-filled, policy-gated client form
 // ---------------------------------------------------------------------------
 router.post('/form', authenticate, defaultLimiter,
+  doc({ summary: 'The pre-filled, policy-gated client form',
+    description: 'The policy gate decides which questions exist: CAR and EAR set the use '
+      + 'stage to zero years by scope rule, so B1/B4/B7 are zero by rule rather than by '
+      + 'omission, and a client-entered cover period applies within the gate and can never '
+      + 'override it.',
+    response: body({ form: obj }, ['form']) }),
   validate({ body: formRequestSchema }),
   (req, res, next) => {
     try {
@@ -116,6 +132,13 @@ router.post('/form', authenticate, defaultLimiter,
 // POST /assess — the full calculation
 // ---------------------------------------------------------------------------
 router.post('/assess', authenticate, defaultLimiter,
+  doc({ summary: 'PCAF Part C insurance-associated emissions — the regulatory figure',
+    description: 'A4 and A5 are the mandatory construction figure. B1, B4 and B7 are the '
+      + 'optional use-stage line, reported separately and never summed with it. B2, B5 and B8 '
+      + 'are a voluntary annex outside the PCAF figure altogether. Every figure carries its '
+      + 'equation, inputs, factors and assumptions, so the registers and the data-quality '
+      + 'score cannot contradict the arithmetic.',
+    response: engineResultSchema }),
   validate({ body: assessRequestSchema }),
   async (req, res, next) => {
     try {
@@ -164,6 +187,14 @@ router.post('/assess', authenticate, defaultLimiter,
 // disclosed.
 // ---------------------------------------------------------------------------
 router.post('/dq-preview', authenticate, defaultLimiter,
+  doc({ summary: 'Data-quality scoring alone — nothing is persisted',
+    description: 'So an intake form can show the score move as evidence is strengthened. The '
+      + 'PCAF score itself does not move when one input improves, because the option has not '
+      + 'changed; the internal aid does, and says so in words rather than numerals.',
+    response: body({
+      dqScoring: orNull(obj), dqStatement: orNull(str),
+      summary: body({ construction_kgCO2e: num, useStage_kgCO2e: num }),
+    }, ['summary']) }),
   validate({ body: assessRequestSchema }),
   (req, res, next) => {
     try {
@@ -220,6 +251,13 @@ async function reportFor(orgId, body) {
 }
 
 router.post('/report', authenticate, defaultLimiter,
+  doc({ summary: 'The disclosure report — PDF, Word or JSON',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    description: 'One content model in the order PCAF\'s disclosure checklist reads, rendered '
+      + 'by one renderer, so a requirement satisfied in one document cannot go missing from '
+      + 'the other. A document is collected in full and checked before it is sent, never '
+      + 'streamed.',
+    response: body({ report: obj }, ['report']) }),
   validate({ body: reportRequestSchema }),
   doc({ summary: 'The assessment report for one policy — JSON, PDF or Word', produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] }),
   async (req, res, next) => {
@@ -240,7 +278,6 @@ router.post('/report', authenticate, defaultLimiter,
 
 router.use(require('./pcaf-partc/runs'));
 router.use(require('./pcaf-partc/agents'));
-const { _publicRegisters, _shapeResult, _toEngineInput } = require('./pcaf-partc/shared');
 
 module.exports = router;
 /* For the job handlers (src/jobs.js): the same report the route builds. */

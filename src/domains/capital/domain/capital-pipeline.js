@@ -6,6 +6,7 @@
 
 const { round, sum } = require('./capital-math');
 const { clamp01 } = require('./capital-math');
+const { numberOr } = require('../../../shared/numbers');
 
 /**
  * Min-max across the candidates, so two quantities in different units can be
@@ -41,8 +42,8 @@ function pipeline(book, { carbonWeight = 0.5 } = {}) {
      nothing derived from it reaches the emissions ledger. */
   const impactPerMillion = waiting.map((i) => {
     const e = i.emissions || {};
-    const capital = Number(i.commitment) || 0;
-    const benefit = (Number(e.reduction_tCO2e) || 0) + (Number(e.avoided_tCO2e) || 0);
+    const capital = numberOr(i.commitment);
+    const benefit = numberOr(e.reduction_tCO2e) + numberOr(e.avoided_tCO2e);
     if (capital <= 0) return NaN;
     return benefit / (capital / 1e6);
   });
@@ -70,7 +71,7 @@ function pipeline(book, { carbonWeight = 0.5 } = {}) {
       assetType: i.assetType,
       country: i.country,
       taxonomy: i.taxonomy,
-      commitment: round(Number(i.commitment) || 0),
+      commitment: round(numberOr(i.commitment)),
       expectedReturnPct: i.expectedReturnPct === null || i.expectedReturnPct === undefined
         ? null : round(Number(i.expectedReturnPct), 2),
       tenorYears: i.tenorYears ?? null,
@@ -78,9 +79,9 @@ function pipeline(book, { carbonWeight = 0.5 } = {}) {
       /* What this one would add to the book if it were written. Named as a
          contribution, because until it is committed it is not in any total. */
       financedEmissionContribution_tCO2e: round(
-        (Number(e.incurred_tCO2e) || 0) + (Number(e.forward_tCO2e) || 0)),
-      reduction_tCO2e: round(Number(e.reduction_tCO2e) || 0),
-      avoided_tCO2e: round(Number(e.avoided_tCO2e) || 0),
+        numberOr(e.incurred_tCO2e) + numberOr(e.forward_tCO2e)),
+      reduction_tCO2e: round(numberOr(e.reduction_tCO2e)),
+      avoided_tCO2e: round(numberOr(e.avoided_tCO2e)),
       impact_tCO2e_perMillion: Number.isFinite(impactPerMillion[k])
         ? round(impactPerMillion[k], 1) : null,
 

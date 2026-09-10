@@ -34,6 +34,7 @@ const boq      = require('./partc-boq');
 const { runPartC }       = require('../domain');
 const { buildRegisters } = require('./partc-registers');
 const { recordLearnings } = require('./learning-store');
+const { numberOr } = require('../../../shared/numbers');
 
 const COLLECTION = 'assessments';
 
@@ -188,9 +189,9 @@ async function createAssessment(orgId, input) {
        what it was weighted on at the time. */
     economics: {
       currency:    settings.currency,
-      premium:     Number(ctx.enginePolicy.premium) || 0,
-      projectCost: Number(ctx.project.projectCost) || 0,
-      gifa_m2:     Number(ctx.project.gifa_m2) || 0
+      premium:     numberOr(ctx.enginePolicy.premium),
+      projectCost: numberOr(ctx.project.projectCost),
+      gifa_m2:     numberOr(ctx.project.gifa_m2)
     },
     summary:        result.summary,
     moduleValues: {

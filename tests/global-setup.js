@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * When TEST_DATABASE_URL is set the suite runs against PostgreSQL, and each
  * Jest worker gets its own schema so suites stay parallel and isolated. This

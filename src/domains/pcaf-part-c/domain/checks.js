@@ -17,6 +17,7 @@
 'use strict';
 
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 /** Typical construction-stage intensity band for A4+A5, kgCO2e/m². */
 const PER_M2_BAND = { low: 10, high: 120 };
@@ -38,7 +39,7 @@ function _finding(code, severity, message, context = {}) {
 function runChecks({ rollupResult, a4, a5, b1, policy = {}, gifa_m2 }) {
   const findings = [];
   const construction = rollupResult ? rollupResult.construction.value : 0;
-  const gifa = Number(gifa_m2) || 0;
+  const gifa = numberOr(gifa_m2);
 
   // 1 — per-m² intensity outside the plausible band
   if (gifa > 0 && construction > 0) {
@@ -89,7 +90,7 @@ function runChecks({ rollupResult, a4, a5, b1, policy = {}, gifa_m2 }) {
   // 5 — B1 de-minimis position (information only)
   if (b1 && b1.value > 0 && construction > 0) {
     const thresholdRef = factors.b1b4Default('deMinimisThreshold');
-    const threshold = Number(thresholdRef.value) || 0.05;
+    const threshold = numberOr(thresholdRef.value, 0.05);
     const ratio = b1.value / construction;
     findings.push(_finding('CHK_B1_DE_MINIMIS', 'info',
       `B1 refrigerant is ${(ratio * 100).toFixed(1)}% of A4+A5 (de-minimis threshold ${(threshold * 100).toFixed(0)}%). ${ratio < threshold ? 'Below threshold.' : 'Material.'} Reported for information only — nothing is excluded.`,

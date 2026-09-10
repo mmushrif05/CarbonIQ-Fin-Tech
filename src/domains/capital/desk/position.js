@@ -43,6 +43,7 @@ const attribution = require('../domain/capital-attribution');
 const baseline = require('../infrastructure/capital-baseline');
 const gcfStore = require('../../gcf/infrastructure/store');
 const store = require('../../../platform/database/store');
+const { numberOr } = require('../../../shared/numbers');
 
 const DELIVERY_STATES = book.DELIVERY_STATES;
 const HELD = book.DEPLOYING_STATUSES;
@@ -51,7 +52,7 @@ const round = (n, dp = 0) => (n === null || n === undefined || !Number.isFinite(
   ? null
   : Math.round(Number(n) * 10 ** dp) / 10 ** dp);
 
-const sum = (rows, pick) => rows.reduce((t, r) => t + (Number(pick(r)) || 0), 0);
+const sum = (rows, pick) => rows.reduce((t, r) => t + numberOr(pick(r)), 0);
 
 /* A record with no delivery state recorded has not been said to be anything.
    `not_started` is the only reading that claims nothing: it is the state every
@@ -100,7 +101,7 @@ function rowsFor(bk, { attributionBasis }) {
       projectCost: round(inv.projectCost),
       drawn: round(share.outstanding),
       drawnPct: share.commitment > 0 ? round(share.share * 100, 1) : null,
-      undrawn: round(Math.max(0, (Number(inv.commitment) || 0) - share.outstanding)),
+      undrawn: round(Math.max(0, numberOr(inv.commitment) - share.outstanding)),
 
       /* Only a held investment carries emissions. A pipeline candidate is an
          intention: attributing emissions to it would book an inventory for

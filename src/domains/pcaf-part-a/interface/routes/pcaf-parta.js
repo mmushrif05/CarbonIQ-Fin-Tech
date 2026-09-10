@@ -14,7 +14,7 @@
 
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
@@ -31,7 +31,11 @@ const router = Router();
  * the UI, so a screen cannot offer an option the engine would then reject, and
  * the two cannot drift.
  */
-router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Part A asset classes, archetypes and the data-quality options for each' }), (_req, res, next) => {
+router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ summary: 'Part A asset classes, archetypes and the data-quality options for each',
+    description: 'The option-to-score mapping is resolved per asset class and there is no '
+      + 'global lookup: Option 2b is score 2 in one class and 3 in another, so one table '
+      + 'applied across classes would be wrong for some of them, silently.',
+    response: body({ standard: str, assetClasses: arr() }, ['standard', 'assetClasses']) }), (_req, res, next) => {
   try {
     res.json({
       standard: parta.STANDARD,
@@ -87,7 +91,12 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
   } catch (err) { next(err); }
 });
 
-router.post('/assess', authenticate, defaultLimiter,
+router.post('/assess',
+  doc({ summary: 'PCAF Part A financed emissions for one asset',
+    description: 'Data quality is weighted by outstanding amount (p.128), which is not how '
+      + 'Part C weights it, so the two engines never share a weighting function. Avoided '
+      + 'emissions are reported separately and never netted against the inventory (p.126).',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
   validate({ body: assessRequestSchema }),
   (req, res, next) => {
     try {

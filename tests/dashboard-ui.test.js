@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The Dashboard, and the two ways it was not working.
  *

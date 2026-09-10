@@ -22,6 +22,7 @@ const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractFromRequest }   = require('../../application/extract');
 const { asError } = require('../../../../shared/types');
+const { doc, body, str, obj, arr } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -29,6 +30,13 @@ const router = Router();
 // POST /v1/extract — extract materials from text, CSV, JSON, or PDF
 // ---------------------------------------------------------------------------
 router.post('/',
+  doc({ summary: 'Extract construction materials from a BOQ',
+    description: 'Claude extracts and classifies; the engine computes. The emission factor '
+      + 'and the total are recomputed here from the factor table and are never taken from '
+      + 'the model, because an LLM must not compute a figure that reaches a disclosure.',
+    response: body({
+      materials: arr(), summary: obj, model: str, tokensUsed: obj,
+    }, ['materials']) }),
   authenticate,
   validate({ body: extractRequestSchema }),
   extractLimiter,

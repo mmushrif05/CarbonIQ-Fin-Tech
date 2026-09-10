@@ -19,6 +19,7 @@ const store  = require('../../../platform/database/store');
 const { hasUseStage } = require('../domain/policy-gate');
 
 const { RECALCULATION_TRIGGERS } = require('../domain/recalculation');
+const { numberOr } = require('../../../shared/numbers');
 
 const CLIENTS  = 'clients';
 const PROJECTS = 'projects';
@@ -177,7 +178,7 @@ function _decoratePolicy(policy) {
     scope: {
       useStageApplies: useStage,
       modules: useStage ? ['A4', 'A5', 'B1', 'B4', 'B7'] : ['A4', 'A5'],
-      useStageYears: useStage ? (Number(policy.yearsOfCover) || 10) : 0,
+      useStageYears: useStage ? (numberOr(policy.yearsOfCover, 10)) : 0,
       note: useStage
         ? 'Use stage applies. B1, B4 and B7 will be computed and reported as a separate line.'
         : `${policy.lineType} covers construction only. B1, B4 and B7 are zero by scope rule, not by omission.`

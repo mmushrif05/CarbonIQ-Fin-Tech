@@ -41,9 +41,10 @@ const C_INVESTMENT = 'capital_investments';
 const C_PAYMENT    = 'capital_payments';
 
 const { STATUSES, DELIVERY_STATES, DEPLOYING_STATUSES, PAYMENT_KINDS } = require('../domain/book-model');
+const { numberOr, numberOrNull } = require('../../../shared/numbers');
 
 const now = () => new Date().toISOString();
-const num = (v, fallback = 0) => (Number.isFinite(Number(v)) ? Number(v) : fallback);
+const num = numberOr;
 
 /**
  * A number, or absent — and `null` is absent.
@@ -54,8 +55,7 @@ const num = (v, fallback = 0) => (Number.isFinite(Number(v)) ? Number(v) : fallb
  * ranked on it, instead of being held out of the ranking as unscoreable. Zero
  * is a claim about the number; null is a claim about the evidence.
  */
-const numOrNull = (v) =>
-  (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+const numOrNull = numberOrNull;
 
 // ---------------------------------------------------------------------------
 // Portfolios

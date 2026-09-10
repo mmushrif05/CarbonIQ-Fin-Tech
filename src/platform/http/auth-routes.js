@@ -27,9 +27,10 @@ const authenticate = require('../auth/authenticate');
 const password = require('../auth/password');
 const store = require('../database/store');
 const validate = require('./validate');
-const { doc } = require('./openapi-hints');
+const { doc, body, str, bool } = require('./openapi-hints');
 const handle = require('./async-handler');
 const { ROLES } = require('../../shared/policies');
+const { emptyBody } = require('./validate').schemas;
 
 /** @typedef {import('../../shared/types').AppError} AppError */
 
@@ -144,8 +145,11 @@ router.post('/login',
   }));
 
 router.post('/logout',
-  authenticate,
-  doc({ summary: 'Sign out', description: 'Ends the session the request carried. Idempotent.', status: 200 }),
+  authenticate, validate({ body: emptyBody }),
+  doc({ summary: 'Sign out',
+    description: 'Ends the session the request carried. Idempotent. A session is a row, not a '
+      + 'signed token, so signing out is a delete and takes effect at once.',
+    status: 200, response: body({ signedOut: bool }, ['signedOut']) }),
   handle(async (req, res) => {
     const header = String(req.headers.authorization || '');
     await sessions.revoke(header.replace(/^bearer\s+/i, '').trim());
@@ -170,6 +174,9 @@ router.get('/me',
   }));
 
 router.post('/password',
+  doc({ summary: "Change the caller's own password",
+    description: 'Every other session that account holds ends, and a fresh one is issued here.',
+    response: body({ changed: bool, token: str, expiresAt: str }, ['changed']) }),
   authenticate,
   validate({ body: changeOwnSchema }),
   doc({
@@ -233,6 +240,9 @@ router.patch('/users/:userId',
   }));
 
 router.post('/users/:userId/password',
+  doc({ summary: "Reset another account's password — requires the admin scope",
+    description: 'Ends every session that account holds.',
+    response: body({ changed: bool, temporaryPassword: str }, ['changed']) }),
   authenticate,
   validate({ body: resetSchema }),
   doc({ summary: 'Reset an account’s password and end its sessions', status: 200 }),

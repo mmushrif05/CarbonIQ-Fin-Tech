@@ -33,6 +33,11 @@
 
 const fs = require('fs');
 const path = require('path');
+const Joi = require('joi');
+
+const { checked, strictNumber } = require('../../../shared/reference-data');
+const { STATUSES, DELIVERY_STATES } = require('../domain/book-model');
+const log = require('../../../platform/observability/logger').for('capital-baseline');
 
 const BOOK_PATH = path.join(__dirname, '..', '..', '..', '..', 'data', 'capital', 'book.json');
 
@@ -48,23 +53,80 @@ function _deepFreeze(value) {
 }
 
 /**
- * The baseline, or null when the file is missing or unreadable.
+ * The shape the book has to have before any figure is read off it.
+ *
+ * Every id is required because the three arrays are joined on them: a payment
+ * whose `investmentId` matches nothing is drawn money attributed to no
+ * facility, and it would be summed into the disbursed total while appearing
+ * against no row on the screen — a book that does not add up to itself.
+ * `commitment` and `amount` are strict numbers for the reason the whole guard
+ * exists: a quoted figure multiplies fine and then fails a comparison.
+ */
+const bookSchema = Joi.object({
+  _meta: Joi.object().unknown(true).optional(),
+  portfolios: Joi.array().items(Joi.object({
+    id: Joi.string().max(60).required(),
+    name: Joi.string().max(200).required(),
+    allocatedBudget: strictNumber.min(0).required(),
+  }).unknown(true)).required(),
+  investments: Joi.array().items(Joi.object({
+    id: Joi.string().max(60).required(),
+    portfolioId: Joi.string().max(60).required(),
+    name: Joi.string().max(200).required(),
+    commitment: strictNumber.min(0).required(),
+    status: Joi.string().valid(...STATUSES).required(),
+    delivery: Joi.string().valid(...DELIVERY_STATES).required(),
+  }).unknown(true)).required(),
+  payments: Joi.array().items(Joi.object({
+    id: Joi.string().max(60).required(),
+    investmentId: Joi.string().max(60).required(),
+    amount: strictNumber.required(),
+  }).unknown(true)).required(),
+}).unknown(true).custom((book, helpers) => {
+  const portfolios = new Set(book.portfolios.map((/** @type {any} */ p) => p.id));
+  const investments = new Set(book.investments.map((/** @type {any} */ i) => i.id));
+  for (const inv of book.investments) {
+    if (!portfolios.has(inv.portfolioId)) {
+      return helpers.error('any.custom', { error: new Error(
+        `investment ${inv.id} sits in portfolio ${inv.portfolioId}, which is not on the book`) });
+    }
+  }
+  for (const pay of book.payments) {
+    if (!investments.has(pay.investmentId)) {
+      return helpers.error('any.custom', { error: new Error(
+        `payment ${pay.id} is against investment ${pay.investmentId}, which is not on the book`) });
+    }
+  }
+  return book;
+});
+
+/**
+ * The baseline, or null when the file is missing, unreadable or malformed.
  *
  * Null rather than a throw: a missing baseline means the screen has nothing to
  * show, which the caller already knows how to say. Crashing the request would
  * turn a presentational gap into an outage.
+ *
+ * A book that **fails its schema** is treated the same way and not as usable
+ * data, which is the choice that matters: a screen saying it has no baseline
+ * is a screen a reader can act on, and a screen drawing a curve from a book
+ * whose payments point at facilities that are not on it is one they cannot.
+ * The reason is logged at warn rather than swallowed, so the difference
+ * between "no file" and "a bad file" reaches whoever has to fix it.
  */
 function readBaseline() {
   if (_cache !== undefined && _cache !== null) return _cache;
   try {
-    const parsed = JSON.parse(fs.readFileSync(BOOK_PATH, 'utf8'));
+    const parsed = checked('data/capital/book.json',
+      JSON.parse(fs.readFileSync(BOOK_PATH, 'utf8')), bookSchema);
     _cache = _deepFreeze({
       portfolios: parsed.portfolios || [],
       investments: parsed.investments || [],
       payments: parsed.payments || [],
       meta: parsed._meta || null,
     });
-  } catch (_) {
+  } catch (err) {
+    log.warn({ err, kind: 'invalid' }, 'capital baseline book unavailable — the screen will say so');
     _cache = null;
   }
   return _cache;

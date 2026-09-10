@@ -14,7 +14,7 @@
 const { Router } = require('express');
 const Joi = require('joi');
 const authenticate = require('../../../../platform/auth/authenticate');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, bool, obj, arr } = require('../../../../platform/http/openapi-hints');
 const handle = require('../../../../platform/http/async-handler');
 const validate   = require('../../../../platform/http/validate');
 const { assessLimiter } = require('../../../../platform/http/rate-limit');
@@ -22,6 +22,7 @@ const { assessNdcSdgAlignment } = require('../../application/ndc-sdg');
 const { generateCertificate, verifyCertificate } = require('../../domain/certificate');
 const baselines = require('../../../baseline/application/registry');
 const { asError } = require('../../../../shared/types');
+const { certificateVerifySchema } = require('../schemas/taxonomy');
 
 const router = Router();
 
@@ -66,6 +67,11 @@ const ndcSdgSchema = Joi.object({
 // ---------------------------------------------------------------------------
 
 router.post('/assess',
+  doc({ summary: 'NDC and SDG alignment for a project',
+    description: 'Reduction and removal are two commitments and are never summed: no key '
+      + 'anywhere holds their total. Only the years falling inside 2026-2035 count against a '
+      + '2026-2035 commitment.',
+    response: body({ success: bool, alignment: obj }, ['success']) }),
   authenticate,
   validate({ body: ndcSdgSchema }),
   assessLimiter,
@@ -99,6 +105,12 @@ router.post('/assess',
 // ---------------------------------------------------------------------------
 
 router.post('/certificate',
+  doc({ summary: 'Generate an SLGFT Green Loan Certificate', status: 201,
+    description: 'The tier is assigned from the governed intensity bands, so the certificate '
+      + 'records the baseline version behind its own classification. The audit hash covers the '
+      + 'tier that was assigned, not the bands that assigned it, so a later change to the '
+      + 'bands does not invalidate a certificate already issued.',
+    response: body({ success: bool, certificate: obj }, ['success', 'certificate']) }),
   authenticate,
   validate({ body: certSchema }),
   async (req, res, next) => {
@@ -127,14 +139,15 @@ router.post('/certificate',
 // ---------------------------------------------------------------------------
 
 router.post('/certificate/verify',
+  doc({ summary: "Verify a certificate against its own audit hash",
+    description: 'The stamp sits inside the hash, so the verifier reads it off the certificate '
+      + 'with a legacy fallback — every already-issued certificate still verifies.',
+    response: body({ success: bool, valid: bool, reason: str }, ['success']) }),
   authenticate,
+  validate({ body: certificateVerifySchema }, { stripUnknown: false }),
   async (req, res, next) => {
     try {
-      const cert = req.body;
-      if (!cert || !cert.certId || !cert.hash) {
-        return res.status(400).json({ error: 'INVALID_CERTIFICATE', message: 'Provide a full certificate object with certId and hash.' });
-      }
-      const result = verifyCertificate(cert);
+      const result = verifyCertificate(req.body);
       return res.status(200).json({ success: true, ...result });
     } catch (err) {
       next(err);
@@ -147,7 +160,15 @@ router.post('/certificate/verify',
 // Returns SLGFT framework metadata (NDC targets, SDGs, sectors) — no AI
 // ---------------------------------------------------------------------------
 
-router.get('/framework', authenticate, doc({ summary: 'SLGFT framework metadata, the NDC 3.0 targets, and the intensity screen in force' }), handle(async (req, res) => {
+router.get('/framework',
+  doc({ summary: 'SLGFT framework metadata, and the intensity screen in force',
+    description: 'The framework is fixed by the published document; the intensity screen '
+      + 'beside it is not in that document and is governed here, so this reports what is '
+      + 'actually in force rather than a second constant.',
+    response: body({
+      framework: str, version: str, regulator: str, ndcTargets: obj, sectors: obj,
+      objectives: obj, activities: arr(), guidingPrinciples: arr(str), intensityScreen: obj,
+    }, ['framework', 'intensityScreen']) }), authenticate, doc({ summary: 'SLGFT framework metadata, the NDC 3.0 targets, and the intensity screen in force' }), handle(async (req, res) => {
   const { TAXONOMY_LK } = require('../../../../shared/constants');
   /* The framework's own content is fixed by the published document; the
      intensity screen beside it is not part of that document and is governed

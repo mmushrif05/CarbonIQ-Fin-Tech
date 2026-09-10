@@ -39,8 +39,8 @@
 
 const Joi = require('joi');
 
-const IRMF = require('../../../../data/gcf/irmf.json');
-const AREAS = require('../../../../data/gcf/results-areas.json');
+const { IRMF } = require('./reference');
+const { RESULTS_AREAS: AREAS } = require('./reference');
 
 const TIERS = IRMF.evidenceTiers.map(t => t.tier);
 const AREA_CODES = AREAS.areas.map(a => a.code);

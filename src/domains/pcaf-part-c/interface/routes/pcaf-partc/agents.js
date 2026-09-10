@@ -20,6 +20,8 @@ const intakeAgent     = require('../../../agents/intake');
 const mappingAgent    = require('../../../agents/mapping');
 const disclosureAgent = require('../../../agents/disclosure');
 const { documentBlocks } = require('../../../agents/documents');
+const { doc, body, str, obj, orNull } =
+  require('../../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -29,6 +31,9 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/agent/intake', authenticate, agentLimiter, requireAI,
+  doc({ summary: 'Extract the policy from a document. Claude classifies; the engine computes.',
+    response: body({ runId: str, status: str, result: orNull(obj), tokensUsed: obj, model: orNull(str) },
+      ['runId', 'status']) }),
   validate({ body: intakeRequestSchema }),
   async (req, res, next) => {
     try {
@@ -72,6 +77,11 @@ router.post('/agent/intake', authenticate, agentLimiter, requireAI,
   });
 
 router.post('/agent/map', authenticate, agentLimiter, requireAI,
+  doc({ summary: 'Map BOQ lines to factor keys',
+    description: 'A mapping that fails clears the table rather than leaving the previous rows '
+      + 'standing — stale rows after a failed upload are what made the agent look static.',
+    response: body({ runId: str, status: str, result: orNull(obj), tokensUsed: obj, model: orNull(str) },
+      ['runId', 'status']) }),
   validate({ body: mappingRequestSchema }),
   async (req, res, next) => {
     try {
@@ -122,6 +132,10 @@ router.post('/agent/map', authenticate, agentLimiter, requireAI,
   });
 
 router.post('/agent/disclose', authenticate, agentLimiter, requireAI,
+  doc({ summary: 'Write the disclosure narrative around figures the engine computed',
+    description: 'An LLM never computes a figure that reaches a regulatory disclosure.',
+    response: body({ runId: str, status: str, memo: orNull(obj), tokensUsed: obj, model: orNull(str) },
+      ['runId', 'status']) }),
   validate({ body: discloseRequestSchema }),
   async (req, res, next) => {
     try {

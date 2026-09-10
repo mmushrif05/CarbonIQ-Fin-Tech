@@ -20,10 +20,13 @@ const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
 const { calculateCarbonFinanceScore } = require('../../domain/score');
+const { doc, body, str, obj } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.get('/:projectId/score',
+  doc({ summary: 'The Carbon Finance Score (0-100) for a construction loan',
+    response: body({ projectId: str, score: obj }, ['projectId']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,

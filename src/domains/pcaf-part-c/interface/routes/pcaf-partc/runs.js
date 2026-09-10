@@ -9,7 +9,7 @@ const { Router } = require('express');
 const { fallback } = require('../../../../../platform/observability/logger');
 const authenticate   = require('../../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../../platform/http/pagination');
-const { doc } = require('../../../../../platform/http/openapi-hints');
+const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 const validate     = require('../../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../../platform/http/rate-limit');
 const { runPartC }        = require('../../../domain');
@@ -24,7 +24,7 @@ const {
 const {
   startRunRequestSchema, resumeRunRequestSchema
 } = require('../../schemas/pcaf-partc');
-const { _publicRegisters, _shapeResult } = require('./shared');
+const { _publicRegisters, _shapeResult , engineResultSchema } = require('./shared');
 
 const router = Router();
 
@@ -36,6 +36,14 @@ const router = Router();
 // run now waits for the client. It may wait across sessions.
 // ---------------------------------------------------------------------------
 router.post('/runs/start', authenticate, defaultLimiter,
+  doc({ summary: 'Begin a run, pausing for the client to complete the form', status: 201,
+    description: 'A Part C assessment is not one request and one response: the agent ingests, '
+      + 'pauses for the client, then resumes and computes. `durable` says whether the run will '
+      + 'survive a restart on this deployment.',
+    response: body({
+      runId: str, status: str, projectName: orNull(str), form: obj,
+      durable: bool, next: str, warning: str,
+    }, ['runId', 'status', 'form']) }),
   validate({ body: startRunRequestSchema }),
   async (req, res, next) => {
     try {
@@ -81,6 +89,10 @@ router.post('/runs/start', authenticate, defaultLimiter,
 // POST /runs/:runId/resume — the client has answered; compute and complete
 // ---------------------------------------------------------------------------
 router.post('/runs/:runId/resume', authenticate, defaultLimiter,
+  doc({ summary: 'Supply the answers, compute, complete the run',
+    description: 'Client factor overrides are held for the duration of this one call and are '
+      + 'never a global: two resumes in one container must not share them.',
+    response: engineResultSchema }),
   validate({ body: resumeRunRequestSchema }),
   async (req, res, next) => {
     const orgId = req.orgId;
@@ -152,7 +164,8 @@ router.post('/runs/:runId/resume', authenticate, defaultLimiter,
 // ---------------------------------------------------------------------------
 // GET /runs, GET /runs/:runId
 // ---------------------------------------------------------------------------
-router.get('/runs', authenticate, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page' }), async (req, res, next) => {
+router.get('/runs', authenticate, defaultLimiter, paged(), doc({ summary: 'Recent Part C runs, newest first; twenty without a page',
+    response: body({ runs: arr(), page: obj }, ['runs']) }), async (req, res, next) => {
   try {
     if (req.query.limit === undefined && req.query.cursor === undefined) {
       return res.json({ runs: await runStore.listRuns(req.orgId, 20) });
@@ -161,7 +174,10 @@ router.get('/runs', authenticate, defaultLimiter, paged(), doc({ summary: 'Recen
   } catch (err) { next(err); }
 });
 
-router.get('/runs/:runId', authenticate, defaultLimiter, async (req, res, next) => {
+router.get('/runs/:runId', authenticate, defaultLimiter,
+  doc({ summary: 'One run, with its state across the pause',
+    response: body({ run: obj }, ['run']) }),
+  async (req, res, next) => {
   try {
     const run = await runStore.getRun(req.orgId, req.params.runId);
     if (!run) return res.status(404).json({ error: 'RUN_NOT_FOUND', message: `No Part C run ${req.params.runId}.` });

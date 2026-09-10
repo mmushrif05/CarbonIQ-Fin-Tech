@@ -58,4 +58,19 @@ const extractRequestSchema = Joi.object({
     'object.missing': 'Provide one of: content (text/CSV/JSON), pdfBase64 (PDF file), or fileId (pre-uploaded file ID)'
   });
 
-module.exports = { extractRequestSchema };
+/**
+ * A BOQ PDF uploaded once, to be reused across extractions for thirty days.
+ *
+ * Separate from `extractRequestSchema` because it is a different request: this
+ * one only carries the file, and the extraction options belong to the call
+ * that names the returned `fileId`. One schema covering both would document an
+ * upload as accepting a format hint it never reads.
+ */
+const extractUploadSchema = Joi.object({
+  pdfBase64: Joi.string().required()
+    .description('Base64-encoded PDF file containing the Bill of Quantities'),
+  filename: Joi.string().max(255).default('boq.pdf')
+    .description('Name recorded against the upload; shown back in run history'),
+}).unknown(false);
+
+module.exports = { extractRequestSchema, extractUploadSchema };

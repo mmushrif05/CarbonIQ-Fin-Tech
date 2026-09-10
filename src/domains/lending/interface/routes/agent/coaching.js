@@ -21,6 +21,7 @@ const borrowerCoaching   = require('../../../agents/borrower-coaching');
 const decisionReview     = require('../../../agents/decision-review');
 const { classifyDecisionTier, DECISION_TIERS } = require('../../../domain/decision-engine');
 const { asError } = require('../../../../../shared/types');
+const { doc, body, str, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -37,6 +38,11 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/coach',
+  doc({ summary: 'Borrower coaching agent', response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_COACH),
@@ -114,6 +120,12 @@ router.post('/coach',
 // ---------------------------------------------------------------------------
 
 router.post('/triage',
+  doc({ summary: 'Decision triage — automatic, AI-reviewed or manual',
+    description: 'Tier 1 and tier 3 answer immediately without an AI call. The classification '
+      + 'is spread rather than re-listed, so a field the engine gains is not silently dropped.',
+    response: body({
+      success: bool, agentType: str, tier: str, aiReview: orNull(obj), escalation: obj,
+    }, ['success', 'tier']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_TRIAGE),

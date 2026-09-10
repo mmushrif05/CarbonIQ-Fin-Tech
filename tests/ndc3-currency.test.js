@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * The national targets this application cites must be the current ones.
  *

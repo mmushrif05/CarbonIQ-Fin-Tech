@@ -23,6 +23,7 @@
 const fs   = require('fs');
 const path = require('path');
 const { AsyncLocalStorage } = require('async_hooks');
+const { checked, factorTableSchema } = require('../../../shared/reference-data');
 
 const FACTOR_DIR = path.join(__dirname, '..', '..', '..', '..', 'data', 'factors');
 
@@ -60,7 +61,14 @@ function _load() {
   _tables = {};
   for (const name of TABLE_FILES) {
     const file = path.join(FACTOR_DIR, `${name}.json`);
-    _tables[name] = JSON.parse(fs.readFileSync(file, 'utf8'));
+    /* Held to the schema here rather than trusted, and loudly: a row missing
+       its `value` is `undefined`, and `undefined * quantity` is `NaN`, which
+       propagates through every sum it touches and prints as an empty cell — a
+       hole in a disclosure that reads as a formatting fault. A row whose value
+       is the string "2400" multiplies fine and then fails a comparison it
+       should have passed. Neither announces itself. */
+    _tables[name] = checked(`data/factors/${name}.json`,
+      JSON.parse(fs.readFileSync(file, 'utf8')), factorTableSchema);
   }
   return _tables;
 }

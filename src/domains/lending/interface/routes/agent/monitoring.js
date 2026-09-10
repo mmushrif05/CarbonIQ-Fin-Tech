@@ -20,6 +20,7 @@ const {
 const monitoringAgent    = require('../../../agents/monitoring');
 const portfolioAgent     = require('../../../agents/portfolio');
 const { asError } = require('../../../../../shared/types');
+const { doc, body, str, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -32,6 +33,11 @@ const router = Router();
 // ---------------------------------------------------------------------------
 
 router.post('/monitor',
+  doc({ summary: 'Monitoring agent', response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_MONITOR),
@@ -91,6 +97,11 @@ router.post('/monitor',
 // ---------------------------------------------------------------------------
 
 router.post('/portfolio',
+  doc({ summary: 'Portfolio agent', response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_PORTFOLIO),

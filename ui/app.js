@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    CarbonIQ — Navigation & Interactions
    ============================================================ */
@@ -137,7 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (activeNav) activeNav.classList.add('active');
 
     // Hide all pages
-    document.querySelectorAll('.page').forEach((p) => { p.style.display = 'none'; });
+    document.querySelectorAll('.page').forEach((p) => {
+      /** @type {HTMLElement} */ (p).style.display = 'none';
+    });
 
     const target = document.getElementById('page-' + pageId);
     if (!target) return;
@@ -200,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
       container.innerHTML = `
         <div style="padding:48px;text-align:center;color:var(--text-secondary);">
           <p style="font-size:14px;font-weight:600;margin-bottom:6px;">Page could not be loaded</p>
-          <p style="font-size:12px;">${err.message}</p>
+          <p style="font-size:12px;">${err instanceof Error ? err.message : String(err)}</p>
         </div>`;
       container.dataset.loaded = 'error';
     }
@@ -210,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
   navItems.forEach((item) => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      navigateTo(item.dataset.page);
+      navigateTo(/** @type {HTMLElement} */ (item).dataset.page);
     });
   });
 
@@ -247,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ── Chip toggles ─────────────────────────────────────────────
   document.querySelectorAll('.chart-controls .chip, .filter-chips .chip').forEach((chip) => {
     chip.addEventListener('click', () => {
+      if (!chip.parentElement) return;
       chip.parentElement.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
       chip.classList.add('active');
     });

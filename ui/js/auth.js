@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    CarbonIQ — Stakeholder Authentication & RBAC Module
    ui/js/auth.js
@@ -78,7 +79,8 @@ const Auth = (() => {
   // ── Session management ─────────────────────────────────────
   function _getSession() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw === null ? null : JSON.parse(raw);
     } catch (_) {
       return null;
     }
@@ -179,7 +181,8 @@ const Auth = (() => {
   // ── Apply RBAC to nav items ────────────────────────────────
   function applyNavVisibility() {
     const navItems = document.querySelectorAll('.nav-item[data-page]');
-    navItems.forEach(item => {
+    navItems.forEach(el => {
+      const item = /** @type {HTMLElement} */ (el);
       const pageId = item.dataset.page;
       if (canAccessPage(pageId)) {
         item.style.display = '';
@@ -197,7 +200,7 @@ const Auth = (() => {
     if (!session) return;
 
     const role = ROLES[session.role];
-    const avatarEl = document.querySelector('.sidebar-footer .avatar');
+    const avatarEl = /** @type {HTMLElement|null} */ (document.querySelector('.sidebar-footer .avatar'));
     const nameEl = document.querySelector('.sidebar-footer .user-name');
     const roleEl = document.querySelector('.sidebar-footer .user-role');
 

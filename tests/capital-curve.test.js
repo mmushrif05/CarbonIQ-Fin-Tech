@@ -159,9 +159,22 @@ describe('The drawdown series covers the whole horizon, not one year of it', () 
     expect(nulled.totalPlanned).toBe(defaulted.totalPlanned);
   });
 
-  test('the guard is Number(years) || 10, and the reason is recorded', () => {
-    expect(forecast).toMatch(/Math\.round\(Number\(years\) \|\| 10\)/);
+  test('the guard is the shared one, and it holds for every shape of absence', () => {
+    /* This used to pin the literal `Number(years) || 10`, which is a test of
+       how the line is spelled rather than of what it guarantees — so it would
+       have failed on a correct rewrite and passed on a wrong one with the same
+       spelling. What has to hold is that every value that is not a horizon
+       falls back to the same series, and that a real horizon is honoured. */
+    expect(forecast).toMatch(/numberOr\(years, 10\)/);
     expect(forecast).toMatch(/default\s+parameter only covers undefined/);
+
+    const book = baselineBook();
+    const ten = capitalSeries(book, {}).rows.length;
+    for (const notAHorizon of [null, undefined, '', '  ', NaN, Infinity, true, 'twelve', {}]) {
+      expect(capitalSeries(book, { years: notAHorizon }).rows.length).toBe(ten);
+    }
+    expect(capitalSeries(book, { years: 4 }).rows.length).toBe(4);
+    expect(capitalSeries(book, { years: '4' }).rows.length).toBe(4);
   });
 
   test('the planned total equals what is committed and undrawn', () => {

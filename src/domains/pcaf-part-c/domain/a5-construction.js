@@ -30,6 +30,7 @@
 const { traced, assumption, sumValues } = require('./provenance');
 const { massTonnes } = require('./a4-transport');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 // ---------------------------------------------------------------------------
 // A5.1 — Pre-construction demolition (debris transport)
@@ -40,14 +41,14 @@ function a51Demolition({ demolitionItems = [], demolitionMass_t = null, demoliti
   const kmRef  = Number.isFinite(Number(demolitionKm))
     ? { key: 'input.demolitionTransport_km', value: Number(demolitionKm), unit: 'km', tier: 'Local', reference: 'Client-supplied demolition transport distance' }
     : factors.a5Default('demolitionTransport_km');
-  const km = Number(kmRef.value) || 0;
+  const km = numberOr(kmRef.value);
   const assumptions = [];
 
   // Path 1 — itemised demolition lines lifted from the BOQ.
   if (demolitionItems.length > 0) {
     const children = demolitionItems.map(item => {
       const mass = massTonnes(item);
-      const value = mass.value * km * (Number(efRoad.value) || 0);
+      const value = mass.value * km * numberOr(efRoad.value);
       return traced({
         value, unit: 'kgCO2e', module: 'A5.1', label: item.name,
         equation: 'A5.1 = mass_t × demolition_km × EF_road',
@@ -72,7 +73,7 @@ function a51Demolition({ demolitionItems = [], demolitionMass_t = null, demoliti
       `Demolition computed from a single total mass of ${mass} t rather than itemised lines. Item-level densities were not applied.`,
       'notable', { demolitionMass_t: mass }));
     return traced({
-      value: mass * km * (Number(efRoad.value) || 0), unit: 'kgCO2e', module: 'A5.1',
+      value: mass * km * numberOr(efRoad.value), unit: 'kgCO2e', module: 'A5.1',
       label: 'A5.1 Pre-construction demolition',
       equation: 'A5.1 = total_demolition_mass_t × demolition_km × EF_road',
       inputs: { mass_t: mass, demolition_km: km, source: 'client total mass' },
@@ -98,13 +99,13 @@ function a51Demolition({ demolitionItems = [], demolitionMass_t = null, demoliti
 // ---------------------------------------------------------------------------
 
 function a52SiteEnergy({ gifa_m2, previousProject } = {}) {
-  const gifa = Number(gifa_m2) || 0;
+  const gifa = numberOr(gifa_m2);
   const assumptions = [];
 
   const prev      = previousProject || {};
-  const prevArea  = Number(prev.area_m2) || 0;
-  const prevFuel  = Number(prev.fuel_L) || 0;
-  const prevElec  = Number(prev.electricity_kWh) || 0;
+  const prevArea  = numberOr(prev.area_m2);
+  const prevFuel  = numberOr(prev.fuel_L);
+  const prevElec  = numberOr(prev.electricity_kWh);
   const hasClientData = prevArea > 0 && (prevFuel > 0 || prevElec > 0);
 
   if (gifa <= 0) {
@@ -127,7 +128,7 @@ function a52SiteEnergy({ gifa_m2, previousProject } = {}) {
     const value = perM2 * gifa;
 
     // Silent benchmark check (MVP: recorded, never interrupts).
-    const ricsRate = Number(ricsRef.value) || 40;
+    const ricsRate = numberOr(ricsRef.value, 40);
     const deviation = (perM2 - ricsRate) / ricsRate;
     if (Math.abs(deviation) >= 0.30) {
       assumptions.push(assumption('A5_2_BENCHMARK_DEVIATION',
@@ -150,7 +151,7 @@ function a52SiteEnergy({ gifa_m2, previousProject } = {}) {
 
   // Method A — RICS default. The normal path, and the dominant assumption.
   const ricsRef = factors.a5Default('ricsSiteEnergy_kgCO2e_m2');
-  const rate  = Number(ricsRef.value) || 40;
+  const rate  = numberOr(ricsRef.value, 40);
   const value = rate * gifa;
 
   assumptions.push(assumption('A5_2_METHOD_A',
@@ -174,13 +175,13 @@ function a53Waste({ materials = [], wasteDisposalKm } = {}) {
   const kmRef  = Number.isFinite(Number(wasteDisposalKm))
     ? { key: 'input.wasteDisposal_km', value: Number(wasteDisposalKm), unit: 'km', tier: 'Local', reference: 'Client-supplied waste disposal distance' }
     : factors.a5Default('wasteDisposal_km');
-  const km = Number(kmRef.value) || 0;
+  const km = numberOr(kmRef.value);
 
   const children = materials.map(m => {
     const mass = massTonnes(m);
     const rate = factors.wasteRate(m.wasteCategory || '');
-    const wastedMass = mass.value * (Number(rate.value) || 0);
-    const value = wastedMass * km * (Number(efRoad.value) || 0);
+    const wastedMass = mass.value * numberOr(rate.value);
+    const value = wastedMass * km * numberOr(efRoad.value);
 
     const assumptions = [];
     if (rate.fallback) {

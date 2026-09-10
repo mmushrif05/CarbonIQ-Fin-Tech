@@ -241,7 +241,18 @@ describe('Over HTTP', () => {
 
   test('a field the schema does not know is refused, not silently stored', async () => {
     const res = await auth(api().put('/v1/gcf/entity').send({ ...ENTITY, boardMeetings: 4 })).expect(400);
-    expect(res.body.error).toBe('INVALID_ENTITY_DISCLOSURES');
+    /* Refused at the door now rather than inside the handler, so the code is
+       the one every write on the surface uses — and the field is named, which
+       the domain's single opaque code could not do. Refusing matters more than
+       the code: `stripUnknown` is off for this route on purpose, because
+       silently dropping a field is how an entity comes to believe a
+       disclosure it typed is being carried. */
+    expect(res.body.error).toBe('VALIDATION_ERROR');
+    expect(res.body.details.map(d => d.field)).toContain('boardMeetings');
+
+    // And nothing was written: the refusal is before the store, not after it.
+    const after = await auth(api().get('/v1/gcf/entity')).expect(200);
+    expect(after.body.entity).toBeNull();
   });
 
   test('export then import round-trips over the wire', async () => {

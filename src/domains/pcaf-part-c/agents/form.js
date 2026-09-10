@@ -27,6 +27,7 @@
 
 const factors = require('../domain/factors');
 const { hasUseStage } = require('../domain/policy-gate');
+const { numberOr } = require('../../../shared/numbers');
 
 function _constant(key, ref) {
   return {
@@ -241,9 +242,9 @@ function formAnswersToEngineInput({ policy = {}, materials = [], demolitionItems
   const distances = {};
   for (const [materialId, d] of Object.entries(answers.distances || {})) {
     distances[materialId] = {
-      road: Number(d.road_km ?? d.road) || 0,
-      sea:  Number(d.sea_km  ?? d.sea)  || 0,
-      rail: Number(d.rail_km ?? d.rail) || 0,
+      road: numberOr(d.road_km ?? d.road),
+      sea:  numberOr(d.sea_km  ?? d.sea),
+      rail: numberOr(d.rail_km ?? d.rail),
       air:  0
     };
   }
@@ -257,7 +258,7 @@ function formAnswersToEngineInput({ policy = {}, materials = [], demolitionItems
     materials,
     distances,
     siteInputs: {
-      gifa_m2:          Number(answers.gifa_m2) || 0,
+      gifa_m2:          numberOr(answers.gifa_m2),
       demolitionKm:     answers.demolitionKm,
       wasteDisposalKm:  answers.wasteDisposalKm,
       demolitionItems,

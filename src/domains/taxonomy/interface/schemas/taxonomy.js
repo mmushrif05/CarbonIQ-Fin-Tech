@@ -51,4 +51,27 @@ const taxonomyRequestSchema = Joi.object({
   }).default(),
 });
 
-module.exports = { taxonomyRequestSchema };
+/**
+ * A certificate on the way back in, to be verified against its own hash.
+ *
+ * The hash covers the certificate's fields, so this schema **must not change
+ * the payload**: a stripped unknown key or a coerced number would alter what
+ * is hashed, and a certificate this system issued would fail its own
+ * verification. It checks that the two fields the verifier needs are present —
+ * so a caller posting the wrong document is told which field is missing rather
+ * than getting a tamper warning that reads like fraud — and admits everything
+ * else untouched.
+ *
+ * Certificates issued before the stamp moved inside the hash still verify:
+ * the verifier reads the stamp off the certificate with a `LEGACY_STAMP`
+ * fallback, because changing a hashed field without that is not a correction
+ * but the destruction of evidence.
+ */
+const certificateVerifySchema = Joi.object({
+  certId: Joi.string().max(200).required(),
+  hash: Joi.string().max(256).required(),
+}).unknown(true);
+
+module.exports = { taxonomyRequestSchema,
+  certificateVerifySchema,
+};

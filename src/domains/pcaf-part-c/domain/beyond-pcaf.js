@@ -22,12 +22,13 @@
 
 const { traced, assumption } = require('./provenance');
 const factors = require('./factors');
+const { numberOr } = require('../../../shared/numbers');
 
 function _allowanceModule({ moduleId, label, allowanceKey, gifa_m2, useStageYears, overrideAllowance }) {
-  const gifa  = Number(gifa_m2) || 0;
-  const years = Number(useStageYears) || 0;
+  const gifa  = numberOr(gifa_m2);
+  const years = numberOr(useStageYears);
   const rspRef = factors.wlcaDefault('referenceStudyPeriod_years');
-  const rsp    = Number(rspRef.value) || 60;
+  const rsp    = numberOr(rspRef.value, 60);
 
   const allowanceRef = Number.isFinite(Number(overrideAllowance)) && Number(overrideAllowance) > 0
     ? { key: `input.${allowanceKey}`, value: Number(overrideAllowance), unit: 'kgCO2e/m2 GIA',
@@ -44,7 +45,7 @@ function _allowanceModule({ moduleId, label, allowanceKey, gifa_m2, useStageYear
     });
   }
 
-  const allowance = Number(allowanceRef.value) || 0;
+  const allowance = numberOr(allowanceRef.value);
   const value = allowance * gifa * years / rsp;
 
   return traced({

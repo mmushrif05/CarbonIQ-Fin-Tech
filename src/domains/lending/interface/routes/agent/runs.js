@@ -9,7 +9,7 @@ const { Router } = require('express');
 
 const authenticate    = require('../../../../../platform/auth/authenticate');
 const { listView, paged } = require('../../../../../platform/http/pagination');
-const { doc } = require('../../../../../platform/http/openapi-hints');
+const { doc, body, bool, obj } = require('../../../../../platform/http/openapi-hints');
 const { authorize } = require('../../../../../platform/auth/authorization');
 const { PERMISSIONS } = require('../../../../../shared/policies');
 const aiStatus      = require('../../../../../platform/ai/ai-status');
@@ -35,7 +35,13 @@ const router = Router();
  * call, which is the only way to tell a rejected key from an unavailable
  * model from a network block.
  */
-router.get('/health', authenticate, async (req, res, next) => {
+router.get('/health', authenticate,
+  doc({ summary: 'Whether each agent can actually run, and why not where it cannot',
+    query: { probe: 'Set to 1 to prove it with a live one-token call.' },
+    description: 'A key that is absent or does not have the shape of an Anthropic key is '
+      + 'diagnosed before any call. A failure is classified with its remedy and the endpoints '
+      + 'that still work without the AI layer.',
+    response: body({ agents: obj, probed: bool, state: obj }) }), async (req, res, next) => {
   try {
     const live = req.query.probe === '1' || req.query.probe === 'true';
 
@@ -141,6 +147,8 @@ router.get('/runs',
 // ---------------------------------------------------------------------------
 
 router.get('/runs/:runId',
+  doc({ summary: 'One agent run, with its full step trail',
+    response: body({ success: bool, run: obj }, ['success', 'run']) }),
   authenticate,
   authorize(PERMISSIONS.RUNS_READ),
   async (req, res, next) => {

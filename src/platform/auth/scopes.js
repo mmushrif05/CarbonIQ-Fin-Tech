@@ -38,6 +38,7 @@
 'use strict';
 
 const config = require('../config');
+const { numberOr } = require('../../shared/numbers');
 
 /** @typedef {import('../../shared/types').AppError} AppError */
 
@@ -138,7 +139,7 @@ function requiredScope(req) {
 
 /** Scopes a role level grants to a signed-in user. */
 function scopesForRoleLevel(level) {
-  const n = Number(level) || 0;
+  const n = numberOr(level);
   if (n >= 100) return [...SCOPES];
   if (n >= 60) return ['read', 'write', 'lock', 'assess'];
   if (n >= 40) return ['read', 'write', 'assess'];

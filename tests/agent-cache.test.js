@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * Unit tests for the prompt-caching helpers in src/platform/ai/agent.js.
  *

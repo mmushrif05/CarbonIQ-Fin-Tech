@@ -120,8 +120,20 @@ const projectUpdateSchema = projectSchema
   .fork(['clientId', 'name', 'gifa_m2', 'projectCost'], f => f.optional())
   .min(1);
 
+/**
+ * Seeding the demonstration book.
+ *
+ * `force` is the whole schema: the route refuses with a 409 where the
+ * organisation already holds clients, because seeding over a real book would
+ * duplicate it, and this is how a caller says to seed anyway.
+ */
+const demoSeedSchema = Joi.object({
+  force: Joi.boolean().default(false),
+}).unknown(false);
+
 module.exports = {
   settingsSchema, clientSchema, clientUpdateSchema,
   projectSchema, projectUpdateSchema, policySchema,
-  POLICY_TYPES, PROJECT_TYPES, COVER_BASES, WHO_PAYS, RECALCULATION_TRIGGERS
+  POLICY_TYPES, PROJECT_TYPES, COVER_BASES, WHO_PAYS, RECALCULATION_TRIGGERS,
+  demoSeedSchema,
 };

@@ -40,10 +40,11 @@
 const registry    = require('./partc-registry');
 const assessments = require('./partc-assessments');
 const portfolio   = require('./partc-portfolio');
+const { numberOr } = require('../../../shared/numbers');
 
 function _round(n, dp = 2) {
   const f = Math.pow(10, dp);
-  return Math.round((Number(n) || 0) * f) / f;
+  return Math.round(numberOr(n) * f) / f;
 }
 
 function _movement(current, prior) {
@@ -74,8 +75,8 @@ async function _intensity(orgId, year) {
   // rather than re-deriving it from a project record that may have moved.
   let emissions = 0, area = 0;
   for (const a of locked) {
-    const perM2 = Number(a.summary.perM2Factor_kgCO2e_m2) || 0;
-    const kg    = Number(a.summary.construction_kgCO2e) || 0;
+    const perM2 = numberOr(a.summary.perM2Factor_kgCO2e_m2);
+    const kg    = numberOr(a.summary.construction_kgCO2e);
     emissions += kg;
     if (perM2 > 0) area += kg / perM2;
   }

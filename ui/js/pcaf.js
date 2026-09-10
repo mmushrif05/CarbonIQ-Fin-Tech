@@ -1,3 +1,4 @@
+// @ts-check
 /* ============================================================
    CarbonIQ — PCAF Calculator Module
    Handles all logic for the PCAF Calculator page (page-pcaf):
@@ -61,8 +62,19 @@ const PCAFCalculator = (() => {
     return Math.round(n * factor) / factor;
   }
 
+  /**
+   * A form control by id. `getElementById` answers `HTMLElement`, which has no
+   * `value` — the cast is the fact that this id names an input, said once here
+   * rather than at every reader.
+   * @param {string} id
+   * @returns {HTMLInputElement|null}
+   */
+  function _field(id) {
+    return /** @type {HTMLInputElement|null} */ (document.getElementById(id));
+  }
+
   function _val(id) {
-    const el = document.getElementById(id);
+    const el = _field(id);
     return el ? el.value : '';
   }
 
@@ -100,7 +112,8 @@ const PCAFCalculator = (() => {
     const currency     = _val('pcaf-currency') || 'USD';
     const projectType  = _val('pcaf-project-type') || 'Commercial';
     const projectPhase = _val('pcaf-project-phase') || 'Operational';
-    const dqScore      = document.querySelector('input[name="dq"]:checked')?.value || '2';
+    const dqScore      = /** @type {HTMLInputElement|null} */
+      (document.querySelector('input[name="dq"]:checked'))?.value || '2';
 
     // Validation
     if (outstanding <= 0) { _showError('Outstanding amount must be greater than 0.'); return; }
@@ -243,7 +256,8 @@ const PCAFCalculator = (() => {
     _setSelect('pcaf-project-type',  DEFAULTS.projectType);
 
     // Reset DQ radio to default (2)
-    const dqRadio = document.querySelector(`input[name="dq"][value="${DEFAULTS.dq}"]`);
+    const dqRadio = /** @type {HTMLInputElement|null} */
+      (document.querySelector(`input[name="dq"][value="${DEFAULTS.dq}"]`));
     if (dqRadio) {
       dqRadio.checked = true;
       dqRadio.dispatchEvent(new Event('change', { bubbles: true }));
@@ -262,12 +276,12 @@ const PCAFCalculator = (() => {
   }
 
   function _setInput(id, value) {
-    const el = document.getElementById(id);
+    const el = _field(id);
     if (el) el.value = value;
   }
 
   function _setSelect(id, value) {
-    const el = document.getElementById(id);
+    const el = _field(id);
     if (el) el.value = value;
   }
 
@@ -342,7 +356,8 @@ const PCAFCalculator = (() => {
       return;
     }
 
-    const btn      = document.getElementById('pcaf-export-pdf-btn');
+    const btn      = /** @type {HTMLButtonElement|null} */
+      (document.getElementById('pcaf-export-pdf-btn'));
     const original = btn ? btn.innerHTML : 'Export PDF';
 
     if (btn) {
@@ -397,7 +412,7 @@ const PCAFCalculator = (() => {
       URL.revokeObjectURL(url);
 
     } catch (err) {
-      _showError(`PDF export failed: ${err.message}`);
+      _showError(`PDF export failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       if (btn) {
         btn.innerHTML = original;

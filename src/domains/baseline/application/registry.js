@@ -18,7 +18,42 @@ const { resolve } = require('../domain/resolve');
 const { METRICS, KEYS } = require('../domain/metrics');
 const repo = require('../infrastructure/store');
 const store = require('../../../platform/database/store');
-const seedFile = require('../../../../data/baselines/seed.json');
+const Joi = require('joi');
+const { checked, strictNumber } = require('../../../shared/reference-data');
+
+/**
+ * The shipped seed, checked at load.
+ *
+ * These figures are **regional judgement**, not a published threshold: the
+ * SLGFT sets no absolute kgCO2e/m2 figure anywhere, which is precisely why the
+ * bands have to be governed rather than hardcoded. The schema insists on the
+ * two things that make the seed safe to ship — that every entry is marked
+ * provisional, and that its bands are in order, because a green band above a
+ * transition band would classify every building on the wrong side of both.
+ */
+const seedSchema = Joi.object({
+  _meta: Joi.object().unknown(true).required(),
+  baselines: Joi.array().items(Joi.object({
+    metric: Joi.string().max(80).required(),
+    scope: Joi.string().valid('global', 'country', 'organisation').required(),
+    country: Joi.string().length(2).optional(),
+    values: Joi.object().pattern(Joi.string().max(40), strictNumber).min(1).required(),
+    source: Joi.string().max(4000).required(),
+  }).unknown(true)).min(1).required(),
+}).unknown(false).custom((doc, helpers) => {
+  for (const entry of doc.baselines) {
+    const { green, transition } = entry.values;
+    if (green !== undefined && transition !== undefined && green >= transition) {
+      return helpers.error('any.custom', {
+        error: new Error(`${entry.metric}: green ${green} must sit below transition ${transition}`),
+      });
+    }
+  }
+  return doc;
+});
+
+const seedFile = checked('data/baselines/seed.json',
+  require('../../../../data/baselines/seed.json'), seedSchema);
 
 /** @typedef {import('../../../shared/types').AppError} AppError */
 

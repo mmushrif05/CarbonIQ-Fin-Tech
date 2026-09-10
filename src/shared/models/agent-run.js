@@ -49,6 +49,58 @@ const STEP_TYPES = {
  * @param {Object} [params.metadata]     - Extra context (projectId, loanAmount, etc.)
  * @returns {Object} Initial run record ready for Firebase storage
  */
+/**
+ * One agent execution, end to end.
+ *
+ * `tokensUsed` carries the cache fields separately because prompt caching is
+ * the largest single cost lever here and a combined input figure would hide
+ * whether it is working.
+ *
+ * `humanReview` is null on every run but a covenant one: the EU AI Act review
+ * is a gate on that agent's output, not a field every agent happens to have.
+ *
+ * @typedef {object} AgentRun
+ * @property {string} runId
+ * @property {string} agentType     one of `AGENT_TYPES`
+ * @property {string} orgId
+ * @property {string} status        one of `AGENT_STATUS`
+ * @property {string} userMessage
+ * @property {AgentStep[]} steps
+ * @property {any} result           null until the run completes
+ * @property {string|null} error
+ * @property {{input: number, output: number, cacheRead: number, cacheCreated: number}} tokensUsed
+ * @property {Record<string, any>} metadata
+ * @property {string} createdAt     ISO 8601
+ * @property {string|null} completedAt
+ * @property {object|null} humanReview  covenant runs only
+ */
+
+/**
+ * One step inside a run — a reasoning turn or a tool call, in the order the
+ * agent took them. `step` is that order, 1-based, and it is on the record
+ * rather than left to the array index because the audit trail is read back
+ * from storage where nothing guarantees the array survived intact.
+ *
+ * A tool call carries its full input and output. That is deliberate and it is
+ * what makes the trail an audit trail: an agent's conclusion is only checkable
+ * if what it was told is recoverable.
+ *
+ * @typedef {object} AgentStep
+ * @property {number} step       1-based position in the run
+ * @property {string} type       one of `STEP_TYPES`
+ * @property {string} timestamp  ISO 8601
+ * @property {string} [content]  the reasoning text, on a reasoning step
+ * @property {string} [tool]     the tool name, on a tool call
+ * @property {any} [input]       what the tool was given
+ * @property {any} [output]      what it returned
+ * @property {string|null} [error]
+ */
+
+/**
+ * @param {{runId: string, agentType: string, orgId: string, userMessage: string,
+ *          metadata?: Record<string, any>}} init
+ * @returns {AgentRun}
+ */
 function createRunRecord({ runId, agentType, orgId, userMessage, metadata = {} }) {
   return {
     runId,
