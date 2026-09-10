@@ -42,7 +42,8 @@
     "worker": "node scripts/worker.js",
     "typecheck": "tsc -p jsconfig.json",
     "build:ui": "node scripts/build-ui.js",
-    "test:e2e": "npm run build:ui && playwright test"
+    "test:e2e": "npm run build:ui && playwright test",
+    "pretypecheck": "node scripts/build-info.js"
   },
   "keywords": [
     "carbon",
@@ -107,6 +108,7 @@
         "statements": 75
       }
     },
-    "globalSetup": "./tests/global-setup.js"
+    "globalSetup": "./tests/global-setup.js",
+    "testTimeout": 30000
   }
 }

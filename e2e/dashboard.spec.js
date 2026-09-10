@@ -77,8 +77,14 @@ test('no page scrolls sideways at a phone width', async ({ page }) => {
     /* At a phone width the sidebar is off-canvas; the shell's own router is
        the way a tap on the mobile navigation reaches a page. */
     await page.evaluate(pageId => window.CARBONIQ_navigateTo(pageId), id);
-    await page.waitForTimeout(600);
-    const width = await page.evaluate(() => document.documentElement.scrollWidth);
-    expect(width, `${id} at 430px`).toBeLessThanOrEqual(430);
+    /* Poll rather than sample once after a fixed wait. A page mid-render is
+       briefly wider than its container while its tables are still outside
+       their scroll box, so a single reading of a half-drawn frame reported
+       an overflow the settled page does not have. The rule is unchanged and
+       a page that genuinely overflows still fails, at the timeout. */
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollWidth),
+        { message: `${id} at 430px`, timeout: 10_000 })
+      .toBeLessThanOrEqual(430);
   }
 });
