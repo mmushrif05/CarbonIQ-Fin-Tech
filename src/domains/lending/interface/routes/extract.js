@@ -22,7 +22,7 @@ const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractFromRequest }   = require('../../application/extract');
 const { asError } = require('../../../../shared/types');
-const { doc, body, str, num, obj, arr } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, obj, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { MATERIAL_CARBON_FACTORS } = require('../../../../shared/models/constants');
 

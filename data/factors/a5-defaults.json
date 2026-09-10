@@ -1,6 +1,10 @@
 {
   "table": "a5-defaults",
   "description": "A5 construction-stage defaults and hidden constants",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "provisional",
+  "provisionalRows": ["gridEF", "ricsSiteEnergy_kgCO2e_m2"],
   "rows": {
     "demolitionTransport_km":   { "value": 100,  "unit": "km",            "tier": "Global", "reference": "Project assumption - client-editable default", "clientVisible": true },
     "wasteDisposal_km":         { "value": 40,   "unit": "km",            "tier": "Global", "reference": "Project assumption - client-editable default", "clientVisible": true },

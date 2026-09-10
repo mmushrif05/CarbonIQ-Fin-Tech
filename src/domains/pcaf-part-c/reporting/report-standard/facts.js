@@ -9,6 +9,7 @@ const { splitByGhgScope, INSURER_NOTE } = require('../../domain/ghg-scopes');
 const { TABLE_5_3_2, TABLE_CITATION } = require('../../domain/data-quality');
 const { N, T, F4, SCALE_QUALIFIER, PREPARED_BY, KYOTO_GASES, UNITS_STATEMENT, FINANCED_EMISSIONS_STATEMENT } = require('./common');
 const { numberOr } = require('../../../../shared/numbers');
+const { factorRelease } = require('../../domain/factors');
 
 // ---------------------------------------------------------------------------
 // Facts — what the sections and the checklist both read
@@ -228,6 +229,7 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
 
     // 11
     factorRegister: _factorRegister(registers),
+    factorRelease: factorRelease(),
     /*
      * The trace is counted, never printed. Annex C is every equation the
      * engine executed with its inputs and factors — the method itself, and the
@@ -419,6 +421,7 @@ function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equatio
 
     // 11
     factorRegister: factorRows,
+    factorRelease: factorRelease(),
     auditTrail: [],
     auditTrailEntries: (disclosure.annexes.C && disclosure.annexes.C.entries || []).length,
     assessmentRegister: (disclosure.annexes.C && disclosure.annexes.C.entries) || [],

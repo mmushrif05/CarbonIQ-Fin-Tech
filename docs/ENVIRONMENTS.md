@@ -45,8 +45,10 @@ feature branch ──PR──▶ staging ──PR──▶ main
 - A pull request opens a **deploy preview** and runs CI. The `gate` job is
   green only when every job is: the suite on the memory store on two Node
   versions, the same suite on PostgreSQL with the scale test, lint, the
-  type check, the dependency audit at the high level, and the built
-  frontend driven in a browser.
+  type check, the dependency audit at the high level, the built frontend
+  driven in a browser, and the conformance evidence — each matrix rule's
+  own proving test re-run under coverage, so a rule cannot claim code no
+  test reaches (`docs/CONFORMANCE-EVIDENCE.md`).
 - Merging to `staging` deploys staging. It is the place to run a client's
   book through the real store before production sees the change, and to
   point an integration team at a contract before it is final.

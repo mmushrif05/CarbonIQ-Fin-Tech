@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **278**. Remaining: **168**.
+Checked across all three: **285**. Remaining: **170**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **248**. Remaining: **62** (418 errors, measured by
+Checked: **252**. Remaining: **62** (418 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -123,7 +123,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **24**. Remaining: **90** (1227 errors, measured by
+Checked: **27**. Remaining: **92** (1234 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -192,6 +192,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/validate-middleware.test.js` | 6 |
 | `tests/borrower-coaching.test.js` | 5 |
 | `tests/capital-curve.test.js` | 5 |
+| `tests/factor-provenance.test.js` | 5 |
 | `tests/partc-ui.test.js` | 5 |
 | `tests/storage-seam.test.js` | 5 |
 | `tests/data-layer.test.js` | 4 |
@@ -209,6 +210,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/dashboard-layout.test.js` | 2 |
 | `tests/deploy-freshness.test.js` | 2 |
 | `tests/health.test.js` | 2 |
+| `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
 | `tests/schemas.test.js` | 2 |
 | `tests/capital-anchor.test.js` | 1 |

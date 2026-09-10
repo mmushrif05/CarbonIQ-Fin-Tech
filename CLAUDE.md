@@ -47,6 +47,8 @@ npm run user:disable -- <email>   # and ends every session
 npm run user:enable  -- <email>
 npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
 npm run docs:openapi     # Regenerate docs/openapi.json from the router
+npm run docs:conformance-evidence  # Run each matrix rule's own test under coverage; a rule whose code never runs fails
+npm run docs:factor-manifest       # Rewrite data/factors/MANIFEST.json — version, effective date, checksum per table
 npm run worker           # A long-lived job worker beside the database
 npm run typecheck        # The TypeScript compiler over every file carrying // @ts-check
 npm run build:ui         # ui/ → dist/ui, minified, what Netlify publishes
@@ -505,6 +507,18 @@ Section order is the checklist's, not ours: cover · scope and coverage · gases
 
 **Conformance evidence:** `src/domains/pcaf-part-c/domain/conformance.js` maps every rule to the code that enforces it and the test that proves it. `tests/pcaf-partc-conformance.test.js` fails the build if a rule cites a file or a test that does not exist, so the claim cannot rot. `npm run docs:conformance` regenerates `docs/PCAF-PART-C-CONFORMANCE.md` from that single source.
 
+**A resolving citation is not evidence of behaviour (`scripts/conformance-evidence.js`, `docs/CONFORMANCE-EVIDENCE.md`).** Both matrices proved only that their citations resolved — the file is on disk, the test name is really in it — which a rule citing code no path reaches satisfies exactly as well as a rule that works. So each rule's own proving test is now run under coverage restricted to the files that rule cites, and what executed is recorded: 64 of 70 rules proved by execution, 3 deliberately out of scope, 1 **proved by absence** (the rule is that no path exists, so the cited code must *not* run and a coverage figure would be the wrong evidence — `evidence: 'absence'`, a declared vocabulary both matrices publish), 2 evidenced by a data table. A rule whose implementation executes no statement is reported unproven and the build fails. The CI `gate` regenerates the document and fails on a diff, because a conformance document regenerated from a stale checkout reads as current. A second, static check proves every cited module is on a path `src/server.js` or `src/jobs.js` actually reaches — a rule about dead code reads exactly like a rule about live code.
+
+The GCF half of this was checking almost nothing: its cited-file regex listed the top-level directories the tree had before the domains split, so it resolved **3 of 38** paths and passed green — the same shape as a flag that fires on nothing. It resolves 38 of 38, and a test asserts the count, because a check that passes because it had nothing to check is worse than no check.
+
+**The factor set is versioned, dated and checksummed (`data/factors/MANIFEST.json`).** The tables carried a schema but no provenance: a value could be corrected and no document would say so. Each now declares a `version`, an `effectiveFrom` and a `status`, and the status is **derived, not declared** — a table is provisional exactly when a row of it records a gap, `provisionalRows` names those rows and no others, and the schema refuses any other combination. Left to a person that field goes stale first: a placeholder is replaced and the warning stays, or a placeholder is added and the table still reads as released, and a reader trusts it either way. `factorRelease()` publishes a SHA-256 per table over its canonical form and one over the set; `GET /v1/pcaf/part-c/factors` serves it and the report's factor annex prints it, so a disclosure names the factor set it rests on. Six of twelve tables are provisional, including the RICS site-energy allowance that drives about 97% of the construction figure on the default path and is a global default rather than a Sri Lankan measurement — which the row says, and the report repeats.
+
+**The regulated deliverable is pinned (`tests/partc-report-golden.test.js`, `tests/golden/`).** 2,730 lines of report code produce the document an auditor reads, and the only check on the PDF was that it was a well-formed PDF — equally true of one with a section missing. The per-assessment report and the annual disclosure are now flattened to an outline and held to committed goldens: every section, every table head and row, every figure, the checklist and the page count, with the publication instant and the ids normalised so it fails on the document rather than on the clock. `UPDATE_GOLDEN=1` regenerates. Beside it the PDF's own draw calls are recorded, which is the only way to see from CI that a figure reached the page: every section and annex title must appear, and nothing may be drawn off the right edge of the paper. Table shape is checked in the model — a row one cell short does not fail, it draws the next column's data under the wrong heading.
+
+**The content layer (`src/shared/content.js`, `data/content/`).** A compliance officer changing a sentence needed a developer and a deploy. What they may reword is an **allow-list**, each key naming its purpose and its owner, resolved at boot from `data/content/report-text.json` where a deployment has one. It is deliberately short, and the reason is the more important half: most of the prose here is not wording. *"No row in this table sums them"* states a scope rule PCAF sets, and a sentence a compliance officer can edit out of a disclosure is a rule they can edit out of a disclosure. Those stay in source, where the tests that hold them to the standard can reach them. Two refusals, both loud: a key not on the list is refused **by name with the list**, because an operator whose edit is silently dropped concludes the feature does not work; and an override carrying endorsement language is refused, so the content layer cannot be the route by which *"PCAF approved"* returns to a page.
+
+That guard is now in `src/shared/report-integrity.js` rather than the Part C domain, because it governs every artefact and the content layer has to be able to apply it — and writing the first test for it found that it caught *"PCAF certified"* and *"approved by PCAF"* but let *"Certified by PCAF"* through.
+
 ---
 
 ## Product North Star — a recognised measurement instrument, not software
@@ -701,6 +715,7 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/RELEASE-AND-ROLLBACK.md` | How a release is cut, and the order to reverse code and schema in |
 | `docs/HANDOVER-GAP-ANALYSIS.md` | The seven-phase handover register: what a development team would find, and the plan |
 | `docs/TYPECHECK-WORKLIST.md` | The files not yet under `@ts-check`, generated, held to the tree |
+| `docs/CONFORMANCE-EVIDENCE.md` | Each conformance rule's own test run under coverage: what executed, what is out of scope, what is unproven |
 | `docs/ENTERPRISE-READINESS.md` | The 47-gap register and the five-phase plan; all five phases delivered |
 | `docs/SCAFFOLDING.md` | 17-step build plan |
 | `docs/STRATEGY.md` | FinTech Innovation Lab APAC 2026 strategy |

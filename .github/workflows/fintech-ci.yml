@@ -131,9 +131,29 @@ jobs:
           path: playwright-report
           retention-days: 7
 
+  # The conformance matrices, re-proved rather than re-read. The committed
+  # docs/CONFORMANCE-EVIDENCE.md says the cited test executes the cited code;
+  # this regenerates it and fails if the working tree disagrees, because a
+  # conformance document regenerated from a stale checkout reads as current.
+  conformance-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Prove every cited rule by running its own test
+        run: npm run docs:conformance-evidence
+        env:
+          NODE_ENV: test
+      - name: The committed evidence matches what the run produced
+        run: git diff --exit-code -- docs/CONFORMANCE-EVIDENCE.md
+
   # The one status to require before merging to main.
   gate:
     runs-on: ubuntu-latest
-    needs: [test, test-postgres, lint, typecheck, audit, ui]
+    needs: [test, test-postgres, lint, typecheck, audit, ui, conformance-evidence]
     steps:
       - run: echo "every check passed"

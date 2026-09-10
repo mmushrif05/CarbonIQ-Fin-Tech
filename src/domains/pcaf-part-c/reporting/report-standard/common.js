@@ -29,9 +29,7 @@
  * this module arranges them and says where each came from.
  */
 
-
-
-
+const content = require('../../../../shared/content');
 
 const N  = n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 2 });
 const T  = (kg, dp = 3) => (Number(kg || 0) / 1000).toFixed(dp);
@@ -45,9 +43,17 @@ const pct = n => (n === null || n === undefined) ? 'not stated' : `${Number(n).t
  */
 const score  = n => (n === null || n === undefined) ? 'not scored' : String(n);
 const wscore = n => (n === null || n === undefined) ? 'not scored' : Number(n).toFixed(2);
-const SCALE_QUALIFIER = 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest. A lower score is better.';
+/* Four statements a deployment may reword, resolved through the content
+   layer. Everything else in this file states what the standard requires and
+   stays here, where the tests that hold it can reach it: a sentence a
+   compliance officer can edit out of a disclosure is a rule they can edit out
+   of a disclosure.
 
-const PREPARED_BY = 'Prepared by Datum Solutions (Private) Limited';
+   Resolved once at load: the override file is a deployment's setting, not a
+   per-request one, so a change to it takes effect on the next boot. */
+const SCALE_QUALIFIER = content.text('report.scaleQualifier');
+
+const PREPARED_BY = content.text('report.preparedBy');
 
 /* The seven gases the Kyoto Protocol covers, and where each can arise in a
    construction insurance value chain. Named individually because the
@@ -62,17 +68,8 @@ const KYOTO_GASES = [
   { gas: 'Nitrogen trifluoride', formula: 'NF3', arises: 'Not expected in a construction value chain; accounted for where it arises.' }
 ];
 
-const UNITS_STATEMENT =
-  'Reported figures are in tonnes of carbon dioxide equivalent (tCO2e). Working tables ' +
-  'are in kilogrammes (kgCO2e) because the engine computes in kilogrammes and rounding ' +
-  'to tonnes before aggregation would move the total. Intensity is in tCO2e per million ' +
-  'units of currency, and per m2 of insured floor area. Every figure carries its unit in ' +
-  'its own column rather than glued to the number.';
+const UNITS_STATEMENT = content.text('report.unitsStatement');
 
-const FINANCED_EMISSIONS_STATEMENT =
-  'This inventory contains insurance-associated emissions only. Financed emissions — the ' +
-  'emissions attributed through lending and investment under Part A of the same standard — ' +
-  'are a different attribution against a different denominator and are reported separately. ' +
-  'The two are never added together, and no figure in this document contains any part of the other.';
+const FINANCED_EMISSIONS_STATEMENT = content.text('report.financedEmissionsStatement');
 
 module.exports = { N, T, F4, pct, score, wscore, SCALE_QUALIFIER, PREPARED_BY, KYOTO_GASES, UNITS_STATEMENT, FINANCED_EMISSIONS_STATEMENT };

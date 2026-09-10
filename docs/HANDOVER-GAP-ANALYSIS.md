@@ -412,6 +412,51 @@ sound; the gap is annotation. This is an incremental path, not a rewrite.
 
 ## H4 — Regulatory claims. The part that is the product.
 
+> **Delivered — all nine gaps closed.** The findings below stand as the record
+> of what was found; each is answered here.
+>
+> **H4.1** The ceded-premium substitution executes: the field is produced,
+> projected and exercised, and `disclosed.ceded` renders. **H4.2** Every factor
+> table carries a version, an effective date and a status, the status is
+> *derived* from the rows that record a gap rather than declared, and
+> `data/factors/MANIFEST.json` records a SHA-256 per table and over the set —
+> so a disclosure names the factor set behind it and a factor change is a
+> reviewable diff in a checksummed manifest. The report's factor annex prints
+> the set checksum and which tables are provisional.
+> **H4.3** `npm run docs:conformance-evidence` runs each rule's own proving
+> test under coverage restricted to what that rule cites and records what
+> executed; a rule whose implementation runs no statement is reported unproven
+> and fails the build. 64 of 70 rules are proved by execution, 3 are out of
+> scope, 1 by the absence of a path, 2 by a data table. The CI `gate` job
+> regenerates it, so the document cannot go stale. A second check proves each
+> cited module is on a path a composition root reaches.
+> **H4.4** The citation regex resolved 3 of 38 GCF paths because its
+> alternation named directories the architecture test asserts are gone; it now
+> resolves 38 of 38, and a test asserts the count so it cannot shrink silently
+> again. **H4.5, H4.6** The browser stops inventing regulatory figures: the
+> five fabricated memos, all four copies of the superseded SLGFT table, the
+> second intensity screen and two parallel emission engines are gone, and
+> `tests/ui-regulatory-integrity.test.js` sweeps `ui/` for their return.
+> **H4.7** `tests/partc-report-golden.test.js` pins the per-assessment report
+> and the annual disclosure to committed goldens — every section, every table
+> row, every figure, the checklist and the page count — and records the PDF's
+> draw calls to prove each section reaches the page and nothing is drawn off
+> the paper. **H4.8** `src/shared/content.js` is the content layer: an
+> allow-listed set a deployment may reword, refused by name when the key is
+> not on it and refused outright when the wording would claim PCAF
+> endorsement. It is deliberately short — most of the prose states a rule the
+> standard sets, and a sentence a compliance officer can edit out of a
+> disclosure is a rule they can edit out of a disclosure; the rest stays in
+> source where the tests that hold it can reach it. **H4.9** The tier
+> thresholds are declared once and the prose is built from them.
+>
+> Two things were found while closing these rather than by the audit. The
+> language guard caught "PCAF certified" and "approved by PCAF" but let
+> "Certified by PCAF" through — the content layer's first test put it in as an
+> override and it passed. And the guard itself lived in the Part C domain
+> while governing every artefact; it is in `src/shared/report-integrity.js`
+> now, re-exported where it was.
+
 **H4.1 · A PCAF clause is claimed and cannot execute. Critical.**
 `partc-portfolio.js:218` weights data quality by ceded premium for treaty
 reinsurance, citing Box 6-4, p.108. `cededPremium` appears in exactly three places

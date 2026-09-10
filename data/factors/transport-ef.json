@@ -1,6 +1,10 @@
 {
   "table": "transport-ef",
   "description": "A4 transport emission factors by mode (kgCO2e per tonne-km)",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-08-19",
+  "status": "provisional",
+  "provisionalRows": ["road"],
   "unit": "kgCO2e/t-km",
   "rows": {
     "road": { "value": 0.24,   "tier": "Global",  "reference": "DEFRA-aligned freight factor (interim; replace with Sri Lanka road factor after motor research)", "gap": "SL road freight EF not defined" },

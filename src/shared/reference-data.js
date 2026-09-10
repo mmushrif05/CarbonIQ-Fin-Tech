@@ -125,6 +125,20 @@ const rowBlockSchema = Joi.object()
 const factorTableSchema = Joi.object({
   table: Joi.string().min(1).max(80).required(),
   description: Joi.string().max(1000).optional(),
+  /* Release provenance, required rather than optional.
+     A disclosure is only traceable if a reader can say which set of factors
+     produced it, and a table that ships without a version and a date has no
+     way to say. `status` is the same vocabulary the baseline registry uses:
+     `provisional` is a figure standing in until a governed one is released,
+     and it is named on every screen that reads it rather than looking
+     settled. `provisionalRows` names which rows are the reason, so a table
+     is not marked provisional as a whole when one factor is the gap. */
+  version: Joi.string().pattern(/^\d+\.\d+\.\d+$/).required(),
+  effectiveFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
+  status: Joi.string().valid('provisional', 'released').required(),
+  provisionalRows: Joi.array().items(Joi.string().max(160)).optional(),
+  supersedes: Joi.string().max(80).optional(),
+  revisionNote: Joi.string().max(2000).optional(),
   unit: Joi.string().max(60).optional(),
   tier: Joi.string().valid('Local', 'Regional', 'Global', 'n/a').optional(),
   reference: Joi.string().min(1).max(4000).optional(),
@@ -145,6 +159,31 @@ const factorTableSchema = Joi.object({
         }
       }
     }
+  }
+
+  /* The provisional marker cannot be set or cleared by hand.
+     A table is provisional exactly when a row of it records a gap, and
+     `provisionalRows` names those rows and no others. Left to a person to
+     maintain, this is the field that goes stale first: a placeholder gets
+     replaced by a real value and the warning stays, or a placeholder is added
+     and the table still reads as released. Both are worse than no marker,
+     because a reader trusts it. */
+  const gapRows = ['rows', 'benchmarks']
+    .flatMap(block => Object.entries(table[block] || {}).filter(([, r]) => r.gap).map(([k]) => k))
+    .sort();
+  const expected = gapRows.length ? 'provisional' : 'released';
+  if (table.status !== expected) {
+    return helpers.error('any.custom', {
+      error: new Error(gapRows.length
+        ? `status is "${table.status}" but rows record a gap (${gapRows.join(', ')}) — it is provisional`
+        : `status is "${table.status}" but no row records a gap — it is released`),
+    });
+  }
+  const declared = [...(table.provisionalRows || [])].sort();
+  if (declared.join('|') !== gapRows.join('|')) {
+    return helpers.error('any.custom', {
+      error: new Error(`provisionalRows is [${declared.join(', ')}] but the rows recording a gap are [${gapRows.join(', ')}]`),
+    });
   }
   return table;
 });

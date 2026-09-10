@@ -1,0 +1,143 @@
+{
+  "note": "GENERATED. Regenerate with: npm run docs:factor-manifest",
+  "purpose": "The factor set a disclosure was computed on: version, effective date, status and checksum per table.",
+  "algorithm": "SHA-256 over the canonical form (keys sorted at every level)",
+  "checksum": "f2721990511637d1c0bd7f4564a5927f44aa053ef0ca4029c468e23053f98ce9",
+  "provisionalTables": [
+    "a5-defaults",
+    "b1-b4-defaults",
+    "beyond-pcaf-defaults",
+    "densities",
+    "transport-ef",
+    "water-ef"
+  ],
+  "tables": [
+    {
+      "table": "a5-defaults",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "gridEF",
+        "ricsSiteEnergy_kgCO2e_m2"
+      ],
+      "rowCount": 5,
+      "checksum": "d4c2aa83670b1047c56e78cb1ac8b2165eff3fb58c96e14cdc2098424382863f"
+    },
+    {
+      "table": "b1-b4-defaults",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "chargeBenchmark_kg_per_m2"
+      ],
+      "rowCount": 5,
+      "checksum": "389e078b1acc8d500ea4130747c0f52dd30c98949ba118676cbaa040f4c7ba8c"
+    },
+    {
+      "table": "beyond-pcaf-defaults",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "b5Refurbishment_kgCO2e_m2"
+      ],
+      "rowCount": 4,
+      "checksum": "0e61c0856ab5fff74d596a020335ac4a8a2f0c16aa2d670d254ba0616f5de27d"
+    },
+    {
+      "table": "densities",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "concrete_normal",
+        "rubble_masonry",
+        "asphalt",
+        "block",
+        "brickwork",
+        "timber"
+      ],
+      "rowCount": 18,
+      "checksum": "dae7b93fa6920dd1ec1c80ca1e59a593fc12ba90209777720f71a8b77bac8ccb"
+    },
+    {
+      "table": "mass-factors",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 8,
+      "checksum": "60812c90804f45af14fb074f22afbdfd182501df6e765a9555defd8dd4402690"
+    },
+    {
+      "table": "refrigerant-gwp",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 9,
+      "checksum": "086931ce30ae4e05999c605b6f4f6742aefca5e818ec06ae5956655e3021076f"
+    },
+    {
+      "table": "refrigerant-leak",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 8,
+      "checksum": "b98ea0ed0fa4798baa0b1d83d9de31fcce3ea7282aa4e83de2be69dcf5a8e774"
+    },
+    {
+      "table": "service-lives",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 12,
+      "checksum": "11327d668cb1d7c822c31fb9273500b9aa901420ef2076ec089adfba86056c22"
+    },
+    {
+      "table": "transport-ef",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "road"
+      ],
+      "rowCount": 4,
+      "checksum": "5d411c20ff946b3264468388674f7cc69345c461a6911ce52647458d25c0fc5f"
+    },
+    {
+      "table": "vehicle-ef",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 4,
+      "checksum": "4ec922d486a4d8117a17294728c753e29d7e11c866ba44e5051a4303d49b4a1b"
+    },
+    {
+      "table": "waste-rates-rics-t18",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "released",
+      "provisionalRows": [],
+      "rowCount": 28,
+      "checksum": "4d2529a9ce2e043246b335f8e5c096e7aff9d831acd007a29dfc47db81ca0fcd"
+    },
+    {
+      "table": "water-ef",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-08-19",
+      "status": "provisional",
+      "provisionalRows": [
+        "supply",
+        "wastewater"
+      ],
+      "rowCount": 4,
+      "checksum": "5c877213d016094859376f82b193fd863a566f28f188bf0f1722114eff6ade7b"
+    }
+  ]
+}

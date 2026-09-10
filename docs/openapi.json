@@ -23117,6 +23117,10 @@
                       "type": "object",
                       "additionalProperties": true
                     },
+                    "release": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
                     "note": {
                       "type": "string"
                     },
@@ -23146,6 +23150,10 @@
                           }
                         },
                         "detail": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "release": {
                           "type": "object",
                           "additionalProperties": true
                         },

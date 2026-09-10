@@ -63,6 +63,7 @@ describe('No screen invents a figure when the API does not answer', () => {
     /* The prefix is not the problem and removing it would not be the fix — the
        stored memo is. A reader who copies one row out of a document does not
        carry the banner with it. */
+    /** @type {Array<[RegExp, string]>} */
     const patterns = [
       [/DEMO[\s_-]?MODE/i, 'a stored answer shown in place of a real one'],
       [/DEMO_RESPONSES|FALLBACK_RESULT|SAMPLE_MEMO|MOCK_(RESULT|RESPONSE|MEMO)/, 'a stored result table'],
@@ -81,6 +82,7 @@ describe('No screen invents a figure when the API does not answer', () => {
        itself and a figure it was given look identical to a reader, so what is
        swept for is the literal in the source: a pricing ratchet, a verdict, a
        named percentile. */
+    /** @type {Array<[RegExp, string]>} */
     const patterns = [
       [/[−-]\s?\d+\s?bps/i, 'a pricing adjustment written into the page'],
       /* The memo's heading form. Copy that *describes* what an agent produces
@@ -110,6 +112,7 @@ describe('No screen holds its own copy of the taxonomy', () => {
      copy carried after the server was corrected. Each is a real code paired
      with the wrong meaning, which is why the pairing is what is swept for
      rather than the code alone. */
+  /** @type {Array<[RegExp, string]>} */
   const SUPERSEDED = [
     [/'M1\.1'\s*:/, 'M1.1 as a construction activity — construction is macro-sector 6'],
     [/M1\.1[^\n]{0,80}(New Construction|600)/i, 'M1.1 for new construction at an absolute threshold'],
@@ -167,6 +170,7 @@ describe('The engine does every arithmetic operation, including against the brow
      because the rows look measured and nothing on them says which side of the
      wire produced them. A parse of a pasted bill of quantities is a parse and
      stays; a factor is a measurement and belongs to the engine. */
+  /** @type {Array<[RegExp, string]>} */
   const FACTOR_TABLE = [
     [/ICE[_\s]?FACTORS|EMISSION_FACTORS|CARBON_FACTORS/, 'an emission factor table in the browser'],
     [/kgCO2e\s*\/\s*kg material/i, 'a per-kilogram emission factor declared in the browser'],
