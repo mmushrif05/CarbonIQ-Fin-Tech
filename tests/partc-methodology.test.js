@@ -6,7 +6,6 @@
  * the methodology must stop claiming it.
  */
 
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const request = require('supertest');
 const app     = require('../src/server');

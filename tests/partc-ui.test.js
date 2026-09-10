@@ -25,9 +25,10 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
-const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
+const read = (...p) => source(p.join('/'));
 
 const page  = read('ui', 'pages', 'pcaf-partc.html');
 const appJs = read('ui', 'app.js');
@@ -42,7 +43,7 @@ const idsWritten = [...js.matchAll(/\$\('(partc[A-Za-z0-9]+)'\)/g)].map(m => m[1
 
 describe('Every element the module writes to exists in the fragment', () => {
   test.each([...new Set(idsWritten)])('#%s is in the page', (id) => {
-    expect(page).toContain(`id="${id}"`);
+    must(page, `id="${id}"`, "the rule this file holds");
   });
 });
 
@@ -51,7 +52,7 @@ describe('The renderers are actually called', () => {
     'renderHero', 'renderUseStage', 'renderDqTile',
     'renderModuleSplit', 'renderParetoArc', 'renderSummary',
   ])('render() calls %s', (fn) => {
-    expect(js).toContain(`function ${fn}(`);
+    must(js, `function ${fn}(`, "the rule this file holds");
     expect(renderFn).toMatch(new RegExp(`\\b${fn}\\(d\\)`));
   });
 });
@@ -60,7 +61,7 @@ describe('The hero leads with the insurer\u2019s share, never the project total'
   const hero = js.slice(js.indexOf('function renderHero'), js.indexOf('function renderUseStage'));
 
   test('it is A4 + A5 construction, named as such', () => {
-    expect(page).toMatch(/partc-hero-eyebrow">Insurance-associated emissions \u00b7 A4 \+ A5 construction/);
+    must(page, /partc-hero-eyebrow">Insurance-associated emissions \u00b7 A4 \+ A5 construction/, "it is A4 + A5 construction, named as such");
   });
 
   /*
@@ -78,7 +79,7 @@ describe('The hero leads with the insurer\u2019s share, never the project total'
   });
 
   test('the project total is present, and quieter', () => {
-    expect(page).toContain('id="partcHeroBaseValue"');
+    must(page, 'id="partcHeroBaseValue"', "the project total is present, and quieter");
     expect(hero).toContain("$('partcHeroBaseValue').textContent");
     // The hero is set with clamp(); the largest of its three lengths is what
     // it reaches on a desk screen, which is where the two are compared.
@@ -120,9 +121,9 @@ describe('The attribution is drawn as a bridge', () => {
   const hero = js.slice(js.indexOf('function renderHero'), js.indexOf('function renderUseStage'));
 
   test('the three rows are present in the fragment', () => {
-    expect(page).toContain('id="partcBridgeSegTotal"');
-    expect(page).toContain('id="partcBridgeSegDrop"');
-    expect(page).toContain('id="partcBridgeSegResult"');
+    must(page, 'id="partcBridgeSegTotal"', "the three rows are present in the fragment");
+    must(page, 'id="partcBridgeSegDrop"', "the three rows are present in the fragment");
+    must(page, 'id="partcBridgeSegResult"', "the three rows are present in the fragment");
   });
 
   test('the step down is the total less the insurer\u2019s share', () => {
@@ -147,7 +148,7 @@ describe('The attribution is drawn as a bridge', () => {
     // bar stretched to be visible would misstate the quantity it exists to
     // show, so the bars share one scale and the smallest stays a sliver.
     expect(hero).toMatch(/All three bars share one scale/);
-    expect(css).toMatch(/\.partc-bridge-seg\.is-result \{[^}]*min-width: 4px/);
+    must(css, /\.partc-bridge-seg\.is-result \{[^}]*min-width: 4px/, "the sliver is drawn to scale");
   });
 
   /*
@@ -156,7 +157,7 @@ describe('The attribution is drawn as a bridge', () => {
    * factor was under one percent — which is most of them.
    */
   test('the attribution factor is never printed in exponent notation', () => {
-    expect(js).not.toContain('toExponential');
+    mustNot(js, 'toExponential', "the attribution factor is never printed in exponent notation");
   });
 });
 
@@ -164,7 +165,7 @@ describe('The use stage stays a separate line', () => {
   const use = js.slice(js.indexOf('function renderUseStage'), js.indexOf('function renderDqTile'));
 
   test('a visible break separates it from the PCAF figure', () => {
-    expect(page).toMatch(/partc-break">.*never added to the figure above/i);
+    must(page, /partc-break">.*never added to the figure above/i, "a visible break separates it from the PCAF figure");
   });
 
   test('zero is reported as a scope rule, not as an absence of data', () => {
@@ -177,7 +178,7 @@ describe('The use stage stays a separate line', () => {
   });
 
   test('it reads indigo, because it is a different container from the figure', () => {
-    expect(css).toMatch(/\.partc-usestage \{[\s\S]*?--data-indigo-soft/);
+    must(css, /\.partc-usestage \{[\s\S]*?--data-indigo-soft/, "it reads indigo, because it is a different container from the figure");
   });
 
   /*
@@ -196,7 +197,7 @@ describe('The use stage stays a separate line', () => {
   });
 
   test('the project total is present, and quieter', () => {
-    expect(page).toContain('id="partcUseStageBaseValue"');
+    must(page, 'id="partcUseStageBaseValue"', "the project total is present, and quieter");
     expect(use).toContain("$('partcUseStageBaseValue').textContent");
     const mineRule = /\.partc-usestage \.partc-tile-value|\.partc-tile-value \{([^}]*)\}/;
     const baseRule = /\.partc-usestage-base-value \{([^}]*)\}/.exec(css);
@@ -232,8 +233,8 @@ describe('The use stage stays a separate line', () => {
    * depends on it.
    */
   test('the hidden base is actually hidden', () => {
-    expect(css).toMatch(/\.partc-result \[hidden\] \{ display: none !important; \}/);
-    expect(css).toMatch(/\.partc-usestage-base \{[^}]*display: flex/);
+    must(css, /\.partc-result \[hidden\] \{ display: none !important; \}/, "the hidden base is actually hidden");
+    must(css, /\.partc-usestage-base \{[^}]*display: flex/, "the hidden base is actually hidden");
   });
 });
 
@@ -241,18 +242,18 @@ describe('The data-quality score is a category with its direction stated', () =>
   const dq = js.slice(js.indexOf('function renderDqTile'), js.indexOf('function renderModuleSplit'));
 
   test('the five bands are in the fragment and one is marked', () => {
-    for (const n of [1, 2, 3, 4, 5]) expect(page).toContain(`data-band="${n}"`);
+    for (const n of [1, 2, 3, 4, 5]) must(page, `data-band="${n}"`, "the five bands are in the fragment and one is marked");
     expect(dq).toContain("b.classList.toggle('is-here'");
   });
 
   test('the ends of the scale are labelled', () => {
-    expect(page).toContain('best evidence');
-    expect(page).toContain('weakest');
+    must(page, 'best evidence', "the ends of the scale are labelled");
+    must(page, 'weakest', "the ends of the scale are labelled");
   });
 
   test('the score is never written as a fraction', () => {
-    expect(page).not.toMatch(/\b[1-5]\s*\/\s*5\b/);
-    expect(js).not.toMatch(/\$\{[^}]*score[^}]*\}\s*\/\s*5/);
+    mustNot(page, /\b[1-5]\s*\/\s*5\b/, "the score is never written as a fraction");
+    mustNot(js, /\$\{[^}]*score[^}]*\}\s*\/\s*5/, "the score is never written as a fraction");
   });
 
   test('it says the score follows the option, not the strength of an input', () => {
@@ -279,17 +280,17 @@ describe('The module split is one whole, not four figures', () => {
   const split = js.slice(js.indexOf('function renderModuleSplit'), js.indexOf('function renderParetoArc'));
 
   test('it is a single stacked bar', () => {
-    expect(page).toContain('id="partcModuleSplit"');
-    expect(css).toMatch(/\.partc-split \{[\s\S]*?display: flex;/);
+    must(page, 'id="partcModuleSplit"', "it is a single stacked bar");
+    must(css, /\.partc-split \{[\s\S]*?display: flex;/, "it is a single stacked bar");
   });
 
   test('the hues are categorical and in a fixed order', () => {
-    for (const n of [1, 2, 3, 4, 5]) expect(css).toContain(`.partc-split-seg.is-${n}`);
+    for (const n of [1, 2, 3, 4, 5]) must(css, `.partc-split-seg.is-${n}`, "the hues are categorical and in a fixed order");
     expect(split).toContain("const HUES = ['is-1', 'is-2', 'is-3', 'is-4', 'is-5']");
   });
 
   test('there is a legend, because there is more than one series', () => {
-    expect(page).toContain('id="partcModuleLegend"');
+    must(page, 'id="partcModuleLegend"', "there is a legend, because there is more than one series");
     expect(split).toContain('partc-split-row');
   });
 
@@ -307,15 +308,15 @@ describe('Detail is available, not in the way', () => {
 
   test('each fold still contains the container its renderer writes to', () => {
     for (const id of ['partcModules', 'partcDrivers', 'partcPareto', 'partcDqPanel']) {
-      expect(page).toMatch(new RegExp(`partc-fold[\\s\\S]{0,400}id="${id}"`));
+      must(page, new RegExp(`partc-fold[\\s\\S]{0,400}id="${id}"`), "each fold still contains the container its renderer writes to");
     }
   });
 
   test('the registers, the disclosure and the voluntary annex survived the rebuild', () => {
-    expect(page).toContain('id="partcRegisterBody"');
-    expect(page).toContain('id="partcDisclosure"');
-    expect(page).toContain('id="partcAnnexD"');
-    expect(page).toMatch(/Not part of the PCAF figure/);
+    must(page, 'id="partcRegisterBody"', "the registers, the disclosure and the voluntary annex survived the rebuild");
+    must(page, 'id="partcDisclosure"', "the registers, the disclosure and the voluntary annex survived the rebuild");
+    must(page, 'id="partcAnnexD"', "the registers, the disclosure and the voluntary annex survived the rebuild");
+    must(page, /Not part of the PCAF figure/, "the registers, the disclosure and the voluntary annex survived the rebuild");
   });
 });
 
@@ -323,7 +324,7 @@ describe('The summary is generated from the run, never written into the page', (
   const sum = js.slice(js.indexOf('function renderSummary'));
 
   test('the list is empty in the fragment', () => {
-    expect(page).toMatch(/<ul id="partcSummaryList"><\/ul>/);
+    must(page, /<ul id="partcSummaryList"><\/ul>/, "the list is empty in the fragment");
   });
 
   test('every line is built from the result', () => {
@@ -347,16 +348,16 @@ describe('The layout holds up', () => {
   });
 
   test('the bento collapses to one column on a phone', () => {
-    expect(css).toMatch(/@media \(max-width: 900px\) \{[\s\S]*?\.partc-bento \{ grid-template-columns: 1fr; \}/);
+    must(css, /@media \(max-width: 900px\) \{[\s\S]*?\.partc-bento \{ grid-template-columns: 1fr; \}/, "the bento collapses to one column on a phone");
   });
 
   test('tiles size to their content rather than stretching', () => {
-    expect(css).toMatch(/\.partc-bento \{[\s\S]*?align-items: start;/);
+    must(css, /\.partc-bento \{[\s\S]*?align-items: start;/, "tiles size to their content rather than stretching");
   });
 
   test('motion is dropped for anyone who asks for that', () => {
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)[\s\S]{0,220}partc-bridge-seg/);
-    expect(js).toContain("prefers-reduced-motion: reduce");
+    must(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]{0,220}partc-bridge-seg/, "motion is dropped for anyone who asks for that");
+    must(js, "prefers-reduced-motion: reduce", "motion is dropped for anyone who asks for that");
   });
 });
 
@@ -383,26 +384,26 @@ describe('The Part C screen opens on the position, not on a file upload', () => 
 
   test('it carries the four figures, and names the PCAF one', () => {
     for (const id of ['partcOvIae', 'partcOvUseStage', 'partcOvCoverage', 'partcOvDq']) {
-      expect(page).toContain(`id="${id}"`);
+      must(page, `id="${id}"`, "it carries the four figures, and names the PCAF one");
     }
-    expect(page).toMatch(/Insurer's IAE — construction \(A4 \+ A5\)/);
-    expect(page).toMatch(/Use stage — B1 \+ B4 \+ B7/);
+    must(page, /Insurer's IAE — construction \(A4 \+ A5\)/, "it carries the four figures, and names the PCAF one");
+    must(page, /Use stage — B1 \+ B4 \+ B7/, "it carries the four figures, and names the PCAF one");
   });
 
   test('construction and use stage wear the two hues the result below uses', () => {
-    expect(css).toMatch(/\.partc-ovkpi\.is-construction \{ border-left: 3px solid var\(--data-green\); \}/);
-    expect(css).toMatch(/\.partc-ovkpi\.is-usestage {5}\{ border-left: 3px solid var\(--data-indigo\); \}/);
+    must(css, /\.partc-ovkpi\.is-construction \{ border-left: 3px solid var\(--data-green\); \}/, "construction and use stage wear the two hues the result below uses");
+    must(css, /\.partc-ovkpi\.is-usestage {5}\{ border-left: 3px solid var\(--data-indigo\); \}/, "construction and use stage wear the two hues the result below uses");
   });
 
   test('the use-stage line says it is never summed with the figure beside it', () => {
-    expect(page).toMatch(/never summed with the figure beside it/);
+    must(page, /never summed with the figure beside it/, "the use-stage line says it is never summed with the figure beside it");
   });
 
   test('nothing here is a financed-emissions figure', () => {
     // A different inventory over a different book. The two are never summed,
     // and this screen does not reach for the lending endpoint at all.
-    expect(js).not.toContain('/v1/portfolio');
-    expect(js).not.toContain('totalFinancedEmissions');
+    mustNot(js, '/v1/portfolio', "nothing here is a financed-emissions figure");
+    mustNot(js, 'totalFinancedEmissions', "nothing here is a financed-emissions figure");
   });
 
   test('a year with nothing locked is named, never rendered as a position of zero', () => {
@@ -421,7 +422,7 @@ describe('The Part C screen opens on the position, not on a file upload', () => 
 
   test('a book that cannot be persisted says so', () => {
     expect(renderFn).toMatch(/durable === false/);
-    expect(page).toContain('id="partcOvStorage"');
+    must(page, 'id="partcOvStorage"', "a book that cannot be persisted says so");
   });
 
   test('the premium-weighted score states its direction and what it excluded', () => {
@@ -446,15 +447,15 @@ describe('The Part C screen opens on the position, not on a file upload', () => 
   test('the band re-reads the book on a return visit', () => {
     // A lock applied on another screen changes this position; showing what it
     // said last time would be stale the moment it mattered.
-    expect(js).toMatch(/return \{ init, refresh \}/);
-    expect(appJs).toMatch(/'pcaf-partc': \{[\s\S]*?PCAFPartCPage\.refresh\(\)/);
+    must(js, /return \{ init, refresh \}/, "the band re-reads the book on a return visit");
+    must(appJs, /'pcaf-partc': \{[\s\S]*?PCAFPartCPage\.refresh\(\)/, "the band re-reads the book on a return visit");
   });
 
   test('its links reach the screens behind the figures', () => {
     for (const target of ['partc-book', 'partc-portfolio']) {
-      expect(page).toContain(`data-goto="${target}"`);
+      must(page, `data-goto="${target}"`, "its links reach the screens behind the figures");
     }
-    expect(js).toContain('window.CARBONIQ_navigateTo(b.dataset.goto)');
+    must(js, 'window.CARBONIQ_navigateTo(b.dataset.goto)', "its links reach the screens behind the figures");
   });
 });
 
@@ -494,11 +495,11 @@ describe('The Part C screen has a dark palette, and everything on it uses it', (
   });
 
   test('the page’s own tokens are what the new blocks read', () => {
-    expect(css).toMatch(/\.partc-tile \{[\s\S]*?background: var\(--p-card\);/);
-    expect(css).toMatch(/\.partc-overview \{[\s\S]*?background: var\(--p-card\);/);
+    must(css, /\.partc-tile \{[\s\S]*?background: var\(--p-card\);/, "the page’s own tokens are what the new blocks read");
+    must(css, /\.partc-overview \{[\s\S]*?background: var\(--p-card\);/, "the page’s own tokens are what the new blocks read");
   });
 
   test('the hard-coded amber notes carry a dark variant', () => {
-    expect(css).toMatch(/@media \(prefers-color-scheme: dark\) \{[\s\S]*?\.partc-ovnote\.is-warn/);
+    must(css, /@media \(prefers-color-scheme: dark\) \{[\s\S]*?\.partc-ovnote\.is-warn/, "the hard-coded amber notes carry a dark variant");
   });
 });

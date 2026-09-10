@@ -9728,28 +9728,60 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "materials": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": true
-                      }
+                    "success": {
+                      "type": "boolean"
                     },
-                    "summary": {
+                    "projectName": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "inputMode": {
+                      "type": "string"
+                    },
+                    "extraction": {
+                      "type": "object",
+                      "properties": {
+                        "materials": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "materials"
+                      ]
+                    },
+                    "carbonTotals": {
                       "type": "object",
                       "additionalProperties": true
                     },
-                    "model": {
-                      "type": "string"
-                    },
-                    "tokensUsed": {
+                    "meta": {
                       "type": "object",
+                      "properties": {
+                        "model": {
+                          "type": "string"
+                        },
+                        "tokensUsed": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
                       "additionalProperties": true
                     }
                   },
                   "additionalProperties": true,
                   "required": [
-                    "materials"
+                    "success",
+                    "extraction"
                   ]
                 }
               },
@@ -9765,28 +9797,60 @@
                     "data": {
                       "type": "object",
                       "properties": {
-                        "materials": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
+                        "success": {
+                          "type": "boolean"
                         },
-                        "summary": {
+                        "projectName": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "inputMode": {
+                          "type": "string"
+                        },
+                        "extraction": {
+                          "type": "object",
+                          "properties": {
+                            "materials": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "summary": {
+                              "type": "object",
+                              "additionalProperties": true
+                            }
+                          },
+                          "additionalProperties": true,
+                          "required": [
+                            "materials"
+                          ]
+                        },
+                        "carbonTotals": {
                           "type": "object",
                           "additionalProperties": true
                         },
-                        "model": {
-                          "type": "string"
-                        },
-                        "tokensUsed": {
+                        "meta": {
                           "type": "object",
+                          "properties": {
+                            "model": {
+                              "type": "string"
+                            },
+                            "tokensUsed": {
+                              "type": "object",
+                              "additionalProperties": true
+                            }
+                          },
                           "additionalProperties": true
                         }
                       },
                       "additionalProperties": true,
                       "required": [
-                        "materials"
+                        "success",
+                        "extraction"
                       ]
                     },
                     "meta": {

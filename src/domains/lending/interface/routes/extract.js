@@ -22,7 +22,7 @@ const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractFromRequest }   = require('../../application/extract');
 const { asError } = require('../../../../shared/types');
-const { doc, body, str, obj, arr } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, bool, obj, orNull, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { MATERIAL_CARBON_FACTORS } = require('../../../../shared/models/constants');
 
@@ -36,9 +36,16 @@ router.post('/',
     description: 'Claude extracts and classifies; the engine computes. The emission factor '
       + 'and the total are recomputed here from the factor table and are never taken from '
       + 'the model, because an LLM must not compute a figure that reaches a disclosure.',
+    /* The shape the route actually answers with: the materials are nested
+       under `extraction`, and the totals are a sibling. The hint named them at
+       the top level, which the live contract sweep could not catch because it
+       drives GETs only — and a client generated from it would have read
+       `materials` off an object that does not carry it. */
     response: body({
-      materials: arr(), summary: obj, model: str, tokensUsed: obj,
-    }, ['materials']) }),
+      success: bool, projectName: orNull(str), inputMode: str,
+      extraction: body({ materials: arr(), summary: obj }, ['materials']),
+      carbonTotals: obj, meta: body({ model: str, tokensUsed: obj }),
+    }, ['success', 'extraction']) }),
   authenticate,
   validate({ body: extractRequestSchema }),
   extractLimiter,

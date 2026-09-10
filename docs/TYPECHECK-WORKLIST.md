@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **285**. Remaining: **170**.
+Checked across all three: **299**. Remaining: **167**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **252**. Remaining: **62** (418 errors, measured by
+Checked: **255**. Remaining: **62** (418 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -123,7 +123,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **27**. Remaining: **92** (1234 errors, measured by
+Checked: **38**. Remaining: **89** (1235 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -131,7 +131,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/capital-api.test.js` | 61 |
 | `tests/capital-adjust.test.js` | 48 |
 | `tests/gcf-screening.test.js` | 42 |
-| `tests/parta-ui.test.js` | 40 |
+| `tests/parta-ui.test.js` | 42 |
 | `tests/parta-generation.test.js` | 37 |
 | `tests/desk-stages456.test.js` | 33 |
 | `tests/gcf-pipeline.test.js` | 33 |
@@ -139,19 +139,19 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/partc-portfolio.test.js` | 32 |
 | `tests/authentication.test.js` | 29 |
 | `tests/partc-boq.test.js` | 29 |
+| `tests/api-contract.test.js` | 27 |
 | `tests/observability.test.js` | 27 |
 | `tests/partc-registry.test.js` | 27 |
-| `tests/api-contract.test.js` | 26 |
 | `tests/api-key.test.js` | 26 |
 | `tests/partc-assessments.test.js` | 26 |
 | `tests/desk-api.test.js` | 24 |
+| `tests/ui-config.test.js` | 24 |
 | `tests/parta-engine.test.js` | 22 |
 | `tests/partc-methodology.test.js` | 22 |
 | `tests/pcaf-partc-api.test.js` | 22 |
 | `tests/slgft-report.test.js` | 22 |
 | `tests/gcf-cn-package.test.js` | 20 |
 | `tests/pg-store.test.js` | 20 |
-| `tests/ui-config.test.js` | 20 |
 | `tests/gcf-emissions.test.js` | 19 |
 | `tests/gcf-reporting.test.js` | 19 |
 | `tests/parta-listed-equity.test.js` | 19 |
@@ -168,11 +168,11 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/slgft-source-fidelity.test.js` | 13 |
 | `tests/partc-disclosure.test.js` | 12 |
 | `tests/pcaf-partc-registers.test.js` | 12 |
+| `tests/partc-ui.test.js` | 11 |
 | `tests/projects.test.js` | 11 |
 | `tests/ndc-sdg.test.js` | 10 |
 | `tests/parta-api.test.js` | 10 |
 | `tests/pcaf-partc-e2e.test.js` | 10 |
-| `tests/webhook.test.js` | 10 |
 | `tests/audit.test.js` | 9 |
 | `tests/auth.test.js` | 9 |
 | `tests/partc-comparatives.test.js` | 9 |
@@ -185,35 +185,32 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-journey.test.js` | 7 |
+| `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
-| `tests/assess.test.js` | 6 |
-| `tests/extract.test.js` | 6 |
-| `tests/structure.test.js` | 6 |
 | `tests/validate-middleware.test.js` | 6 |
+| `tests/baselines-ui.test.js` | 5 |
 | `tests/borrower-coaching.test.js` | 5 |
 | `tests/capital-curve.test.js` | 5 |
 | `tests/factor-provenance.test.js` | 5 |
-| `tests/partc-ui.test.js` | 5 |
+| `tests/gcf-ui.test.js` | 5 |
 | `tests/storage-seam.test.js` | 5 |
+| `tests/dashboard-layout.test.js` | 4 |
 | `tests/data-layer.test.js` | 4 |
 | `tests/deadline.test.js` | 4 |
 | `tests/gcf-conformance.test.js` | 4 |
 | `tests/pcaf-partc-conformance.test.js` | 4 |
 | `tests/pdf-response.test.js` | 4 |
-| `tests/baselines-ui.test.js` | 3 |
-| `tests/gcf-ui.test.js` | 3 |
+| `tests/structure.test.js` | 4 |
+| `tests/capital-anchor.test.js` | 3 |
 | `tests/pg-scale.test.js` | 3 |
-| `tests/responsive-layout.test.js` | 3 |
 | `tests/baseline-registry.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |
 | `tests/constants.test.js` | 2 |
-| `tests/dashboard-layout.test.js` | 2 |
 | `tests/deploy-freshness.test.js` | 2 |
 | `tests/health.test.js` | 2 |
 | `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
 | `tests/schemas.test.js` | 2 |
-| `tests/capital-anchor.test.js` | 1 |
 | `tests/config.test.js` | 1 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |

@@ -669,15 +669,36 @@ This replaced the 2021 NDC (4.5% / 14.5% by 2030, net zero 2050) that seven sour
 ## Testing
 
 ```bash
-npm test             # Run all tests with coverage
+npm test             # The whole suite, with coverage
+npm test tests/x.test.js   # Just that file — no coverage, so the exit code means what it says
 npm run test:watch   # Watch mode for TDD
+npm run db:test-up   # Start and migrate the PostgreSQL the second suite needs
+npm run test:postgres
 ```
 
-- Test files live in `tests/`
-- Setup/mocks in `tests/setup.js`
+- Test files live in `tests/`; shared helpers in `tests/helpers/`
+- Setup in `tests/setup.js` (before the framework) and `tests/setup-after-env.js` (per file)
 - Coverage thresholds: branches 60%, functions 75%, lines/statements 75% (measured 66 / 81 / 80 at the time they were set); `npm run lint`, `npm run typecheck`, the audit and the browser tests are CI jobs under one `gate`
 - `e2e/` holds the Playwright journeys; Jest ignores it
 - Uses `supertest` for HTTP integration tests against the Express app
+
+**The suite runs on both stores, and says so honestly (`tests/helpers/store-mode.js`).** Fifteen suites pinned themselves to the memory store at module scope, so `npm run test:postgres` never ran them — including the whole GCF domain, whose `infrastructure/store.js` is a storage adapter, while `CLAUDE.md` and `docs/DATA-LAYER.md` both claimed "the same suites". The pins are gone. Two suites keep one because they target a specific adapter (`api-key` mocks Firebase as the key home; `blob-store` is about Blobs), each with the reason written down, and a handful of assertions that are genuinely about a store's *capability* — "503 because nothing can persist" is true on memory and false on PostgreSQL — say which store they apply to instead of the whole suite opting out. The PostgreSQL run went from 2,321 tests to 2,373, and immediately found what those suites had never been asked: a collection that is not registered anywhere (the memory store accepted it), and two literal backend lists that omitted `postgres`, the store every deployment actually runs on.
+
+**A developer can run the second suite (`npm run db:test-up`).** `TEST_DATABASE_URL` defaulted to port 54329, and that port appeared in exactly one file in the repository: `package.json`. No compose service, no script, no mention in any doc — so the command failed with a raw `ECONNREFUSED` from inside a migration, and everyone ran the memory suite and learned about foreign-key failures from CI. That is the loop `docs/DATA-LAYER.md` records as having cost 27 test failures once already. `db:test-up` starts one in Docker and migrates every worker schema, `db:test-status` says what is listening, and a database that is not there is now a message naming both.
+
+**`npm test <path>` means what it says.** `test` was `jest --coverage`, so running one file passed its tests and then exited non-zero on the *global* coverage thresholds — a thing a developer hits several times a day, and what it teaches is to stop believing exit codes. Coverage is added only when the run is the whole suite (`scripts/jest.js`); an explicit `--coverage` still wins.
+
+**Coverage has a floor per area, not only globally (`collectCoverageFrom`).** Thirteen files of the original lending route surface sat at **0% function coverage** — `/v1/assess`, `/v1/covenant`, `/v1/score`, `/v1/portfolio`, `/v1/webhook` — while the suite passed, because the global bar was met elsewhere and seven never-loaded files were not in the denominator at all. Both are closed: every file under `src/` counts, and each domain and platform area carries its own floor.
+
+**The lending suites reach their routes now.** `tests/assess.test.js` and `tests/extract.test.js` claimed in a header comment that AI calls were mocked and contained no `jest.mock` at all; all three presented a well-formed key registered nowhere and asserted the 503 from the door, so the route never executed. `tests/helpers/key.js` issues a credential that authenticates on whichever store the run is on — a real row in `api_keys` on PostgreSQL, the dashboard key on the in-process store, which holds no key table — and `tests/helpers/anthropic.js` mocks the SDK at **the surface the code calls**: three suites mocked `messages.create` while the production loop uses `messages.stream().finalMessage()`, so the mock stood in for a method the agent never reaches. Rewriting them found a wrong `doc({ response })` hint on `POST /v1/extract`, which the live contract sweep could not catch because it drives GETs only.
+
+**The frontend sweeps keep their rules and lose their failure mode (`tests/helpers/ui-source.js`).** 524 assertions across sixteen suites match the frontend's source, and the rules are right — each of the four mechanical faults has shipped here once with a unit test passing. The instrument was the problem: `expect(HTML).toMatch(/…/)` prints the whole module as the received value, and one rename produced 702 lines of terminal output with no file, no line and no instruction. A developer who meets three of those in a week starts deleting assertions and takes the good rules down with the bad. `must()` and `mustNot()` say the same things and fail with the file, the rule, the line and a remedy; `tests/ui-sweep-instrument.test.js` fails the build if the old shape returns.
+
+The four mechanical rules are **also** driven in a browser now (`e2e/mechanical-rules.spec.js`), because what a sweep can check is the shape of the fix and not whether it works. The first run found a fifth instance of the `<select>` fault: a long option in the assumptions drawer pushed the page 159px past a 430px viewport, with the responsive rule already in force and every source sweep green.
+
+**Two more things the phase changed.** The architecture checker is a function (`tests/helpers/architecture.js`), so the test that proves it catches a cross-domain import passes it one synthetic edge instead of writing a probe module into `src/domains/gcf/domain/` and shelling out to a nested Jest run — two minutes per run, and a stray file in the source tree on any interrupt. And each test file starts on a truncated schema with its pool closed at the end, so a suite can no longer read a row another suite wrote in the same worker.
+
+`tests/api-contract.test.js` was the one suite that failed under `--randomize`: one test set a `clientId` two others read. It makes what it needs in a `beforeEach`, and the whole suite passes randomized.
 
 ---
 

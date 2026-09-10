@@ -8,7 +8,6 @@
 
 'use strict';
 
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 /* The Firebase stand-in below exists to answer the API key lookup, which
    `platform/auth/api-key.js` makes through the bridge. It is not this suite's

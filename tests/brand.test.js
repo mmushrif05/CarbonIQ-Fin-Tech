@@ -16,19 +16,20 @@
 
 const fs = require('fs');
 const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
 const read = p => fs.readFileSync(path.join(ROOT, p), 'utf8');
 
-const INDEX = read('ui/index.html');
-const BRAND_JS = read('ui/js/brand.js');
-const BRAND_CSS = read('ui/css/brand.css');
+const INDEX = source('ui/index.html');
+const BRAND_JS = source('ui/js/brand.js');
+const BRAND_CSS = source('ui/css/brand.css');
 
 describe('One source', () => {
   test('the name, the legal name and the mark are defined once, in brand.js', () => {
-    expect(BRAND_JS).toMatch(/name: 'Datum Solutions'/);
-    expect(BRAND_JS).toMatch(/legalName: 'Datum Solutions \(Private\) Limited'/);
-    expect(BRAND_JS).toMatch(/lockup: \(variant\) =>/);
+    must(BRAND_JS, /name: 'Datum Solutions'/, "the name, the legal name and the mark are defined once, in brand.js");
+    must(BRAND_JS, /legalName: 'Datum Solutions \(Private\) Limited'/, "the name, the legal name and the mark are defined once, in brand.js");
+    must(BRAND_JS, /lockup: \(variant\) =>/, "the name, the legal name and the mark are defined once, in brand.js");
   });
 
   test('no page fragment or page module keeps a copy of its own', () => {
@@ -46,17 +47,17 @@ describe('One source', () => {
   });
 
   test('the shell carries placeholders, never the words themselves', () => {
-    expect(INDEX).toContain('data-brand="sidebar"');
-    expect(INDEX).toContain('data-brand="footer"');
-    expect(INDEX).toContain('data-brand="login"');
-    expect(INDEX).not.toMatch(/Datum\s+Solutions/);
+    must(INDEX, 'data-brand="sidebar"', "the shell carries placeholders, never the words themselves");
+    must(INDEX, 'data-brand="footer"', "the shell carries placeholders, never the words themselves");
+    must(INDEX, 'data-brand="login"', "the shell carries placeholders, never the words themselves");
+    mustNot(INDEX, /Datum\s+Solutions/, "the shell carries placeholders, never the words themselves");
   });
 
   test('the artwork is the supplied lockup, not a redrawing of it', () => {
-    expect(BRAND_JS).toMatch(/datum-lockup\.png/);
-    expect(BRAND_JS).toMatch(/datum-lockup-white\.png/);
+    must(BRAND_JS, /datum-lockup\.png/, "the artwork is the supplied lockup, not a redrawing of it");
+    must(BRAND_JS, /datum-lockup-white\.png/, "the artwork is the supplied lockup, not a redrawing of it");
     /* No hand-drawn substitute survives beside it — one mark, one file. */
-    expect(BRAND_JS).not.toMatch(/<svg/);
+    mustNot(BRAND_JS, /<svg/, "the artwork is the supplied lockup, not a redrawing of it");
   });
 
   test('every referenced asset is actually in the publish directory', () => {
@@ -97,11 +98,11 @@ describe('It is on every page, structurally', () => {
   });
 
   test('the stylesheet and the module are both loaded by the shell', () => {
-    expect(INDEX).toContain('css/brand.css');
-    expect(INDEX).toContain('js/brand.js');
+    must(INDEX, 'css/brand.css', "the stylesheet and the module are both loaded by the shell");
+    must(INDEX, 'js/brand.js', "the stylesheet and the module are both loaded by the shell");
     /* Rendered on DOMContentLoaded, so the shell's own placeholders fill
        without waiting on a navigation. */
-    expect(BRAND_JS).toMatch(/DOMContentLoaded[\s\S]{0,60}Brand\.render\(\)/);
+    must(BRAND_JS, /DOMContentLoaded[\s\S]{0,60}Brand\.render\(\)/, "the stylesheet and the module are both loaded by the shell");
   });
 });
 
@@ -110,31 +111,31 @@ describe('It renders correctly wherever it lands', () => {
     /* The sheet forbids the colour lockup on a dark ground. The sidebar is
        dark in every theme, so it takes the white file outright rather than
        switching with the page. */
-    expect(BRAND_JS).toMatch(/if \(variant === 'onDark'\) return dark;/);
-    expect(BRAND_CSS).toMatch(/\.brand-lockup-sidebar \.is-on-dark,/);
+    must(BRAND_JS, /if \(variant === 'onDark'\) return dark;/, "the knocked-out variant is used on the dark sidebar, per the brand sheet");
+    must(BRAND_CSS, /\.brand-lockup-sidebar \.is-on-dark,/, "the knocked-out variant is used on the dark sidebar, per the brand sheet");
   });
 
   test('both theme states swap the footer and login lockups', () => {
     /* The default setting stamps nothing on the root, so prefers-color-scheme
        is the only signal there; an explicit choice must win in both
        directions. */
-    expect(BRAND_CSS).toMatch(/@media \(prefers-color-scheme: dark\)[\s\S]*?:root:not\(\[data-theme="light"\]\)/);
-    expect(BRAND_CSS).toMatch(/:root\[data-theme="dark"\] \.brand-lockup-footer \.is-on-light/);
+    must(BRAND_CSS, /@media \(prefers-color-scheme: dark\)[\s\S]*?:root:not\(\[data-theme="light"\]\)/, "both theme states swap the footer and login lockups");
+    must(BRAND_CSS, /:root\[data-theme="dark"\] \.brand-lockup-footer \.is-on-light/, "both theme states swap the footer and login lockups");
   });
 
   test('the sign-in screen takes the knocked-out variant too', () => {
     /* It has its own dark styling and is dark in every theme. A first pass
        drew the colour lockup there: navy on near-black. */
-    expect(BRAND_JS).toMatch(/login: \(\) => `[\s\S]{0,200}LOGO\.lockup\('onDark'\)/);
-    expect(BRAND_CSS).toMatch(/\.brand-lockup-login\s+\.is-on-dark \{ display: block; \}/);
+    must(BRAND_JS, /login: \(\) => `[\s\S]{0,200}LOGO\.lockup\('onDark'\)/, "the sign-in screen takes the knocked-out variant too");
+    must(BRAND_CSS, /\.brand-lockup-login\s+\.is-on-dark \{ display: block; \}/, "the sign-in screen takes the knocked-out variant too");
   });
 
   test('height is set and width follows, so the lockup is never stretched', () => {
     /* 2.70 : 1. Stretching it is the one thing the brand sheet forbids
        outright, and `width: auto` beside a set height is what prevents it. */
-    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?height:\s*30px/);
-    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?width:\s*auto/);
-    expect(BRAND_CSS).not.toMatch(/\.brand-lockup-img[^}]*width:\s*\d+px/);
+    must(BRAND_CSS, /\.brand-lockup-img\s*\{[\s\S]*?height:\s*30px/, "height is set and width follows, so the lockup is never stretched");
+    must(BRAND_CSS, /\.brand-lockup-img\s*\{[\s\S]*?width:\s*auto/, "height is set and width follows, so the lockup is never stretched");
+    mustNot(BRAND_CSS, /\.brand-lockup-img[^}]*width:\s*\d+px/, "height is set and width follows, so the lockup is never stretched");
   });
 
   test('no placement falls below the sheet\'s 28px floor', () => {
@@ -147,25 +148,25 @@ describe('It renders correctly wherever it lands', () => {
   });
 
   test('it is a block, or it sits on the text baseline and looks misaligned', () => {
-    expect(BRAND_CSS).toMatch(/\.brand-lockup-img\s*\{[\s\S]*?display:\s*block/);
+    must(BRAND_CSS, /\.brand-lockup-img\s*\{[\s\S]*?display:\s*block/, "it is a block, or it sits on the text baseline and looks misaligned");
   });
 
   test('the name is announced once, as the image alt text', () => {
     /* The lockup already reads DATUM SOLUTIONS, so a text wordmark beside it
        would say the name twice — once drawn, once spoken. */
-    expect(BRAND_JS).toMatch(/alt="\$\{LOGO\.name\}"/);
-    expect(BRAND_JS).not.toMatch(/brand-word/);
+    must(BRAND_JS, /alt="\$\{LOGO\.name\}"/, "the name is announced once, as the image alt text");
+    mustNot(BRAND_JS, /brand-word/, "the name is announced once, as the image alt text");
   });
 
   test('rendering twice does not rebuild what is already there', () => {
-    expect(BRAND_JS).toMatch(/brandRendered === 'true'/);
+    must(BRAND_JS, /brandRendered === 'true'/, "rendering twice does not rebuild what is already there");
   });
 });
 
 describe('The browser tab carries it too', () => {
   test('the supplied favicon set is linked', () => {
-    expect(INDEX).toMatch(/rel="icon" href="brand\/favicon\.ico" sizes="any"/);
-    expect(INDEX).toMatch(/sizes="32x32" href="brand\/datum-mark-32\.png"/);
-    expect(INDEX).toMatch(/rel="apple-touch-icon" href="brand\/apple-touch-icon-180\.png"/);
+    must(INDEX, /rel="icon" href="brand\/favicon\.ico" sizes="any"/, "the supplied favicon set is linked");
+    must(INDEX, /sizes="32x32" href="brand\/datum-mark-32\.png"/, "the supplied favicon set is linked");
+    must(INDEX, /rel="apple-touch-icon" href="brand\/apple-touch-icon-180\.png"/, "the supplied favicon set is linked");
   });
 });

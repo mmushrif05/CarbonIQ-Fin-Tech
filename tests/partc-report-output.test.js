@@ -12,7 +12,6 @@
  * These tests read the produced bytes, not the response envelope.
  */
 
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const { handler } = require('../netlify/functions/fintech-api');
 const { winAnsi } = require('../src/domains/pcaf-part-c/reporting/partc-docgen');

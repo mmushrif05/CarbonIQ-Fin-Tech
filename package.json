@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "jest --coverage",
+    "test": "node scripts/jest.js",
     "test:watch": "jest --watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -32,7 +32,7 @@
     "db:backfill": "node scripts/migrate-to-postgres.js",
     "db:backup": "node scripts/db-backup.js",
     "db:verify-audit": "node scripts/db-verify-audit.js",
-    "test:postgres": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --coverage",
+    "test:postgres": "TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} node scripts/jest.js",
     "test:scale": "SCALE_STRICT=1 TEST_DATABASE_URL=${TEST_DATABASE_URL:-postgresql://carboniq@127.0.0.1:54329/carboniq_test} jest --runInBand tests/pg-scale.test.js",
     "key:scope": "node scripts/create-api-key.js scope",
     "key:rotate": "node scripts/create-api-key.js rotate",
@@ -52,7 +52,10 @@
     "user:enable": "node scripts/manage-users.js enable",
     "docs:typecheck-worklist": "node scripts/generate-typecheck-worklist.js",
     "docs:conformance-evidence": "node scripts/conformance-evidence.js",
-    "docs:factor-manifest": "node scripts/generate-factor-manifest.js"
+    "docs:factor-manifest": "node scripts/generate-factor-manifest.js",
+    "db:test-up": "node scripts/test-db.js up",
+    "db:test-down": "node scripts/test-db.js down",
+    "db:test-status": "node scripts/test-db.js status"
   },
   "keywords": [
     "carbon",
@@ -113,13 +116,71 @@
     "coverageDirectory": "coverage",
     "coverageThreshold": {
       "global": {
-        "branches": 60,
-        "functions": 75,
-        "lines": 75,
-        "statements": 75
+        "branches": 25,
+        "functions": 55,
+        "lines": 55,
+        "statements": 55
+      },
+      "src/domains/gcf/": {
+        "branches": 70,
+        "functions": 90,
+        "lines": 92
+      },
+      "src/domains/capital/": {
+        "branches": 72,
+        "functions": 88,
+        "lines": 92
+      },
+      "src/domains/pcaf-part-c/": {
+        "branches": 68,
+        "functions": 85,
+        "lines": 88
+      },
+      "src/domains/pcaf-part-a/": {
+        "branches": 70,
+        "functions": 88,
+        "lines": 82
+      },
+      "src/domains/taxonomy/": {
+        "branches": 72,
+        "functions": 88,
+        "lines": 84
+      },
+      "src/domains/baseline/": {
+        "branches": 55,
+        "functions": 78,
+        "lines": 85
+      },
+      "src/domains/lending/": {
+        "branches": 40,
+        "functions": 55,
+        "lines": 63
+      },
+      "src/platform/": {
+        "branches": 45,
+        "functions": 60,
+        "lines": 60
+      },
+      "src/shared/": {
+        "branches": 75,
+        "functions": 85,
+        "lines": 88
+      },
+      "netlify/functions/": {
+        "branches": 12,
+        "functions": 15,
+        "lines": 25
       }
     },
     "globalSetup": "./tests/global-setup.js",
-    "testTimeout": 30000
+    "testTimeout": 30000,
+    "setupFilesAfterEnv": [
+      "./tests/setup-after-env.js"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.js",
+      "netlify/functions/**/*.js",
+      "!src/**/index.js"
+    ]
   }
 }

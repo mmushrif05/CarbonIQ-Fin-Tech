@@ -7,7 +7,6 @@
  * disclaimer about PCAF not endorsing software stays in place.
  */
 
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const fs = require('fs');
 const path = require('path');

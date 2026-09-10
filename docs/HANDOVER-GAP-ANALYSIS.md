@@ -522,6 +522,64 @@ and five reasons a credit committee reads become false.
 
 ## H5 — The test net and the developer loop.
 
+> **Delivered — all eleven actionable gaps closed** (H5.12 is a positive
+> finding with nothing to do). The findings below stand as the record of what
+> was found; each is answered here.
+>
+> **H5.1** The rules were right and the instrument was wrong, so the
+> instrument changed: `tests/helpers/ui-source.js` says the same things and
+> fails with the file, the rule, the line and a remedy — never the module.
+> Every sweep in every UI suite goes through it, and
+> `tests/ui-sweep-instrument.test.js` fails the build on a bare
+> `expect(<file>).toMatch(…)` returning. The four mechanical rules are now
+> *also* driven in a browser (`e2e/mechanical-rules.spec.js`), which found a
+> fifth instance of the `<select>` fault on the first run: a long option in
+> the assumptions drawer pushed the page 159px past a 430px viewport, with
+> the responsive rule already in force and every source sweep passing.
+> **H5.2** `/v1/assess`, `/v1/extract` and `/v1/webhooks` are driven rather
+> than refused at the door: `tests/helpers/key.js` issues a credential that
+> authenticates on whichever store the run is on, and the SDK is mocked at
+> the surface the code calls. Lending went from 58.1%/44.9% to 67%/60%.
+> `collectCoverageFrom` puts the never-loaded files in the denominator, and
+> **per-area coverage floors** mean a whole domain can no longer sit at zero
+> while the global bar passes.
+> **H5.3** `npm run db:test-up` starts and migrates one in Docker;
+> `db:test-status` says what is listening; a missing database is now a
+> message naming both, not a raw `ECONNREFUSED` from inside a migration.
+> **H5.4** The fifteen module-scope memory pins are gone — the two suites
+> that legitimately target one adapter (`api-key`, `blob-store`) keep theirs
+> with the reason written down, and a handful of genuinely store-dependent
+> assertions say so through `tests/helpers/store-mode.js`. The PostgreSQL run
+> went from 2,321 tests to **2,373**, and finding what those suites had never
+> been asked: an unregistered collection the memory store accepted, and two
+> literal backend lists that omitted `postgres` — the store every deployment
+> runs on.
+> **H5.5** `tests/api-contract.test.js` makes what it needs in a `beforeEach`
+> rather than in one test that two others read from; the whole suite passes
+> under `--randomize`.
+> **H5.6** `tests/setup.js` sets the key and the store once, `tests/helpers/api.js`
+> is the one `auth()` and `api()`, and the four suites that deliberately hold
+> a distinct key still do.
+> **H5.7** `tests/helpers/anthropic.js` mocks both `messages.create` and
+> `messages.stream().finalMessage()` from one script of replies, so a suite
+> can no longer pass by mocking a path the code does not take.
+> **H5.8** `npm test <path>` runs plain and its exit code means what it says;
+> coverage is added only when the run is the whole suite.
+> **H5.9** The architecture checker is a function
+> (`tests/helpers/architecture.js`), so the test that proves it catches a
+> violation passes it one synthetic edge instead of writing a probe module
+> into `src/` and shelling out to a nested Jest run — two minutes and a stray
+> file on any interrupt, gone.
+> **H5.10** Each test file starts on a truncated schema, the discipline the
+> memory suites already had.
+> **H5.11** Each worker closes its pool; the warning is gone on the
+> PostgreSQL run.
+>
+> One test was made honest rather than fixed: the two-way adopt race asserted
+> that exactly one call wins, which fails when a loaded database aborts both.
+> It asserts the invariant — the book never carries two investments for one
+> record — and that every refusal is a conflict.
+
 **H5.1 · 268 tests assert on the literal text of UI source. Critical (friction).**
 Sixteen suites, 363 tests, 524 assertions are greps against source. The worst,
 `desk-ui.test.js`, is 95% source-text assertions pinning UI labels, exact ternary

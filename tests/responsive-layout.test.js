@@ -25,8 +25,9 @@
 
 const fs   = require('fs');
 const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
-const read = (...p) => fs.readFileSync(path.join(__dirname, '..', 'ui', ...p), 'utf8');
+const read = (...p) => source(['ui', ...p].join('/'));
 
 /** The declarations of the first rule whose selector list matches. */
 function ruleBody(css, selector) {

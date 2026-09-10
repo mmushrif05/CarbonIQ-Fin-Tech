@@ -2689,9 +2689,10 @@ body {
    a column count that leaves white. */
 .asm-grid { display: grid; grid-template-columns: 1fr; gap: 18px; }
 @media (min-width: 780px) { .asm-grid { grid-template-columns: repeat(3, 1fr); } }
-.asm-item { display: flex; flex-direction: column; gap: 6px; }
+.asm-item { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .asm-label {
-  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; min-width: 0;
+  overflow-wrap: anywhere;
   font-size: 12.5px; font-weight: 650; color: var(--text-primary);
 }
 .asm-value {
@@ -2699,6 +2700,12 @@ body {
   font-variant-numeric: tabular-nums;
 }
 select.asm-input {
+  /* A <select> sizes to its WIDEST option, not to its container, and a grid
+     item's min-width is `auto` — so one long option pushed this drawer, and
+     with it the whole page, 159px past a 430px viewport. Found by driving it;
+     the source sweeps checked the desk's controls and the adopt row and never
+     this one. Fifth instance of the same shape in this codebase. */
+  max-width: 100%; min-width: 0;
   min-height: 40px; padding: 0 10px;
   border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface); color: var(--text-primary); font-size: 13px;

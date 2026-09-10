@@ -191,4 +191,7 @@ function _sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-module.exports = { registerWebhook, listWebhooks, deleteWebhook, dispatchEvent };
+/* `_sign` is exported so the suite asserts the signature this module
+   produces rather than one the test computes for itself — the latter proves
+   Node's crypto works and nothing about this code. */
+module.exports = { registerWebhook, listWebhooks, deleteWebhook, dispatchEvent, _sign };

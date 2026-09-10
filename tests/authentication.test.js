@@ -12,7 +12,6 @@
 
 'use strict';
 
-process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = 'ck_test_' + 'h'.repeat(32);
 
 const request = require('supertest');

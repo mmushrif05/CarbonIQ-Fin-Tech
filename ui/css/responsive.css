@@ -62,6 +62,14 @@
     max-width: 100%;
     min-width: 0;
   }
+
+  /* And the box each one sits in, whatever it is called. A control that may
+     shrink inside a flex or grid item whose own `min-width` is `auto` still
+     pushes the track — which is how the assumptions drawer moved the page
+     159px sideways with the rule above already in force. */
+  .asm-item, .asm-label, .dk-controls, .dk-adopt, .cap-field, .field, .control {
+    min-width: 0;
+  }
 }
 
 /* ── Grids that must collapse to one column ───────────────── */

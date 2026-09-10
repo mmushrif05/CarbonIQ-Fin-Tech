@@ -15,7 +15,6 @@
 
 'use strict';
 
-process.env.STORAGE_BACKEND = 'memory';
 process.env.UI_API_KEY = 'ck_test_' + 'c'.repeat(32);
 
 const fs = require('fs');
@@ -144,14 +143,26 @@ describe('The document is the router, and nothing else (F1)', () => {
 });
 
 describe('Live responses satisfy the document (F4)', () => {
+  /* Two records, made before each test rather than by one of them.
+     `clientId` used to be set inside the first test and read by two others, so
+     the suite failed under `--randomize` and would fail again the first time
+     anyone ran a focused subset — the shape that becomes "works on my
+     machine". Every test here now makes what it needs. */
   let clientId;
+
+  const makeClient = async (name = 'Contract Client') =>
+    (await request(app).post('/v1/partc/clients').set('x-api-key', KEY)
+      .send({ name, country: 'LK' }).expect(201)).body.client.clientId;
+
+  beforeEach(async () => {
+    clientId = await makeClient();
+    await makeClient('Contract Client Two');
+  });
 
   test('a created record, in the legacy shape and in the envelope', async () => {
     const legacy = await request(app).post('/v1/partc/clients').set('x-api-key', KEY).send({ name: 'Contract Client', country: 'LK' }).expect(201);
     expect(legacy.headers['x-api-envelope']).toBe('legacy');
     expect(conforms(responseSchema('POST', '/v1/partc/clients', 201), legacy.body)).toBeNull();
-    clientId = legacy.body.client.clientId;
-
     const wrapped = await request(app).post('/v1/partc/clients').set('x-api-key', KEY).set('Accept', VND).send({ name: 'Contract Client Two', country: 'LK' }).expect(201);
     expect(wrapped.headers['x-api-envelope']).toBe('v1');
     expect(wrapped.headers['content-type']).toMatch(/vnd\.carboniq\.v1\+json/);
@@ -288,6 +299,14 @@ describe('The exit criterion: a client generated from the document alone drives 
     const job = await client.postJobs({ key: KEY, body: { type: 'lending.report', payload: { type: 'pcaf', period: '2025', format: 'pdf', orgName: 'Generated Bank' } } });
     expect(job.status).toBe(202);
     expect(conforms(responseSchema('POST', '/v1/jobs', 202), job.body)).toBeNull();
+    /* Where a database holds the queue the job is claimed by a worker, so the
+       run has to be driven; where none does the mode is inline and the job is
+       already finished. The test assumed inline, which is true of exactly one
+       of the two stores this suite runs on. */
+    if (process.env.TEST_DATABASE_URL) {
+      await require('../src/platform/jobs/worker')
+        .drain({ workerId: 'contract-test', untilMs: Date.now() + 30_000 });
+    }
     const read = await client.getJobsByJobId({ key: KEY, path: { jobId: job.body.job.jobId }, accept: VND });
     expect(read.status).toBe(200);
     expect(conforms(responseSchema('GET', '/v1/jobs/{jobId}', 200, VND), read.body)).toBeNull();

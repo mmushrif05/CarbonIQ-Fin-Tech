@@ -1,19 +1,23 @@
+// @ts-check
 /**
- * CarbonIQ FinTech — /v1/extract Endpoint Tests
+ * `POST /v1/extract` — the BOQ extraction route.
  *
- * Covers: auth enforcement, input validation, and response shape.
- * AI calls are mocked so tests run without ANTHROPIC_API_KEY.
+ * As with `/v1/assess`, this suite reached the route with a key registered
+ * nowhere, so every "validation" test passed on a 503 from the door and the
+ * route itself was never executed. The SDK is mocked at the surface the code
+ * calls, a real credential is issued into whichever store the run is on, and
+ * the schema tests below — which were always sound — stay as they are.
  */
 
-/* These tests mock Firebase as the home of API keys. On a PostgreSQL run
-   the keys would be looked up in the database instead, so this suite pins
-   the in-memory store: it is about the middleware, not about where keys live
-   (tests/pg-store.test.js covers keys in PostgreSQL). */
-process.env.STORAGE_BACKEND = 'memory';
-const request = require('supertest');
-const app = require('../src/server');
+'use strict';
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+const { mockAnthropic } = require('./helpers/anthropic');
+
+const ai = mockAnthropic();
+
+const { api } = require('./helpers/api');
+const { issueKey } = require('./helpers/key');
+const { onPostgres } = require('./helpers/store-mode');
 
 /** A minimal valid BOQ payload. */
 const VALID_BODY = {
@@ -23,40 +27,76 @@ const VALID_BODY = {
   computeTotal: true
 };
 
-/** Forge a valid-format (but fake) API key to hit auth middleware. */
-const FAKE_KEY = 'ck_test_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+/** Well-formed, and registered nowhere. */
+const UNREGISTERED = 'ck_test_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
+/** What the extraction agent returns for the body above. */
+const EXTRACTED = JSON.stringify({
+  materials: [
+    { name: 'Concrete C30', category: 'concrete', quantity: 850, unit: 'tonnes', confidence: 'high' },
+    { name: 'Steel Rebar', category: 'steel', quantity: 120, unit: 'tonnes', confidence: 'high' },
+  ],
+  summary: { totalItems: 2 },
+});
+
+let KEY;
+
+beforeAll(async () => { KEY = (await issueKey({ orgId: 'extract-org' })).key; });
+beforeEach(() => { ai.reply(EXTRACTED); });
 
 // ── Authentication ─────────────────────────────────────────────────────────
 
-describe('POST /v1/extract — authentication', () => {
-  test('returns 401 when X-API-Key header is missing', async () => {
-    const res = await request(app)
-      .post('/v1/extract')
-      .send(VALID_BODY);
-
+describe('POST /v1/extract — the door', () => {
+  test('no key is 401', async () => {
+    const res = await api().post('/v1/extract').send(VALID_BODY);
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('UNAUTHORIZED');
   });
 
-  test('returns 401 when X-API-Key format is invalid', async () => {
-    const res = await request(app)
-      .post('/v1/extract')
-      .set('X-API-Key', 'not-a-valid-key')
-      .send(VALID_BODY);
-
+  test('a key that is not shaped like one is 401', async () => {
+    const res = await api().post('/v1/extract').set('X-API-Key', 'not-a-valid-key').send(VALID_BODY);
     expect(res.status).toBe(401);
     expect(res.body.error).toBe('INVALID_API_KEY');
   });
 
-  test('returns 503 when Firebase is unconfigured (valid format, DB unavailable)', async () => {
-    const res = await request(app)
-      .post('/v1/extract')
-      .set('X-API-Key', FAKE_KEY)
-      .send(VALID_BODY);
+  test('a well-formed key registered nowhere is refused, and the refusal says which', async () => {
+    const res = await api().post('/v1/extract').set('X-API-Key', UNREGISTERED).send(VALID_BODY);
+    if (onPostgres) {
+      expect(res.status).toBe(401);
+      expect(res.body.error).toBe('INVALID_API_KEY');
+    } else {
+      expect(res.status).toBe(503);
+      expect(res.body.error).toBe('SERVICE_UNAVAILABLE');
+    }
+  });
+});
 
-    // Without Firebase the middleware returns 503 SERVICE_UNAVAILABLE
-    expect(res.status).toBe(503);
-    expect(res.body.error).toBe('SERVICE_UNAVAILABLE');
+// ── What it returns ────────────────────────────────────────────────────────
+
+describe('POST /v1/extract — what it returns', () => {
+  test('the materials the model read, with the factor the engine applied', async () => {
+    const res = await api().post('/v1/extract').set('X-API-Key', KEY).send(VALID_BODY);
+    expect(res.status).toBe(200);
+    expect(res.body.extraction.materials).toHaveLength(2);
+    for (const m of res.body.extraction.materials) {
+      expect(typeof m.emissionFactor).toBe('number');
+      expect(typeof m.totalKgCO2e).toBe('number');
+    }
+  });
+
+  test('the model returned no factor and no total — the engine supplied both', async () => {
+    expect(EXTRACTED).not.toMatch(/emissionFactor|totalKgCO2e/);
+    const res = await api().post('/v1/extract').set('X-API-Key', KEY).send(VALID_BODY);
+    expect(res.body.extraction.materials[0].emissionFactor).toBeGreaterThan(0);
+  });
+
+  test('a reply the engine will not compute from is refused, not carried', async () => {
+    /* A material with a factor in it would mean the model had done arithmetic
+       that reaches a disclosure. The schema is `unknown(false)` for exactly
+       this, and the refusal is a 502 rather than a silent pass-through. */
+    ai.reply(JSON.stringify({ materials: [{ name: 'X', quantity: 1, totalKgCO2e: 999 }] }));
+    const res = await api().post('/v1/extract').set('X-API-Key', KEY).send(VALID_BODY);
+    expect(res.status).toBe(502);
   });
 });
 
@@ -64,40 +104,34 @@ describe('POST /v1/extract — authentication', () => {
 
 describe('POST /v1/extract — input validation', () => {
   test('returns 400 when content field is missing', async () => {
-    const res = await request(app)
+    const res = await api()
       .post('/v1/extract')
-      .set('X-API-Key', FAKE_KEY)
+      .set('X-API-Key', KEY)
       .send({ format: 'csv' }); // missing content
 
     // Validation fires before DB lookup — expect 400
-    expect([400, 401, 503]).toContain(res.status);
-    if (res.status === 400) {
-      expect(res.body.error).toBe('VALIDATION_ERROR');
-    }
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('VALIDATION_ERROR');
   });
 
   test('returns 400 when content is too short (< 10 chars)', async () => {
-    const res = await request(app)
+    const res = await api()
       .post('/v1/extract')
-      .set('X-API-Key', FAKE_KEY)
+      .set('X-API-Key', KEY)
       .send({ content: 'short', format: 'text' });
 
-    expect([400, 401, 503]).toContain(res.status);
-    if (res.status === 400) {
-      expect(res.body.error).toBe('VALIDATION_ERROR');
-    }
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('VALIDATION_ERROR');
   });
 
   test('returns 400 when format is not a valid enum value', async () => {
-    const res = await request(app)
+    const res = await api()
       .post('/v1/extract')
-      .set('X-API-Key', FAKE_KEY)
+      .set('X-API-Key', KEY)
       .send({ content: VALID_BODY.content, format: 'excel' });
 
-    expect([400, 401, 503]).toContain(res.status);
-    if (res.status === 400) {
-      expect(res.body.error).toBe('VALIDATION_ERROR');
-    }
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('VALIDATION_ERROR');
   });
 });
 

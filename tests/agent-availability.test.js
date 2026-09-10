@@ -20,7 +20,6 @@
 
 'use strict';
 
-process.env.UI_API_KEY = process.env.UI_API_KEY || 'ck_test_00000000000000000000000000000000';
 
 const { describe: describeAi, diagnose, AGENTS, KEY_SHAPE } = require('../src/platform/ai/ai-status');
 

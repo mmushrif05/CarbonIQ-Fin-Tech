@@ -23,22 +23,20 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
-const ROOT = path.join(__dirname, '..');
-const read = (...p) => fs.readFileSync(path.join(ROOT, ...p), 'utf8');
+const read = (...p) => source(p.join('/'));
 
 const appJs  = read('ui', 'app.js');
 const html   = read('ui', 'index.html');
 const dashJs = read('ui', 'js', 'dashboard.js');
 const css    = read('ui', 'styles.css');
-const sample = JSON.parse(read('ui', 'data', 'portfolio-sample.json'));
+const sample = JSON.parse(read('ui', 'data', 'portfolio-sample.json').text);
 
 describe('A returning user lands on a page rather than on a spinner', () => {
   test('the router runs on load, not only on a nav click', () => {
-    expect(appJs).toContain('_landOnFirstPage');
-    expect(appJs).toMatch(/_landOnFirstPage\(\);/);
+    must(appJs, '_landOnFirstPage', "the router runs on load, not only on a nav click");
+    must(appJs, /_landOnFirstPage\(\);/, "the router runs on load, not only on a nav click");
   });
 
   test('landing goes through navigateTo, so it is the same path as clicking', () => {
@@ -58,38 +56,38 @@ describe('A returning user lands on a page rather than on a spinner', () => {
   });
 
   test('the login screen calls the router directly', () => {
-    expect(html).toContain('window.CARBONIQ_navigateTo(defaultPage)');
+    must(html, 'window.CARBONIQ_navigateTo(defaultPage)', "the login screen calls the router directly");
   });
 
 });
 
 describe('Sample figures are named as samples, and never blended', () => {
   test('the demo constant is gone from the module', () => {
-    expect(dashJs).not.toMatch(/\bconst DEMO\b/);
-    expect(dashJs).not.toMatch(/= DEMO\./);
+    mustNot(dashJs, /\bconst DEMO\b/, "the demo constant is gone from the module");
+    mustNot(dashJs, /= DEMO\./, "the demo constant is gone from the module");
   });
 
   test('the sample book is a data file, not a literal in the code', () => {
-    expect(dashJs).toContain("/data/portfolio-sample.json");
+    must(dashJs, "/data/portfolio-sample.json", "the sample book is a data file, not a literal in the code");
     expect(sample._meta.label).toBe('SAMPLE DATA');
   });
 
   test('an empty portfolio is a named state, distinct from an unreachable API', () => {
-    expect(dashJs).toContain("cause = 'empty'");
-    expect(dashJs).toContain("cause = 'unreachable'");
-    expect(dashJs).toContain("mode: 'sample'");
-    expect(dashJs).toContain("mode: 'unavailable'");
+    must(dashJs, "cause = 'empty'", "an empty portfolio is a named state, distinct from an unreachable API");
+    must(dashJs, "cause = 'unreachable'", "an empty portfolio is a named state, distinct from an unreachable API");
+    must(dashJs, "mode: 'sample'", "an empty portfolio is a named state, distinct from an unreachable API");
+    must(dashJs, "mode: 'unavailable'", "an empty portfolio is a named state, distinct from an unreachable API");
   });
 
   test('the empty case explains the remedy, which is not the same as a 401', () => {
-    expect(dashJs).toMatch(/no projects are linked to this API key/i);
-    expect(dashJs).toMatch(/npm run key:create/);
+    must(dashJs, /no projects are linked to this API key/i, "the empty case explains the remedy, which is not the same as a 401");
+    must(dashJs, /npm run key:create/, "the empty case explains the remedy, which is not the same as a 401");
   });
 
   test('a live portfolio is never topped up from the sample', () => {
     // The old code did exactly this, six times over.
     for (const field of ['assetClasses', 'assetTypes', 'dqDistribution', 'regions', 'regulatoryReadiness']) {
-      expect(dashJs).not.toMatch(new RegExp(`data\\.${field}\\s*=\\s*(DEMO|_sample|sample)\\.`));
+      mustNot(dashJs, new RegExp(`data\\.${field}\\s*=\\s*(DEMO|_sample|sample)\\.`), "a live portfolio is never topped up from the sample");
     }
   });
 
@@ -102,8 +100,8 @@ describe('Sample figures are named as samples, and never blended', () => {
   });
 
   test('a missing data-quality score is reported, never rendered as zero', () => {
-    expect(dashJs).toContain("const DQ_ABSENT = 'not reported'");
-    expect(dashJs).not.toMatch(/\$\('dash-dq-value'\)[\s\S]{0,200}d\.weightedDQ\.toFixed\(2\)`/);
+    must(dashJs, "const DQ_ABSENT = 'not reported'", "a missing data-quality score is reported, never rendered as zero");
+    mustNot(dashJs, /\$\('dash-dq-value'\)[\s\S]{0,200}d\.weightedDQ\.toFixed\(2\)`/, "a missing data-quality score is reported, never rendered as zero");
   });
 
   test('every rendering of the score states the direction of the scale', () => {
@@ -173,7 +171,7 @@ describe('The chart says what it is measuring', () => {
   test('the scale phrase wraps whole rather than breaking after "of"', () => {
     // "1 = best of 1–5" states the direction of a scale people read backwards.
     // Split across a line it stops reading as one thing.
-    expect(css).toMatch(/\.kpi-unit \{[^}]*white-space: nowrap/);
+    must(css, /\.kpi-unit \{[^}]*white-space: nowrap/, "the scale phrase wraps whole rather than breaking after \"of\"");
   });
 });
 
@@ -181,14 +179,14 @@ describe('The asset-class bars actually have height', () => {
   test('the bar sits in a track that owns the height', () => {
     // A percentage height against a parent sized by its own text resolves to
     // zero: labels and values rendered, no bars.
-    expect(dashJs).toContain('bar-track');
-    expect(css).toMatch(/\.bar-track \{[\s\S]*?flex: 1 1 auto;/);
-    expect(css).toMatch(/\.bar-chart \{[\s\S]*?align-items: stretch;/);
+    must(dashJs, 'bar-track', "the bar sits in a track that owns the height");
+    must(css, /\.bar-track \{[\s\S]*?flex: 1 1 auto;/, "the bar sits in a track that owns the height");
+    must(css, /\.bar-chart \{[\s\S]*?align-items: stretch;/, "the bar sits in a track that owns the height");
   });
 
   test('the label and value classes the module emits are styled', () => {
-    expect(css).toContain('.bar-value');
-    expect(css).toContain('.bar-label');
+    must(css, '.bar-value', "the label and value classes the module emits are styled");
+    must(css, '.bar-label', "the label and value classes the module emits are styled");
   });
 });
 

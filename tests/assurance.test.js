@@ -27,6 +27,7 @@ const path = require('path');
 
 const assurance = require('../src/domains/lending/application/assurance');
 const store = require('../src/platform/database/store');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -140,8 +141,8 @@ describe('The badge is the same object on every screen', () => {
   });
 
   test('the browser helper carries the same absent wording as the engine', () => {
-    const js = fs.readFileSync(path.join(ROOT, 'ui', 'js', 'assurance.js'), 'utf8');
-    expect(js).toContain('Assurance not stated');
+    const js = source('ui/js/assurance.js');
+    must(js, 'Assurance not stated', "the browser helper carries the same absent wording as the engine");
     // The same sentence, with the source's own line breaks collapsed.
     expect(js.replace(/\s*\+\s*'/g, '').replace(/'\s*/g, '').replace(/\s+/g, ' '))
       .toContain('only the reporting entity can make');
@@ -149,9 +150,9 @@ describe('The badge is the same object on every screen', () => {
 
   /* A fetch that failed is not a declaration of "no". */
   test('the browser helper falls back to absent, never to a claim', () => {
-    const js = fs.readFileSync(path.join(ROOT, 'ui', 'js', 'assurance.js'), 'utf8');
-    expect(js).toMatch(/catch[\s\S]{0,400}scopes: \{ financed: UNKNOWN, insurance: UNKNOWN \}/);
+    const js = source('ui/js/assurance.js');
+    must(js, /catch[\s\S]{0,400}scopes: \{ financed: UNKNOWN, insurance: UNKNOWN \}/, "the browser helper falls back to absent, never to a claim");
     // The helper never constructs an assured state; it only renders one it was given.
-    expect(js).not.toMatch(/status:\s*'assured'/);
+    mustNot(js, /status:\s*'assured'/, "the browser helper falls back to absent, never to a claim");
   });
 });

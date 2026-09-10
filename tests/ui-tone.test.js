@@ -22,6 +22,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { source, must } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -83,16 +84,16 @@ describe('Screens do not leak the implementation', () => {
   });
 
   test('the illustrative-data label is short and is not styled as a fault', () => {
-    const desk = fs.readFileSync(path.join(ROOT, 'src/domains/capital/desk/position.js'), 'utf8');
-    expect(desk).toMatch(/sampleNote: 'Illustrative dataset — not client records\.'/);
-    const capital = fs.readFileSync(path.join(ROOT, 'src/domains/capital/interface/routes/capital.js'), 'utf8');
-    expect(capital).toMatch(/BASELINE_NOTE = 'Illustrative dataset — not client records\.'/);
+    const desk = source('src/domains/capital/desk/position.js');
+    must(desk, /sampleNote: 'Illustrative dataset — not client records\.'/, "the illustrative-data label is short and is not styled as a fault");
+    const capital = source('src/domains/capital/interface/routes/capital.js');
+    must(capital, /BASELINE_NOTE = 'Illustrative dataset — not client records\.'/, "the illustrative-data label is short and is not styled as a fault");
 
     /* A pill in the neutral palette. Amber is reserved for something a reader
        has to act on; illustrative figures are the screen working normally. */
-    const html = fs.readFileSync(path.join(ROOT, 'ui/pages/desk.html'), 'utf8');
-    expect(html).toMatch(/\.dk-banner\s*\{[\s\S]*?border-radius:\s*999px/);
-    expect(html).toMatch(/\.dk-banner\s*\{[\s\S]*?--dk-neutral-soft/);
+    const html = source('ui/pages/desk.html');
+    must(html, /\.dk-banner\s*\{[\s\S]*?border-radius:\s*999px/, "the illustrative-data label is short and is not styled as a fault");
+    must(html, /\.dk-banner\s*\{[\s\S]*?--dk-neutral-soft/, "the illustrative-data label is short and is not styled as a fault");
   });
 
   test('no screen shouts in block capitals', () => {
@@ -122,25 +123,25 @@ describe('Standard citations survive the trim', () => {
   test('the statements a reviewer actually needs are still there', () => {
     /* Terse is not the same as silent. Where a figure rests on a published
        rule, the rule is still named. */
-    const desk = fs.readFileSync(path.join(ROOT, 'ui/pages/desk.html'), 'utf8');
-    const deskJs = fs.readFileSync(path.join(ROOT, 'ui/js/desk.js'), 'utf8');
-    expect(desk).toMatch(/PCAF Part A, p\.126/);
-    expect(desk).toMatch(/B\.36\/10/);
-    expect(deskJs).toMatch(/PCAF scale 1–5, 1 is best/);
-    const metrics = fs.readFileSync(path.join(ROOT, 'src/domains/capital/domain/capital-metrics.js'), 'utf8');
-    expect(metrics).toMatch(/PCAF Part A p\.128/);
-    expect(metrics).toMatch(/PCAF Part A, p\.126/);
+    const desk = source('ui/pages/desk.html');
+    const deskJs = source('ui/js/desk.js');
+    must(desk, /PCAF Part A, p\.126/, "the statements a reviewer actually needs are still there");
+    must(desk, /B\.36\/10/, "the statements a reviewer actually needs are still there");
+    must(deskJs, /PCAF scale 1–5, 1 is best/, "the statements a reviewer actually needs are still there");
+    const metrics = source('src/domains/capital/domain/capital-metrics.js');
+    must(metrics, /PCAF Part A p\.128/, "the statements a reviewer actually needs are still there");
+    must(metrics, /PCAF Part A, p\.126/, "the statements a reviewer actually needs are still there");
   });
 });
 
 describe('Narrow viewports', () => {
-  const CSS = fs.readFileSync(path.join(ROOT, 'ui/css/responsive.css'), 'utf8');
-  const INDEX = fs.readFileSync(path.join(ROOT, 'ui/index.html'), 'utf8');
+  const CSS = source('ui/css/responsive.css');
+  const INDEX = source('ui/index.html');
 
   test('the corrections are loaded, and loaded last', () => {
     /* Last, so they win without raising the specificity of the rules they
        correct — which would make the next correction harder again. */
-    expect(INDEX).toContain('css/responsive.css');
+    must(INDEX, 'css/responsive.css', "the corrections are loaded, and loaded last");
     const sheets = [...INDEX.matchAll(/href="(css\/[a-z-]+\.css)"/g)].map(m => m[1]);
     expect(sheets[sheets.length - 1]).toBe('css/responsive.css');
   });
@@ -152,23 +153,23 @@ describe('Narrow viewports', () => {
        those grids have since been removed, so there is no live rule left to
        pin; what has to survive is the instruction, in the file whoever writes
        the next grid will open. */
-    expect(CSS).toMatch(/minmax\(min\(100%, 330px\), 1fr\)/);
-    expect(CSS).toMatch(/a bare pixel minimum is a\s*\n?\s*page-width bug/);
+    must(CSS, /minmax\(min\(100%, 330px\), 1fr\)/, "the auto-fit rule is written down where the next grid will be added");
+    must(CSS, /a bare pixel minimum is a\s*\n?\s*page-width bug/, "the auto-fit rule is written down where the next grid will be added");
   });
 
   test('grid and flex children are allowed to shrink', () => {
     /* A grid or flex item's min-width is `auto`, which refuses to shrink it
        below its content. Every remaining overflow measured was this shape. */
-    expect(CSS).toMatch(/\.extract-left-col[\s\S]{0,400}min-width: 0;/);
-    expect(CSS).toMatch(/\.card \{ min-width: 0; \}/);
+    must(CSS, /\.extract-left-col[\s\S]{0,400}min-width: 0;/, "grid and flex children are allowed to shrink");
+    must(CSS, /\.card \{ min-width: 0; \}/, "grid and flex children are allowed to shrink");
   });
 
   test('action rows wrap rather than setting the page width', () => {
-    expect(CSS).toMatch(/\.form-actions,[\s\S]{0,200}flex-wrap: wrap;/);
+    must(CSS, /\.form-actions,[\s\S]{0,200}flex-wrap: wrap;/, "action rows wrap rather than setting the page width");
   });
 
   test('every wide table has a scrolling container', () => {
     /* The page must never scroll sideways; the table may. */
-    expect(INDEX).toMatch(/<div class="table-scroll">\s*<table class="data-table" id="pf-top-table">/);
+    must(INDEX, /<div class="table-scroll">\s*<table class="data-table" id="pf-top-table">/, "every wide table has a scrolling container");
   });
 });

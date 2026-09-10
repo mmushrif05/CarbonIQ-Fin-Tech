@@ -17,6 +17,7 @@
 
 const metrics  = require('../src/domains/capital/domain/capital-metrics');
 const baseline = require('../src/domains/capital/infrastructure/capital-baseline');
+const { source, must, mustNot } = require('./helpers/ui-source');
 
 const BOOK = baseline.baselineBook();
 
@@ -183,26 +184,26 @@ describe('The five figures an anchor arrives for', () => {
 describe('The screen shows all five, and marks the two that are not measurements', () => {
   const fs = require('fs');
   const path = require('path');
-  const html   = fs.readFileSync(path.join(__dirname, '..', 'ui', 'index.html'), 'utf8');
-  const dashJs = fs.readFileSync(path.join(__dirname, '..', 'ui', 'js', 'dashboard.js'), 'utf8');
-  const css    = fs.readFileSync(path.join(__dirname, '..', 'ui', 'styles.css'), 'utf8');
+  const html   = source('ui/index.html');
+  const dashJs = source('ui/js/dashboard.js');
+  const css    = source('ui/styles.css');
   const render = dashJs.slice(dashJs.indexOf('function _renderAnchor'), dashJs.indexOf('function _splitRow'));
 
   test('all five figures are on the page', () => {
     for (const id of ['anch-total', 'anch-current', 'anch-pending', 'anch-pledged', 'anch-queue']) {
-      expect(html).toContain(`id="${id}"`);
+      must(html, `id="${id}"`, "all five figures are on the page");
     }
   });
 
   test('each carries its kind as a visible chip', () => {
     for (const cls of ['k-part', 'k-measured', 'k-pending', 'k-declared', 'k-open']) {
-      expect(html).toContain(cls);
-      expect(css).toContain(`.${cls}`);
+      must(html, cls, "each carries its kind as a visible chip");
+      must(css, `.${cls}`, "each carries its kind as a visible chip");
     }
   });
 
   test('the projected half is hatched, meaning what it means everywhere else', () => {
-    expect(css).toMatch(/\.anch-split-mark\.is-projected \{[\s\S]*?repeating-linear-gradient/);
+    must(css, /\.anch-split-mark\.is-projected \{[\s\S]*?repeating-linear-gradient/, "the projected half is hatched, meaning what it means everywhere else");
   });
 
   test('a pledge renders the absence, not a number', () => {
@@ -211,9 +212,9 @@ describe('The screen shows all five, and marks the two that are not measurements
   });
 
   test('the basis is switchable and the engine decides, not the browser', () => {
-    expect(html).toContain('id="cap-basis"');
-    expect(dashJs).toContain('attributionBasis: _attributionBasis');
-    expect(dashJs).not.toMatch(/outstanding\s*\/\s*commitment/);
+    must(html, 'id="cap-basis"', "the basis is switchable and the engine decides, not the browser");
+    must(dashJs, 'attributionBasis: _attributionBasis', "the basis is switchable and the engine decides, not the browser");
+    mustNot(dashJs, /outstanding\s*\/\s*commitment/, "the basis is switchable and the engine decides, not the browser");
   });
 
   test('a failed read blanks the anchor figures too', () => {
