@@ -298,6 +298,7 @@ router.get('/assessments', authenticate, defaultLimiter, paged('projectId', 'pol
   doc({ summary: 'List assessments — each bound to a policy, a BOQ revision and a reporting year' }),
   handle(async (req, res) => {
   if (req.query.limit !== undefined) {
+    /** @type {Record<string, any>} */
     const where = {};
     if (req.query.projectId) where.projectId = req.query.projectId;
     if (req.query.policyId) where.policyId = req.query.policyId;

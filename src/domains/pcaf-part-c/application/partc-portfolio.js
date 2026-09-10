@@ -132,10 +132,19 @@ async function rollUp(orgId, reportingYear, { fields = ROLLUP_FIELDS } = {}) {
     dqScope1and2: _scopeScore(a, 'scope1and2'),
     dqScope3:     _scopeScore(a, 'scope3'),
     premium:     _policyNum(policyById.get(a.policyId), 'premium'),
+    /* Box 6-4 (p.108) weights treaty reinsurance by ceded premium instead of
+       premium. The field is `reinsuranceCeded` on the policy; the roll-up
+       read `cededPremium`, which no schema defines — so `rows.some(...)`
+       below was false on every book however much treaty business it carried,
+       and the disclosure was silently never made. */
+    cededPremium: _policyNum(policyById.get(a.policyId), 'reinsuranceCeded'),
     projectCost: _policyNum(policyById.get(a.policyId), 'projectCost'),
     gifa_m2:     _policyNum(policyById.get(a.policyId), 'gifa_m2'),
     isRestatement:       !!(a.restatement && a.restatement.isRestatement),
-    lockedAt:            a.lockedAt
+    lockedAt:            a.lockedAt,
+    /* Filled in below, once the book's total is known. Declared here so the
+       row has one shape rather than growing a field halfway down the file. */
+    shareOfConstructionPct: 0
   })).sort((x, y) => y.construction_kgCO2e - x.construction_kgCO2e);
 
   const construction = rows.reduce((n, r) => n + r.construction_kgCO2e, 0);
@@ -366,7 +375,7 @@ async function improvementPlan(orgId, reportingYear) {
       const a = byId.get(r.assessmentId);
       const headroom = Math.max(r.dataQualityScore - BEST_ACHIEVABLE_SCORE, 0);
       // Actions come from the assessment's own register, not from a template.
-      const actions = (a.limitations || [])
+      const actions = ((a && a.limitations) || [])
         .filter(l => l.severity === 'material')
         .map(l => l.message);
       return {

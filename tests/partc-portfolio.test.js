@@ -314,6 +314,48 @@ describe('Portfolio — the disclosed data-quality score', () => {
     expect(Math.round(byEmissions * 100) / 100).not.toBe(4.8);
   });
 
+  /* Box 6-4 (p.108): treaty reinsurance weights by ceded premium instead of
+     premium. The roll-up read `cededPremium` off a row that never carried it —
+     the policy field is `reinsuranceCeded` — so the guard was false on every
+     book however much treaty business it held, and the disclosure was never
+     made. Nothing failed; a required line was simply absent. */
+  test('a book carrying ceded premium discloses the Box 6-4 weighting', async () => {
+    await lockOn('Negombo');
+    const before = await P.rollUp(ORG, 2026);
+    expect(before.dataQuality.disclosed.ceded).toBeNull();
+
+    /* A second project on the same year, this one carrying ceded premium. */
+    const client = book.clients[0];
+    const project = await registry.createProject(ORG, {
+      clientId: client.clientId, name: 'Treaty-reinsured warehouse',
+      gifa_m2: 1000, region: 'Sri Lanka', projectType: 'warehouse',
+      policies: [{
+        lineType: 'CAR', premium: 400000, reinsuranceCeded: 250000,
+        inception: '2026-03-01', expiry: '2027-03-01',
+      }],
+    });
+    const rev = await boq.createRevision(ORG, project.projectId, {
+      note: 'Tender', materials: withDist(fx.MATERIALS), demolitionItems: fx.DEMOLITION_ITEMS });
+    const { assessment } = await A.createAssessment(ORG, {
+      projectId: project.projectId, policyId: project.policies[0].policyId,
+      boqRevisionId: rev.revisionId,
+      siteInputs: { demolitionKm: 100, wasteDisposalKm: 40 },
+    });
+    await A.changeStatus(ORG, assessment.assessmentId, 'under_review');
+    await A.changeStatus(ORG, assessment.assessmentId, 'locked', { actor: 'Ceylon Insurance PLC' });
+
+    const after = await P.rollUp(ORG, 2026);
+    expect(after.dataQuality.disclosed.ceded).not.toBeNull();
+    expect(after.rows.some(r => r.cededPremium === 250000)).toBe(true);
+
+    /* And it is a different weighting from the premium one, which is the
+       whole reason the standard names it separately. */
+    const cededRows = after.rows.filter(r => r.cededPremium > 0);
+    expect(cededRows.length).toBe(1);
+    expect(after.dataQuality.disclosed.ceded.weighted)
+      .toBe(cededRows[0].dataQualityScore);
+  });
+
   test('there is no emission-weighted score to quote by mistake', async () => {
     await lockOn('Negombo');
     const r = await P.rollUp(ORG, 2026);
