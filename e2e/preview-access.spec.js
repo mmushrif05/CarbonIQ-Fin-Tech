@@ -14,6 +14,11 @@
 
 'use strict';
 
+/* `Auth` is declared in the page, not here: page.evaluate runs its function in
+   the browser's realm, where a top-level `const` in a classic script is a
+   global lexical binding rather than a property of `window`. */
+/* global Auth */
+
 const { test, expect } = require('@playwright/test');
 
 const address = () => `preview.${Date.now()}.${Math.floor(Math.random() * 1e6)}@bank.lk`;
