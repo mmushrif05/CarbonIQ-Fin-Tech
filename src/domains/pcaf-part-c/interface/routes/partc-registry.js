@@ -264,6 +264,11 @@ router.post('/projects/:projectId/boq/compare', authenticate, defaultLimiter,
     });
 
     const ctx = await registry.buildAssessmentContext(orgId, projectId, policy.policyId);
+    if (!ctx) return res.status(409).json({
+      error: 'NO_ASSESSMENT_CONTEXT',
+      message: 'The project and policy could not be resolved into an engine input, so the two revisions cannot be compared on a constant basis.',
+      remedy: 'Check the policy is still on this project and carries a premium, a sum insured and a period.',
+    });
 
     const comparison = boq.compareRevisions({
       from, to,

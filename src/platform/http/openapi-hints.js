@@ -33,6 +33,11 @@ const components = new Map();
  * describes, plus the identity and timestamps the service stamps on it.
  * With a `name` the schema is registered as a component and a `$ref` is
  * returned in its place.
+ *
+ * @param {any} joiSchema
+ * @param {string} idField
+ * @param {Record<string, any>} [extra] properties the service stamps on beyond the schema
+ * @param {string|null} [name] register as a component under this name and return a `$ref`
  */
 function recordOf(joiSchema, idField, extra = {}, name = null) {
   const base = convert(joiSchema);
@@ -46,7 +51,12 @@ function recordOf(joiSchema, idField, extra = {}, name = null) {
 /** The record schemas registered so far, for the generator. */
 function registeredComponents() { return Object.fromEntries(components); }
 
-/** `{ [key]: Item[] , ...extra }` — the shape a list route answers. */
+/**
+ * `{ [key]: Item[] , ...extra }` — the shape a list route answers.
+ * @param {string} key
+ * @param {any} itemSchema
+ * @param {Record<string, any>} [extra]
+ */
 function listOf(key, itemSchema, extra = {}) {
   return { type: 'object', required: [key], properties: { [key]: { type: 'array', items: itemSchema }, ...extra } };
 }

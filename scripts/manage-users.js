@@ -103,7 +103,7 @@ async function main() {
       name: flags.name,
       role: flags.role || 'esg_analyst',
       password: secret,
-      createdBy: 'cli',
+      createdBy: /** @type {any} */ ('cli'),
     });
     console.log(`\nCreated ${created.email} — ${created.roleLabel} in ${created.orgId}`);
     if (!flags.password) {

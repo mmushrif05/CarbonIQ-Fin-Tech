@@ -20,6 +20,7 @@ const {
 const borrowerCoaching   = require('../../../agents/borrower-coaching');
 const decisionReview     = require('../../../agents/decision-review');
 const { classifyDecisionTier, DECISION_TIERS } = require('../../../domain/decision-engine');
+const { asError } = require('../../../../../shared/types');
 
 const router = Router();
 
@@ -93,7 +94,8 @@ router.post('/coach',
         completedAt: run.completedAt,
         ...(run.error && { error: run.error })
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }
@@ -220,7 +222,8 @@ router.post('/triage',
         completedAt:   run.completedAt,
         ...(run.error && { error: run.error })
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }

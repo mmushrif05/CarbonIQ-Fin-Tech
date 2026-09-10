@@ -60,10 +60,6 @@ function checkEU(metrics) {
 }
 
 function checkHK(metrics) {
-  const intensity = metrics.buildingArea_m2 > 0
-    ? (metrics.totalEmission_tCO2e * 1000) / metrics.buildingArea_m2
-    : null;
-
   // Approximate score based on reduction achievement
   const score = Math.min(100, Math.round(metrics.reductionPct * 2.5 + (metrics.hasEPD ? 20 : 0)));
 

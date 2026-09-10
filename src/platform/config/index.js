@@ -7,6 +7,11 @@
  */
 
 const path = require('path');
+/* One coercion for every environment variable that is a number. `parseInt`
+   of an unset variable is NaN, and `NaN || 3001` happens to give the default —
+   which is the right answer arrived at by accident, and reads as though the
+   variable were being parsed. */
+const { intOr, numberOr } = require('../../shared/numbers');
 
 // Load .env in development (not in Netlify production)
 if (process.env.NODE_ENV !== 'production') {
@@ -20,7 +25,7 @@ if (process.env.NODE_ENV !== 'production') {
 const config = {
   // --- Server ---
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.FINTECH_API_PORT, 10) || 3001,
+  port: intOr(process.env.FINTECH_API_PORT, 3001),
   version: require('../../../package.json').version,
   apiEnabled: process.env.FINTECH_API_ENABLED !== 'false',
 
@@ -59,26 +64,26 @@ const config = {
   // --- API Keys ---
   apiKey: {
     salt: process.env.API_KEY_SALT || 'default-dev-salt-change-in-production',
-    defaultRateLimit: parseInt(process.env.API_KEY_DEFAULT_RATE_LIMIT, 10) || 100
+    defaultRateLimit: intOr(process.env.API_KEY_DEFAULT_RATE_LIMIT, 100)
   },
 
   // --- PCAF ---
   pcaf: {
     version: process.env.PCAF_VERSION || '3.0',
-    defaultAttribution: parseFloat(process.env.PCAF_DEFAULT_ATTRIBUTION) || 1.0
+    defaultAttribution: numberOr(process.env.PCAF_DEFAULT_ATTRIBUTION, 1.0)
   },
 
   // --- Taxonomy ---
   taxonomy: {
-    aseanVersion: parseInt(process.env.TAXONOMY_ASEAN_VERSION, 10) || 3,
-    euVersion: parseInt(process.env.TAXONOMY_EU_VERSION, 10) || 2024,
-    hkVersion: parseInt(process.env.TAXONOMY_HK_VERSION, 10) || 2024
+    aseanVersion: intOr(process.env.TAXONOMY_ASEAN_VERSION, 3),
+    euVersion: intOr(process.env.TAXONOMY_EU_VERSION, 2024),
+    hkVersion: intOr(process.env.TAXONOMY_HK_VERSION, 2024)
   },
 
   // --- Webhooks ---
   webhook: {
-    timeoutMs: parseInt(process.env.WEBHOOK_TIMEOUT_MS, 10) || 5000,
-    maxRetries: parseInt(process.env.WEBHOOK_MAX_RETRIES, 10) || 3,
+    timeoutMs: intOr(process.env.WEBHOOK_TIMEOUT_MS, 5000),
+    maxRetries: intOr(process.env.WEBHOOK_MAX_RETRIES, 3),
     signingSecret: process.env.WEBHOOK_SIGNING_SECRET || ''
   },
 
@@ -116,7 +121,7 @@ const config = {
     get databaseSchema() { return process.env.DATABASE_SCHEMA || ''; },
     get databaseSsl() { return process.env.DATABASE_SSL || ''; },
     get databasePoolMax() { return process.env.DATABASE_POOL_MAX || ''; },
-    get loanAmountThreshold() { return parseInt(process.env.LOAN_AMOUNT_THRESHOLD, 10) || 50_000_000; },
+    get loanAmountThreshold() { return intOr(process.env.LOAN_AMOUNT_THRESHOLD, 50_000_000); },
     get coreAppUrl() { return process.env.CORE_APP_URL || process.env.APP_URL || ''; },
     get anthropicApiKey() { return process.env.ANTHROPIC_API_KEY || ''; },
     /* Error reporting is inert without a DSN; /health says whether one is set, never what it is. */

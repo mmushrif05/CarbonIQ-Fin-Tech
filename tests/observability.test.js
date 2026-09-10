@@ -225,7 +225,10 @@ describe('The exit criterion: a 500 raises a report naming the request id, the o
     expect(src).toMatch(/await errors\.capture\(err, \{ req, status \}\)/);
     expect(src.indexOf('await errors.capture')).toBeLessThan(src.indexOf('res.status(status).json(body)'));
     const fn = fs.readFileSync(path.join(ROOT, 'netlify/functions/fintech-api.js'), 'utf8');
-    expect(fn).toMatch(/await errors\.capture\(err, \{ source: 'invocation'/);
+    /* The point is the `await`: a serverless container is frozen the moment
+       the response is sent, so a report that is merely started is a report
+       that never arrives. How the thrown value is narrowed is not the point. */
+    expect(fn).toMatch(/await errors\.capture\([^;]*source: 'invocation'/);
     const server = fs.readFileSync(path.join(ROOT, 'src/server.js'), 'utf8');
     expect(server).toMatch(/process\.on\('unhandledRejection'/);
     expect(server).toMatch(/process\.on\('uncaughtException'/);

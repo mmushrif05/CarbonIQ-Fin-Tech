@@ -57,7 +57,7 @@ async function authenticate(req, res, next) {
       });
     }
     if (!resolved.user) {
-      const why = SESSION_REFUSALS[resolved.reason] || SESSION_REFUSALS.unknown;
+      const why = SESSION_REFUSALS[resolved.reason || 'unknown'] || SESSION_REFUSALS.unknown;
       return res.status(401).json({ error: why.code, message: why.message });
     }
     req.user = resolved.user;

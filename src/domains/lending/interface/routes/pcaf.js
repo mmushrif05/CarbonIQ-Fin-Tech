@@ -22,6 +22,7 @@ const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
 const { generatePCAFOutput } = require('../../application/pcaf');
+const { maybeNumber } = require('../../../../shared/numbers');
 
 const router = Router();
 
@@ -45,9 +46,12 @@ router.get('/:projectId/pcaf',
         });
       }
 
-      const loanAmount        = parseFloat(req.query.loanAmount)        || null;
-      const projectValue      = parseFloat(req.query.projectValue)      || null;
-      const attributionFactor = parseFloat(req.query.attributionFactor) || null;
+      /* `parseFloat(x) || null` also turned a supplied zero into "not
+         supplied". `maybeNumber` answers undefined only for absence, so a
+         zero attribution factor is now a zero rather than a default. */
+      const loanAmount        = maybeNumber(req.query.loanAmount);
+      const projectValue      = maybeNumber(req.query.projectValue);
+      const attributionFactor = maybeNumber(req.query.attributionFactor);
 
       const result = generatePCAFOutput({
         emissionSummary,

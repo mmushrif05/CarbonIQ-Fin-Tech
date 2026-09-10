@@ -20,6 +20,7 @@ const {
   covenantReviewSchema
 } = require('../../schemas/agent');
 const covenantsAgent     = require('../../../agents/covenants');
+const { asError } = require('../../../../../shared/types');
 
 const router = Router();
 
@@ -102,7 +103,8 @@ router.post('/covenants',
           : undefined,
         ...(run.error && { error: run.error })
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {
         return res.status(503).json({ error: 'AI_SERVICE_UNAVAILABLE', message: 'Agentic AI is not configured.' });
       }

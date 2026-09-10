@@ -27,6 +27,7 @@ const crypto = require('crypto');
 const LEGACY_STAMP = 'SLGFT v2024';
 const TAXONOMY_STAMP = `SLGFT ${require('../../../shared/constants').TAXONOMY_LK.edition}`;
 const { TAXONOMY_LK } = require('../../../shared/constants');
+const { asError } = require('../../../shared/types');
 
 const CERT_VERSION = '1.0';
 
@@ -195,7 +196,8 @@ function verifyCertificate(cert) {
       message: valid ? 'Certificate hash verified successfully.' : 'Hash mismatch — document may have been tampered with.',
       computedHash: hash, storedHash: cert.hash,
     };
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     return { valid: false, message: `Verification failed: ${err.message}` };
   }
 }

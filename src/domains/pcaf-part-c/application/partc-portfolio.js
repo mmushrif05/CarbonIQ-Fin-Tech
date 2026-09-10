@@ -27,7 +27,7 @@
 
 const registry    = require('./partc-registry');
 const { fallback } = require('../../../platform/observability/logger');
-const { splitStageTotals, SCOPE_OF } = require('../domain/ghg-scopes');
+const { splitStageTotals } = require('../domain/ghg-scopes');
 const assessments = require('./partc-assessments');
 
 /** The best data-quality score a physical-activity assessment can reach. */

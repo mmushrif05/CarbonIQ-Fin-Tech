@@ -16,7 +16,6 @@
 
 'use strict';
 
-const config = require('../config');
 const { describe } = require('../ai/ai-status');
 
 /** What the calculation side can still do while the AI layer is down. */
@@ -59,7 +58,10 @@ function requireAI(_req, res, next) {
 }
 
 /** Kept so the gate can be reasoned about in tests without an HTTP round trip. */
-requireAI.state = () => ({ configured: !!config.anthropicApiKey, ...describe() });
+/* `describe()` already answers `configured`, so stating it here did nothing
+   but read as though it were the authority — the spread beside it overwrote
+   the explicit key on every call. */
+requireAI.state = () => ({ ...describe() });
 requireAI.UNAFFECTED = UNAFFECTED;
 
 module.exports = requireAI;

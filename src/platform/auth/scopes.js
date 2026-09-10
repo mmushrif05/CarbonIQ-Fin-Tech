@@ -139,11 +139,19 @@ function scopesForRoleLevel(level) {
  * The scopes a request's subject holds, or `null` for an unscoped key.
  * @returns {{scopes: string[]|null, unscoped: boolean}}
  */
+/**
+ * What this request holds. A discriminated union, not one shape with a
+ * nullable field: an unscoped key holds no list at all, and the caller has to
+ * deal with that branch before it can read one.
+ *
+ * @param {any} req
+ * @returns {{scopes: string[], unscoped: false}|{scopes: null, unscoped: true}}
+ */
 function heldScopes(req) {
   if (req.user) return { scopes: scopesForRoleLevel(req.user.roleLevel), unscoped: false };
   if (req.apiKey) {
     if (Array.isArray(req.apiKey.scopes)) return { scopes: req.apiKey.scopes.filter(s => SCOPES.includes(s)), unscoped: false };
-    return { scopes: null, unscoped: true };
+    return /** @type {{scopes: null, unscoped: true}} */ ({ scopes: null, unscoped: true });
   }
   return { scopes: [], unscoped: false };
 }

@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — the candidates a desk can actually act on
  *
@@ -80,7 +81,7 @@ function candidates(projects = [], investments = [], { accreditation = {}, weigh
          not always a verdict: flagged means eligible with something to verify. */
       gate: {
         verdict: gate.status,
-        eligible: gate.eligible !== false,
+        eligible: /** @type {any} */ (gate).eligible !== false,
         reasons: [...(gate.exclusions || []), ...(gate.flags || [])].map(r => r.detail),
       },
 

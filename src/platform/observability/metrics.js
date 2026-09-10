@@ -40,6 +40,7 @@ const state = {
   errors: { total: 0, byModule: new Map() },
 };
 
+/** @returns {{count: number, sum: number, buckets: number[], recent: number[]}} */
 function _hist() {
   return { count: 0, sum: 0, buckets: BUCKETS_MS.map(() => 0), recent: [] };
 }
@@ -109,8 +110,13 @@ function errorCaptured(module) {
   state.errors.byModule.set(m, (state.errors.byModule.get(m) || 0) + 1);
 }
 
-/** Wrap an async function so every call is observed under `verb`. */
+/**
+ * Wrap an async function so every call is observed under `verb`.
+ * @param {string} verb
+ * @param {Function} fn
+ */
 function timed(verb, fn) {
+  /** @this {any} */
   return async function timedCall(...args) {
     const t0 = process.hrtime.bigint();
     let ok = true;

@@ -20,6 +20,7 @@ const validate   = require('../../../../platform/http/validate');
 const { assessLimiter } = require('../../../../platform/http/rate-limit');
 const { assessNdcSdgAlignment } = require('../../application/ndc-sdg');
 const { generateCertificate, verifyCertificate } = require('../../domain/certificate');
+const { asError } = require('../../../../shared/types');
 
 const router = Router();
 
@@ -75,7 +76,8 @@ router.post('/assess',
         success: true,
         ...result,
       });
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.message && (
         err.message.includes('ANTHROPIC_API_KEY') ||
         err.message.includes('api_key')

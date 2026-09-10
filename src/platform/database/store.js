@@ -78,6 +78,7 @@ const memoryAdapter = require('./adapters/memory');
 const config = require('../config');
 const { timed } = require('../observability/metrics');
 const logger = require('../observability/logger');
+const { asError } = require('../../shared/types');
 const log = logger.for('platform/database/store');
 
 /** True when Firebase is configured and reachable. */
@@ -332,7 +333,8 @@ async function probe({ timeoutMs = 1500 } = {}) {
   try {
     const s = await db.migrate.status();
     schema = { applied: s.applied.length, pending: s.pending.length, drifted: s.drifted.length };
-  } catch (err) {
+  } catch (thrown) {
+    const err = asError(thrown);
     schema = { applied: 0, pending: null, drifted: null, error: err.code || 'status_failed' };
   }
   const out = { ...cap, reachable: true, schema };

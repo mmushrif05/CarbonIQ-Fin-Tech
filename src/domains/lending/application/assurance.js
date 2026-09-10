@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — external assurance, declared or absent
  *
@@ -117,7 +118,8 @@ async function save(orgId, input) {
     const d = (input && input.scopes && input.scopes[key]) || {};
     const status = STATES.includes(d.status) ? d.status : 'not_declared';
     if (status === 'assured' && d.level && !LEVELS.includes(d.level)) {
-      const err = new Error(`assurance level for ${key} must be one of: ${LEVELS.join(', ')}`);
+      const err = /** @type {import('../../../shared/types').AppError} */ (
+        new Error(`assurance level for ${key} must be one of: ${LEVELS.join(', ')}`));
       err.statusCode = 400;
       throw err;
     }

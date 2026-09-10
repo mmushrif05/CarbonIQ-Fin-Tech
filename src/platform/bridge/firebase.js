@@ -118,6 +118,12 @@ async function getProjectEntries(projectId) {
 
 async function getApiKeyData(hashedKey) {
   const db = getDatabase();
+  /* Every other reader here guards; this one did not, so on a deployment
+     without Firebase — which is every deployment holding its keys in
+     PostgreSQL — an API key lookup that reached this path threw
+     "Cannot read properties of null" and answered 500. "No such key" is the
+     true answer, and the caller already turns it into a 401. */
+  if (!db) return null;
   const snapshot = await db.ref(`fintech/apiKeys/${hashedKey}`).once('value');
   return snapshot.val();
 }

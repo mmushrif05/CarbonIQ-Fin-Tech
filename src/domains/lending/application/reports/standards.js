@@ -6,7 +6,6 @@
 'use strict';
 
 const integrity   = require('../../../../shared/report-integrity');
-const { _withGaps } = require('./common');
 
 // ---------------------------------------------------------------------------
 // Report Builders

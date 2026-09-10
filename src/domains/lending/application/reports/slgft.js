@@ -7,7 +7,6 @@
 
 const integrity   = require('../../../../shared/report-integrity');
 const { _entityScope } = require('./standards');
-const { _withGaps } = require('./common');
 
 // ---------------------------------------------------------------------------
 // Sri Lanka Green Finance Taxonomy (SLGFT) Report

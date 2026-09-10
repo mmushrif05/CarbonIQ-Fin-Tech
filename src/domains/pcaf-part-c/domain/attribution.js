@@ -1,3 +1,4 @@
+// @ts-check
 /**
  * CarbonIQ FinTech — PCAF Part C: Attribution Factor
  *
@@ -36,7 +37,7 @@ const BASES = {
  * @param {number} [policy.precision] - decimal places to round the factor to
  * @returns {Object} traced value
  */
-function attributionFactor(policy = {}) {
+function attributionFactor(policy = /** @type {any} */ ({})) {
   const basis = policy.basis || 'project_specific';
   const spec  = BASES[basis];
   const assumptions = [];

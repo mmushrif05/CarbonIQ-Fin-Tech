@@ -49,7 +49,7 @@ function seedMeta() {
 
 /**
  * Every project, and whether they are recorded or the shipped seed.
- * @returns {{projects: object[], source: 'recorded'|'seed', sample: boolean, meta: object}}
+ * @returns {Promise<{projects: object[], source: 'recorded'|'seed', sample: boolean, meta: object}>}
  */
 async function list(orgId) {
   const recorded = await store.list(COLLECTION, orgId).catch(fallback('gcf.pipeline.list', () => []));

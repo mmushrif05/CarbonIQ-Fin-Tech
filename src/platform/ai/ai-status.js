@@ -22,6 +22,7 @@
 'use strict';
 
 const config = require('../config');
+const { asError } = require('../../shared/types');
 
 /** An Anthropic key looks like sk-ant-… and is far longer than a UUID. */
 const KEY_SHAPE = /^sk-ant-[A-Za-z0-9_-]{20,}$/;
@@ -86,7 +87,8 @@ async function probe({ timeoutMs = 8000 } = {}) {
 
   let Anthropic;
   try { Anthropic = /** @type {any} */ (require('@anthropic-ai/sdk')); }
-  catch (err) {
+  catch (thrown) {
+    const err = asError(thrown);
     return { ...base, status: 'sdk_missing', ok: false,
       detail: `The Anthropic SDK could not be loaded: ${err.message}`,
       remedy: 'Reinstall dependencies (npm install) and redeploy.' };

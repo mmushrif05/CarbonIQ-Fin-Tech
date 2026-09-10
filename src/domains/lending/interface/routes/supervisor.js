@@ -29,6 +29,7 @@ const { createAndRunPipeline, resumePipeline } = require('../../application/supe
 const { getPipelineRun, listPipelineRuns }     = require('../../infrastructure/lending-store');
 const { buildSubject } = require('../../../../platform/auth/authorization');
 const { createPipelineSchema, resumePipelineSchema } = require('../schemas/supervisor');
+const { asError } = require('../../../../shared/types');
 
 const router = Router();
 
@@ -132,12 +133,13 @@ router.post('/pipeline',
         }),
       });
 
-    } catch (err) {
+    } catch (thrown) {
+      const err = asError(thrown);
       if (err.statusCode === 403) {
         return res.status(403).json({
           error:   'PIPELINE_AUTH_FAILED',
           message: err.message,
-          denied:  err.denied,
+          denied:  /** @type {any} */ (err).denied,
         });
       }
       if (err.message && err.message.includes('ANTHROPIC_API_KEY')) {

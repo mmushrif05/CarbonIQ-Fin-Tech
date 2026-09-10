@@ -37,6 +37,7 @@ const logger = require('./logger');
 const metrics = require('./metrics');
 const context = require('./context');
 const { release } = require('./release');
+const { asError } = require('../../shared/types');
 
 const log = logger.for('platform/observability/errors');
 const ROOT = path.resolve(__dirname, '..', '..', '..');
@@ -48,7 +49,9 @@ function parseDsn(dsn) {
   try {
     const u = new URL(dsn);
     const projectId = u.pathname.replace(/\/+$/, '').split('/').pop();
-    if (!u.username || !u.hostname || !/^\d+$/.test(projectId)) return null;
+    /* `.pop()` on an empty split is undefined, and `/^\d+$/.test(undefined)`
+       is false — so the guard already held. It now says so. */
+    if (!u.username || !u.hostname || !projectId || !/^\d+$/.test(projectId)) return null;
     const base = u.pathname.replace(/\/+$/, '').slice(0, -(projectId.length + 1));
     return { publicKey: u.username, host: u.host, protocol: u.protocol.replace(/:$/, ''), projectId, base };
   } catch (_) {
@@ -161,12 +164,15 @@ let transport = sendEnvelope;
  *
  * @param {Error} err
  * @param {{req?: object, status?: number, requestId?: string, source?: string}} [ctx]
- * @returns {Promise<{reported: boolean, eventId: string, module: string, reason?: string}>}
+ * @returns {Promise<{reported: boolean, eventId: string|null, module: string, reason?: string}>}
+ *   `eventId` is null only where the report could not even be built — there is
+ *   no event to quote, and saying so beats quoting one that does not exist.
  */
 async function capture(err, ctx = {}) {
   const error = err instanceof Error ? err : new Error(String(err));
   let event;
-  try { event = buildEvent(error, ctx); } catch (e) {
+  try { event = buildEvent(error, ctx); } catch (thrown) {
+    const e = asError(thrown);
     log.error({ err: error, buildError: e.message }, 'error report could not be built');
     return { reported: false, eventId: null, module: 'unknown', reason: 'build_failed' };
   }
@@ -192,7 +198,8 @@ async function capture(err, ctx = {}) {
     await transport(dsn, envelope);
     log.error({ ...entry, reported: true }, `${where}: ${error.message}`);
     return { reported: true, eventId: event.event_id, module: where };
-  } catch (e) {
+  } catch (thrown) {
+    const e = asError(thrown);
     log.error({ ...entry, reported: false, reason: e.code || 'transport_failed', reportError: e.message }, `${where}: ${error.message}`);
     return { reported: false, eventId: event.event_id, module: where, reason: e.code || 'transport_failed' };
   }

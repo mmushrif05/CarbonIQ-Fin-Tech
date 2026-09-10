@@ -152,19 +152,38 @@ describe('The type check covers the platform and never regresses (G1)', () => {
     expect(missing).toEqual([]);
   });
 
-  test('the domain files still to join are listed, and the list only shrinks', () => {
-    const domain = [...walk(path.join(ROOT, 'src/domains')), ...walk(path.join(ROOT, 'scripts'))];
-    const without = domain.filter(f => !/^\s*\/\/ @ts-check/m.test(fs.readFileSync(f, 'utf8').slice(0, 400))).map(rel).sort();
-    const listed = fs.readFileSync(path.join(ROOT, 'docs/TYPECHECK-WORKLIST.md'), 'utf8');
-    for (const f of without) expect(listed).toContain(f);
-    const checked = domain.length - without.length;
-    expect(checked).toBeGreaterThan(without.length);
+  /* The worklist's file list was exact and its counts were not — 362 claimed
+     against 428 actual, with the largest offender in the tree listed at zero
+     and therefore reading as ready to adopt. It is generated now
+     (`npm run docs:typecheck-worklist`) and this holds the document to the
+     tree in both directions: every unchecked file is listed, and every listed
+     file is genuinely unchecked. */
+  test('the worklist names exactly the files still to join', () => {
+    const src = walk(path.join(ROOT, 'src'));
+    const unchecked = src.filter(f => !/^\s*\/\/ @ts-check/m.test(fs.readFileSync(f, 'utf8').slice(0, 400))).map(rel).sort();
+    const doc = fs.readFileSync(path.join(ROOT, 'docs/TYPECHECK-WORKLIST.md'), 'utf8');
+    const listed = [...doc.matchAll(/^\| `([^`]+)` \| \d+ \|$/gm)].map(m => m[1]).sort();
+    expect(listed).toEqual(unchecked);
+
+    const claimed = Number((doc.match(/Checked: \*\*(\d+)\*\*/) || [])[1]);
+    expect(claimed).toBe(src.length - unchecked.length);
+    expect(claimed).toBeGreaterThan(unchecked.length);
   });
 
-  test('jsconfig checks by pragma, and the check is a CI job', () => {
-    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'jsconfig.json'), 'utf8'));
-    expect(cfg.compilerOptions.checkJs).toBe(false);
-    expect(cfg.compilerOptions.allowJs).toBe(true);
+  test('the check is strict everywhere it is affordable, and that cannot quietly relax', () => {
+    const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'jsconfig.json'), 'utf8')).compilerOptions;
+    expect(cfg.checkJs).toBe(false);
+    expect(cfg.allowJs).toBe(true);
+    /* `strict` was off, so a green type check proved very little. It is on
+       now with `noImplicitAny` the single exception — that one is 2,648
+       missing annotations and is the phase after this. Everything else,
+       including the null safety this codebase has shipped defects against
+       three times, is enforced. */
+    expect(cfg.strict).toBe(true);
+    expect(cfg.noImplicitAny).toBe(false);
+    for (const flag of ['noImplicitReturns', 'noFallthroughCasesInSwitch', 'noUnusedLocals']) {
+      expect({ flag, on: cfg[flag] }).toEqual({ flag, on: true });
+    }
     const ci = fs.readFileSync(path.join(ROOT, '.github/workflows/fintech-ci.yml'), 'utf8');
     expect(ci).toMatch(/npm run typecheck/);
   });
