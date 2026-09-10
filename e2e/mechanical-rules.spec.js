@@ -26,7 +26,12 @@
 const { test, expect } = require('@playwright/test');
 
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
-const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui', password: 'an end to end passphrase' };
+/* `mustChangePassword: false` because this caller chose the password and
+   already holds it. An account issued with one an administrator typed reaches
+   nothing but its own replacement, which is a journey of its own below rather
+   than a step in front of every other one. */
+const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
+  password: 'an end to end passphrase', mustChangePassword: false };
 
 async function signIn(page, request) {
   const res = await request.post('/v1/auth/users', { headers: { 'x-api-key': ADMIN_KEY }, data: USER });

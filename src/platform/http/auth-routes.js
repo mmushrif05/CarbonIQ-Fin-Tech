@@ -13,6 +13,18 @@
  * take the same work (`users.authenticate`). And a rate limit on sign-in is
  * per address as well as per caller, so guessing one account's password is
  * slow even from many places.
+ *
+ * Two refusals are named rather than generic, and only ever after the password
+ * has verified: a disabled account, and one whose access window has closed.
+ * Telling a customer on the morning after their trial ended that their
+ * password is wrong sends them to reset a password that was never the problem.
+ *
+ * `POST /v1/auth/bootstrap` is the second route on the surface that carries no
+ * session or key, and it exists because the first administrator could not
+ * otherwise be created on a serverless deployment: `npm run user:create` needs
+ * a shell beside the database, and Netlify has none. It is bounded three ways
+ * — it works only while the deployment holds no accounts at all, only when the
+ * operator has set a bootstrap token, and only once. See `bootstrapState()`.
  */
 
 'use strict';
@@ -30,6 +42,8 @@ const validate = require('./validate');
 const { doc, body, str, bool } = require('./openapi-hints');
 const handle = require('./async-handler');
 const { ROLES } = require('../../shared/policies');
+const config = require('../config');
+const crypto = require('crypto');
 const { emptyBody } = require('./validate').schemas;
 
 /** @typedef {import('../../shared/types').AppError} AppError */
@@ -74,18 +88,44 @@ const changeOwnSchema = Joi.object({
   currentPassword: Joi.string().max(512).required(),
   newPassword: passwordField,
 });
+const accessEndsAtField = Joi.string().max(40).allow(null, '')
+  .description('The instant after which this account may no longer sign in — an ISO date (2026-03-31, '
+    + 'meaning through the end of that day) or instant. This is what a trial is. Null is an ordinary '
+    + 'account with no end. It is not a role and not the active flag: a role says what someone may do, '
+    + 'a window says for how long, and disabling is a decision somebody took rather than a date that passed.');
 const createUserSchema = Joi.object({
   email: emailField,
   name: Joi.string().max(160).allow('', null),
   role: roleField.required(),
   password: passwordField,
   orgId: Joi.string().max(120).description('Defaults to the organisation of the account creating this one.'),
+  accessEndsAt: accessEndsAtField,
+  mustChangePassword: Joi.boolean().default(true)
+    .description('Whether the account must replace this password before it can reach anything else. '
+      + 'Defaults to true, because a password an administrator typed is the administrator\'s.'),
 });
 const patchUserSchema = Joi.object({
   role: roleField,
   active: Joi.boolean().description('Setting this false ends every session that account holds.'),
+  accessEndsAt: accessEndsAtField
+    .description('Extend a trial, end one now with an instant in the past, or send null to remove the '
+      + 'window entirely — which is how a trial becomes an ordinary account without changing its id, '
+      + 'its history or anything it recorded.'),
 }).min(1);
-const resetSchema = Joi.object({ newPassword: passwordField });
+const resetSchema = Joi.object({
+  newPassword: passwordField,
+  mustChangePassword: Joi.boolean().default(true)
+    .description('Defaults to true: an administrator resetting a password is issuing a temporary one.'),
+});
+const bootstrapSchema = Joi.object({
+  token: Joi.string().max(512).required()
+    .description('The value of ADMIN_BOOTSTRAP_TOKEN on this deployment.'),
+  email: emailField,
+  name: Joi.string().max(160).allow('', null),
+  password: passwordField,
+  orgId: Joi.string().max(120).required()
+    .description('The organisation this administrator, and everything they create, belongs to.'),
+});
 
 /** What a sign-in and `/me` both answer with. */
 const userShape = {
@@ -94,6 +134,16 @@ const userShape = {
     id: { type: 'string' }, email: { type: 'string' }, name: { type: 'string' },
     orgId: { type: 'string' }, role: { type: 'string' }, roleLabel: { type: 'string' },
     roleLevel: { type: 'integer' }, active: { type: 'boolean' },
+    accessEndsAt: { type: ['string', 'null'], format: 'date-time' },
+    mustChangePassword: { type: 'boolean' },
+    access: {
+      type: 'object',
+      properties: {
+        state: { type: 'string', enum: ['open', 'ending', 'ended', 'disabled'] },
+        endsAt: { type: ['string', 'null'], format: 'date-time' },
+        daysRemaining: { type: ['integer', 'null'] },
+      },
+    },
     createdAt: { type: 'string', format: 'date-time' },
     lastLoginAt: { type: ['string', 'null'], format: 'date-time' },
   },
@@ -106,6 +156,87 @@ async function assertSomeoneExists() {
     'This deployment has no accounts yet, so nobody can sign in.',
     'Create the first administrator: npm run user:create -- --email you@bank.lk --org <org-id> --role admin');
 }
+
+/**
+ * Whether the first administrator can still be created over HTTP, and why not
+ * where the answer is no.
+ *
+ * Three conditions, all of which must hold. The deployment must be able to
+ * persist. It must hold **no accounts at all** — not "no administrators", not
+ * "none in this organisation": one account anywhere closes the window for
+ * good, so the route cannot be used to add a second administrator to a live
+ * deployment. And the operator must have set a token, because a bootstrap
+ * route that works without one is an open door on every deployment that has
+ * not been set up yet, which is exactly the state this route exists to serve.
+ *
+ * The token itself never reaches the wire, here or on `/health`.
+ */
+async function bootstrapState() {
+  if (!store.capability().writable) {
+    return { available: false, reason: 'This deployment cannot persist anything.',
+      remedy: 'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.' };
+  }
+  if (await users.countUsers() > 0) {
+    return { available: false, reason: 'This deployment already has accounts, so the first-run window has closed.',
+      remedy: 'An administrator creates further accounts: POST /v1/auth/users.' };
+  }
+  if (!config.runtime.adminBootstrapToken) {
+    return { available: false, reason: 'No bootstrap token is set on this deployment.',
+      remedy: 'Set ADMIN_BOOTSTRAP_TOKEN to a long random value, redeploy, and call this route with it.' };
+  }
+  return { available: true, reason: null, remedy: null };
+}
+
+/** Compared in constant time, so the answer's timing says nothing about the token. */
+function tokenMatches(supplied) {
+  const expected = Buffer.from(String(config.runtime.adminBootstrapToken));
+  const got = Buffer.from(String(supplied == null ? '' : supplied));
+  if (expected.length === 0 || expected.length !== got.length) return false;
+  return crypto.timingSafeEqual(expected, got);
+}
+
+router.get('/bootstrap',
+  doc({ summary: 'Whether the first administrator can still be created here',
+    description: 'Answers before anyone tries, so an operator setting a deployment up is told which '
+      + 'of the three conditions is not met rather than guessing from a refusal. Never carries the token.',
+    response: body({ available: bool, reason: str, remedy: str }, ['available']) }),
+  handle(async (req, res) => {
+    res.json(await bootstrapState());
+  }));
+
+router.post('/bootstrap',
+  signInLimiter,
+  validate({ body: bootstrapSchema }),
+  doc({ summary: 'Create the first administrator',
+    description: 'The one route that creates an account without one. It works only while the '
+      + 'deployment holds no accounts at all, only when ADMIN_BOOTSTRAP_TOKEN is set, and therefore '
+      + 'only once — the account it creates closes the window. Afterwards it answers 410.',
+    status: 201,
+    response: { type: 'object', properties: { user: userShape } } }),
+  handle(async (req, res) => {
+    const state = await bootstrapState();
+    if (!state.available) {
+      /* 410 rather than 403: the window is not shut against this caller, it is
+         gone. A 403 invites someone to go looking for a credential that would
+         open it, and there is not one. */
+      throw fail(410, 'BOOTSTRAP_CLOSED', state.reason, state.remedy);
+    }
+    if (!tokenMatches(req.body.token)) {
+      throw fail(401, 'BOOTSTRAP_TOKEN_INVALID', 'That is not this deployment\'s bootstrap token.',
+        'The value is ADMIN_BOOTSTRAP_TOKEN in the deployment environment.');
+    }
+    const user = await users.createUser({
+      orgId: req.body.orgId,
+      email: req.body.email,
+      name: req.body.name,
+      role: 'admin',
+      password: req.body.password,
+      createdBy: 'bootstrap',
+      /* The person typing it chose it, so it is already theirs. */
+      mustChangePassword: false,
+    });
+    res.status(201).json({ user });
+  }));
 
 router.post('/login',
   signInLimiter,
@@ -133,9 +264,19 @@ router.post('/login',
         'Set DATABASE_URL. GET /v1/partc/storage reports what this deployment can hold.');
     }
     await assertSomeoneExists();
-    const user = await users.authenticate(req.body.email, req.body.password);
+    const { user, reason } = await users.authenticate(req.body.email, req.body.password);
     if (!user) {
-      /* One answer for a wrong address and a wrong password. */
+      /* One answer for a wrong address and a wrong password. The two named
+         refusals below are only reachable once the password has verified, so
+         neither tells an attacker which addresses exist. */
+      if (reason === 'disabled') {
+        throw fail(403, 'ACCOUNT_DISABLED', 'This account has been disabled.',
+          'Contact your administrator.');
+      }
+      if (reason === 'access_ended') {
+        throw fail(403, 'ACCESS_ENDED', 'Access for this account has reached its end date.',
+          'Contact your administrator to extend it.');
+      }
       throw fail(401, 'SIGN_IN_FAILED', 'That email address and password do not match an active account.');
     }
     const issued = await sessions.issue(user, {
@@ -187,11 +328,13 @@ router.post('/password',
   }),
   handle(async (req, res) => {
     if (!req.user) throw fail(400, 'NOT_A_SESSION', 'Only a signed-in account can change its own password.');
-    const confirmed = await users.authenticate(req.user.email, req.body.currentPassword);
+    const { user: confirmed } = await users.authenticate(req.user.email, req.body.currentPassword);
     if (!confirmed) throw fail(401, 'SIGN_IN_FAILED', 'The current password is not correct.');
-    await users.setPassword(req.user.uid, req.body.newPassword);
+    /* This is the moment the password becomes the account holder's, so it is
+       the moment `mustChangePassword` is cleared — not a moment sooner. */
+    const updated = await users.setPassword(req.user.uid, req.body.newPassword, { mustChangePassword: false });
     await sessions.revokeAllForUser(req.user.uid);
-    const issued = await sessions.issue(confirmed, { userAgent: req.headers['user-agent'], ip: req.ip });
+    const issued = await sessions.issue(updated, { userAgent: req.headers['user-agent'], ip: req.ip });
     res.json({ changed: true, ...issued });
   }));
 
@@ -210,7 +353,13 @@ router.get('/users',
 router.post('/users',
   authenticate,
   validate({ body: createUserSchema }),
-  doc({ summary: 'Create an account', status: 201, response: { type: 'object', properties: { user: userShape } } }),
+  doc({ summary: 'Create an account',
+    description: 'Requires the admin scope. Give `accessEndsAt` to issue a trial — an account that '
+      + 'signs in normally until a date agreed in advance and then cannot, which is a different fact '
+      + 'from an account somebody disabled and is told to the customer differently. The password is '
+      + 'the administrator\'s until the account replaces it; until then it can reach its own password '
+      + 'and nothing else.',
+    status: 201, response: { type: 'object', properties: { user: userShape } } }),
   handle(async (req, res) => {
     const user = await users.createUser({
       ...req.body,
@@ -236,6 +385,16 @@ router.patch('/users/:userId',
          sessions, or "they are disabled" is only true at their next sign-in. */
       if (req.body.active === false) await sessions.revokeAllForUser(target.id);
     }
+    if (req.body.accessEndsAt !== undefined) {
+      user = await users.setAccessEndsAt(target.id, req.body.accessEndsAt || null);
+      /* No revoke here, and that is the point rather than an omission. The
+         window is read from the account on every request, so a session held
+         under a window that has just closed stops working on its next call and
+         `sessions.resolve()` removes the row then — with `ACCESS_ENDED` as the
+         reason. Deleting the rows here would also stop it, one request sooner,
+         and the customer would be told their session "is not recognised",
+         which sends them to sign in again to discover the real answer. */
+    }
     res.json({ user });
   }));
 
@@ -249,9 +408,14 @@ router.post('/users/:userId/password',
   handle(async (req, res) => {
     const target = await users.getUser(req.params.userId);
     if (!target || target.orgId !== req.orgId) throw fail(404, 'USER_NOT_FOUND', 'No such account in this organisation.');
-    await users.setPassword(target.id, req.body.newPassword);
+    const user = await users.setPassword(target.id, req.body.newPassword,
+      { mustChangePassword: req.body.mustChangePassword !== false });
     const ended = await sessions.revokeAllForUser(target.id);
-    res.json({ reset: true, sessionsEnded: ended });
+    res.json({ reset: true, sessionsEnded: ended, user });
   }));
 
 module.exports = router;
+/* `/health` reports whether the first-run window is still open, because an
+   operator who cannot sign in needs to know which of "nobody exists yet" and
+   "the token is not set" they are looking at. A boolean, never the token. */
+module.exports.bootstrapState = bootstrapState;

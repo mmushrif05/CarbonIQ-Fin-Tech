@@ -46,6 +46,7 @@ npm run user:create -- --email you@bank.lk --org <org-id> --role admin   # the f
 npm run user:list        # every account, its role and standing
 npm run user:role   -- <email> --role <role>
 npm run user:passwd -- <email>    # resets, and ends every session that account holds
+npm run user:trial  -- <email> --until YYYY-MM-DD | --end | --open   # the access window
 npm run user:disable -- <email>   # and ends every session
 npm run user:enable  -- <email>
 npm run docs:scopes      # Regenerate docs/API-SCOPES.md from the router
@@ -133,9 +134,10 @@ fails the build when a path in this table is not one the router serves.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `POST` | `/v1/auth/login` | Sign in — the only route that needs no credential |
+| `POST` | `/v1/auth/login` | Sign in — one of the three routes that need no credential |
+| `GET/POST` | `/v1/auth/bootstrap` | Whether the first administrator can still be created here · create them. Open only while the deployment holds no accounts at all |
 | `POST` | `/v1/auth/logout` · `GET /v1/auth/me` · `POST /v1/auth/password` | The caller's own session and password |
-| `GET/POST/PATCH` | `/v1/auth/users` | Accounts — requires the `admin` scope |
+| `GET/POST/PATCH` | `/v1/auth/users` | Accounts, their roles and their access windows — requires the `admin` scope |
 | `GET` | `/health` | Health check — no auth required |
 | `POST` | `/v1/assess` | Full project carbon assessment (AI-powered) |
 | `GET/POST` | `/v1/projects` | List projects / create project |
@@ -209,6 +211,14 @@ Before H1 there was no user authentication at all. The sign-in screen was a form
 
 **Accounts and sessions are rows in the one database** (`users`, `sessions`, migration `0004`). Passwords are scrypt from Node's standard library, parameters carried in the stored form so the cost can be raised without invalidating anyone, upgraded at the next sign-in. A failed sign-in is byte-identical whether the address exists or not, and costs the same time, because otherwise the form is an address oracle. A session is a row rather than a signed token, so signing out is a delete and "sign that person out now" is a control that works; what is stored is the SHA-256 of the token, so a database read cannot impersonate anyone. Two clocks end it: idle at 60 minutes, absolute at 12 hours.
 
+**Admin sign-in, and trial access for customers who have been allowed in (`docs/AUTHENTICATION.md`).** Three facts about an account, deliberately kept apart: the **role** says what it may do, the **standing** (`active`) says whether an administrator switched it off, and the **access window** (`accessEndsAt`) says until when. A trial is the third — an instant after which the account can no longer sign in — and it is neither of the other two on purpose. Folding it into the role would mean a trial customer could not hold the same role as a paying one, so on the day they convert their permissions would change for a reason nobody recorded; folding it into `active` would tell a customer whose trial ran out that their account "has been disabled", which sends them to the wrong person. So `ACCOUNT_DISABLED` and `ACCESS_ENDED` are separate refusals, both reachable **only after the password has verified** — a wrong password on an ended account is still the generic `401 SIGN_IN_FAILED`, so neither names an address that exists. A bare date means *through the end of that day*, because "the trial runs to the 31st" read as midnight cuts a customer off a day early. **A session never outlives the window it was issued under**: `sessions.issue()` caps the absolute clock at `accessEndsAt`, and the window is re-read from the account on every request exactly as the role is, so ending a trial ends it now rather than at that customer's next sign-in. Removing the window converts a trial to an ordinary account — same id, same history, no second account.
+
+**A password an administrator typed is the administrator's.** An issued account carries `mustChangePassword` and is refused at the door with `403 PASSWORD_CHANGE_REQUIRED` on every route but three (`GET /v1/auth/me`, `POST /v1/auth/password`, `POST /v1/auth/logout`) until the holder replaces it. Advisory enforcement — a banner asking nicely — leaves the whole surface open. `POST /v1/auth/password` is the moment the password becomes theirs, so it is the moment the flag clears; an administrator resetting one sets it again.
+
+**The first administrator can now be created on a deployment with no shell (`POST /v1/auth/bootstrap`).** `npm run user:create` needs a terminal beside the database and a serverless deployment has none, so on production the first account could not be created at all. The route is bounded three ways: the deployment must hold **no accounts at all** (not "no administrators" — one account anywhere closes the window for good), `ADMIN_BOOTSTRAP_TOKEN` must be set and match in constant time, and the store must be writable. `GET /v1/auth/bootstrap` says whether the window is open and which condition failed where it is not; `/health` reports `configured.bootstrap` as a boolean; neither ever carries the token. Once shut it answers **410 Gone** rather than 403, because a 403 invites someone to look for a credential that would open it and there is not one. The sign-in screen offers the form only where the server says the window is open.
+
+**The Accounts screen (`ui/pages/accounts.html`, `ui/js/accounts.js`)** is administrators only — the nav entry is hidden below `admin` and every route behind it requires the `admin` scope, so hiding it is a courtesy rather than the control. Role, standing and window are three columns and never one, and `windowCell()` and `standingCell()` are two functions so neither can borrow the other's wording. A password is shown once, where it can be read: the server stores a hash and can never read it back, so one not rendered there is one nobody has.
+
 **A role is on the account, and the scopes follow from it.** `scopesForRoleLevel()` maps the six roles in `src/shared/policies.js` onto the five scopes, which is how all 154 routes acquired role enforcement without a decorator on any of them — closing gaps B1 and B2, which E2's scope work had left open. The role is read from the account on every request rather than kept in the session, so a demotion or a disabled account takes effect on the next call rather than at the next sign-in. `npm run user:create` makes the first administrator; there is no self-service sign-up, and a deployment with nobody in it says so on `/health` and in the sign-in refusal.
 
 **The browser holds no API key.** `GET /v1/ui-config.js` serves the build stamp and nothing that authenticates; `UI_API_KEY` remains an ordinary integration key. `X-API-Key` is unchanged for bank systems, with two adjustments: `X-Actor` is still believed, because a bank's own system is the only thing that knows which of its people pressed the button, and is now recorded `actorVerified: false` beside a name the server established; and a key issued before scopes existed is held to `read` rather than waved through with every scope on every route, with `ALLOW_UNSCOPED_KEYS=true` as a migration window that `config.validate()` refuses in production.
@@ -260,6 +270,7 @@ Copy `.env.example` to `.env` and fill in:
 | `SENTRY_DSN` · `SENTRY_ENVIRONMENT` | Error reporting; inert when unset, `/health` says which (see `docs/OBSERVABILITY.md`) |
 | `JOBS_TOKEN` · `JOBS_URL` · `JOBS_INLINE` | The job queue's background worker token and site URL; inline forces a job to run inside its request (see `docs/JOBS.md`) |
 | `ASSURANCE_MODE` | `self_declared` (default) or `verified` — the deployment-wide operating mode (see `docs/ASSURANCE-MODE.md`) |
+| `ADMIN_BOOTSTRAP_TOKEN` | Lets the first administrator be created at `POST /v1/auth/bootstrap` on a deployment with no shell; the window closes with the account it creates (see `docs/AUTHENTICATION.md`) |
 | `ALLOW_UNSCOPED_KEYS` | A migration window for keys issued before scopes existed; refused in production (see `docs/AUTHENTICATION.md`) |
 | `ALLOW_PREVIEW_MIGRATIONS` | Lets a deploy preview run migrations, which it otherwise refuses because it may share the production database |
 | `NODE_ENV` | `development` or `production` |

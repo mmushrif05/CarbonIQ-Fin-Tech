@@ -253,6 +253,22 @@ function actorOf(req) {
  * actor is named, and the route's scope is enforced. One exit, so no route
  * can be authenticated without being authorised.
  */
+/**
+ * The three routes an account holding an administrator's password may reach.
+ *
+ * A password an administrator typed is the administrator's: they know it, they
+ * may have sent it over email, and until it is replaced it is not evidence of
+ * who is at the keyboard. So an account carrying `mustChangePassword` can see
+ * who it is, change its password, and sign out — and nothing else. Advisory
+ * enforcement (a banner asking nicely) would leave every other route open,
+ * which is the whole surface.
+ */
+const PASSWORD_CHANGE_ALLOWED = Object.freeze([
+  'GET /v1/auth/me',
+  'POST /v1/auth/password',
+  'POST /v1/auth/logout',
+]);
+
 function admit(req, res, next) {
   req.actor = actorOf(req);
   /* The organisation a request belongs to, whichever credential carried it.
@@ -268,6 +284,14 @@ function admit(req, res, next) {
       error: 'NO_ORGANISATION',
       message: 'This credential is not attached to an organisation, so it can read nothing.',
       remedy: 'Reissue the key against an organisation, or sign in with an account that has one.',
+    });
+  }
+  if (req.user && req.user.mustChangePassword
+      && !PASSWORD_CHANGE_ALLOWED.includes(`${String(req.method).toUpperCase()} ${routePattern(req)}`)) {
+    return res.status(403).json({
+      error: 'PASSWORD_CHANGE_REQUIRED',
+      message: 'This account is still using the password an administrator issued.',
+      remedy: 'Choose your own password first: POST /v1/auth/password.',
     });
   }
   return enforceScope(req, res, next);
@@ -289,4 +313,5 @@ function normaliseScopes(input) {
 module.exports = {
   SCOPES, UI_KEY_SCOPES, DEV_KEY_SCOPES, OVERRIDES, DEFAULT_BY_METHOD,
   requiredScope, requiredScopeFor, routePattern, heldScopes, scopesForRoleLevel, enforceScope, admit, actorOf, normaliseScopes,
+  PASSWORD_CHANGE_ALLOWED,
 };

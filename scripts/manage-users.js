@@ -56,9 +56,14 @@ const HELP = `
 Accounts that can sign in to CarbonIQ.
 
   create   --email <address> --org <org-id> [--role <role>] [--name "Full Name"] [--password <secret>]
+           [--until <YYYY-MM-DD>]  an access window — this is what a trial is
+           [--own-password]        the account holder chose this password, so it need not be replaced
   list     [--org <org-id>]
   role     <email> --role <role>
   passwd   <email> [--password <secret>]
+  trial    <email> --until <YYYY-MM-DD>   an access window: signs in normally until then, and not after
+  trial    <email> --end                  close the window now, and end every session
+  trial    <email> --open                 remove the window — a trial becomes an ordinary account
   disable  <email>
   enable   <email>
 
@@ -83,8 +88,20 @@ async function findOrFail(email) {
   return user;
 }
 
+/* An access window is its own column. It is not the standing and not the role,
+   and a reader scanning this list has to be able to tell "trial ends Friday"
+   from "somebody switched this off". */
+const windowOf = (u) => {
+  const a = u.access || { state: u.active === false ? 'disabled' : 'open' };
+  if (a.state === 'open') return '           ';
+  if (a.state === 'ended') return `ended ${String(a.endsAt || '').slice(0, 10)}`;
+  if (a.state === 'ending') return `until ${String(a.endsAt || '').slice(0, 10)}`;
+  return '           ';
+};
+
 const line = u => `${u.email.padEnd(32)} ${String(u.role).padEnd(22)} ${u.orgId.padEnd(14)} `
-  + `${u.active ? 'active  ' : 'disabled'} ${u.lastLoginAt ? `last in ${u.lastLoginAt.slice(0, 10)}` : 'never signed in'}`;
+  + `${u.active ? 'active  ' : 'disabled'} ${windowOf(u)} `
+  + `${u.lastLoginAt ? `last in ${u.lastLoginAt.slice(0, 10)}` : 'never signed in'}`;
 
 async function main() {
   if (!command || command === 'help' || argv.includes('--help')) {
@@ -104,8 +121,16 @@ async function main() {
       role: flags.role || 'esg_analyst',
       password: secret,
       createdBy: /** @type {any} */ ('cli'),
+      accessEndsAt: flags.until || null,
+      /* The operator typed this password, so it is theirs until the account
+         replaces it. `--own-password` is for the first administrator, who is
+         creating their own account and has already chosen it. */
+      mustChangePassword: !argv.includes('--own-password'),
     });
     console.log(`\nCreated ${created.email} — ${created.roleLabel} in ${created.orgId}`);
+    if (created.accessEndsAt) {
+      console.log(`  Access ends ${created.accessEndsAt} — ${created.access.daysRemaining} day(s) from now.`);
+    }
     if (!flags.password) {
       console.log(`\n  Password: ${secret}`);
       console.log('\n  Shown once. It is stored only as a scrypt hash and cannot be read back.');
@@ -145,10 +170,36 @@ async function main() {
   if (command === 'passwd') {
     const user = await findOrFail(email);
     const secret = flags.password || generatePassword();
-    await users.setPassword(user.id, secret);
+    await users.setPassword(user.id, secret, { mustChangePassword: !argv.includes('--own-password') });
     const ended = await sessions.revokeAllForUser(user.id);
     console.log(`\nPassword reset for ${user.email}. ${ended} session(s) ended.`);
     if (!flags.password) console.log(`\n  Password: ${secret}\n\n  Shown once.\n`);
+    return;
+  }
+
+  if (command === 'trial') {
+    const user = await findOrFail(email);
+    if (!flags.until && !argv.includes('--end') && !argv.includes('--open')) {
+      console.error('trial needs one of --until <YYYY-MM-DD>, --end or --open.');
+      process.exit(1);
+    }
+    /* --end closes the window at this instant rather than deleting it: the
+       date it closed is part of the account's history, and "when did their
+       access stop" is a question somebody asks later. */
+    const when = argv.includes('--open') ? null
+      : argv.includes('--end') ? new Date().toISOString()
+        : flags.until;
+    const updated = await users.setAccessEndsAt(user.id, when);
+    const ended = users.accessHasEnded(updated) ? await sessions.revokeAllForUser(user.id) : 0;
+    if (!updated.accessEndsAt) {
+      console.log(`${updated.email} has no access window — an ordinary account.`);
+    } else if (users.accessHasEnded(updated)) {
+      console.log(`${updated.email} access ended ${updated.accessEndsAt}.`
+        + (ended ? ` ${ended} session(s) ended.` : ''));
+    } else {
+      console.log(`${updated.email} may sign in until ${updated.accessEndsAt}`
+        + ` — ${updated.access.daysRemaining} day(s).`);
+    }
     return;
   }
 

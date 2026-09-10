@@ -17,7 +17,12 @@ const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
 
 /* One account, created through the API the same way an administrator would.
    409 means a previous test in this run already made it. */
-const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui', password: 'an end to end passphrase' };
+/* `mustChangePassword: false` because this caller chose the password and
+   already holds it. An account issued with one an administrator typed reaches
+   nothing but its own replacement, which is a journey of its own below rather
+   than a step in front of every other one. */
+const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
+  password: 'an end to end passphrase', mustChangePassword: false };
 
 async function ensureAccount(request) {
   const res = await request.post('/v1/auth/users', { headers: { 'x-api-key': ADMIN_KEY }, data: USER });
@@ -96,4 +101,34 @@ test('no page scrolls sideways at a phone width', async ({ page, request }) => {
         { message: `${id} at 430px`, timeout: 10_000 })
       .toBeLessThanOrEqual(430);
   }
+});
+
+test('an account issued with an administrator’s password must replace it before it reaches anything', async ({ page, request }) => {
+  /* The server enforces this at the door; what only a browser can show is
+     that the sign-in screen takes them to the form rather than to a dashboard
+     whose every request comes back 403. */
+  const email = `trial-${Date.now()}@customer.lk`;
+  const issued = 'the password an administrator typed';
+  const own = 'a password only they know';
+
+  const made = await request.post('/v1/auth/users', {
+    headers: { 'x-api-key': ADMIN_KEY },
+    data: { email, role: 'esg_analyst', orgId: 'ui', password: issued },
+  });
+  expect(made.status()).toBe(201);
+  expect((await made.json()).user.mustChangePassword).toBe(true);
+
+  await page.goto('/');
+  await page.fill('#login-email', email);
+  await page.fill('#login-password', issued);
+  await page.locator('#login-btn').click();
+
+  /* Not the app. The change form, and the sign-in card out of the way. */
+  await expect(page.locator('#login-change')).toBeVisible();
+  await expect(page.locator('#sidebar')).toBeHidden();
+
+  await page.fill('#change-new', own);
+  await page.fill('#change-again', own);
+  await page.locator('#change-btn').click();
+  await expect(page.locator('#sidebar')).toBeVisible();
 });

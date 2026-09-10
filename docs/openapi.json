@@ -4110,6 +4110,364 @@
         ]
       }
     },
+    "/v1/auth/bootstrap": {
+      "get": {
+        "operationId": "getAuthBootstrap",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Whether the first administrator can still be created here",
+        "description": "Answers before anyone tries, so an operator setting a deployment up is told which of the three conditions is not met rather than guessing from a refusal. Never carries the token. No credential required.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "available": {
+                      "type": "boolean"
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "remedy": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "available"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "available": {
+                          "type": "boolean"
+                        },
+                        "reason": {
+                          "type": "string"
+                        },
+                        "remedy": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "available"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": []
+      },
+      "post": {
+        "operationId": "postAuthBootstrap",
+        "tags": [
+          "auth"
+        ],
+        "summary": "Create the first administrator",
+        "description": "The one route that creates an account without one. It works only while the deployment holds no accounts at all, only when ADMIN_BOOTSTRAP_TOKEN is set, and therefore only once — the account it creates closes the window. Afterwards it answers 410. No credential required.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "maxLength": 512,
+                    "description": "The value of ADMIN_BOOTSTRAP_TOKEN on this deployment."
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 254,
+                    "description": "The address the account was created with. Case is not significant."
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 160
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 512,
+                    "description": "At least 12 characters."
+                  },
+                  "orgId": {
+                    "type": "string",
+                    "maxLength": 120,
+                    "description": "The organisation this administrator, and everything they create, belongs to."
+                  }
+                },
+                "required": [
+                  "token",
+                  "email",
+                  "password",
+                  "orgId"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "user": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "email": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "orgId": {
+                          "type": "string"
+                        },
+                        "role": {
+                          "type": "string"
+                        },
+                        "roleLabel": {
+                          "type": "string"
+                        },
+                        "roleLevel": {
+                          "type": "integer"
+                        },
+                        "active": {
+                          "type": "boolean"
+                        },
+                        "accessEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "mustChangePassword": {
+                          "type": "boolean"
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "ending",
+                                "ended",
+                                "disabled"
+                              ]
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "daysRemaining": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "lastLoginAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "orgId": {
+                              "type": "string"
+                            },
+                            "role": {
+                              "type": "string"
+                            },
+                            "roleLabel": {
+                              "type": "string"
+                            },
+                            "roleLevel": {
+                              "type": "integer"
+                            },
+                            "active": {
+                              "type": "boolean"
+                            },
+                            "accessEndsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mustChangePassword": {
+                              "type": "boolean"
+                            },
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "ending",
+                                    "ended",
+                                    "disabled"
+                                  ]
+                                },
+                                "endsAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "daysRemaining": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "lastLoginAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": []
+      }
+    },
     "/v1/auth/login": {
       "post": {
         "operationId": "postAuthLogin",
@@ -4204,6 +4562,43 @@
                         "active": {
                           "type": "boolean"
                         },
+                        "accessEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "mustChangePassword": {
+                          "type": "boolean"
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "ending",
+                                "ended",
+                                "disabled"
+                              ]
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "daysRemaining": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4269,6 +4664,43 @@
                             },
                             "active": {
                               "type": "boolean"
+                            },
+                            "accessEndsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mustChangePassword": {
+                              "type": "boolean"
+                            },
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "ending",
+                                    "ended",
+                                    "disabled"
+                                  ]
+                                },
+                                "endsAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "daysRemaining": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
                             },
                             "createdAt": {
                               "type": "string",
@@ -4486,6 +4918,43 @@
                         "active": {
                           "type": "boolean"
                         },
+                        "accessEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "mustChangePassword": {
+                          "type": "boolean"
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "ending",
+                                "ended",
+                                "disabled"
+                              ]
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "daysRemaining": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -4543,6 +5012,43 @@
                             },
                             "active": {
                               "type": "boolean"
+                            },
+                            "accessEndsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mustChangePassword": {
+                              "type": "boolean"
+                            },
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "ending",
+                                    "ended",
+                                    "disabled"
+                                  ]
+                                },
+                                "endsAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "daysRemaining": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
                             },
                             "createdAt": {
                               "type": "string",
@@ -4797,6 +5303,43 @@
                           "active": {
                             "type": "boolean"
                           },
+                          "accessEndsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time"
+                          },
+                          "mustChangePassword": {
+                            "type": "boolean"
+                          },
+                          "access": {
+                            "type": "object",
+                            "properties": {
+                              "state": {
+                                "type": "string",
+                                "enum": [
+                                  "open",
+                                  "ending",
+                                  "ended",
+                                  "disabled"
+                                ]
+                              },
+                              "endsAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "daysRemaining": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              }
+                            }
+                          },
                           "createdAt": {
                             "type": "string",
                             "format": "date-time"
@@ -4855,6 +5398,43 @@
                               "active": {
                                 "type": "boolean"
                               },
+                              "accessEndsAt": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "format": "date-time"
+                              },
+                              "mustChangePassword": {
+                                "type": "boolean"
+                              },
+                              "access": {
+                                "type": "object",
+                                "properties": {
+                                  "state": {
+                                    "type": "string",
+                                    "enum": [
+                                      "open",
+                                      "ending",
+                                      "ended",
+                                      "disabled"
+                                    ]
+                                  },
+                                  "endsAt": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "format": "date-time"
+                                  },
+                                  "daysRemaining": {
+                                    "type": [
+                                      "integer",
+                                      "null"
+                                    ]
+                                  }
+                                }
+                              },
                               "createdAt": {
                                 "type": "string",
                                 "format": "date-time"
@@ -4901,7 +5481,7 @@
           "auth"
         ],
         "summary": "Create an account",
-        "description": "Requires the `admin` scope.",
+        "description": "Requires the admin scope. Give `accessEndsAt` to issue a trial — an account that signs in normally until a date agreed in advance and then cannot, which is a different fact from an account somebody disabled and is told to the customer differently. The password is the administrator's until the account replaces it; until then it can reach its own password and nothing else. Requires the `admin` scope.",
         "x-scope": "admin",
         "parameters": [
           {
@@ -4950,6 +5530,19 @@
                     "type": "string",
                     "maxLength": 120,
                     "description": "Defaults to the organisation of the account creating this one."
+                  },
+                  "accessEndsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40,
+                    "description": "The instant after which this account may no longer sign in — an ISO date (2026-03-31, meaning through the end of that day) or instant. This is what a trial is. Null is an ordinary account with no end. It is not a role and not the active flag: a role says what someone may do, a window says for how long, and disabling is a decision somebody took rather than a date that passed."
+                  },
+                  "mustChangePassword": {
+                    "type": "boolean",
+                    "description": "Whether the account must replace this password before it can reach anything else. Defaults to true, because a password an administrator typed is the administrator's.",
+                    "default": true
                   }
                 },
                 "required": [
@@ -5007,6 +5600,43 @@
                         "active": {
                           "type": "boolean"
                         },
+                        "accessEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "mustChangePassword": {
+                          "type": "boolean"
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "ending",
+                                "ended",
+                                "disabled"
+                              ]
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "daysRemaining": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -5061,6 +5691,43 @@
                             },
                             "active": {
                               "type": "boolean"
+                            },
+                            "accessEndsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mustChangePassword": {
+                              "type": "boolean"
+                            },
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "ending",
+                                    "ended",
+                                    "disabled"
+                                  ]
+                                },
+                                "endsAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "daysRemaining": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
                             },
                             "createdAt": {
                               "type": "string",
@@ -5158,6 +5825,14 @@
                   "active": {
                     "type": "boolean",
                     "description": "Setting this false ends every session that account holds."
+                  },
+                  "accessEndsAt": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 40,
+                    "description": "Extend a trial, end one now with an instant in the past, or send null to remove the window entirely — which is how a trial becomes an ordinary account without changing its id, its history or anything it recorded."
                   }
                 }
               }
@@ -5222,6 +5897,43 @@
                         "active": {
                           "type": "boolean"
                         },
+                        "accessEndsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time"
+                        },
+                        "mustChangePassword": {
+                          "type": "boolean"
+                        },
+                        "access": {
+                          "type": "object",
+                          "properties": {
+                            "state": {
+                              "type": "string",
+                              "enum": [
+                                "open",
+                                "ending",
+                                "ended",
+                                "disabled"
+                              ]
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "daysRemaining": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ]
+                            }
+                          }
+                        },
                         "createdAt": {
                           "type": "string",
                           "format": "date-time"
@@ -5276,6 +5988,43 @@
                             },
                             "active": {
                               "type": "boolean"
+                            },
+                            "accessEndsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time"
+                            },
+                            "mustChangePassword": {
+                              "type": "boolean"
+                            },
+                            "access": {
+                              "type": "object",
+                              "properties": {
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "open",
+                                    "ending",
+                                    "ended",
+                                    "disabled"
+                                  ]
+                                },
+                                "endsAt": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "format": "date-time"
+                                },
+                                "daysRemaining": {
+                                  "type": [
+                                    "integer",
+                                    "null"
+                                  ]
+                                }
+                              }
                             },
                             "createdAt": {
                               "type": "string",
@@ -5351,6 +6100,11 @@
                     "minLength": 12,
                     "maxLength": 512,
                     "description": "At least 12 characters."
+                  },
+                  "mustChangePassword": {
+                    "type": "boolean",
+                    "description": "Defaults to true: an administrator resetting a password is issuing a temporary one.",
+                    "default": true
                   }
                 },
                 "required": [

@@ -34,6 +34,9 @@ const SESSION_REFUSALS = Object.freeze({
   idle: { code: 'SESSION_IDLE', message: 'This session ended after a period of inactivity. Sign in again.' },
   expired: { code: 'SESSION_EXPIRED', message: 'This session has reached its maximum age. Sign in again.' },
   disabled: { code: 'ACCOUNT_DISABLED', message: 'This account is no longer active. Contact your administrator.' },
+  /* Distinct from disabled on purpose: a trial that reached its end and an
+     account somebody switched off send a customer to different people. */
+  access_ended: { code: 'ACCESS_ENDED', message: 'Access for this account has reached its end date. Contact your administrator to extend it.' },
   missing: { code: 'SESSION_INVALID', message: 'No session token was supplied.' },
 });
 

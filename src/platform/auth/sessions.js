@@ -18,6 +18,12 @@
  * that has been alive too long however busy it looks, which is what bounds
  * the damage from a token taken and used quietly.
  *
+ * A third bound is not a clock but a date somebody agreed: an account with an
+ * access window — a trial — never receives a session that outlives it. A
+ * twelve-hour session issued an hour before a window closes would leave the
+ * customer working for eleven hours past the end of their trial, and a trial
+ * that keeps working after it ends is not a trial.
+ *
  * The role is not kept in the session. It is read from the account on every
  * request, so disabling someone or lowering their role takes effect on their
  * next call rather than at their next sign-in. That is one extra read of a
@@ -58,6 +64,12 @@ function mint() {
 async function issue(user, { userAgent = null, ip = null } = {}) {
   const token = mint();
   const now = Date.now();
+  /* Whichever comes first: the absolute clock, or the end of this account's
+     access window. */
+  const windowEnds = user && user.accessEndsAt ? new Date(user.accessEndsAt).getTime() : null;
+  const absolute = Number.isFinite(windowEnds)
+    ? Math.min(now + ABSOLUTE_MS, /** @type {number} */ (windowEnds))
+    : now + ABSOLUTE_MS;
   const record = {
     id: digest(token),
     userId: user.id,
@@ -66,7 +78,7 @@ async function issue(user, { userAgent = null, ip = null } = {}) {
     createdAt: new Date(now).toISOString(),
     lastSeenAt: new Date(now).toISOString(),
     idleExpiresAt: new Date(now + IDLE_MS).toISOString(),
-    expiresAt: new Date(now + ABSOLUTE_MS).toISOString(),
+    expiresAt: new Date(absolute).toISOString(),
     /* Recorded so a person can recognise their own sessions; never matched
        against, because a changing user agent is not evidence of anything. */
     userAgent: userAgent ? String(userAgent).slice(0, 200) : null,
@@ -105,6 +117,13 @@ async function resolve(token) {
     await store.remove(COLLECTION, PARTITION, id).catch(logger.fallback('sessions.remove.disabled', undefined));
     return { user: null, reason: 'disabled' };
   }
+  /* The window is read from the account on every request, for the same reason
+     the role is: an administrator who ends a trial now has ended it now, not
+     at that customer's next sign-in. */
+  if (users.accessHasEnded(user, now)) {
+    await store.remove(COLLECTION, PARTITION, id).catch(logger.fallback('sessions.remove.accessEnded', undefined));
+    return { user: null, reason: 'access_ended' };
+  }
 
   if (now - new Date(session.lastSeenAt).getTime() > TOUCH_AFTER_MS) {
     await store.patch(COLLECTION, PARTITION, id, {
@@ -123,6 +142,10 @@ async function resolve(token) {
       roleLevel: role.level,
       roleLabel: role.label,
       organizationId: user.orgId,
+      /* Carried onto the request so `admit()` can hold an account to its own
+         password until an administrator's password has been replaced. */
+      mustChangePassword: user.mustChangePassword === true,
+      accessEndsAt: user.accessEndsAt || null,
     },
     session: { id, expiresAt: session.expiresAt },
   };

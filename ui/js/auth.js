@@ -72,6 +72,10 @@ const Auth = (() => {
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
     'taxonomy':       30,   // auditor+
+    /* Administrators only. The nav entry is hidden below this level and every
+       route behind the screen requires the `admin` scope, so hiding it is a
+       courtesy rather than the control. */
+    'accounts':      100,
   };
 
   const STORAGE_KEY = 'carboniq_session';
@@ -133,8 +137,27 @@ const Auth = (() => {
       organisation: user.orgId || '',
       initials,
       loginTime: new Date().toISOString(),
+      /* Two facts about the account that the shell has to act on rather than
+         only display: a password an administrator issued reaches nothing but
+         its own replacement, and an access window that is running out is
+         something the holder should see before the day it closes. */
+      mustChangePassword: user.mustChangePassword === true,
+      accessEndsAt: (user.access && user.access.endsAt) || user.accessEndsAt || null,
+      accessDaysRemaining: (user.access && user.access.daysRemaining) ?? null,
     });
     return true;
+  }
+
+  /** True while the account is still on the password an administrator typed. */
+  function mustChangePassword() {
+    const session = _getSession();
+    return Boolean(session && session.mustChangePassword);
+  }
+
+  /** Days left on this account's access window, or null where there is none. */
+  function accessDaysRemaining() {
+    const session = _getSession();
+    return session && session.accessDaysRemaining != null ? session.accessDaysRemaining : null;
   }
 
   /** The token every request carries, or null. */
@@ -259,6 +282,8 @@ const Auth = (() => {
     sessionEnded,
     logout,
     canAccessPage,
+    mustChangePassword,
+    accessDaysRemaining,
     applyNavVisibility,
     updateUserBadge,
     enforceAuth,
