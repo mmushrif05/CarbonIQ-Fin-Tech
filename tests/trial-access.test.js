@@ -244,6 +244,32 @@ describe('Only an administrator issues or ends access', () => {
 });
 
 describe('The first administrator, on a deployment with no shell', () => {
+  test('a refusal to persist carries the store\'s own reason, not a guess', async () => {
+    /* "Set DATABASE_URL" is the wrong instruction for most of the ways this
+       can be false — a forced backend that is unreachable is fixed by
+       changing STORAGE_BACKEND, and setting a database while the force stands
+       changes nothing. The seam knows which case it is; the refusal says so. */
+    const store = require('../src/platform/database/store');
+    const cap = jest.spyOn(store, 'capability').mockReturnValue({
+      mode: 'none', durable: false, writable: false, transactional: false, chosen: true,
+      reason: 'STORAGE_BACKEND=blobs, but Netlify Blobs is not reachable from this runtime.',
+      remedy: 'Unset STORAGE_BACKEND to fall back to automatic selection.',
+    });
+    try {
+      const res = await login('boss@bank.lk').expect(503);
+      expect(res.body.error).toBe('STORAGE_UNAVAILABLE');
+      expect(res.body.message).toContain('Netlify Blobs is not reachable');
+      expect(res.body.remedy).toContain('STORAGE_BACKEND');
+      /* And it no longer sends an operator to a variable that would not help. */
+      expect(res.body.remedy).not.toMatch(/Set DATABASE_URL/);
+
+      const boot = await api().get('/v1/auth/bootstrap').expect(200);
+      expect(boot.body.reason).toContain('Netlify Blobs is not reachable');
+    } finally {
+      cap.mockRestore();
+    }
+  });
+
   test('the window is shut once accounts exist, and says so rather than refusing', async () => {
     const res = await api().get('/v1/auth/bootstrap').expect(200);
     expect(res.body.available).toBe(false);
