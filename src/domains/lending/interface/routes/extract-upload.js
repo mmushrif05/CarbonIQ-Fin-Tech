@@ -25,6 +25,7 @@ const { extractLimiter } = require('../../../../platform/http/rate-limit');
 const config       = require('../../../../platform/config');
 const validate = require('../../../../platform/http/validate');
 const { extractUploadSchema } = require('../schemas/extract');
+const { doc, body, str } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -35,6 +36,8 @@ router.post('/upload',
   authenticate,
   extractLimiter,
   validate({ body: extractUploadSchema }),
+  doc({ summary: 'Upload a BOQ PDF once and reuse its file id across extractions',
+    response: body({ fileId: str, filename: str, expiresAt: str }, ['fileId']) }),
   async (req, res, next) => {
     try {
       if (!config.anthropicApiKey) {

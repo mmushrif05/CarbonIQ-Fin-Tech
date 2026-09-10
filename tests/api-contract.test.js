@@ -295,3 +295,88 @@ describe('The exit criterion: a client generated from the document alone drives 
     expect(read.body.data.job.artifact.url).toBe(`/v1/jobs/${job.body.job.jobId}/artifact`);
   });
 });
+
+/**
+ * Every documented reply is checked against a real one.
+ *
+ * The document typed 13% of its replies: 146 of 162 operations answered
+ * `{ type: 'object', additionalProperties: true }`, and `POST
+ * /v1/pcaf/part-c/assess` — the operation that produces the regulatory figure
+ * — was among them. A bank generating a client could construct every request
+ * and understand one reply in eight.
+ *
+ * Writing schemas fixes that only if they are true, and a wrong contract is
+ * worse than a vague one: it sends a client author to build against a shape
+ * the API does not answer with. So every GET that needs no path parameter is
+ * called for real and its body validated against what the document claims.
+ *
+ * The schemas are written as a **floor**: `additionalProperties` is true and
+ * `required` is short, so a route may answer with more than is named. What
+ * this proves is that everything named is there and is the type claimed —
+ * which is what a generated client actually depends on.
+ */
+describe('The documented reply is the reply (F2)', () => {
+  /** Every GET operation with no path parameter to invent. */
+  const gettable = () => {
+    const out = [];
+    for (const [oaPath, methods] of Object.entries(spec.paths)) {
+      const op = methods.get;
+      if (!op) continue;
+      if (/\{/.test(oaPath)) continue;                 // needs an id we do not have
+      if (/openapi\.json|ui-config|metrics/.test(oaPath)) continue;  // not JSON bodies
+      out.push({ oaPath, op });
+    }
+    return out;
+  };
+
+  test('there are enough of them for this to mean something', () => {
+    expect(gettable().length).toBeGreaterThan(20);
+  });
+
+  test('each one answers the shape the document gives it', async () => {
+    const failures = [];
+    let checked = 0;
+    for (const { oaPath, op } of gettable()) {
+      let req = request(app).get(oaPath);
+      if ((op.security || []).some(sec => sec.ApiKeyAuth) && KEY) req = req.set('X-API-Key', KEY);
+      const res = await req;
+
+      /* A route that refuses, or answers something other than JSON, is not
+         evidence about its success schema either way. What must never happen
+         is a 200 whose body contradicts the document. */
+      if (res.status >= 300) continue;
+      if (!/application\/json/.test(String(res.headers['content-type'] || ''))) continue;
+
+      const schema = responseSchema('GET', oaPath, res.status);
+      if (!schema || !(schema.properties || schema.allOf || schema.$ref)) continue;
+      checked += 1;
+      const why = conforms(schema, res.body);
+      if (why) failures.push(`GET ${oaPath}: ${why}`);
+    }
+    expect(checked).toBeGreaterThan(25);
+    expect(failures).toEqual([]);
+  }, 60000);
+
+  test('the share of operations documenting their reply only goes up', () => {
+    let documented = 0;
+    let total = 0;
+    for (const methods of Object.values(spec.paths)) {
+      for (const op of Object.values(methods)) {
+        const ok = op.responses['2XX'] || op.responses['200'] || op.responses['201'];
+        if (!ok) continue;
+        total += 1;
+        const schema = ok.content && ok.content['application/json']
+          && ok.content['application/json'].schema;
+        /* `allOf` is how a paged list is composed — the list shape and the
+           `page` object — so it counts as documented just as a plain
+           `properties` block does. */
+        if (schema && (schema.properties || schema.$ref || schema.allOf)) documented += 1;
+      }
+    }
+    /* Every one. It was 19 of 157 when this was written, and the floor is the
+       whole surface now: an operation that loses its response schema is an
+       operation a generated client stops understanding, so this is an equality
+       rather than a threshold that could quietly slip. */
+    expect({ total, documented }).toEqual({ total, documented: total });
+  });
+});

@@ -22,10 +22,20 @@ const underwritingAgent  = require('../../../agents/underwriting');
 const screeningAgent     = require('../../../agents/screening');
 const originationAgent   = require('../../../agents/origination');
 const { asError } = require('../../../../../shared/types');
+const { doc, body, str, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.post('/underwrite',
+  doc({ summary: 'Underwriting agent — live carbon tax rates and green bond pricing',
+    description: 'The steps carry every tool call with its full input and output, which is '
+      + "what makes the trail an audit trail: an agent's conclusion is only checkable if what "
+      + 'it was told is recoverable.',
+    response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_UNDERWRITE),
@@ -104,6 +114,11 @@ router.post('/underwrite',
 // ---------------------------------------------------------------------------
 
 router.post('/originate',
+  doc({ summary: 'Origination agent', response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_ORIGINATE),
@@ -167,6 +182,12 @@ router.post('/originate',
 // ---------------------------------------------------------------------------
 
 router.post('/screen',
+  doc({ summary: 'Screening agent — a single call, sized for speed over depth',
+    response: body({
+      success: bool, runId: str, agentType: str, status: str, result: orNull(obj),
+      steps: arr(), tokensUsed: obj, metadata: obj, createdAt: str,
+      completedAt: orNull(str), error: str,
+    }, ['success', 'runId', 'status']) }),
   authenticate,
   agentLimiter,
   authorize(PERMISSIONS.AGENT_SCREEN),

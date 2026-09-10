@@ -5,6 +5,9 @@
 
 'use strict';
 
+const { body, str, num, obj, orNull, arr } =
+  require('../../../../../platform/http/openapi-hints');
+
 /**
  * The registers, minus the calculation trace.
  *
@@ -83,4 +86,30 @@ function _toEngineInput(body) {
   };
 }
 
-module.exports = { _publicRegisters, _shapeResult, _toEngineInput };
+/**
+ * The shape `_shapeResult` answers with, for the document.
+ *
+ * The three tiers are separate keys and there is no key holding their sum.
+ * `rollup.construction` is **the PCAF figure** (A4 + A5, mandatory);
+ * `rollup.useStage` is the optional B1/B4/B7 line, policy-gated and never
+ * summed with construction; `beyondPcafAnnex` is the voluntary annex and is
+ * never in the PCAF figure at all. A client that added two of them would be
+ * reporting a number no standard defines.
+ */
+const engineResultSchema = body({
+  standard: obj, scopeModel: obj, policy: obj, summary: obj,
+  modules: body({ a4: num, a5: num, a5Breakdown: obj, b1: num, b4: num, b7: num }),
+  paretoVitalFew: arr(), a4MaterialMass_t: orNull(num),
+  beyondPcafAnnex: body({ total: num, breakdown: arr(), scopeNote: str }),
+  deMinimis: obj,
+  /* PCAF requires a score beside any disclosed figure, so the scoring travels
+     with the figures rather than being fetched separately. One score per
+     project, decided by the option used — never an average, and never
+     rendered as a fraction. */
+  dataQuality: body({ option: str, score: num }),
+  dqScoring: orNull(obj), dqStatement: orNull(str),
+  disclosureNote: str, sensitivity: obj, vehicle: obj,
+  registers: obj, generatedAt: str,
+}, ['summary', 'modules', 'dataQuality']);
+
+module.exports = { _publicRegisters, _shapeResult, _toEngineInput, engineResultSchema };

@@ -24,10 +24,18 @@ const { checkAllTaxonomies } = require('../../domain/taxonomy');
 /* The Sri Lanka bands are governed, not hardcoded: they resolve from the
    master baseline table, and the answer carries which baseline it used. */
 const baselines = require('../../../baseline/application/registry');
+const { doc, body, str, obj } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.get('/:projectId/taxonomy',
+  doc({ summary: 'EU, ASEAN, Hong Kong, Singapore and Sri Lanka alignment for one project',
+    description: 'The five frameworks answer different questions and nothing here is summed '
+      + 'into a single verdict. The Sri Lanka bands are regional judgement under governance, '
+      + 'not a taxonomy threshold — the SLGFT sets no absolute figure per unit area.',
+    response: body({
+      projectId: str, projectMetrics: obj, taxonomyAlignment: obj,
+    }, ['projectId', 'taxonomyAlignment']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,

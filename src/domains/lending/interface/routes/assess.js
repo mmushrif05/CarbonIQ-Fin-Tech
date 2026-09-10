@@ -19,10 +19,17 @@ const { assessLimiter } = require('../../../../platform/http/rate-limit');
 const { extractRequestSchema } = require('../schemas/extract');
 const { extractMaterials } = require('../../application/extract');
 const { asError } = require('../../../../shared/types');
+const { doc, body, str, bool, obj, orNull } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.post('/',
+  doc({ summary: 'Full project carbon assessment',
+    description: 'The top 20% of materials driving 80% of emissions is pre-computed by the '
+      + 'core engine; this reads those results rather than recomputing them.',
+    response: body({
+      success: bool, projectName: orNull(str), assessment: obj,
+    }, ['success', 'assessment']) }),
   authenticate,
   validate({ body: extractRequestSchema }),
   assessLimiter,

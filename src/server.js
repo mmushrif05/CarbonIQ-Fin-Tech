@@ -33,6 +33,7 @@ const jobQueue = require('./platform/jobs/queue');
 /* The job handlers: the engines, registered on the platform's queue. */
 require('./jobs');
 const v1Router = require('./platform/http/router');
+const { doc, body, str, obj, orNull } = require('./platform/http/openapi-hints');
 
 /* Express ships no types of its own; the app is untyped here, typed by the routes' Joi schemas at the boundary. */
 const app = /** @type {any} */ (express());
@@ -93,7 +94,18 @@ app.use(express.static(path.resolve(__dirname, '..', config.runtime.uiDir)));
  * and DEPLOY_ID on every build, so the running commit is reported here: one
  * request settles which of the two it is, without guessing.
  */
-app.get('/health', async (_req, res) => {
+app.get('/health',
+  doc({ summary: 'Health check — no credential required',
+    description: 'Reports the running commit, because "the fix did not work" and "the fix has '
+      + 'not been deployed" look identical from a browser and the second is far more common. '
+      + 'The storage block says which store was **asked for** as well as which is running: '
+      + '"the variable never took" and "the store is unreachable" look identical too. Names '
+      + 'and yes/no only — no value can reach the wire.',
+    response: body({
+      status: str, service: str, version: str, commit: orNull(str),
+      configured: obj, storage: obj, observability: obj,
+    }, ['status', 'service']) }),
+  async (_req, res) => {
   /* COMMIT_REF is a build-time variable and is absent from the function's
      runtime environment, so reading it here answered "unknown" on every
      production deploy — the diagnostic built to tell a broken fix from an

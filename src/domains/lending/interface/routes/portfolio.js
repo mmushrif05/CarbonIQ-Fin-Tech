@@ -18,10 +18,16 @@ const { portfolioLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
 const engine = require('../../../../platform/bridge/engine');
 const { aggregatePortfolio } = require('../../domain/portfolio');
+const { doc, body, str, num } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.get('/',
+  doc({ summary: 'Portfolio carbon risk aggregation across the key\'s projects',
+    response: body({
+      totalProjects: num, totalFinancedEmissions_tCO2e: num,
+      message: str, aggregatedAt: str,
+    }, ['totalProjects']) }),
   authenticate,
   portfolioLimiter,
   async (req, res, next) => {

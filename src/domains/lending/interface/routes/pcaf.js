@@ -23,10 +23,13 @@ const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const engine = require('../../../../platform/bridge/engine');
 const { generatePCAFOutput } = require('../../application/pcaf');
 const { maybeNumber } = require('../../../../shared/numbers');
+const { doc, body, str, obj } = require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
 router.get('/:projectId/pcaf',
+  doc({ summary: 'PCAF financed-emissions output for a project',
+    response: body({ projectId: str, pcaf: obj }, ['projectId']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,

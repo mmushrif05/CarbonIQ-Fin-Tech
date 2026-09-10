@@ -9,7 +9,7 @@
 
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, bool, obj, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { reportGenerateSchema } = require('../schemas/reports');
 const { generateReport, buildPDF } = require('../../application/reports');
@@ -22,7 +22,11 @@ const router = Router();
 // POST /v1/reports/generate
 // ---------------------------------------------------------------------------
 
-router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'] }),
+router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305, TCFD, IFRS S2 or SLGFT report — JSON or PDF', body: reportGenerateSchema, produces: ['application/pdf'],
+  description: 'A report built without a portfolio is stamped SAMPLE DATA on its face, and '
+    + 'every report carries a `gaps` list of what it could not state. Entity-level narrative '
+    + 'comes from recorded disclosures or is reported absent with the clause that requires it.',
+  response: body({ success: bool, report: obj }, ['report']) }),
   validate({ body: reportGenerateSchema }), async (req, res, next) => {
     try {
       const { type, period, format, orgName, portfolioData, slgftData } = req.body;
@@ -51,7 +55,8 @@ router.post('/generate', authenticate, doc({ summary: 'Generate a PCAF, GRI 305,
 // GET /v1/reports/types  — list available report types (no auth required)
 // ---------------------------------------------------------------------------
 
-router.get('/types', referenceCache(), doc({ summary: 'The report types this API generates' }), (_req, res) => {
+router.get('/types', referenceCache(), doc({ summary: 'The report types this API generates',
+    response: body({ types: arr() }, ['types']) }), (_req, res) => {
   res.json({
     types: [
       {

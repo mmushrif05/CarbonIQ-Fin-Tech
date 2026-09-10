@@ -27,7 +27,8 @@ const authenticate = require('../../../../platform/auth/authenticate');
 const validate = require('../../../../platform/http/validate');
 const handle = require('../../../../platform/http/async-handler');
 const referenceCache = require('../../../../platform/http/reference-cache');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, bool, obj, orNull, arr } =
+  require('../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const registry = require('../../application/registry');
 const { heldScopes } = require('../../../../platform/auth/scopes');
@@ -54,7 +55,8 @@ const countryOf = req => String(req.query.country || req.orgCountry || 'LK').toU
 
 router.get('/metrics',
   authenticate, defaultLimiter, referenceCache(),
-  doc({ summary: 'The metrics a baseline can govern, and what in the product reads each' }),
+  doc({ summary: 'The metrics a baseline can govern, and what in the product reads each',
+    response: body({ metrics: arr(), note: str }, ['metrics']) }),
   handle(async (_req, res) => res.json(registry.metrics())));
 
 router.get('/effective',
@@ -65,6 +67,13 @@ router.get('/effective',
       country: 'ISO 3166-1 alpha-2. Defaults to the organisation\'s own country.',
       metric: 'One metric rather than all of them.',
     },
+    description: 'A resolution answers `resolved: false` with what it `needs` where nothing is in '
+      + 'force — absence is an answer, because a figure invented to fill the gap would be quoted '
+      + 'as regional judgement.',
+    response: body({
+      effective: obj,
+      country: orNull(str), orgId: orNull(str),
+    }, ['effective']),
   }),
   handle(async (req, res) => {
     const ctx = { country: countryOf(req), orgId: req.orgId || null };
@@ -83,6 +92,12 @@ router.get('/pledge',
       currentValue: 'The figure the book stands at today. Supplied by the caller: this endpoint does not read the book.',
       asOfYear: 'The year that figure is for. Defaults to this year.',
     },
+    description: 'The position against a pledge is computed and labelled apart, never as a '
+      + 'forecast: the pledge is a declared commitment and the position is a measurement.',
+    response: body({
+      available: bool, reason: orNull(str), needs: orNull(str), baseline: orNull(obj),
+      progress: orNull(obj),
+    }, ['available']),
   }),
   handle(async (req, res) => {
     const metric = String(req.query.metric || 'construction_intensity_kgCO2e_m2');
@@ -94,13 +109,18 @@ router.get('/pledge',
 router.get('/',
   authenticate, defaultLimiter,
   validate({ query: listQuerySchema }),
-  doc({ summary: 'The master table: every baseline version this caller can see, with the shipped seed beside it' }),
+  doc({ summary: 'The master table: every baseline version this caller can see, with the shipped seed beside it',
+    description: 'The seed is marked provisional and is never merged with a released baseline — '
+      + 'a released one replaces it entirely, and the payload says which is showing.',
+    response: body({ baselines: arr(), total: num, seed: arr(), seedNote: str },
+      ['baselines', 'seed']) }),
   handle(async (req, res) => res.json(await registry.list(req.orgId || null, req.query))));
 
 router.post('/',
   authenticate, defaultLimiter,
   validate({ body: createBaselineSchema }),
-  doc({ summary: 'Record a baseline as a draft. A draft is not in force.', status: 201 }),
+  doc({ summary: 'Record a baseline as a draft. A draft is not in force.', status: 201,
+    response: body({ baseline: obj }, ['baseline']) }),
   handle(async (req, res) => {
     const ctx = ctxOf(req);
     const input = { ...req.body, orgId: req.body.orgId || (req.body.scope === 'organisation' ? ctx.orgId : null) };
@@ -109,7 +129,8 @@ router.post('/',
 
 router.post('/:baselineId/release',
   authenticate, validate({ body: emptyBody }), defaultLimiter,
-  doc({ summary: 'Put a draft in force, superseding the version it replaces in one transaction' }),
+  doc({ summary: 'Put a draft in force, superseding the version it replaces in one transaction',
+    response: body({ baseline: obj }, ['baseline']) }),
   handle(async (req, res) => {
     res.json({ baseline: await registry.releaseDraft(req.params.baselineId, ctxOf(req)) });
   }));
@@ -117,7 +138,10 @@ router.post('/:baselineId/release',
 router.post('/:baselineId/supersede',
   authenticate, defaultLimiter,
   validate({ body: supersedeSchema }),
-  doc({ summary: 'A new version of a released baseline, carrying the movement and the reason', status: 201 }),
+  doc({ summary: 'A new version of a released baseline, carrying the movement and the reason', status: 201,
+    description: 'A movement reaching the stated threshold requires a recorded reason: a baseline '
+      + 'anyone can move without one is worth nothing.',
+    response: body({ baseline: obj }, ['baseline']) }),
   handle(async (req, res) => {
     res.status(201).json({ baseline: await registry.supersede(req.params.baselineId, req.body, ctxOf(req)) });
   }));
@@ -125,7 +149,8 @@ router.post('/:baselineId/supersede',
 router.put('/pledge',
   authenticate, defaultLimiter,
   validate({ body: pledgeSchema }),
-  doc({ summary: "Record the organisation's own pledge against its baseline" }),
+  doc({ summary: "Record the organisation's own pledge against its baseline",
+    response: body({ baseline: obj }, ['baseline']) }),
   handle(async (req, res) => {
     const { metric, ...pledge } = req.body;
     res.json({ baseline: await registry.setPledge(metric, pledge, ctxOf(req)) });

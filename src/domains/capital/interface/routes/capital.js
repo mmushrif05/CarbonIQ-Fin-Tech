@@ -31,7 +31,8 @@
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
-const { doc, recordOf, listOf } = require('../../../../platform/http/openapi-hints');
+const { doc, recordOf, listOf, body, str, num, bool, obj, orNull, arr } =
+  require('../../../../platform/http/openapi-hints');
 const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
@@ -116,11 +117,17 @@ function readOptions(query = {}, body = {}) {
 
 // ---------------------------------------------------------------------------
 
-router.get('/storage', authenticate, defaultLimiter, (_req, res) => {
+router.get('/storage', authenticate, defaultLimiter,
+  doc({ summary: 'What this deployment can actually persist',
+    response: body({ storage: obj }, ['storage']) }),
+  (_req, res) => {
   res.json({ storage: store.capability() });
 });
 
-router.get('/dashboard', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/dashboard', authenticate, defaultLimiter,
+  doc({ summary: 'The anchor position: capital, emissions, pipeline and forecast',
+    response: body({ dashboard: obj }, ['dashboard']) }),
+  handle(async (req, res) => {
   /* The weighting and the forecast assumptions ride on the query string
      because each is a question a reader asks of one book, not a property of
      it. They come back in the payload, so a screenshot of a curve always
@@ -194,7 +201,10 @@ router.get('/dashboard', authenticate, defaultLimiter, handle(async (req, res) =
  * repository baseline where nothing has been recorded — so the funding figures
  * cannot be drawn from a different book than the position they are set against.
  */
-router.get('/basket', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/basket', authenticate, defaultLimiter,
+  doc({ summary: 'What writing a selection of pipeline projects would do',
+    response: body({ basket: obj }, ['basket']) }),
+  handle(async (req, res) => {
   const opts = readOptions(req.query);
   if (opts.error) return res.status(400).json(opts.error);
 
@@ -239,7 +249,16 @@ router.get('/basket', authenticate, defaultLimiter, handle(async (req, res) => {
  * tens of rows, and a drawer that paginated would let a reader adjust a figure
  * they could not see the effect of.
  */
-router.get('/book', authenticate, defaultLimiter, handle(async (req, res) => {
+router.get('/book', authenticate, defaultLimiter,
+  doc({ summary: 'The effective base book, for the adjust drawer to edit against',
+    description: '`source` says whether these are the organisation\'s own records or the '
+      + 'shipped baseline. The two are never merged, so a reader always knows which is showing.',
+    response: body({
+      book: obj,
+      portfolios: arr(), investments: arr(), payments: arr(),
+      source: str, sample: bool, storage: obj,
+    }, ['book', 'source']) }),
+  handle(async (req, res) => {
   const held = await book.readBook(req.orgId, { portfolioId: req.query.portfolioId });
   const recorded = held.portfolios.length > 0 || held.investments.length > 0;
   const base = recorded ? held : (baseline.baselineBook() || held);
@@ -273,7 +292,12 @@ router.get('/book', authenticate, defaultLimiter, handle(async (req, res) => {
  * the recorded dashboard. The overlay changes inputs and nothing else.
  */
 router.post('/compute', authenticate, defaultLimiter,
-  validate({ body: computeSchema }), handle(async (req, res) => {
+  validate({ body: computeSchema }),
+  doc({ summary: 'The dashboard and basket from the book as the reader adjusted it',
+    description: 'A read: nothing is stored, no id is issued, and it is idempotent. '
+      + 'An adjusted figure is marked as such, and an unadjusted one carries no mark at all.',
+    response: body({ dashboard: obj, basket: orNull(obj) }, ['dashboard']) }),
+  handle(async (req, res) => {
   const body = req.body || {};
   const opts = readOptions(req.query, body);
   if (opts.error) return res.status(400).json(opts.error);
@@ -336,12 +360,16 @@ router.get('/portfolios', authenticate, defaultLimiter, paged(),
 
 router.post('/portfolios', authenticate, defaultLimiter,
   validate({ body: portfolioSchema }),
+  doc({ summary: 'Record a portfolio', status: 201,
+    response: body({ portfolio: recordOf(portfolioSchema, 'portfolioId', {}, 'Portfolio') }, ['portfolio']) }),
   handle(async (req, res) => {
     res.status(201).json({ portfolio: await book.createPortfolio(req.orgId, req.body) });
   }));
 
 router.patch('/portfolios/:id', authenticate, defaultLimiter,
   validate({ body: portfolioUpdateSchema }),
+  doc({ summary: 'Change a portfolio',
+    response: body({ portfolio: recordOf(portfolioSchema, 'portfolioId', {}, 'Portfolio') }, ['portfolio']) }),
   handle(async (req, res) => {
     const updated = await book.updatePortfolio(req.orgId, req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No portfolio ${req.params.id}.` });
@@ -361,12 +389,18 @@ router.get('/investments', authenticate, defaultLimiter, paged('portfolioId', 's
 
 router.post('/investments', authenticate, defaultLimiter,
   validate({ body: investmentSchema }),
+  doc({ summary: 'Record an investment', status: 201,
+    description: 'Neither `origin` nor `pledge` can be asserted here — only '
+      + '`POST /v1/desk/adopt` writes them, once, from the pipeline record.',
+    response: body({ investment: recordOf(investmentSchema, 'investmentId', {}, 'Investment') }, ['investment']) }),
   handle(async (req, res) => {
     res.status(201).json({ investment: await book.createInvestment(req.orgId, req.body) });
   }));
 
 router.patch('/investments/:id', authenticate, defaultLimiter,
   validate({ body: investmentUpdateSchema }),
+  doc({ summary: 'Change an investment',
+    response: body({ investment: recordOf(investmentSchema, 'investmentId', {}, 'Investment') }, ['investment']) }),
   handle(async (req, res) => {
     const updated = await book.updateInvestment(req.orgId, req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'NOT_FOUND', message: `No investment ${req.params.id}.` });
@@ -386,18 +420,26 @@ router.get('/payments', authenticate, defaultLimiter, paged('portfolioId', 'inve
 
 router.post('/payments', authenticate, defaultLimiter,
   validate({ body: paymentSchema }),
+  doc({ summary: 'Record a payment', status: 201,
+    description: 'A payment is an event and is added rather than edited.',
+    response: body({ payment: recordOf(paymentSchema, 'paymentId', {}, 'Payment') }, ['payment']) }),
   handle(async (req, res) => {
     res.status(201).json({ payment: await book.createPayment(req.orgId, req.body) });
   }));
 
-router.delete('/payments/:id', authenticate, defaultLimiter, handle(async (req, res) => {
+router.delete('/payments/:id', authenticate, defaultLimiter,
+  doc({ summary: 'Remove a payment', status: 204 }),
+  handle(async (req, res) => {
   await book.deletePayment(req.orgId, req.params.id);
   res.status(204).end();
 }));
 
 // ── A worked book, for a demonstration ─────────────────────────────────────
 
-router.post('/demo', authenticate, validate({ body: emptyBody }), defaultLimiter, handle(async (req, res) => {
+router.post('/demo', authenticate, validate({ body: emptyBody }), defaultLimiter,
+  doc({ summary: 'Seed a worked book, for a demonstration', status: 201,
+    response: body({ seeded: obj, portfolios: num, investments: num, payments: num }) }),
+  handle(async (req, res) => {
   res.status(201).json(await seedCapitalDemo(req.orgId));
 }));
 

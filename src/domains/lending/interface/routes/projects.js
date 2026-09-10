@@ -12,7 +12,7 @@
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../platform/http/openapi-hints');
 const { requireProjectAccess } = require('../../../../platform/auth/api-key');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const validate = require('../../../../platform/http/validate');
@@ -26,6 +26,11 @@ const lendingStore = require('../../infrastructure/lending-store');
 const router = Router();
 
 router.get('/:projectId',
+  doc({ summary: 'One lending project, with its carbon summary and material breakdown',
+    response: body({
+      projectId: str, name: str, status: str,
+      carbonSummary: orNull(obj), materialBreakdown: orNull(arr()), retrievedAt: str,
+    }, ['projectId']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,
@@ -65,6 +70,12 @@ router.post('/',
   authenticate,
   defaultLimiter,
   validate({ body: createProjectSchema }),
+  doc({ summary: 'Record a lending project', status: 201,
+    description: 'A lending project is a construction loan being underwritten. It is not an '
+      + 'insured project and not a GCF candidate: the three carry three different emission '
+      + 'boundaries and are never merged.',
+    response: body({ success: bool, projectId: str, message: str, project: obj },
+      ['success', 'projectId']) }),
   async (req, res, next) => {
     try {
       const value = req.body;
@@ -112,6 +123,11 @@ router.post('/:projectId/monitoring',
   requireProjectAccess,
   defaultLimiter,
   validate({ body: monitoringEntrySchema }),
+  doc({ summary: 'Record a monitoring entry for a reporting year',
+    description: 'Attribution is PCAF Part A: outstanding over project equity plus debt.',
+    response: body({
+      success: bool, projectId: str, year: num, attribution: num, financed: num, message: str,
+    }, ['success', 'projectId', 'year']) }),
   async (req, res, next) => {
     try {
       const value = req.body;
@@ -129,6 +145,9 @@ router.post('/:projectId/monitoring',
 
 // GET /v1/projects/:projectId/monitoring — list monitoring history
 router.get('/:projectId/monitoring',
+  doc({ summary: 'Every monitoring entry recorded against a project',
+    response: body({ projectId: str, entries: arr(), total: num },
+      ['projectId', 'entries', 'total']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,

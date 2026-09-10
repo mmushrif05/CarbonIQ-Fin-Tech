@@ -13,7 +13,7 @@
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { sendList, paged } = require('../../../../platform/http/pagination');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, arr } = require('../../../../platform/http/openapi-hints');
 const validate = require('../../../../platform/http/validate');
 const { schemas } = require('../../../../platform/http/validate');
 const { webhookLimiter } = require('../../../../platform/http/rate-limit');
@@ -26,6 +26,15 @@ const router = Router();
 // POST /v1/webhooks — Register subscription
 // ---------------------------------------------------------------------------
 router.post('/',
+  doc({ summary: 'Register a webhook subscription', status: 201,
+    description: 'The signing secret is returned once, here, and only when this system '
+      + 'generated it. A subscription that handed its own HMAC secret back on every read '
+      + 'would be a secret that leaks to anything able to list subscriptions.',
+    response: body({
+      subscriptionId: str, url: str, events: arr(str), createdAt: str,
+      signingSecret: str, message: str, verificationHeader: str,
+      signatureFormat: str, retryPolicy: str,
+    }, ['subscriptionId', 'url', 'events']) }),
   authenticate,
   validate({ body: schemas.webhookRegister }),
   webhookLimiter,

@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **267**. Remaining: **169**.
+Checked across all three: **277**. Remaining: **168**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **238**. Remaining: **63** (416 errors, measured by
+Checked: **248**. Remaining: **62** (418 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -41,12 +41,13 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/application/partc-registry.js` | 12 |
 | `src/domains/pcaf-part-a/domain/impact.js` | 11 |
 | `src/domains/capital/infrastructure/capital-book.js` | 10 |
-| `src/domains/gcf/domain/screening.js` | 10 |
 | `src/domains/capital/domain/capital-forecast.js` | 9 |
 | `src/domains/pcaf-part-a/domain/attribution.js` | 9 |
 | `src/domains/pcaf-part-c/agents/documents.js` | 9 |
 | `src/domains/gcf/application/cn-package.js` | 8 |
+| `src/domains/gcf/domain/screening.js` | 8 |
 | `scripts/generate-gcf-conformance-doc.js` | 7 |
+| `src/domains/lending/interface/routes/covenant.js` | 7 |
 | `src/domains/pcaf-part-a/domain/country-config.js` | 7 |
 | `src/domains/pcaf-part-c/domain/data-quality.js` | 7 |
 | `src/domains/pcaf-part-a/domain/listed-equity/lines.js` | 6 |
@@ -59,6 +60,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/domain/beyond-pcaf.js` | 5 |
 | `scripts/create-api-key.js` | 4 |
 | `src/domains/capital/domain/capital-metrics.js` | 4 |
+| `src/domains/capital/interface/routes/desk.js` | 4 |
 | `src/domains/gcf/domain/record.js` | 4 |
 | `src/domains/pcaf-part-a/domain/data-quality.js` | 4 |
 | `src/domains/pcaf-part-a/domain/listed-equity/index.js` | 4 |
@@ -67,18 +69,15 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/domain/a5-construction.js` | 4 |
 | `src/domains/pcaf-part-c/domain/b4-replacement.js` | 4 |
 | `src/domains/pcaf-part-c/domain/b7-water.js` | 4 |
+| `src/domains/pcaf-part-c/interface/routes/pcaf-partc/runs.js` | 4 |
 | `scripts/migrate-to-postgres.js` | 3 |
 | `src/domains/capital/desk/adopt.js` | 3 |
 | `src/domains/capital/domain/capital-basket.js` | 3 |
-| `src/domains/capital/interface/routes/desk.js` | 3 |
 | `src/domains/gcf/domain/instruments.js` | 3 |
-| `src/domains/gcf/interface/routes/gcf.js` | 3 |
 | `src/domains/lending/application/extract.js` | 3 |
-| `src/domains/lending/interface/routes/covenant.js` | 3 |
 | `src/domains/pcaf-part-c/application/learning-store.js` | 3 |
 | `src/domains/pcaf-part-c/application/partc-registers.js` | 3 |
 | `src/domains/pcaf-part-c/domain/index.js` | 3 |
-| `src/domains/pcaf-part-c/interface/routes/pcaf-partc/runs.js` | 3 |
 | `src/domains/capital/desk/position.js` | 2 |
 | `src/domains/capital/domain/capital-pipeline.js` | 2 |
 | `src/domains/lending/application/reports.js` | 2 |
@@ -90,9 +89,9 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `src/domains/pcaf-part-c/application/methodology/factors.js` | 2 |
 | `src/domains/pcaf-part-c/application/partc-methodology.js` | 2 |
 | `src/domains/pcaf-part-c/domain/conformance.js` | 2 |
+| `src/domains/pcaf-part-c/interface/routes/pcaf-partc.js` | 2 |
 | `src/domains/pcaf-part-c/interface/routes/pcaf-partc/agents.js` | 2 |
 | `scripts/generate-conformance-doc.js` | 1 |
-| `src/domains/pcaf-part-c/interface/routes/pcaf-partc.js` | 1 |
 
 ## The browser — `ui/`
 
@@ -124,14 +123,14 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **23**. Remaining: **90** (1228 errors, measured by
+Checked: **23**. Remaining: **90** (1227 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
 |---|---|
 | `tests/capital-api.test.js` | 61 |
 | `tests/capital-adjust.test.js` | 48 |
-| `tests/gcf-screening.test.js` | 44 |
+| `tests/gcf-screening.test.js` | 42 |
 | `tests/parta-ui.test.js` | 40 |
 | `tests/parta-generation.test.js` | 37 |
 | `tests/desk-stages456.test.js` | 33 |
@@ -142,9 +141,9 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/partc-boq.test.js` | 29 |
 | `tests/observability.test.js` | 27 |
 | `tests/partc-registry.test.js` | 27 |
+| `tests/api-contract.test.js` | 26 |
 | `tests/api-key.test.js` | 26 |
 | `tests/partc-assessments.test.js` | 26 |
-| `tests/api-contract.test.js` | 25 |
 | `tests/desk-api.test.js` | 24 |
 | `tests/parta-engine.test.js` | 22 |
 | `tests/partc-methodology.test.js` | 22 |

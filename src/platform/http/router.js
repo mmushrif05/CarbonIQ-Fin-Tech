@@ -52,11 +52,17 @@ const authRouter          = require('./auth-routes');
 const metricsRouter       = require('./metrics-route');
 const jobsRouter          = require('./jobs-route');
 const openapiRouter       = require('./openapi-route');
+const { doc, body, str, obj } = require('./openapi-hints');
 
 const router = Router();
 
 // API info — no auth required
-router.get('/', (_req, res) => {
+router.get('/',
+  doc({ summary: 'What this API offers, and where each scope lives',
+    response: body({
+      api: str, version: str, status: str, endpoints: obj,
+    }, ['api', 'version', 'endpoints']) }),
+  (_req, res) => {
   res.json({
     api: 'CarbonIQ FinTech',
     version: `v1 (${config.version})`,

@@ -17,6 +17,8 @@ const { schemas } = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
 const { checkCovenant } = require('../../domain/covenant');
+const { doc, body, str, num, bool, obj, orNull, arr } =
+  require('../../../../platform/http/openapi-hints');
 
 const router = Router();
 
@@ -56,6 +58,8 @@ const REMEDIATION_GUIDANCE = {
 // Body: { metric, operator, threshold, buildingArea_m2? }
 // ---------------------------------------------------------------------------
 router.post('/:projectId/covenant',
+  doc({ summary: 'Check a green loan covenant against the project',
+    response: body({ projectId: str, checks: arr(), status: str }) }),
   authenticate,
   requireProjectAccess,
   validate({ body: schemas.covenantCheck, params: schemas.projectId }),
@@ -134,6 +138,8 @@ router.post('/:projectId/covenant',
 // Returns all standard SLL covenant checks for the project in one call.
 // ---------------------------------------------------------------------------
 router.get('/:projectId/covenants',
+  doc({ summary: 'The full SLL covenant suite for a project',
+    response: body({ projectId: str, covenants: arr() }) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,

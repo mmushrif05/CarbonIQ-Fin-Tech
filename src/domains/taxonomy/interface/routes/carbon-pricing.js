@@ -11,7 +11,7 @@
 
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
-const { doc } = require('../../../../platform/http/openapi-hints');
+const { doc, body, bool, arr } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const { carbonPricingSchema } = require('../schemas/carbon-pricing');
 const { calculateFinancialImpact, CARBON_TAX_RATES, PRICING_TIERS } = require('../../domain/carbon-pricing');
@@ -23,7 +23,9 @@ const router = Router();
 // POST /v1/carbon-pricing/calculate
 // ---------------------------------------------------------------------------
 
-router.post('/calculate', authenticate, validate({ body: carbonPricingSchema }), async (req, res, next) => {
+router.post('/calculate', authenticate, validate({ body: carbonPricingSchema }),
+  doc({ summary: 'Financial impact of a carbon price on a project',
+    response: body({ success: bool }, ['success']) }), async (req, res, next) => {
   try {
     const result = calculateFinancialImpact(req.body);
     res.json({ success: true, ...result });
@@ -37,7 +39,12 @@ router.post('/calculate', authenticate, validate({ body: carbonPricingSchema }),
 // GET /v1/carbon-pricing/rates  — no auth, reference data
 // ---------------------------------------------------------------------------
 
-router.get('/rates', referenceCache(), doc({ summary: 'Carbon tax rates by jurisdiction' }), (_req, res) => {
+router.get('/rates',
+  referenceCache(),
+  doc({ summary: 'Carbon tax rates by jurisdiction, and the loan pricing tiers they set',
+    response: body({ carbonTaxRates: arr(), loanPricingTiers: arr() },
+      ['carbonTaxRates', 'loanPricingTiers']) }),
+  (_req, res) => {
   const rates = Object.entries(CARBON_TAX_RATES).map(([code, r]) => ({
     code,
     name:        r.name,

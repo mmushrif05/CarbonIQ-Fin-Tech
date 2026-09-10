@@ -366,6 +366,9 @@ function rank(projects = [], { accreditation, weights } = {}) {
  * mitigation/adaptation split across its portfolio, so two picks from one
  * stream is a choice to defend, not a neutral outcome. It is stated, and the
  * decision stays the reader's.
+ *
+ * @param {any[]} [projects]
+ * @param {{accreditation?: any, weights?: any, take?: number}} [options]
  */
 function recommend(projects = [], { accreditation, weights, take = 2 } = {}) {
   const ranked = rank(projects, { accreditation, weights });
