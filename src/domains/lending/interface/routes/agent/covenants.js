@@ -209,7 +209,7 @@ router.post('/covenants/:runId/review',
           : req.body.decision === 'modified'
           ? 'Covenant terms approved with modifications. The revised thresholds in modifications[] may be used in the facility agreement.'
           : 'Covenant terms rejected. Re-submit via POST /v1/agent/covenants with updated parameters.',
-        auditNote: 'This review decision has been immutably recorded per EU AI Act Art. 22 and PCAF v3 audit trail requirements.'
+        auditNote: 'This review decision has been immutably recorded per EU AI Act Art. 22 and the PCAF Part A audit trail requirements.'
       });
 
     } catch (err) {

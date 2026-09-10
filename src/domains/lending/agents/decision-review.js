@@ -48,7 +48,7 @@ Using the pre-computed assessment data provided, produce the memo using EXACTLY 
 **Triage Tier:** AI-Assisted Review (Tier 2 of 3)
 **Review Trigger(s):** [list the reasons from the tier classification]
 **Review Date:** ${new Date().toISOString().split('T')[0]}
-**Prepared by:** CarbonIQ AI Decision Review System | GLP 2025 | PCAF v3
+**Prepared by:** CarbonIQ AI Decision Review System | GLP 2025
 
 ---
 
@@ -147,7 +147,7 @@ Using the pre-computed assessment data provided, produce the memo using EXACTLY 
 | Requirement | Status | Required Action |
 |---|---|---|
 | GLP 2025 Use of Proceeds | [Met / Not Met / Conditional] | [action] |
-| PCAF v3 Attribution Disclosure | [Met / Not Met / Conditional] | [action] |
+| Attribution disclosed (embodied carbon, A1–A3) | [Met / Not Met / Conditional] | [action] |
 | [Primary taxonomy] Technical Screening | [Met / Not Met / Conditional] | [action] |
 | External Verification / SPO | [Obtained / Required / Optional] | [action] |
 | Quarterly Reporting Framework | [In place / To be established] | [action] |

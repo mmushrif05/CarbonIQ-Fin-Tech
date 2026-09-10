@@ -1930,5 +1930,18 @@ const Dashboard = (() => {
     URL.revokeObjectURL(url);
   }
 
-  return { init, refresh, refreshCapital, exportCSV, generateAIReport };
+  /*
+   * Close the panel the memo is written into.
+   *
+   * The close button used to carry
+   * `document.getElementById('pf-ai-panel').style.display='none'` — a script
+   * reaching into the DOM from an attribute, which is a small thing on its own
+   * and part of what kept `'unsafe-inline'` on script-src.
+   */
+  function hideAIPanel() {
+    const panel = $('pf-ai-panel');
+    if (panel) panel.style.display = 'none';
+  }
+
+  return { init, refresh, refreshCapital, exportCSV, generateAIReport, hideAIPanel };
 })();

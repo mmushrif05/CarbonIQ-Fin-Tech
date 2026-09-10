@@ -49,8 +49,24 @@ function refuse(collection, orgId) {
   return err;
 }
 
+function duplicate(collection, orgId, id) {
+  const err = /** @type {AppError} */ (new Error(
+    `A record already exists in "${collection}" for ${orgId} at "${id}".`));
+  err.statusCode = 409;
+  err.code = 'DUPLICATE';
+  return err;
+}
+
 const adapter = {
   mode: 'memory',
+
+  /* Insert, not upsert: a caller that derives its id from something else
+     needs the store to refuse rather than overwrite. See document-store.js. */
+  async insert(collection, orgId, id, record) {
+    const bucket = bucketFor(collection, orgId);
+    if (bucket.has(id)) throw duplicate(collection, orgId, id);
+    return adapter.put(collection, orgId, id, record);
+  },
 
   async put(collection, orgId, id, record) {
     const bucket = bucketFor(collection, orgId);

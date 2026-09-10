@@ -23,7 +23,7 @@
  * Routing logic is calibrated to APAC green loan market norms:
  *   - GLP 2021/2025 eligibility requirements
  *   - MAS ENRM, HKMA CRMF thresholds
- *   - PCAF v3 data quality requirements
+ *   - PCAF Part A data-quality requirements
  *
  * IMPORTANT: This engine classifies the tier and verdict but does NOT make
  * the final lending decision. Tier 1 auto-approvals are pending covenant

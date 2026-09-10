@@ -14,7 +14,7 @@
  *   4. Produces TCFD/MAS/HKMA-ready ESG portfolio report
  *
  * Regulatory grounding:
- *   - PCAF v3 Global Standard: financed emissions for construction sector
+ *   - PCAF Part A, Third Edition: financed emissions for the construction sector — computed by src/domains/pcaf-part-a/, not here
  *   - GLP 2025 §5: portfolio-level impact reporting
  *   - TCFD: physical & transition risk disclosure for real estate
  *   - MAS Notice 652 / Env Risk Guidelines: climate risk disclosure
@@ -64,7 +64,7 @@ OUTPUT — ESG PORTFOLIO REPORT
 **Reporting Period:** [period]
 **Report Date:** ${new Date().toISOString().split('T')[0]}
 **Total Assets:** [N loans]
-**Framework:** PCAF v3 | GLP 2025 | TCFD | [MAS/HKMA as applicable]
+**Framework:** GLP 2025 | TCFD | [MAS/HKMA as applicable]
 
 ---
 
@@ -94,7 +94,7 @@ OUTPUT — ESG PORTFOLIO REPORT
 
 **Total Financed Emissions: [X tCO2e]**
 
-[PCAF v3 methodology note: Financed emissions = Attribution Factor × Asset Emissions
+[Methodology: attributed embodied carbon = Attribution Factor × Asset A1–A3 Emissions
 Attribution Factor = Outstanding Loan / Total Asset Value at origination]
 
 | Asset | tCO2e | Attribution Factor | Financed tCO2e | PCAF Score | Data Quality |
@@ -260,7 +260,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'calculate_pcaf_output',
-    description: 'Calculate PCAF v3 financed emissions for the total portfolio. Call once after aggregating all asset-level data.',
+    description: 'Calculate attributed embodied carbon (A1–A3) across the portfolio. Not PCAF financed emissions. Call once after aggregating all asset-level data.',
     input_schema: {
       type: 'object',
       properties: {

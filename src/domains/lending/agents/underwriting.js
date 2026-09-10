@@ -7,7 +7,7 @@
  *   1. Extracts and classifies all materials
  *   2. Computes embodied carbon totals and intensity
  *   3. Checks alignment across all 4 green taxonomies
- *   4. Generates PCAF v3 financed emissions
+ *   4. Generates attributed embodied carbon (A1–A3)
  *   5. Calculates the Carbon Finance Score
  *   6. Identifies data quality gaps
  *   7. Drafts a complete professional Green Loan Underwriting Memo
@@ -49,7 +49,7 @@ Call check_taxonomy_alignment with the computed metrics to assess alignment with
 - Singapore Green Mark / TSC
 
 STEP 4 — PCAF FINANCED EMISSIONS
-Call calculate_pcaf_output with the carbon totals, top-80% materials, loan amount, and project value to generate PCAF v3 output including attribution factor and data quality score.
+Call calculate_pcaf_output with the carbon totals, top-80% materials, loan amount, and project value to generate the attributed embodied-carbon output including attribution factor and data quality score.
 
 STEP 5 — CARBON FINANCE SCORE
 Call calculate_carbon_score with EPD coverage, reduction percentage, certification level, and verification status.
@@ -68,7 +68,7 @@ After all tool calls are complete, produce the memo using EXACTLY this structure
 **Building Type:** [type] | **Floor Area:** [X m²] | **Region:** [region]
 **Loan Amount:** [amount] | **Project Value:** [value]
 **Assessment Date:** ${new Date().toISOString().split('T')[0]}
-**Prepared by:** CarbonIQ Agentic AI Underwriting System | PCAF v3 | GLP 2025
+**Prepared by:** CarbonIQ Agentic AI Underwriting System | GLP 2025
 
 ---
 
@@ -106,16 +106,23 @@ After all tool calls are complete, produce the memo using EXACTLY this structure
 
 ---
 
-### 4. PCAF v3 FINANCED EMISSIONS
+### 4. ATTRIBUTED EMBODIED CARBON (A1–A3)
 
 | Item | Value |
 |---|---|
 | Attribution Factor | X% (Loan SGD X / Project Value SGD X) |
-| Bank's Financed Emissions | X tCO2e |
+| Attributed embodied carbon — bank's share | X tCO2e |
 | Project Total Emissions | X tCO2e |
 | Scope | A1–A3 Cradle-to-Gate |
-| PCAF Data Quality Score | X — [Label] |
-| PCAF Standard | v3.0 |
+| Factor-provenance band | X — [Label] |
+
+**What this figure is.** Attributed embodied carbon: CarbonIQ's A1–A3
+cradle-to-gate assessment of the project, apportioned by the bank's share of
+project value. It is **not** a PCAF financed-emissions figure and must not be
+booked as Scope 3 Category 15 — PCAF Part A financed emissions cover the
+borrower's own emissions on a per-asset-class method, and this deployment
+computes those separately. The band above is CarbonIQ's own and is not a PCAF
+data-quality score.
 
 ---
 
@@ -275,7 +282,7 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: 'calculate_pcaf_output',
-    description: 'Generate PCAF v3 financed emissions output. Calculates attribution factor (loanAmount/projectValue), financed emissions (tCO2e), and data quality score (1–5). Required for regulatory disclosure.',
+    description: 'Generate attributed embodied carbon (A1–A3). Calculates the attribution factor (loanAmount/projectValue) and the attributed emissions (tCO2e), and data quality score (1–5). Required for regulatory disclosure.',
     input_schema: {
       type: 'object',
       properties: {

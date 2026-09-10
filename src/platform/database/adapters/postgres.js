@@ -14,6 +14,10 @@ module.exports = {
   mode: 'postgres',
 
   put: (collection, orgId, id, record) => db.documents.put(collection, orgId, id, record),
+  /* A plain INSERT, so the primary key raises 23505 rather than the row being
+     updated. This is the only store where the refusal is the database's; the
+     other three read and then write. */
+  insert: (collection, orgId, id, record) => db.documents.insert(collection, orgId, id, record),
   get: (collection, orgId, id, opts = {}) => db.documents.get(collection, orgId, id, opts),
   list: (collection, orgId, opts = {}) => db.documents.list(collection, orgId, opts),
   patch: (collection, orgId, id, updates) => db.documents.patch(collection, orgId, id, updates),

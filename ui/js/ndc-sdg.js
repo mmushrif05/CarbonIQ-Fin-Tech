@@ -394,6 +394,7 @@ const NdcSdgPage = (() => {
   }
 
   function _renderCertificate(cert) {
+    _shownCert = cert;
     const el = $$('ndc-cert-result');
     if (!el) return;
 
@@ -435,8 +436,8 @@ const NdcSdgPage = (() => {
           <code style="font-size:10px;color:var(--text-tertiary);word-break:break-all">${cert.hash}</code>
         </div>
         <div style="margin-top:12px;display:flex;gap:8px">
-          <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.copyCertHash('${cert.hash}')">Copy Hash</button>
-          <button class="btn btn-ghost btn-sm" onclick="NdcSdgPage.downloadCert(${JSON.stringify(JSON.stringify(cert))})">Download JSON</button>
+          <button class="btn btn-ghost btn-sm" data-action="NdcSdgPage.copyCertHash" data-arg="${cert.hash}">Copy Hash</button>
+          <button class="btn btn-ghost btn-sm" data-action="NdcSdgPage.downloadCert">Download JSON</button>
         </div>
       </div>`;
   }
@@ -446,8 +447,19 @@ const NdcSdgPage = (() => {
     if (typeof Toast !== 'undefined') Toast.info('Hash copied to clipboard.');
   }
 
-  function downloadCert(certStr) {
-    const cert = JSON.parse(certStr);
+  /*
+   * The certificate the screen is showing, held here rather than serialised
+   * into the button that downloads it.
+   *
+   * It used to travel as `JSON.stringify(JSON.stringify(cert))` inside an
+   * onclick attribute — a whole document, quoted twice, in markup. One
+   * apostrophe in a project name would have ended the attribute early.
+   */
+  let _shownCert = null;
+
+  function downloadCert() {
+    const cert = _shownCert;
+    if (!cert) return;
     const blob = new Blob([JSON.stringify(cert, null, 2)], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');

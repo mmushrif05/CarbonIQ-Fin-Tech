@@ -15,7 +15,7 @@
  * Regulatory grounding:
  *   - GLP 2021/2025: green project eligibility must be established pre-drawdown
  *   - ASEAN/EU/HK/SG taxonomies: technical screening criteria applied here
- *   - PCAF v3: Score 4 is correct for pre-screening without project-specific data
+ *   - PCAF Part A: score 4 is correct for pre-screening without project-specific data
  */
 
 'use strict';

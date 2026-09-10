@@ -67,7 +67,7 @@
         <div class="login-error" id="login-error" role="alert" aria-live="polite"></div>
 
         <div class="login-actions">
-          <button class="login-btn" id="login-btn" onclick="LoginPage.submit()">
+          <button class="login-btn" id="login-btn" data-action="LoginPage.submit">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Sign In
           </button>
@@ -83,7 +83,7 @@
           <div class="login-preview-row">
             <input id="preview-email" type="email" class="login-input" autocomplete="email"
                    placeholder="you@bank.lk" aria-label="Email address" />
-            <button class="login-btn login-btn-quiet" id="preview-btn" onclick="LoginPage.preview()">Open</button>
+            <button class="login-btn login-btn-quiet" id="preview-btn" data-action="LoginPage.preview">Open</button>
           </div>
           <div class="login-error" id="preview-error" role="alert" aria-live="polite"></div>
         </div>
@@ -108,7 +108,7 @@
         </div>
         <div class="login-error" id="change-error" role="alert" aria-live="polite"></div>
         <div class="login-actions">
-          <button class="login-btn" id="change-btn" onclick="LoginPage.changePassword()">Save and continue</button>
+          <button class="login-btn" id="change-btn" data-action="LoginPage.changePassword">Save and continue</button>
         </div>
       </div>
 
@@ -140,227 +140,13 @@
         </div>
         <div class="login-error" id="boot-error" role="alert" aria-live="polite"></div>
         <div class="login-actions">
-          <button class="login-btn" id="boot-btn" onclick="LoginPage.bootstrap()">Create</button>
+          <button class="login-btn" id="boot-btn" data-action="LoginPage.bootstrap">Create</button>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- =================== LOGIN PAGE CONTROLLER =================== -->
-  <script>
-  const LoginPage = (() => {
-    /* Sign-in is a request, not a decision the browser makes. Until H1 this
-       form wrote a self-selected role into localStorage and every visitor was
-       handed the same write-and-lock key; the role and the organisation now
-       come back from the server, which is the only place that knows them. */
-    async function submit() {
-      const email = document.getElementById('login-email').value.trim();
-      const password = document.getElementById('login-password').value;
-      const errEl = document.getElementById('login-error');
-      const btn = document.getElementById('login-btn');
-
-      if (!email || !password) {
-        errEl.textContent = 'Enter your email address and password.';
-        errEl.classList.add('visible');
-        return;
-      }
-      errEl.classList.remove('visible');
-      btn.disabled = true;
-
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          errEl.textContent = body.message || 'Sign-in failed.';
-          if (body.remedy) errEl.textContent += ` ${body.remedy}`;
-          errEl.classList.add('visible');
-          return;
-        }
-        Auth.startSession(body);
-        /* A password an administrator typed reaches nothing but its own
-           replacement — the server enforces that, and this form is where it
-           gets replaced. Sending them to the dashboard instead would show a
-           screen whose every request comes back 403. */
-        if (body.user && body.user.mustChangePassword) return _showPane('change');
-        _enter();
-      } catch (err) {
-        errEl.textContent = 'Could not reach the server. Check your connection and try again.';
-        errEl.classList.add('visible');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    /* One pane at a time. `hidden` is used rather than a class that sets
-       `display`, because any class rule that sets display beats the
-       user-agent sheet's [hidden] and the pane stays on screen. */
-    function _showPane(which) {
-      const panes = { signin: 'login-card-signin', change: 'login-change', bootstrap: 'login-bootstrap' };
-      Object.entries(panes).forEach(([name, id]) => {
-        const el = document.getElementById(id);
-        if (el) el.hidden = name !== which;
-      });
-    }
-
-    function _enter() {
-      Auth.enforceAuth();
-      const defaultPage = Auth.getDefaultPage();
-      if (typeof window.CARBONIQ_navigateTo === 'function') {
-        window.CARBONIQ_navigateTo(defaultPage);
-      } else {
-        const navItem = document.querySelector(`.nav-item[data-page="${defaultPage}"]`);
-        if (navItem) navItem.click();
-      }
-    }
-
-    function _say(id, text) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.textContent = text || '';
-      el.classList.toggle('visible', Boolean(text));
-    }
-
-    /** Replace the administrator's password with the account holder's own. */
-    async function changePassword() {
-      const next = document.getElementById('change-new').value;
-      const again = document.getElementById('change-again').value;
-      if (next !== again) return _say('change-error', 'The two passwords are not the same.');
-      if (!next || next.length < 12) return _say('change-error', 'Use at least 12 characters.');
-      _say('change-error', '');
-      const btn = document.getElementById('change-btn');
-      btn.disabled = true;
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${Auth.getToken()}` },
-          /* The current password is the one just used to sign in, which is
-             why this form asks for it once rather than twice. */
-          body: JSON.stringify({
-            currentPassword: document.getElementById('login-password').value,
-            newPassword: next,
-          }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) return _say('change-error', [body.message, body.remedy].filter(Boolean).join(' '));
-        /* Changing a password ends every other session and issues a fresh one
-           here, so the token in hand has to be replaced with the new one. */
-        Auth.startSession({ token: body.token, expiresAt: body.expiresAt,
-          user: { ...Auth.getSession(), id: Auth.getSession().userId, orgId: Auth.getSession().organisation,
-            mustChangePassword: false } });
-        _enter();
-      } catch (_) {
-        _say('change-error', 'Could not reach the server. Check your connection and try again.');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    /** Create the first administrator, where the server says that is still possible. */
-    async function bootstrap() {
-      const payload = {
-        token: document.getElementById('boot-token').value,
-        orgId: document.getElementById('boot-org').value.trim(),
-        email: document.getElementById('boot-email').value.trim(),
-        password: document.getElementById('boot-password').value,
-      };
-      if (!payload.token || !payload.orgId || !payload.email || !payload.password) {
-        return _say('boot-error', 'Every field is required.');
-      }
-      _say('boot-error', '');
-      const btn = document.getElementById('boot-btn');
-      btn.disabled = true;
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/bootstrap`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) return _say('boot-error', [body.message, body.remedy].filter(Boolean).join(' '));
-        _showPane('signin');
-        document.getElementById('login-email').value = payload.email;
-        _say('login-error', '');
-      } catch (_) {
-        _say('boot-error', 'Could not reach the server. Check your connection and try again.');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    /** Open the sample book against an address, and nothing else. */
-    async function preview() {
-      const email = document.getElementById('preview-email').value.trim();
-      if (!email) return _say('preview-error', 'Enter an email address.');
-      _say('preview-error', '');
-      const btn = document.getElementById('preview-btn');
-      btn.disabled = true;
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/preview`, {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) return _say('preview-error', [body.message, body.remedy].filter(Boolean).join(' '));
-        Auth.startSession(body);
-        _enter();
-      } catch (_) {
-        _say('preview-error', 'Could not reach the server. Check your connection and try again.');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    /* Asked before the panel is drawn, for the same reason the first-run
-       window is: a deployment that cannot issue a preview session should show
-       no offer rather than one that fails when pressed. */
-    async function _checkPreview() {
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/preview`);
-        const body = await res.json().catch(() => ({}));
-        const el = document.getElementById('login-preview');
-        if (el && res.ok && body.available) el.hidden = false;
-      } catch (_) { /* offline: offer nothing */ }
-    }
-
-    /* The window is checked before the form is drawn, so an operator setting
-       a deployment up meets the first-run screen rather than a sign-in form
-       that can only refuse them. */
-    async function _checkFirstRun() {
-      try {
-        const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/bootstrap`);
-        const body = await res.json().catch(() => ({}));
-        if (res.ok && body.available) _showPane('bootstrap');
-      } catch (_) { /* offline: the sign-in form is the right thing to show */ }
-    }
-
-    /* Enter submits, which is what a two-field sign-in form should do. */
-    function _wireEnter() {
-      ['login-email', 'login-password'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-      });
-      ['change-new', 'change-again'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') changePassword(); });
-      });
-      const pv = document.getElementById('preview-email');
-      if (pv) pv.addEventListener('keydown', e => { if (e.key === 'Enter') preview(); });
-      _checkFirstRun();
-      _checkPreview();
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', _wireEnter);
-    } else {
-      _wireEnter();
-    }
-
-    return { submit, changePassword, bootstrap, preview };
-  })();
-  </script>
 
   <!-- Sidebar (hidden until auth check) -->
   <aside class="sidebar" id="sidebar" style="display:none">
@@ -490,10 +276,10 @@
           <span class="user-name">Jane Chen</span>
           <span class="user-role">ESG Analyst</span>
         </div>
-        <button class="btn-icon-ghost" onclick="Settings.open()" title="API Settings">
+        <button class="btn-icon-ghost" data-action="Settings.open" title="API Settings">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 10a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.5v1M8 13.5v1M1.5 8h1M13.5 8h1M3.3 3.3l.7.7M12 12l.7.7M3.3 12.7l.7-.7M12 4l.7-.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         </button>
-        <button class="logout-btn" onclick="Auth.logout()" title="Sign Out">
+        <button class="logout-btn" data-action="Auth.logout" title="Sign Out">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 00-1 1v10a1 1 0 001 1h3M11 11l3-3-3-3M6 8h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
       </div>
@@ -644,7 +430,7 @@
     <div id="settings-drawer" class="settings-drawer" style="display:none">
       <div class="settings-header">
         <span>API Settings</span>
-        <button class="btn-icon-sm" onclick="Settings.close()">×</button>
+        <button class="btn-icon-sm" data-action="Settings.close">×</button>
       </div>
       <div class="settings-body">
         <div class="form-group">
@@ -655,8 +441,8 @@
         </div>
         <div id="cfg-msg" style="font-size:12px;margin-bottom:8px"></div>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-sm" onclick="Settings.save()" style="flex:1">Save</button>
-          <button class="btn btn-ghost btn-sm" onclick="Settings.reset()">Reset</button>
+          <button class="btn btn-primary btn-sm" data-action="Settings.save" style="flex:1">Save</button>
+          <button class="btn btn-ghost btn-sm" data-action="Settings.reset">Reset</button>
         </div>
       </div>
     </div>
@@ -1265,11 +1051,11 @@
             </div>
 
             <div class="form-actions">
-              <button class="btn btn-primary btn-lg" onclick="PCAFCalculator.calculate()">
+              <button class="btn btn-primary btn-lg" data-action="PCAFCalculator.calculate">
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2 13l4-4 3 3 7-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Calculate PCAF Attribution
               </button>
-              <button class="btn btn-ghost btn-lg" onclick="PCAFCalculator.reset()">Reset</button>
+              <button class="btn btn-ghost btn-lg" data-action="PCAFCalculator.reset">Reset</button>
             </div>
           </div>
 
@@ -1340,8 +1126,8 @@
             <div id="pcaf-error" style="display:none" class="pcaf-error-box"></div>
 
             <div class="result-actions">
-              <button id="pcaf-save-btn" class="btn btn-primary" onclick="PCAFCalculator.saveAndSubmit()">Save &amp; Copy</button>
-              <button id="pcaf-export-pdf-btn" class="btn btn-secondary" onclick="PCAFCalculator.exportPDF()">
+              <button id="pcaf-save-btn" class="btn btn-primary" data-action="PCAFCalculator.saveAndSubmit">Save &amp; Copy</button>
+              <button id="pcaf-export-pdf-btn" class="btn btn-secondary" data-action="PCAFCalculator.exportPDF">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 Export PDF
               </button>
@@ -1363,9 +1149,9 @@
           <div class="project-selector">
             <label>Monitoring Project</label>
             <select class="form-input form-input-lg" id="mon-project-select"
-              onchange="Monitoring.loadProject(this.value)"></select>
+              data-action-change="Monitoring.loadProject"></select>
           </div>
-          <button class="btn btn-primary" onclick="Monitoring.showUpdateModal()">
+          <button class="btn btn-primary" data-action="Monitoring.showUpdateModal">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.5"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             Submit Annual Update
           </button>
@@ -1419,11 +1205,11 @@
         </div>
 
         <!-- Annual Update Modal -->
-        <div id="mon-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)Monitoring.closeModal()">
+        <div id="mon-modal" class="modal-overlay" style="display:none" data-action="Monitoring.closeModal" data-action-self>
           <div class="modal-box">
             <div class="modal-header">
               <h3>Submit Annual Update</h3>
-              <button class="btn-icon-sm" onclick="Monitoring.closeModal()">×</button>
+              <button class="btn-icon-sm" data-action="Monitoring.closeModal">×</button>
             </div>
             <div class="modal-body">
               <div class="form-grid">
@@ -1457,8 +1243,8 @@
               <div id="mon-modal-msg" style="margin-top:8px;font-size:13px"></div>
             </div>
             <div class="modal-footer">
-              <button class="btn btn-ghost" onclick="Monitoring.closeModal()">Cancel</button>
-              <button class="btn btn-primary" onclick="Monitoring.submitUpdate()">Submit Update</button>
+              <button class="btn btn-ghost" data-action="Monitoring.closeModal">Cancel</button>
+              <button class="btn btn-primary" data-action="Monitoring.submitUpdate">Submit Update</button>
             </div>
           </div>
         </div>
@@ -1511,7 +1297,7 @@
               </div>
               <div class="form-group">
                 <label for="np-proj-region">Region</label>
-                <select id="np-proj-region" class="form-input" onchange="NewProject.onRegionChange(this.value)">
+                <select id="np-proj-region" class="form-input" data-action-change="NewProject.onRegionChange">
                   <option value="SG">Singapore</option>
                   <option value="MY">Malaysia</option>
                   <option value="HK">Hong Kong</option>
@@ -1565,7 +1351,7 @@
                   <label for="np-activity-code">SLGFT Activity Code</label>
                   <input id="np-activity-code" type="text" class="form-input"
                     placeholder="e.g. M1.1, M4.1, A2.1"
-                    oninput="NewProject.lookupActivity(this.value)" />
+                    data-action-input="NewProject.lookupActivity" />
                   <span class="form-hint">Format: {Objective}{Sector}.{Activity} — e.g. M1.1 = Green Buildings</span>
                 </div>
               </div>
@@ -1574,7 +1360,7 @@
 
             <div class="wizard-actions">
               <span></span>
-              <button class="btn btn-primary btn-lg" onclick="NewProject.nextFromStep1()">Continue to Materials →</button>
+              <button class="btn btn-primary btn-lg" data-action="NewProject.nextFromStep1">Continue to Materials →</button>
             </div>
           </div>
 
@@ -1598,10 +1384,10 @@
                 </tr>
               </tfoot>
             </table>
-            <button class="btn btn-ghost" style="margin-top:12px" onclick="NewProject.addMaterial()">+ Add Material</button>
+            <button class="btn btn-ghost" style="margin-top:12px" data-action="NewProject.addMaterial">+ Add Material</button>
             <div class="wizard-actions">
-              <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(1)">← Back</button>
-              <button class="btn btn-primary btn-lg" onclick="NewProject.goTo(3)">Continue to Loan Details →</button>
+              <button class="btn btn-ghost btn-lg" data-action="NewProject.goTo" data-arg="1">← Back</button>
+              <button class="btn btn-primary btn-lg" data-action="NewProject.goTo" data-arg="3">Continue to Loan Details →</button>
             </div>
           </div>
 
@@ -1637,8 +1423,8 @@
               </div>
             </div>
             <div class="wizard-actions">
-              <button class="btn btn-ghost btn-lg" onclick="NewProject.goTo(2)">← Back</button>
-              <button class="btn btn-primary btn-lg" onclick="NewProject.nextFromStep3()">Continue to Review →</button>
+              <button class="btn btn-ghost btn-lg" data-action="NewProject.goTo" data-arg="2">← Back</button>
+              <button class="btn btn-primary btn-lg" data-action="NewProject.nextFromStep3">Continue to Review →</button>
             </div>
           </div>
 
@@ -1666,8 +1452,8 @@
             <p>PCAF-aligned financed emissions, taxonomy distribution, and concentration risk analysis</p>
           </div>
           <div class="pf-hero-actions">
-            <button class="btn btn-ghost" onclick="Dashboard.exportCSV()" title="Export CSV">Export CSV</button>
-            <button class="btn btn-primary pf-ai-btn" id="pf-ai-report-btn" onclick="Dashboard.generateAIReport()">
+            <button class="btn btn-ghost" data-action="Dashboard.exportCSV" title="Export CSV">Export CSV</button>
+            <button class="btn btn-primary pf-ai-btn" id="pf-ai-report-btn" data-action="Dashboard.generateAIReport">
               <span class="pf-ai-icon">&#9670;</span> Generate AI ESG Report
             </button>
           </div>
@@ -1830,7 +1616,7 @@
               <h3><span class="pf-ai-icon">&#9670;</span> AI-Generated ESG Portfolio Report</h3>
               <div>
                 <span class="kpi-badge badge-neutral" id="pf-ai-status">Pending</span>
-                <button class="btn btn-ghost" onclick="document.getElementById('pf-ai-panel').style.display='none'" style="margin-left:8px">Close</button>
+                <button class="btn btn-ghost" data-action="Dashboard.hideAIPanel" style="margin-left:8px">Close</button>
               </div>
             </div>
             <div class="pf-ai-steps" id="pf-ai-steps">
@@ -1863,13 +1649,13 @@
         <div class="taxonomy-controls">
           <div class="form-group" style="flex:1;min-width:200px">
             <label>Project</label>
-            <select id="tax-project-select" class="form-input" onchange="Taxonomy.selectProject(this.value)"></select>
+            <select id="tax-project-select" class="form-input" data-action-change="Taxonomy.selectProject"></select>
           </div>
           <div id="tax-manual-wrap" class="form-group" style="flex:0 0 220px">
             <label>Emissions Intensity (kgCO2e/m²)</label>
             <input id="tax-intensity-input" type="number" class="form-input"
               placeholder="e.g. 380" min="0"
-              oninput="Taxonomy.updateIntensity(this.value)" />
+              data-action-input="Taxonomy.updateIntensity" />
           </div>
         </div>
 
@@ -1932,7 +1718,10 @@
   <!-- The deployment hands the browser the key it authenticates with, so the
        two can never drift. Must load after config.js and before any page. -->
   <script src="/v1/ui-config.js"></script>
+  <!-- The dispatcher behind every data-action, before anything that uses one. -->
+  <script src="js/actions.js"></script>
   <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
   <script src="app.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/capital-record.js"></script>
@@ -1956,5 +1745,15 @@
   <script src="js/accounts.js"></script>
   <script src="js/gcf.js"></script>
   <script src="js/ndc-sdg.js"></script>
+  <!-- Three modules that used to be defined inside their own page fragment.
+       A fragment is inserted with innerHTML and a <script> inserted that way
+       never executes, so each was undefined and every control on those three
+       pages threw the moment it was pressed. -->
+  <script src="js/reports.js"></script>
+  <script src="js/pipeline.js"></script>
+  <script src="js/carbon-pricing.js"></script>
+  <!-- Last: the allow-list of what markup may call, which can only be built
+       once every module it names has been defined. -->
+  <script src="js/register-actions.js"></script>
 </body>
 </html>

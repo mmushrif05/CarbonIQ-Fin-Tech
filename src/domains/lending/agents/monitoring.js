@@ -19,7 +19,7 @@
  *   - GLP 2025 §4: ongoing monitoring and reporting requirements
  *   - APLMA Model Provisions June 2024: cure period and step-up mechanics
  *   - MAS Notice 652 / HKMA SPM: green loan reporting to regulator
- *   - PCAF v3: annual update of financed emissions required
+ *   - PCAF Part A: annual update of financed emissions required
  */
 
 'use strict';

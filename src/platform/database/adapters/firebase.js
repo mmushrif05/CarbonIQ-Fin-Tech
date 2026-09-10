@@ -11,14 +11,34 @@
 
 'use strict';
 
+/** @typedef {import('../../../shared/types').AppError} AppError */
+
 const fb = require('../../bridge/firebase');
 const { queryOver, pageOver } = require('./emulated');
 
 /** The ceiling of a store the seam cannot ask to page. */
 const MAX_RECORDS = 5000;
 
+function duplicate(collection, orgId, id) {
+  const err = /** @type {AppError} */ (new Error(
+    `A record already exists in "${collection}" for ${orgId} at "${id}".`));
+  err.statusCode = 409;
+  err.code = 'DUPLICATE';
+  return err;
+}
+
 const adapter = {
   mode: 'firebase',
+
+  /* Insert, not upsert. Neither store has a conditional write, so this is a
+     read then a write and two callers in the same instant can both pass the
+     read — the check narrows the window rather than closing it, and
+     `tests/store-conformance.test.js` states that as a real difference from
+     PostgreSQL rather than leaving it to be found. */
+  async insert(collection, orgId, id, record) {
+    if (await adapter.get(collection, orgId, id)) throw duplicate(collection, orgId, id);
+    return adapter.put(collection, orgId, id, record);
+  },
 
   async put(collection, orgId, id, record) {
     await fb.savePartCRecord(collection, orgId, id, record);

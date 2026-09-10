@@ -79,7 +79,7 @@ router.post('/',
         carbonTotals,
         nextSteps: {
           score:    'POST /v1/score — submit these materials with project details for a 0-100 Carbon Finance Score',
-          pcaf:     'POST /v1/pcaf — compute PCAF v3 financed emissions attribution',
+          pcaf:     'POST /v1/pcaf — attributed embodied carbon (A1–A3) for lending; not PCAF Part A',
           taxonomy: 'POST /v1/taxonomy — check taxonomy alignment (ASEAN/EU/HK/SG)'
         },
         meta: {

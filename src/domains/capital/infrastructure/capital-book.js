@@ -222,7 +222,20 @@ async function createInvestment(orgId, input) {
     createdAt: now(),
     updatedAt: now(),
   };
-  await store.put(C_INVESTMENT, orgId, id, record);
+  /*
+   * Insert, not upsert, whenever the caller supplied the id.
+   *
+   * A generated id is unique by construction and `put` is right for it. A
+   * supplied one is derived from something else — `desk.adopt` writes
+   * `inv_<recordId>` — and two callers deriving the same id aimed at the same
+   * primary key: the second overwrote the first, the unique index on the
+   * origin never saw a second row to reject, and both were told they had
+   * adopted the record. That silently rewrote the frozen screening verdict
+   * and the pledged mitigation, which exist precisely because they must be
+   * written once and never again.
+   */
+  if (input.id) await store.insert(C_INVESTMENT, orgId, id, record);
+  else await store.put(C_INVESTMENT, orgId, id, record);
   return record;
 }
 

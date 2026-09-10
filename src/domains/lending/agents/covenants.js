@@ -18,7 +18,7 @@
  * Regulatory grounding:
  *   - GLP 2025: KPIs must be "core and material" to the borrower's business
  *   - APLMA Model Provisions June 2024: first standardised green loan drafting
- *   - PCAF v3: covenant metrics must be reportable under PCAF framework
+ *   - PCAF Part A: covenant metrics must be reportable under the PCAF framework
  *   - MAS/HKMA: covenants must be calibrated against taxonomy thresholds
  */
 

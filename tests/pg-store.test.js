@@ -144,20 +144,27 @@ suite('PostgreSQL — transactions', () => {
     const ok = results.filter(r => r.status === 'fulfilled');
     const no = results.filter(r => r.status === 'rejected');
 
-    /* The rule is that the book never carries two investments for one record,
-       and the index is what enforces it. That is asserted directly.
+    /* One record, one investment — and exactly one caller is told so.
+       
+       This asserted only `ok.length <= 1` and explained the looseness as
+       database contention: two concurrent transactions can both abort, so
+       requiring a winner would fail on the database being busy. That reading
+       was wrong, and it hid a real defect for as long as it stood.
 
-       What is *not* asserted is that exactly one call wins: under a loaded
-       database two concurrent transactions can both be aborted, and a test
-       that requires a winner fails on the database being busy rather than on
-       the rule being broken. It did, once, in a full parallel run and never in
-       isolation — which is the shape that gets a suite labelled flaky and then
-       ignored. Every refusal must still be a conflict and nothing else. */
+       `ok.length` was **2**. Both adoptions succeeded and one investment
+       existed, because the id is derived from the record — `inv_<recordId>` —
+       and `store.put` is an upsert: the second write updated the first row
+       rather than colliding with it, so the unique index on the origin never
+       saw a second row to reject. Two people pressing Adopt in the same
+       moment were each told they had adopted it, and the second silently
+       rewrote the frozen screening verdict and the pledged mitigation that
+       the desk exists to keep. `store.insert()` is the fix, and this is the
+       assertion that would have caught it. */
     const inv = (await book.listInvestments(ORG)).filter(i => i.origin && i.origin.recordId === 'gcf_p1_jaffna_solar');
-    expect(inv.length).toBeLessThanOrEqual(1);
-    expect(inv).toHaveLength(ok.length);
-    expect(ok.length).toBeLessThanOrEqual(1);
-    for (const r of no) expect(r.reason).toMatchObject({ statusCode: 409 });
+    expect(inv).toHaveLength(1);
+    expect(ok).toHaveLength(1);
+    expect(no).toHaveLength(1);
+    expect(no[0].reason).toMatchObject({ statusCode: 409 });
   });
 });
 

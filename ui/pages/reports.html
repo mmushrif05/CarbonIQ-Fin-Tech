@@ -52,7 +52,7 @@
       <span class="rpt-chip">Data Quality Score</span>
       <span class="rpt-chip">YoY Analysis</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('pcaf')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="pcaf">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate Report
     </button>
@@ -82,7 +82,7 @@
       <span class="rpt-chip">Scope 3 Value Chain</span>
       <span class="rpt-chip">Intensity Ratio</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('gri305')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="gri305">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate Report
     </button>
@@ -113,7 +113,7 @@
       <span class="rpt-chip">Risk Management</span>
       <span class="rpt-chip">Scenario Analysis</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('tcfd')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="tcfd">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate Report
     </button>
@@ -144,7 +144,7 @@
       <span class="rpt-chip">Transition Plan</span>
       <span class="rpt-chip">Scope 1/2/3</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('ifrs-s2')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="ifrs-s2">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate Report
     </button>
@@ -176,7 +176,7 @@
       <span class="rpt-chip">Green Lending</span>
       <span class="rpt-chip">ESG Classification</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('slgft-cbsl')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="slgft-cbsl">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate Report
     </button>
@@ -208,7 +208,7 @@
       <span class="rpt-chip">DNSH Compliance</span>
       <span class="rpt-chip">Carbon Pricing</span>
     </div>
-    <button class="btn btn-primary rpt-generate-btn" onclick="ReportsPage.generate('slgft')">
+    <button class="btn btn-primary rpt-generate-btn" data-action="ReportsPage.generate" data-arg="slgft">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M4 6l3 3 3-3M2 11h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       Generate SLGFT Report
     </button>
@@ -225,7 +225,7 @@
 <div class="table-card rpt-history" id="rptHistory" style="display:none">
   <div class="table-header">
     <h3>Generated This Session</h3>
-    <button class="btn btn-ghost btn-sm" onclick="ReportsPage.clearHistory()">Clear</button>
+    <button class="btn btn-ghost btn-sm" data-action="ReportsPage.clearHistory">Clear</button>
   </div>
   <table class="data-table">
     <thead>
@@ -242,144 +242,3 @@
 </div>
 
 <!-- ── JavaScript ─────────────────────────────────────────── -->
-<script>
-const ReportsPage = (() => {
-  const API_BASE = window.CARBONIQ_API_BASE || '';
-
-  const history = [];
-
-  function _typeLabel(type) {
-    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures', 'slgft-cbsl': 'SLGFT CBSL Disclosure' }[type] || type;
-    return { pcaf: 'PCAF Annual Disclosure', gri305: 'GRI 305 Emissions', tcfd: 'TCFD Climate Risk', 'ifrs-s2': 'IFRS S2 Disclosures', slgft: 'SLGFT CBSL Compliance Report' }[type] || type;
-  }
-
-  async function generate(type) {
-    const orgName = document.getElementById('rptOrgName').value.trim() || 'Your Organisation';
-    const period  = document.getElementById('rptPeriod').value;
-    const format  = document.getElementById('rptFormat').value;
-
-    const progressEl = document.getElementById(`rpt-progress-${type}`);
-    const resultEl   = document.getElementById(`rpt-result-${type}`);
-    const card       = document.querySelector(`.rpt-card[data-type="${type}"]`);
-    const btn        = card.querySelector('.rpt-generate-btn');
-
-    // Show loading state
-    btn.disabled = true;
-    resultEl.style.display = 'none';
-    progressEl.style.display = 'flex';
-
-    try {
-      const res = await window.CARBONIQ_fetch('/v1/reports/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, period, format, orgName }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: res.statusText }));
-        throw new Error(err.message || `Server error ${res.status}`);
-      }
-
-      progressEl.style.display = 'none';
-
-      if (format === 'pdf') {
-        // Trigger browser download
-        const blob = await res.blob();
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `CarbonIQ-${type.toUpperCase()}-${period}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-
-        _showSuccess(resultEl, type, period, format, null, a.download);
-      } else {
-        const data = await res.json();
-        _showSuccess(resultEl, type, period, format, data.report, null);
-      }
-
-      _addHistory(type, period, format);
-
-    } catch (err) {
-      progressEl.style.display = 'none';
-      _showError(resultEl, err.message);
-    } finally {
-      btn.disabled = false;
-    }
-  }
-
-  function _showSuccess(el, type, period, format, reportData, filename) {
-    if (format === 'pdf') {
-      el.innerHTML = `
-        <div class="rpt-success">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>PDF downloaded — <strong>${filename}</strong></span>
-        </div>`;
-    } else {
-      // JSON: show a collapsible preview + download button
-      const jsonStr = JSON.stringify(reportData, null, 2);
-      const blob    = new Blob([jsonStr], { type: 'application/json' });
-      const url     = URL.createObjectURL(blob);
-      el.innerHTML = `
-        <div class="rpt-success">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span>Report generated</span>
-          <a href="${url}" download="CarbonIQ-${type}-${period}.json" class="btn btn-secondary btn-sm" style="margin-left:auto">Download JSON</a>
-        </div>
-        <details class="rpt-json-preview">
-          <summary>Preview JSON</summary>
-          <pre>${_escapeHtml(JSON.stringify(reportData, null, 2).slice(0, 3000))}${jsonStr.length > 3000 ? '\n…(truncated)' : ''}</pre>
-        </details>`;
-    }
-    el.style.display = 'block';
-  }
-
-  function _showError(el, message) {
-    el.innerHTML = `
-      <div class="rpt-error">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="6" stroke="#ef4444" stroke-width="1.4"/><path d="M7 4v3M7 9.5v.5" stroke="#ef4444" stroke-width="1.4" stroke-linecap="round"/></svg>
-        ${_escapeHtml(message)}
-      </div>`;
-    el.style.display = 'block';
-  }
-
-  function _addHistory(type, period, format) {
-    const now = new Date().toLocaleTimeString();
-    history.unshift({ type, period, format, time: now });
-
-    const historyEl = document.getElementById('rptHistory');
-    const tbody     = document.getElementById('rptHistoryBody');
-    historyEl.style.display = 'block';
-
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><strong>${_typeLabel(type)}</strong></td>
-      <td>FY ${period}</td>
-      <td><span class="format-tag format-tag-${format}">${format.toUpperCase()}</span></td>
-      <td>${now}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="ReportsPage.regenerate('${type}')">Re-generate</button></td>`;
-    tbody.prepend(row);
-  }
-
-  function regenerate(type) {
-    generate(type);
-  }
-
-  function clearHistory() {
-    history.length = 0;
-    document.getElementById('rptHistoryBody').innerHTML = '';
-    document.getElementById('rptHistory').style.display = 'none';
-  }
-
-  function _escapeHtml(str) {
-    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  // Public init hook (called by app.js after lazy-load)
-  function init() {
-    // Nothing to init — all handlers are inline
-  }
-
-  return { generate, regenerate, clearHistory, init };
-})();
-</script>

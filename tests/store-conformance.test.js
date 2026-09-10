@@ -70,6 +70,26 @@ describe.each(reachable)('%s — the contract every store keeps', name => {
     expect(await store.patch(COLLECTION, ORG, 'nope', { added: true })).toBeNull();
   });
 
+  test('insert refuses a record that is already there, and put does not', async () => {
+    /* The verb exists because `put` is an upsert, and a caller that derives
+       its id from something else needs the store to refuse rather than
+       overwrite. `desk.adopt` derives `inv_<recordId>`: two adoptions of one
+       pipeline record aimed at the same primary key, the second updated the
+       first, and both callers were told they had adopted it — silently
+       rewriting a frozen screening verdict and a pledge that exist to be
+       written once and never again. */
+    await store.insert(COLLECTION, ORG, 'once', { ...rec('once'), v: 1 });
+    await expect(store.insert(COLLECTION, ORG, 'once', { ...rec('once'), v: 2 }))
+      .rejects.toMatchObject({ statusCode: 409, code: 'DUPLICATE' });
+
+    /* The first write stands. A refused insert changes nothing. */
+    expect(await store.get(COLLECTION, ORG, 'once')).toMatchObject({ v: 1 });
+
+    /* And `put` still overwrites, because every other caller depends on it. */
+    await store.put(COLLECTION, ORG, 'once', { ...rec('once'), v: 3 });
+    expect(await store.get(COLLECTION, ORG, 'once')).toMatchObject({ v: 3 });
+  });
+
   test('remove takes one record and leaves the rest', async () => {
     await store.put(COLLECTION, ORG, 'a', rec('a'));
     await store.put(COLLECTION, ORG, 'b', rec('b'));
