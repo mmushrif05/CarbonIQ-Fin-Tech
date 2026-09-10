@@ -16,7 +16,7 @@ safety, `this`, unused locals, unreachable returns and catch narrowing are
 all enforced, and only the missing-annotation class is not. Adopting
 `noImplicitAny` is the remaining step and is measured below.
 
-Checked: **203** files. Remaining: **61** (382 errors under the
+Checked: **211** files. Remaining: **61** (401 errors under the
 settings above, with `checkJs` on for the whole tree).
 
 The per-file count is what that file raises when **every** file is checked.
@@ -29,21 +29,21 @@ pragma and nothing else.
 
 | File | Errors to fix before it joins |
 |---|---|
+| `src/domains/pcaf-part-c/application/partc-assessments.js` | 37 |
 | `src/domains/pcaf-part-c/reporting/report-standard/facts.js` | 34 |
-| `src/domains/pcaf-part-c/application/partc-assessments.js` | 23 |
 | `src/domains/pcaf-part-c/agents/form.js` | 21 |
 | `src/domains/pcaf-part-a/domain/index.js` | 19 |
 | `src/domains/capital/interface/routes/capital.js` | 17 |
 | `src/domains/pcaf-part-a/domain/listed-equity/denominator.js` | 16 |
 | `src/domains/pcaf-part-a/domain/generation.js` | 15 |
 | `src/domains/lending/domain/decision-engine.js` | 14 |
+| `src/domains/pcaf-part-c/application/partc-registry.js` | 12 |
 | `src/domains/pcaf-part-a/domain/impact.js` | 11 |
+| `src/domains/capital/infrastructure/capital-book.js` | 10 |
 | `src/domains/gcf/domain/screening.js` | 10 |
-| `src/domains/pcaf-part-c/application/partc-registry.js` | 10 |
 | `src/domains/capital/domain/capital-forecast.js` | 9 |
 | `src/domains/pcaf-part-a/domain/attribution.js` | 9 |
 | `src/domains/pcaf-part-c/agents/documents.js` | 9 |
-| `src/domains/capital/infrastructure/capital-book.js` | 8 |
 | `src/domains/gcf/application/cn-package.js` | 8 |
 | `src/domains/pcaf-part-a/domain/country-config.js` | 7 |
 | `src/domains/pcaf-part-c/domain/data-quality.js` | 7 |
@@ -53,13 +53,13 @@ pragma and nothing else.
 | `src/domains/lending/application/webhook.js` | 5 |
 | `src/domains/pcaf-part-a/domain/emissions.js` | 5 |
 | `src/domains/pcaf-part-a/domain/listed-equity/classify.js` | 5 |
+| `src/domains/pcaf-part-c/application/partc-boq.js` | 5 |
 | `src/domains/pcaf-part-c/domain/beyond-pcaf.js` | 5 |
 | `src/domains/capital/domain/capital-metrics.js` | 4 |
 | `src/domains/gcf/domain/record.js` | 4 |
 | `src/domains/pcaf-part-a/domain/data-quality.js` | 4 |
 | `src/domains/pcaf-part-a/domain/listed-equity/index.js` | 4 |
 | `src/domains/pcaf-part-c/application/methodology/demonstrations.js` | 4 |
-| `src/domains/pcaf-part-c/application/partc-boq.js` | 4 |
 | `src/domains/pcaf-part-c/application/partc-disclosure.js` | 4 |
 | `src/domains/pcaf-part-c/domain/a5-construction.js` | 4 |
 | `src/domains/pcaf-part-c/domain/b4-replacement.js` | 4 |

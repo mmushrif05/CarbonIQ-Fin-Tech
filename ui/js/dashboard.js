@@ -1804,12 +1804,39 @@ const Dashboard = (() => {
     await Promise.all([
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
+      _renderBaseline(),
     ]);
     /* The drawer recomputes through the same path a control does, so an
        adjusted figure and an adjusted assumption reach the screen the same
        way — one code path, one place for it to be wrong. It is initialised
        above, before the first fetch. */
     _wireCapitalControls();
+  }
+
+  /**
+   * Name the baseline the screened figures rest on.
+   *
+   * The bands are the product's own regional judgement, not a taxonomy
+   * threshold, so a reader is told which version assigned them and whether it
+   * has been released or is still the illustrative set.
+   */
+  async function _renderBaseline() {
+    const el = document.getElementById('cap-baseline');
+    if (!el) return;
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/baselines/effective?metric=construction_intensity_kgCO2e_m2');
+      if (!res.ok) { el.hidden = true; return; }
+      const body = await res.json();
+      const r = (body.effective || {}).construction_intensity_kgCO2e_m2;
+      if (!r) { el.hidden = true; return; }
+      el.textContent = r.resolved
+        ? `Intensity screen: ${r.values.green} green, ${r.values.transition} transition ${r.unit}. ${r.basis}`
+        : r.basis;
+      el.hidden = false;
+    } catch (_) {
+      /* A dashboard that cannot reach the registry still shows the book. */
+      el.hidden = true;
+    }
   }
 
   async function refresh() {
@@ -1822,6 +1849,7 @@ const Dashboard = (() => {
     await Promise.all([
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
+      _renderBaseline(),
     ]);
   }
 

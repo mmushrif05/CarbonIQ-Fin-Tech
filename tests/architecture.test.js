@@ -81,7 +81,7 @@ function violations(rule) {
 describe('The layout is the one the readiness plan named', () => {
   test('every domain has a domain/ layer, and the platform has its areas', () => {
     const domains = fs.readdirSync(path.join(SRC, 'domains'));
-    expect(domains.sort()).toEqual(['capital', 'gcf', 'lending', 'pcaf-part-a', 'pcaf-part-c', 'taxonomy']);
+    expect(domains.sort()).toEqual(['baseline', 'capital', 'gcf', 'lending', 'pcaf-part-a', 'pcaf-part-c', 'taxonomy']);
     for (const d of domains) expect(fs.existsSync(path.join(SRC, 'domains', d, 'domain'))).toBe(true);
     for (const a of ['ai', 'auth', 'bridge', 'config', 'database', 'http', 'observability', 'reporting']) {
       expect(fs.existsSync(path.join(SRC, 'platform', a))).toBe(true);

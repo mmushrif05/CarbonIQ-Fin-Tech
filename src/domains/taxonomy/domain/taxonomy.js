@@ -21,13 +21,22 @@ const {
  * @param {Object} projectMetrics - { totalEmission_tCO2e, buildingArea_m2, reductionPct, hasLCA, hasEPD }
  * @returns {Object} Alignment results per taxonomy
  */
-function checkAllTaxonomies(projectMetrics) {
+/**
+ * @param {any} projectMetrics
+ * @param {{sriLanka?: {green: number, transition: number, basis?: string, provisional?: boolean}}} [baselines]
+ *   The Sri Lanka bands come from the master baseline registry, resolved by
+ *   the caller and handed in. This layer imports no registry and reads no
+ *   store — a screening engine that fetched its own thresholds could not be
+ *   run twice against two of them, which is exactly what a restatement needs.
+ *   Absent, it falls back to the shipped screen, and says so on the result.
+ */
+function checkAllTaxonomies(projectMetrics, baselines = {}) {
   return {
     asean: checkASEAN(projectMetrics),
     eu: checkEU(projectMetrics),
     hongKong: checkHK(projectMetrics),
     singapore: checkSG(projectMetrics),
-    sriLanka: checkSL(projectMetrics),
+    sriLanka: checkSL(projectMetrics, baselines.sriLanka),
     assessedAt: new Date().toISOString()
   };
 }
@@ -88,20 +97,47 @@ function checkSG(metrics) {
   };
 }
 
-function checkSL(metrics) {
+/**
+ * The Sri Lanka screen.
+ *
+ * The bands are **this product's own intensity screen**, not a taxonomy
+ * threshold: the SLGFT held in this repository sets no absolute kgCO2e/m²
+ * figure anywhere, its construction criteria being relative (M6.1, M6.3) or
+ * certification-based (M6.2). Two band sets used to be live at once — 520/780
+ * here and 600/900 on the certificate — so a building at 560 was Green from
+ * one endpoint and Transition from another. There is one set now, and it is
+ * governed: released, versioned and superseded through the baseline registry
+ * rather than edited in a constants file.
+ *
+ * @param {any} metrics
+ * @param {{green: number, transition: number, basis?: string, provisional?: boolean}} [bands]
+ */
+function checkSL(metrics, bands) {
   const intensity = metrics.buildingArea_m2 > 0
     ? (metrics.totalEmission_tCO2e * 1000) / metrics.buildingArea_m2
     : null;
 
-  const criteria = TAXONOMY_SL.classifications;
+  const given = bands || /** @type {{green?: number, transition?: number, basis?: string, provisional?: boolean}} */ ({});
+  const green = Number.isFinite(Number(given.green))
+    ? Number(given.green) : TAXONOMY_SL.classifications.green.maxIntensity;
+  const transition = Number.isFinite(Number(given.transition))
+    ? Number(given.transition) : TAXONOMY_SL.classifications.transition.maxIntensity;
 
-  if (intensity !== null && intensity <= criteria.green.maxIntensity) {
-    return { classification: 'green', label: criteria.green.label, intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
+  const screen = {
+    green, transition,
+    basis: given.basis || 'Shipped intensity screen — no baseline was resolved for this request.',
+    provisional: bands ? given.provisional !== false : true,
+    isTaxonomyThreshold: false,
+  };
+  const framework = 'CBSL Direction No. 05/2022 + SLGFT';
+
+  if (intensity !== null && intensity <= green) {
+    return { classification: 'green', label: TAXONOMY_SL.classifications.green.label, intensity_kgCO2e_m2: intensity, framework, screen };
   }
-  if (intensity !== null && intensity <= criteria.transition.maxIntensity) {
-    return { classification: 'transition', label: criteria.transition.label, intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
+  if (intensity !== null && intensity <= transition) {
+    return { classification: 'transition', label: TAXONOMY_SL.classifications.transition.label, intensity_kgCO2e_m2: intensity, framework, screen };
   }
-  return { classification: 'not_aligned', label: 'Not Aligned', intensity_kgCO2e_m2: intensity, framework: 'CBSL Direction No. 05/2022 + SLGFT' };
+  return { classification: 'not_aligned', label: 'Not Aligned', intensity_kgCO2e_m2: intensity, framework, screen };
 }
 
 module.exports = { checkAllTaxonomies };

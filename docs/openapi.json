@@ -38,6 +38,9 @@
       "name": "auth"
     },
     {
+      "name": "baselines"
+    },
+    {
       "name": "capital"
     },
     {
@@ -3931,6 +3934,950 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines": {
+      "get": {
+        "operationId": "getBaselines",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "The master table: every baseline version this caller can see, with the shipped seed beside it",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "metric",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "construction_intensity_kgCO2e_m2",
+                "embodied_carbon_benchmark_kgCO2e_m2",
+                "grid_emission_factor_kgCO2e_kWh",
+                "data_quality_target_score"
+              ]
+            }
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "global",
+                "country",
+                "organisation"
+              ]
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 2
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "released",
+                "superseded"
+              ]
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postBaselines",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "Record a baseline as a draft. A draft is not in force.",
+        "description": "Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "metric": {
+                    "type": "string",
+                    "enum": [
+                      "construction_intensity_kgCO2e_m2",
+                      "embodied_carbon_benchmark_kgCO2e_m2",
+                      "grid_emission_factor_kgCO2e_kWh",
+                      "data_quality_target_score"
+                    ]
+                  },
+                  "scope": {
+                    "type": "string",
+                    "enum": [
+                      "global",
+                      "country",
+                      "organisation"
+                    ]
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "description": "ISO 3166-1 alpha-2. Required for a country or organisation baseline."
+                  },
+                  "orgId": {
+                    "type": "string",
+                    "maxLength": 80,
+                    "description": "Defaults to the calling organisation; an organisation cannot govern another."
+                  },
+                  "values": {
+                    "type": "object",
+                    "description": "The fields the metric declares — bands, or a single value."
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 2000,
+                    "description": "The document or judgement this figure rests on. A baseline nobody can trace is not a baseline."
+                  },
+                  "authority": {
+                    "type": "string",
+                    "maxLength": 200,
+                    "description": "Who stands behind it."
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "metric",
+                  "scope",
+                  "values",
+                  "source"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines/{baselineId}/release": {
+      "post": {
+        "operationId": "postBaselinesByBaselineIdRelease",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "Put a draft in force, superseding the version it replaces in one transaction",
+        "description": "Requires the `lock` scope.",
+        "x-scope": "lock",
+        "parameters": [
+          {
+            "name": "baselineId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines/{baselineId}/supersede": {
+      "post": {
+        "operationId": "postBaselinesByBaselineIdSupersede",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "A new version of a released baseline, carrying the movement and the reason",
+        "description": "Requires the `lock` scope.",
+        "x-scope": "lock",
+        "parameters": [
+          {
+            "name": "baselineId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "values": {
+                    "type": "object"
+                  },
+                  "reason": {
+                    "type": "string",
+                    "maxLength": 2000,
+                    "description": "Required where the movement reaches the restatement threshold."
+                  },
+                  "source": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 2000
+                  },
+                  "authority": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000
+                  },
+                  "effectiveFrom": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  }
+                },
+                "required": [
+                  "values"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines/effective": {
+      "get": {
+        "operationId": "getBaselinesEffective",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "The baselines in force for this caller, each with the provenance behind it",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "country",
+            "in": "query",
+            "description": "ISO 3166-1 alpha-2. Defaults to the organisation's own country.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "metric",
+            "in": "query",
+            "description": "One metric rather than all of them.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines/metrics": {
+      "get": {
+        "operationId": "getBaselinesMetrics",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "The metrics a baseline can govern, and what in the product reads each",
+        "description": "Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "304": {
+            "$ref": "#/components/responses/NotModified"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/baselines/pledge": {
+      "get": {
+        "operationId": "getBaselinesPledge",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "Where the organisation stands against its own pledge",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "metric",
+            "in": "query",
+            "description": "Which baseline the pledge is measured against.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currentValue",
+            "in": "query",
+            "description": "The figure the book stands at today. Supplied by the caller: this endpoint does not read the book.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "asOfYear",
+            "in": "query",
+            "description": "The year that figure is for. Defaults to this year.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "putBaselinesPledge",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "Record the organisation's own pledge against its baseline",
+        "description": "Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "metric": {
+                    "type": "string",
+                    "enum": [
+                      "construction_intensity_kgCO2e_m2",
+                      "embodied_carbon_benchmark_kgCO2e_m2",
+                      "grid_emission_factor_kgCO2e_kWh",
+                      "data_quality_target_score"
+                    ]
+                  },
+                  "targetPct": {
+                    "type": "number",
+                    "exclusiveMinimum": 0,
+                    "maximum": 100,
+                    "description": "The reduction the entity committed to, against its baseline."
+                  },
+                  "baseYear": {
+                    "type": "integer",
+                    "minimum": 1990,
+                    "maximum": 2100
+                  },
+                  "targetYear": {
+                    "type": "integer",
+                    "minimum": 1990,
+                    "maximum": 2100
+                  },
+                  "basis": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "What the percentage is of, in the entity's own words."
+                  },
+                  "statedBy": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 200,
+                    "description": "A pledge belongs to whoever made it. This product does not make one."
+                  },
+                  "reference": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 500,
+                    "description": "Where a reader can go and find it."
+                  }
+                },
+                "required": [
+                  "metric",
+                  "targetPct",
+                  "baseYear",
+                  "targetYear",
+                  "statedBy",
+                  "reference"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Default"
@@ -9552,8 +10499,8 @@
         "tags": [
           "ndc-sdg"
         ],
-        "summary": "SLGFT framework metadata and the NDC 3.0 targets",
-        "description": "Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "summary": "SLGFT framework metadata, the NDC 3.0 targets, and the intensity screen in force",
+        "description": "Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {
@@ -9561,9 +10508,6 @@
           }
         ],
         "responses": {
-          "304": {
-            "$ref": "#/components/responses/NotModified"
-          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },

@@ -211,6 +211,10 @@
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="4" width="13" height="10" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M2.5 7.5h13" stroke="currentColor" stroke-width="1.5"/><path d="M6 11h2.5M11 11h1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         Fund Desk
       </a>
+      <a href="#" class="nav-item" data-page="baselines">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 13.5h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><rect x="4" y="8.5" width="3" height="5" stroke="currentColor" stroke-width="1.4"/><rect x="11" y="4.5" width="3" height="9" stroke="currentColor" stroke-width="1.4"/><path d="M2.5 6.5h13" stroke="currentColor" stroke-width="1.2" stroke-dasharray="2 2"/></svg>
+        Baselines
+      </a>
       <a href="#" class="nav-item" data-page="gcf">
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 2.5v13M2.5 9h13" stroke="currentColor" stroke-width="1.2"/><path d="M9 2.5c2 2.2 2 10.8 0 13M9 2.5c-2 2.2-2 10.8 0 13" stroke="currentColor" stroke-width="1.2"/></svg>
         GCF Pipeline
@@ -489,6 +493,12 @@
               <button type="button" class="dash-link" id="cap-refresh">Refresh</button>
             </div>
           </header>
+
+          <!-- Which baseline the screened figures rest on. A band with no
+               version behind it cannot be checked, and every figure here can
+               be. Hidden until it has something to say; `hidden` is honoured
+               because no class rule on this element sets display. -->
+          <p class="cap-sub" id="cap-baseline" hidden></p>
 
           <!-- An adjusted screen says so before its first figure. This project
                has already had one failure of exactly the opposite kind, where
@@ -1671,6 +1681,7 @@
            Entirely separate from PCAF: nothing here is a financed or an
            insurance-associated emission. -->
       <div class="page" id="page-desk" data-src="pages/desk.html"></div>
+      <div class="page" id="page-baselines" data-src="pages/baselines.html"></div>
       <div class="page" id="page-gcf" data-src="pages/gcf.html"></div>
 
       <div class="page" id="page-pcaf-parta" data-src="pages/pcaf-parta.html"></div>
@@ -1717,6 +1728,7 @@
   <script src="js/assurance.js"></script>
   <script src="js/brand.js"></script>
   <script src="js/desk.js"></script>
+  <script src="js/baselines.js"></script>
   <script src="js/gcf.js"></script>
   <script src="js/ndc-sdg.js"></script>
 </body>

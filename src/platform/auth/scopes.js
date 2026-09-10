@@ -90,6 +90,16 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-c\//, scope: 'assess', why: 'Part C runs, forms, reports and agents' },
   { method: 'POST', pattern: /^\/v1\/jobs$/, scope: 'assess', why: 'enqueues an engine run' },
 
+  /* The master baseline table. Releasing or superseding a baseline is the
+     baseline-governance act `lock` exists for — it is what a disclosure will
+     be quoted against, and it is kept apart from `write` for the same reason
+     locking an assessment is. Whether the *market's* figure may be governed,
+     as against the organisation's own, is a second question the handler asks
+     of the same resolver: a country band moved by one tenant is moved for
+     every institution on the deployment. */
+  { method: 'POST', pattern: /^\/v1\/baselines\/:[A-Za-z]+\/release$/, scope: 'lock', why: 'puts a baseline in force' },
+  { method: 'POST', pattern: /^\/v1\/baselines\/:[A-Za-z]+\/supersede$/, scope: 'lock', why: 'restates a released baseline' },
+
   /* The lock itself is decided from the body: see requiredScope(). */
   { method: 'POST', pattern: /^\/v1\/partc\/assessments\/:[A-Za-z]+\/status$/, scope: 'write', why: 'status change; locking needs lock' },
 ]);

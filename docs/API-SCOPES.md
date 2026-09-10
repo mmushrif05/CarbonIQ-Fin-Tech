@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-154 routes.
+162 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -45,6 +45,14 @@ relationship manager read, write, assess; auditor and borrower read.
 | POST | `/v1/auth/users` | `admin` | creates or resets another account |
 | PATCH | `/v1/auth/users/:userId` | `admin` | changes another account's role or standing |
 | POST | `/v1/auth/users/:userId/password` | `admin` | creates or resets another account |
+| GET | `/v1/baselines` | `read` | read |
+| POST | `/v1/baselines` | `write` | changes a record |
+| POST | `/v1/baselines/:baselineId/release` | `lock` | puts a baseline in force |
+| POST | `/v1/baselines/:baselineId/supersede` | `lock` | restates a released baseline |
+| GET | `/v1/baselines/effective` | `read` | read |
+| GET | `/v1/baselines/metrics` | `read` | read |
+| GET | `/v1/baselines/pledge` | `read` | read |
+| PUT | `/v1/baselines/pledge` | `write` | changes a record |
 | GET | `/v1/capital/basket` | `read` | read |
 | GET | `/v1/capital/book` | `read` | read |
 | POST | `/v1/capital/compute` | `read` | adjusted dashboard, stores nothing |

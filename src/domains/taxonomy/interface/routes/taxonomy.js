@@ -21,6 +21,9 @@ const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
 const engine = require('../../../../platform/bridge/engine');
 const { checkAllTaxonomies } = require('../../domain/taxonomy');
+/* The Sri Lanka bands are governed, not hardcoded: they resolve from the
+   master baseline table, and the answer carries which baseline it used. */
+const baselines = require('../../../baseline/application/registry');
 
 const router = Router();
 
@@ -57,7 +60,14 @@ router.get('/:projectId/taxonomy',
         hasEPD:       req.query.hasEPD  === 'true'
       };
 
-      const result = checkAllTaxonomies(projectMetrics);
+      const screen = await baselines.effective('construction_intensity_kgCO2e_m2',
+        { country: String(req.query.country || 'LK').toUpperCase(), orgId: req.orgId || null });
+
+      const result = checkAllTaxonomies(projectMetrics, {
+        sriLanka: screen.values
+          ? /** @type {any} */ ({ ...screen.values, basis: screen.basis, provisional: screen.provisional })
+          : undefined,
+      });
 
       res.json({
         projectId,

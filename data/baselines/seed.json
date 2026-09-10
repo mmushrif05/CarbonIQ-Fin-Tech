@@ -1,0 +1,19 @@
+{
+  "_meta": {
+    "title": "Shipped baseline seed — illustrative, not released",
+    "purpose": "Enough for the product to run and be demonstrated before an operator has released anything. Every value here resolves with provisional: true and is labelled on every screen and in every response that reads it.",
+    "rule": "A released baseline replaces this entirely for that metric and scope. The two are never merged.",
+    "governance": "docs/BASELINE-GOVERNANCE.md"
+  },
+  "baselines": [
+    {
+      "metric": "construction_intensity_kgCO2e_m2",
+      "scope": "country",
+      "country": "LK",
+      "values": { "green": 520, "transition": 780 },
+      "source": "CarbonIQ FinTech — this product's own carbon-intensity screen, not a taxonomy threshold. The Sri Lanka Green Finance Taxonomy (May 2022) sets no absolute kgCO2e/m² figure: its construction criteria are relative (M6.1 ≥30% PED reduction, M6.3 ≥10% below a nearly zero-energy benchmark) or certification-based (M6.2 Green SL Gold/Platinum).",
+      "authority": "Datum Solutions",
+      "note": "Two band sets were live in this codebase and disagreed — 520/780 and 600/900 — so a building at 560 kgCO2e/m² was Green from one endpoint and Transition from another. 520/780 is now the single answer, held here so it can be released, versioned and superseded rather than edited in a constants file."
+    }
+  ]
+}

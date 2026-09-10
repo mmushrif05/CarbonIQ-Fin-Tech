@@ -15,11 +15,12 @@ const { Router } = require('express');
 const Joi = require('joi');
 const authenticate = require('../../../../platform/auth/authenticate');
 const { doc } = require('../../../../platform/http/openapi-hints');
-const referenceCache = require('../../../../platform/http/reference-cache');
+const handle = require('../../../../platform/http/async-handler');
 const validate   = require('../../../../platform/http/validate');
 const { assessLimiter } = require('../../../../platform/http/rate-limit');
 const { assessNdcSdgAlignment } = require('../../application/ndc-sdg');
 const { generateCertificate, verifyCertificate } = require('../../domain/certificate');
+const baselines = require('../../../baseline/application/registry');
 const { asError } = require('../../../../shared/types');
 
 const router = Router();
@@ -102,7 +103,17 @@ router.post('/certificate',
   validate({ body: certSchema }),
   async (req, res, next) => {
     try {
-      const cert = generateCertificate(req.body);
+      /* The tier a certificate carries is assigned from the governed bands,
+         resolved here and handed to the engine, so a certificate records the
+         baseline version behind its own classification. */
+      const screen = await baselines.effective('construction_intensity_kgCO2e_m2',
+        { country: String(req.body.country || 'LK').toUpperCase(), orgId: req.orgId || null });
+      const cert = generateCertificate({
+        ...req.body,
+        screen: screen.values
+          ? { ...screen.values, basis: screen.basis, provisional: screen.provisional, version: screen.version }
+          : undefined,
+      });
       return res.status(201).json({ success: true, certificate: cert });
     } catch (err) {
       next(err);
@@ -136,8 +147,14 @@ router.post('/certificate/verify',
 // Returns SLGFT framework metadata (NDC targets, SDGs, sectors) — no AI
 // ---------------------------------------------------------------------------
 
-router.get('/framework', authenticate, referenceCache(), doc({ summary: 'SLGFT framework metadata and the NDC 3.0 targets' }), (_req, res) => {
+router.get('/framework', authenticate, doc({ summary: 'SLGFT framework metadata, the NDC 3.0 targets, and the intensity screen in force' }), handle(async (req, res) => {
   const { TAXONOMY_LK } = require('../../../../shared/constants');
+  /* The framework's own content is fixed by the published document; the
+     intensity screen beside it is not part of that document and is governed
+     here, so this endpoint reports what is actually in force rather than a
+     second constant that disagreed with the taxonomy screen. */
+  const screen = await baselines.effective('construction_intensity_kgCO2e_m2',
+    { country: String(req.query.country || 'LK').toUpperCase(), orgId: req.orgId || null });
   res.json({
     framework:   TAXONOMY_LK.name,
     version:     TAXONOMY_LK.version,
@@ -145,10 +162,20 @@ router.get('/framework', authenticate, referenceCache(), doc({ summary: 'SLGFT f
     ndcTargets:  TAXONOMY_LK.ndcTargets,
     sectors:     TAXONOMY_LK.sectors,
     objectives:  TAXONOMY_LK.environmentalObjectives,
-    thresholds:  TAXONOMY_LK.thresholds,
     activities:  TAXONOMY_LK.constructionActivities,
     guidingPrinciples: TAXONOMY_LK.guidingPrinciples,
+    intensityScreen: {
+      ...(screen.values || {}),
+      unit: screen.unit,
+      basis: screen.basis,
+      source: screen.source,
+      provisional: screen.provisional,
+      baselineVersion: screen.version,
+      isTaxonomyThreshold: false,
+      note: 'The taxonomy sets no absolute kgCO2e/m² figure. These bands are this '
+        + "product's own screen, governed through the master baseline table.",
+    },
   });
-});
+}));
 
 module.exports = router;

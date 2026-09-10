@@ -154,16 +154,24 @@ const TAXONOMY_SL = {
 // Sri Lanka Green Finance Taxonomy — the SLGFT v2024 structure
 //
 // TAXONOMY_SL above and TAXONOMY_LK here both describe Sri Lankan green
-// finance, and they do not agree on the construction thresholds: TAXONOMY_SL
-// classifies Green at <= 520 kgCO2e/m2 and Transition at <= 780, while
-// TAXONOMY_LK uses 600 and 900. They were written on separate branches from
-// different readings of the rules.
+// finance. They used to disagree on the construction bands — 520/780 against
+// 600/900 — with each still feeding the code written against it, so a building
+// at 560 kgCO2e/m2 was Green from `GET /v1/taxonomy` and Transition on its
+// Green Loan Certificate. That is not two readings of a rule, it is two
+// answers to one question, and a bank cannot act on it.
 //
-// Both are kept, each still feeding the code written against it, because
-// silently adopting one set of numbers would rescore live projects: a
-// building at 560 kgCO2e/m2 is Green under one and Transition under the
-// other, which changes what a bank may call a green loan. Which figure is
-// correct is a regulatory question for CBSL, not a merge decision.
+// **520/780 is the answer**, and it no longer lives here. The bands are the
+// product's own intensity screen — the taxonomy sets no absolute kgCO2e/m2
+// figure at all — which makes them regional judgement, and regional judgement
+// is exactly what has to be governed rather than hardcoded. They are now a
+// baseline in the master table (`src/domains/baseline/`): scoped to a country
+// or to one institution, released by an administrator, versioned, and
+// superseded only with a recorded reason once the movement reaches the stated
+// threshold. What each endpoint answers with, it also says the provenance of.
+//
+// The change does not invalidate a certificate already issued: the audit hash
+// covers the tier that was assigned, not the bands that assigned it. What it
+// changes is the tier a new certificate carries, which is the correction.
 // ---------------------------------------------------------------------------
 
 const TAXONOMY_LK = {
@@ -349,12 +357,22 @@ const TAXONOMY_LK = {
     transition:         900,           // ≤ 900 kgCO2e/m2
   },
 
-  /* Kept under the old key so existing callers keep working. Same numbers, and
-     the honest labelling lives on intensityScreen above. */
+  /* The fallback the certificate engine uses when a caller hands it no bands.
+     It was 600/900 while `GET /v1/taxonomy` screened on 520/780, so the same
+     building was Green from one endpoint and Transition from another and a
+     bank had two answers to one question. There is one set now, and the live
+     figure comes from the master baseline table
+     (`src/domains/baseline/`, metric `construction_intensity_kgCO2e_m2`) —
+     released, versioned and superseded with a recorded reason, because a
+     baseline anyone can edit in a constants file is worth nothing.
+
+     This stays only as the value a pure engine falls back to when it is run
+     with no resolution handed in, and `tests/baseline-registry.test.js`
+     asserts it equals the one screen. */
   thresholds: {
     directlyEligible:   null,
-    green:              600,
-    transition:         900,
+    green:              TAXONOMY_SL.classifications.green.maxIntensity,
+    transition:         TAXONOMY_SL.classifications.transition.maxIntensity,
   },
 
   /* NDC targets Sri Lanka committed to.
