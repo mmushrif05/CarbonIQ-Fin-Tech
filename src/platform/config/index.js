@@ -223,6 +223,57 @@ const config = {
 };
 
 /**
+ * AWS Lambda's hard ceiling on the whole function environment.
+ *
+ * Netlify Functions are Lambdas, and Lambda refuses to create a function whose
+ * environment — every key, every value, the platform's own injected variables
+ * included — exceeds 4 KB. There is no warning and no partial application: the
+ * deploy fails at function creation with a message about a size limit and
+ * nothing about which variable is responsible.
+ *
+ * This deployment hit it. One base64 service account was using roughly
+ * two-thirds of the budget; the deploy that added a 32-character token was the
+ * one that failed. Nothing in the codebase or the documentation mentioned the
+ * limit, so the cause took hours to find, and the deploys in between simply
+ * did not appear.
+ */
+const LAMBDA_ENV_LIMIT_BYTES = 4096;
+
+/** Where a warning is worth more than the noise: three quarters spent. */
+const LAMBDA_ENV_WARN_BYTES = Math.floor(LAMBDA_ENV_LIMIT_BYTES * 0.75);
+
+/**
+ * How much of that budget this process's environment occupies, and which
+ * variables account for most of it.
+ *
+ * **Names and byte counts only.** This is reported by `/health`, so a value
+ * must never be able to reach it — which is also why the largest are named
+ * rather than printed: "FIREBASE_SERVICE_ACCOUNT is 2,847 bytes" is the whole
+ * of what an operator needs, and the value would be a leaked credential.
+ *
+ * Lambda counts the key, the value and a separator per variable. The figure is
+ * therefore an estimate of the same order rather than the platform's exact
+ * accounting, and the warning threshold leaves room for that.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{bytes: number, count: number, limit: number, largest: {variable: string, bytes: number}[]}}
+ */
+function environmentSize(env = process.env) {
+  const entries = Object.entries(env)
+    .map(([variable, value]) => ({
+      variable,
+      bytes: Buffer.byteLength(variable, 'utf8') + Buffer.byteLength(String(value ?? ''), 'utf8') + 1,
+    }))
+    .sort((a, b) => b.bytes - a.bytes);
+  return {
+    bytes: entries.reduce((n, e) => n + e.bytes, 0),
+    count: entries.length,
+    limit: LAMBDA_ENV_LIMIT_BYTES,
+    largest: entries.slice(0, 3),
+  };
+}
+
+/**
  * Boot-time validation: the variables a production deployment cannot run
  * without, or cannot run safely with. Names only in the result — never a
  * value — because /health prints it.
@@ -269,7 +320,28 @@ function validate({ env = config.env } = {}) {
   if (production && process.env.STORAGE_BACKEND === 'memory') {
     problems.push({ variable: 'STORAGE_BACKEND', problem: 'memory in production — every write is lost when the process ends', remedy: 'Unset it, or set postgres / firebase / blobs.' });
   }
+  /* The environment's own size, on the runtime where it is a hard limit.
+     Reported before the deploy fails rather than after: Lambda's refusal names
+     a number and not a variable, and the largest is almost always the answer. */
+  if (config.runtime.isServerless) {
+    const size = environmentSize();
+    if (size.bytes > LAMBDA_ENV_WARN_BYTES) {
+      const over = size.bytes > LAMBDA_ENV_LIMIT_BYTES;
+      problems.push({
+        variable: size.largest[0] ? size.largest[0].variable : 'STORAGE_BACKEND',
+        problem: `the function environment is ${size.bytes} bytes across ${size.count} variables, `
+          + `against AWS Lambda's ${LAMBDA_ENV_LIMIT_BYTES}-byte ceiling`
+          + (over ? ' — a deploy will fail at function creation' : ' — a deploy is close to failing at function creation')
+          + `. Largest: ${size.largest.map(l => `${l.variable} (${l.bytes} bytes)`).join(', ')}`,
+        remedy: 'Scope the largest to Builds only, or remove it. A base64 service account is '
+          + 'usually most of the budget and is needed only where Firebase is the store.',
+      });
+    }
+  }
   return { ok: problems.length === 0, problems };
 }
 
-module.exports = Object.freeze({ ...config, validate, KEY_SHAPES, firebaseServiceAccountUsable });
+module.exports = Object.freeze({
+  ...config, validate, KEY_SHAPES, firebaseServiceAccountUsable,
+  environmentSize, LAMBDA_ENV_LIMIT_BYTES, LAMBDA_ENV_WARN_BYTES,
+});

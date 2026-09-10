@@ -127,7 +127,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **90** (1238 errors, measured by
+Checked: **42**. Remaining: **90** (1241 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -199,6 +199,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/gcf-ui.test.js` | 5 |
 | `tests/pdf-response.test.js` | 5 |
 | `tests/storage-seam.test.js` | 5 |
+| `tests/config.test.js` | 4 |
 | `tests/dashboard-layout.test.js` | 4 |
 | `tests/data-layer.test.js` | 4 |
 | `tests/deadline.test.js` | 4 |
@@ -216,7 +217,6 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
 | `tests/schemas.test.js` | 2 |
-| `tests/config.test.js` | 1 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |
 | `tests/reports.test.js` | 1 |
