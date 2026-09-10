@@ -93,6 +93,8 @@ function outline(model) {
   L.push(`  reporting year: ${model.cover.reportingYear}`);
   L.push(`  standard: ${model.cover.standard}`);
   L.push(`  prepared by: ${model.cover.preparedBy}`);
+  L.push(`  assurance: ${model.cover.assuranceMode} — ${model.cover.assuranceLabel}`);
+  L.push(`  assurance statement: ${model.cover.assuranceStatement}`);
   L.push('');
   let n = 1;
   for (const sec of model.sections) {

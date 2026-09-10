@@ -172,3 +172,6 @@ section contradicts.
 | **the seam** | `src/platform/database/store.js` — the one interface every record goes through. |
 | **composition root** | one of the four files allowed to wire the domains together. |
 | **conformance** | this software follows a published method. It is **not** endorsement: PCAF does not approve, endorse or certify software. |
+| **self-declared** | an operating mode. The figures rest on the reporting entity's own baseline and its own values, and neither the tool provider nor Datum Solutions has confirmed them. Every document says so on its face. |
+| **verified** | the other operating mode. Every governed value the document reads resolves to a *released* baseline, and the entity has recorded who assured the figures, to what standard and at what level. It is a request rather than an assertion: where either condition is unmet the position resolves back to self-declared and prints the reason. |
+| **the operating mode** | which of those two a deployment may claim. It is the **tool provider's** to set (`PUT /v1/assurance/mode`, scope `admin`), never the reporting entity's — an entity that could choose `verified` for itself would be self-declaring by another name. Distinct from the entity's own **assurance declaration** (`PUT /v1/assurance`), which says who audited what. |

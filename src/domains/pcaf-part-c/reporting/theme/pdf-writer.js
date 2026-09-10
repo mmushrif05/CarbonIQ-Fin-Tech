@@ -73,7 +73,7 @@ function pcafWriter(doc, meta = {}) {
    * preparer's mark. The chevrons are a low-contrast watermark: present
    * enough to read as designed, faint enough never to compete with the text.
    */
-  function cover({ title, subtitle, insurer, reportingYear, publishedAt, standard, preparedBy, reportId }) {
+  function cover({ title, subtitle, insurer, reportingYear, publishedAt, standard, preparedBy, reportId, assuranceLabel, assuranceStatement }) {
     const w = doc.page.width, h = doc.page.height;
     doc.save();
     doc.rect(0, 0, w, h).fill(PALETTE.slate);
@@ -106,6 +106,19 @@ function pcafWriter(doc, meta = {}) {
 
     doc.moveDown(1.6).fillColor('#AFBDCC').font(F.sans).fontSize(9)
        .text(standard, { width: width() - 110, lineGap: 2 });
+
+    /* The posture, on the face of the document.
+       A reader who is not told that the inputs rest on the entity's own
+       baseline will assume otherwise, because a cover citing a standard looks
+       like one somebody stood behind. It is set in the same size as the
+       standard citation rather than smaller: a caveat written to be skipped is
+       a caveat that has done nothing. */
+    if (assuranceStatement) {
+      doc.moveDown(0.9).fillColor(PALETTE.white).font(F.sansBold).fontSize(9)
+         .text(String(assuranceLabel || '').toUpperCase(), { width: width() - 110 });
+      doc.moveDown(0.15).fillColor('#AFBDCC').font(F.sans).fontSize(8.4)
+         .text(assuranceStatement, { width: width() - 130, lineGap: 1.6 });
+    }
 
     doc.fillColor('#AFBDCC').font(F.sans).fontSize(9)
        .text(`Published ${publishedAt}`, left, h - 190, { width: width() - 200 });

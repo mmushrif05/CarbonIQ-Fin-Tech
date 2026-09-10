@@ -33,4 +33,16 @@ const assuranceSaveSchema = Joi.object({
   declaredAt: Joi.string().max(40).allow('', null).optional(),
 }).unknown(false);
 
-module.exports = { assuranceSaveSchema, scopeDeclarationSchema };
+/**
+ * The tool provider's operating mode for one organisation.
+ *
+ * `verified` is a request, not an assertion: the resolver downgrades it and
+ * names the reason where the conditions it rests on are not met. The route
+ * requires the `admin` scope, because a reporting entity that could set its
+ * own mode to `verified` would be self-declaring by another name.
+ */
+const assuranceModeSchema = Joi.object({
+  mode: Joi.string().valid('self_declared', 'verified').required(),
+}).unknown(false);
+
+module.exports = { assuranceSaveSchema, scopeDeclarationSchema, assuranceModeSchema };

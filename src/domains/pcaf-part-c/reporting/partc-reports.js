@@ -32,9 +32,10 @@ const standard = require('./partc-report-standard');
  * @param {string} [params.memo]     - narrative from the disclosure agent
  * @param {Object} [params.meta]     - { projectName, insurer, insured, orgName, runId }
  * @param {Object} [params.settings] - the reporting entity's settings, printed in every report
+ * @param {Object} [params.assurance] - the resolved assurance position, which prints on the face
  * @param {boolean} [params.includeWlcaAnnex]
  */
-function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, includeWlcaAnnex = false }) {
+function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, assurance = null, includeWlcaAnnex = false }) {
   const s = result.summary;
 
   const report = {
@@ -135,7 +136,7 @@ function buildPartCReport({ result, registers, memo, meta = {}, settings = {}, i
 
   /* What the document renderers need, kept off the JSON. See _model(). */
   Object.defineProperty(report, '_source', {
-    value: { result, registers, settings, meta, memo: memo || null },
+    value: { result, registers, settings, meta, assurance, memo: memo || null },
     enumerable: false, writable: false
   });
 
@@ -159,8 +160,8 @@ function _model(report) {
   if (!report._source) {
     throw new Error('This report was not built by buildPartCReport(), so the document cannot be rendered from it.');
   }
-  const { result, registers, settings, meta, memo } = report._source;
-  const facts = standard.assessmentFacts({ result, registers, settings, meta, memo });
+  const { result, registers, settings, meta, memo, assurance } = report._source;
+  const facts = standard.assessmentFacts({ result, registers, settings, meta, memo, assurance });
   if (report.annexes.D) facts.beyondPcafAnnex = report.annexes.D;
   return standard.buildStandardModel(facts);
 }

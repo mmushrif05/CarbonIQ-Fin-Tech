@@ -10,6 +10,16 @@ const { TABLE_5_3_2, TABLE_CITATION } = require('../../domain/data-quality');
 const { N, T, F4, SCALE_QUALIFIER, PREPARED_BY, KYOTO_GASES, UNITS_STATEMENT, FINANCED_EMISSIONS_STATEMENT } = require('./common');
 const { numberOr } = require('../../../../shared/numbers');
 const { factorRelease } = require('../../domain/factors');
+const { resolve: resolveAssuranceMode, faceStatement } = require('../../../../shared/assurance-mode');
+
+/* A document built without an assurance position falls back to the honest
+   default rather than to silence: absent the check, nothing has been checked.
+   The alternative — printing nothing — reads as the stronger claim, which is
+   the failure src/shared/report-integrity.js exists to prevent. */
+const DEFAULT_ASSURANCE = (() => {
+  const r = resolveAssuranceMode({});
+  return { ...r, statement: faceStatement(r) };
+})();
 
 // ---------------------------------------------------------------------------
 // Facts — what the sections and the checklist both read
@@ -74,7 +84,19 @@ function _equations(registers) {
  * not a claim about the insurer's book, and reading it as one would be the
  * easiest mistake this document could invite.
  */
-function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = null }) {
+/**
+ * @param {object} input
+ * @param {any} input.result       runPartC() output
+ * @param {any} input.registers    buildRegisters() output
+ * @param {any} [input.settings]   the reporting entity's settings
+ * @param {any} [input.meta]       project, insurer, insured, economics
+ * @param {string|null} [input.memo]
+ * @param {any} [input.assurance] the resolved assurance position — what
+ *   posture this deployment may claim, and the sentence the cover prints. See
+ *   `src/platform/reporting/assurance-mode.js`. Absent, the document falls
+ *   back to the honest default rather than to silence.
+ */
+function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = null, assurance = null }) {
   const s = result.summary;
   const ghg = splitByGhgScope(result);
   const dq = result.dqScoring || null;
@@ -230,6 +252,7 @@ function assessmentFacts({ result, registers, settings = {}, meta = {}, memo = n
     // 11
     factorRegister: _factorRegister(registers),
     factorRelease: factorRelease(),
+    assurance: assurance || DEFAULT_ASSURANCE,
     /*
      * The trace is counted, never printed. Annex C is every equation the
      * engine executed with its inputs and factors — the method itself, and the
@@ -279,7 +302,16 @@ function _gwpBasis(registers) {
  * it rather than recomputing anything, so the document and the API answer
  * cannot disagree.
  */
-function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equations = [] }) {
+/**
+ * @param {object} input
+ * @param {any} input.disclosure  the structured annual disclosure
+ * @param {any} input.roll        the reporting-year roll-up it was built from
+ * @param {any} [input.settings]
+ * @param {any[]} [input.factorRows]
+ * @param {any[]} [input.equations]
+ * @param {any} [input.assurance] as `assessmentFacts`.
+ */
+function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equations = [], assurance = null }) {
   const p = disclosure.position;
   const dqd = (roll.dataQuality && roll.dataQuality.disclosed) || {};
   const useStageApplies = Number(p.useStage.total_kgCO2e) > 0;
@@ -422,6 +454,7 @@ function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equatio
     // 11
     factorRegister: factorRows,
     factorRelease: factorRelease(),
+    assurance: assurance || DEFAULT_ASSURANCE,
     auditTrail: [],
     auditTrailEntries: (disclosure.annexes.C && disclosure.annexes.C.entries || []).length,
     assessmentRegister: (disclosure.annexes.C && disclosure.annexes.C.entries) || [],

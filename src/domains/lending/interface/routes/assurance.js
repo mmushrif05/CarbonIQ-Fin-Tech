@@ -17,8 +17,11 @@ const validate = require('../../../../platform/http/validate');
 const handle = require('../../../../platform/http/async-handler');
 const assurance = require('../../application/assurance');
 const store = require('../../../../platform/database/store');
-const { assuranceSaveSchema } = require('../schemas/assurance');
-const { doc, body, obj } = require('../../../../platform/http/openapi-hints');
+const { assuranceSaveSchema, assuranceModeSchema } = require('../schemas/assurance');
+const { doc, body, obj, str, bool, arr } = require('../../../../platform/http/openapi-hints');
+const assuranceMode = require('../../../../platform/reporting/assurance-mode');
+const { MODE_DETAIL, VERIFIED_REQUIRES } = require('../../../../shared/assurance-mode');
+const { positionFor } = require('../../../baseline/application/assurance-position');
 
 const router = Router();
 
@@ -43,6 +46,48 @@ router.put('/', authenticate, defaultLimiter,
      worse off than one told plainly that this deployment cannot persist. */
   store.assertWritable();
   res.json({ assurance: await assurance.save(req.orgId, req.body || {}) });
+}));
+
+/*
+ * The operating mode sits under the same prefix as the entity's declaration
+ * because a reader answering "what may this document claim" needs both, and
+ * two prefixes for one question is how two screens come to disagree. They are
+ * different facts with different owners, and the scopes say so: the
+ * declaration is the entity's and needs `write`; the mode is the tool
+ * provider's and needs `admin`.
+ */
+router.get('/mode', authenticate, defaultLimiter,
+  doc({ summary: 'The operating mode, and what it rests on',
+    description: 'Self-declared or verified. Verified is a request rather than an assertion: '
+      + 'where the conditions it rests on are unmet the position resolves to self-declared and '
+      + 'names why, and that is the sentence every document prints on its face.',
+    response: body({
+      mode: str, label: str, requested: str, downgraded: bool, statement: str,
+      caution: str, chosenBy: str, unmet: arr(obj), modes: arr(obj), requires: arr(obj),
+    }, ['mode', 'requested', 'statement']) }), handle(async (req, res) => {
+  const position = await positionFor(req.orgId, {});
+  res.json({
+    ...position,
+    modes: Object.values(MODE_DETAIL).map(m => ({
+      id: m.id, label: m.label, recommended: m.recommended, caution: m.caution,
+    })),
+    requires: VERIFIED_REQUIRES.map(r => ({ id: r.id, requirement: r.requirement })),
+  });
+}));
+
+router.put('/mode', authenticate, defaultLimiter,
+  validate({ body: assuranceModeSchema }),
+  doc({ summary: 'Set the operating mode — the tool provider\'s choice',
+    description: 'Requires the admin scope. The mode is the tool provider\'s to set and never '
+      + 'the reporting entity\'s: an entity that could choose verified for itself would be '
+      + 'self-declaring by another name.',
+    response: body({ mode: obj }, ['mode']) }), handle(async (req, res) => {
+  /* Same reason as the declaration above: a mode the runtime cannot store is
+     refused rather than accepted, because the next document would print the
+     old one without saying so. */
+  store.assertWritable();
+  const actor = (req.actor && req.actor.label) || null;
+  res.json({ mode: await assuranceMode.setFor(req.orgId, req.body.mode, actor) });
 }));
 
 module.exports = router;

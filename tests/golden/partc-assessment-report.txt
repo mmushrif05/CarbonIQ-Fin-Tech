@@ -4,6 +4,8 @@ COVER: Insurance-Associated Emissions Assessment
   reporting year: 2026
   standard: PCAF Global GHG Accounting and Reporting Standard — Part C (insurance-associated emissions)
   prepared by: Prepared by Datum Solutions (Private) Limited
+  assurance: self_declared — Self-declared
+  assurance statement: Self-declared. The figures in this document rest on the reporting entity’s own baseline and its own values. Neither the tool provider nor Datum Solutions has confirmed those inputs, and nothing here should be read as their opinion on them. The method is as stated and every figure is traced to what it was computed from; what has not been established is whether those inputs are right.
 
 SECTION 2 [coverage] Scope and coverage
     callout [What this report covers]: This report describes one policy. Portfolio coverage across the book is stated in the annual disclosure for the reporting year.

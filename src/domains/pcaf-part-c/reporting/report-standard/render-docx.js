@@ -24,8 +24,12 @@ async function renderStandardDOCX(model) {
     ['Published', model.cover.publishedAt],
     ['Report reference', model.cover.reportId || '—'],
     ['Standard', model.cover.standard],
-    ['Prepared by', model.cover.preparedBy]
+    ['Prepared by', model.cover.preparedBy],
+    /* The posture, on the face rather than in an annex — the same rule the
+       PDF cover follows. */
+    ['Assurance', model.cover.assuranceLabel || 'Self-declared']
   ], { align: ['left', 'left'] }));
+  if (model.cover.assuranceStatement) children.push(theme.wBody(model.cover.assuranceStatement));
 
   const push = blocks => {
     for (const blk of blocks) {

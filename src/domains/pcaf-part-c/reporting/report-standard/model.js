@@ -125,7 +125,14 @@ function buildStandardModel(facts) {
       title: facts.title, subtitle: facts.subtitle,
       insurer: facts.insurer || facts.insured || 'Re/insurer not stated',
       reportingYear: facts.reportingYear, publishedAt: facts.publishedAt,
-      standard: facts.standard, preparedBy: facts.preparedBy, reportId: facts.reportId
+      standard: facts.standard, preparedBy: facts.preparedBy, reportId: facts.reportId,
+      /* On the face, not in an annex. A reader who is not told that the
+         inputs rest on the entity's own baseline will assume otherwise,
+         because a document citing a standard and carrying a conformance
+         statement looks like one somebody stood behind. */
+      assuranceMode: facts.assurance.mode,
+      assuranceLabel: facts.assurance.label,
+      assuranceStatement: facts.assurance.statement,
     },
     footerNote: `${facts.title} — FY${facts.reportingYear}`,
     sections, annexes, checklist, facts

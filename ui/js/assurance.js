@@ -21,6 +21,8 @@ window.CarbonIQAssurance = (function () {
 
   let _cache = null;
   let _inflight = null;
+  let _mode = null;
+  let _modeInflight = null;
 
   const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -83,5 +85,61 @@ window.CarbonIQAssurance = (function () {
     return scopeEl.length;
   }
 
-  return { load, render, badgeHtml, forScope, UNKNOWN };
+  /*
+   * The operating mode is a second, separate fact, and it belongs to the tool
+   * provider rather than to the entity. The declaration answers "who checked
+   * these figures"; the mode answers "what may this deployment claim about
+   * them", which is the sentence printed on the face of every document. Read
+   * from the same module because a screen showing one without the other tells
+   * half the story, and cached for the same reason the declaration is.
+   */
+  const MODE_UNKNOWN = {
+    mode: 'self_declared',
+    label: 'Self-declared',
+    downgraded: false,
+    statement: '',
+    unmet: [],
+  };
+
+  async function loadMode() {
+    if (_mode) return _mode;
+    if (_modeInflight) return _modeInflight;
+    _modeInflight = (async () => {
+      try {
+        const res = await window.CARBONIQ_fetch('/v1/assurance/mode');
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'unavailable');
+        _mode = body;
+      } catch (_) {
+        /* A mode that could not be read falls back to the weaker claim, never
+           the stronger one. */
+        _mode = MODE_UNKNOWN;
+      }
+      _modeInflight = null;
+      return _mode;
+    })();
+    return _modeInflight;
+  }
+
+  /** The mode pill. Verified is plain, not celebratory; it states a position. */
+  function modeHtml(m) {
+    const p = m || MODE_UNKNOWN;
+    const tone = p.mode === 'verified' ? 'plain' : 'quiet';
+    const why = p.downgraded
+      ? (p.unmet || []).map((u) => u.because || u.requirement).join('; ')
+      : (p.statement || '');
+    return `<span class="assur-badge is-${tone}" title="${esc(why)}">`
+      + `<span class="assur-dot" aria-hidden="true"></span>${esc(p.label || 'Self-declared')}</span>`;
+  }
+
+  /** Render into every `[data-assurance-mode]` placeholder under `root`. */
+  async function renderMode(root) {
+    const els = (root || document).querySelectorAll('[data-assurance-mode]');
+    if (!els.length) return 0;
+    const m = await loadMode();
+    els.forEach((el) => { el.innerHTML = modeHtml(m); });
+    return els.length;
+  }
+
+  return { load, render, badgeHtml, forScope, UNKNOWN, loadMode, renderMode, modeHtml };
 })();

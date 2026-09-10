@@ -38,10 +38,10 @@ proved or it is not.
 | PCAF Part C | `C-METH-06` | RICS WLCA 2nd ed §5.2.4 | `tests/pcaf-partc-engine.test.js` | 22 | executed |
 | PCAF Part C | `C-METH-07` | Part C v2 — operational water | `tests/pcaf-partc-engine.test.js` | 33 | executed |
 | PCAF Part C | `C-METH-08` | GHG Protocol / US EPA | `tests/pcaf-partc-engine.test.js` | 32 | executed |
-| PCAF Part C | `C-DQ-01` | PCAF data quality scoring | `tests/pcaf-partc-api.test.js` | 34 | executed |
-| PCAF Part C | `C-DQ-02` | PCAF — factor transparency | `tests/pcaf-partc-registers.test.js` | 62 | executed |
+| PCAF Part C | `C-DQ-01` | PCAF data quality scoring | `tests/pcaf-partc-api.test.js` | 29 | executed |
+| PCAF Part C | `C-DQ-02` | PCAF — factor transparency | `tests/pcaf-partc-registers.test.js` | 71 | executed |
 | PCAF Part C | `C-DQ-03` | PCAF — limitations | `tests/pcaf-partc-registers.test.js` | 41 | executed |
-| PCAF Part C | `C-DQ-04` | PCAF — conformance language | `tests/pcaf-partc-registers.test.js` | 55 | executed |
+| PCAF Part C | `C-DQ-04` | PCAF — conformance language | `tests/pcaf-partc-registers.test.js` | 48 | executed |
 | PCAF Part C | `C-DQ-05` | Audit and assurance | `tests/pcaf-partc-registers.test.js` | 33 | executed |
 | PCAF Part C | `C-DQ-07` | Part C Table 5.3-2 (p.58) | `tests/pcaf-partc-dq-scoring.test.js` | 131 | executed |
 | PCAF Part C | `C-DQ-08` | Part C Table 5.3-2 (p.58); Chapter 6 (p.106) | `tests/pcaf-partc-dq-scoring.test.js` | 93 | executed |
@@ -53,18 +53,18 @@ proved or it is not.
 | PCAF Part C | `C-RPT-04` | Part C ch.6 | `tests/partc-report-standard.test.js` | 56 | executed |
 | PCAF Part C | `C-RPT-05` | Part C ch.6, GASES AND UNITS (pp.103, 61) | `tests/partc-report-output.test.js` | 7 | executed |
 | PCAF Part C | `C-RPT-06` | Part C ch.6, ABSOLUTE EMISSIONS (pp.104-105) | `tests/partc-report-standard.test.js` | — | proved by absence |
-| PCAF Part C | `C-DISC-01` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 63 | executed |
-| PCAF Part C | `C-DISC-02` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 63 | executed |
-| PCAF Part C | `C-DISC-03` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 63 | executed |
+| PCAF Part C | `C-DISC-01` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 67 | executed |
+| PCAF Part C | `C-DISC-02` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 67 | executed |
+| PCAF Part C | `C-DISC-03` | Part C v2 §6 — reporting | `tests/partc-disclosure.test.js` | 67 | executed |
 | PCAF Part C | `C-REST-01` | Part C v2 §6 — restatement | `tests/partc-comparatives.test.js` | 36 | executed |
 | PCAF Part C | `C-REST-02` | Part C v2 §6 — restatement | `tests/partc-comparatives.test.js` | 36 | executed |
 | PCAF Part C | `C-REST-03` | Comparability | `tests/partc-comparatives.test.js` | 36 | executed |
 | GCF pipeline | `G-DATA-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data for sustainable reporting" | `tests/gcf-pipeline.test.js` | 58 | executed |
 | GCF pipeline | `G-DATA-02` | ToR Lot 1, Milestone 4 — data systems for carbon accounting | `tests/gcf-pipeline.test.js` | 58 | executed |
-| GCF pipeline | `G-DATA-03` | ToR Lot 1, Milestone 4 — data "should be stored and can be transferred and assessed" | `tests/gcf-reporting.test.js` | 77 | executed |
+| GCF pipeline | `G-DATA-03` | ToR Lot 1, Milestone 4 — data "should be stored and can be transferred and assessed" | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-DATA-04` | ToR Lot 1, Milestone 4 — durable capture | `tests/gcf-pipeline.test.js` | 36 | executed |
 | GCF pipeline | `G-CARBON-01` | ToR Lot 1, Milestone 4 — emissions | `tests/gcf-emissions.test.js` | 108 | executed |
-| GCF pipeline | `G-CARBON-02` | PCAF Part A p.126, applied to project appraisal | `tests/gcf-reporting.test.js` | 77 | executed |
+| GCF pipeline | `G-CARBON-02` | PCAF Part A p.126, applied to project appraisal | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-CARBON-03` | GCF Mitigation Core Indicator 1 (IRMF, decision B.29/01) | `tests/gcf-pipeline.test.js` | 58 | executed |
 | GCF pipeline | `G-CARBON-04` | Engine discipline — no LLM computes a regulatory figure | `tests/gcf-emissions.test.js` | 108 | executed |
 | GCF pipeline | `G-NDC-01` | Sri Lanka NDC 3.0 (September 2025), ToR section 1.2 | `tests/gcf-emissions.test.js` | 71 | executed |
@@ -74,21 +74,21 @@ proved or it is not.
 | GCF pipeline | `G-ACCR-01` | ToR section 1.1 — Board decision B.36/10, E&S category B/I-2 | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-ACCR-02` | ToR section 1.1 — medium size (USD 50-250m) | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-ACCR-03` | ToR section 1.1 — modalities: basic, project management, on-lending and blending. The grant box is not ticked. | `tests/gcf-screening.test.js` | 237 | executed |
-| GCF pipeline | `G-ACCR-04` | ToR section 1.1 — three open accreditation conditions | `tests/gcf-cn-package.test.js` | 99 | executed |
+| GCF pipeline | `G-ACCR-04` | ToR section 1.1 — three open accreditation conditions | `tests/gcf-cn-package.test.js` | 100 | executed |
 | GCF pipeline | `G-LOT2-01` | ToR Lot 2 — screening candidates and recommending Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-LOT2-02` | GCF investment framework — six investment criteria | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-LOT2-03` | ToR Lot 2 — at least two high-potential concepts, up to two Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-LOT2-04` | ToR Lot 2 — five to seven innovative instruments evaluated | `tests/gcf-screening.test.js` | 86 | executed |
 | GCF pipeline | `G-LOT2-05` | ToR Lot 2 — viability with and without concessional support; GCF minimum concessionality | `tests/gcf-screening.test.js` | 86 | executed |
-| GCF pipeline | `G-LOT2-06` | GCF investment policy — no minimum co-financing requirement | `tests/gcf-reporting.test.js` | 90 | executed |
-| GCF pipeline | `G-REPORT-01` | SLFRS S2 §29(a); GRI 305-1/2/3 | `tests/gcf-reporting.test.js` | 77 | executed |
-| GCF pipeline | `G-REPORT-02` | GRI 305-5 | `tests/gcf-reporting.test.js` | 77 | executed |
-| GCF pipeline | `G-REPORT-03` | SLFRS S1 §27; SLFRS S2 §6, §25, §33 | `tests/gcf-reporting.test.js` | 96 | executed |
-| GCF pipeline | `G-REPORT-04` | Report honesty — a checklist answered from the report | `tests/gcf-reporting.test.js` | 77 | executed |
-| GCF pipeline | `G-CN-01` | GCF Concept Note / Funding Proposal structure, sections A-H | `tests/gcf-cn-package.test.js` | 99 | executed |
-| GCF pipeline | `G-CN-02` | GCF policies — NDA no-objection, gender assessment, ESIA/ESMP, FPIC | `tests/gcf-cn-package.test.js` | 99 | executed |
-| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 127 | executed |
-| GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 127 | executed |
+| GCF pipeline | `G-LOT2-06` | GCF investment policy — no minimum co-financing requirement | `tests/gcf-reporting.test.js` | 85 | executed |
+| GCF pipeline | `G-REPORT-01` | SLFRS S2 §29(a); GRI 305-1/2/3 | `tests/gcf-reporting.test.js` | 72 | executed |
+| GCF pipeline | `G-REPORT-02` | GRI 305-5 | `tests/gcf-reporting.test.js` | 72 | executed |
+| GCF pipeline | `G-REPORT-03` | SLFRS S1 §27; SLFRS S2 §6, §25, §33 | `tests/gcf-reporting.test.js` | 92 | executed |
+| GCF pipeline | `G-REPORT-04` | Report honesty — a checklist answered from the report | `tests/gcf-reporting.test.js` | 72 | executed |
+| GCF pipeline | `G-CN-01` | GCF Concept Note / Funding Proposal structure, sections A-H | `tests/gcf-cn-package.test.js` | 100 | executed |
+| GCF pipeline | `G-CN-02` | GCF policies — NDA no-objection, gender assessment, ESIA/ESMP, FPIC | `tests/gcf-cn-package.test.js` | 100 | executed |
+| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 128 | executed |
+| GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 128 | executed |
 | GCF pipeline | `G-EXCL-01` | ToR Lot 1, Milestones 1-3 and 5 | — | — | out of scope |
 | GCF pipeline | `G-EXCL-02` | GCF Funding Proposal preparation | — | — | out of scope |
 
