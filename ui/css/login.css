@@ -357,14 +357,13 @@
   }
 }
 
-/* ── The sample book, offered under the sign-in form ────────────
-   A second way in rather than a competing one: quieter than the
-   sign-in button, separated by a rule, and hidden outright until the
+/* ── The sample book, offered beneath whichever card is showing ──
+   A second way in rather than a competing one: its own card so that
+   the pane above it can change without taking the offer with it,
+   quieter than the sign-in button, and hidden outright until the
    server says a preview session can be issued. */
 .login-preview {
-  margin-top: 28px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 20px;
 }
 
 .login-preview h3 {

@@ -73,20 +73,6 @@
           </button>
           <span class="login-hint">Your role and organisation come from your account.</span>
         </div>
-
-        <!-- The sample book, opened by an address. Offered only where the
-             server says a preview session can be issued, so the panel is
-             never a button that cannot work. -->
-        <div class="login-preview" id="login-preview" hidden>
-          <h3>See a worked example</h3>
-          <p class="login-subtitle">A sample insurance book, read-only. No client records.</p>
-          <div class="login-preview-row">
-            <input id="preview-email" type="email" class="login-input" autocomplete="email"
-                   placeholder="you@bank.lk" aria-label="Email address" />
-            <button class="login-btn login-btn-quiet" id="preview-btn" data-action="LoginPage.preview">Open</button>
-          </div>
-          <div class="login-error" id="preview-error" role="alert" aria-live="polite"></div>
-        </div>
       </div>
 
       <!-- Choosing your own password. An account is issued with one an
@@ -142,6 +128,24 @@
         <div class="login-actions">
           <button class="login-btn" id="boot-btn" data-action="LoginPage.bootstrap">Create</button>
         </div>
+      </div>
+
+      <!-- The sample book, opened by an address. Its own card, and not a panel
+           inside the sign-in one: the three cards above are three states of
+           signing in and only one is ever shown, so while this sat inside the
+           first of them a deployment whose first-run window was open hid the
+           offer along with the form it was nested in. The visitor saw it
+           appear and then go, because two independent checks answer at their
+           own speed and only one of them is about signing in. -->
+      <div class="login-card login-preview" id="login-preview" hidden>
+        <h3>See a worked example</h3>
+        <p class="login-subtitle">A sample insurance book, read-only. No client records.</p>
+        <div class="login-preview-row">
+          <input id="preview-email" type="email" class="login-input" autocomplete="email"
+                 placeholder="you@bank.lk" aria-label="Email address" />
+          <button class="login-btn login-btn-quiet" id="preview-btn" data-action="LoginPage.preview">Open</button>
+        </div>
+        <div class="login-error" id="preview-error" role="alert" aria-live="polite"></div>
       </div>
 
     </div>

@@ -73,13 +73,40 @@ const LoginPage = (() => {
 
   /* One pane at a time. `hidden` is used rather than a class that sets
      `display`, because any class rule that sets display beats the
-     user-agent sheet's [hidden] and the pane stays on screen. */
+     user-agent sheet's [hidden] and the pane stays on screen.
+
+     The preview offer is not one of these. It answers a different question
+     from a different visitor, so it is a card of its own and its visibility
+     is decided by `_applyPreview()` on every pane change — the two checks
+     that run at load answer at their own speed, and while the offer was
+     nested inside the sign-in card the later answer silently overrode the
+     earlier one. */
+  let _pane = 'signin';
   function _showPane(which) {
+    _pane = which;
     const panes = { signin: 'login-card-signin', change: 'login-change', bootstrap: 'login-bootstrap' };
     Object.entries(panes).forEach(([name, id]) => {
       const el = document.getElementById(id);
       if (el) el.hidden = name !== which;
     });
+    _applyPreview();
+  }
+
+  /* Whether the server said a preview session can be issued here. Held
+     rather than read back off the panel, so a later pane change cannot lose
+     the answer. */
+  let _previewOffered = false;
+
+  /**
+   * Show the offer where it makes sense, from both facts at once.
+   *
+   * Not on the change-password pane: that person is part-way through taking
+   * ownership of their own account, and opening the sample book from there
+   * would replace the session they are holding.
+   */
+  function _applyPreview() {
+    const el = document.getElementById('login-preview');
+    if (el) el.hidden = !(_previewOffered && _pane !== 'change');
   }
 
   function _enter() {
@@ -196,8 +223,8 @@ const LoginPage = (() => {
     try {
       const res = await fetch(`${window.CARBONIQ_API_BASE || ''}/v1/auth/preview`);
       const body = await res.json().catch(() => ({}));
-      const el = document.getElementById('login-preview');
-      if (el && res.ok && body.available) el.hidden = false;
+      if (res.ok && body.available) _previewOffered = true;
+      _applyPreview();
     } catch (_) { /* offline: offer nothing */ }
   }
 

@@ -90,3 +90,45 @@ test('the panel does not widen the page at a phone width', async ({ page }) => {
     document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
+
+/**
+ * The first-run window, open.
+ *
+ * The offer shipped nested inside the sign-in card, and `_showPane()` hides
+ * that whole card to show another. So on a deployment holding no accounts with
+ * a bootstrap token set — which is every deployment on its first day — the
+ * offer was revealed by one check and hidden by the other, and a visitor saw it
+ * appear and go.
+ *
+ * This server cannot be put in that state: it sets no ADMIN_BOOTSTRAP_TOKEN and
+ * other journeys create accounts in it, which is exactly why the journeys above
+ * were green while the live site was not. The bootstrap answer is therefore the
+ * one thing stubbed; everything else — the preview check, the session, the
+ * sample book — is the real server.
+ */
+for (const delayMs of [0, 250]) {
+  test(`the offer survives the first-run pane, whichever answer lands first (${delayMs}ms)`, async ({ page }) => {
+    await page.route('**/v1/auth/bootstrap', async route => {
+      if (route.request().method() !== 'GET') return route.continue();
+      if (delayMs) await new Promise(r => setTimeout(r, delayMs));
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ available: true, reason: null, remedy: null }),
+      });
+    });
+
+    await page.goto('/');
+    await expect(page.locator('#login-bootstrap')).toBeVisible();
+    await expect(page.locator('#login-card-signin')).toBeHidden();
+
+    /* Both answers are in by now, in one order or the other. */
+    await expect(page.locator('#login-preview')).toBeVisible();
+
+    /* And it is an offer that works, not a card that survived being drawn. */
+    await page.fill('#preview-email', address());
+    await page.locator('#preview-btn').click();
+    await expect(page.locator('#sidebar')).toBeVisible();
+    await expect(page.locator('#preview-mark')).toBeVisible();
+  });
+}
