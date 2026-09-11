@@ -104,6 +104,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
           dataQualityTable: parta.dataQuality.tableFor('sovereign-debt').table,
           countriesHeld: sovereignData.countriesHeld(),
           dataset: sovereignData.release(),
+          thresholds: require('../../domain/sovereign/checks').DEFAULTS,
         },
       ],
       archetypes: parta.archetypes.list(),
