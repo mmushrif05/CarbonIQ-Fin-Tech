@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **353**. Remaining: **195**.
+Checked across all three: **356**. Remaining: **196**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **303**. Remaining: **67** (384 errors, measured by
+Checked: **306**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -137,7 +137,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **106** (1357 errors, measured by
+Checked: **42**. Remaining: **107** (1360 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **4 of them raise no errors at all** and can be adopted by adding the
@@ -229,6 +229,7 @@ pragma and nothing else.
 | `tests/pcaf-partc-conformance.test.js` | 4 |
 | `tests/structure.test.js` | 4 |
 | `tests/capital-anchor.test.js` | 3 |
+| `tests/parta-sovereign-register.test.js` | 3 |
 | `tests/accounts-ui.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |
 | `tests/constants.test.js` | 2 |

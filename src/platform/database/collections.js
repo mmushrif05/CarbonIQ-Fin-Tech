@@ -149,6 +149,39 @@ const COLLECTIONS = Object.freeze({
     } },
   parta_book:          { table: 'parta_book', keys: { reportingYear: 'reporting_year' }, dependsOn: [] },
   parta_settings:      { table: 'parta_settings', keys: {}, dependsOn: [] },
+  /* 0011 — the §5.9 sovereign register. A separate table from parta_exposures,
+     not a discriminator on it, because the result shapes differ (scope 1 on
+     two LULUCF boundaries and one data-quality score, against six lines and two
+     scores), so the roll-up projection differs and one generated column cannot
+     compute both. parta_book is shared: coverage is against the same whole-book
+     denominator. */
+  parta_sovereign_exposures: { table: 'parta_sovereign_exposures',
+    keys: { reportingYear: 'reporting_year', assetClass: 'asset_class', status: 'status',
+      'country.code': 'country_code',
+      'input.identifiers.accountNumber': 'account_number' },
+    dependsOn: [],
+    /* Computed at write time by parta_sovereign_rollup() in migration 0011.
+       Every entry is a path INTO the record, held to the SQL function by
+       tests/parta-sovereign-register.test.js. */
+    projections: {
+      rollup: { column: 'rollup', fields: [
+        'exposureId', 'status', 'reportingYear', 'assetClass', 'createdAt',
+        'country.code', 'country.name',
+        'input.exposure.amount',
+        'result.attribution.value',
+        'result.sovereign.name', 'result.sovereign.country', 'result.sovereign.provisional',
+        'result.inventory.scope1.exclLULUCF.value',
+        'result.inventory.scope1.inclLULUCF.value', 'result.inventory.scope1.inclLULUCF.absent',
+        'result.inventory.scope2.value', 'result.inventory.scope2.absent',
+        'result.inventory.scope3.value', 'result.inventory.scope3.absent',
+        'result.inventory.dataQuality.score', 'result.inventory.dataQuality.option',
+        'result.inventory.productionIntensity.value',
+        'result.validation.verdict',
+        'result.validation.findings[].code', 'result.validation.findings[].severity',
+        'result.validation.findings[].field', 'result.validation.findings[].remedy',
+        'result.validation.findings[].reference',
+      ] },
+    } },
 });
 
 function definition(collection) {

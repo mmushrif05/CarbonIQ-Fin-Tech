@@ -112,7 +112,8 @@ describe('The boundary — one file knows the driver', () => {
        a second place that can drift from the column. */
     const allowed = new Set(['src/platform/database/store.js', 'src/platform/observability/audit.js', 'src/server.js',
       'src/domains/pcaf-part-c/application/partc-portfolio.js',
-      'src/domains/pcaf-part-a/infrastructure/store.js']);
+      'src/domains/pcaf-part-a/infrastructure/store.js',
+      'src/domains/pcaf-part-a/infrastructure/sovereign-store.js']);
     const offenders = walk(path.join(ROOT, 'src')).filter(f => !f.includes(`${path.sep}platform${path.sep}database${path.sep}`))
       .filter(f => /require\(['"][./]*platform\/database(?!\/store\b)/.test(fs.readFileSync(f, 'utf8')))
       .map(f => path.relative(ROOT, f))

@@ -33,9 +33,11 @@ const handle = require('../../../../platform/http/async-handler');
 const store = require('../../../../platform/database/store');
 
 const register = require('../../application/register');
+const sovereign = require('../../application/sovereign-register');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema } = require('../schemas/register');
+const { sovereignExposureSchema } = require('../schemas/sovereign');
 
 const router = Router();
 
@@ -206,6 +208,94 @@ router.get('/position/:year', authenticate, defaultLimiter,
       improvementTarget: req.query.improvementTarget === undefined
         ? undefined : Number(req.query.improvementTarget),
     }));
+  }));
+
+// ---------------------------------------------------------------------------
+// The §5.9 sovereign register — its own exposures, over the shared book total
+// ---------------------------------------------------------------------------
+
+/*
+ * A separate register from §5.2's because the result shapes differ, but the
+ * same discipline: both halves kept, nothing recomputes on read, one bond
+ * once, a 409 on an empty year. Coverage is against the shared book total
+ * (PUT /book), so there is no sovereign book of its own.
+ */
+
+router.get('/sovereign/years', authenticate, defaultLimiter,
+  doc({ summary: 'The reporting years the sovereign book holds exposures for',
+    response: body({ years: arr() }, ['years']) }),
+  handle(async (req, res) => {
+    res.json({ years: await sovereign.years(req.orgId) });
+  }));
+
+router.get('/sovereign/exposures', authenticate, defaultLimiter, paged(),
+  doc({ summary: 'A reporting year\'s sovereign exposures, a page at a time',
+    response: body({ exposures: arr(), reportingYear: str }, ['exposures']) }),
+  handle(async (req, res) => {
+    const year = req.query.reportingYear;
+    if (!year) {
+      return res.status(400).json({
+        error: 'REPORTING_YEAR_REQUIRED',
+        message: 'Name the reporting year. Part A accounts for positions at one date.',
+        remedy: 'GET /v1/pcaf/part-a/sovereign/exposures?reportingYear=2024',
+      });
+    }
+    const page = await sovereign.listExposures(req.orgId, year, { limit: req.query.limit, cursor: req.query.cursor });
+    return sendList(req, res, 'exposures', page.items, { reportingYear: String(year), nextCursor: page.nextCursor });
+  }));
+
+router.post('/sovereign/exposures', authenticate, defaultLimiter,
+  doc({ summary: 'Record one sovereign exposure in the register',
+    description: 'The engine runs before anything is written. Both halves are kept — what the bank keyed '
+      + 'and what the engine computed — and one bond is recorded once (a repeated reference is a 409).',
+    response: body({ exposure: obj }, ['exposure']) }),
+  validate({ body: sovereignExposureSchema }),
+  handle(async (req, res) => {
+    res.status(201).json({ exposure: await sovereign.record(req.orgId, req.body) });
+  }));
+
+router.get('/sovereign/exposures/:exposureId', authenticate, defaultLimiter,
+  doc({ summary: 'One sovereign exposure, with the input it was computed from and its whole trace',
+    response: body({ exposure: obj }, ['exposure']) }),
+  handle(async (req, res) => {
+    res.json({ exposure: await sovereign.get(req.orgId, req.params.exposureId) });
+  }));
+
+router.put('/sovereign/exposures/:exposureId', authenticate, defaultLimiter,
+  doc({ summary: 'Change a recorded sovereign exposure; the engine reruns over the new input',
+    response: body({ exposure: obj }, ['exposure']) }),
+  validate({ body: sovereignExposureSchema }),
+  handle(async (req, res) => {
+    res.json({ exposure: await sovereign.update(req.orgId, req.params.exposureId, req.body) });
+  }));
+
+router.post('/sovereign/exposures/:exposureId/recompute', authenticate, defaultLimiter,
+  doc({ summary: 'Rerun the sovereign engine over the input already held, and say what moved',
+    description: 'Reports the movement across scope 1 on both LULUCF boundaries, scope 2 and 3, the '
+      + 'data-quality score and the findings — a change in the engine or the sovereign dataset, never '
+      + 'in what the bank recorded.',
+    response: body({ exposure: obj, movement: obj }, ['exposure', 'movement']) }),
+  validate({ body: noBodySchema }),
+  handle(async (req, res) => {
+    res.json(await sovereign.recompute(req.orgId, req.params.exposureId));
+  }));
+
+router.delete('/sovereign/exposures/:exposureId', authenticate, defaultLimiter,
+  doc({ summary: 'Remove a sovereign exposure from the register',
+    response: body({ exposureId: str, removed: obj }, ['exposureId']) }),
+  handle(async (req, res) => {
+    res.json(await sovereign.remove(req.orgId, req.params.exposureId));
+  }));
+
+router.get('/sovereign/position/:year', authenticate, defaultLimiter,
+  doc({ summary: 'The sovereign reporting-year position, rolled up from the recorded exposures',
+    description: 'Read from the stored roll-up projection. Scope 1 is summed on both LULUCF boundaries '
+      + 'and never added together; the disclosed data-quality score is weighted by outstanding amount '
+      + '(p.128); coverage is assessed outstanding over the stated book total. A year with no sovereign '
+      + 'exposures is a 409.',
+    response: body({ reportingYear: str, totals: obj, coverage: obj, exposures: num }, ['reportingYear', 'totals']) }),
+  handle(async (req, res) => {
+    res.json(await sovereign.position(req.orgId, req.params.year));
   }));
 
 // ---------------------------------------------------------------------------

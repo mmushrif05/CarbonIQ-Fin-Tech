@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-190 routes.
+198 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -172,6 +172,14 @@ relationship manager read, write, assess; auditor and borrower read.
 | GET | `/v1/pcaf/part-a/settings` | `read` | read |
 | PUT | `/v1/pcaf/part-a/settings` | `write` | changes a record |
 | POST | `/v1/pcaf/part-a/sovereign/assess` | `read` | Part A engine, stateless |
+| GET | `/v1/pcaf/part-a/sovereign/exposures` | `read` | read |
+| POST | `/v1/pcaf/part-a/sovereign/exposures` | `write` | records or recomputes a sovereign exposure in the register |
+| GET | `/v1/pcaf/part-a/sovereign/exposures/:exposureId` | `read` | read |
+| PUT | `/v1/pcaf/part-a/sovereign/exposures/:exposureId` | `write` | changes a recorded sovereign exposure |
+| DELETE | `/v1/pcaf/part-a/sovereign/exposures/:exposureId` | `write` | removes a sovereign exposure from the register |
+| POST | `/v1/pcaf/part-a/sovereign/exposures/:exposureId/recompute` | `write` | records or recomputes a sovereign exposure in the register |
+| GET | `/v1/pcaf/part-a/sovereign/position/:year` | `read` | read |
+| GET | `/v1/pcaf/part-a/sovereign/years` | `read` | read |
 | GET | `/v1/pcaf/part-a/storage` | `read` | read |
 | GET | `/v1/pcaf/part-a/years` | `read` | read |
 | POST | `/v1/pcaf/part-c/agent/disclose` | `assess` | Part C runs, forms, reports and agents |
