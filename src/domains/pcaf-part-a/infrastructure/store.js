@@ -22,6 +22,7 @@ const { definition } = require('../../../platform/database/collections');
 
 const EXPOSURES = 'parta_exposures';
 const BOOK = 'parta_book';
+const SETTINGS = 'parta_settings';
 
 /** The field set the stored projection holds — asked for by name, not by luck. */
 const ROLLUP_FIELDS = Object.freeze(
@@ -94,8 +95,21 @@ async function listBooks(orgId) {
   return store.list(BOOK, String(orgId));
 }
 
+/* The reporting entity's own settings — org-wide, one row per organisation
+   under the id 'default'. The recalculation protocol Chapter 6 requires lives
+   here, not on a per-year book row, because a base year is one claim about
+   history and two years must not disagree about it. */
+async function saveSettings(orgId, record) {
+  return store.put(SETTINGS, String(orgId), 'default', record);
+}
+
+async function getSettings(orgId) {
+  return store.get(SETTINGS, String(orgId), 'default');
+}
+
 module.exports = {
-  EXPOSURES, BOOK, ROLLUP_FIELDS,
+  EXPOSURES, BOOK, SETTINGS, ROLLUP_FIELDS,
   saveExposure, getExposure, removeExposure, exposuresForYear, rollupsForYear, pageForYear, years,
   saveBook, getBook, listBooks,
+  saveSettings, getSettings,
 };

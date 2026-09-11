@@ -451,3 +451,58 @@ describe('The sector band comes from the baseline registry, and a released band 
     expect(f.observed.band.basis).toMatch(/Supplied on the request/);
   });
 });
+
+describe('The recalculation protocol (Chapter 6)', () => {
+  const RORG = 'org-recalc-test';
+  const rloan = () => ({
+    reportingYear: 2020, instrument: 'business-loan', borrowerListed: false,
+    counterparty: { name: 'Recalc Co', sector: 'Example' },
+    outstanding: { amount: 4e5, asOf: '2020-12-31', currency: 'EUR' },
+    denominator: { totalEquity: 6e5, totalDebt: 4e5, asOf: '2020-12-31', currency: 'EUR' },
+    emissions: {
+      scope1: { value: 1000, basis: 'reported-unverified', period: '2020' },
+      scope2: { value: 100, basis: 'reported-unverified', period: '2020' },
+      scope3: { value: 5000, basis: 'reported-unverified', period: '2020' },
+    },
+  });
+
+  beforeEach(async () => {
+    for (const e of await store.list(repo.EXPOSURES, RORG)) await store.remove(repo.EXPOSURES, RORG, e.exposureId || e.id);
+    const s = await store.get(repo.SETTINGS, RORG, 'default');
+    if (s) await store.remove(repo.SETTINGS, RORG, 'default');
+  });
+
+  test('the recalculation protocol is the entity’s own settings, base year null until set', async () => {
+    const before = await register.getSettings(RORG);
+    expect(before.baseYear).toBeNull();
+    expect(before.significanceThresholdPct).toBe(5);
+    expect(before.recalculationTriggers.length).toBeGreaterThan(0);
+
+    const after = await register.saveSettings(RORG, {
+      baseYear: 2020, significanceThresholdPct: 10, recalculationPolicy: 'Reviewed each January.',
+      notAField: 'ignored',
+    });
+    expect(after.baseYear).toBe(2020);
+    expect(after.significanceThresholdPct).toBe(10);
+    expect(after.recalculationPolicy).toBe('Reviewed each January.');
+    expect(after.notAField).toBeUndefined();
+
+    /* Clearing the base year back to unstated is a legitimate act, distinct
+       from leaving it unchanged. */
+    const cleared = await register.saveSettings(RORG, { baseYear: null });
+    expect(cleared.baseYear).toBeNull();
+    expect(cleared.significanceThresholdPct).toBe(10);
+  });
+
+  test('a recomputation says whether the movement reaches the significance threshold', async () => {
+    await register.saveSettings(RORG, { significanceThresholdPct: 10 });
+    const e = await register.record(RORG, rloan());
+    const { movement } = await register.recompute(RORG, e.exposureId);
+    /* The same input reruns to the same figures, so nothing moved and it is
+       not a trigger — and the threshold judged against is the entity's own. */
+    expect(movement.moved).toBe(false);
+    expect(movement.significance.thresholdPct).toBe(10);
+    expect(movement.significance.significant).toBe(false);
+    expect(movement.significance.note).toMatch(/no recalculation is triggered/i);
+  });
+});

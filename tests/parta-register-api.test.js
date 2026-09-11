@@ -246,3 +246,24 @@ describe('what this deployment can hold', () => {
     expect(res.body.storage).toHaveProperty('writable');
   });
 });
+
+describe('the recalculation protocol over HTTP', () => {
+  test('GET returns the defaults, PUT sets the base year and threshold, and a read-only key cannot set it', async () => {
+    const before = await request(app).get('/v1/pcaf/part-a/settings').set('x-api-key', KEY).expect(200);
+    expect(before.body.settings.baseYear).toBeNull();
+    expect(before.body.settings.significanceThresholdPct).toBe(5);
+
+    const put = await request(app).put('/v1/pcaf/part-a/settings').set('x-api-key', KEY)
+      .send({ baseYear: 2022, significanceThresholdPct: 8, recalculationPolicy: 'Reviewed annually.' }).expect(200);
+    expect(put.body.settings.baseYear).toBe(2022);
+    expect(put.body.settings.significanceThresholdPct).toBe(8);
+
+    const after = await request(app).get('/v1/pcaf/part-a/settings').set('x-api-key', KEY).expect(200);
+    expect(after.body.settings.baseYear).toBe(2022);
+  });
+
+  test('setting the protocol is a write, not a read', () => {
+    expect(requiredScopeFor('PUT', '/v1/pcaf/part-a/settings').scope).toBe('write');
+    expect(requiredScopeFor('GET', '/v1/pcaf/part-a/settings').scope).toBe('read');
+  });
+});

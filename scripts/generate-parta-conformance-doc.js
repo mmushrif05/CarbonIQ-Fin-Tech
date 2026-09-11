@@ -28,6 +28,7 @@ function groupKey(id) {
   if (id.startsWith('A-FIND'))  return 'The third verdict, and the checks a standard cannot give';
   if (id.startsWith('A-REG'))   return 'The exposure register';
   if (id.startsWith('A-DQ'))    return 'The disclosed score and the improvement plan';
+  if (id.startsWith('A-RECALC')) return 'Recalculation and significance';
   return 'The disclosure and the per-exposure report';
 }
 
@@ -40,6 +41,7 @@ const GROUPS = [
   'The third verdict, and the checks a standard cannot give',
   'The exposure register',
   'The disclosed score and the improvement plan',
+  'Recalculation and significance',
   'The disclosure and the per-exposure report',
 ];
 

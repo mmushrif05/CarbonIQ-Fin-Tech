@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **343**. Remaining: **192**.
+Checked across all three: **346**. Remaining: **192**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **293**. Remaining: **67** (384 errors, measured by
+Checked: **296**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -137,7 +137,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **103** (1345 errors, measured by
+Checked: **42**. Remaining: **103** (1349 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **4 of them raise no errors at all** and can be adopted by adding the
@@ -154,15 +154,15 @@ pragma and nothing else.
 | `tests/gcf-pipeline.test.js` | 33 |
 | `tests/jobs.test.js` | 33 |
 | `tests/partc-portfolio.test.js` | 32 |
+| `tests/parta-register-api.test.js` | 31 |
 | `tests/authentication.test.js` | 29 |
 | `tests/partc-boq.test.js` | 29 |
-| `tests/parta-register-api.test.js` | 28 |
 | `tests/api-contract.test.js` | 27 |
 | `tests/observability.test.js` | 27 |
 | `tests/partc-registry.test.js` | 27 |
 | `tests/api-key.test.js` | 26 |
+| `tests/parta-register.test.js` | 26 |
 | `tests/partc-assessments.test.js` | 26 |
-| `tests/parta-register.test.js` | 25 |
 | `tests/desk-api.test.js` | 24 |
 | `tests/ui-config.test.js` | 24 |
 | `tests/parta-engine.test.js` | 22 |

@@ -186,7 +186,8 @@ function dataQualitySection(f) {
   };
 }
 
-function recalculationSection(_f) {
+function recalculationSection(f) {
+  const r = f.recalculation || { baseYear: null, significanceThresholdPct: null, triggers: [], policy: '' };
   return {
     id: 'recalculation', title: 'Recalculation and significance',
     blocks: keep([
@@ -195,10 +196,33 @@ function recalculationSection(_f) {
         + 'threshold belong to the reporting entity; where none has been set, this report '
         + 'states so rather than implying the current year — a base year is a claim about '
         + 'history and belongs to the entity, not to its software.'),
+      b.table({
+        head: ['Item', 'This reporting entity'],
+        widths: [3.2, 2.8], align: ['left', 'left'],
+        rows: [
+          ['Inventory base year', r.baseYear ? String(r.baseYear) : 'Not yet stated for this reporting entity'],
+          ['Significance threshold — triggers a recalculation of base-year emissions',
+            r.significanceThresholdPct === null || r.significanceThresholdPct === undefined
+              ? 'Not stated'
+              : `${r.significanceThresholdPct}% movement in a reported figure`],
+        ],
+      }),
+      b.h2('What triggers a recalculation'),
+      r.triggers.length
+        ? b.bullets(r.triggers)
+        : b.body('No recalculation protocol has been stated for this reporting entity. A §5.2 '
+          + 'disclosure requires one.'),
+      r.policy ? b.body(r.policy) : null,
+      !r.baseYear
+        ? b.callout('No base year is stated for this reporting entity. The report says so rather than '
+          + 'implying the current year, because a base year is a claim about history and belongs to the '
+          + 'entity, not to its software.', 'Open item')
+        : null,
       b.body('The register holds both the input a bank keyed and the result the engine '
         + 'computed. A recomputation reruns the engine over the input already held and '
-        + 'reports what moved across every line and both scores, so a change in a factor or '
-        + 'a baseline is a decision somebody takes rather than something that happens to them.'),
+        + 'reports what moved across every line and both scores, and whether the movement '
+        + 'reaches the significance threshold above — so a change in a factor or a baseline is '
+        + 'a decision somebody takes rather than something that happens to them.'),
     ])
   };
 }

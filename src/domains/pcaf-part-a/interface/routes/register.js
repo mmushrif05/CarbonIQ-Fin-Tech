@@ -5,6 +5,8 @@
  *   GET    /v1/pcaf/part-a/years                    which years this book holds
  *   GET    /v1/pcaf/part-a/book/:year               the entity's stated book total
  *   PUT    /v1/pcaf/part-a/book                     state it — coverage's denominator
+ *   GET    /v1/pcaf/part-a/settings                 the entity's recalculation protocol
+ *   PUT    /v1/pcaf/part-a/settings                 set it — base year, threshold, triggers
  *   GET    /v1/pcaf/part-a/exposures                a year's book, a page at a time
  *   POST   /v1/pcaf/part-a/exposures                record one
  *   GET    /v1/pcaf/part-a/exposures/:id            one, with its whole trace
@@ -33,7 +35,7 @@ const store = require('../../../../platform/database/store');
 const register = require('../../application/register');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
-const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema } = require('../schemas/register');
+const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema } = require('../schemas/register');
 
 const router = Router();
 
@@ -86,6 +88,30 @@ router.put('/book', authenticate, defaultLimiter,
   validate({ body: bookSchema }),
   handle(async (req, res) => {
     res.json({ book: await register.stateBook(req.orgId, req.body) });
+  }));
+
+// ---------------------------------------------------------------------------
+// The reporting entity's settings — the recalculation protocol
+// ---------------------------------------------------------------------------
+
+router.get('/settings', authenticate, defaultLimiter,
+  doc({ summary: 'The reporting entity\'s recalculation protocol — base year, significance threshold and triggers',
+    description: 'Chapter 6 requires a disclosure to state its recalculation protocol. The base year is '
+      + 'null until the entity sets one, because a base year is a claim about history and the report says '
+      + 'so rather than implying the current year.',
+    response: body({ settings: obj }, ['settings']) }),
+  handle(async (req, res) => {
+    res.json({ settings: await register.getSettings(req.orgId) });
+  }));
+
+router.put('/settings', authenticate, defaultLimiter,
+  doc({ summary: 'Set the reporting entity\'s recalculation protocol',
+    description: 'A movement of at least the significance threshold is a recalculation trigger. Only the '
+      + 'protocol fields are accepted; anything else is ignored rather than written.',
+    response: body({ settings: obj }, ['settings']) }),
+  validate({ body: settingsSchema }),
+  handle(async (req, res) => {
+    res.json({ settings: await register.saveSettings(req.orgId, req.body) });
   }));
 
 // ---------------------------------------------------------------------------
