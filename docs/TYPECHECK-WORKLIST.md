@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **348**. Remaining: **193**.
+Checked across all three: **352**. Remaining: **194**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **298**. Remaining: **67** (384 errors, measured by
+Checked: **302**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -137,7 +137,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **104** (1350 errors, measured by
+Checked: **42**. Remaining: **105** (1356 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **4 of them raise no errors at all** and can be adopted by adding the
@@ -210,6 +210,7 @@ pragma and nothing else.
 | `tests/gcf-journey.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
+| `tests/parta-sovereign.test.js` | 6 |
 | `tests/validate-middleware.test.js` | 6 |
 | `tests/baseline-registry.test.js` | 5 |
 | `tests/baselines-ui.test.js` | 5 |

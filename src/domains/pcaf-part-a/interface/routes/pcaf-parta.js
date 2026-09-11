@@ -29,6 +29,8 @@ const handle = require('../../../../platform/http/async-handler');
 const parta = require('../../domain');
 const library = require('../../domain/sector-factors');
 const sovereignData = require('../../domain/sovereign/dataset');
+const { assessSovereign } = require('../../domain/sovereign');
+const { sovereignRequestSchema } = require('../schemas/sovereign');
 const { withSectorBand } = require('../../application/plausibility');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
@@ -187,6 +189,34 @@ router.post('/assess',
     try {
       const startedAt = Date.now();
       const result = parta.assessExposure(req.body);
+      res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * §5.9 — one sovereign exposure.
+ *
+ * The whole class is one division: exposure ÷ PPP-adjusted GDP (p.144), never
+ * equity plus debt. Scope 1 is reported both including and excluding LULUCF and
+ * the two are never summed; scope 2 and 3 are shoulds, reported absent rather
+ * than zero where not held; the consumption view is a separate recommended cut
+ * and is never folded into the territorial figure. A country resolves from the
+ * versioned dataset, or the figures are supplied on the request.
+ */
+router.post('/sovereign/assess',
+  doc({ summary: 'PCAF Part A §5.9 financed emissions for one sovereign bond or loan',
+    description: 'Attribution is exposure ÷ PPP-adjusted GDP (international USD), not equity plus '
+      + 'debt. Scope 1 (domestic territorial, UNFCCC production) is returned both including and '
+      + 'excluding LULUCF and never summed; scope 2 and 3 are reported separately where held and '
+      + 'absent — not zero — where not. Data quality is scored from Table 5.9-6 by the emissions '
+      + 'source. Reproduces the standard’s worked example (Table 10.3-2): $1M to Singapore → 106 '
+      + 'tCO2e, to Hong Kong → 91.',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
+  validate({ body: sovereignRequestSchema }),
+  (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const result = assessSovereign(req.body);
       res.json({ ...result, elapsedMs: Date.now() - startedAt });
     } catch (err) { next(err); }
   });
