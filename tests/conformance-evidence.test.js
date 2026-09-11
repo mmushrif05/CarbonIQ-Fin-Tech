@@ -26,9 +26,10 @@ const DOC = path.join(ROOT, 'docs', 'CONFORMANCE-EVIDENCE.md');
 
 const { requireGraph } = require('./helpers/require-graph');
 
+const parta = require('../src/domains/pcaf-part-a/domain/conformance');
 const partc = require('../src/domains/pcaf-part-c/domain/conformance');
 const gcf = require('../src/domains/gcf/domain/conformance');
-const ALL = [...partc.RULES, ...gcf.RULES];
+const ALL = [...parta.RULES, ...partc.RULES, ...gcf.RULES];
 
 const doc = () => fs.readFileSync(DOC, 'utf8');
 
@@ -54,7 +55,7 @@ describe('It cannot drift from the matrices', () => {
   });
 
   test('the rule count in the summary is the matrices’ own count', () => {
-    expect(doc()).toContain(`- ${ALL.length} rules across both matrices`);
+    expect(doc()).toContain(`- ${ALL.length} rules across the conformance matrices`);
   });
 });
 
@@ -74,8 +75,9 @@ describe('Nothing is left unproven', () => {
 });
 
 describe('The evidence vocabulary is declared, not improvised', () => {
-  test('both matrices publish the same vocabulary', () => {
+  test('the matrices publish the same vocabulary', () => {
     expect(partc.VALID_EVIDENCE).toEqual(gcf.VALID_EVIDENCE);
+    expect(parta.VALID_EVIDENCE).toEqual(partc.VALID_EVIDENCE);
     expect(partc.VALID_EVIDENCE).toEqual(['execution', 'absence']);
   });
 
