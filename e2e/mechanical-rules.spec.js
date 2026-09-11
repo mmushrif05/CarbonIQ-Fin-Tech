@@ -41,11 +41,7 @@ async function signIn(page, request) {
   await page.fill('#login-email', USER.email);
   await page.fill('#login-password', USER.password);
   await page.locator('#login-btn').click();
-  /* Sign-in posts, then the shell swaps the login card for the app; under a
-     loaded CI runner that swap can take longer than the 5s default, and the
-     sidebar is briefly present-but-not-yet-visible. Wait for the true
-     condition with room, rather than asserting it has already happened. */
-  await expect(page.locator('#sidebar')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#sidebar')).toBeVisible();
 }
 
 test('nothing marked hidden is visible on any page, whatever a class rule says', async ({ page, request }) => {

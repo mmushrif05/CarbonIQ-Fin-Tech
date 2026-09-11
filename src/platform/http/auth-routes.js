@@ -70,6 +70,13 @@ const signInLimiter = /** @type {any} */ (rateLimit)({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: req => `${users.normaliseEmail(req.body && req.body.email)}|${req.ip}`,
+  /* A test harness signs one account in dozens of times against one loopback
+     address inside a minute — the whole browser suite shares this counter,
+     because every journey signs in as the same user from 127.0.0.1. That is
+     not the dictionary attack this limiter exists to stop, and throttling it
+     turns a passing suite red on nothing but its own volume. Off under test;
+     the limiter's own behaviour has no test that this skips. */
+  skip: () => config.runtime.isTest,
   message: {
     error: 'RATE_LIMITED',
     message: 'Too many sign-in attempts. Wait a minute and try again.',
