@@ -28,6 +28,7 @@ const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const handle = require('../../../../platform/http/async-handler');
 const parta = require('../../domain');
 const library = require('../../domain/sector-factors');
+const sovereignData = require('../../domain/sovereign/dataset');
 const { withSectorBand } = require('../../application/plausibility');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
@@ -84,6 +85,23 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
           dataQualityOptions: parta.dataQuality.optionsFor('business-loans-unlisted-equity'),
           dataQualityTable: parta.dataQuality.tableFor('business-loans-unlisted-equity').table,
           thresholds: require('../../domain/business-loans/checks').DEFAULTS,
+        },
+        {
+          id: 'sovereign-debt',
+          label: 'Sovereign debt',
+          section: '5.9',
+          definition: 'Sovereign bonds and loans of any maturity or currency, including issuance '
+            + 'by a central bank on the sovereign’s behalf. Supranationals are not required. '
+            + 'Loans to a state-owned enterprise are business loans; a municipal or regional issuer '
+            + 'is sub-sovereign debt (§5.10).',
+          denominator: 'PPP-adjusted GDP of the sovereign (international USD) — not equity plus debt',
+          scopes: 'Scope 1 (domestic territorial, UNFCCC production emissions) shall be reported, '
+            + 'both including and excluding LULUCF. Scope 2 (imported grid energy) and scope 3 '
+            + '(non-energy imports) should be reported where available.',
+          dataQualityOptions: parta.dataQuality.optionsFor('sovereign-debt'),
+          dataQualityTable: parta.dataQuality.tableFor('sovereign-debt').table,
+          countriesHeld: sovereignData.countriesHeld(),
+          dataset: sovereignData.release(),
         },
       ],
       archetypes: parta.archetypes.list(),

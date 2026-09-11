@@ -145,6 +145,12 @@ const DQ_LISTED_EQUITY = Object.freeze(checked('data/pcaf-parta/dq-listed-equity
    two would then move both, silently. */
 const DQ_BUSINESS_LOANS = Object.freeze(checked('data/pcaf-parta/dq-business-loans-unlisted-equity.json',
   require('../../../../data/pcaf-parta/dq-business-loans-unlisted-equity.json'), dqTableSchema));
+/* §5.9's table has its own shape — no Option 2b, no 3c, Option 2 at score 3 —
+   and the denominator behind it is PPP-adjusted GDP rather than equity plus
+   debt. Held apart for the same reason as every other class table: the
+   option→score mapping is a fact about this chapter, not the standard. */
+const DQ_SOVEREIGN = Object.freeze(checked('data/pcaf-parta/dq-sovereign.json',
+  require('../../../../data/pcaf-parta/dq-sovereign.json'), dqTableSchema));
 const COUNTRY_CONFIG = Object.freeze(checked('data/pcaf-parta/country-config.json',
   require('../../../../data/pcaf-parta/country-config.json'), countryConfigSchema));
 
@@ -157,7 +163,7 @@ const SECTOR_FACTORS = Object.freeze(checked('data/pcaf-parta/sector-factors.jso
   require('../../../../data/pcaf-parta/sector-factors.json'), sectorFactorTableSchema));
 
 module.exports = {
-  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, COUNTRY_CONFIG,
+  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, DQ_SOVEREIGN, COUNTRY_CONFIG,
   SECTORS, SECTOR_FACTORS,
   dqTableSchema, countryConfigSchema,
 };

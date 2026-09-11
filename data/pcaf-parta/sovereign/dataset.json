@@ -1,0 +1,117 @@
+{
+  "table": "sovereign-dataset",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.9 Sovereign debt",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-09-11",
+  "status": "provisional",
+  "unit": {
+    "emissions": "tCO2e",
+    "pppGdp": "million international USD (PPP, current)",
+    "population": "persons"
+  },
+  "note": "One record per sovereign. Scope 1 is domestic territorial (production) emissions and is held both including and excluding LULUCF, because §5.9 requires both (p.141) and because the LULUCF term can distort the trend of the energy and industrial sectors. The attribution denominator is PPP-adjusted GDP (p.144), not equity plus debt. Every figure carries its own source and vintage. Singapore and Hong Kong carry the figures from the standard's own worked example (Table 10.3-2, p.202), which gives scope 1 excluding LULUCF only — the including-LULUCF figure is reported absent with the reason rather than invented. Sri Lanka is shipped provisional: order-of-magnitude figures pending a released baseline, and every provisional figure says so. A released dataset replaces this one entirely and is never merged with it.",
+  "sources": {
+    "scope1": "Domestic (territorial) emissions including / excluding LULUCF — UNFCCC (di.unfccc.int, Annex I and non-Annex I parties); Climate Watch (climatewatchdata.org); EDGAR (europa.eu, GHG 1970-2018, a 4-year lag). PCAF Table 10.3-4 (pp.205-206).",
+    "scope2": "Imported grid electricity, steam, heat and cooling — OECD, Carbon dioxide emissions embodied in international trade (CO2 only, industry code D35, 4-year lag). PCAF Table 10.3-4 (p.206).",
+    "scope3": "Non-energy imports — OECD, Carbon dioxide emissions embodied in international trade (CO2 only, 4-year lag). PCAF Table 10.3-4 (p.206).",
+    "pppGdp": "GDP, PPP (current international $) — World Bank (worldbank.org). PCAF Table 10.3-4 (p.206).",
+    "population": "Standard macro-economic metrics — World Bank / IMF. PCAF Table 10.3-4 (p.206)."
+  },
+  "countries": {
+    "LK": {
+      "name": "Sri Lanka",
+      "iso3": "LKA",
+      "provisional": true,
+      "gap": "Illustrative order-of-magnitude figures, not a released baseline and not audited. Replace with Sri Lanka's UNFCCC submissions (di.unfccc.int) for scope 1 and World Bank PPP-GDP for the denominator before any figure is disclosed.",
+      "scope1": {
+        "exclLULUCF": {
+          "value": 35000000,
+          "unit": "tCO2e",
+          "year": 2018,
+          "basis": "provisional",
+          "source": "Illustrative order-of-magnitude, pending a released baseline. Source when released: Sri Lanka UNFCCC submissions (di.unfccc.int), production emissions excluding LULUCF."
+        },
+        "inclLULUCF": {
+          "value": 30000000,
+          "unit": "tCO2e",
+          "year": 2018,
+          "basis": "provisional",
+          "source": "Illustrative order-of-magnitude, pending a released baseline. Sri Lanka reports a modest net LULUCF sink in some years; the direction and size of the LULUCF term are illustrative here and are not asserted."
+        }
+      },
+      "pppGdp": {
+        "value": 296600,
+        "unit": "million international USD (PPP, current)",
+        "year": 2020,
+        "source": "World Bank, GDP PPP (current international $), Sri Lanka, 2020 — approximate."
+      },
+      "population": {
+        "value": 21919000,
+        "unit": "persons",
+        "year": 2020,
+        "source": "World Bank, Sri Lanka, 2020 — approximate."
+      }
+    },
+    "SG": {
+      "name": "Singapore",
+      "iso3": "SGP",
+      "provisional": false,
+      "scope1": {
+        "exclLULUCF": {
+          "value": 61451586,
+          "unit": "tCO2e",
+          "year": 2018,
+          "basis": "edgar-estimated",
+          "source": "EDGAR (europa.eu), scope 1 excluding LULUCF, as reproduced in PCAF Part A Third Edition Table 10.3-2 (p.202)."
+        },
+        "inclLULUCF": {
+          "absent": true,
+          "reason": "The standard's worked example (Table 10.3-2, p.202) gives Singapore's scope 1 excluding LULUCF only. The including-LULUCF figure is not in the example and is not asserted here; source it from di.unfccc.int for a released set."
+        }
+      },
+      "pppGdp": {
+        "value": 579762,
+        "unit": "million international USD (PPP, current)",
+        "year": 2020,
+        "source": "World Bank, GDP PPP (current international $), as reproduced in PCAF Part A Third Edition Table 10.3-2 (p.202)."
+      },
+      "population": {
+        "value": 5686000,
+        "unit": "persons",
+        "year": 2020,
+        "source": "World Bank, Singapore, 2020 — approximate."
+      }
+    },
+    "HK": {
+      "name": "Hong Kong SAR",
+      "iso3": "HKG",
+      "provisional": false,
+      "scope1": {
+        "exclLULUCF": {
+          "value": 42654105,
+          "unit": "tCO2e",
+          "year": 2018,
+          "basis": "edgar-estimated",
+          "source": "EDGAR (europa.eu), scope 1 excluding LULUCF, as reproduced in PCAF Part A Third Edition Table 10.3-2 (p.202)."
+        },
+        "inclLULUCF": {
+          "absent": true,
+          "reason": "The standard's worked example (Table 10.3-2, p.202) gives Hong Kong's scope 1 excluding LULUCF only. The including-LULUCF figure is not in the example and is not asserted here; source it from di.unfccc.int for a released set."
+        }
+      },
+      "pppGdp": {
+        "value": 469182,
+        "unit": "million international USD (PPP, current)",
+        "year": 2020,
+        "source": "World Bank, GDP PPP (current international $), as reproduced in PCAF Part A Third Edition Table 10.3-2 (p.202)."
+      },
+      "population": {
+        "value": 7481000,
+        "unit": "persons",
+        "year": 2020,
+        "source": "World Bank, Hong Kong SAR, 2020 — approximate."
+      }
+    }
+  }
+}
