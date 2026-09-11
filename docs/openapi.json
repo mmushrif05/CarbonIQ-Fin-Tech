@@ -26723,6 +26723,1305 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/sovereign/exposures": {
+      "get": {
+        "operationId": "getPcafPartASovereignExposures",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "A reporting year's sovereign exposures, a page at a time",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "x-paged": true,
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "exposures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "reportingYear": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposures"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "$ref": "#/components/schemas/Page"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "exposures": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "reportingYear": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": true,
+                          "required": [
+                            "exposures"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "$ref": "#/components/schemas/Page"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postPcafPartASovereignExposures",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Record one sovereign exposure in the register",
+        "description": "The engine runs before anything is written. Both halves are kept — what the bank keyed and what the engine computed — and one bond is recorded once (a repeated reference is a 409). Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "instrument": {
+                    "type": "string",
+                    "enum": [
+                      "sovereign-bond",
+                      "sovereign-loan"
+                    ],
+                    "default": "sovereign-bond"
+                  },
+                  "exposure": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "USD"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "amount"
+                    ]
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "sovereign": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "iso3": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope1InclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope2_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope3_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "pppGdp": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "emissionsYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "pppGdpYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF",
+                      "pppGdp"
+                    ]
+                  },
+                  "dataQualityOption": {
+                    "type": "string",
+                    "enum": [
+                      "1a",
+                      "1b",
+                      "2",
+                      "3a",
+                      "3b"
+                    ]
+                  },
+                  "dataQualityOverrideJustification": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "crossCheck": {
+                    "type": "object",
+                    "properties": {
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF"
+                    ]
+                  },
+                  "thresholds": {
+                    "type": "object",
+                    "properties": {
+                      "emissionsLagYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "gdpYearGapYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "intensityLow": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "intensityHigh": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "sourceDivergencePct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000
+                      }
+                    }
+                  },
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "identifiers": {
+                    "type": "object",
+                    "properties": {
+                      "accountNumber": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "exposure",
+                  "reportingYear"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/sovereign/exposures/{exposureId}": {
+      "delete": {
+        "operationId": "deletePcafPartASovereignExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Remove a sovereign exposure from the register",
+        "description": "Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposureId": {
+                      "type": "string"
+                    },
+                    "removed": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposureId"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposureId": {
+                          "type": "string"
+                        },
+                        "removed": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposureId"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getPcafPartASovereignExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "One sovereign exposure, with the input it was computed from and its whole trace",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "putPcafPartASovereignExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Change a recorded sovereign exposure; the engine reruns over the new input",
+        "description": "Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "instrument": {
+                    "type": "string",
+                    "enum": [
+                      "sovereign-bond",
+                      "sovereign-loan"
+                    ],
+                    "default": "sovereign-bond"
+                  },
+                  "exposure": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "USD"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "amount"
+                    ]
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "sovereign": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "iso3": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope1InclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope2_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope3_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "pppGdp": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "emissionsYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "pppGdpYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF",
+                      "pppGdp"
+                    ]
+                  },
+                  "dataQualityOption": {
+                    "type": "string",
+                    "enum": [
+                      "1a",
+                      "1b",
+                      "2",
+                      "3a",
+                      "3b"
+                    ]
+                  },
+                  "dataQualityOverrideJustification": {
+                    "type": "string",
+                    "maxLength": 500
+                  },
+                  "crossCheck": {
+                    "type": "object",
+                    "properties": {
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF"
+                    ]
+                  },
+                  "thresholds": {
+                    "type": "object",
+                    "properties": {
+                      "emissionsLagYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "gdpYearGapYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "intensityLow": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "intensityHigh": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "sourceDivergencePct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000
+                      }
+                    }
+                  },
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "identifiers": {
+                    "type": "object",
+                    "properties": {
+                      "accountNumber": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "exposure",
+                  "reportingYear"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/sovereign/exposures/{exposureId}/recompute": {
+      "post": {
+        "operationId": "postPcafPartASovereignExposuresByExposureIdRecompute",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Rerun the sovereign engine over the input already held, and say what moved",
+        "description": "Reports the movement across scope 1 on both LULUCF boundaries, scope 2 and 3, the data-quality score and the findings — a change in the engine or the sovereign dataset, never in what the bank recorded. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "movement": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure",
+                    "movement"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "movement": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure",
+                        "movement"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/sovereign/position/{year}": {
+      "get": {
+        "operationId": "getPcafPartASovereignPositionByYear",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The sovereign reporting-year position, rolled up from the recorded exposures",
+        "description": "Read from the stored roll-up projection. Scope 1 is summed on both LULUCF boundaries and never added together; the disclosed data-quality score is weighted by outstanding amount (p.128); coverage is assessed outstanding over the stated book total. A year with no sovereign exposures is a 409. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reportingYear": {
+                      "type": "string"
+                    },
+                    "totals": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "coverage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "exposures": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "reportingYear",
+                    "totals"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reportingYear": {
+                          "type": "string"
+                        },
+                        "totals": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "coverage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "exposures": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "reportingYear",
+                        "totals"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/sovereign/years": {
+      "get": {
+        "operationId": "getPcafPartASovereignYears",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The reporting years the sovereign book holds exposures for",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "years": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "years"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "years": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "years"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/storage": {
       "get": {
         "operationId": "getPcafPartAStorage",

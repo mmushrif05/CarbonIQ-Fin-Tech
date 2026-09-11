@@ -64,4 +64,16 @@ const sovereignRequestSchema = Joi.object({
   }).optional(),
 }).or('country', 'sovereign');
 
-module.exports = { sovereignRequestSchema };
+/**
+ * The register form: the assess request plus what persistence needs — a
+ * required reporting year (a row with no year belongs to no book) and the
+ * bank's own reference for the holding, which carries the one-bond-once index.
+ */
+const sovereignExposureSchema = sovereignRequestSchema.keys({
+  reportingYear: Joi.number().integer().min(2000).max(2100).required(),
+  identifiers: Joi.object({
+    accountNumber: Joi.string().max(120).optional(),
+  }).optional(),
+});
+
+module.exports = { sovereignRequestSchema, sovereignExposureSchema };

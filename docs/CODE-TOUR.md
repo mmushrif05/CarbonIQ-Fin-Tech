@@ -166,15 +166,15 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 5 | 852 |
+|       `src/domains/pcaf-part-a/application/` | 6 | 1,121 |
 |       `src/domains/pcaf-part-a/domain/` | 14 | 2,544 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
-|         `src/domains/pcaf-part-a/domain/sovereign/` | 5 | 824 |
-|       `src/domains/pcaf-part-a/infrastructure/` | 1 | 116 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 547 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 4 | 387 |
+|         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 953 |
+|       `src/domains/pcaf-part-a/infrastructure/` | 2 | 194 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 637 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 4 | 399 |
 |       `src/domains/pcaf-part-a/reporting/` | 5 | 893 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
@@ -191,10 +191,10 @@ flowchart TD
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,180 |
+|     `src/platform/auth/` | 12 | 2,187 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
-|     `src/platform/database/` | 10 | 1,843 |
+|     `src/platform/database/` | 10 | 1,876 |
 |       `src/platform/database/adapters/` | 6 | 496 |
 |     `src/platform/http/` | 22 | 2,571 |
 |     `src/platform/jobs/` | 3 | 413 |
@@ -204,7 +204,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **338** | **56,804** |
+| **total** | **341** | **57,422** |
 
 <!-- END MODULE-MAP -->
 
@@ -406,6 +406,16 @@ erDiagram
     string id PK
     string owner_org_id
     jsonb record
+  }
+  parta_sovereign_exposures {
+    string id PK
+    string owner_org_id
+    jsonb record
+    string reporting_year "reportingYear"
+    string asset_class "assetClass"
+    string status "status"
+    string country_code "country.code"
+    string account_number "input.identifiers.accountNumber"
   }
   partc_clients ||--o{ partc_projects : "restrict"
   partc_projects ||--o{ partc_boq_revisions : "restrict"
