@@ -15,7 +15,7 @@ when working on a clause.
 
 | Document | Date | What it gives us | Status |
 |---|---|---|---|
-| **Global GHG Accounting and Reporting Standard, Part A: Financed Emissions — Third Edition** | Dec 2025 | Chapter 5 methodologies: asset classes, attribution formulas, data-quality tables. **The calculator core.** | **NOT YET HELD** |
+| **Global GHG Accounting and Reporting Standard, Part A: Financed Emissions — Third Edition** | Dec 2025 | Chapter 5 methodologies: asset classes, attribution formulas, data-quality tables. **The calculator core.** | Held as `PCAF-PartA-2025-V3-15012026.pdf`; studied in full in `docs/PCAF-PART-A-RESEARCH.md` |
 | **PCAF Disclosure Checklist (DCL), Part A** | May 2025 | Chapter 6 reporting requirements as Yes/No items with page cites (pp.122–129) | Held |
 | **DCL Frequently Asked Questions** | May 2025 | What the DCL is for and how it is submitted | Held |
 | **Supplemental guidance: financed avoided emissions & forward-looking metrics** | Dec 2025 | Avoided emissions, Use of Proceeds, EER/EAE | Held |
@@ -152,8 +152,10 @@ emissions.
 
 ## 6. Still needed before the calculator can be built
 
-The three documents held give us Chapter 6 — *what must be reported*. They do not
-give Chapter 5 — *how it is calculated*. Outstanding:
+**Superseded.** The Third Edition is now held and every item below is answered
+in `docs/PCAF-PART-A-RESEARCH.md` (§2 per asset class, §3 the data-quality
+matrix, §4 reporting, §6 the gaps the standard itself leaves). The list is
+kept as the record of what was open when this note was written.
 
 1. The ten asset classes and their exact names
 2. Attribution formula per asset class — numerator, denominator, and whether the
