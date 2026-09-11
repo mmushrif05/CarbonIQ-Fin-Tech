@@ -6577,6 +6577,7 @@
                 "construction_intensity_kgCO2e_m2",
                 "embodied_carbon_benchmark_kgCO2e_m2",
                 "grid_emission_factor_kgCO2e_kWh",
+                "sector_intensity_tCO2e_per_million_revenue",
                 "data_quality_target_score"
               ]
             }
@@ -6769,6 +6770,7 @@
                       "construction_intensity_kgCO2e_m2",
                       "embodied_carbon_benchmark_kgCO2e_m2",
                       "grid_emission_factor_kgCO2e_kWh",
+                      "sector_intensity_tCO2e_per_million_revenue",
                       "data_quality_target_score"
                     ]
                   },
@@ -7640,6 +7642,7 @@
                       "construction_intensity_kgCO2e_m2",
                       "embodied_carbon_benchmark_kgCO2e_m2",
                       "grid_emission_factor_kgCO2e_kWh",
+                      "sector_intensity_tCO2e_per_million_revenue",
                       "data_quality_target_score"
                     ]
                   },
@@ -22224,6 +22227,34 @@
                         "type": "string",
                         "maxLength": 120
                       },
+                      "sectorKey": {
+                        "type": "string",
+                        "enum": [
+                          "agriculture",
+                          "agriculture_tea",
+                          "agriculture_rice",
+                          "mining",
+                          "manufacturing",
+                          "manufacturing_textiles",
+                          "manufacturing_cement",
+                          "manufacturing_food",
+                          "manufacturing_rubber_plastics",
+                          "electricity",
+                          "water_waste",
+                          "construction",
+                          "wholesale_retail",
+                          "transport",
+                          "accommodation_food",
+                          "information",
+                          "finance",
+                          "real_estate",
+                          "professional",
+                          "admin_support",
+                          "education",
+                          "health",
+                          "other_services"
+                        ]
+                      },
                       "naceL2": {
                         "type": "string",
                         "maxLength": 20
@@ -22692,6 +22723,10 @@
                           "high": {
                             "type": "number",
                             "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 400
                           }
                         },
                         "required": [
@@ -22713,6 +22748,11 @@
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 20
+                      },
+                      "factorVintageYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 30
                       }
                     }
                   }
@@ -22863,6 +22903,34 @@
                             "sector": {
                               "type": "string",
                               "maxLength": 120
+                            },
+                            "sectorKey": {
+                              "type": "string",
+                              "enum": [
+                                "agriculture",
+                                "agriculture_tea",
+                                "agriculture_rice",
+                                "mining",
+                                "manufacturing",
+                                "manufacturing_textiles",
+                                "manufacturing_cement",
+                                "manufacturing_food",
+                                "manufacturing_rubber_plastics",
+                                "electricity",
+                                "water_waste",
+                                "construction",
+                                "wholesale_retail",
+                                "transport",
+                                "accommodation_food",
+                                "information",
+                                "finance",
+                                "real_estate",
+                                "professional",
+                                "admin_support",
+                                "education",
+                                "health",
+                                "other_services"
+                              ]
                             },
                             "naceL2": {
                               "type": "string",
@@ -23332,6 +23400,10 @@
                                 "high": {
                                   "type": "number",
                                   "minimum": 0
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "maxLength": 400
                                 }
                               },
                               "required": [
@@ -23353,6 +23425,11 @@
                               "type": "integer",
                               "minimum": 0,
                               "maximum": 20
+                            },
+                            "factorVintageYears": {
+                              "type": "integer",
+                              "minimum": 0,
+                              "maximum": 30
                             }
                           }
                         }
@@ -23659,6 +23736,34 @@
                       "sector": {
                         "type": "string",
                         "maxLength": 120
+                      },
+                      "sectorKey": {
+                        "type": "string",
+                        "enum": [
+                          "agriculture",
+                          "agriculture_tea",
+                          "agriculture_rice",
+                          "mining",
+                          "manufacturing",
+                          "manufacturing_textiles",
+                          "manufacturing_cement",
+                          "manufacturing_food",
+                          "manufacturing_rubber_plastics",
+                          "electricity",
+                          "water_waste",
+                          "construction",
+                          "wholesale_retail",
+                          "transport",
+                          "accommodation_food",
+                          "information",
+                          "finance",
+                          "real_estate",
+                          "professional",
+                          "admin_support",
+                          "education",
+                          "health",
+                          "other_services"
+                        ]
                       },
                       "naceL2": {
                         "type": "string",
@@ -24123,6 +24228,10 @@
                           "high": {
                             "type": "number",
                             "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 400
                           }
                         },
                         "required": [
@@ -24144,6 +24253,11 @@
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 20
+                      },
+                      "factorVintageYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 30
                       }
                     }
                   },
@@ -24534,6 +24648,34 @@
                         "type": "string",
                         "maxLength": 120
                       },
+                      "sectorKey": {
+                        "type": "string",
+                        "enum": [
+                          "agriculture",
+                          "agriculture_tea",
+                          "agriculture_rice",
+                          "mining",
+                          "manufacturing",
+                          "manufacturing_textiles",
+                          "manufacturing_cement",
+                          "manufacturing_food",
+                          "manufacturing_rubber_plastics",
+                          "electricity",
+                          "water_waste",
+                          "construction",
+                          "wholesale_retail",
+                          "transport",
+                          "accommodation_food",
+                          "information",
+                          "finance",
+                          "real_estate",
+                          "professional",
+                          "admin_support",
+                          "education",
+                          "health",
+                          "other_services"
+                        ]
+                      },
                       "naceL2": {
                         "type": "string",
                         "maxLength": 20
@@ -24997,6 +25139,10 @@
                           "high": {
                             "type": "number",
                             "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 400
                           }
                         },
                         "required": [
@@ -25018,6 +25164,11 @@
                         "type": "integer",
                         "minimum": 0,
                         "maximum": 20
+                      },
+                      "factorVintageYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 30
                       }
                     }
                   },
@@ -25233,6 +25384,129 @@
                       "required": [
                         "exposure",
                         "movement"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/factors": {
+      "get": {
+        "operationId": "getPcafPartAFactors",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "PCAF Part A sector factor library — every row with its tier, source, vintage and gap, and the release checksum",
+        "description": "Option 3 sector-average intensities per unit of revenue, keyed to a closed sector vocabulary (ISIC Rev.4 sections, with the divisions a Sri Lankan book holds). The shipped table is provisional and each row says why. An estimated figure names the table, version and checksum it was computed on. Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "304": {
+            "$ref": "#/components/responses/NotModified"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "vocabulary": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "table": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "release": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "vocabulary",
+                    "table",
+                    "release"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "vocabulary": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "table": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "release": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "vocabulary",
+                        "table",
+                        "release"
                       ]
                     },
                     "meta": {

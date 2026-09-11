@@ -1,0 +1,205 @@
+{
+  "table": "sector-factors",
+  "description": "PCAF Part A Option 3 sector-average emission intensities per unit of borrower revenue, by sector of the vocabulary in sectors.json, with the asset turnover ratio Option 3c needs. Option 3b's per-assets factor is derived: GHG per revenue × revenue per assets (Annex Table 10.1-2).",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-09-11",
+  "status": "provisional",
+  "provisionalRows": [
+    "accommodation_food",
+    "admin_support",
+    "agriculture",
+    "agriculture_rice",
+    "agriculture_tea",
+    "construction",
+    "education",
+    "electricity",
+    "finance",
+    "health",
+    "information",
+    "manufacturing",
+    "manufacturing_cement",
+    "manufacturing_food",
+    "manufacturing_rubber_plastics",
+    "manufacturing_textiles",
+    "mining",
+    "other_services",
+    "professional",
+    "real_estate",
+    "transport",
+    "water_waste",
+    "wholesale_retail"
+  ],
+  "currency": "LKR",
+  "unit": "tCO2e per million LKR of revenue",
+  "vintage": 2022,
+  "tier": "Global",
+  "reference": "Global multi-regional EEIO ranges (EXIOBASE v3.8 order of magnitude), converted to LKR at an indicative rate; see each row's gap.",
+  "rules": {
+    "currency": "A factor held in this currency is never applied to an exposure in another. The resolver reports it absent with the reason.",
+    "vintage": "Box 6.1-5 (p.167) recommends inflating score 4 and 5 factors to the reporting year. A factor applied without a deflator beyond the stated age raises FACTOR_VINTAGE_STALE.",
+    "scope3": "Scope 3 is estimated from this table only where the exposure asks for it. EEIO scope 3 boundaries differ from reported ones; mixing them mixes scope coverage (§5.2, pp.64–65)."
+  },
+  "rows": {
+    "agriculture": {
+      "scope1PerRevenue": 2.0,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 1.0,
+      "assetTurnover": 0.8,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "agriculture_tea": {
+      "scope1PerRevenue": 1.0,
+      "scope2PerRevenue": 0.3,
+      "scope3PerRevenue": 0.8,
+      "assetTurnover": 0.7,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "agriculture_rice": {
+      "scope1PerRevenue": 4.5,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 0.7,
+      "assetTurnover": 0.8,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "mining": {
+      "scope1PerRevenue": 2.2,
+      "scope2PerRevenue": 0.5,
+      "scope3PerRevenue": 1.5,
+      "assetTurnover": 0.6,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "manufacturing": {
+      "scope1PerRevenue": 0.7,
+      "scope2PerRevenue": 0.4,
+      "scope3PerRevenue": 2.0,
+      "assetTurnover": 1.0,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "manufacturing_textiles": {
+      "scope1PerRevenue": 0.3,
+      "scope2PerRevenue": 0.5,
+      "scope3PerRevenue": 2.5,
+      "assetTurnover": 1.1,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "manufacturing_cement": {
+      "scope1PerRevenue": 7.5,
+      "scope2PerRevenue": 0.6,
+      "scope3PerRevenue": 1.2,
+      "assetTurnover": 0.6,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "manufacturing_food": {
+      "scope1PerRevenue": 0.6,
+      "scope2PerRevenue": 0.3,
+      "scope3PerRevenue": 3.0,
+      "assetTurnover": 1.2,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "manufacturing_rubber_plastics": {
+      "scope1PerRevenue": 0.5,
+      "scope2PerRevenue": 0.4,
+      "scope3PerRevenue": 2.5,
+      "assetTurnover": 1.0,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "electricity": {
+      "scope1PerRevenue": 12.0,
+      "scope2PerRevenue": 0.2,
+      "scope3PerRevenue": 1.5,
+      "assetTurnover": 0.4,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "water_waste": {
+      "scope1PerRevenue": 4.0,
+      "scope2PerRevenue": 0.4,
+      "scope3PerRevenue": 0.8,
+      "assetTurnover": 0.4,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "construction": {
+      "scope1PerRevenue": 0.4,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 3.0,
+      "assetTurnover": 1.0,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "wholesale_retail": {
+      "scope1PerRevenue": 0.12,
+      "scope2PerRevenue": 0.08,
+      "scope3PerRevenue": 1.5,
+      "assetTurnover": 1.8,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "transport": {
+      "scope1PerRevenue": 2.5,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 1.0,
+      "assetTurnover": 0.9,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "accommodation_food": {
+      "scope1PerRevenue": 0.25,
+      "scope2PerRevenue": 0.3,
+      "scope3PerRevenue": 1.0,
+      "assetTurnover": 0.7,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "information": {
+      "scope1PerRevenue": 0.03,
+      "scope2PerRevenue": 0.12,
+      "scope3PerRevenue": 0.5,
+      "assetTurnover": 0.9,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "finance": {
+      "scope1PerRevenue": 0.02,
+      "scope2PerRevenue": 0.05,
+      "scope3PerRevenue": 0.3,
+      "assetTurnover": 0.1,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "real_estate": {
+      "scope1PerRevenue": 0.05,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 0.6,
+      "assetTurnover": 0.3,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "professional": {
+      "scope1PerRevenue": 0.05,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 0.5,
+      "assetTurnover": 1.2,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "admin_support": {
+      "scope1PerRevenue": 0.1,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 0.5,
+      "assetTurnover": 1.2,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "education": {
+      "scope1PerRevenue": 0.05,
+      "scope2PerRevenue": 0.15,
+      "scope3PerRevenue": 0.4,
+      "assetTurnover": 0.8,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "health": {
+      "scope1PerRevenue": 0.1,
+      "scope2PerRevenue": 0.2,
+      "scope3PerRevenue": 0.8,
+      "assetTurnover": 0.9,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    },
+    "other_services": {
+      "scope1PerRevenue": 0.1,
+      "scope2PerRevenue": 0.1,
+      "scope3PerRevenue": 0.6,
+      "assetTurnover": 1.0,
+      "gap": "Order-of-magnitude figure derived from published global EEIO ranges converted at an indicative 300 LKR per USD; not a licensed EXIOBASE extraction and not a Sri Lankan measurement. Stands in until a released factor set replaces it."
+    }
+  }
+}

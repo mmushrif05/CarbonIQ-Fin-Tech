@@ -242,7 +242,7 @@ describe('The vocabulary is closed, and says what is wired', () => {
   test('a metric nobody reads yet says so rather than shipping invented values', () => {
     const { metrics } = registry.metrics();
     const wired = metrics.filter(m => m.wired).map(m => m.key);
-    expect(wired).toEqual(['construction_intensity_kgCO2e_m2']);
+    expect(wired).toEqual(['construction_intensity_kgCO2e_m2', 'sector_intensity_tCO2e_per_million_revenue']);
 
     const seed = require('../data/baselines/seed.json');
     const seeded = new Set(seed.baselines.map(b => b.metric));
@@ -256,5 +256,37 @@ describe('The vocabulary is closed, and says what is wired', () => {
     expect(r.resolved).toBe(false);
     expect(() => baseline.create({ ...LK, values: { green: 900, transition: 500 } }))
       .toThrow(/cannot be above the transition threshold/);
+  });
+});
+
+describe('Sector intensity bands — a band set over the vocabulary', () => {
+  const B = {
+    metric: 'sector_intensity_tCO2e_per_million_revenue',
+    scope: 'country', country: 'LK',
+    source: 'Datum sector survey 2026',
+  };
+
+  test('the shipped LK set resolves, provisional, with a band per held sector', async () => {
+    const eff = await registry.effective('sector_intensity_tCO2e_per_million_revenue', { country: 'LK', orgId: ORG });
+    expect(eff.resolved).toBe(true);
+    expect(eff.provisional).toBe(true);
+    expect(eff.values.manufacturing_cement_low).toBeLessThan(eff.values.manufacturing_cement_high);
+  });
+
+  test('a band out of order, an unknown sector, a half band and a stray key are each refused by name', () => {
+    expect(() => baseline.create({ ...B, values: { finance_low: 3, finance_high: 1 } })).toThrow(/finance_low \(3\) cannot be above finance_high \(1\)/);
+    expect(() => baseline.create({ ...B, values: { astrology_low: 1, astrology_high: 2 } })).toThrow(/"astrology" is not a sector in the vocabulary/);
+    expect(() => baseline.create({ ...B, values: { finance_low: 1 } })).toThrow(/needs both finance_low and finance_high/);
+    expect(() => baseline.create({ ...B, values: { green: 1, transition: 2 } })).toThrow(/is not a band key/);
+    expect(() => baseline.create({ ...B, values: {} })).toThrow(/At least one sector band/);
+    expect(() => baseline.create({ ...B, values: { finance_low: 1, finance_high: 2 } })).not.toThrow();
+  });
+
+  test('a released country set replaces the seed entirely — a sector it does not carry is not held', async () => {
+    const draft = await registry.createDraft({ ...B, values: { finance_low: 0.01, finance_high: 1 } }, market);
+    await registry.releaseDraft(draft.baselineId, market);
+    const eff = await registry.effective('sector_intensity_tCO2e_per_million_revenue', { country: 'LK', orgId: ORG });
+    expect(eff.provisional).toBe(false);
+    expect(eff.values.manufacturing_cement_low).toBeUndefined();
   });
 });

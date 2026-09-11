@@ -128,9 +128,9 @@ test('a preview visitor sees the sample lending book and is offered nothing the 
   await openPage(page);
   await expect(page.locator('#pr-body')).toBeVisible();
   /* Six exposures, a stated book total, a real coverage figure. */
-  await expect(page.locator('#pr-status')).toContainText('6 exposure(s)');
+  await expect(page.locator('#pr-status')).toContainText('7 exposure(s)');
   await expect(page.locator('#pr-coverage')).toContainText('%');
-  await expect(page.locator('#pr-rows .pr-row')).toHaveCount(6);
+  await expect(page.locator('#pr-rows .pr-row')).toHaveCount(7);
 
   /* Every write control is withheld, and the server refuses anyway. */
   for (const id of ['pr-record-toggle', 'pr-book-form']) {

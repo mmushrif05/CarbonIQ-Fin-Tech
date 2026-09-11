@@ -45,7 +45,12 @@ function describeFactor(f, what) {
     throw refuse('FACTOR_REQUIRED', `${what} needs an emission factor with a value, its unit, source and vintage.`);
   }
   if (!f.source) throw refuse('FACTOR_SOURCE_REQUIRED', `${what}: name the factor's source. A factor without a publisher cannot be cited.`);
-  return { value: Number(f.value), unit: f.unit || null, source: f.source, vintage: f.vintage || null, region: f.region || null, tier: f.tier || null };
+  return {
+    value: Number(f.value), unit: f.unit || null, source: f.source, vintage: f.vintage || null, region: f.region || null, tier: f.tier || null,
+    /* Where the factor came from the held library, the trace names the table,
+       version, row and checksum, so the figure can be followed back to the set. */
+    ...(f.library ? { library: f.library } : {}),
+  };
 }
 
 /**

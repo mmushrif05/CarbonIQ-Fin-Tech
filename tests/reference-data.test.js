@@ -62,6 +62,10 @@ describe('Every reference file goes through the guard', () => {
        wrong. The factor tables are named by pattern because their loader
        iterates a list. */
     const unguarded = files.filter((file) => {
+      /* A manifest is generated from the tables it describes and read by
+         nothing under src/; the tables themselves are what go through the
+         guard, and the manifest test holds it to them. */
+      if (path.basename(file) === 'MANIFEST.json') return false;
       if (src.includes(`checked('${file}'`)) return false;
       if (file.startsWith('data/factors/') && src.includes('checked(`data/factors/${name}.json`')) return false;
       return true;

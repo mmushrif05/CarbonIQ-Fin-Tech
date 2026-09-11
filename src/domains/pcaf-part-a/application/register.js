@@ -38,6 +38,7 @@ const crypto = require('crypto');
 const store = require('../../../platform/database/store');
 const repo = require('../infrastructure/store');
 const { assessBusinessLoan, STANDARD } = require('../domain/business-loans');
+const { withSectorBand } = require('./plausibility');
 const { rollUp } = require('../domain/business-loans/portfolio');
 
 /** @typedef {import('../../../shared/types').AppError} AppError */
@@ -145,7 +146,7 @@ async function record(orgId, input) {
   store.assertWritable();
 
   const engineInput = engineInputOf(input);
-  const result = engine(engineInput);
+  const result = engine(await withSectorBand(engineInput, { orgId }));
 
   await refuseDuplicateLoan(orgId, String(reportingYear), engineInput, null);
 
@@ -198,7 +199,7 @@ async function update(orgId, exposureId, input) {
   const assetClass = input.assetClass || existing.assetClass;
   const engine = engineFor(assetClass);
   const engineInput = engineInputOf(input);
-  const result = engine(engineInput);
+  const result = engine(await withSectorBand(engineInput, { orgId }));
 
   await refuseDuplicateLoan(orgId, String(input.reportingYear || existing.reportingYear), engineInput, exposureId);
 
@@ -245,7 +246,9 @@ async function recompute(orgId, exposureId) {
   store.assertWritable();
 
   const engine = engineFor(existing.assetClass);
-  const result = engine(existing.input);
+  /* The band in force now, not the one that applied when it was recorded:
+     a newly released band is exactly what a recomputation is for. */
+  const result = engine(await withSectorBand(existing.input, { orgId }));
 
   /* Every line and both scores, not the headline alone: a factor that reaches
      only scope 3, or a table that re-scores one option, would otherwise be
@@ -274,7 +277,12 @@ async function recompute(orgId, exposureId) {
     before: dqBefore, after: dqAfter,
     moved: dqBefore.scope1And2 !== dqAfter.scope1And2 || dqBefore.scope3 !== dqAfter.scope3,
   };
-  const moved = lines.some(l => l.moved) || dataQuality.moved;
+  /* Findings too: a band released since, or a factor that aged past the
+     threshold, moves what the data says about itself and nothing else. */
+  const codesOf = r => [...new Set(((r.validation || {}).findings || []).map(f => f.code))].sort();
+  const findings = { before: codesOf(existing.result), after: codesOf(result) };
+  findings.moved = findings.before.join('|') !== findings.after.join('|');
+  const moved = lines.some(l => l.moved) || dataQuality.moved || findings.moved;
 
   const next = { ...existing, result, computedAt: _now(), standard: STANDARD, updatedAt: _now() };
   await repo.saveExposure(orgId, next);
@@ -283,17 +291,17 @@ async function recompute(orgId, exposureId) {
   return {
     exposure: next,
     movement: {
-      basis: 'every reporting line and both data-quality scores',
+      basis: 'every reporting line, both data-quality scores and the findings',
       /* The headline stays where callers first read it. */
       before: headline.before, after: headline.after, movementPct: headline.movementPct,
-      lines, dataQuality,
+      lines, dataQuality, findings,
       moved,
       previousStandard: existing.standard,
       standard: STANDARD,
       note: !moved
         ? 'The engine produced the same figures and the same scores from the same input.'
-        : `Moved on the same input: ${[...lines.filter(l => l.moved).map(l => l.line), ...(dataQuality.moved ? ['data quality'] : [])].join(', ')}. `
-          + 'The cause is a change in the engine or in a factor, not in what the bank recorded.',
+        : `Moved on the same input: ${[...lines.filter(l => l.moved).map(l => l.line), ...(dataQuality.moved ? ['data quality'] : []), ...(findings.moved ? ['findings'] : [])].join(', ')}. `
+          + 'The cause is a change in the engine, in a factor or in a baseline, not in what the bank recorded.',
     },
   };
 }

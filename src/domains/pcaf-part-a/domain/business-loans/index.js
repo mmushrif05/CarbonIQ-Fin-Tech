@@ -31,6 +31,7 @@ const { register } = require('../corporate/findings');
 const { attributionFactor } = require('../attribution');
 const { traced } = require('../provenance');
 const dataQuality = require('../data-quality');
+const library = require('../sector-factors');
 
 const STANDARD = 'PCAF (2025). The Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition, §5.2.';
 
@@ -41,8 +42,17 @@ function refuse(code, message) {
   return err;
 }
 
-/** The borrower-level figure for one scope: reported as given, or estimated. */
-function borrowerFigure({ scope, opt, entry, out, reportingYear, deflator }) {
+/**
+ * The borrower-level figure for one scope: reported as given, or estimated.
+ *
+ * Where an Option 3 line needs a factor and the request carries none, the
+ * held library is asked for the borrower's sector — per unit of revenue for
+ * 3a and 3c, per unit of assets for 3b — and the trace records which table,
+ * version and checksum it came from. Where the library has nothing for that
+ * sector, or holds its factors in another currency, the refusal says so and
+ * names the two ways forward; it never reaches for the nearest sector.
+ */
+function borrowerFigure({ scope, opt, entry, out, reportingYear, deflator, counterparty, currency, used }) {
   if (!opt) return null;
 
   if (!opt.estimated && opt.option !== 'alt') {
@@ -72,7 +82,31 @@ function borrowerFigure({ scope, opt, entry, out, reportingYear, deflator }) {
     }), entry.alreadyAttributed ? { alreadyAttributed: true } : {});
   }
 
-  return estimate({ option: opt.option, scope, activity: entry.activity || {}, outstanding: out, reportingYear, deflator });
+  let activity = entry.activity || {};
+  const heldAssumptions = [];
+  if (['3a', '3b', '3c'].includes(opt.option) && !(activity.factor && Number.isFinite(Number(activity.factor.value)))) {
+    const held = /** @type {any} */ (library.factorFor({
+      sectorKey: counterparty.sectorKey, sector: counterparty.sector, scope,
+      basis: opt.option === '3b' ? 'assets' : 'revenue', currency,
+    }));
+    if (held.absent) {
+      const err = refuse('FACTOR_REQUIRED',
+        `Scope ${scope} under Option ${opt.option} needs an emission factor and none was supplied. ${held.reason}`);
+      err.remedy = held.remedy;
+      throw err;
+    }
+    activity = { ...activity, factor: held.factor };
+    if (opt.option === '3c' && activity.assetTurnoverRatio === undefined) {
+      activity.assetTurnoverRatio = held.assetTurnover;
+      heldAssumptions.push(`Asset turnover ratio ${held.assetTurnover} taken from the held row for ${held.sectorKey}.`);
+    }
+    heldAssumptions.push(...held.assumptions);
+    if (used) used.add(held.factor.library.row);
+  }
+
+  const t = estimate({ option: opt.option, scope, activity, outstanding: out, reportingYear, deflator });
+  if (heldAssumptions.length) t.assumptions = [...(t.assumptions || []), ...heldAssumptions];
+  return t;
 }
 
 /**
@@ -134,9 +168,16 @@ function assessBusinessLoan(x = {}) {
   /* 4 — the borrower's figures. */
   const deflator = x.deflator || null;
   const em = x.emissions || {};
-  const s1 = borrowerFigure({ scope: '1', opt: scope12.scope1, entry: em.scope1, out: amount, reportingYear, deflator });
-  const s2 = borrowerFigure({ scope: '2', opt: scope12.scope2, entry: em.scope2, out: amount, reportingYear, deflator });
-  const s3 = scope3 ? borrowerFigure({ scope: '3', opt: scope3.scope3, entry: em.scope3, out: amount, reportingYear, deflator }) : null;
+  const cp = x.counterparty || {};
+  /** The library rows this run drew on, so the result can name the set. */
+  const heldRows = new Set();
+  const fig = (scope, opt, entry) => borrowerFigure({
+    scope, opt, entry, out: amount, reportingYear, deflator,
+    counterparty: cp, currency: out.currency || null, used: heldRows,
+  });
+  const s1 = fig('1', scope12.scope1, em.scope1);
+  const s2 = fig('2', scope12.scope2, em.scope2);
+  const s3 = scope3 ? fig('3', scope3.scope3, em.scope3) : null;
 
   const plain = (v, what) => {
     if (v === undefined || v === null) return null;
@@ -162,7 +203,6 @@ function assessBusinessLoan(x = {}) {
 
   /* 5 — what the data says about itself. */
   const thresholds = x.thresholds || {};
-  const cp = x.counterparty || {};
 
   found.add(checks.yearEndFluctuation({
     outstanding: amount,
@@ -174,6 +214,15 @@ function assessBusinessLoan(x = {}) {
   for (const [scope, entry] of [['1', em.scope1], ['2', em.scope2], ['3', em.scope3]]) {
     if (entry && entry.period) {
       found.add(checks.emissionsLag({ reportingYear, period: entry.period, scope, thresholdYears: thresholds.emissionsLagYears }));
+    }
+  }
+  for (const { scope, t } of [{ scope: '1', t: s1 }, { scope: '2', t: s2 }, { scope: '3', t: s3 }]) {
+    const inputs = t && typeof t === 'object' && t.inputs ? t.inputs : null;
+    if (inputs && inputs.factor && inputs.factor.vintage) {
+      found.add(checks.factorVintage({
+        reportingYear, factor: inputs.factor, inflationApplied: Boolean(inputs.inflation), scope,
+        thresholdYears: thresholds.factorVintageYears,
+      }));
     }
   }
   found.add(checks.denominatorCoherence({ denominator: denom, totalAssets: (x.denominator || {}).totalAssets }));
@@ -240,6 +289,7 @@ function assessBusinessLoan(x = {}) {
       identifiers: x.identifiers || {},
       counterparty: {
         name: cp.name || null, country: cp.country || null, sector: cp.sector || null,
+        sectorKey: cp.sectorKey || null,
         naceL2: cp.naceL2 || null, financialInstitution: Boolean(cp.financialInstitution),
         borrowerType: cls.borrowerType,
       },
@@ -262,6 +312,10 @@ function assessBusinessLoan(x = {}) {
         + 'currency outstanding (PCAF Disclosure Checklist Part A, p.127).',
     },
     validation: found.result(),
+    /* The factor set an estimated figure rests on, where a held factor was
+       used: a disclosure names the release it was computed on. Null where
+       every factor came with the request. */
+    factorRelease: heldRows.size ? { ...library.release(), rows: [...heldRows].sort() } : null,
     /* p.56: separate reporting of financed emissions to the financial sector
        is recommended, because of the double count it creates. */
     financialSector: Boolean(cp.financialInstitution),

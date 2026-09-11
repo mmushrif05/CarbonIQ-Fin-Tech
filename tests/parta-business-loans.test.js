@@ -384,3 +384,93 @@ describe('the book, and what to fix first', () => {
     expect(rollUp([assessBusinessLoan(loan(0.1))], { totalLoansAndInvestments: 1e6 }).coverage.share).toBe(0.1);
   });
 });
+
+describe('The held factor library, and the vintage of an economic factor', () => {
+  const asOf = '2024-12-31';
+  const held = (over = {}) => ({
+    reportingYear: 2024, instrument: 'business-loan', borrowerListed: false,
+    counterparty: { name: 'Ratnapura Rubber', sectorKey: 'manufacturing_rubber_plastics' },
+    outstanding: { amount: 40e6, asOf, currency: 'LKR' },
+    emissions: { scope1: { basis: 'assets-sector' }, scope2: { basis: 'assets-sector' }, scope3AbsentReason: 'none held' },
+    ...over,
+  });
+
+  test('Option 3b with no factor supplied takes the held factor per unit of assets, and the result names the set', () => {
+    const r = assessBusinessLoan(held());
+    const row = require('../data/pcaf-parta/sector-factors.json').rows.manufacturing_rubber_plastics;
+    expect(r.inventory.scope1.value).toBeCloseTo(40e6 * (row.scope1PerRevenue * row.assetTurnover) / 1e6, 6);
+    expect(r.inventory.dataQuality.scope1And2.score).toBe(5);
+    expect(r.factorRelease).toMatchObject({ rows: ['manufacturing_rubber_plastics'], checksum: expect.any(String) });
+    expect(r.factorRelease.provisionalTables).toEqual(['sector-factors']);
+    expect(r.inventory.scope1.inputs.factor.library.row).toBe('manufacturing_rubber_plastics');
+    expect(r.inventory.scope1.assumptions.join(' ')).toMatch(/Provisional factor/);
+  });
+
+  test('Option 3c takes the per-revenue factor and the row’s asset turnover', () => {
+    const r = assessBusinessLoan(held({
+      emissions: { scope1: { basis: 'turnover-sector' }, scope2: { basis: 'turnover-sector' }, scope3AbsentReason: 'none held' },
+    }));
+    const row = require('../data/pcaf-parta/sector-factors.json').rows.manufacturing_rubber_plastics;
+    expect(r.inventory.scope1.value).toBeCloseTo(40e6 * row.assetTurnover * (row.scope1PerRevenue / 1e6), 6);
+    expect(r.inventory.scope1.assumptions.join(' ')).toMatch(/Asset turnover ratio .* taken from the held row/);
+  });
+
+  test('a factor supplied on the request stands, and the result names no held set', () => {
+    const r = assessBusinessLoan(held({
+      emissions: {
+        scope1: { basis: 'assets-sector', activity: { factor: { value: 0.000001, unit: 'tCO2e/LKR', source: 'Bank', vintage: 2024 } } },
+        scope2: { basis: 'assets-sector', activity: { factor: { value: 0.000001, unit: 'tCO2e/LKR', source: 'Bank', vintage: 2024 } } },
+        scope3AbsentReason: 'none held',
+      },
+    }));
+    expect(r.inventory.scope1.value).toBe(40);
+    expect(r.factorRelease).toBeNull();
+  });
+
+  test('a sector that is not held is a refusal naming the two ways forward, never the nearest sector', () => {
+    expect(() => assessBusinessLoan(held({ counterparty: { name: 'X', sector: 'Astrology' } })))
+      .toThrow(expect.objectContaining({ code: 'FACTOR_REQUIRED', remedy: expect.stringMatching(/counterparty\.sectorKey/) }));
+  });
+
+  test('a factor held in LKR is not applied to an exposure in USD', () => {
+    expect(() => assessBusinessLoan(held({ outstanding: { amount: 1e5, asOf, currency: 'USD' } })))
+      .toThrow(/per unit of LKR and this exposure is in USD/);
+  });
+
+  test('a free-text sector mapped by name records the mapping on the trace', () => {
+    const r = assessBusinessLoan(held({ counterparty: { name: 'X', sector: 'Rubber' } }));
+    expect(r.inventory.scope1.assumptions.join(' ')).toMatch(/mapped to manufacturing_rubber_plastics .* by name/);
+  });
+
+  test('an economic factor four years old, applied without a deflator, is a finding; with a deflator it is not', () => {
+    const own = vintage => ({
+      scope1: { basis: 'assets-sector', activity: { factor: { value: 0.000001, unit: 'tCO2e/LKR', source: 'Bank', vintage } } },
+      scope2: { basis: 'assets-sector', activity: { factor: { value: 0.000001, unit: 'tCO2e/LKR', source: 'Bank', vintage } } },
+      scope3AbsentReason: 'none held',
+    });
+    const stale = assessBusinessLoan(held({ emissions: own(2020) }));
+    const f = stale.validation.findings.filter(x => x.code === 'FACTOR_VINTAGE_STALE');
+    expect(f).toHaveLength(2);
+    expect(f[0].observed).toMatchObject({ vintage: 2020, ageYears: 4, thresholdYears: 3 });
+    expect(f[0].reference).toMatch(/Box 6\.1-5/);
+    expect(stale.inventory.scope1.value).toBe(40);
+
+    const fresh = assessBusinessLoan(held({ emissions: own(2023) }));
+    expect(fresh.validation.findings.map(x => x.code)).not.toContain('FACTOR_VINTAGE_STALE');
+
+    const deflated = assessBusinessLoan(held({ emissions: own(2020), deflator: { ratio: 1.3, index: 'CCPI' } }));
+    expect(deflated.validation.findings.map(x => x.code)).not.toContain('FACTOR_VINTAGE_STALE');
+
+    const tighter = assessBusinessLoan(held({ emissions: own(2023), thresholds: { factorVintageYears: 1 } }));
+    expect(tighter.validation.findings.map(x => x.code)).toContain('FACTOR_VINTAGE_STALE');
+  });
+
+  test('the intensity finding cites the band it was checked against', () => {
+    const r = assessBusinessLoan(loan(0.1, {
+      plausibility: { revenue: 1e6, sectorBand: { low: 5, high: 50, basis: 'the LK baseline, version 3' } },
+    }));
+    const f = r.validation.findings.find(x => x.code === 'INTENSITY_OUTSIDE_SECTOR_BAND');
+    expect(f.reference).toMatch(/Band: the LK baseline, version 3/);
+    expect(f.observed.band.basis).toBe('the LK baseline, version 3');
+  });
+});

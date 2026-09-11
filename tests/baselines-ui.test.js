@@ -99,6 +99,10 @@ describe('The theme resolves as a set in all three states', () => {
 describe('A figure never appears without what stands behind it', () => {
   test('a released baseline shows its version and an illustrative one says so', () => {
     must(js, /Illustrative dataset — not client records\./, "a released baseline shows its version and an illustrative one says so");
+    must(html, /\.bl \[hidden\]\s*\{\s*display:\s*none\s*!important/, "the value fields open and close with el.hidden, and a label sets a display");
+    must(html, /id="bl-values-field"[^>]*hidden/, "the JSON value field is closed until a metric that needs it is chosen");
+    must(js, /shapeOf\(current\.metric\) === 'bands'/, "a sector band set is superseded as a value set, not as two thresholds");
+    must(js, /sectorBandTable\(r\.values\)/, "a band per sector reads as a table");
     must(js, /Released · version \$\{r\.version\}/, "a released baseline shows its version and an illustrative one says so");
   });
 

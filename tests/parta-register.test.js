@@ -131,7 +131,8 @@ describe('a recomputation is a decision, not something that happens on read', ()
     const { movement } = await register.recompute(ORG, exposureId);
     expect(movement.moved).toBe(false);
     expect(movement.before).toBe(movement.after);
-    expect(movement.basis).toMatch(/every reporting line and both data-quality scores/);
+    expect(movement.basis).toMatch(/every reporting line, both data-quality scores and the findings/);
+    expect(movement.findings.moved).toBe(false);
     expect(movement.note).toMatch(/same figures and the same scores from the same input/);
   });
 
@@ -393,5 +394,60 @@ describe('the lifecycle is not built, and says which step builds it', () => {
       expect(e.message).toMatch(/lock-and-supersede lifecycle/);
       expect(e.remedy).toMatch(/PCAF-PART-A-BUSINESS-LOANS/);
     }
+  });
+});
+
+describe('The sector band comes from the baseline registry, and a released band moves the findings', () => {
+  const registry = require('../src/domains/baseline/application/registry');
+  const asOf = '2026-12-31';
+  const tea = () => ({
+    reportingYear: 2026, instrument: 'business-loan', borrowerListed: false,
+    counterparty: { name: 'Hill Country Tea', sectorKey: 'agriculture_tea' },
+    outstanding: { amount: 150e6, asOf, currency: 'LKR' },
+    denominator: { totalEquity: 900e6, totalDebt: 600e6, asOf, currency: 'LKR' },
+    emissions: {
+      scope1: { value: 6800, basis: 'reported-unverified', period: '2026' },
+      scope2: { value: 900, basis: 'reported-unverified', period: '2026' },
+      scope3: { value: 4100, basis: 'reported-unverified', period: '2026' },
+    },
+    /* 7,700 over LKR 600m is 12.8 per million — above the shipped tea band. */
+    plausibility: { revenue: 600e6 },
+  });
+
+  test('recording reads the band in force and the finding says it is the illustrative set', async () => {
+    const e = await register.record(ORG, tea());
+    const f = e.result.validation.findings.find(x => x.code === 'INTENSITY_OUTSIDE_SECTOR_BAND');
+    expect(f).toBeTruthy();
+    expect(f.observed.band.provisional).toBe(true);
+    expect(f.reference).toMatch(/illustrative dataset, not a released baseline/);
+    /* The band is applied on the way in and never written into what the bank keyed. */
+    expect(e.input.plausibility.sectorBand).toBeUndefined();
+  });
+
+  test('a band the organisation releases changes what recompute reports, and the note says findings moved', async () => {
+    const e = await register.record(ORG, tea());
+    expect(e.result.validation.findings.map(x => x.code)).toContain('INTENSITY_OUTSIDE_SECTOR_BAND');
+
+    const ctx = { orgId: ORG, actor: 'risk@bank.lk', mayGovernMarket: false };
+    const draft = await registry.createDraft({
+      metric: 'sector_intensity_tCO2e_per_million_revenue', scope: 'organisation', country: 'LK', orgId: ORG,
+      values: { agriculture_tea_low: 1, agriculture_tea_high: 20 },
+      source: 'Estate energy survey, FY2026 — firewood-fired withering is the sector norm here',
+    }, ctx);
+    await registry.releaseDraft(draft.baselineId, ctx);
+
+    const { movement, exposure } = await register.recompute(ORG, e.exposureId);
+    expect(movement.lines.every(l => !l.moved)).toBe(true);
+    expect(movement.findings.moved).toBe(true);
+    expect(movement.moved).toBe(true);
+    expect(movement.note).toMatch(/Moved on the same input: findings\./);
+    expect(exposure.result.validation.findings.map(x => x.code)).not.toContain('INTENSITY_OUTSIDE_SECTOR_BAND');
+  });
+
+  test('a band supplied on the request stands over the registry, and says so', async () => {
+    const e = await register.record(ORG, { ...tea(), plausibility: { revenue: 600e6, sectorBand: { low: 100, high: 200 } } });
+    const f = e.result.validation.findings.find(x => x.code === 'INTENSITY_OUTSIDE_SECTOR_BAND');
+    expect(f.observed).toMatchObject({ low: 100, high: 200 });
+    expect(f.observed.band.basis).toMatch(/Supplied on the request/);
   });
 });

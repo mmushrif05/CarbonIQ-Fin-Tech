@@ -40,43 +40,50 @@ const EXPOSURES = [
   {
     reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'TL-24-0117' },
-    counterparty: { name: 'Lanka Apparel Manufacturing (Pvt) Ltd', sector: 'Textiles' },
+    counterparty: { name: 'Lanka Apparel Manufacturing (Pvt) Ltd', sector: 'Textiles', sectorKey: 'manufacturing_textiles' },
     outstanding: { amount: 480_000_000, asOf, currency },
     denominator: { totalEquity: 1_900_000_000, totalDebt: 2_100_000_000, asOf, currency },
     emissions: reported(11_200, 3_400, 26_000),
+    /* Revenue runs the sector band check: 14,600 tCO2e over LKR 5.2bn is 2.8
+       per million, inside the textiles band. */
+    plausibility: { revenue: 5_200_000_000 },
   },
   {
     reportingYear: YEAR, instrument: 'overdraft', borrowerListed: false,
     identifiers: { accountNumber: 'OD-24-0442' },
-    counterparty: { name: 'Ruhunu Rice Millers (Pvt) Ltd', sector: 'Food processing' },
+    counterparty: { name: 'Ruhunu Rice Millers (Pvt) Ltd', sector: 'Rice milling', sectorKey: 'agriculture_rice' },
     outstanding: { amount: 60_000_000, averageOutstanding: 240_000_000, asOf, currency },
     denominator: { totalEquity: 700_000_000, totalDebt: 500_000_000, asOf, currency },
     emissions: reported(2_900, 1_100, null),
+    plausibility: { revenue: 1_300_000_000 },
   },
   {
     reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'TL-24-0903' },
-    counterparty: { name: 'Kandy Hardware Traders', sector: 'Wholesale' },
+    counterparty: { name: 'Kandy Hardware Traders', sector: 'Wholesale', sectorKey: 'wholesale_retail' },
     outstanding: { amount: 25_000_000, asOf, currency },
+    /* The bank's own factor, four years old and applied without a deflator:
+       the vintage finding. */
     emissions: {
-      scope1: { basis: 'assets-sector', activity: { factor: { value: 0.000032, unit: 'tCO2e/LKR', source: 'EXIOBASE v3.8', vintage: 2022 } } },
-      scope2: { basis: 'assets-sector', activity: { factor: { value: 0.000011, unit: 'tCO2e/LKR', source: 'EXIOBASE v3.8', vintage: 2022 } } },
+      scope1: { basis: 'assets-sector', activity: { factor: { value: 0.00000032, unit: 'tCO2e/LKR', source: 'EXIOBASE v3.8', vintage: 2020 } } },
+      scope2: { basis: 'assets-sector', activity: { factor: { value: 0.00000011, unit: 'tCO2e/LKR', source: 'EXIOBASE v3.8', vintage: 2020 } } },
       scope3AbsentReason: 'No sector factor for scope 3 is held for this activity.',
     },
   },
   {
     reportingYear: YEAR, instrument: 'business-loan', borrowerListed: true,
     identifiers: { accountNumber: 'TL-24-0031' },
-    counterparty: { name: 'Ceylon Cement Holdings PLC', sector: 'Cement' },
+    counterparty: { name: 'Ceylon Cement Holdings PLC', sector: 'Cement', sectorKey: 'manufacturing_cement' },
     outstanding: { amount: 1_250_000_000, asOf, currency },
     denominator: { marketCapOrdinary: 18_400_000_000, totalDebtInterestBearing: 9_600_000_000,
       minorityInterests: 300_000_000, asOf, currency },
     emissions: reported(412_000, 38_000, 95_000),
+    plausibility: { revenue: 38_000_000_000 },
   },
   {
     reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'IB-24-0008' },
-    counterparty: { name: 'Sabaragamuwa Development Finance Ltd', sector: 'Finance', financialInstitution: true },
+    counterparty: { name: 'Sabaragamuwa Development Finance Ltd', sector: 'Finance', sectorKey: 'finance', financialInstitution: true },
     outstanding: { amount: 300_000_000, asOf, currency },
     denominator: { totalEquity: 2_000_000_000, totalDebt: 1_000_000_000, customerDeposits: 9_000_000_000,
       financialInstitution: true, asOf, currency },
@@ -85,10 +92,27 @@ const EXPOSURES = [
   {
     reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'TL-24-0210' },
-    counterparty: { name: 'Nuwara Eliya Tea Estates (Pvt) Ltd', sector: 'Agriculture' },
+    counterparty: { name: 'Nuwara Eliya Tea Estates (Pvt) Ltd', sector: 'Tea', sectorKey: 'agriculture_tea' },
     outstanding: { amount: 150_000_000, asOf, currency },
     denominator: { totalEquity: 900_000_000, totalDebt: 600_000_000, asOf, currency },
     emissions: reported(6_800, 900, 4_100, '2021'),
+    /* 7,700 tCO2e over LKR 600m is 12.8 per million — above the tea band. A
+       firewood-fired estate can sit there legitimately; the finding records
+       that it was checked, and changes nothing. */
+    plausibility: { revenue: 600_000_000 },
+  },
+  {
+    reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
+    identifiers: { accountNumber: 'TL-24-1188' },
+    counterparty: { name: 'Ratnapura Rubber Products (Pvt) Ltd', sector: 'Rubber', sectorKey: 'manufacturing_rubber_plastics' },
+    outstanding: { amount: 40_000_000, asOf, currency },
+    /* No company value and no factor of the bank's own: Option 3b from the
+       held library, and the result names the table, version and checksum. */
+    emissions: {
+      scope1: { basis: 'assets-sector' },
+      scope2: { basis: 'assets-sector' },
+      scope3AbsentReason: 'No scope 3 figure is held; the held scope 3 factor is not applied unless asked for.',
+    },
   },
 ];
 

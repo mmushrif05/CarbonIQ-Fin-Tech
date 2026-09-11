@@ -23,7 +23,7 @@
 'use strict';
 
 const Joi = require('joi');
-const { checked, strictNumber } = require('../../../shared/reference-data');
+const { checked, strictNumber, sectorVocabularySchema, sectorFactorTableSchema } = require('../../../shared/reference-data');
 
 /** One row of a PCAF option table. */
 const optionSchema = Joi.object({
@@ -148,7 +148,16 @@ const DQ_BUSINESS_LOANS = Object.freeze(checked('data/pcaf-parta/dq-business-loa
 const COUNTRY_CONFIG = Object.freeze(checked('data/pcaf-parta/country-config.json',
   require('../../../../data/pcaf-parta/country-config.json'), countryConfigSchema));
 
+/* The sector vocabulary and the Option 3 factor library keyed to it. The
+   baseline registry reads the same vocabulary file for the intensity bands,
+   so a band cannot name a sector the library does not hold. */
+const SECTORS = Object.freeze(checked('data/pcaf-parta/sectors.json',
+  require('../../../../data/pcaf-parta/sectors.json'), sectorVocabularySchema));
+const SECTOR_FACTORS = Object.freeze(checked('data/pcaf-parta/sector-factors.json',
+  require('../../../../data/pcaf-parta/sector-factors.json'), sectorFactorTableSchema));
+
 module.exports = {
   DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, COUNTRY_CONFIG,
+  SECTORS, SECTOR_FACTORS,
   dqTableSchema, countryConfigSchema,
 };

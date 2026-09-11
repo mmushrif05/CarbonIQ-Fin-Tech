@@ -112,6 +112,7 @@ printed beside a commitment reads as a plan.
 | `POST /v1/ndc-sdg/certificate` | same | the tier printed on a Green Loan Certificate |
 | `GET /v1/ndc-sdg/framework` | same | the screen reported beside the framework |
 | Dashboard | same | the line naming what the screened figures rest on |
+| `POST /v1/pcaf/part-a/business-loans/assess` · the exposure register | `sector_intensity_tCO2e_per_million_revenue` | the band a borrower's reported scope 1 and 2 intensity is checked against; the finding cites the version |
 
 **These three used to disagree.** 520/780 screened the taxonomy endpoint while
 600/900 assigned the certificate tier, so a building at 560 kgCO2e/m² was Green
@@ -122,6 +123,19 @@ resolves it from here.
 Changing the bands does **not** invalidate a certificate already issued: the
 audit hash covers the tier that was assigned, not the rule that assigned it.
 What changes is the tier a new certificate carries, which is the correction.
+
+**The sector intensity bands are a band set, not two thresholds.** The metric
+is of shape `sector_bands`: `<sector>_low` and `<sector>_high` for each sector
+of Part A's vocabulary (`data/pcaf-parta/sectors.json`), at least one sector,
+both ends present, low at or below high, and no key naming a sector the
+vocabulary does not hold. PCAF sets no plausibility test, so the bands are
+regional judgement of exactly the kind this table exists to govern. A borrower
+outside its band is a **finding** on the exposure — recorded with the
+divergence and the baseline version it was checked against — and nothing is
+refused and no figure changes: the check exists to catch a unit or a boundary
+error, not to police a borrower. The shipped LK set is provisional and every
+finding drawn from it says so. A released set replaces the seed entirely, as
+every metric's does, so a first release is the whole set rather than one row.
 
 ## Running it
 

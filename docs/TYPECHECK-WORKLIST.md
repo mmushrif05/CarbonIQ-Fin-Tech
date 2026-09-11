@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **330**. Remaining: **186**.
+Checked across all three: **333**. Remaining: **187**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **280**. Remaining: **66** (384 errors, measured by
+Checked: **283**. Remaining: **66** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **5 of them raise no errors at all** and can be adopted by adding the
@@ -104,7 +104,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **22** (1506 errors, measured by
+Checked: **8**. Remaining: **22** (1521 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -116,12 +116,12 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
+| `ui/js/baselines.js` | 52 |
 | `ui/js/parta-register.js` | 49 |
 | `ui/js/capital-record.js` | 47 |
 | `ui/js/login.js` | 47 |
 | `ui/js/agents.js` | 40 |
 | `ui/js/pipeline.js` | 40 |
-| `ui/js/baselines.js` | 37 |
 | `ui/js/accounts.js` | 35 |
 | `ui/js/ndc-sdg.js` | 35 |
 | `ui/js/extract.js` | 30 |
@@ -136,7 +136,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **98** (1314 errors, measured by
+Checked: **42**. Remaining: **99** (1329 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **4 of them raise no errors at all** and can be adopted by adding the
@@ -172,6 +172,7 @@ pragma and nothing else.
 | `tests/pg-store.test.js` | 20 |
 | `tests/gcf-emissions.test.js` | 19 |
 | `tests/gcf-reporting.test.js` | 19 |
+| `tests/parta-api.test.js` | 19 |
 | `tests/parta-listed-equity.test.js` | 19 |
 | `tests/partc-report-output.test.js` | 18 |
 | `tests/scopes.test.js` | 18 |
@@ -179,7 +180,6 @@ pragma and nothing else.
 | `tests/agent-call-budget.test.js` | 16 |
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
-| `tests/parta-api.test.js` | 16 |
 | `tests/pcaf-partc-dq-scoring.test.js` | 16 |
 | `tests/pcaf-partc-lifecycle.test.js` | 15 |
 | `tests/desk-engine.test.js` | 14 |
@@ -199,15 +199,17 @@ pragma and nothing else.
 | `tests/authorization.test.js` | 8 |
 | `tests/capital-engine.test.js` | 8 |
 | `tests/ip-surface.test.js` | 8 |
+| `tests/parta-business-loans.test.js` | 8 |
+| `tests/parta-factor-provenance.test.js` | 8 |
 | `tests/pg-scale.test.js` | 8 |
 | `tests/supervisor.test.js` | 8 |
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-journey.test.js` | 7 |
-| `tests/parta-business-loans.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
 | `tests/validate-middleware.test.js` | 6 |
+| `tests/baseline-registry.test.js` | 5 |
 | `tests/baselines-ui.test.js` | 5 |
 | `tests/borrower-coaching.test.js` | 5 |
 | `tests/capital-curve.test.js` | 5 |
@@ -224,7 +226,6 @@ pragma and nothing else.
 | `tests/structure.test.js` | 4 |
 | `tests/capital-anchor.test.js` | 3 |
 | `tests/accounts-ui.test.js` | 2 |
-| `tests/baseline-registry.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |
 | `tests/constants.test.js` | 2 |
 | `tests/csp-inline.test.js` | 2 |

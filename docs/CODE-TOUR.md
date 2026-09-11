@@ -142,7 +142,7 @@ flowchart TD
 |---|---:|---:|
 | `src/` | 2 | 418 |
 |       `src/domains/baseline/application/` | 2 | 322 |
-|       `src/domains/baseline/domain/` | 4 | 671 |
+|       `src/domains/baseline/domain/` | 4 | 756 |
 |       `src/domains/baseline/infrastructure/` | 1 | 56 |
 |         `src/domains/baseline/interface/routes/` | 1 | 160 |
 |         `src/domains/baseline/interface/schemas/` | 1 | 70 |
@@ -166,14 +166,14 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 2 | 590 |
-|       `src/domains/pcaf-part-a/domain/` | 10 | 1,732 |
-|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,164 |
-|         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 886 |
+|       `src/domains/pcaf-part-a/application/` | 3 | 695 |
+|       `src/domains/pcaf-part-a/domain/` | 11 | 1,917 |
+|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
+|         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 1 | 102 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 371 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 279 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 393 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 292 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -199,9 +199,9 @@ flowchart TD
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 3 | 291 |
-|   `src/shared/` | 10 | 1,790 |
+|   `src/shared/` | 10 | 1,899 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **317** | **53,339** |
+| **total** | **319** | **53,970** |
 
 <!-- END MODULE-MAP -->
 

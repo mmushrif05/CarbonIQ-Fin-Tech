@@ -172,9 +172,10 @@ jobs:
           npm run docs:readme
           npm run docs:code-tour
           npm run docs:factor-manifest
+          npm run docs:parta-manifest
           npm run docs:typecheck-worklist
       - name: The committed documents match what the code produces
-        run: git diff --exit-code -- docs/ README.md data/factors/MANIFEST.json
+        run: git diff --exit-code -- docs/ README.md data/factors/MANIFEST.json data/pcaf-parta/MANIFEST.json
 
   # The one status to require before merging to main.
   gate:

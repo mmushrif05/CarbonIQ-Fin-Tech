@@ -17,6 +17,8 @@
 
 const Joi = require('joi');
 
+const SECTOR_KEYS = Object.keys(require('../../domain/reference').SECTORS.sectors);
+
 const money = Joi.number().min(0);
 
 const scopeEntry = Joi.object({
@@ -79,6 +81,10 @@ const exposureSchema = Joi.object({
     name: Joi.string().max(200).optional(),
     country: Joi.string().max(80).optional(),
     sector: Joi.string().max(120).optional(),
+    /* The held vocabulary (data/pcaf-parta/sectors.json). A key resolves the
+       Option 3 factor and the intensity band; a free-text sector is mapped by
+       name and the mapping recorded, or reported not held. */
+    sectorKey: Joi.string().valid(...SECTOR_KEYS).optional(),
     naceL2: Joi.string().max(20).optional(),
     financialInstitution: Joi.boolean().optional(),
   }).unknown(false).optional(),
@@ -121,7 +127,13 @@ const exposureSchema = Joi.object({
      they did not run rather than passing. */
   plausibility: Joi.object({
     revenue: Joi.number().min(0).optional(),
-    sectorBand: Joi.object({ low: Joi.number().min(0).required(), high: Joi.number().min(0).required() }).unknown(false).optional(),
+    /* A band supplied here stands over the registry's, and says so on the
+       finding. Absent, the band in force for the borrower's sector is read
+       from the baseline registry on the way into the engine. */
+    sectorBand: Joi.object({
+      low: Joi.number().min(0).required(), high: Joi.number().min(0).required(),
+      basis: Joi.string().max(400).optional(),
+    }).unknown(false).optional(),
   }).unknown(false).optional(),
 
   /* CarbonIQ's thresholds, settable per run because they are ours and not
@@ -129,6 +141,7 @@ const exposureSchema = Joi.object({
   thresholds: Joi.object({
     fluctuationPct: Joi.number().min(0).max(1000).optional(),
     emissionsLagYears: Joi.number().integer().min(0).max(20).optional(),
+    factorVintageYears: Joi.number().integer().min(0).max(30).optional(),
   }).unknown(false).optional(),
 }).unknown(false);
 

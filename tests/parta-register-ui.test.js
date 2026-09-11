@@ -93,6 +93,17 @@ describe('The four mechanical rules', () => {
 });
 
 describe('The screen renders the engine rather than repeating it', () => {
+  test('the held vocabulary is loaded before the first request, and the form offers it', () => {
+    must(JS, /await loadVocabulary\(\);\s*await loadYears\(\);/, 'the vocabulary is loaded before the first request is sent');
+    must(HTML, /id="pr-f-sector-key"/, 'the form carries a select over the held sectors');
+    must(JS, /sectorKey: str\('pr-f-sector-key'\)/, 'the mapped sector reaches the request');
+    must(JS, /plausibility: \{ revenue: num\('pr-f-revenue'\) \}/, 'the revenue for the band check reaches the request');
+    must(HTML, /Leave the sector factors empty to use the held factor/, 'the form says the held factor applies when none is typed');
+    must(JS, /sf === undefined \? undefined/, 'an empty factor field is an absent factor, so the held one is used');
+    must(JS, /Factor set<\/h5>/, 'the detail names the factor set an estimated figure rests on');
+    must(JS, /x\.factorRelease\.checksum\.slice\(0, 16\)/, 'with its checksum');
+  });
+
   test('it does not compute an attribution factor of its own', () => {
     mustNot(JS, /outstanding\w*\s*\/\s*(total|denominator|value)/i, 'the one number a browser is most tempted to work out for itself');
   });
