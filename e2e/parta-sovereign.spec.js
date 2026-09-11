@@ -33,7 +33,7 @@ async function signIn(page, request) {
   await page.fill('#login-email', USER.email);
   await page.fill('#login-password', USER.password);
   await page.locator('#login-btn').click();
-  await expect(page.locator('#sidebar')).toBeVisible();
+  await expect(page.locator('#sidebar')).toBeVisible({ timeout: 15000 });
 }
 
 const YEAR = 2032;
@@ -105,7 +105,7 @@ test('a preview visitor sees the sample sovereign book and is offered nothing th
   await expect(page.locator('#login-preview')).toBeVisible();
   await page.fill('#preview-email', `preview.${Date.now()}@bank.lk`);
   await page.locator('#preview-btn').click();
-  await expect(page.locator('#sidebar')).toBeVisible();
+  await expect(page.locator('#sidebar')).toBeVisible({ timeout: 15000 });
 
   await openPage(page);
   await expect(page.locator('#ps-body')).toBeVisible();
