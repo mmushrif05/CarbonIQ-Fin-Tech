@@ -25,6 +25,8 @@ const boq = require('../src/domains/pcaf-part-c/application/partc-boq');
 const A = require('../src/domains/pcaf-part-c/application/partc-assessments');
 const P = require('../src/domains/pcaf-part-c/application/partc-portfolio');
 const { seedDemoBook } = require('../src/domains/pcaf-part-c/application/partc-demo-data');
+const partaRegister = require('../src/domains/pcaf-part-a/application/register');
+const partaRepo = require('../src/domains/pcaf-part-a/infrastructure/store');
 const fx = require('../data/partc/fisheries-reference');
 
 const ORG = 'scale-org';
@@ -118,5 +120,79 @@ suite('Scale — a 10,000-policy book', () => {
     console.log(`roll-up over ${r.assessments.locked} locked assessments: best ${best.toFixed(0)} ms of ${times.map(t => t.toFixed(0)).join(' / ')} ms (bound ${bound} ms${process.env.SCALE_STRICT ? ', strict' : ', regression guard'})`);
     expect(best).toBeLessThan(bound);
     expect(projectTemplate).toBeTruthy();
+  });
+});
+
+/**
+ * The same exit criterion for the Part A register, and the same reason for it.
+ *
+ * A stored exposure is several kilobytes, most of it the provenance trace, and
+ * the reporting-year position needs about twenty fields of it. Reading ten
+ * thousand whole records to use twenty fields is the defect
+ * `partc_assessments.rollup` was built to end; migration 0008 gives Part A the
+ * same projection, and this is what proves the column is actually being read
+ * rather than the record being fetched and thrown away.
+ */
+suite('Scale — a 10,000-exposure Part A book', () => {
+  const PARTA_ORG = 'scale-org-parta';
+  const EXPOSURES = 10000;
+  const YEAR = '2026';
+
+  beforeAll(async () => {
+    /* One genuine exposure from the engine, cloned — so every row has exactly
+       the shape the projection reads, rather than a hand-typed approximation
+       of it. */
+    const template = await partaRegister.record(PARTA_ORG, {
+      reportingYear: Number(YEAR),
+      instrument: 'business-loan',
+      borrowerListed: false,
+      counterparty: { name: 'Scale borrower', sector: 'Textiles' },
+      outstanding: { amount: 100000, asOf: '2026-12-31', currency: 'LKR' },
+      denominator: { totalEquity: 600000, totalDebt: 400000, asOf: '2026-12-31', currency: 'LKR' },
+      emissions: {
+        scope1: { value: 1000, basis: 'reported-unverified', period: '2026' },
+        scope2: { value: 100, basis: 'reported-unverified', period: '2026' },
+        scope3: { value: 5000, basis: 'reported-unverified', period: '2026' },
+      },
+    });
+
+    const rows = [];
+    const t0 = new Date('2026-01-01T00:00:00.000Z').getTime();
+    for (let i = 0; i < EXPOSURES - 1; i++) {
+      rows.push({
+        ...template,
+        __id: `pae_s${i}`,
+        exposureId: `pae_s${i}`,
+        counterparty: { ...template.counterparty, name: `Scale borrower ${i}` },
+        createdAt: new Date(t0 + i * 1000).toISOString(),
+      });
+    }
+    await bulk('parta_exposures', PARTA_ORG, rows);
+    await partaRegister.stateBook(PARTA_ORG, {
+      reportingYear: Number(YEAR), totalLoansAndInvestments: 1e12, currency: 'LKR', statedBy: 'Scale test',
+    });
+  });
+
+  afterAll(() => (process.env.KEEP_SCALE ? undefined : store._resetMemory()));
+
+  test('the book holds what was written', async () => {
+    expect(await store.count(partaRepo.EXPOSURES, PARTA_ORG)).toBe(EXPOSURES);
+  });
+
+  test('the reporting-year position over 10,000 exposures returns in under a second', async () => {
+    const times = [];
+    let pos;
+    for (let i = 0; i < 3; i++) {
+      const started = process.hrtime.bigint();
+      pos = await partaRegister.position(PARTA_ORG, YEAR);
+      times.push(Number(process.hrtime.bigint() - started) / 1e6);
+    }
+    const best = Math.min(...times);
+    expect(pos.exposures).toBe(EXPOSURES);
+    expect(pos.total.lines.scope1.value).toBeCloseTo(100 * EXPOSURES, 0);
+    expect(pos.coverage.share).toBeGreaterThan(0);
+    const bound = process.env.SCALE_STRICT ? 1000 : 3000;
+    console.log(`Part A position over ${pos.exposures} exposures: best ${best.toFixed(0)} ms of ${times.map(t => t.toFixed(0)).join(' / ')} ms (bound ${bound} ms${process.env.SCALE_STRICT ? ', strict' : ', regression guard'})`);
+    expect(best).toBeLessThan(bound);
   });
 });

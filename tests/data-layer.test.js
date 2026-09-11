@@ -106,9 +106,13 @@ describe('The boundary — one file knows the driver', () => {
   });
 
   test('no service or route requires platform/database except the seam, the audit middleware, and a declared projection', () => {
-    /* partc-portfolio reads the collection registry for the field list of
-       its stored projection — a declaration, not a database call. */
-    const allowed = new Set(['src/platform/database/store.js', 'src/platform/observability/audit.js', 'src/server.js', 'src/domains/pcaf-part-c/application/partc-portfolio.js']);
+    /* Two files read the collection registry for the field list of their
+       stored projection — a declaration, not a database call. Asking for the
+       set by name is the whole point: a field list copied into the caller is
+       a second place that can drift from the column. */
+    const allowed = new Set(['src/platform/database/store.js', 'src/platform/observability/audit.js', 'src/server.js',
+      'src/domains/pcaf-part-c/application/partc-portfolio.js',
+      'src/domains/pcaf-part-a/infrastructure/store.js']);
     const offenders = walk(path.join(ROOT, 'src')).filter(f => !f.includes(`${path.sep}platform${path.sep}database${path.sep}`))
       .filter(f => /require\(['"][./]*platform\/database(?!\/store\b)/.test(fs.readFileSync(f, 'utf8')))
       .map(f => path.relative(ROOT, f))

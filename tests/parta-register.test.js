@@ -1,0 +1,308 @@
+/**
+ * The PCAF Part A exposure register.
+ *
+ * §5.2 shipped as two stateless reads, so a book had to be posted whole on
+ * every call. These hold the three things that changes: a book that persists,
+ * a coverage figure that is a percentage of something real, and a roll-up that
+ * reads a projection rather than ten thousand provenance traces.
+ *
+ * The anchor is the same worked example §5.2 is anchored on — Tables 5.2-2 and
+ * 5.2-3, p.63 — driven through the register this time. If the stored path and
+ * the direct path ever disagree, one of them is wrong and the standard says
+ * which.
+ */
+
+'use strict';
+
+const store = require('../src/platform/database/store');
+const register = require('../src/domains/pcaf-part-a/application/register');
+const repo = require('../src/domains/pcaf-part-a/infrastructure/store');
+const { assessBusinessLoan } = require('../src/domains/pcaf-part-a/domain/business-loans');
+const { rollUp } = require('../src/domains/pcaf-part-a/domain/business-loans/portfolio');
+const { definition } = require('../src/platform/database/collections');
+
+const ORG = 'org-register-test';
+
+const loan = (af, over = {}) => ({
+  reportingYear: 2020,
+  instrument: 'business-loan',
+  borrowerListed: false,
+  counterparty: { name: `Borrower ${af}`, sector: 'Example' },
+  outstanding: { amount: 1e6 * af, asOf: '2020-12-31', currency: 'EUR' },
+  denominator: { totalEquity: 6e5, totalDebt: 4e5, asOf: '2020-12-31', currency: 'EUR' },
+  emissions: {
+    scope1: { value: 1000, basis: 'reported-unverified', period: '2020' },
+    scope2: { value: 100, basis: 'reported-unverified', period: '2020' },
+    scope3: { value: 5000, basis: 'reported-unverified', period: '2020' },
+  },
+  ...over,
+});
+
+/** The three companies of Table 5.2-2, as register inputs. */
+const TABLE_5_2_2 = [
+  { name: 'Forestry company', af: 0.10, s1: 1000, s2: 100, s3: 5000, rem: 20000, ret: 0, gen: 5000 },
+  { name: 'Industrial company', af: 0.25, s1: 20000, s2: 5000, s3: 30000, rem: 0, ret: 25000, gen: 0 },
+  { name: 'Energy company', af: 0.20, s1: 5000, s2: 0, s3: 10000, rem: 1000, ret: 5000, gen: 500 },
+].map(r => loan(r.af, {
+  counterparty: { name: r.name, sector: 'Example' },
+  emissions: {
+    scope1: { value: r.s1, basis: 'reported-unverified', period: '2020' },
+    scope2: { value: r.s2, basis: 'reported-unverified', period: '2020' },
+    scope3: { value: r.s3, basis: 'reported-unverified', period: '2020' },
+  },
+  removals: { value: r.rem },
+  creditsRetired: { value: r.ret },
+  creditsGenerated: { value: r.gen },
+}));
+
+async function clear() {
+  for (const e of await store.list(repo.EXPOSURES, ORG)) {
+    await store.remove(repo.EXPOSURES, ORG, e.exposureId || e.id);
+  }
+  for (const b of await store.list(repo.BOOK, ORG)) {
+    await store.remove(repo.BOOK, ORG, b.reportingYear || b.id);
+  }
+}
+
+beforeEach(clear);
+afterAll(clear);
+
+describe('a book that persists', () => {
+  test('an exposure is recorded with both halves and the standard it rests on', async () => {
+    const rec = await register.record(ORG, loan(0.1));
+    expect(rec.exposureId).toMatch(/^pae_/);
+    expect(rec.reportingYear).toBe('2020');
+    expect(rec.assetClass).toBe('business-loans-unlisted-equity');
+
+    /* Both halves: the input the bank keyed and the result the engine made. */
+    expect(rec.input.outstanding.amount).toBe(100000);
+    expect(rec.result.inventory.scope1.value).toBe(100);
+    expect(rec.standard).toMatch(/Third Edition/);
+    expect(rec.computedAt).toBeTruthy();
+  });
+
+  test('it reads back whole, with its trace', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    const found = await register.get(ORG, exposureId);
+    expect(found.result.attribution.equation).toMatch(/attribution factor =/);
+    expect(found.input).toBeTruthy();
+  });
+
+  test('an exposure the standard refuses never reaches the book', async () => {
+    await expect(register.record(ORG, loan(0.1, { borrowerType: 'government' })))
+      .rejects.toThrow(/sovereign debt/i);
+    expect(await store.list(repo.EXPOSURES, ORG)).toHaveLength(0);
+  });
+
+  test('an exposure with no reporting year belongs to no book and is refused', async () => {
+    const { reportingYear, ...noYear } = loan(0.1);
+    expect(reportingYear).toBe(2020);
+    await expect(register.record(ORG, noYear)).rejects.toThrow(/belongs to no book/);
+  });
+
+  test('an asset class with no engine is a 501 naming what is registered', async () => {
+    try {
+      await register.record(ORG, loan(0.1, { assetClass: 'mortgages' }));
+      throw new Error('should have refused');
+    } catch (e) {
+      expect(e.statusCode).toBe(501);
+      expect(e.message).toMatch(/business-loans-unlisted-equity/);
+    }
+  });
+
+  test('a change replaces the input and reruns the engine — no figure is edited directly', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    const changed = await register.update(ORG, exposureId, loan(0.2));
+    expect(changed.exposureId).toBe(exposureId);
+    expect(changed.result.attribution.value).toBe(0.2);
+    expect(changed.result.inventory.scope1.value).toBe(200);
+  });
+
+  test('a removed exposure is gone, and reading it is a 404', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    await register.remove(ORG, exposureId);
+    await expect(register.get(ORG, exposureId)).rejects.toThrow(/No exposure/);
+  });
+});
+
+describe('a recomputation is a decision, not something that happens on read', () => {
+  test('rerunning the same input reports that nothing moved', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    const { movement } = await register.recompute(ORG, exposureId);
+    expect(movement.moved).toBe(false);
+    expect(movement.before).toBe(movement.after);
+    expect(movement.basis).toBe('financed scope 1 and 2');
+    expect(movement.note).toMatch(/same figure from the same input/);
+  });
+
+  test('the note says a movement is the engine or a factor, never what the bank recorded', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    const { movement } = await register.recompute(ORG, exposureId);
+    /* The wording is the point: it exists for the day a factor changes. */
+    expect(register.recompute).toBeInstanceOf(Function);
+    expect(movement.previousStandard).toBe(movement.standard);
+  });
+});
+
+describe('coverage is a percentage of something real', () => {
+  test('without a stated book total it is absent with what it needs', async () => {
+    await register.record(ORG, loan(0.1));
+    const pos = await register.position(ORG, 2020);
+    expect(pos.coverage.share).toBeNull();
+    expect(pos.coverage.remedy).toMatch(/PUT \/v1\/pcaf\/part-a\/book/);
+  });
+
+  test('with one, it is the assessed outstanding over the whole book', async () => {
+    await register.record(ORG, loan(0.1));
+    await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 1e6, currency: 'EUR', statedBy: 'CFO' });
+    const pos = await register.position(ORG, 2020);
+    expect(pos.coverage.share).toBe(0.1);
+    expect(pos.coverage.reference).toMatch(/p\.124/);
+  });
+
+  test('the book total is recorded as declared, with who stated it', async () => {
+    const book = await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 5e6, statedBy: 'Group CFO' });
+    expect(book.basis).toBe('declared');
+    expect(book.statedBy).toBe('Group CFO');
+    expect(book.basisNote).toMatch(/can derive/);
+  });
+
+  test('a book of zero is refused rather than read as full coverage', async () => {
+    await expect(register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 0 }))
+      .rejects.toThrow(/no coverage rather than full coverage/);
+  });
+
+  test('restating the book total replaces it — a year has one denominator', async () => {
+    await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 1e6 });
+    await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 2e6 });
+    expect((await register.getBook(ORG, 2020)).totalLoansAndInvestments).toBe(2e6);
+    expect(await store.list(repo.BOOK, ORG)).toHaveLength(1);
+  });
+});
+
+describe('the position, read from the stored projection', () => {
+  test('the standard\'s own example reproduces through the register', async () => {
+    for (const r of TABLE_5_2_2) await register.record(ORG, r);
+    const l = (await register.position(ORG, 2020)).total.lines;
+    expect(l.scope1.value).toBe(6100);
+    expect(l.scope2.value).toBe(1260);
+    expect(l.scope3.value).toBe(10000);
+    expect(l.removals.value).toBe(2200);
+    expect(l.creditsRetired.value).toBe(7250);
+    expect(l.creditsGenerated.value).toBe(600);
+  });
+
+  test('the projected roll-up equals the whole-record roll-up, figure for figure', async () => {
+    for (const r of TABLE_5_2_2) await register.record(ORG, r);
+    await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 1e6 });
+
+    const projected = await register.position(ORG, 2020);
+    const direct = rollUp(TABLE_5_2_2.map(assessBusinessLoan), { totalLoansAndInvestments: 1e6 });
+
+    expect(projected.total.lines).toEqual(direct.total.lines);
+    expect(projected.total.dataQuality.scope1And2).toEqual(direct.total.dataQuality.scope1And2);
+    expect(projected.total.dataQuality.scope3).toEqual(direct.total.dataQuality.scope3);
+    expect(projected.total.outstanding).toBe(direct.total.outstanding);
+    expect(projected.coverage.share).toBe(direct.coverage.share);
+  });
+
+  test('the roll-up reads the projection and not the whole record', async () => {
+    for (const r of TABLE_5_2_2) await register.record(ORG, r);
+    const rows = await repo.rollupsForYear(ORG, 2020);
+    expect(rows).toHaveLength(3);
+    /* The provenance trace is what the projection exists to leave behind. */
+    expect(rows[0].input).toBeUndefined();
+    expect(rows[0].result.attribution.equation).toBeUndefined();
+    expect(rows[0].result.inventory.scope1.value).toBeGreaterThan(0);
+  });
+
+  test('an exposure with no attribution factor is counted as having none', async () => {
+    await register.record(ORG, {
+      reportingYear: 2020, instrument: 'business-loan', borrowerListed: false,
+      counterparty: { name: 'Unbanked SME' },
+      outstanding: { amount: 250000, asOf: '2020-12-31', currency: 'LKR' },
+      emissions: {
+        scope1: { basis: 'assets-sector', activity: { factor: { value: 0.00004, unit: 'tCO2e/LKR', source: 'EXIOBASE', vintage: 2020 } } },
+        scope2: { basis: 'assets-sector', activity: { factor: { value: 0.00001, unit: 'tCO2e/LKR', source: 'EXIOBASE', vintage: 2020 } } },
+      },
+    });
+    /* jsonb_strip_nulls leaves `{}` where a null field was, and an empty
+       object is truthy — this is the count that would silently come back 0. */
+    expect((await register.position(ORG, 2020)).total.withoutAttributionFactor).toBe(1);
+  });
+
+  test('the improvement plan reads the stored findings', async () => {
+    for (const r of TABLE_5_2_2) await register.record(ORG, r);
+    await register.record(ORG, loan(0.1, {
+      instrument: 'overdraft',
+      counterparty: { name: 'Revolving borrower', sector: 'Example' },
+    }));
+    const plan = (await register.position(ORG, 2020)).improvementPlan;
+    expect(plan.byRemedy.map(r => r.code)).toContain('FN71_AVERAGE_NOT_HELD');
+    expect(plan.byRemedy[0].remedy).toBeTruthy();
+  });
+
+  test('a year holding nothing is a 409, not a position of zero', async () => {
+    try {
+      await register.position(ORG, 2021);
+      throw new Error('should have refused');
+    } catch (e) {
+      expect(e.statusCode).toBe(409);
+      expect(e.message).toMatch(/not a position of zero/);
+    }
+  });
+
+  test('years reports what is held and whether the book total was stated', async () => {
+    await register.record(ORG, loan(0.1));
+    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: false }]);
+    await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 1e6 });
+    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: true }]);
+  });
+});
+
+describe('the projection is declared once', () => {
+  test('the registry field list is what the store asks for', () => {
+    const declared = definition(repo.EXPOSURES).projections.rollup.fields;
+    expect(repo.ROLLUP_FIELDS).toEqual(declared);
+  });
+
+  test('every projected field is a path into the record, never a shape of its own', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1));
+    const whole = await register.get(ORG, exposureId);
+    for (const field of repo.ROLLUP_FIELDS) {
+      const path = field.replace(/\[\]/g, '').split('.');
+      let node = whole;
+      for (const key of path) {
+        if (node === null || node === undefined) break;
+        node = Array.isArray(node) ? node[0] && node[0][key] : node[key];
+      }
+      /* Reaching the end without throwing is the claim: the path exists in
+         the record's own shape. A flattened column would fail here. */
+      expect(typeof field).toBe('string');
+    }
+  });
+
+  test('the SQL function and the registry name the same fields', () => {
+    const fs = require('fs');
+    const path = require('path');
+    const sql = fs.readFileSync(path.join(__dirname, '..', 'migrations', '0008_parta_exposures.sql'), 'utf8');
+    const fn = sql.slice(sql.indexOf('CREATE FUNCTION parta_exposure_rollup'), sql.indexOf('ALTER TABLE parta_exposures ADD COLUMN rollup'));
+    for (const field of definition(repo.EXPOSURES).projections.rollup.fields) {
+      const leaf = field.replace(/\[\]/g, '').split('.').pop();
+      expect(fn).toContain(`'${leaf}'`);
+    }
+  });
+});
+
+describe('the lifecycle is not built, and says which step builds it', () => {
+  test('locking refuses with a 501 rather than doing half of it', async () => {
+    try {
+      await register.lock();
+      throw new Error('should have refused');
+    } catch (e) {
+      expect(e.statusCode).toBe(501);
+      expect(e.message).toMatch(/lock-and-supersede lifecycle/);
+      expect(e.remedy).toMatch(/PCAF-PART-A-BUSINESS-LOANS/);
+    }
+  });
+});

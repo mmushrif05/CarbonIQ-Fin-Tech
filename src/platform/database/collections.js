@@ -99,6 +99,51 @@ const COLLECTIONS = Object.freeze({
   baselines:           { table: 'baselines',
     keys: { key: 'baseline_key', metric: 'metric', scope: 'scope', country: 'country', status: 'status' },
     dependsOn: [] },
+  /* 0008 — the PCAF Part A exposure register. §5.2 shipped as two stateless
+     reads, so a book had to be posted whole on every call; coverage could not
+     be stated, because coverage is over the whole book and a posted body is
+     only what somebody chose to send. `parta_book` is its own collection and
+     not a field on a settings blob, because "we have not stated the book
+     total" and "the book total is zero" are different answers and coverage
+     against a zero book is unanswerable rather than 100%. */
+  parta_exposures:     { table: 'parta_exposures',
+    keys: { reportingYear: 'reporting_year', assetClass: 'asset_class', status: 'status',
+      'counterparty.name': 'counterparty', 'counterparty.sector': 'sector' },
+    dependsOn: [],
+    /* A stored projection, computed at write time by parta_exposure_rollup()
+       in migration 0008. A stored exposure is several kilobytes, most of it
+       the provenance trace; the reporting-year roll-up reads this set and
+       nothing else. Every entry is a path INTO the record, which is what lets
+       the in-memory store project the same set with no column at all and
+       produce the same rows. Held to the SQL function by a test — a field
+       added to one and not the other would silently return a projection
+       missing it. */
+    projections: {
+      rollup: { column: 'rollup', fields: [
+        'exposureId', 'status', 'reportingYear', 'assetClass', 'financialSector', 'createdAt',
+        'result.exposure.kind', 'result.exposure.instrument',
+        'result.exposure.counterparty.name', 'result.exposure.counterparty.sector',
+        'result.exposure.counterparty.naceL2', 'result.exposure.counterparty.borrowerType',
+        'result.exposure.counterparty.financialInstitution',
+        'result.exposure.outstanding.value',
+        'result.attribution.value',
+        'result.inventory.scope1.value', 'result.inventory.scope1.absent',
+        'result.inventory.scope2.value', 'result.inventory.scope2.absent',
+        'result.inventory.scope1And2.value', 'result.inventory.scope1And2.absent',
+        'result.inventory.scope3.value', 'result.inventory.scope3.absent',
+        'result.inventory.removals.value', 'result.inventory.removals.absent',
+        'result.inventory.creditsRetired.value', 'result.inventory.creditsRetired.absent',
+        'result.inventory.creditsGenerated.value', 'result.inventory.creditsGenerated.absent',
+        'result.inventory.dataQuality.scope1And2.option', 'result.inventory.dataQuality.scope1And2.score',
+        'result.inventory.dataQuality.scope3.option', 'result.inventory.dataQuality.scope3.score',
+        'result.inventory.dataQuality.scope3.absent',
+        'result.validation.verdict',
+        'result.validation.findings[].code', 'result.validation.findings[].severity',
+        'result.validation.findings[].field', 'result.validation.findings[].remedy',
+        'result.validation.findings[].reference',
+      ] },
+    } },
+  parta_book:          { table: 'parta_book', keys: { reportingYear: 'reporting_year' }, dependsOn: [] },
 });
 
 function definition(collection) {

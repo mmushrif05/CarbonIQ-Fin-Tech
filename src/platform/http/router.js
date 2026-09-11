@@ -42,6 +42,7 @@ const reportsRouter       = require('../../domains/lending/interface/routes/repo
 const carbonPricingRouter = require('../../domains/taxonomy/interface/routes/carbon-pricing');
 const pcafPartCRouter     = require('../../domains/pcaf-part-c/interface/routes/pcaf-partc');
 const pcafPartARouter     = require('../../domains/pcaf-part-a/interface/routes/pcaf-parta');
+const pcafPartARegister   = require('../../domains/pcaf-part-a/interface/routes/register');
 const partcRegistryRouter = require('../../domains/pcaf-part-c/interface/routes/partc-registry');
 const capitalRouter       = require('../../domains/capital/interface/routes/capital');
 const assuranceRouter     = require('../../domains/lending/interface/routes/assurance');
@@ -198,6 +199,7 @@ router.use('/pcaf/part-c', pcafPartCRouter);
 /* Part A is financed emissions for lending; Part C is insurance-associated
    emissions. Separate mounts, separate engines, never merged. */
 router.use('/pcaf/part-a', pcafPartARouter);
+router.use('/pcaf/part-a', pcafPartARegister);
 router.use('/partc', partcRegistryRouter);
 router.use('/capital', capitalRouter);
 router.use('/assurance', assuranceRouter);

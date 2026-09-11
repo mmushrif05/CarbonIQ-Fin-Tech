@@ -166,12 +166,14 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
+|       `src/domains/pcaf-part-a/application/` | 1 | 410 |
 |       `src/domains/pcaf-part-a/domain/` | 10 | 1,732 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,164 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 886 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 1 | 187 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 2 | 227 |
+|       `src/domains/pcaf-part-a/infrastructure/` | 1 | 102 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 371 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 279 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -188,18 +190,18 @@ flowchart TD
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,165 |
+|     `src/platform/auth/` | 12 | 2,176 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
-|     `src/platform/database/` | 10 | 1,793 |
+|     `src/platform/database/` | 10 | 1,838 |
 |       `src/platform/database/adapters/` | 6 | 496 |
-|     `src/platform/http/` | 22 | 2,569 |
+|     `src/platform/http/` | 22 | 2,571 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 3 | 291 |
 |   `src/shared/` | 10 | 1,790 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **312** | **52,343** |
+| **total** | **316** | **53,149** |
 
 <!-- END MODULE-MAP -->
 
@@ -379,6 +381,22 @@ erDiagram
     string scope "scope"
     string country "country"
     string status "status"
+  }
+  parta_exposures {
+    string id PK
+    string owner_org_id
+    jsonb record
+    string reporting_year "reportingYear"
+    string asset_class "assetClass"
+    string status "status"
+    string counterparty "counterparty.name"
+    string sector "counterparty.sector"
+  }
+  parta_book {
+    string id PK
+    string owner_org_id
+    jsonb record
+    string reporting_year "reportingYear"
   }
   partc_clients ||--o{ partc_projects : "restrict"
   partc_projects ||--o{ partc_boq_revisions : "restrict"
