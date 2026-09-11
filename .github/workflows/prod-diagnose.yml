@@ -9,6 +9,11 @@
 name: Production diagnose
 
 on:
+  # The GitHub integration this is driven from may not dispatch a workflow, so
+  # a push to the working branch is the trigger as well. Not on main.
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/prod-diagnose.yml']
   workflow_dispatch:
     inputs:
       site:
@@ -22,19 +27,19 @@ jobs:
     steps:
       - name: GET /health
         run: |
-          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site }}/health")
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/health")
           echo "HTTP $code"; jq . body.json || cat body.json
       - name: GET /v1/auth/bootstrap
         run: |
-          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site }}/v1/auth/bootstrap")
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/bootstrap")
           echo "HTTP $code"; jq . body.json || cat body.json
       - name: GET /v1/auth/preview
         run: |
-          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site }}/v1/auth/preview")
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/preview")
           echo "HTTP $code"; jq . body.json || cat body.json
       - name: POST /v1/auth/login with an address that exists nowhere
         run: |
           code=$(curl -sS -o body.json -w '%{http_code}' -H 'content-type: application/json' \
             -d '{"email":"probe@example.invalid","password":"not-a-real-password-1"}' \
-            "${{ inputs.site }}/v1/auth/login")
+            "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/login")
           echo "HTTP $code"; jq . body.json || cat body.json
