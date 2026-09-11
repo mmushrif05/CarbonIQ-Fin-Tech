@@ -15,6 +15,7 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 
 const content = require('../src/shared/content');
@@ -78,23 +79,25 @@ describe('What it refuses', () => {
 });
 
 describe('An override reaches the document', () => {
-  const file = content.OVERRIDE_FILE;
-  let existed;
+  /* A temporary file, never the deployment's own: this suite used to write
+     "PCAF certified" into data/content/report-text.json for one assertion,
+     and the Netlify-function suite on another worker loaded the application
+     in that instant and refused to start. */
+  const file = path.join(os.tmpdir(), `carboniq-report-text-${process.pid}.json`);
 
   beforeAll(() => {
-    existed = fs.existsSync(file);
-    fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, JSON.stringify({ text: { 'report.preparedBy': 'Prepared by Ceylon Insurance PLC' } }));
   });
 
   afterAll(() => {
-    if (!existed) fs.rmSync(file, { force: true });
+    fs.rmSync(file, { force: true });
     jest.resetModules();
   });
 
   test('the cover line becomes the deployment’s', () => {
     jest.resetModules();
     const fresh = require('../src/shared/content');
+    fresh.useOverrideFile(file);
     expect(fresh.text('report.preparedBy')).toBe('Prepared by Ceylon Insurance PLC');
     const common = require('../src/domains/pcaf-part-c/reporting/report-standard/common');
     expect(common.PREPARED_BY).toBe('Prepared by Ceylon Insurance PLC');
@@ -103,6 +106,8 @@ describe('An override reaches the document', () => {
   test('a bad override fails loudly at load rather than being ignored', () => {
     fs.writeFileSync(file, JSON.stringify({ text: { 'report.preparedBy': 'PCAF certified preparer' } }));
     jest.resetModules();
-    expect(() => require('../src/shared/content').text('report.preparedBy')).toThrow(/endorsement/);
+    const fresh = require('../src/shared/content');
+    fresh.useOverrideFile(file);
+    expect(() => fresh.text('report.preparedBy')).toThrow(/endorsement/);
   });
 });

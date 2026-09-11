@@ -199,9 +199,9 @@ flowchart TD
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 3 | 291 |
-|   `src/shared/` | 10 | 1,899 |
+|   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **319** | **53,970** |
+| **total** | **319** | **53,984** |
 
 <!-- END MODULE-MAP -->
 
