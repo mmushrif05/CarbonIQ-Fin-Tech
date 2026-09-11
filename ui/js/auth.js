@@ -74,6 +74,7 @@ const Auth = (() => {
     'pcaf':           60,   // esg_analyst+
     'pcaf-parta':     60,   // esg_analyst+ — same bar as the other PCAF screens
     'parta-register': 60,   // esg_analyst+ — the lending book behind the Part A figures
+    'parta-sovereign': 60,  // esg_analyst+ — the §5.9 sovereign book, same bar as the other PCAF screens
     'monitoring':     60,   // esg_analyst+
     'pipeline':       60,   // esg_analyst+
     'carbon-pricing': 40,   // relationship_manager+
@@ -100,7 +101,7 @@ const Auth = (() => {
    * show the product rather than a sidebar of screens that answer 403.
    */
   const PREVIEW_PAGES = [
-    'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'parta-register', 'pcaf-partc',
+    'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'parta-register', 'parta-sovereign', 'pcaf-partc',
     'partc-book', 'partc-portfolio', 'gcf', 'taxonomy', 'ndc-sdg',
     'reports', 'carbon-pricing', 'baselines',
   ];

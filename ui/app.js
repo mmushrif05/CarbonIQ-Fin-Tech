@@ -18,6 +18,7 @@ const PAGE_META = {
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
   'parta-register': { title: 'Lending Book',      subtitle: 'The exposures behind the Part A figures — position, coverage, and what to fix first' },
+  'parta-sovereign': { title: 'Sovereign Book',    subtitle: 'The §5.9 sovereign holdings — attribution on PPP-adjusted GDP, scope 1 on both LULUCF boundaries' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
   'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and see what moves' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
@@ -67,6 +68,13 @@ const DYNAMIC_PAGES = {
     // The book changes whenever an exposure is recorded on another screen or
     // by an integration, so a return visit re-reads rather than replaying.
     refresh: () => typeof PartARegisterPage !== 'undefined' && PartARegisterPage.refresh(),
+  },
+  'parta-sovereign': {
+    src:  'pages/parta-sovereign.html',
+    init: () => typeof PartASovereignPage !== 'undefined' && PartASovereignPage.init(),
+    // The sovereign book changes whenever a holding is recorded elsewhere, so
+    // a return visit re-reads rather than replaying.
+    refresh: () => typeof PartASovereignPage !== 'undefined' && PartASovereignPage.refresh(),
   },
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',
