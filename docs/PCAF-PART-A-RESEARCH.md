@@ -29,6 +29,40 @@ statement must say which half a figure sits in.
 
 ---
 
+## 0. How this document is kept
+
+This is **the reference guide for Part A**. Every section built under
+`src/domains/pcaf-part-a/` is built from what is written here, and what is
+written here is held to the standard rather than to our memory of it.
+
+Four rules keep it worth reading a year from now.
+
+**A new finding is recorded here first, before the code that acts on it.** A
+rule read off the standard, a worked example that reproduces, a table whose
+shape differs from the one beside it, a claim of ours the document does not
+support — each lands in the section it belongs to, with the page of the source
+it came from, and then the change log below records what moved. A finding that
+lives only in a commit message is a finding the next person re-derives.
+
+**A page cite is the unit of evidence.** Every figure, threshold and rule in
+this document names the printed page of the named document, so a reader can
+check the standard rather than check us. A statement with no cite is either
+CarbonIQ's own judgement — and says so — or it is not yet evidence.
+
+**A built section moves from §11 to §10.** §11 is the plan and §10 is what
+exists; a row that has shipped belongs in the second. The "done when" column is
+the acceptance test and is not rewritten after the fact to match what was
+built.
+
+**A correction is recorded as a correction.** Where this study contradicts
+something we had previously written — `docs/PCAF-PART-A-BUILD-SPEC.md`, the
+strategic-analysis PDF, `CLAUDE.md` — the contradiction is stated with both
+readings and the page that settles it (§3 and §9 both carry one). Silently
+replacing the old text leaves the next reader to rediscover the same trap.
+
+---
+---
+
 ## 1. The frame every asset class sits inside (Chapter 4, pp.24–31)
 
 These are the rules that apply before any asset class is chosen. Each is a
@@ -834,3 +868,19 @@ the class's own table, never averaged; 1 best, 5 worst, never rendered as a
 fraction; every figure traced; refuse rather than render zero; measured,
 declared or absent; one content model, one renderer; conformance evidence
 before a section is called done.
+
+---
+
+## 12. Change log
+
+What moved in this document and why, newest first. A row is added whenever a
+finding lands — a rule read off the standard, a worked example that reproduces,
+a correction to something we had previously written, or a section moving from
+§11 to §10 because it shipped.
+
+| Date | Section | What changed | Source |
+|---|---|---|---|
+| 2026-09-11 | §0 | The maintenance rules and this log, so a later finding has a place to land rather than a commit message | — |
+| 2026-09-11 | all | First full study: the ten asset classes, the consolidated data-quality matrix, Chapter 6, the supplement, the twelve gaps, the market picture, and the build order | Third Edition (Dec 2025) 209 pp.; DCL May 2025; DCL FAQ; the avoided-emissions supplement; the strategic analysis |
+| 2026-09-11 | §3 | **Correction.** `docs/PCAF-PART-A-BUILD-SPEC.md` said Option 2b was "score 2 in one class and 3 in another". Read against all eight tables there are five distinct shapes: 2a is 2 or 3, 2b is 3 or 4, Option 3 is 4 or 5, and 1b is 1 for motor vehicles alone | Tables 5.1-2 … 5.10-2, Annex 10.1 |
+| 2026-09-11 | §9 | **Correction.** The strategic analysis says Part A "requires" embodied carbon for new construction and major renovation lending. The standard makes it **optional** for CRE and mortgages, and the developer's own scope 3 "when relevant, should" for project finance | pp.77, 83, 74 |
