@@ -17,6 +17,7 @@ const { issueKey } = require('./helpers/key');
 const { requiredScopeFor } = require('../src/platform/auth/scopes');
 const store = require('../src/platform/database/store');
 const repo = require('../src/domains/pcaf-part-a/infrastructure/store');
+const { testOnMemory } = require('./helpers/store-mode');
 
 let KEY;
 let ORG;
@@ -164,7 +165,8 @@ describe('changing what is held', () => {
     const res = await request(app).post(`/v1/pcaf/part-a/exposures/${body.exposure.exposureId}/recompute`)
       .set('x-api-key', KEY).expect(200);
     expect(res.body.movement.moved).toBe(false);
-    expect(res.body.movement.basis).toBe('financed scope 1 and 2');
+    expect(res.body.movement.basis).toMatch(/every reporting line/);
+    expect(res.body.movement.lines).toHaveLength(7);
   });
 
   test('a removed exposure is a 404 afterwards', async () => {
@@ -174,6 +176,66 @@ describe('changing what is held', () => {
       .set('x-api-key', KEY).expect(200);
     await request(app).get(`/v1/pcaf/part-a/exposures/${body.exposure.exposureId}`)
       .set('x-api-key', KEY).expect(404);
+  });
+});
+
+/**
+ * A store that cannot persist. Same shape as tests/storage-seam.test.js: force
+ * the PostgreSQL adapter with no DATABASE_URL, so capability() is not writable
+ * and the seam refuses. The engine routes must still answer, because they
+ * store nothing.
+ */
+async function withNoStore(fn) {
+  const saved = { backend: process.env.STORAGE_BACKEND, url: process.env.DATABASE_URL };
+  process.env.STORAGE_BACKEND = 'postgres';
+  delete process.env.DATABASE_URL;
+  try {
+    expect(store.capability().writable).toBe(false);
+    return await fn();
+  } finally {
+    if (saved.backend === undefined) delete process.env.STORAGE_BACKEND;
+    else process.env.STORAGE_BACKEND = saved.backend;
+    if (saved.url === undefined) delete process.env.DATABASE_URL;
+    else process.env.DATABASE_URL = saved.url;
+  }
+}
+
+describe('a write that cannot be kept is refused, not confirmed', () => {
+  test('recording an exposure answers 503 naming DATABASE_URL, and never 201', async () => {
+    const res = await withNoStore(() => request(app).post('/v1/pcaf/part-a/exposures')
+      .set('x-api-key', KEY).send(EXPOSURE));
+    expect(res.status).toBe(503);
+    expect(JSON.stringify(res.body)).toMatch(/DATABASE_URL/);
+  });
+
+  test('stating the book total is refused the same way', async () => {
+    const res = await withNoStore(() => request(app).put('/v1/pcaf/part-a/book')
+      .set('x-api-key', KEY).send({ reportingYear: 2024, totalLoansAndInvestments: 1e6 }));
+    expect(res.status).toBe(503);
+  });
+
+  /* Memory only, and the reason is about the credential rather than the
+     route: on PostgreSQL the API key is a row in the database, so removing
+     DATABASE_URL takes authentication with it and the request never reaches
+     the engine. On the in-process store the dashboard key authenticates
+     without a store, which is the only run where "the engine still answers"
+     is a claim about the engine. */
+  testOnMemory('the stateless engine route still answers, because it stores nothing', async () => {
+    const res = await withNoStore(() => request(app).post('/v1/pcaf/part-a/business-loans/assess')
+      .set('x-api-key', KEY).send(EXPOSURE));
+    expect(res.status).toBe(200);
+    expect(res.body.inventory.scope1.value).toBe(100);
+  });
+});
+
+describe('one loan, once, over HTTP', () => {
+  test('the second recording of a facility reference is a 409 that names the first', async () => {
+    const withRef = { ...EXPOSURE, identifiers: { accountNumber: 'LN-HTTP-1' } };
+    const first = await request(app).post('/v1/pcaf/part-a/exposures').set('x-api-key', KEY).send(withRef).expect(201);
+    const again = await request(app).post('/v1/pcaf/part-a/exposures').set('x-api-key', KEY).send(withRef).expect(409);
+    expect(again.body.error).toBe('DUPLICATE_LOAN');
+    expect(again.body.message).toContain(first.body.exposure.exposureId);
+    expect(again.body.remedy).toMatch(/PUT \/v1\/pcaf\/part-a\/exposures\//);
   });
 });
 

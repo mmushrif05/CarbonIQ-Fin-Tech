@@ -1,0 +1,71 @@
+/* ============================================================
+   CarbonIQ — PCAF Part A, the lending book
+   ============================================================
+   The page borrows the Part C vocabulary (cards, figures, tables, the data
+   quality badge) so a score means the same thing on every PCAF screen. What
+   is here is only what this page adds.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets. The UA stylesheet's
+   [hidden]{display:none} carries almost no specificity, and a single class
+   rule with display:grid outranks it — the record form and the detail panel
+   are both grids that open and close with el.hidden. */
+.parta-register [hidden] { display: none !important; }
+
+.parta-register .pr-form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+
+/* Columns collapse rather than push the page: minmax(min(100%, …)) is the
+   whole difference at 430px. */
+.parta-register .pr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px 14px;
+}
+.parta-register .pr-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; }
+.parta-register .pr-grid input,
+.parta-register .pr-grid select,
+.parta-register .pr-inline input {
+  font: inherit; font-size: 14px; padding: 7px 9px; border-radius: 8px;
+  border: 1px solid var(--p-separator, #d1d1d6); background: var(--p-bg, #fff); color: inherit;
+  min-width: 0; max-width: 100%;
+}
+.parta-register .pr-grid input:focus-visible,
+.parta-register .pr-grid select:focus-visible,
+.parta-register .pr-inline input:focus-visible { outline: 2px solid var(--brand, #0a7a4c); outline-offset: 1px; }
+.parta-register .pr-check { flex-direction: row; align-items: center; gap: 8px; align-self: end; }
+.parta-register .pr-check input { width: 16px; height: 16px; }
+.parta-register .pr-wide { grid-column: 1 / -1; }
+
+.parta-register .pr-inline { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 10px; }
+.parta-register .pr-inline label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; flex: 1 1 160px; }
+
+/* A select sizes to its widest option, not to its container. */
+.parta-register select { min-width: 0; max-width: 100%; }
+
+/* One row per finding: severity chip, then the three sentences a reader
+   needs, in the order they need them — what is true, what it does, what
+   clears it. */
+.parta-register .pr-finding { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--p-separator, #e5e5ea); }
+.parta-register .pr-finding:last-child { border-bottom: none; }
+.parta-register .pr-finding-body { min-width: 0; }
+.parta-register .pr-finding-body p { margin: 0 0 4px; font-size: 13.5px; line-height: 1.45; }
+.parta-register .pr-finding-body .partc-hint { display: block; }
+
+.parta-register .pr-row { cursor: pointer; }
+.parta-register .pr-row:hover td { background: var(--p-fill, rgba(120,120,128,.08)); }
+.parta-register .pr-row.is-open td { background: var(--p-fill, rgba(120,120,128,.12)); }
+
+.parta-register .pr-verdict { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--p-fill, rgba(120,120,128,.12)); white-space: nowrap; }
+.parta-register .pr-verdict-clean { background: rgba(52,199,89,.16); color: #1d7a3a; }
+.parta-register .pr-verdict-material { background: rgba(255,59,48,.14); color: #b3251d; }
+
+/* A wide table scrolls inside its own box; the page never scrolls sideways. */
+.parta-register .pr-scroll { overflow-x: auto; max-width: 100%; }
+
+/* The label column takes its own width until the panel cannot give it,
+   then wraps — a `max-content` track with no floor is the one that pushes
+   a panel past a phone. */
+.parta-register .pr-kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 14px; font-size: 13.5px; }
+.parta-register .pr-kv dt { color: var(--p-label-2); min-width: 0; overflow-wrap: anywhere; }
+.parta-register .pr-kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.parta-register .pr-eq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--p-label-2); overflow-wrap: anywhere; }

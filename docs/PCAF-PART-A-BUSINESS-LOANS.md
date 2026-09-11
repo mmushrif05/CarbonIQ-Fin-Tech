@@ -290,7 +290,76 @@ it, so an exposure with no attribution factor (Option 3b or 3c) projects as
 `attribution: {}` — which is truthy. `inflate()` normalises it, and a test
 pins the count.
 
-## 8. What is still not built
+**One loan, once — said in the database (migration `0009`).** Two rows for one
+facility in one year is the same loan financed twice, and nothing in 0008
+stopped it: an exposure keyed on the bank's own account number could be
+recorded twice by two people, or by one person pressing the button twice, and
+the position would carry both. `account_number` is a generated column over
+`input.identifiers.accountNumber` with a partial unique index on
+`(org_id, reporting_year, account_number)` — partial, because an exposure
+recorded without a reference is not thereby the same loan as every other
+exposure recorded without one. The service refuses first, with a **409
+`DUPLICATE_LOAN`** naming the exposure that already holds the reference and
+the two ways forward (change that one, or give this one its own reference);
+the index is what closes the race the service cannot, exactly as the one
+locked assessment per policy-year index does in Part C.
+
+**A recomputation compares every line and both scores.** It used to compare
+the headline — financed scope 1 and 2 — and report "nothing moved" when scope 3,
+removals or a data-quality score had. The movement now carries all seven
+reporting lines and both scores, each with before, after and whether it moved,
+and the note names what did: *Moved on the same input: scope3.* The cause of
+such a movement is a change in the engine or in a factor, never in what the
+bank recorded, and the note says so.
+
+**The sample book.** A preview visitor sees six FY2024 exposures in Sri Lankan
+rupees, chosen so that each shape the checks can take is on the screen: a clean
+term loan at Option 1b; an overdraft drawn to a quarter of its own annual
+average, which is the footnote 71 finding; a hardware merchant with no company
+value, estimated under Option 3b from a sector factor whose vintage is stale; a
+listed cement producer attributed on EVIC; a development-finance company whose
+customer deposits are excluded from its debt (p.56); and a tea estate whose
+emissions year lags the reporting year. The book total is stated so coverage is
+a percentage. It is installed by the same installer that seeds the Part C
+sample book, into the preview organisation only, and a read-only session can
+open every exposure and record none.
+
+## 8. The screen
+
+`ui/pages/parta-register.html` · `ui/js/parta-register.js` · `ui/css/parta-register.css`,
+under **Lending Book** in the navigation. It computes nothing: every figure on it
+is one the register returned, which is the rule the Fund Desk established and
+`tests/parta-register-ui.test.js` holds it to.
+
+It is laid out in the order a bank reads its own book. The **position** first —
+financed scope 1 and 2, scope 3 on its own line, removals netted against
+nothing, and coverage of the book — each with its data-quality score as a
+category, 1 the highest and 5 the lowest, never as a fraction. Then the **book
+total** and the **groups** side by side: the total is stated from the screen,
+so coverage becomes a percentage without leaving the page, and financial-sector
+borrowers are rolled up apart from the rest (p.56). Then **what to fix first**:
+the improvement plan, every step ordered by outstanding × points above the
+target, every projected score marked *scenario* so it cannot be read as the
+reported one. Then the **exposures**, one row each with its verdict — clean, or
+the count of material and advisory findings — and a row opens into the
+exposure: its lines, its scores, its attribution with the equation the engine
+ran, and its findings inline with *what clears it*, because a finding without
+the sentence that clears it is a complaint.
+
+Recording an exposure is a form and no arithmetic: the engine runs before
+anything is written, and a refusal reaches the screen with its clause. Every
+write control carries `data-writes` and is hidden for a preview session — a
+courtesy, not the control; the server refuses the same call with `read`.
+
+Two rules from the rest of the product apply and were both needed. The panel
+grid's items had to be allowed to shrink: a grid item's `min-width` is `auto`,
+so the groups table set the Book panel at 599px inside a 430px viewport, with
+its scroll box already in place. And a `max-content` label column with no floor
+does the same; `minmax(0, max-content)` is the whole difference. The browser
+journey (`e2e/parta-register.spec.js`) seeds a book through the API, opens the
+overdraft, states the total, recomputes, and asserts the page never widens.
+
+## 9. What is still not built
 
 - **No lifecycle.** An exposure is recorded and can be changed; there is no
   lock and no supersede. Nothing publishes from this register yet, and a
@@ -299,7 +368,6 @@ pins the count.
   needs no migration.
 - **No §5.2 report.** The figures are there; the document PCAF's Chapter 6 and
   the Disclosure Checklist ask for is row 8 of that plan.
-- **No screen.** The surface is the API.
 - **No sector factor library and no sector intensity bands.** Both are supplied
   per request. A held, versioned and checksummed set — the discipline
   `data/factors/MANIFEST.json` already follows for Part C — is what turns

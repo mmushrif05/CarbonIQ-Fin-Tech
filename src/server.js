@@ -47,11 +47,17 @@ const v1Router = require('./platform/http/router');
  * `require('./jobs')` above, which registers the domain engines on the
  * platform's queue.
  */
-require('./platform/auth/preview').registerSampleBook(orgId =>
-  require('./domains/pcaf-part-c/application/partc-demo-data').seedDemoBook(
+require('./platform/auth/preview').registerSampleBook(async orgId => {
+  await require('./domains/pcaf-part-c/application/partc-demo-data').seedDemoBook(
     require('./domains/pcaf-part-c/application/partc-registry'),
     orgId,
-    require('./domains/pcaf-part-c/application/partc-boq')));
+    require('./domains/pcaf-part-c/application/partc-boq'));
+  /* The Part A lending book beside the Part C insurance book. Two domains,
+     two seeds, one installer — the installer's idempotency check reads the
+     Part C clients, and both run inside its one transaction. */
+  await require('./domains/pcaf-part-a/application/demo-data').seedSampleBook(
+    require('./domains/pcaf-part-a/application/register'), orgId);
+});
 const { doc, body, str, obj, orNull } = require('./platform/http/openapi-hints');
 
 /* Express ships no types of its own; the app is untyped here, typed by the routes' Joi schemas at the boundary. */

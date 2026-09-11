@@ -86,6 +86,40 @@ function engineFor(assetClass) {
 }
 
 /**
+ * One loan, once.
+ *
+ * A facility keyed in twice doubles its financed emissions and its
+ * outstanding, and lifts coverage on money the bank does not lend twice — a
+ * register wrong in the direction that flatters it. The bank's own reference
+ * (`identifiers.accountNumber`) is the key; where the bank gives none, nothing
+ * here can tell two loans apart and nothing pretends to. Uniqueness is on the
+ * loan, never the counterparty: two facilities to one borrower are two rows.
+ *
+ * This is the check that names the existing exposure. Migration 0009's partial
+ * unique index is the one that holds when two requests race for the same
+ * reference on PostgreSQL; the other three stores read and then write, which
+ * narrows that window without shutting it.
+ */
+async function refuseDuplicateLoan(orgId, reportingYear, engineInput, exceptId) {
+  const ref = engineInput.identifiers && engineInput.identifiers.accountNumber;
+  if (!ref) return;
+  const rows = await store.query(repo.EXPOSURES, String(orgId), {
+    where: { reportingYear, 'input.identifiers.accountNumber': String(ref) },
+    fields: ['exposureId', 'result.exposure.counterparty.name'],
+  });
+  const clash = rows.find(r => r.exposureId !== exceptId);
+  if (!clash) return;
+  throw refuse('DUPLICATE_LOAN',
+    `Facility ${ref} is already recorded for ${reportingYear} as exposure ${clash.exposureId}`
+    + `${clash.result && clash.result.exposure && clash.result.exposure.counterparty && clash.result.exposure.counterparty.name
+      ? ` (${clash.result.exposure.counterparty.name})` : ''}. Recording it again would count its `
+    + 'financed emissions and its outstanding twice and lift coverage on money the bank does not lend twice.',
+    409,
+    `Change the existing exposure at PUT /v1/pcaf/part-a/exposures/${clash.exposureId}, or give this one `
+    + 'its own facility reference if it is a different loan.');
+}
+
+/**
  * Record one exposure: keep what was keyed, compute what follows.
  *
  * The engine runs before anything is written, so an exposure the standard
@@ -112,6 +146,8 @@ async function record(orgId, input) {
 
   const engineInput = engineInputOf(input);
   const result = engine(engineInput);
+
+  await refuseDuplicateLoan(orgId, String(reportingYear), engineInput, null);
 
   const now = _now();
   const cp = result.exposure.counterparty || {};
@@ -164,6 +200,8 @@ async function update(orgId, exposureId, input) {
   const engineInput = engineInputOf(input);
   const result = engine(engineInput);
 
+  await refuseDuplicateLoan(orgId, String(input.reportingYear || existing.reportingYear), engineInput, exposureId);
+
   const cp = result.exposure.counterparty || {};
   const now = _now();
   const next = {
@@ -209,27 +247,53 @@ async function recompute(orgId, exposureId) {
   const engine = engineFor(existing.assetClass);
   const result = engine(existing.input);
 
-  const before = existing.result.inventory.scope1And2.value;
-  const after = result.inventory.scope1And2.value;
-  const movementPct = (Number.isFinite(before) && before !== 0)
-    ? +(((after - before) / before) * 100).toFixed(4) : null;
+  /* Every line and both scores, not the headline alone: a factor that reaches
+     only scope 3, or a table that re-scores one option, would otherwise be
+     reported as "nothing moved" — which is the one thing this call exists to
+     never say untruthfully. */
+  const val = x => (x && Number.isFinite(x.value) ? x.value : null);
+  const LINES = ['scope1', 'scope2', 'scope1And2', 'scope3', 'removals', 'creditsRetired', 'creditsGenerated'];
+  const movementOf = k => {
+    const before = val(existing.result.inventory[k]);
+    const after = val(result.inventory[k]);
+    return {
+      line: k, before, after,
+      moved: before !== after,
+      movementPct: (Number.isFinite(before) && before !== 0 && Number.isFinite(after))
+        ? +(((after - before) / before) * 100).toFixed(4) : null,
+    };
+  };
+  const lines = LINES.map(movementOf);
+  const dqOf = r => ({
+    scope1And2: r.inventory.dataQuality.scope1And2.score,
+    scope3: r.inventory.dataQuality.scope3 && !r.inventory.dataQuality.scope3.absent
+      ? r.inventory.dataQuality.scope3.score : null,
+  });
+  const dqBefore = dqOf(existing.result), dqAfter = dqOf(result);
+  const dataQuality = {
+    before: dqBefore, after: dqAfter,
+    moved: dqBefore.scope1And2 !== dqAfter.scope1And2 || dqBefore.scope3 !== dqAfter.scope3,
+  };
+  const moved = lines.some(l => l.moved) || dataQuality.moved;
 
   const next = { ...existing, result, computedAt: _now(), standard: STANDARD, updatedAt: _now() };
   await repo.saveExposure(orgId, next);
 
+  const headline = movementOf('scope1And2');
   return {
     exposure: next,
     movement: {
-      basis: 'financed scope 1 and 2',
-      before, after,
-      movementPct,
-      moved: before !== after,
+      basis: 'every reporting line and both data-quality scores',
+      /* The headline stays where callers first read it. */
+      before: headline.before, after: headline.after, movementPct: headline.movementPct,
+      lines, dataQuality,
+      moved,
       previousStandard: existing.standard,
       standard: STANDARD,
-      note: before === after
-        ? 'The engine produced the same figure from the same input.'
-        : 'The figure moved on the same input. The cause is a change in the engine or in a factor, not '
-          + 'in what the bank recorded.',
+      note: !moved
+        ? 'The engine produced the same figures and the same scores from the same input.'
+        : `Moved on the same input: ${[...lines.filter(l => l.moved).map(l => l.line), ...(dataQuality.moved ? ['data quality'] : [])].join(', ')}. `
+          + 'The cause is a change in the engine or in a factor, not in what the bank recorded.',
     },
   };
 }

@@ -131,8 +131,8 @@ describe('a recomputation is a decision, not something that happens on read', ()
     const { movement } = await register.recompute(ORG, exposureId);
     expect(movement.moved).toBe(false);
     expect(movement.before).toBe(movement.after);
-    expect(movement.basis).toBe('financed scope 1 and 2');
-    expect(movement.note).toMatch(/same figure from the same input/);
+    expect(movement.basis).toMatch(/every reporting line and both data-quality scores/);
+    expect(movement.note).toMatch(/same figures and the same scores from the same input/);
   });
 
   test('the note says a movement is the engine or a factor, never what the bank recorded', async () => {
@@ -291,6 +291,95 @@ describe('the projection is declared once', () => {
       const leaf = field.replace(/\[\]/g, '').split('.').pop();
       expect(fn).toContain(`'${leaf}'`);
     }
+  });
+});
+
+describe('one loan, once (migration 0009)', () => {
+  const withRef = (ref, over = {}) => loan(0.1, { identifiers: { accountNumber: ref }, ...over });
+
+  test('the same facility reference in the same year is refused, naming the existing exposure', async () => {
+    const first = await register.record(ORG, withRef('LN-1001'));
+    try {
+      await register.record(ORG, withRef('LN-1001'));
+      throw new Error('should have refused');
+    } catch (e) {
+      expect(e.statusCode).toBe(409);
+      expect(e.code).toBe('DUPLICATE_LOAN');
+      expect(e.message).toContain(first.exposureId);
+      expect(e.message).toMatch(/twice/);
+      expect(e.remedy).toMatch(new RegExp(first.exposureId));
+    }
+    expect(await store.list(repo.EXPOSURES, ORG)).toHaveLength(1);
+  });
+
+  test('two facilities to one borrower are two rows — uniqueness is on the loan, never the counterparty', async () => {
+    await register.record(ORG, withRef('LN-2001', { counterparty: { name: 'Same borrower', sector: 'Example' } }));
+    await register.record(ORG, withRef('LN-2002', { counterparty: { name: 'Same borrower', sector: 'Example' } }));
+    expect((await register.position(ORG, 2020)).exposures).toBe(2);
+  });
+
+  test('the same reference in a different reporting year is a different position and stands', async () => {
+    await register.record(ORG, withRef('LN-3001'));
+    await register.record(ORG, withRef('LN-3001', { reportingYear: 2021,
+      outstanding: { amount: 100000, asOf: '2021-12-31', currency: 'EUR' },
+      denominator: { totalEquity: 6e5, totalDebt: 4e5, asOf: '2021-12-31', currency: 'EUR' } }));
+    expect((await register.years(ORG)).map(y => y.reportingYear)).toEqual(['2020', '2021']);
+  });
+
+  test('changing an exposure does not collide with itself', async () => {
+    const { exposureId } = await register.record(ORG, withRef('LN-4001'));
+    const changed = await register.update(ORG, exposureId, withRef('LN-4001', {
+      outstanding: { amount: 200000, asOf: '2020-12-31', currency: 'EUR' } }));
+    expect(changed.result.attribution.value).toBe(0.2);
+  });
+
+  test('a change that takes another loan\'s reference is refused', async () => {
+    await register.record(ORG, withRef('LN-5001'));
+    const { exposureId } = await register.record(ORG, withRef('LN-5002'));
+    await expect(register.update(ORG, exposureId, withRef('LN-5001'))).rejects.toMatchObject({ code: 'DUPLICATE_LOAN' });
+  });
+
+  test('a loan with no reference carries no constraint, and the register does not pretend otherwise', async () => {
+    await register.record(ORG, loan(0.1));
+    await register.record(ORG, loan(0.1));
+    expect((await register.position(ORG, 2020)).exposures).toBe(2);
+  });
+
+  test('the registry lifts the reference from the input the bank keyed, not the engine\'s echo', () => {
+    expect(definition(repo.EXPOSURES).keys['input.identifiers.accountNumber']).toBe('account_number');
+  });
+});
+
+describe('a recomputation compares every line and both scores', () => {
+  test('the movement carries all seven lines and the two scores, and the headline is still where it was', async () => {
+    const { exposureId } = await register.record(ORG, loan(0.1, { removals: { value: 20000 }, creditsGenerated: { value: 5000 } }));
+    const { movement } = await register.recompute(ORG, exposureId);
+    expect(movement.basis).toMatch(/every reporting line/);
+    expect(movement.lines.map(l => l.line)).toEqual(['scope1', 'scope2', 'scope1And2', 'scope3', 'removals', 'creditsRetired', 'creditsGenerated']);
+    expect(movement.lines.every(l => l.moved === false)).toBe(true);
+    expect(movement.dataQuality.before).toEqual({ scope1And2: 2, scope3: 2 });
+    expect(movement.dataQuality.moved).toBe(false);
+    expect(movement.before).toBe(110);
+    expect(movement.after).toBe(110);
+    expect(movement.moved).toBe(false);
+    expect(movement.note).toMatch(/same figures and the same scores/);
+  });
+
+  test('a stored result that differs from what the engine now produces is reported line by line', async () => {
+    const rec = await register.record(ORG, loan(0.1));
+    /* Simulate a factor correction landing between the write and the reread:
+       the stored scope 3 is wrong, the headline is not. */
+    const tampered = JSON.parse(JSON.stringify(rec));
+    tampered.result.inventory.scope3.value = 999;
+    await repo.saveExposure(ORG, tampered);
+
+    const { movement } = await register.recompute(ORG, rec.exposureId);
+    expect(movement.moved).toBe(true);
+    expect(movement.lines.find(l => l.line === 'scope1And2').moved).toBe(false);
+    const s3 = movement.lines.find(l => l.line === 'scope3');
+    expect(s3.before).toBe(999);
+    expect(s3.after).toBe(500);
+    expect(movement.note).toMatch(/Moved on the same input: scope3\./);
   });
 });
 

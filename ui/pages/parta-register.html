@@ -1,0 +1,177 @@
+<!-- PCAF Part A — the lending book behind the financed-emissions figures.
+     Scope 3 is a separate line from scope 1 and 2; removals and credits are
+     separate again and netted against nothing. -->
+
+<div class="partc parta-register">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">A</div>
+    <div>
+      <strong id="pr-title">Lending book</strong>
+      <span id="pr-subtitle">Business loans and unlisted equity — PCAF Part A §5.2</span>
+    </div>
+  </div>
+
+  <section class="partc-card">
+    <div class="partc-actions">
+      <label class="partc-year">Reporting year
+        <select id="pr-year"></select>
+      </label>
+      <button class="btn btn-secondary" id="pr-refresh">Refresh</button>
+      <button class="btn btn-primary" id="pr-record-toggle" data-writes>Record an exposure</button>
+      <span class="partc-hint" id="pr-status"></span>
+    </div>
+  </section>
+
+  <!-- Record one exposure. Every figure comes back from the engine; the
+       form holds no arithmetic. -->
+  <section class="partc-card" id="pr-record" hidden data-writes>
+    <div class="partc-card-head"><h3>Record an exposure</h3>
+      <span class="partc-hint">A business loan or unlisted equity holding. The engine runs before anything is written; a refusal names its clause.</span></div>
+    <form id="pr-form" class="pr-form" autocomplete="off">
+      <div class="pr-grid">
+        <label>Borrower <input id="pr-f-name" type="text" required maxlength="200"></label>
+        <label>Sector <input id="pr-f-sector" type="text" maxlength="120" placeholder="e.g. Textiles"></label>
+        <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>
+        <label>Instrument
+          <select id="pr-f-instrument">
+            <option value="business-loan">Term loan</option>
+            <option value="revolving-credit">Revolving credit</option>
+            <option value="overdraft">Overdraft</option>
+            <option value="line-of-credit">Line of credit</option>
+            <option value="unlisted-equity">Unlisted equity</option>
+          </select></label>
+        <label>Borrower type
+          <select id="pr-f-borrower-type">
+            <option value="company">Company</option>
+            <option value="state-owned-enterprise">State-owned enterprise</option>
+            <option value="nonprofit">Non-profit</option>
+          </select></label>
+        <label class="pr-check"><input id="pr-f-listed" type="checkbox"> Borrower is a listed company</label>
+        <label class="pr-check"><input id="pr-f-fi" type="checkbox"> Borrower is a financial institution</label>
+      </div>
+
+      <h5 class="partc-subhead">Outstanding at year-end</h5>
+      <div class="pr-grid">
+        <label>Amount <input id="pr-f-outstanding" type="number" min="0" step="any" required></label>
+        <label>Average over the year <input id="pr-f-average" type="number" min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
+        <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
+        <label>As of <input id="pr-f-asof" type="date" required></label>
+      </div>
+
+      <h5 class="partc-subhead">Company value</h5>
+      <div class="pr-grid" id="pr-denom-private">
+        <label>Total equity <input id="pr-f-equity" type="number" step="any"></label>
+        <label>Total debt <input id="pr-f-debt" type="number" min="0" step="any"></label>
+        <label>Customer deposits <input id="pr-f-deposits" type="number" min="0" step="any" placeholder="financial institutions only"></label>
+      </div>
+      <div class="pr-grid" id="pr-denom-listed" hidden>
+        <label>Market capitalisation, ordinary <input id="pr-f-mcap" type="number" min="0" step="any"></label>
+        <label>Total debt, interest-bearing <input id="pr-f-debt-ib" type="number" min="0" step="any"></label>
+        <label>Minority interests <input id="pr-f-minorities" type="number" min="0" step="any"></label>
+      </div>
+      <p class="partc-hint">Leave the company value empty to estimate under Option 3b from the outstanding amount and a sector factor — a figure at score 5 with no attribution factor.</p>
+
+      <h5 class="partc-subhead">Borrower emissions, tCO₂e</h5>
+      <div class="pr-grid">
+        <label>Scope 1 <input id="pr-f-s1" type="number" min="0" step="any"></label>
+        <label>Scope 2 <input id="pr-f-s2" type="number" min="0" step="any"></label>
+        <label>Scope 3 <input id="pr-f-s3" type="number" min="0" step="any"></label>
+        <label>Basis
+          <select id="pr-f-basis">
+            <option value="reported-unverified">Reported by the borrower, unverified</option>
+            <option value="reported-verified">Reported and verified by a named third party</option>
+          </select></label>
+        <label>Verifier <input id="pr-f-verifier" type="text" maxlength="200" placeholder="required for a verified figure"></label>
+        <label>Emissions year <input id="pr-f-period" type="number" min="2000" max="2100"></label>
+        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given"></label>
+      </div>
+      <div class="pr-grid" id="pr-sector-factor">
+        <label>Sector factor, scope 1 (tCO₂e per unit of assets) <input id="pr-f-sf1" type="number" min="0" step="any"></label>
+        <label>Sector factor, scope 2 <input id="pr-f-sf2" type="number" min="0" step="any"></label>
+        <label>Factor source <input id="pr-f-sf-source" type="text" maxlength="200" placeholder="e.g. EXIOBASE v3.8"></label>
+        <label>Factor vintage <input id="pr-f-sf-vintage" type="number" min="2000" max="2100"></label>
+      </div>
+
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit" id="pr-form-submit">Record</button>
+        <button class="btn btn-secondary" type="button" id="pr-form-cancel">Cancel</button>
+        <span class="partc-hint" id="pr-form-status"></span>
+      </div>
+    </form>
+  </section>
+
+  <div id="pr-body" hidden>
+
+    <div class="partc-figures">
+      <div class="partc-figure partc-figure-primary">
+        <span class="partc-figure-label">Financed scope 1 and 2</span>
+        <span class="partc-figure-value" id="pr-s12">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+        <span class="partc-figure-dq" id="pr-dq12"></span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Financed scope 3 — separate line</span>
+        <span class="partc-figure-value" id="pr-s3">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+        <span class="partc-figure-dq" id="pr-dq3"></span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Financed removals — netted against nothing</span>
+        <span class="partc-figure-value" id="pr-removals">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Coverage of the book</span>
+        <span class="partc-figure-value" id="pr-coverage">—</span>
+        <span class="partc-figure-unit" id="pr-coverage-unit">of total loans and investments</span>
+      </div>
+    </div>
+    <p class="partc-hint" id="pr-weighting-note">Data quality weighted by outstanding amount, scope 3 apart from scope 1 and 2 — PCAF Part A, Box 6.1-6 (p.168). 1 is the highest quality, 5 the lowest.</p>
+
+    <div class="partc-panels">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Book total</h3>
+          <span class="partc-hint">Coverage is assessed outstanding over total loans and investments — PCAF Disclosure Checklist Part A, p.124.</span></div>
+        <div id="pr-book"></div>
+        <form id="pr-book-form" class="pr-inline" data-writes hidden>
+          <label>Total loans and investments <input id="pr-book-total" type="number" min="1" step="any" required></label>
+          <label>Currency <input id="pr-book-currency" type="text" maxlength="10" value="LKR"></label>
+          <label>Stated by <input id="pr-book-by" type="text" maxlength="200" placeholder="e.g. Group CFO"></label>
+          <button class="btn btn-primary" type="submit">State it</button>
+          <span class="partc-hint" id="pr-book-status"></span>
+        </form>
+      </section>
+
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Groups</h3></div>
+        <div id="pr-groups"></div>
+      </section>
+    </div>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>What to fix first</h3>
+        <span class="partc-hint" id="pr-plan-note"></span></div>
+      <div id="pr-plan"></div>
+    </section>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Exposures</h3>
+        <span class="partc-hint" id="pr-rows-note"></span></div>
+      <div id="pr-rows"></div>
+    </section>
+
+    <section class="partc-card" id="pr-detail" hidden>
+      <div class="partc-card-head"><h3 id="pr-detail-title">Exposure</h3>
+        <div class="partc-actions">
+          <button class="btn btn-secondary" id="pr-detail-recompute" data-writes>Recompute</button>
+          <button class="btn btn-secondary" id="pr-detail-remove" data-writes>Remove</button>
+          <button class="btn btn-secondary" id="pr-detail-close">Close</button>
+          <span class="partc-hint" id="pr-detail-status"></span>
+        </div>
+      </div>
+      <div id="pr-detail-body"></div>
+    </section>
+
+  </div>
+</div>
