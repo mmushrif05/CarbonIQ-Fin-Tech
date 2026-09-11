@@ -1,11 +1,16 @@
 // @ts-check
 /**
  * The PDF renderer over the content model.
+ *
+ * Domain-agnostic: it is handed the visual theme so it can draw a Part C
+ * disclosure and a Part A disclosure through one code path. The theme is the
+ * generic PCAF report furniture in ./theme; a domain that wants a different
+ * look passes a different one.
  */
 
 'use strict';
 
-const theme = require('../partc-theme');
+const defaultTheme = require('./theme');
 
 // ---------------------------------------------------------------------------
 // PDF
@@ -18,7 +23,7 @@ const theme = require('../partc-theme');
  * which renders last — can tell a reviewer which page evidences each item
  * without anyone maintaining a map by hand.
  */
-function renderStandardPDF(model) {
+function renderStandardPDF(model, theme = defaultTheme) {
   const doc = theme.pcafDocument();
   const w = theme.pcafWriter(doc, { footerNote: model.footerNote });
   const pageOf = {};

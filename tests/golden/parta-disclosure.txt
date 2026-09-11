@@ -1,0 +1,102 @@
+COVER: PCAF Part A §5.2 — Financed emissions of business loans and unlisted equity
+  subtitle: Reporting year 2024
+  insurer: Demo Bank PLC
+  standard: PCAF (2025). The Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition, §5.2 and Chapter 6.
+  assurance: self_declared — Self-declared
+
+SECTION 2 [coverage] Scope and coverage
+    callout [What this report covers]: This report covers one PCAF asset class — business loans and unlisted equity (Part A §5.2). It is one input to a Chapter 6 financed-emissions disclosure, not the disclosure: the reporting entity’s own gross scope 1, 2 and 3 inventory is a separate and larger claim, made where the entity states it.
+    body: Asset class: Business loans and unlisted equity (§5.2). Reporting year: 2024. The position is taken at the fiscal year-end, which is how Part A accounts for financed emissions (Chapter 4).
+    h2: Coverage of the book
+    figure: Share of total loans and investments assessed = 3.71%
+      note: 520,000,000 of 14,000,000,000 LKR, book total stated by Group CFO
+    body: Coverage is the assessed outstanding amount over the reporting entity’s total loans and investments for the year, 3.71%. A total drawn from part of the book means something different from one drawn from all of it, so the percentage is stated beside every figure it qualifies (p.124).
+    body: 2 exposure(s) are recorded for the year.
+
+SECTION 3 [gases] Gases and units
+    body: Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), using the IPCC 100-year global warming potentials of the latest assessment report. Borrower figures cover the seven Kyoto Protocol gases where the borrower reports them; a sector-average estimate carries whichever gases its emission factor covers, which the factor register names.
+    table [3 cols] head: Gas | Formula | Where it arises for a lending book
+      row: Carbon dioxide | CO2 | The dominant gas in every borrower inventory: fuel combustion, process emissions and purchased electricity.
+      row: Methane | CH4 | Fossil-fuel supply chains, agriculture and waste in the borrowers financed.
+      row: Nitrous oxide | N2O | Combustion and, for agricultural borrowers, fertiliser use.
+      row: Hydrofluorocarbons | HFCs | Refrigeration and cooling in a borrower’s operations.
+      row: Perfluorocarbons | PFCs | Aluminium smelting and some electronics manufacture.
+      row: Sulphur hexafluoride | SF6 | Electrical switchgear at industrial and utility borrowers.
+      row: Nitrogen trifluoride | NF3 | Electronics manufacture; accounted for where a borrower reports it.
+    body: Biogenic carbon, where a borrower reports it, is stated separately from the fossil inventory and never netted against it.
+
+SECTION 4 [absolute] Absolute emissions
+    figure: Financed scope 1 and 2 across the class = 1788.000 tCO2e
+      score: Weighted data quality score: 2.23 (Box 6.1-6, p.168). 1 is the highest quality, 5 the lowest.
+    figure: Financed scope 3 — a separate line = 3120.000 tCO2e
+      note: 1 exposure(s) carried a scope 3 figure; 1 did not and said why.
+    table [3 cols] head: Line | tCO2e | Note
+      row: Financed scope 1 and 2 | 1788.000 | Scope 3 Category 15 in full — the attributed share of borrower scope 1 and 2.
+      row: Financed scope 3 | 3120.000 | A separate line; never summed with scope 1 and 2.
+      row: Removals | — | Reported apart from the inventory (Part A, p.126).
+      row: Carbon credits generated | — | Apart.
+      row: Carbon credits retired | — | Apart.
+    caption: No row sums scope 1 and 2 with scope 3, and no row nets a credit or a removal against the inventory (Part A, p.126).
+
+SECTION 5 [methodology] Methodology
+    body: Financed emissions are the borrower’s emissions multiplied by an attribution factor: the outstanding amount over the borrower’s value — EVIC where the borrower is listed, total equity plus debt otherwise (§5.2, p.57). The borrower’s emissions are reported by the borrower where held, and estimated from a sector-average factor otherwise; the data-quality score records which option was used.
+    body: The engine performs every arithmetic operation. Nothing in this report is computed by a language model, and no figure here rests on one. Each figure traces to the exposure the register holds and to the factor set named below.
+    body: Sector factor set: sector-factors v1.0.0 (provisional), sectors v1.0.0 (undefined); SHA-256 over the canonical form, <checksum>. Provisional pending a released regional value: sector-factors. A provisional row carries the gap it stands in for.
+    body: Sector intensity bands (the plausibility check): Sector carbon-intensity plausibility bands — illustrative dataset, not a released baseline. These are illustrative until a baseline is released.
+
+SECTION 6 [dataquality] Data quality
+    body: The disclosed score is weighted by outstanding amount (Box 6.1-6, p.168), with scope 3 weighted apart from scope 1 and 2 (p.167). An exposure carrying no score is excluded from the weighting, not counted as zero. 1 is the highest quality, 5 the lowest; the score is a category, never a mark out of five.
+    table [3 cols] head:  | Weighted score | Excluded, no score
+      row: Scope 1 and 2 | 2.23 | 0
+      row: Scope 3 | 2 | 1
+    caption: Weighted by outstanding amount (Box 6.1-6, p.168). Scope 3 weighted separately from scope 1 and 2 (p.167). An exposure without a score is excluded, not counted as zero.
+
+SECTION 7 [recalculation] Recalculation and significance
+    body: A recalculation of the base year is a "shall" under Chapter 6 when the book, the method or a factor changes materially. The base year and the significance threshold belong to the reporting entity; where none has been set, this report states so rather than implying the current year — a base year is a claim about history and belongs to the entity, not to its software.
+    body: The register holds both the input a bank keyed and the result the engine computed. A recomputation reruns the engine over the input already held and reports what moved across every line and both scores, so a change in a factor or a baseline is a decision somebody takes rather than something that happens to them.
+
+SECTION 8 [intensity] Emission intensity
+    body: Economic emission intensity — financed scope 1 and 2 per million of the currency outstanding — is reported per exposure and can be aggregated across the class (p.127). A physical intensity per sector is not reported: it needs a physical activity denominator this asset class does not hold.
+
+SECTION 9 [limitations] Limitations and the improvement plan
+    body: A disclosed score is a measurement, not a task list. The plan below is every finding grouped by what would clear it and every option band ordered by outstanding amount times the score points above the target — because ordering by count sends a bank to many small borrowers before the one exposure carrying a fifth of the book. Every figure in it is a scenario run through the same weighting the disclosure uses, never presented as the reported score.
+    table [3 cols] head: Finding | Severity | What would clear it
+      row: SCOPE_3_NOT_REPORTED | material | The stated reason travels into the report. An institution unable to report scope 3 shall explain why.
+      row: NO_ATTRIBUTION_FACTOR | material | Obtain the borrower's total equity and debt — or its EVIC where it is listed — and any Option 1, 2 or 3a figure then attributes properly.
+
+SECTION 10 [conformance] Conformance statement
+    body: The method in this report conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025), §5.2 and Chapter 6. PCAF sets the method; it does not approve, endorse or certify this report or the figures in it. The sector additions of the Third Edition have not been reviewed by the GHG Protocol, and this asset class — business loans and unlisted equity — carries the GHG Protocol’s "Built on" mark.
+    body: This report states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the report or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
+
+ANNEX A [annexFactors] Factor set and governed baselines
+    body: The sector factor set an estimated figure rests on, and the governed baseline the plausibility check read. A register of values a reader cannot tie to a released version is a list, not a citation.
+    table [6 cols] head: Table | Version | Effective from | Status | Rows | Checksum
+      row: sector-factors | 1.0.0 | <date> | provisional | 23 | <checksum>
+      row: sectors | 1.0.0 | <date> | — | 23 | <checksum>
+    body: Sector intensity bands: Sector carbon-intensity plausibility bands — illustrative dataset, not a released baseline.
+
+ANNEX B [annexTable] Annex 10.2 — scope 3 Category 15 by sector
+    body: The template PCAF Annex 10.2 gives (pp.199–200): the asset class disaggregated by sector, with outstanding covered, scope 1 and 2, scope 3 and the weighted score per row. Removals and credits are in a separate table by rule.
+    table [6 cols] head: Sector | Exposures | Outstanding LKR | Scope 1+2 tCO2e | Scope 3 tCO2e | DQ
+      row: Textiles | 1 | 480,000,000 | 1752.000 | 3120.000 | 2
+      row: unclassified | 1 | 40,000,000 | 36.000 | — | 5
+
+ANNEX C [annexChecklist] PCAF disclosure checklist — completed
+    checklist
+
+CHECKLIST: 15 items, 13 Yes, 1 No
+  GOV-1: Yes
+  COV-1: Yes
+  COV-2: Yes
+  GAS-1: Yes
+  ABS-1: Yes
+  ABS-2: Yes
+  ABS-3: Yes
+  ABS-4: Not applicable
+  MTH-1: Yes
+  DQ-1: Yes
+  REC-1: Yes
+  INV-1: No
+  INT-1: Yes
+  FLU-1: Yes
+  ASR-1: Yes

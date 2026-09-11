@@ -471,20 +471,6 @@ function annualFacts({ disclosure, roll, settings = {}, factorRows = [], equatio
 // Sections — the same blocks for both documents
 // ---------------------------------------------------------------------------
 
-const b = {
-  h2:      text => ({ kind: 'h2', text }),
-  band:    text => ({ kind: 'band', text }),
-  body:    text => ({ kind: 'body', text }),
-  caption: text => ({ kind: 'caption', text }),
-  bullets: items => ({ kind: 'bullets', items }),
-  callout: (text, title) => ({ kind: 'callout', text, title }),
-  figure:  o => ({ kind: 'figure', ...o }),
-  table:   o => ({ kind: 'table', ...o }),
-  legend:  () => ({ kind: 'legend' }),
-  checklist: () => ({ kind: 'checklist' }),
-  pageBreak: () => ({ kind: 'pageBreak' })
-};
-
-const keep = blocks => blocks.filter(Boolean);
+const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
 
 module.exports = { _scanLanguage, _factorRegister, _equations, assessmentFacts, _gwpBasis, annualFacts, b, keep };

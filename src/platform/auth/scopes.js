@@ -86,6 +86,10 @@ const OVERRIDES = Object.freeze([
      the first match wins and the broad stateless rule would otherwise hand a
      read-only key the ability to record exposures. `recompute` is the same:
      it rewrites a stored figure. */
+  /* The per-exposure report is a POST that stores nothing — it renders a
+     document from a figure already held — so it is `read`, and it sits
+     before the broad write rule because the first match wins. */
+  { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures\/[^/]+\/report$/, scope: 'read', why: 'renders a report from a held exposure; stores nothing' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'records or recomputes an exposure in the register' },
   { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'changes a recorded exposure' },
   { method: 'DELETE', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'removes an exposure from the register' },

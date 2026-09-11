@@ -240,7 +240,7 @@ describe('The PDF draws the whole model', () => {
   test('nothing is drawn off the right edge of the paper', () => {
     /* A cell that starts beyond the page is a figure the reader never sees,
        and the file is still a valid PDF. */
-    const { PAGE } = require('../src/domains/pcaf-part-c/reporting/theme/pdf-writer');
+    const { PAGE } = require('../src/platform/reporting/report-standard/theme/pdf-writer');
     const width = 595.28;                       // A4 portrait, points
     const off = drawn.filter(d => d.x > width - PAGE.margin / 2 || d.x < 0);
     expect(off.map(d => `${d.text.slice(0, 40)} @ x=${Math.round(d.x)}`)).toEqual([]);

@@ -1,19 +1,22 @@
 // @ts-check
 /**
  * The Word renderer over the content model.
+ *
+ * Domain-agnostic: the visual theme is injected, so one code path renders
+ * every report the application generates. See ./theme for the default.
  */
 
 'use strict';
 
 const { Document, Packer } = require('docx');
-const theme = require('../partc-theme');
+const defaultTheme = require('./theme');
 
 // ---------------------------------------------------------------------------
 // Word
 // ---------------------------------------------------------------------------
 
 /** The same model, in styles a client can edit. */
-async function renderStandardDOCX(model) {
+async function renderStandardDOCX(model, theme = defaultTheme) {
   const children = [];
 
   children.push(theme.wH1(model.cover.title));

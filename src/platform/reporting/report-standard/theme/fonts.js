@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { winAnsi } = require('../partc-docgen');
+const { winAnsi } = require('../../winansi');
 
 // ---------------------------------------------------------------------------
 // Fonts

@@ -48,4 +48,17 @@ const positionQuerySchema = Joi.object({
  */
 const noBodySchema = Joi.object({}).unknown(false);
 
-module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema };
+const reportRequestSchema = Joi.object({
+  format: Joi.string().valid('json', 'pdf', 'docx').default('json'),
+  insurer: Joi.string().max(200).optional(),
+}).unknown(false);
+
+const disclosureQuerySchema = Joi.object({
+  format: Joi.string().valid('json', 'pdf', 'docx').default('json'),
+  insurer: Joi.string().max(200).optional(),
+  currency: Joi.string().max(10).optional(),
+  country: Joi.string().length(2).optional(),
+}).unknown(false);
+
+
+module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema, reportRequestSchema, disclosureQuerySchema };

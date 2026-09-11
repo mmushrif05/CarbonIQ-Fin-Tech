@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **333**. Remaining: **187**.
+Checked across all three: **343**. Remaining: **190**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **283**. Remaining: **66** (384 errors, measured by
+Checked: **293**. Remaining: **66** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **5 of them raise no errors at all** and can be adopted by adding the
@@ -136,7 +136,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **99** (1329 errors, measured by
+Checked: **42**. Remaining: **102** (1343 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **4 of them raise no errors at all** and can be adopted by adding the
@@ -201,6 +201,7 @@ pragma and nothing else.
 | `tests/ip-surface.test.js` | 8 |
 | `tests/parta-business-loans.test.js` | 8 |
 | `tests/parta-factor-provenance.test.js` | 8 |
+| `tests/parta-report-api.test.js` | 8 |
 | `tests/pg-scale.test.js` | 8 |
 | `tests/supervisor.test.js` | 8 |
 | `tests/blob-store.test.js` | 7 |
@@ -215,6 +216,7 @@ pragma and nothing else.
 | `tests/capital-curve.test.js` | 5 |
 | `tests/factor-provenance.test.js` | 5 |
 | `tests/gcf-ui.test.js` | 5 |
+| `tests/parta-report.test.js` | 5 |
 | `tests/pdf-response.test.js` | 5 |
 | `tests/storage-seam.test.js` | 5 |
 | `tests/config.test.js` | 4 |
@@ -236,6 +238,7 @@ pragma and nothing else.
 | `tests/schemas.test.js` | 2 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |
+| `tests/parta-report-golden.test.js` | 1 |
 | `tests/reports.test.js` | 1 |
 | `tests/score.test.js` | 1 |
 | `tests/v1-info.test.js` | 1 |
