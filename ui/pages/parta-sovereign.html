@@ -1,0 +1,155 @@
+<!-- PCAF Part A §5.9 — the sovereign book behind the financed-emissions
+     figures. Scope 1 is reported on both LULUCF boundaries and the two are
+     never summed; scope 2 and 3 are separate lines, reported absent rather
+     than zero where not held. -->
+
+<div class="partc parta-sovereign">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">A</div>
+    <div>
+      <strong id="ps-title">Sovereign book</strong>
+      <span id="ps-subtitle">Sovereign debt — PCAF Part A §5.9</span>
+    </div>
+  </div>
+
+  <section class="partc-card">
+    <div class="partc-actions">
+      <label class="partc-year">Reporting year
+        <select id="ps-year"></select>
+      </label>
+      <button class="btn btn-secondary" id="ps-refresh">Refresh</button>
+      <button class="btn btn-primary" id="ps-record-toggle" data-writes>Record a holding</button>
+      <span class="partc-hint" id="ps-status"></span>
+    </div>
+  </section>
+
+  <!-- Record one sovereign holding. The attribution is one division —
+       exposure ÷ PPP-adjusted GDP — and the engine does it; the form holds no
+       arithmetic. A held country needs only an amount. -->
+  <section class="partc-card" id="ps-record" hidden data-writes>
+    <div class="partc-card-head"><h3>Record a sovereign holding</h3>
+      <span class="partc-hint">A held country needs only the amount; the emissions and the PPP-adjusted GDP come from the dataset. The engine runs before anything is written.</span></div>
+    <form id="ps-form" class="ps-form" autocomplete="off">
+      <div class="ps-grid">
+        <label>Sovereign
+          <select id="ps-f-country"><option value="">Custom — enter figures below</option></select></label>
+        <label>Instrument
+          <select id="ps-f-instrument">
+            <option value="sovereign-bond">Sovereign bond</option>
+            <option value="sovereign-loan">Sovereign loan</option>
+          </select></label>
+        <label>Exposure (USD) <input id="ps-f-amount" type="number" min="0" step="any" required></label>
+        <label>Reference <input id="ps-f-ref" type="text" maxlength="120" placeholder="the bank's own ISIN or loan number"></label>
+        <label>Data quality option
+          <select id="ps-f-dq">
+            <option value="">Derive from the source</option>
+            <option value="1a">1a — verified UNFCCC</option>
+            <option value="1b">1b — unverified reported</option>
+            <option value="2">2 — physical energy activity</option>
+            <option value="3a">3a — sectoral revenue</option>
+            <option value="3b">3b — proxy country</option>
+          </select></label>
+      </div>
+
+      <div id="ps-custom" hidden>
+        <h5 class="partc-subhead">Custom sovereign — where the dataset holds no country</h5>
+        <p class="partc-hint">Scope 1 is domestic territorial emissions, held both including and excluding LULUCF (§5.9, p.141). The denominator is PPP-adjusted GDP in millions of international USD, never equity plus debt.</p>
+        <div class="ps-grid">
+          <label>Country name <input id="ps-f-name" type="text" maxlength="120"></label>
+          <label>Scope 1 excl. LULUCF (tCO₂e) <input id="ps-f-s1-excl" type="number" min="0" step="any"></label>
+          <label>Scope 1 incl. LULUCF (tCO₂e) <input id="ps-f-s1-incl" type="number" min="0" step="any" placeholder="optional"></label>
+          <label>PPP-adjusted GDP ($M international) <input id="ps-f-ppp" type="number" min="0" step="any"></label>
+          <label>Emissions year <input id="ps-f-year" type="number" min="1900" max="2100"></label>
+          <label>Source basis
+            <select id="ps-f-basis">
+              <option value="unfccc-reported-verified">UNFCCC, verified</option>
+              <option value="unfccc-reported-unverified">UNFCCC, unverified</option>
+              <option value="edgar-estimated">EDGAR estimate</option>
+              <option value="proxy-country">Proxy country</option>
+            </select></label>
+        </div>
+      </div>
+
+      <div class="partc-actions">
+        <button class="btn btn-primary" type="submit" id="ps-form-submit">Record</button>
+        <button class="btn btn-secondary" type="button" id="ps-form-cancel">Cancel</button>
+        <span class="partc-hint" id="ps-form-status"></span>
+      </div>
+    </form>
+  </section>
+
+  <div id="ps-body" hidden>
+
+    <div class="partc-figures">
+      <div class="partc-figure partc-figure-primary">
+        <span class="partc-figure-label">Financed scope 1 — excl. LULUCF</span>
+        <span class="partc-figure-value" id="ps-s1-excl">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+        <span class="partc-figure-dq" id="ps-dq"></span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Financed scope 1 — incl. LULUCF, never summed with the above</span>
+        <span class="partc-figure-value" id="ps-s1-incl">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+        <span class="partc-figure-dq" id="ps-s1-incl-note"></span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Financed scope 3 — separate line, never summed</span>
+        <span class="partc-figure-value" id="ps-s3">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Coverage of the book</span>
+        <span class="partc-figure-value" id="ps-coverage">—</span>
+        <span class="partc-figure-unit" id="ps-coverage-unit">of total loans and investments</span>
+      </div>
+    </div>
+    <p class="partc-hint" id="ps-weighting-note">Data quality weighted by outstanding amount — PCAF Disclosure Checklist Part A, p.128. Scope 1 is reported both including and excluding LULUCF and the two are never summed — §5.9 (p.141). 1 is the highest quality, 5 the lowest.</p>
+
+    <div class="partc-panels">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Book total</h3>
+          <span class="partc-hint">Coverage is assessed outstanding over total loans and investments — PCAF Disclosure Checklist Part A, p.124.</span></div>
+        <div id="ps-book"></div>
+        <form id="ps-book-form" class="ps-inline" data-writes hidden>
+          <label>Total loans and investments <input id="ps-book-total" type="number" min="1" step="any" required></label>
+          <label>Currency <input id="ps-book-currency" type="text" maxlength="10" value="USD"></label>
+          <label>Stated by <input id="ps-book-by" type="text" maxlength="200" placeholder="e.g. Group CFO"></label>
+          <button class="btn btn-primary" type="submit">State it</button>
+          <span class="partc-hint" id="ps-book-status"></span>
+        </form>
+      </section>
+
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>By sovereign</h3></div>
+        <div id="ps-groups"></div>
+      </section>
+    </div>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>What to fix first</h3>
+        <span class="partc-hint" id="ps-plan-note"></span></div>
+      <div id="ps-plan"></div>
+    </section>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Holdings</h3>
+        <span class="partc-hint" id="ps-rows-note"></span></div>
+      <div id="ps-rows"></div>
+    </section>
+
+    <section class="partc-card" id="ps-detail" hidden>
+      <div class="partc-card-head"><h3 id="ps-detail-title">Holding</h3>
+        <div class="partc-actions">
+          <button class="btn btn-secondary" id="ps-detail-recompute" data-writes>Recompute</button>
+          <button class="btn btn-secondary" id="ps-detail-remove" data-writes>Remove</button>
+          <button class="btn btn-secondary" id="ps-detail-close">Close</button>
+          <span class="partc-hint" id="ps-detail-status"></span>
+        </div>
+      </div>
+      <div id="ps-detail-body"></div>
+    </section>
+
+  </div>
+</div>

@@ -57,6 +57,9 @@ require('./platform/auth/preview').registerSampleBook(async orgId => {
      Part C clients, and both run inside its one transaction. */
   await require('./domains/pcaf-part-a/application/demo-data').seedSampleBook(
     require('./domains/pcaf-part-a/application/register'), orgId);
+  /* The §5.9 sovereign book beside them, over the same shared book total. */
+  await require('./domains/pcaf-part-a/application/sovereign-demo-data').seedSovereignBook(
+    require('./domains/pcaf-part-a/application/sovereign-register'), orgId);
 });
 const { doc, body, str, obj, orNull } = require('./platform/http/openapi-hints');
 

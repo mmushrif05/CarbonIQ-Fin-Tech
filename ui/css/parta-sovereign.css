@@ -1,0 +1,63 @@
+/* ============================================================
+   CarbonIQ — PCAF Part A §5.9, the sovereign book
+   ============================================================
+   Borrows the Part C vocabulary (cards, figures, tables, the data-quality
+   badge) so a score means the same thing on every PCAF screen. Only what this
+   page adds is here, and it mirrors the Lending Book's four mechanical rules.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets: the UA [hidden] rule loses
+   to a single class rule, and the record form and detail panel open and close
+   with el.hidden. */
+.parta-sovereign [hidden] { display: none !important; }
+
+.parta-sovereign .ps-form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+
+/* Columns collapse rather than push the page: minmax(min(100%, …)) at 430px. */
+.parta-sovereign .ps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px 14px;
+}
+.parta-sovereign .ps-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; }
+.parta-sovereign .ps-grid input,
+.parta-sovereign .ps-grid select,
+.parta-sovereign .ps-inline input {
+  font: inherit; font-size: 14px; padding: 7px 9px; border-radius: 8px;
+  border: 1px solid var(--p-separator, #d1d1d6); background: var(--p-bg, #fff); color: inherit;
+  min-width: 0; max-width: 100%;
+}
+.parta-sovereign .ps-grid input:focus-visible,
+.parta-sovereign .ps-grid select:focus-visible,
+.parta-sovereign .ps-inline input:focus-visible { outline: 2px solid var(--brand, #0a7a4c); outline-offset: 1px; }
+
+.parta-sovereign .ps-inline { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 10px; }
+.parta-sovereign .ps-inline label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; flex: 1 1 160px; }
+
+/* A select sizes to its widest option, not to its container. */
+.parta-sovereign select { min-width: 0; max-width: 100%; }
+
+/* One row per finding: severity chip, then what is true, what it does, what clears it. */
+.parta-sovereign .ps-finding { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; padding: 10px 0; border-bottom: 1px solid var(--p-separator, #e5e5ea); }
+.parta-sovereign .ps-finding:last-child { border-bottom: none; }
+.parta-sovereign .ps-finding-body { min-width: 0; }
+.parta-sovereign .ps-finding-body p { margin: 0 0 4px; font-size: 13.5px; line-height: 1.45; }
+.parta-sovereign .ps-finding-body .partc-hint { display: block; }
+
+.parta-sovereign .ps-row { cursor: pointer; }
+.parta-sovereign .ps-row:hover td { background: var(--p-fill, rgba(120,120,128,.08)); }
+.parta-sovereign .ps-row.is-open td { background: var(--p-fill, rgba(120,120,128,.12)); }
+
+.parta-sovereign .ps-verdict { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--p-fill, rgba(120,120,128,.12)); white-space: nowrap; }
+.parta-sovereign .ps-verdict-clean { background: rgba(52,199,89,.16); color: #1d7a3a; }
+.parta-sovereign .ps-verdict-material { background: rgba(255,59,48,.14); color: #b3251d; }
+
+/* A wide table scrolls inside its own box; the page never scrolls sideways. */
+.parta-sovereign .ps-scroll { overflow-x: auto; max-width: 100%; }
+
+/* The label column takes its own width until the panel cannot give it, then
+   wraps — a max-content track with a floor of zero. */
+.parta-sovereign .ps-kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 14px; font-size: 13.5px; }
+.parta-sovereign .ps-kv dt { color: var(--p-label-2); min-width: 0; overflow-wrap: anywhere; }
+.parta-sovereign .ps-kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.parta-sovereign .ps-eq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--p-label-2); overflow-wrap: anywhere; }

@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **356**. Remaining: **196**.
+Checked across all three: **357**. Remaining: **198**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **306**. Remaining: **67** (384 errors, measured by
+Checked: **307**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -105,7 +105,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **22** (1521 errors, measured by
+Checked: **8**. Remaining: **23** (1554 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -125,6 +125,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/pipeline.js` | 40 |
 | `ui/js/accounts.js` | 35 |
 | `ui/js/ndc-sdg.js` | 35 |
+| `ui/js/parta-sovereign.js` | 33 |
 | `ui/js/extract.js` | 30 |
 | `ui/js/new-project.js` | 29 |
 | `ui/js/gcf.js` | 27 |
@@ -137,10 +138,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **107** (1360 errors, measured by
+Checked: **42**. Remaining: **108** (1360 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**4 of them raise no errors at all** and can be adopted by adding the
+**5 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -251,4 +252,5 @@ pragma and nothing else.
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
 | `tests/parta-register-ui.test.js` | 0 |
+| `tests/parta-sovereign-ui.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |
