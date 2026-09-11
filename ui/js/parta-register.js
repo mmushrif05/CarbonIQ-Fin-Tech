@@ -335,9 +335,11 @@ const PartARegisterPage = (() => {
     say('pr-detail-status', 'Recomputing…');
     try {
       const { movement } = await post(`/exposures/${encodeURIComponent(openId)}/recompute`);
-      say('pr-detail-status', movement.note);
       await load();
       if (openId) await openDetail(openId);
+      /* After the re-open, not before: openDetail() resets the status line, so
+         setting the note first left it wiped the instant the detail refreshed. */
+      say('pr-detail-status', movement.note);
     } catch (err) { say('pr-detail-status', err.message); }
   }
 
