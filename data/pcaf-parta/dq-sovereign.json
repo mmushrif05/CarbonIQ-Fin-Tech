@@ -1,0 +1,60 @@
+{
+  "table": "Table 5.9-6",
+  "assetClass": "sovereign-debt",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.9 Sovereign debt",
+  "page": 147,
+  "detail": "Annex Table 10.1-7 — data needs and equations per option",
+  "status": "required",
+  "note": "The sovereign table has its own shape and must never be substituted for another class's: it has no Option 2b and no Option 3c, Option 2 (physical energy activity) is score 3, and Option 3a is 4 where the corporate classes put Option 3a at 4 but reach it differently. Option 1a is verified GHG emissions the country reports itself and extracts from UNFCCC (fn 178); 1b is the same reported figures unverified; Option 2 is the country's energy consumption (domestic generated and imported) with specific emission factors; Option 3a is sectoral revenue of the country's production with specific factors; Option 3b is a proxy country of similar climate zone, wealth and GDP. The attribution factor for a sovereign is outstanding exposure divided by PPP-adjusted GDP (p.144), not equity plus debt; PPP-adjusted GDP is a flow standing in for the value of the country (Annex 10.3, p.201). Scope 1 shall be reported both including and excluding LULUCF (p.141).",
+  "scale": "1 is the highest data quality, 5 the lowest. A score is a category, never a mark out of five.",
+  "options": [
+    {
+      "option": "1a",
+      "score": 1,
+      "family": "Option 1: Reported emissions",
+      "scopes": ["1", "2", "3"],
+      "attributionFactor": true,
+      "when": "Verified GHG emissions of the country are available. These emissions are reported by the country itself and can be extracted from UNFCCC.",
+      "emissionsBasis": ["unfccc-reported-verified"],
+      "footnote": "178: this refers to UNFCCC reporting requirements. Scope 1 aligns with the UNFCCC definition of domestic territorial (production) emissions, including emissions from exported goods and services."
+    },
+    {
+      "option": "1b",
+      "score": 2,
+      "family": "Option 1: Reported emissions",
+      "scopes": ["1", "2", "3"],
+      "attributionFactor": true,
+      "when": "Unverified emissions of the country are available.",
+      "emissionsBasis": ["unfccc-reported-unverified", "provider-relayed"]
+    },
+    {
+      "option": "2",
+      "score": 3,
+      "family": "Option 2: Physical activity-based emissions",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "Reported GHG emissions of the country are not known. Emissions are calculated using primary physical activity data of the country's energy consumption (domestic generated and imported) and emission factors specific to that primary data.",
+      "emissionsBasis": ["energy-activity"]
+    },
+    {
+      "option": "3a",
+      "score": 4,
+      "family": "Option 3: Economic activity-based emissions",
+      "scopes": ["1", "2", "3"],
+      "attributionFactor": true,
+      "when": "Reported GHG emissions of the country are not known. Emissions are calculated using sectoral revenue data of the country's production and emission factors specific to that revenue data.",
+      "emissionsBasis": ["revenue-sector"]
+    },
+    {
+      "option": "3b",
+      "score": 5,
+      "family": "Option 3: Economic activity-based emissions",
+      "scopes": ["1", "2", "3"],
+      "attributionFactor": true,
+      "when": "Country GHG emissions are estimated by taking a proxy: emissions from a similar country (climate zone, wealth, GDP) are used to estimate this country's GHG emissions.",
+      "emissionsBasis": ["proxy-country"],
+      "footnote": "A proxy stands in for the country's own inventory, so the figure is the lowest quality on the scale and the proxy country is named on the trace."
+    }
+  ]
+}

@@ -21,6 +21,7 @@ const TABLES = {
   'project-finance': require('./reference').DQ_PROJECT_FINANCE,
   'listed-equity-corporate-bonds': require('./reference').DQ_LISTED_EQUITY,
   'business-loans-unlisted-equity': require('./reference').DQ_BUSINESS_LOANS,
+  'sovereign-debt': require('./reference').DQ_SOVEREIGN,
 };
 
 /** The data-quality table for an asset class, or an error naming the gap. */

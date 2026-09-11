@@ -56,6 +56,7 @@
     "docs:conformance-evidence": "node scripts/conformance-evidence.js",
     "docs:factor-manifest": "node scripts/generate-factor-manifest.js",
     "docs:parta-manifest": "node scripts/generate-parta-manifest.js",
+    "docs:parta-sovereign-manifest": "node scripts/generate-parta-sovereign-manifest.js",
     "db:test-up": "node scripts/test-db.js up",
     "db:test-down": "node scripts/test-db.js down",
     "db:test-status": "node scripts/test-db.js status",

@@ -1,0 +1,22 @@
+{
+  "note": "GENERATED. Regenerate with: npm run docs:parta-sovereign-manifest",
+  "purpose": "The Part A §5.9 sovereign dataset a financed-emissions figure was computed on: version, effective date, status and checksum.",
+  "algorithm": "SHA-256 over the canonical form (keys sorted at every level)",
+  "checksum": "20163ba5e386c42ca52cc9827aa8425975065f043364a4fa5ca37e6bcd5b5444",
+  "provisionalTables": [
+    "sovereign-dataset"
+  ],
+  "tables": [
+    {
+      "table": "sovereign-dataset",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-09-11",
+      "status": "provisional",
+      "countryCount": 3,
+      "provisionalCountries": [
+        "LK"
+      ],
+      "checksum": "8fa9f53c6b4423da71ed5eff04b6eb109c1ceda6d0f1b1d51d35fe3e2f620419"
+    }
+  ]
+}
