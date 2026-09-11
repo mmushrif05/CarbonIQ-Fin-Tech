@@ -46,7 +46,7 @@ async function signIn(page, request) {
 
 test('nothing marked hidden is visible on any page, whatever a class rule says', async ({ page, request }) => {
   await signIn(page, request);
-  for (const id of ['dashboard', 'desk', 'gcf', 'partc-book', 'baselines']) {
+  for (const id of ['dashboard', 'desk', 'gcf', 'partc-book', 'baselines', 'parta-register']) {
     await page.evaluate(pageId => window.CARBONIQ_navigateTo(pageId), id);
     await page.waitForTimeout(400);
     const shown = await page.evaluate(() => {

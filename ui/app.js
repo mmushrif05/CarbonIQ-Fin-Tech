@@ -17,6 +17,7 @@ const PAGE_META = {
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
+  'parta-register': { title: 'Lending Book',      subtitle: 'The exposures behind the Part A figures — position, coverage, and what to fix first' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
   'pcaf-demo':   { title: 'Live Walkthrough',  subtitle: 'PCAF Part C computed live — change an input and see what moves' },
   'monitoring':  { title: 'Monitoring',          subtitle: 'Track project emissions over time' },
@@ -59,6 +60,13 @@ const DYNAMIC_PAGES = {
   'pcaf-parta': {
     src:  'pages/pcaf-parta.html',
     init: () => typeof PCAFPartAPage !== 'undefined' && PCAFPartAPage.init(),
+  },
+  'parta-register': {
+    src:  'pages/parta-register.html',
+    init: () => typeof PartARegisterPage !== 'undefined' && PartARegisterPage.init(),
+    // The book changes whenever an exposure is recorded on another screen or
+    // by an integration, so a return visit re-reads rather than replaying.
+    refresh: () => typeof PartARegisterPage !== 'undefined' && PartARegisterPage.refresh(),
   },
   'pcaf-partc': {
     src:  'pages/pcaf-partc.html',

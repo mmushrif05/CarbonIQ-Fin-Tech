@@ -108,7 +108,11 @@ const COLLECTIONS = Object.freeze({
      against a zero book is unanswerable rather than 100%. */
   parta_exposures:     { table: 'parta_exposures',
     keys: { reportingYear: 'reporting_year', assetClass: 'asset_class', status: 'status',
-      'counterparty.name': 'counterparty', 'counterparty.sector': 'sector' },
+      'counterparty.name': 'counterparty', 'counterparty.sector': 'sector',
+      /* 0009 — the bank's own reference for the facility, carrying the
+         partial unique index that stops one loan being recorded twice in a
+         year. Under `input`, not `result`: it is the register's field. */
+      'input.identifiers.accountNumber': 'account_number' },
     dependsOn: [],
     /* A stored projection, computed at write time by parta_exposure_rollup()
        in migration 0008. A stored exposure is several kilobytes, most of it

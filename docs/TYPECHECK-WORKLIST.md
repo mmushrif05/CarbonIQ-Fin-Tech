@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **329**. Remaining: **184**.
+Checked across all three: **330**. Remaining: **186**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **279**. Remaining: **66** (384 errors, measured by
+Checked: **280**. Remaining: **66** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **5 of them raise no errors at all** and can be adopted by adding the
@@ -104,7 +104,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **21** (1457 errors, measured by
+Checked: **8**. Remaining: **22** (1506 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -116,6 +116,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
+| `ui/js/parta-register.js` | 49 |
 | `ui/js/capital-record.js` | 47 |
 | `ui/js/login.js` | 47 |
 | `ui/js/agents.js` | 40 |
@@ -135,10 +136,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **97** (1301 errors, measured by
+Checked: **42**. Remaining: **98** (1314 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**3 of them raise no errors at all** and can be adopted by adding the
+**4 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -154,14 +155,15 @@ pragma and nothing else.
 | `tests/partc-portfolio.test.js` | 32 |
 | `tests/authentication.test.js` | 29 |
 | `tests/partc-boq.test.js` | 29 |
+| `tests/parta-register-api.test.js` | 28 |
 | `tests/api-contract.test.js` | 27 |
 | `tests/observability.test.js` | 27 |
 | `tests/partc-registry.test.js` | 27 |
 | `tests/api-key.test.js` | 26 |
 | `tests/partc-assessments.test.js` | 26 |
+| `tests/parta-register.test.js` | 25 |
 | `tests/desk-api.test.js` | 24 |
 | `tests/ui-config.test.js` | 24 |
-| `tests/parta-register-api.test.js` | 23 |
 | `tests/parta-engine.test.js` | 22 |
 | `tests/partc-methodology.test.js` | 22 |
 | `tests/pcaf-partc-api.test.js` | 22 |
@@ -174,7 +176,6 @@ pragma and nothing else.
 | `tests/partc-report-output.test.js` | 18 |
 | `tests/scopes.test.js` | 18 |
 | `tests/capital-basket.test.js` | 17 |
-| `tests/parta-register.test.js` | 17 |
 | `tests/agent-call-budget.test.js` | 16 |
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
@@ -239,4 +240,5 @@ pragma and nothing else.
 | `tests/v1-info.test.js` | 1 |
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
+| `tests/parta-register-ui.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |
