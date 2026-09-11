@@ -166,14 +166,15 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 3 | 695 |
+|       `src/domains/pcaf-part-a/application/` | 4 | 771 |
 |       `src/domains/pcaf-part-a/domain/` | 11 | 1,917 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 1 | 102 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 393 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 292 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 452 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 305 |
+|       `src/domains/pcaf-part-a/reporting/` | 6 | 934 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -182,15 +183,14 @@ flowchart TD
 |           `src/domains/pcaf-part-c/interface/routes/partc-registry/` | 4 | 640 |
 |           `src/domains/pcaf-part-c/interface/routes/pcaf-partc/` | 3 | 467 |
 |         `src/domains/pcaf-part-c/interface/schemas/` | 4 | 471 |
-|       `src/domains/pcaf-part-c/reporting/` | 5 | 635 |
-|         `src/domains/pcaf-part-c/reporting/report-standard/` | 6 | 1,357 |
-|         `src/domains/pcaf-part-c/reporting/theme/` | 4 | 720 |
+|       `src/domains/pcaf-part-c/reporting/` | 5 | 585 |
+|         `src/domains/pcaf-part-c/reporting/report-standard/` | 4 | 1,113 |
 |       `src/domains/taxonomy/application/` | 1 | 229 |
 |       `src/domains/taxonomy/domain/` | 3 | 791 |
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,176 |
+|     `src/platform/auth/` | 12 | 2,180 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,842 |
@@ -198,10 +198,12 @@ flowchart TD
 |     `src/platform/http/` | 22 | 2,571 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
-|     `src/platform/reporting/` | 3 | 291 |
+|     `src/platform/reporting/` | 4 | 337 |
+|       `src/platform/reporting/report-standard/` | 4 | 299 |
+|         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **319** | **53,984** |
+| **total** | **329** | **55,121** |
 
 <!-- END MODULE-MAP -->
 

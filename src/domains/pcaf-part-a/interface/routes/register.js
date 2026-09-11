@@ -31,7 +31,9 @@ const handle = require('../../../../platform/http/async-handler');
 const store = require('../../../../platform/database/store');
 
 const register = require('../../application/register');
-const { registerExposureSchema, bookSchema, noBodySchema } = require('../schemas/register');
+const partaReport = require('../../application/parta-report');
+const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
+const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema } = require('../schemas/register');
 
 const router = Router();
 
@@ -178,6 +180,63 @@ router.get('/position/:year', authenticate, defaultLimiter,
       improvementTarget: req.query.improvementTarget === undefined
         ? undefined : Number(req.query.improvementTarget),
     }));
+  }));
+
+// ---------------------------------------------------------------------------
+// The §5.2 disclosure and the per-exposure report
+// ---------------------------------------------------------------------------
+
+/*
+ * Both are read-scoped and store nothing. The document is one content model in
+ * the order PCAF Chapter 6 reads, rendered by the platform report standard —
+ * the same renderer Part C uses — so a requirement satisfied in one document
+ * cannot go missing from the other. Every figure is one the register returned;
+ * the engine did the arithmetic and this path never recomputes it.
+ */
+
+const R = require('../../reporting/report');
+
+/* One delivery path for both documents. `built.input.result` is present for a
+   single exposure and absent for the annual disclosure, which is how the
+   right renderer is chosen without a second branch per format. */
+const deliver = async (res, built, format, kind) => {
+  if (format === 'docx') {
+    const buf = await (built.input.result ? R.exposureDOCX(built.input) : R.disclosureDOCX(built.input));
+    return sendDocx(res, buf, `${built.safeName}.docx`, kind);
+  }
+  if (format === 'pdf') {
+    const doc = built.input.result ? R.exposurePDF(built.input) : R.disclosurePDF(built.input);
+    return sendPdf(res, doc, `${built.safeName}.pdf`, kind);
+  }
+  return res.json({ report: { cover: built.model.cover, checklist: built.model.checklist, facts: built.facts } });
+};
+
+router.get('/disclosure/:year', authenticate, defaultLimiter,
+  validate({ query: disclosureQuerySchema }),
+  doc({ summary: 'The annual PCAF Part A §5.2 disclosure — JSON, PDF or Word',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    description: 'Built from the reporting-year position in the exposure register, in the order '
+      + 'PCAF Chapter 6 reads. A year holding no exposures is a 409. The checklist covers the §5.2 '
+      + 'asset class only, so it cannot reach a hundred per cent — this report is one input to a '
+      + 'Chapter 6 disclosure, not the disclosure.',
+    response: body({ report: obj }, ['report']) }),
+  handle(async (req, res) => {
+    const built = await partaReport.annualDisclosure(req.orgId, req.params.year, {
+      insurer: req.query.insurer, currency: req.query.currency, country: req.query.country,
+    });
+    await deliver(res, built, req.query.format || 'json', 'disclosure');
+  }));
+
+router.post('/exposures/:exposureId/report', authenticate, defaultLimiter,
+  validate({ body: reportRequestSchema }),
+  doc({ summary: 'The per-exposure §5.2 report for one recorded exposure — JSON, PDF or Word',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    response: body({ report: obj }, ['report']) }),
+  handle(async (req, res) => {
+    const built = await partaReport.exposureReport(req.orgId, req.params.exposureId, {
+      insurer: req.body.insurer,
+    });
+    await deliver(res, built, req.body.format || 'json', 'exposure');
   }));
 
 module.exports = router;

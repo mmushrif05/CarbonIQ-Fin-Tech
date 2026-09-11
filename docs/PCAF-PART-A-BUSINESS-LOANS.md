@@ -420,15 +420,46 @@ does the same; `minmax(0, max-content)` is the whole difference. The browser
 journey (`e2e/parta-register.spec.js`) seeds a book through the API, opens the
 overdraft, states the total, recomputes, and asserts the page never widens.
 
-## 9. What is still not built
+## 9. The disclosure and the per-exposure report
+
+`src/domains/pcaf-part-a/reporting/` builds the document PCAF Chapter 6 and the
+Disclosure Checklist ask for — one content model in the checklist's order,
+rendered to PDF and Word by **one renderer shared with Part C**. The renderer,
+the block vocabulary and the visual theme moved to
+`src/platform/reporting/report-standard/` so the two scopes render through one
+engine without either domain importing the other; Part C's output is
+byte-identical and its golden test holds it.
+
+`GET /v1/pcaf/part-a/disclosure/:year` is the annual disclosure, built from the
+register's reporting-year position: scope and coverage (assessed outstanding
+over the stated book, or absent), gases and units, absolute emissions with
+scope 3 a separate line and removals netted against nothing, methodology naming
+the factor set and its checksum, the outstanding-weighted score with scope 3
+apart, recalculation, economic intensity, the improvement plan as the
+limitations section, and the conformance statement. Annex 10.2 is the sector
+table; the completed checklist is the last annex. A year with no exposures is a
+409, never a document of zeros. `POST /v1/pcaf/part-a/exposures/:id/report` is
+the same document for one borrower, carrying its findings as the limitations
+section. Both are `read` and store nothing; both serve JSON, PDF or Word.
+
+**The checklist can never reach a hundred per cent, and that is correct.** The
+inventory Chapter 6 ultimately asks a bank to disclose is the *entity's own*
+gross scope 1/2/3 (SLFRS S2 §29(a)); this report is the §5.2 asset class, one
+input to that disclosure. The entity-inventory item is answered No with that
+reason, so the checklist cannot claim to be the whole disclosure — the rule the
+GCF report follows too. `tests/parta-report.test.js`,
+`tests/parta-report-api.test.js` and the golden `tests/parta-report-golden.test.js`
+hold the document; `reporting/conformance.js` maps every rule to the code and
+the test that proves it.
+
+## 10. What is still not built
+
 
 - **No lifecycle.** An exposure is recorded and can be changed; there is no
   lock and no supersede. Nothing publishes from this register yet, and a
   half-built lifecycle is worse than none. `lock()` refuses with a 501 naming
   the step that builds it, and the `status` column exists in 0008 so that step
   needs no migration.
-- **No §5.2 report.** The figures are there; the document PCAF's Chapter 6 and
-  the Disclosure Checklist ask for is row 8 of that plan.
 - **The sector factors are placeholders.** The library is built and every
   row of it is provisional: a released factor set — a licensed EEIO extraction
   mapped to the vocabulary, or a Sri Lankan measurement — replaces the shipped

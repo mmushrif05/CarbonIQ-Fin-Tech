@@ -28,8 +28,8 @@
 const { assessmentFacts, annualFacts } = require('./report-standard/facts');
 const { buildSections } = require('./report-standard/sections');
 const { buildAnnexes, buildStandardModel } = require('./report-standard/model');
-const { renderStandardPDF } = require('./report-standard/render-pdf');
-const { renderStandardDOCX } = require('./report-standard/render-docx');
+const { renderStandardPDF } = require('../../../platform/reporting/report-standard/render-pdf');
+const { renderStandardDOCX } = require('../../../platform/reporting/report-standard/render-docx');
 const { KYOTO_GASES, UNITS_STATEMENT, FINANCED_EMISSIONS_STATEMENT } = require('./report-standard/common');
 
 module.exports = {
