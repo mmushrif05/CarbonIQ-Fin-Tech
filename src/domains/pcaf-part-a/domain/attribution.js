@@ -38,6 +38,20 @@ const DENOMINATORS = {
     label: 'total company equity plus debt',
     reference: 'PCAF Part A Third Edition §5.1, Attribution of emissions (p.42)',
   },
+  /* §5.2 uses the same two denominators as §5.1 and cites its own pages for
+     them. They are separate entries rather than aliases so a report built for
+     a business loan sends a reviewer to §5.2's footnotes, which is where that
+     reviewer would look. */
+  'business-loans-unlisted-equity': {
+    field: 'evic',
+    label: 'enterprise value including cash (EVIC)',
+    reference: 'PCAF Part A Third Edition §5.2, Attribution of emissions (p.57, footnote 86)',
+  },
+  'business-loans-unlisted-equity-private': {
+    field: 'totalEquityPlusDebt',
+    label: 'total company equity plus debt',
+    reference: 'PCAF Part A Third Edition §5.2, Attribution of emissions (p.57)',
+  },
 };
 
 /**

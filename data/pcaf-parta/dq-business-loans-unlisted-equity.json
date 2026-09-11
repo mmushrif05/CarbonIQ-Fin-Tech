@@ -1,0 +1,140 @@
+{
+  "table": "Table 5.2-1",
+  "assetClass": "business-loans-unlisted-equity",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.2 Business loans and unlisted equity",
+  "page": 60,
+  "detail": "Annex Table 10.1-2 — data needs and equations per option",
+  "status": "required",
+  "note": "Options 1 and 2 are preferred over Option 3. An institution may use Option 1 or 2 for certain companies and Option 3 for others; the mix shall be reflected in the average data quality score (p.60). Footnote 86: for business loans to listed companies, total company equity and debt is the EVIC of that company. Footnote 87: the quality scoring for Option 2a is applicable to scope 1 and 2 only. Footnote 73: Options 3b and 3c produce no attribution factor. The scores are the same as Table 5.1-2's, and that is a fact about these two classes rather than a rule about the standard — the real-estate and motor-vehicle tables differ, so this table is held separately and neither may be substituted for the other. Page 62 adds two rules that are not rows of the table: an emission factor should be as consistent as possible with the primary business activity financed — the paddy-rice sector rather than agriculture in general — and a loan to another financial institution with no PCAF-aligned figure may be estimated at score 5 from its sectoral distribution, or economy-wide where no breakdown exists.",
+  "scale": "1 is the highest data quality, 5 the lowest. A score is a category, never a mark out of five.",
+  "options": [
+    {
+      "option": "1a",
+      "score": 1,
+      "family": "Option 1: Reported emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": true,
+      "when": "Outstanding amount in the company and total company equity plus debt are known. Verified emissions of the company are available.",
+      "emissionsBasis": [
+        "reported-verified"
+      ]
+    },
+    {
+      "option": "1b",
+      "score": 2,
+      "family": "Option 1: Reported emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": true,
+      "when": "Outstanding amount in the company and total company equity plus debt are known. Unverified emissions calculated by the company are available.",
+      "emissionsBasis": [
+        "reported-unverified",
+        "provider-relayed"
+      ]
+    },
+    {
+      "option": "2a",
+      "score": 2,
+      "family": "Option 2: Physical activity-based emissions",
+      "scopes": [
+        "1",
+        "2"
+      ],
+      "attributionFactor": true,
+      "when": "Outstanding amount in the company and total company equity plus debt are known. Reported company emissions are not known. Emissions are calculated using primary physical activity data for the company's energy consumption and emission factors specific to that primary data. Relevant process emissions are added.",
+      "emissionsBasis": [
+        "energy-activity"
+      ],
+      "footnote": "87: the quality scoring for Option 2a is only applicable to scope 1 and scope 2; scope 3 cannot be estimated by this option, though other options can."
+    },
+    {
+      "option": "2b",
+      "score": 3,
+      "family": "Option 2: Physical activity-based emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": true,
+      "when": "Outstanding amount in the company and total company equity plus debt are known. Reported company emissions are not known. Emissions are calculated using primary physical activity data of the company's production and emission factors specific to that primary data.",
+      "emissionsBasis": [
+        "production-activity"
+      ]
+    },
+    {
+      "option": "3a",
+      "score": 4,
+      "family": "Option 3: Economic activity-based emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": true,
+      "when": "Outstanding amount in the company, total company equity plus debt, and the company's revenue are known. Emission factors for the sector per unit of revenue are known.",
+      "emissionsBasis": [
+        "revenue-sector"
+      ],
+      "footnote": "88: where revenue is not a suitable indicator for a sector, another suitable financial indicator may be used as a proxy; the reasoning should be made transparent and the data quality score is not affected."
+    },
+    {
+      "option": "3b",
+      "score": 5,
+      "family": "Option 3: Economic activity-based emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": false,
+      "when": "Outstanding amount in the company is known. Emission factors for the sector per unit of asset are known.",
+      "emissionsBasis": [
+        "assets-sector"
+      ],
+      "footnote": "73: the attribution factor cannot be calculated where client-specific financial data is unavailable; a rough estimation is made from the outstanding amount and region- and sector-average financial data."
+    },
+    {
+      "option": "3c",
+      "score": 5,
+      "family": "Option 3: Economic activity-based emissions",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": false,
+      "when": "Outstanding amount in the company is known. Emission factors for the sector per unit of revenue and asset turnover ratios for the sector are known.",
+      "emissionsBasis": [
+        "turnover-sector"
+      ],
+      "footnote": "73: the attribution factor cannot be calculated where client-specific financial data is unavailable; a rough estimation is made from the outstanding amount and region- and sector-average financial data."
+    },
+    {
+      "option": "alt",
+      "score": 5,
+      "family": "Alternative option",
+      "scopes": [
+        "1",
+        "2",
+        "3"
+      ],
+      "attributionFactor": true,
+      "when": "None of the specified options is applicable. Permitted only with an explanation from the reporting institution (p.62). PCAF's own example is a loan to another financial institution with no PCAF-aligned reported figure: its financed scope 3 category 15 is estimated at score 5 from the borrower's sectoral distribution with EEIO factors, or from an economy-wide average factor applied to the borrower's total portfolio value where no sectoral breakdown exists.",
+      "emissionsBasis": [
+        "alternative",
+        "fi-sectoral-distribution",
+        "fi-economy-wide"
+      ],
+      "footnote": "p.62: any deviation from the specified options shall be accompanied by an explanation from the reporting financial institution. The two financial-institution paths are held as bases on this row rather than as rows of their own, because the standard states them as examples of the alternative option and not as lettered options in Table 5.2-1 — inventing a row here would put a label in a disclosure that no reader could find in the standard."
+    }
+  ]
+}

@@ -166,10 +166,12 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/domain/` | 10 | 1,710 |
-|         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 1,388 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 1 | 110 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 1 | 85 |
+|       `src/domains/pcaf-part-a/domain/` | 10 | 1,732 |
+|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,164 |
+|         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 886 |
+|         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 1 | 187 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 2 | 227 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -197,7 +199,7 @@ flowchart TD
 |     `src/platform/reporting/` | 3 | 291 |
 |   `src/shared/` | 10 | 1,790 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **297** | **50,669** |
+| **total** | **312** | **52,343** |
 
 <!-- END MODULE-MAP -->
 

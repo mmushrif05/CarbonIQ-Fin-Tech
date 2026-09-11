@@ -206,9 +206,14 @@ lending bank: guidance on the interannual fluctuation of revolving products is
 still to come, and an FI "should be transparent on any major last minute
 increases or decreases at fiscal year-end".
 
-**CarbonIQ status: not built** — no attribution rule, no DQ table, no tests.
-The denominator and table are the ones §5.1 already holds, so the gap is a
-table file, a class entry and the unlisted-equity numerator.
+**CarbonIQ status: built** — `domain/business-loans/` (classify, numerator,
+checks, engine, portfolio) over `domain/corporate/` (the denominator, option,
+line and estimation machinery §5.1 and §5.2 share, bound per chapter to its own
+table and footnote numbers), Table 5.2-1 in
+`data/pcaf-parta/dq-business-loans-unlisted-equity.json`, two routes, 39 tests
+anchored on the standard's own Tables 5.2-2/5.2-3, and
+`docs/PCAF-PART-A-BUSINESS-LOANS.md`. What is *not* built is the persisted
+exposure register, the report and the sector factor library — see §10.
 **Sri Lankan relevance: the largest class on the book.** Corporate and SME
 lending is the bulk of a Sri Lankan commercial bank's assets; almost every
 borrower is unlisted; almost none reports emissions, so Options 2 and 3 carry
@@ -822,18 +827,19 @@ annual inventory.
 
 | Area | Built | Not built |
 |---|---|---|
-| Asset classes | §5.1 listed equity & corporate bonds; §5.3 project finance | §5.2, §5.4, §5.5, §5.6, §5.7, §5.8, §5.9, §5.10 |
+| Asset classes | §5.1 listed equity & corporate bonds; §5.2 business loans & unlisted equity; §5.3 project finance | §5.4, §5.5, §5.6, §5.7, §5.8, §5.9, §5.10 |
 | Attribution | EVIC, private-company equity + debt, project equity + debt; factor above 1 refused unless justified | Value at origination with the fixing and modification rules; PPP-GDP; UoP double attribution; SSP four factors; the standard's own caps where it has them |
-| Data quality | Two tables, `(assetClass, option) → score`, outstanding-weighted mean, scope 3 apart | Six tables; the motor-vehicle lowest-in-mix rule; the weighted-of-underlying rule for structures; the avoided-emissions 1–3 scale |
+| Data quality | Three tables, `(assetClass, option) → score`, outstanding-weighted mean, scope 3 apart | Five tables; the motor-vehicle lowest-in-mix rule; the weighted-of-underlying rule for structures; the avoided-emissions 1–3 scale |
 | Emissions paths | Direct scope 1/2 entry; renewable generation × country grid factor deriving the option from the data | Building energy paths (metered, label × area, statistics × area, statistics × count); vehicle distance × efficiency × fuel factor; sovereign territorial |
 | Impact | Archetype → reduction/avoided/EER/EAE, separate container | Counterfactual guardrails; year-of-contracting; AER and interpolated EER; the shipping "regulatory minimum → zero" rule |
-| Portfolio | — | Exposure register per reporting year; coverage against the book; roll-up by class and sector; intensity; fluctuation analysis; recalculation policy and threshold on entity settings |
+| Portfolio | §5.2 roll-up: six lines per group, outstanding-weighted score with scope 3 apart, financial-sector borrowers apart, coverage where the book total is supplied, and an improvement plan ordered by what each remedy is worth | A **persisted** exposure register per reporting year (the roll-up is a read over a posted book); the same roll-up for §5.1 and §5.3; economic intensity across a book; recalculation policy and threshold on entity settings |
 | Reporting | — | The Part A report (one model, two renderers, reusing Part C's standard); auto-answered DCL; Annex 10.2 tables |
 | Conformance | — | Rule → implementation → proving test, generated document, evidence run |
-| Surface | `GET /v1/pcaf/part-a/reference`, `POST /v1/pcaf/part-a/assess` (stateless, `read`), the Part A screen | Persisted exposures; a reporting-year screen |
+| Data validation | §5.2 only: the footnote 71 year-end fluctuation, the emissions-year lag, denominator-versus-balance-sheet coherence, sector-intensity plausibility, attribution concentration — as findings that refuse nothing and change no figure | The same for every other class; a held set of sector intensity bands and sector factors, versioned and checksummed |
+| Surface | `GET /v1/pcaf/part-a/reference`, `POST /v1/pcaf/part-a/assess`, `POST /v1/pcaf/part-a/business-loans/assess`, `POST /v1/pcaf/part-a/business-loans/portfolio` (all stateless, `read`), the Part A screen | Persisted exposures; a reporting-year screen; a §5.2 screen |
 
-Five test suites, 152 tests: `parta-api`, `parta-engine`, `parta-generation`,
-`parta-listed-equity`, `parta-ui`.
+Six test suites: `parta-api`, `parta-business-loans`, `parta-engine`,
+`parta-generation`, `parta-listed-equity`, `parta-ui`.
 
 ---
 
@@ -844,7 +850,7 @@ already pays for, and by what the standard itself makes mandatory.
 
 | # | Section | Why this order | What it takes | Done when |
 |---|---|---|---|---|
-| **1** | **§5.2 Business loans and unlisted equity** | The largest class on any Sri Lankan book; the EVIC and equity + debt machinery and the identical DQ table shape already exist for §5.1; the class where CarbonIQ's Option 2 data reaches a contractor's or developer's own inventory | Class entry; `dq-business-loans-unlisted-equity.json` (Table 5.2-1, p.60); unlisted-equity numerator (share × book equity); the listed-borrower EVIC branch (fn 86); the p.62 loans-to-FIs score-5 path; the fn 71 year-end note | Tables 5.2-2/5.2-3 (pp.63) reproduce exactly; a listed borrower resolves to EVIC; scope 3 separate |
+| ~~1~~ **done** | **§5.2 Business loans and unlisted equity** — shipped; see §2.2 and `docs/PCAF-PART-A-BUSINESS-LOANS.md` | The largest class on any Sri Lankan book; the EVIC and equity + debt machinery and the identical DQ table shape already exist for §5.1; the class where CarbonIQ's Option 2 data reaches a contractor's or developer's own inventory | Class entry; `dq-business-loans-unlisted-equity.json` (Table 5.2-1, p.60); unlisted-equity numerator (share × book equity); the listed-borrower EVIC branch (fn 86); the p.62 loans-to-FIs score-5 path; the fn 71 year-end note | Tables 5.2-2/5.2-3 (pp.63) reproduce exactly; a listed borrower resolves to EVIC; scope 3 separate |
 | **2** | **The portfolio layer** | Without it every class is a calculator and none is a disclosure; the DCL's Coverage and Data Quality items cannot be answered per exposure | Exposure register (reporting entity → year → exposure, migration + collection); coverage % by class against the whole book (p.161); outstanding-weighted score with scope 3 apart (Box 6.1-6); economic intensity (p.166); by-class and by-sector roll-up; recalculation policy + threshold on entity settings (reuse Part C's) | The Box 6.1-6 example yields 3.03 and 3.53; a year with no exposures is a 409; Annex 10.2's table renders |
 | **3** | **§5.9 Sovereign debt** | Government securities are a large share of a Sri Lankan bank's assets; the inputs are public; the arithmetic is one division; scope 1 with and without LULUCF is a two-line rule | Class entry; PPP-GDP denominator; Table 5.9-6; a `data/pcaf-parta/sovereign/` file for Sri Lanka's UNFCCC figures and World Bank PPP GDP, versioned and dated like the factor manifest | The Singapore/Hong Kong example (Annex 10.3, p.202) reproduces: 106 and 91 tCO2e |
 | **4** | **§5.4 CRE and §5.5 mortgages together** | One denominator rule (value at origination, fixed, updated on modification), one DQ table, one energy equation; the retail and property book | The origination-value rule with its three states; four energy paths; the CRE/mortgage table (2a→3, 2b→4, 3→5); a Sri Lankan building-energy baseline in the registry, provisional and said so | A metered building scores 1 with a supplier factor and 2 without; a floor-area estimate without a label scores 4; a modification updates the origination value |
@@ -856,12 +862,22 @@ already pays for, and by what the standard itself makes mandatory.
 | **10** | **Supplement completion** | Transition-finance products need it, but only once the inventory is solid | Counterfactual guardrails; three-point DQ; EER at contracting with AER/interpolated tracking; EAE annualised; the regulatory-minimum-is-zero rule | The rail, geothermal, green-bond and shipping examples reproduce |
 | 11 | §5.8 Securitizations · §5.10 Sub-sovereign | Reference implementations; no material Sri Lankan exposure | Later | — |
 
-**Recommendation for the first section: §5.2 business loans and unlisted
-equity**, immediately followed by the portfolio layer. §5.2 is the smallest
-step that covers the most of a Sri Lankan book, it reuses what §5.1 built, and
-it is the class through which CarbonIQ's own physical-activity data enters a
-mandatory line of the inventory rather than an optional one. The portfolio
-layer is what turns two or three built classes into something a bank can file.
+**§5.2 is built.** The next step is row 2, and building §5.2 sharpened what it
+has to be. The roll-up exists as a *read* over a book posted whole, which is
+right for a pilot and wrong for a bank with five thousand loans: what is
+missing is the persisted register, coverage against the whole book rather than
+against what was posted, and the same roll-up reaching §5.1 and §5.3 so a
+disclosure covers the classes a bank actually holds.
+
+**The finding that came out of building it, and that should shape everything
+after:** the standard sets the method and says almost nothing about whether a
+bank's data is telling it the truth. That gap is where a tool stops being a
+calculator. §5.2 answers it with a third verdict — refuse what would be wrong,
+record what is merely weak, never block a number, only ever block a claim —
+and with checks that report divergence where an independent path exists and say
+so where none does. Every class built after this carries the same, and the
+threshold behind any check that is CarbonIQ's rather than PCAF's says so on its
+own face and is settable.
 
 Each section follows the rules Part C established: data quality by option from
 the class's own table, never averaged; 1 best, 5 worst, never rendered as a
@@ -880,6 +896,10 @@ a correction to something we had previously written, or a section moving from
 
 | Date | Section | What changed | Source |
 |---|---|---|---|
+| 2026-09-11 | §2.2, §10, §11 | **§5.2 built.** Business loans and unlisted equity: the class entry, Table 5.2-1, both numerators, the two denominators, the roll-up and the improvement plan. Row 1 of the plan moves to §10 | §5.2 pp.55–65; Tables 5.2-2/5.2-3 reproduce at 6,100 / 1,260 / 10,000 / 2,200 / 7,250 / 600 |
+| 2026-09-11 | §11 | **Design rule, carried by every class after this.** The standard sets the method and says almost nothing about whether a bank's data is telling it the truth. §5.2 answers with a third verdict — refuse what would be wrong, record what is merely weak — and never blocks a number, only a claim. A threshold that is ours says so on its own face | CarbonIQ; `domain/corporate/findings.js` |
+| 2026-09-11 | §2.2 | **The standard's own cross-reference is wrong.** Footnote 69 sends loans to governments to "the Sovereign Debt and Sub-Sovereign Debt asset class (see subchapter 5.7)". §5.7 is Use of Proceeds Structures; sovereign debt is §5.9 and sub-sovereign §5.10. The classifier redirects to §5.9/§5.10 and the note records why it does not follow the footnote | fn 69 (p.55) against §5.7 (p.98), §5.9 (p.140), §5.10 (p.150) |
+| 2026-09-11 | §2.2 | **A rule the standard states for the denominator only.** Footnote 75 sets negative book equity to zero so every emission is attributed to debt. The unlisted-equity *numerator* is a share of that same equity, so the same rule there gives an equity holder in such a company a numerator of zero. The reading is applied and travels on the trace as ours, not as the standard's | fn 75 (p.57) with p.56 |
 | 2026-09-11 | §0 | The maintenance rules and this log, so a later finding has a place to land rather than a commit message | — |
 | 2026-09-11 | all | First full study: the ten asset classes, the consolidated data-quality matrix, Chapter 6, the supplement, the twelve gaps, the market picture, and the build order | Third Edition (Dec 2025) 209 pp.; DCL May 2025; DCL FAQ; the avoided-emissions supplement; the strategic analysis |
 | 2026-09-11 | §3 | **Correction.** `docs/PCAF-PART-A-BUILD-SPEC.md` said Option 2b was "score 2 in one class and 3 in another". Read against all eight tables there are five distinct shapes: 2a is 2 or 3, 2b is 3 or 4, Option 3 is 4 or 5, and 1b is 1 for motor vehicles alone | Tables 5.1-2 … 5.10-2, Annex 10.1 |
