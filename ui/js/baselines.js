@@ -59,7 +59,9 @@ const BaselinesPage = (() => {
           ${r.needs ? `<p class="bl-src">${esc(r.needs)}</p>` : ''}
         </div>`;
     }
-    const values = Object.entries(r.values || {}).map(([k, v]) => `
+    const values = def.shape === 'sector_bands'
+      ? sectorBandTable(r.values)
+      : Object.entries(r.values || {}).map(([k, v]) => `
       <span><span class="bl-v">${num(v)}</span> <span class="bl-u">${esc(k)}</span></span>`).join('');
     const pill = r.provisional
       ? '<span class="bl-pill prov">Illustrative dataset — not client records.</span>'
@@ -71,6 +73,25 @@ const BaselinesPage = (() => {
         <p class="bl-basis">${esc(r.basis)}</p>
         ${r.source ? `<p class="bl-src">${esc(r.source)}</p>` : ''}
       </div>`;
+  }
+
+  /* A band per sector reads as a table, not as forty-six loose numbers. */
+  function sectorBandTable(values) {
+    const rows = {};
+    for (const [k, v] of Object.entries(values || {})) {
+      const m = k.match(/^(.+)_(low|high)$/);
+      if (!m) continue;
+      rows[m[1]] = { ...(rows[m[1]] || {}), [m[2]]: v };
+    }
+    return `<div class="bl-scroll"><table class="bl-table bl-bands">
+      <thead><tr><th>Sector</th><th class="num">Low</th><th class="num">High</th></tr></thead>
+      <tbody>${Object.entries(rows).map(([k, b]) => `<tr><td>${esc(k)}</td><td class="num">${num(b.low)}</td><td class="num">${num(b.high)}</td></tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  function shapeOf(metricKey) {
+    const def = state.metrics.find(m => m.key === metricKey) || {};
+    return def.shape || 'bands';
   }
 
   function renderEffective() {
@@ -147,7 +168,9 @@ const BaselinesPage = (() => {
         <td>${esc(b.metric)}</td>
         <td>${esc(b.scope)}</td>
         <td>${esc(b.country || '—')}</td>
-        <td class="num">${Object.entries(b.values).map(([k, v]) => `${esc(k)} ${num(v)}`).join('<br>')}</td>
+        <td class="num">${shapeOf(b.metric) === 'sector_bands'
+    ? `${Object.keys(b.values).length / 2} sector bands`
+    : Object.entries(b.values).map(([k, v]) => `${esc(k)} ${num(v)}`).join('<br>')}</td>
         <td class="num">${esc(b.version)}</td>
         <td>${statusPill(b.status)}</td>
         <td>${movementCell(b)}</td>
@@ -166,15 +189,30 @@ const BaselinesPage = (() => {
     el.hidden = !message;
   }
 
+  /* The two thresholds for a band metric; the whole value set as JSON for
+     any other shape, because a sector band set is forty-odd numbers and a
+     form of forty fields would be worse than the text. */
+  function valuesFromForm(metricKey) {
+    if (shapeOf(metricKey) === 'bands') {
+      return { green: Number($('bl-green').value), transition: Number($('bl-transition').value) };
+    }
+    return JSON.parse($('bl-values').value || '{}');
+  }
+
+  function syncValueFields() {
+    const bands = shapeOf($('bl-metric').value) === 'bands';
+    for (const id of ['bl-green-field', 'bl-transition-field']) { const el = $(id); if (el) el.hidden = !bands; }
+    const json = $('bl-values-field'); if (json) json.hidden = bands;
+  }
+
   async function create() {
     const scope = $('bl-scope').value;
+    let values;
+    try { values = valuesFromForm($('bl-metric').value); } catch (err) { return say(`Values must be JSON: ${err.message}`, true); }
     const body = {
       metric: $('bl-metric').value,
       scope,
-      values: {
-        green: Number($('bl-green').value),
-        transition: Number($('bl-transition').value),
-      },
+      values,
       source: $('bl-source').value.trim(),
     };
     if (scope !== 'global') body.country = $('bl-country').value.trim().toUpperCase();
@@ -197,10 +235,18 @@ const BaselinesPage = (() => {
   async function supersede(id) {
     const current = state.table.find(b => b.baselineId === id);
     if (!current) return;
-    const green = window.prompt('New green threshold', String(current.values.green));
-    if (green === null) return;
-    const transition = window.prompt('New transition threshold', String(current.values.transition));
-    if (transition === null) return;
+    let values;
+    if (shapeOf(current.metric) === 'bands') {
+      const green = window.prompt('New green threshold', String(current.values.green));
+      if (green === null) return;
+      const transition = window.prompt('New transition threshold', String(current.values.transition));
+      if (transition === null) return;
+      values = { green: Number(green), transition: Number(transition) };
+    } else {
+      const text = window.prompt('New values, as JSON', JSON.stringify(current.values));
+      if (text === null) return;
+      try { values = JSON.parse(text); } catch (err) { return say(`Values must be JSON: ${err.message}`, true); }
+    }
     const reason = window.prompt('Reason for the change. Required where the movement reaches the restatement threshold.', '');
     if (reason === null) return;
     try {
@@ -208,7 +254,7 @@ const BaselinesPage = (() => {
       await call(`/${id}/supersede`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ values: { green: Number(green), transition: Number(transition) }, reason }),
+        body: JSON.stringify({ values, reason }),
       });
       say('A new version is recorded as a draft. Release it to put it in force.');
       await load();
@@ -233,6 +279,8 @@ const BaselinesPage = (() => {
       if (select && !select.options.length) {
         select.innerHTML = state.metrics
           .map(m => `<option value="${esc(m.key)}">${esc(m.label)}</option>`).join('');
+        select.addEventListener('change', syncValueFields);
+        syncValueFields();
       }
       renderEffective();
       renderTable();

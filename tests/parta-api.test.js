@@ -175,3 +175,39 @@ describe('PCAF Part A §5.2 over HTTP', () => {
     expect(a.body).toEqual(b.body);
   });
 });
+
+describe('POST /v1/pcaf/part-a/business-loans/assess — the held library over HTTP', () => {
+  const asOf = '2024-12-31';
+  const body = (over = {}) => ({
+    reportingYear: 2024, instrument: 'business-loan', borrowerListed: false,
+    counterparty: { name: 'Ratnapura Rubber', sectorKey: 'manufacturing_rubber_plastics' },
+    outstanding: { amount: 40e6, asOf, currency: 'LKR' },
+    emissions: { scope1: { basis: 'assets-sector' }, scope2: { basis: 'assets-sector' }, scope3AbsentReason: 'none held' },
+    ...over,
+  });
+
+  test('an Option 3b exposure with no factor is estimated from the held set, and the response names it', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess').set('x-api-key', KEY).send(body()).expect(200);
+    expect(res.body.factorRelease.rows).toEqual(['manufacturing_rubber_plastics']);
+    expect(res.body.inventory.dataQuality.scope1And2.score).toBe(5);
+  });
+
+  test('a sector key outside the vocabulary is refused by the schema, naming the field', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess').set('x-api-key', KEY)
+      .send(body({ counterparty: { name: 'X', sectorKey: 'astrology' } })).expect(400);
+    expect(JSON.stringify(res.body)).toMatch(/sectorKey/);
+  });
+
+  test('the band in force is read for the check, and the finding cites it', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess').set('x-api-key', KEY).send({
+      reportingYear: 2024, instrument: 'business-loan', borrowerListed: false,
+      counterparty: { name: 'Hill Country Tea', sectorKey: 'agriculture_tea' },
+      outstanding: { amount: 150e6, asOf, currency: 'LKR' },
+      denominator: { totalEquity: 900e6, totalDebt: 600e6, asOf, currency: 'LKR' },
+      emissions: { scope1: { value: 6800, basis: 'reported-unverified' }, scope2: { value: 900, basis: 'reported-unverified' }, scope3AbsentReason: 'n/a' },
+      plausibility: { revenue: 600e6 },
+    }).expect(200);
+    const f = res.body.validation.findings.find(x => x.code === 'INTENSITY_OUTSIDE_SECTOR_BAND');
+    expect(f.reference).toMatch(/Band: Sector carbon-intensity plausibility bands/);
+  });
+});

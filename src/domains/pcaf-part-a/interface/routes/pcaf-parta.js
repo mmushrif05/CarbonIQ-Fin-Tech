@@ -4,24 +4,30 @@
  *
  *   GET  /v1/pcaf/part-a/reference                    asset classes, archetypes, data-quality options
  *   POST /v1/pcaf/part-a/assess                       assess one exposure (§5.3 project finance)
+ *   GET  /v1/pcaf/part-a/factors                      the Option 3 sector factor library and its release
  *   POST /v1/pcaf/part-a/business-loans/assess        assess one exposure (§5.2)
  *   POST /v1/pcaf/part-a/business-loans/portfolio     roll up a book and rank what to fix first (§5.2)
  *
- * Deterministic and synchronous. No model call, so none of the deadline
- * machinery the agent routes need applies here — an assessment is arithmetic
- * and returns in single-digit milliseconds.
+ * Deterministic, and the engine is synchronous. No model call, so none of the
+ * deadline machinery the agent routes need applies here — an assessment is
+ * arithmetic and returns in single-digit milliseconds. The one read before it
+ * is the baseline registry's, for the sector band an exposure is checked
+ * against; nothing is stored.
  */
 
 'use strict';
 
 const { Router } = require('express');
 const authenticate = require('../../../../platform/auth/authenticate');
-const { doc, body, str, num, arr } = require('../../../../platform/http/openapi-hints');
+const { doc, body, str, num, arr, obj } = require('../../../../platform/http/openapi-hints');
 const referenceCache = require('../../../../platform/http/reference-cache');
 const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
+const handle = require('../../../../platform/http/async-handler');
 const parta = require('../../domain');
+const library = require('../../domain/sector-factors');
+const { withSectorBand } = require('../../application/plausibility');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
 const { assessRequestSchema } = require('../schemas/pcaf-parta');
@@ -116,6 +122,22 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
   } catch (err) { next(err); }
 });
 
+/**
+ * The Option 3 factor library and the vocabulary it is keyed to, with the
+ * release the figures rest on. Reference data: cached, and every row says
+ * whether it is provisional.
+ */
+router.get('/factors', authenticate, defaultLimiter, referenceCache(),
+  doc({ summary: 'PCAF Part A sector factor library — every row with its tier, source, vintage and gap, and the release checksum',
+    description: 'Option 3 sector-average intensities per unit of revenue, keyed to a closed sector '
+      + 'vocabulary (ISIC Rev.4 sections, with the divisions a Sri Lankan book holds). The shipped '
+      + 'table is provisional and each row says why. An estimated figure names the table, version '
+      + 'and checksum it was computed on.',
+    response: body({ vocabulary: obj, table: obj, release: obj }, ['vocabulary', 'table', 'release']) }),
+  (_req, res) => {
+    res.json({ vocabulary: library.vocabulary(), table: library.table(), release: library.release() });
+  });
+
 router.post('/assess',
   doc({ summary: 'PCAF Part A financed emissions for one asset',
     description: 'Data quality is weighted by outstanding amount (p.128), which is not how '
@@ -147,13 +169,11 @@ router.post('/business-loans/assess',
       + 'cannot have come from one balance sheet — as findings that change no figure.',
     response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
   validate({ body: exposureSchema }),
-  (req, res, next) => {
-    try {
-      const startedAt = Date.now();
-      const result = assessBusinessLoan(req.body);
-      res.json({ ...result, elapsedMs: Date.now() - startedAt });
-    } catch (err) { next(err); }
-  });
+  handle(async (req, res) => {
+    const startedAt = Date.now();
+    const result = assessBusinessLoan(await withSectorBand(req.body, { orgId: req.orgId || null }));
+    res.json({ ...result, elapsedMs: Date.now() - startedAt });
+  }));
 
 /**
  * §5.2 — a book.
@@ -171,16 +191,18 @@ router.post('/business-loans/portfolio',
       + 'disclosure uses and is never the reported score. Stores nothing.',
     response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
   validate({ body: portfolioRequestSchema }),
-  (req, res, next) => {
-    try {
+  handle(async (req, res) => {
+    {
       const startedAt = Date.now();
-      const results = req.body.exposures.map(assessBusinessLoan);
+      const ctx = { orgId: req.orgId || null };
+      const results = [];
+      for (const x of req.body.exposures) results.push(assessBusinessLoan(await withSectorBand(x, ctx)));
       const book = businessLoansPortfolio.rollUp(results, {
         totalLoansAndInvestments: req.body.totalLoansAndInvestments,
         improvementTarget: req.body.improvementTarget,
       });
       res.json({ ...book, exposures: results, elapsedMs: Date.now() - startedAt });
-    } catch (err) { next(err); }
-  });
+    }
+  }));
 
 module.exports = router;

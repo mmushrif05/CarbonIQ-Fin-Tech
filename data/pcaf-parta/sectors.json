@@ -1,0 +1,230 @@
+{
+  "vocabulary": "ISIC Rev.4 sections, with the divisions a Sri Lankan lending book actually holds as rows of their own beneath their section. PCAF Part A §5.2 (p.62): an emission factor should be as consistent as possible with the primary business activity financed — the paddy-rice sector rather than agriculture in general.",
+  "version": "1.0.0",
+  "effectiveFrom": "2026-09-11",
+  "rule": "A borrower is mapped by sectorKey. A free-text sector matched to an alias is recorded as an assumption on the trace, never silently. A sector not in this list is not held: the factor is reported absent with the reason and the plausibility check says it did not run.",
+  "sectors": {
+    "agriculture": {
+      "label": "Agriculture, forestry and fishing",
+      "isic": "A",
+      "aliases": [
+        "agriculture",
+        "farming",
+        "fisheries",
+        "forestry",
+        "fishing"
+      ]
+    },
+    "agriculture_tea": {
+      "label": "Tea growing and processing",
+      "isic": "A01.27 with C10.83",
+      "parent": "agriculture",
+      "aliases": [
+        "tea",
+        "tea estate",
+        "plantation"
+      ]
+    },
+    "agriculture_rice": {
+      "label": "Rice growing and milling",
+      "isic": "A01.12 with C10.61",
+      "parent": "agriculture",
+      "aliases": [
+        "rice",
+        "paddy",
+        "rice milling"
+      ]
+    },
+    "mining": {
+      "label": "Mining and quarrying",
+      "isic": "B",
+      "aliases": [
+        "mining",
+        "quarrying",
+        "quarry"
+      ]
+    },
+    "manufacturing": {
+      "label": "Manufacturing",
+      "isic": "C",
+      "aliases": [
+        "manufacturing",
+        "industrial"
+      ]
+    },
+    "manufacturing_textiles": {
+      "label": "Textiles and apparel",
+      "isic": "C13 to C14",
+      "parent": "manufacturing",
+      "aliases": [
+        "textiles",
+        "apparel",
+        "garments",
+        "clothing"
+      ]
+    },
+    "manufacturing_cement": {
+      "label": "Cement, lime and plaster",
+      "isic": "C23.94",
+      "parent": "manufacturing",
+      "aliases": [
+        "cement",
+        "lime"
+      ]
+    },
+    "manufacturing_food": {
+      "label": "Food and beverages",
+      "isic": "C10 to C11",
+      "parent": "manufacturing",
+      "aliases": [
+        "food",
+        "beverages",
+        "food processing"
+      ]
+    },
+    "manufacturing_rubber_plastics": {
+      "label": "Rubber and plastics",
+      "isic": "C22",
+      "parent": "manufacturing",
+      "aliases": [
+        "rubber",
+        "plastics",
+        "tyres"
+      ]
+    },
+    "electricity": {
+      "label": "Electricity, gas, steam and air conditioning",
+      "isic": "D",
+      "aliases": [
+        "electricity",
+        "power",
+        "power generation",
+        "energy"
+      ]
+    },
+    "water_waste": {
+      "label": "Water supply, sewerage and waste",
+      "isic": "E",
+      "aliases": [
+        "water",
+        "waste",
+        "sewerage"
+      ]
+    },
+    "construction": {
+      "label": "Construction",
+      "isic": "F",
+      "aliases": [
+        "construction",
+        "building",
+        "contractor"
+      ]
+    },
+    "wholesale_retail": {
+      "label": "Wholesale and retail trade",
+      "isic": "G",
+      "aliases": [
+        "wholesale",
+        "retail",
+        "trade",
+        "trading",
+        "hardware"
+      ]
+    },
+    "transport": {
+      "label": "Transportation and storage",
+      "isic": "H",
+      "aliases": [
+        "transport",
+        "logistics",
+        "shipping",
+        "haulage",
+        "storage"
+      ]
+    },
+    "accommodation_food": {
+      "label": "Accommodation and food service",
+      "isic": "I",
+      "aliases": [
+        "hotels",
+        "hotel",
+        "tourism",
+        "hospitality",
+        "restaurants"
+      ]
+    },
+    "information": {
+      "label": "Information and communication",
+      "isic": "J",
+      "aliases": [
+        "information",
+        "telecom",
+        "telecommunications",
+        "software",
+        "it"
+      ]
+    },
+    "finance": {
+      "label": "Financial and insurance activities",
+      "isic": "K",
+      "aliases": [
+        "finance",
+        "banking",
+        "insurance",
+        "leasing",
+        "financial services"
+      ]
+    },
+    "real_estate": {
+      "label": "Real estate activities",
+      "isic": "L",
+      "aliases": [
+        "real estate",
+        "property"
+      ]
+    },
+    "professional": {
+      "label": "Professional, scientific and technical",
+      "isic": "M",
+      "aliases": [
+        "professional",
+        "consulting",
+        "engineering services"
+      ]
+    },
+    "admin_support": {
+      "label": "Administrative and support services",
+      "isic": "N",
+      "aliases": [
+        "administrative",
+        "support services",
+        "security services"
+      ]
+    },
+    "education": {
+      "label": "Education",
+      "isic": "P",
+      "aliases": [
+        "education",
+        "schools"
+      ]
+    },
+    "health": {
+      "label": "Human health and social work",
+      "isic": "Q",
+      "aliases": [
+        "health",
+        "hospital",
+        "healthcare"
+      ]
+    },
+    "other_services": {
+      "label": "Other service activities",
+      "isic": "S",
+      "aliases": [
+        "services",
+        "other services"
+      ]
+    }
+  }
+}

@@ -31,7 +31,12 @@ function attributeLine({ label, investee, af, unit, ref }) {
     value: +(v * af).toFixed(2),
     unit: unit || 'tCO2e',
     equation: `financed ${label} = attribution factor × company ${label}`,
-    inputs: { attributionFactor: af, [`company_${label.replace(/\s+/g, '_')}`]: v },
+    inputs: {
+      attributionFactor: af, [`company_${label.replace(/\s+/g, '_')}`]: v,
+      /* An estimated company figure carries its factor; the financed line
+         keeps it, so a reader of the line can see what it was estimated from. */
+      ...(investee.inputs && investee.inputs.factor ? { factor: investee.inputs.factor } : {}),
+    },
     basis: investee.basis || 'Measured',
     reference: ref,
     assumptions: investee.assumptions || [],

@@ -160,15 +160,25 @@ const factorTableSchema = Joi.object({
       }
     }
   }
+  return provisionalRule(table, helpers, ['rows', 'benchmarks']);
+});
 
-  /* The provisional marker cannot be set or cleared by hand.
-     A table is provisional exactly when a row of it records a gap, and
-     `provisionalRows` names those rows and no others. Left to a person to
-     maintain, this is the field that goes stale first: a placeholder gets
-     replaced by a real value and the warning stays, or a placeholder is added
-     and the table still reads as released. Both are worse than no marker,
-     because a reader trusts it. */
-  const gapRows = ['rows', 'benchmarks']
+/**
+ * The provisional marker cannot be set or cleared by hand.
+ *
+ * A table is provisional exactly when a row of it records a gap, and
+ * `provisionalRows` names those rows and no others. Left to a person to
+ * maintain, this is the field that goes stale first: a placeholder gets
+ * replaced by a real value and the warning stays, or a placeholder is added
+ * and the table still reads as released. Both are worse than no marker,
+ * because a reader trusts it. Shared by every table that carries the marker.
+ *
+ * @param {any} table
+ * @param {import('joi').CustomHelpers} helpers
+ * @param {string[]} blocks the row blocks a gap may sit in
+ */
+function provisionalRule(table, helpers, blocks) {
+  const gapRows = blocks
     .flatMap(block => Object.entries(table[block] || {}).filter(([, r]) => r.gap).map(([k]) => k))
     .sort();
   const expected = gapRows.length ? 'provisional' : 'released';
@@ -186,6 +196,105 @@ const factorTableSchema = Joi.object({
     });
   }
   return table;
+}
+
+/** A sector key: lower-case, underscore-joined, so it can be a baseline value key with a suffix. */
+const sectorKey = Joi.string().pattern(/^[a-z][a-z0-9]*(_[a-z0-9]+)*$/).max(60);
+
+/**
+ * The sector vocabulary Part A's factor library and the intensity bands are
+ * keyed to. Closed: a sector is in this list or it is not held, and a sector
+ * that is not held is reported absent with the reason rather than mapped to
+ * its nearest neighbour.
+ */
+const sectorVocabularySchema = Joi.object({
+  vocabulary: Joi.string().max(2000).required(),
+  version: Joi.string().pattern(/^\d+\.\d+\.\d+$/).required(),
+  effectiveFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
+  rule: Joi.string().max(2000).required(),
+  sectors: Joi.object().pattern(sectorKey, Joi.object({
+    label: Joi.string().min(1).max(120).required(),
+    isic: Joi.string().min(1).max(60).required(),
+    parent: sectorKey.optional(),
+    aliases: Joi.array().items(Joi.string().min(1).max(60)).required(),
+  }).unknown(false)).min(1).required(),
+}).unknown(false).custom((doc, helpers) => {
+  const seen = new Map();
+  for (const [key, s] of Object.entries(doc.sectors)) {
+    if (s.parent && !doc.sectors[s.parent]) {
+      return helpers.error('any.custom', { error: new Error(`${key}.parent "${s.parent}" is not a sector`) });
+    }
+    for (const a of s.aliases) {
+      const norm = a.toLowerCase();
+      if (seen.has(norm)) {
+        return helpers.error('any.custom', { error: new Error(`alias "${a}" names both ${seen.get(norm)} and ${key}`) });
+      }
+      seen.set(norm, key);
+    }
+  }
+  return doc;
 });
 
-module.exports = { checked, strictNumber, factorRowSchema, factorTableSchema };
+/**
+ * Part A's sector factor table — Option 3's sector-average intensities per
+ * unit of revenue, with the asset turnover Option 3c needs. Every row resolves
+ * a tier and a reference, as the Part C tables must, and the provisional
+ * marker follows the same rule. `currency` is on the table because a factor
+ * per unit of one currency applied to an exposure in another is a unit error
+ * of exactly the kind the plausibility check exists to catch.
+ */
+const sectorFactorRowSchema = Joi.object({
+  scope1PerRevenue: strictNumber.required(),
+  scope2PerRevenue: strictNumber.required(),
+  scope3PerRevenue: strictNumber.optional(),
+  assetTurnover: strictNumber.required(),
+  vintage: Joi.number().integer().min(1990).max(2100).optional(),
+  tier: Joi.string().valid('Local', 'Regional', 'Global').optional(),
+  reference: Joi.string().min(1).max(4000).optional(),
+  gap: Joi.string().max(2000).optional(),
+  note: Joi.string().max(2000).optional(),
+}).unknown(false).custom((row, helpers) => {
+  for (const f of ['scope1PerRevenue', 'scope2PerRevenue', 'scope3PerRevenue', 'assetTurnover']) {
+    if (row[f] !== undefined && row[f] < 0) {
+      return helpers.error('any.custom', { error: new Error(`${f} cannot be negative`) });
+    }
+  }
+  if (row.assetTurnover === 0) {
+    return helpers.error('any.custom', { error: new Error('assetTurnover of zero would make the per-assets factor zero: a sector with no revenue per unit of assets is not a sector') });
+  }
+  return row;
+});
+
+const sectorFactorTableSchema = Joi.object({
+  table: Joi.string().valid('sector-factors').required(),
+  description: Joi.string().max(2000).optional(),
+  version: Joi.string().pattern(/^\d+\.\d+\.\d+$/).required(),
+  effectiveFrom: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).required(),
+  status: Joi.string().valid('provisional', 'released').required(),
+  provisionalRows: Joi.array().items(sectorKey).optional(),
+  supersedes: Joi.string().max(80).optional(),
+  revisionNote: Joi.string().max(2000).optional(),
+  currency: Joi.string().min(3).max(10).required(),
+  unit: Joi.string().max(80).required(),
+  vintage: Joi.number().integer().min(1990).max(2100).required(),
+  tier: Joi.string().valid('Local', 'Regional', 'Global').optional(),
+  reference: Joi.string().min(1).max(4000).optional(),
+  rules: Joi.object().pattern(Joi.string().max(40), Joi.string().max(2000)).optional(),
+  rows: Joi.object().pattern(sectorKey, sectorFactorRowSchema).min(1).required(),
+}).unknown(false).custom((table, helpers) => {
+  for (const [key, row] of Object.entries(table.rows)) {
+    for (const field of ['tier', 'reference']) {
+      if (row[field] === undefined && table[field] === undefined) {
+        return helpers.error('any.custom', {
+          error: new Error(`rows.${key} resolves no ${field}: declare it on the row, or once on the table`),
+        });
+      }
+    }
+  }
+  return provisionalRule(table, helpers, ['rows']);
+});
+
+module.exports = {
+  checked, strictNumber, factorRowSchema, factorTableSchema,
+  sectorKey, sectorVocabularySchema, sectorFactorTableSchema,
+};

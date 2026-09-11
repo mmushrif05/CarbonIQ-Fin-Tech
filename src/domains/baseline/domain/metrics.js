@@ -17,13 +17,23 @@
 
 'use strict';
 
+const { checked, sectorVocabularySchema } = require('../../../shared/reference-data');
+
+/**
+ * The sector vocabulary the intensity bands are keyed to — Part A's, read from
+ * the same file its factor library reads, so a band cannot name a sector the
+ * library does not know and the two cannot drift.
+ */
+const SECTORS = checked('data/pcaf-parta/sectors.json',
+  require('../../../../data/pcaf-parta/sectors.json'), sectorVocabularySchema).sectors;
+
 /**
  * @typedef {Object} MetricDefinition
  * @property {string} key
  * @property {string} label
  * @property {string} unit
  * @property {string[]} fields the value keys a baseline for this metric carries
- * @property {'bands'|'single'} shape
+ * @property {'bands'|'single'|'sector_bands'} shape
  * @property {string} governs what reads it — or that nothing does yet
  * @property {boolean} wired whether the product reads it today
  * @property {string} [direction] for bands: whether lower is better
@@ -70,6 +80,23 @@ const METRICS = Object.freeze({
     wired: false,
   },
 
+  sector_intensity_tCO2e_per_million_revenue: {
+    key: 'sector_intensity_tCO2e_per_million_revenue',
+    label: 'Sector carbon-intensity plausibility bands',
+    unit: 'tCO2e per million units of the reporting currency, of revenue (scope 1 and 2)',
+    shape: 'sector_bands',
+    /* The fields are the vocabulary's: `<sector>_low` and `<sector>_high` for
+       each sector held, so the value set is declared by the sector list and
+       not restated here. */
+    fields: [],
+    direction: 'range',
+    governs: 'The plausibility finding on a PCAF Part A §5.2 exposure: a borrower whose reported '
+      + 'scope 1 and 2 intensity sits outside its sector\'s band is recorded, with the divergence and '
+      + 'the baseline version it was checked against. Nothing is refused and no figure changes. '
+      + 'PCAF sets no such test; the bands are regional judgement, which is why they are governed here.',
+    wired: true,
+  },
+
   data_quality_target_score: {
     key: 'data_quality_target_score',
     label: 'PCAF data-quality ambition',
@@ -105,6 +132,8 @@ function validateValues(key, values) {
   if (!def) return { ok: false, reason: `Unknown metric "${key}". Known: ${KEYS.join(', ')}.` };
   if (!values || typeof values !== 'object') return { ok: false, reason: 'Values are required.' };
 
+  if (def.shape === 'sector_bands') return validateSectorBands(values, def);
+
   for (const f of def.fields) {
     const n = values[f];
     if (typeof n !== 'number' || !Number.isFinite(n)) {
@@ -121,4 +150,60 @@ function validateValues(key, values) {
   return { ok: true };
 }
 
-module.exports = { METRICS, KEYS, metric, validateValues };
+/**
+ * A band set over the sector vocabulary: `<sector>_low` and `<sector>_high`
+ * for at least one sector, both present, both finite and non-negative, low
+ * at or below high, and no key naming a sector the vocabulary does not hold.
+ * A band for an unknown sector would sit in the table looking authoritative
+ * and never apply to a single exposure.
+ *
+ * @param {Record<string, any>} values
+ * @param {MetricDefinition} def
+ * @returns {{ok: true}|{ok: false, reason: string}}
+ */
+function validateSectorBands(values, def) {
+  /** @type {Record<string, {low?: number, high?: number}>} */
+  const bySector = {};
+  for (const [k, n] of Object.entries(values)) {
+    const m = k.match(/^(.+)_(low|high)$/);
+    if (!m) return { ok: false, reason: `"${k}" is not a band key. This metric carries <sector>_low and <sector>_high.` };
+    const [, sector, end] = m;
+    if (!SECTORS[sector]) {
+      return { ok: false, reason: `"${sector}" is not a sector in the vocabulary (data/pcaf-parta/sectors.json). Held: ${Object.keys(SECTORS).join(', ')}.` };
+    }
+    if (typeof n !== 'number' || !Number.isFinite(n)) {
+      return { ok: false, reason: `"${k}" must be a finite number (${def.unit}).` };
+    }
+    if (n < 0) return { ok: false, reason: `"${k}" cannot be negative.` };
+    bySector[sector] = { ...(bySector[sector] || {}), [end]: n };
+  }
+  const sectors = Object.keys(bySector);
+  if (!sectors.length) return { ok: false, reason: 'At least one sector band is required.' };
+  for (const sector of sectors) {
+    const b = bySector[sector];
+    if (b.low === undefined || b.high === undefined) {
+      return { ok: false, reason: `${sector} needs both ${sector}_low and ${sector}_high.` };
+    }
+    if (b.low > b.high) {
+      return { ok: false, reason: `${sector}_low (${b.low}) cannot be above ${sector}_high (${b.high}).` };
+    }
+  }
+  return { ok: true };
+}
+
+/**
+ * A band set's values, read by sector: `{ sector: { low, high } }`.
+ * @param {Record<string, number>|null|undefined} values
+ */
+function sectorBandsOf(values) {
+  /** @type {Record<string, {low: number, high: number}>} */
+  const out = {};
+  for (const [k, n] of Object.entries(values || {})) {
+    const m = k.match(/^(.+)_(low|high)$/);
+    if (!m) continue;
+    out[m[1]] = { ...(out[m[1]] || { low: NaN, high: NaN }), [m[2]]: Number(n) };
+  }
+  return out;
+}
+
+module.exports = { METRICS, KEYS, SECTORS, metric, validateValues, sectorBandsOf };

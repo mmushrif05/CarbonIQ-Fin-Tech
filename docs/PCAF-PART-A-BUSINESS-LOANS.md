@@ -131,11 +131,37 @@ than as silence.
 Three thresholds are CarbonIQ's rather than PCAF's, and every finding that uses
 one says so on its face and takes it from the request:
 
-| Threshold | Default | Why it is ours |
-|---|---|---|
-| `fluctuationPct` | 25 | Footnote 71 asks for transparency about "any major" year-end movement and defines neither *major* nor a method |
-| `emissionsLagYears` | 2 | Chapter 4 permits a lag between the financial and emissions years and sets no limit |
-| `factorVintageYears` | 3 | Box 6.1-5 recommends inflating score 4 and 5 factors and names no age |
+| Threshold | Default | Why it is ours | The finding |
+|---|---|---|---|
+| `fluctuationPct` | 25 | Footnote 71 asks for transparency about "any major" year-end movement and defines neither *major* nor a method | `FN71_YEAR_END_FLUCTUATION` |
+| `emissionsLagYears` | 2 | Chapter 4 permits a lag between the financial and emissions years and sets no limit | `EMISSIONS_DATA_LAG` |
+| `factorVintageYears` | 3 | Box 6.1-5 recommends inflating score 4 and 5 factors and names no age | `FACTOR_VINTAGE_STALE` |
+
+The third row shipped as a threshold with no check behind it — declared in
+`DEFAULTS`, documented here, read by nothing — which is the same as none.
+`FACTOR_VINTAGE_STALE` now fires where an economic factor's vintage sits at or
+beyond the threshold behind the reporting year and no deflator was applied;
+with a deflator, Box 6.1-5 is applied and there is nothing to report.
+
+**The sector band is a baseline, not a request field.** The intensity
+plausibility check compares a borrower's reported scope 1 and 2 against a
+low–high band for its sector, per million units of the reporting currency of
+revenue. PCAF sets no such test, so the band is regional judgement — and
+regional judgement lives in the baseline registry
+(`sector_intensity_tCO2e_per_million_revenue`, `docs/BASELINE-GOVERNANCE.md`),
+scoped global → country → organisation, released by an administrator and
+superseded only with a recorded reason. The band is resolved on the way into
+the engine (`application/plausibility.js`) and handed in with its provenance,
+so `INTENSITY_OUTSIDE_SECTOR_BAND` cites the baseline version it was checked
+against and the shipped set says *illustrative dataset, not a released
+baseline* on the finding itself. A band supplied on the request stands over
+the registry's and says so. `INTENSITY_BAND_NOT_HELD` names the two ways to
+clear it: map the borrower to a held sector, or release a band for the sector.
+
+The band is never written into the stored input. A recomputation reads the
+band in force *now* — a newly released band is exactly what a recomputation
+is for — and the movement reports the findings that changed beside the lines
+that did not.
 
 Footnote 71 is the one worth dwelling on. Only the year-end balance counts —
 that is the rule, and it is applied. But a revolving facility drawn to
@@ -145,6 +171,41 @@ it. The finding is not that the rule was applied; it is what applying it to
 *this* facility produced. That disclosure belongs beside the figure.
 
 ---
+
+### The held sector factors
+
+Option 3 needs a sector-average factor, and until this step every one was
+supplied on the request. The library (`domain/sector-factors.js`,
+`data/pcaf-parta/sector-factors.json`) holds one row per sector of a closed
+vocabulary (`data/pcaf-parta/sectors.json`: ISIC Rev.4 sections, with the
+divisions a Sri Lankan book actually holds — tea, rice, textiles and apparel,
+cement, food, rubber and plastics — as rows of their own beneath their
+section, because "a paddy-rice factor, not an agriculture factor" is the
+standard's own example on p.62). Each row carries scope 1, 2 and 3 intensities
+per million LKR of revenue and the sector's asset turnover; Option 3b's
+per-assets factor is derived as GHG ÷ revenue × revenue ÷ assets rather than
+held as a second number that could disagree with the first.
+
+An Option 3 line with no `activity.factor` takes the held factor for
+`counterparty.sectorKey` — a free-text `sector` is mapped by name and the
+mapping recorded as an assumption on the trace, never silently — and the
+result carries `factorRelease`: the table, version, status, the rows used and
+a SHA-256 over the set, so a disclosure names the factor set it rests on.
+Three refusals, each with the way forward: a sector that is not held is
+`FACTOR_REQUIRED` naming the vocabulary, never the nearest sector; a factor
+held in LKR is not applied to an exposure in USD; a scope the row does not
+hold is absent with the reason.
+
+**Every shipped row is provisional and says so.** The figures are
+order-of-magnitude, derived from published global EEIO ranges at an
+indicative exchange rate — not a licensed EXIOBASE extraction and not a
+Sri Lankan measurement — and each row's `gap` records that. The table is
+versioned, dated and checksummed in `data/pcaf-parta/MANIFEST.json`
+(`npm run docs:parta-manifest`, held to the table by
+`tests/parta-factor-provenance.test.js` and regenerated in the CI `docs`
+job), kept apart from `data/factors/MANIFEST.json` because Part A and Part C
+are two scopes that never merge. `GET /v1/pcaf/part-a/factors` publishes the
+vocabulary, the table and the release.
 
 ## 4. Driving it
 
@@ -368,10 +429,17 @@ overdraft, states the total, recomputes, and asserts the page never widens.
   needs no migration.
 - **No §5.2 report.** The figures are there; the document PCAF's Chapter 6 and
   the Disclosure Checklist ask for is row 8 of that plan.
-- **No sector factor library and no sector intensity bands.** Both are supplied
-  per request. A held, versioned and checksummed set — the discipline
-  `data/factors/MANIFEST.json` already follows for Part C — is what turns
-  `INTENSITY_BAND_NOT_HELD` from the usual answer into the rare one, and it is
-  regional judgement, so it belongs in the baseline registry.
+- **The sector factors are placeholders.** The library is built and every
+  row of it is provisional: a released factor set — a licensed EEIO extraction
+  mapped to the vocabulary, or a Sri Lankan measurement — replaces the shipped
+  figures under the same version, date and checksum. Until then an estimate
+  from the library is a score-5 figure resting on a stated order of magnitude,
+  and the trace says so.
+- **A released band set replaces the seed entirely.** An organisation that
+  releases a band for one sector holds a band for that sector alone; the
+  others are then *not held* and the finding says so with the remedy. That is
+  the registry's rule for every metric and it is the right one — a
+  half-shipped, half-recorded band set is a figure with two authors — but it
+  means a first release is the whole set, not one row.
 - **No recalculation policy.** Base year and significance threshold are on the
   reporting entity's settings in Part C and have no Part A equivalent yet.

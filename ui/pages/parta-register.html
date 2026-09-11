@@ -32,6 +32,8 @@
       <div class="pr-grid">
         <label>Borrower <input id="pr-f-name" type="text" required maxlength="200"></label>
         <label>Sector <input id="pr-f-sector" type="text" maxlength="120" placeholder="e.g. Textiles"></label>
+        <label>Held sector
+          <select id="pr-f-sector-key"><option value="">Not mapped</option></select></label>
         <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>
         <label>Instrument
           <select id="pr-f-instrument">
@@ -55,6 +57,7 @@
       <div class="pr-grid">
         <label>Amount <input id="pr-f-outstanding" type="number" min="0" step="any" required></label>
         <label>Average over the year <input id="pr-f-average" type="number" min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
+        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" min="0" step="any" placeholder="optional — runs the sector band check"></label>
         <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-asof" type="date" required></label>
       </div>
@@ -86,6 +89,7 @@
         <label>Emissions year <input id="pr-f-period" type="number" min="2000" max="2100"></label>
         <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given"></label>
       </div>
+      <p class="partc-hint" id="pr-sector-factor-note">Leave the sector factors empty to use the held factor for the mapped sector. The run names the table, version and checksum it used.</p>
       <div class="pr-grid" id="pr-sector-factor">
         <label>Sector factor, scope 1 (tCO₂e per unit of assets) <input id="pr-f-sf1" type="number" min="0" step="any"></label>
         <label>Sector factor, scope 2 <input id="pr-f-sf2" type="number" min="0" step="any"></label>

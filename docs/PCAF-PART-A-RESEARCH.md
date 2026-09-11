@@ -212,8 +212,10 @@ line and estimation machinery §5.1 and §5.2 share, bound per chapter to its ow
 table and footnote numbers), Table 5.2-1 in
 `data/pcaf-parta/dq-business-loans-unlisted-equity.json`, two routes, 39 tests
 anchored on the standard's own Tables 5.2-2/5.2-3, and
-`docs/PCAF-PART-A-BUSINESS-LOANS.md`. What is *not* built is the persisted
-exposure register, the report and the sector factor library — see §10.
+`docs/PCAF-PART-A-BUSINESS-LOANS.md`; the persisted exposure register
+(migration 0008), the Lending Book screen, and the sector factor library with
+the intensity bands governed in the baseline registry. What is *not* built is
+the report and a released factor set — see §10.
 **Sri Lankan relevance: the largest class on the book.** Corporate and SME
 lending is the bulk of a Sri Lankan commercial bank's assets; almost every
 borrower is unlisted; almost none reports emissions, so Options 2 and 3 carry
@@ -835,13 +837,14 @@ annual inventory.
 | Portfolio | §5.2 roll-up over a **persisted** register (migration 0008): one row per exposure per reporting year holding the input and the result, a stored projection the roll-up reads instead of the trace (316 ms over 10,000), one loan per year said in the database (migration 0009, `409 DUPLICATE_LOAN`), a recomputation that compares every line and both scores, real coverage against the entity's stated book total, and the improvement plan | The same register reaching §5.1 and §5.3; the lock-and-supersede lifecycle; economic intensity across a book; recalculation policy and threshold on entity settings |
 | Reporting | — | The Part A report (one model, two renderers, reusing Part C's standard); auto-answered DCL; Annex 10.2 tables |
 | Conformance | — | Rule → implementation → proving test, generated document, evidence run |
-| Data validation | §5.2 only: the footnote 71 year-end fluctuation, the emissions-year lag, denominator-versus-balance-sheet coherence, sector-intensity plausibility, attribution concentration — as findings that refuse nothing and change no figure | The same for every other class; a held set of sector intensity bands and sector factors, versioned and checksummed |
+| Data validation | §5.2 only: the footnote 71 year-end fluctuation, the emissions-year lag, the vintage of an economic factor (Box 6.1-5), denominator-versus-balance-sheet coherence, sector-intensity plausibility against a **governed band** (the baseline registry, cited by version on the finding), attribution concentration — as findings that refuse nothing and change no figure | The same for every other class |
+| Factors | The Option 3 sector factor library keyed to a closed ISIC-based vocabulary (`data/pcaf-parta/sectors.json`, `sector-factors.json`), versioned, dated and checksummed (`data/pcaf-parta/MANIFEST.json`); an estimated figure names the set; a factor in one currency is never applied to an exposure in another | A released factor set — every shipped row is a stated order of magnitude and says so; sector factors for the other classes |
 | Surface | The stateless engine routes (`read`), and the register: `exposures` CRUD and `recompute`, `book`, `years`, `position/:year`, `storage` (the writes on `write`, deliberately apart from the engine's `read`); the **Lending Book** screen over the register (`ui/pages/parta-register.html`), computing nothing, with a sample book for a preview session | A reporting-year screen across classes |
 
-Nine test suites: `parta-api`, `parta-business-loans`, `parta-engine`,
-`parta-generation`, `parta-listed-equity`, `parta-register`,
-`parta-register-api`, `parta-register-ui`, `parta-ui` — and the browser
-journey `e2e/parta-register.spec.js`.
+Ten test suites: `parta-api`, `parta-business-loans`, `parta-engine`,
+`parta-factor-provenance`, `parta-generation`, `parta-listed-equity`,
+`parta-register`, `parta-register-api`, `parta-register-ui`, `parta-ui` — and
+the browser journey `e2e/parta-register.spec.js`.
 
 ---
 
@@ -898,6 +901,10 @@ a correction to something we had previously written, or a section moving from
 
 | Date | Section | What changed | Source |
 |---|---|---|---|
+| 2026-09-11 | §2.2, §10 | **A factor must match the primary activity financed (p.62), so the library is keyed to a closed sector vocabulary.** ISIC Rev.4 sections, with the divisions a Sri Lankan lending book actually holds (tea, rice, textiles and apparel, cement, food, rubber and plastics) as rows of their own beneath their section, because "a paddy-rice factor, not an agriculture factor" is the standard's own example. A factor resolves by `sectorKey`; a free-text sector mapped by name is recorded as an assumption on the trace, never silently. Step 3 of the §5.2 plan | p.62; `data/pcaf-parta/sectors.json` |
+| 2026-09-11 | §10 | **The held sector factors are provisional, every row a gap, and a run that uses one names the set.** `data/pcaf-parta/sector-factors.json` carries order-of-magnitude figures derived from published global EEIO ranges at an indicative exchange rate — not a licensed EXIOBASE extraction and not a Sri Lankan measurement — and each row says so. The table is versioned, dated and checksummed (`data/pcaf-parta/MANIFEST.json`, the discipline `data/factors/MANIFEST.json` established for Part C) and an exposure estimated from it carries the table, version and checksum on its result. A factor held in one currency is never applied to an exposure in another: the resolver reports it absent with the reason | Box 6.1-5 (p.167); CarbonIQ |
+| 2026-09-11 | §2.2, §10 | **Correction: `factorVintageYears` was declared and nothing checked it.** The §5.2 checks named three thresholds as CarbonIQ's and only two had a check behind them. `FACTOR_VINTAGE_STALE` now fires where an economic factor's vintage sits at or beyond the threshold behind the reporting year and no deflator was applied — the omission Box 6.1-5 (p.167) is about, reported as a finding rather than left as an assumption in the trace | Box 6.1-5 (p.167); `domain/business-loans/checks.js` |
+| 2026-09-11 | §10 | **Sector intensity bands are regional judgement, so they live in the baseline registry.** `sector_intensity_tCO2e_per_million_revenue` is a metric of shape `sector_bands` — a low and a high per sector of the vocabulary, scoped global → country → organisation, released by an administrator and superseded only with a recorded reason. The plausibility finding cites the baseline version it was checked against, and `INTENSITY_BAND_NOT_HELD` now names the two ways to clear it: map the borrower to a held sector, or release a band. The shipped LK set is provisional and says so | CarbonIQ; `docs/BASELINE-GOVERNANCE.md` |
 | 2026-09-11 | §10 | **The §5.2 screen built** — the Lending Book, over the register. It computes nothing; every figure is the register's. Position, book total, groups with financial-sector borrowers apart, the improvement plan with every projected score marked *scenario*, and each exposure opening into its findings with what clears them. A preview session sees a six-exposure sample book. Step 2 of the §5.2 plan | `docs/PCAF-PART-A-BUSINESS-LOANS.md` §8; p.56 (financial-sector borrowers apart) |
 | 2026-09-11 | §10 | **One loan, once — said in the database.** Migration 0009: a generated `account_number` column and a partial unique index on `(org_id, reporting_year, account_number)`, so one facility cannot be financed twice in a year by two people or one double press. The service refuses first with `409 DUPLICATE_LOAN` naming the row that holds the reference; the index closes the race the service cannot. Partial, because two exposures recorded without a reference are not thereby the same loan | CarbonIQ; the one-locked-assessment-per-policy-year index in Part C |
 | 2026-09-11 | §10 | **A recomputation compares every line and both scores.** It compared the headline alone and reported "nothing moved" when scope 3, removals or a data-quality score had. All seven lines and both scores now travel with before, after and whether each moved, and the note names what did | CarbonIQ; `application/register.js` |

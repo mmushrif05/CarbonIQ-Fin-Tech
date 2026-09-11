@@ -19,12 +19,18 @@
  * finding, the finding carries what would clear it, and the same list sorted
  * by what each fix would move is the improvement plan.
  *
- * Two thresholds are CarbonIQ's judgement rather than PCAF's, and both say so
- * on the finding they raise. Footnote 71 asks an institution to be transparent
- * about "any major last minute increases or decreases at fiscal year-end" and
- * defines neither *major* nor a method; leaving it undefined means nobody
- * checks it, which is how a revolving book reports a year of emissions from
- * one week's balance.
+ * Three thresholds are CarbonIQ's judgement rather than PCAF's, and each says
+ * so on the finding it raises. Footnote 71 asks an institution to be
+ * transparent about "any major last minute increases or decreases at fiscal
+ * year-end" and defines neither *major* nor a method; leaving it undefined
+ * means nobody checks it, which is how a revolving book reports a year of
+ * emissions from one week's balance. The factor-vintage threshold was declared
+ * here for a release before anything read it — a threshold with no check
+ * behind it is the same as none — and `factorVintage` is the check.
+ *
+ * The sector band the intensity check reads is not this module's: it is a
+ * baseline, resolved by the application layer and handed in with its
+ * provenance, so the finding can cite the version it was checked against.
  */
 
 'use strict';
@@ -176,14 +182,17 @@ function intensityPlausibility({ scope1And2_tCO2e, revenue, currency, sectorBand
         + 'compare it against.',
       effect: 'The figure is used as given. A unit error — kilograms entered as tonnes, one plant entered for '
         + 'a group — would not be caught by anything in this run.',
-      remedy: 'Supply a sector intensity band for this borrower\'s primary activity. The check then reports '
-        + 'divergence from it and never overwrites the figure.',
+      remedy: 'Map the borrower to a held sector (counterparty.sectorKey) so the band in force for its '
+        + 'country applies, or release a band for the sector in the baseline registry, or supply '
+        + 'plausibility.sectorBand on the request. The check then reports divergence and never '
+        + 'overwrites the figure.',
       reference: 'CarbonIQ plausibility check; PCAF sets no such test',
       observed: { intensity: +intensity.toFixed(2), sector: sector || null },
     });
   }
 
   const low = Number(sectorBand.low), high = Number(sectorBand.high);
+  const basis = sectorBand.basis ? ` Band: ${sectorBand.basis}` : '';
   if (intensity >= low && intensity <= high) return null;
   const side = intensity < low ? 'below' : 'above';
   const factor = intensity < low ? low / intensity : intensity / high;
@@ -202,8 +211,47 @@ function intensityPlausibility({ scope1And2_tCO2e, revenue, currency, sectorBand
         + 'that it does.',
     remedy: 'Confirm the unit and the reporting boundary of the borrower\'s figure against its source '
       + 'document. If it is right, nothing needs to change and the finding is the evidence that it was checked.',
-    reference: 'CarbonIQ plausibility check; PCAF sets no such test',
-    observed: { intensity: +intensity.toFixed(2), low, high, sector: sector || null, divergenceFactor: +factor.toFixed(2) },
+    reference: `CarbonIQ plausibility check; PCAF sets no such test.${basis}`,
+    observed: {
+      intensity: +intensity.toFixed(2), low, high, sector: sector || null, divergenceFactor: +factor.toFixed(2),
+      band: {
+        basis: sectorBand.basis || null, provisional: sectorBand.provisional === undefined ? null : Boolean(sectorBand.provisional),
+        scope: sectorBand.scope || null, baselineId: sectorBand.baselineId || null, version: sectorBand.version === undefined ? null : sectorBand.version,
+      },
+    },
+  });
+}
+
+/**
+ * An economic emission factor's age against the year it is applied to.
+ *
+ * Box 6.1-5 (p.167) recommends inflating score 4 and 5 factors to the
+ * reporting year, because a factor per unit of currency of its own year
+ * applied to a later year's revenue or balance understates the estimate by
+ * the inflation between the two. The estimation records the omission as an
+ * assumption; this is the same fact as a finding, so it reaches the plan and
+ * the disclosure rather than the trace alone. Where a deflator was applied
+ * there is nothing to report.
+ */
+function factorVintage({ reportingYear, factor, inflationApplied, scope, thresholdYears }) {
+  const limit = Number.isFinite(Number(thresholdYears)) ? Number(thresholdYears) : DEFAULTS.factorVintageYears;
+  if (inflationApplied || !factor || !Number.isFinite(Number(factor.vintage)) || !reportingYear) return null;
+  const vintage = Number(factor.vintage);
+  const age = Number(reportingYear) - vintage;
+  if (age < limit) return null;
+  return finding({
+    code: 'FACTOR_VINTAGE_STALE',
+    severity: 'advisory',
+    field: `emissions.scope${scope}.activity.factor`,
+    statement: `The scope ${scope} economic emission factor is of vintage ${vintage} and is applied to `
+      + `${reportingYear} figures without an inflation adjustment — ${age} years apart.`,
+    effect: 'A factor per unit of currency of its own year, applied to a later year\'s revenue or balance, '
+      + 'understates the estimate by the inflation between the two years. The figure stands as computed.',
+    remedy: 'Supply a deflator — the price-level ratio and the index it came from — and Box 6.1-5 is '
+      + 'applied; or use a factor of a more recent vintage. PCAF names no age; the '
+      + `${limit}-year threshold is CarbonIQ's and is settable.`,
+    reference: 'PCAF Part A Third Edition Box 6.1-5 (p.167)',
+    observed: { vintage, reportingYear: Number(reportingYear), ageYears: age, thresholdYears: limit, source: factor.source || null },
   });
 }
 
@@ -240,5 +288,5 @@ function concentration({ attributionFactor, borrowerListed }) {
 
 module.exports = {
   DEFAULTS, yearEndFluctuation, emissionsLag, denominatorCoherence,
-  intensityPlausibility, concentration,
+  intensityPlausibility, factorVintage, concentration,
 };

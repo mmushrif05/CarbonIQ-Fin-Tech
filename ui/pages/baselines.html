@@ -78,6 +78,8 @@
 
   .bl-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bl-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 780px; }
+  .bl-table.bl-bands { min-width: 0; margin: 4px 0 8px; }
+  .bl-form textarea { min-width: 0; max-width: 100%; font: inherit; font-size: 12.5px; }
   .bl-table th {
     text-align: left; font-weight: 600; color: var(--bl-muted);
     font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
@@ -97,6 +99,10 @@
   .bl-btn:disabled { opacity: .5; cursor: not-allowed; }
   .bl-form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }
   .bl-form label { display: grid; gap: 4px; font-size: 11.5px; color: var(--bl-muted); min-width: 0; }
+  /* The label above sets a display, and any class rule that sets display
+     beats the user-agent [hidden]. The value fields open and close with
+     el.hidden as the metric changes. */
+  .bl [hidden] { display: none !important; }
   .bl-form input, .bl-form select {
     font: inherit; font-size: 13px; padding: 7px 9px; min-width: 0;
     border: 1px solid var(--bl-line); border-radius: 7px;
@@ -158,11 +164,14 @@
         <label>Country
           <input id="bl-country" value="LK" maxlength="2" />
         </label>
-        <label>Green threshold
+        <label id="bl-green-field">Green threshold
           <input id="bl-green" type="number" step="1" min="0" value="520" />
         </label>
-        <label>Transition threshold
+        <label id="bl-transition-field">Transition threshold
           <input id="bl-transition" type="number" step="1" min="0" value="780" />
+        </label>
+        <label id="bl-values-field" hidden>Values, as JSON
+          <textarea id="bl-values" rows="4" placeholder='{ "manufacturing_cement_low": 2, "manufacturing_cement_high": 32 }'></textarea>
         </label>
         <label>Source
           <input id="bl-source" placeholder="The document this figure rests on" />

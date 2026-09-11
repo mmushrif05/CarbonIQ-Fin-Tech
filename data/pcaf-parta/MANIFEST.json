@@ -1,0 +1,53 @@
+{
+  "note": "GENERATED. Regenerate with: npm run docs:parta-manifest",
+  "purpose": "The Part A sector factor set an estimated figure was computed on: version, effective date, status and checksum per table.",
+  "algorithm": "SHA-256 over the canonical form (keys sorted at every level)",
+  "checksum": "c98b41b10b689a08bfc00e5cb5c0e916ee39ccec4b61c52d05dc39a52afd5bf9",
+  "provisionalTables": [
+    "sector-factors"
+  ],
+  "tables": [
+    {
+      "table": "sector-factors",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-09-11",
+      "status": "provisional",
+      "provisionalRows": [
+        "accommodation_food",
+        "admin_support",
+        "agriculture",
+        "agriculture_rice",
+        "agriculture_tea",
+        "construction",
+        "education",
+        "electricity",
+        "finance",
+        "health",
+        "information",
+        "manufacturing",
+        "manufacturing_cement",
+        "manufacturing_food",
+        "manufacturing_rubber_plastics",
+        "manufacturing_textiles",
+        "mining",
+        "other_services",
+        "professional",
+        "real_estate",
+        "transport",
+        "water_waste",
+        "wholesale_retail"
+      ],
+      "rowCount": 23,
+      "currency": "LKR",
+      "vintage": 2022,
+      "checksum": "751c5d59929246ad957b7b7bb4229865249d86953a9209d68852fe33e6a43b20"
+    },
+    {
+      "table": "sectors",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-09-11",
+      "rowCount": 23,
+      "checksum": "96c0a6c81e2e576b1b00337ce8340d134cf0315597ae3352b24563d83159c002"
+    }
+  ]
+}

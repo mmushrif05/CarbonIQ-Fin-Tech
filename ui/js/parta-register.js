@@ -72,6 +72,22 @@ const PartARegisterPage = (() => {
   const put = (path, body) => call(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const del = path => call(path, { method: 'DELETE' });
 
+  // ── the held vocabulary ─────────────────────────────────────
+
+  /* Reference data for the form: the sectors a factor and a band are held
+     for. Loaded before the first request so the select is populated before
+     anyone can open the form. */
+  async function loadVocabulary() {
+    const sel = $('pr-f-sector-key');
+    if (!sel) return;
+    try {
+      const { vocabulary } = await call('/factors');
+      const sectors = (vocabulary && vocabulary.sectors) || [];
+      sel.innerHTML = '<option value="">Not mapped</option>' + sectors
+        .map(x => `<option value="${esc(x.key)}">${esc(x.label)} · ISIC ${esc(x.isic)}${x.held ? '' : ' · no factor held'}</option>`).join('');
+    } catch (_) { /* the free-text sector still records; the engine says what it could not map */ }
+  }
+
   // ── years ──────────────────────────────────────────────────
 
   async function loadYears() {
@@ -293,6 +309,9 @@ const PartARegisterPage = (() => {
             ${x.denominator ? `<dt>Company value</dt><dd>${fmt(x.denominator.value, 0)} <span class="partc-hint">${esc(x.denominator.equation)}</span></dd>` : ''}</dl>
             ${x.denominator && x.denominator.assumptions && x.denominator.assumptions.length ? `<ul class="partc-hint">${x.denominator.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}`
             : '<p class="partc-hint">No attribution factor: the figure rests on a sector-average option and is a rough estimate of this institution\'s share.</p>'}
+          ${x.factorRelease ? `<h5 class="partc-subhead">Factor set</h5>
+            <p class="partc-hint">${esc(x.factorRelease.tables[0].table)} v${esc(x.factorRelease.tables[0].version)}, ${esc(x.factorRelease.tables[0].status)} · rows ${esc(x.factorRelease.rows.join(', '))} · SHA-256 ${esc(x.factorRelease.checksum.slice(0, 16))}…</p>` : ''}
+          ${x.exposure.counterparty.sectorKey ? `<p class="partc-hint">Held sector: ${esc(x.exposure.counterparty.sectorKey)}</p>` : ''}
         </div>
       </div>
       <h5 class="partc-subhead">What the data says about itself</h5>
@@ -347,7 +366,8 @@ const PartARegisterPage = (() => {
       instrument,
       borrowerListed: instrument === 'unlisted-equity' ? false : listed,
       borrowerType: $('pr-f-borrower-type').value,
-      counterparty: { name: str('pr-f-name'), sector: str('pr-f-sector'), financialInstitution: fi || undefined },
+      counterparty: { name: str('pr-f-name'), sector: str('pr-f-sector'), sectorKey: str('pr-f-sector-key'), financialInstitution: fi || undefined },
+      plausibility: { revenue: num('pr-f-revenue') },
       outstanding: { amount: num('pr-f-outstanding'), averageOutstanding: num('pr-f-average'), asOf: str('pr-f-asof'), currency: str('pr-f-currency') },
     };
     const ref = str('pr-f-ref');
@@ -372,8 +392,11 @@ const PartARegisterPage = (() => {
     if (s1 !== undefined || s2 !== undefined || s3 !== undefined || hasValue) {
       body.emissions = { scope1: reported(s1), scope2: reported(s2), scope3: reported(s3) };
     } else {
-      /* Nothing reported and no company value: Option 3b from a sector factor. */
-      const factor = sf => ({ value: sf, unit: 'tCO2e per unit of assets', source: str('pr-f-sf-source'), vintage: num('pr-f-sf-vintage') });
+      /* Nothing reported and no company value: Option 3b from a sector factor —
+         the one typed here, or, left empty, the held factor for the mapped
+         sector. */
+      const factor = sf => (sf === undefined ? undefined
+        : { value: sf, unit: 'tCO2e per unit of assets', source: str('pr-f-sf-source'), vintage: num('pr-f-sf-vintage') });
       body.emissions = {
         scope1: { basis: 'assets-sector', activity: { factor: factor(num('pr-f-sf1')) } },
         scope2: { basis: 'assets-sector', activity: { factor: factor(num('pr-f-sf2')) } },
@@ -454,6 +477,7 @@ const PartARegisterPage = (() => {
     }
     if ($('pr-f-asof') && !$('pr-f-asof').value) $('pr-f-asof').value = `${new Date().getFullYear()}-12-31`;
     for (const el of document.querySelectorAll('.parta-register [data-writes]')) el.hidden = preview();
+    await loadVocabulary();
     await loadYears();
     await load();
   }

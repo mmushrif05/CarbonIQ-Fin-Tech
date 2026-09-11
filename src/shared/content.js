@@ -35,6 +35,12 @@ const { containsForbiddenLanguage } = require('./report-integrity');
 
 const OVERRIDE_FILE = path.join(__dirname, '..', '..', 'data', 'content', 'report-text.json');
 
+/* The file actually read. A test points a fresh copy of this module at a
+   temporary file rather than writing the deployment's own — the suite runs
+   in parallel workers, and a forbidden override written into the real file
+   for one assertion was loaded by another worker's app in the same instant. */
+let overrideFile = OVERRIDE_FILE;
+
 /**
  * What a deployment may reword, and what each line is for.
  *
@@ -87,14 +93,22 @@ let _overrides = null;
 function _load() {
   if (_overrides) return _overrides;
   _overrides = /** @type {Record<string, string>} */ ({});
-  if (!fs.existsSync(OVERRIDE_FILE)) return _overrides;
-  const raw = JSON.parse(fs.readFileSync(OVERRIDE_FILE, 'utf8'));
+  if (!fs.existsSync(overrideFile)) return _overrides;
+  const raw = JSON.parse(fs.readFileSync(overrideFile, 'utf8'));
   _overrides = validateOverrides(raw && raw.text ? raw.text : raw);
   return _overrides;
 }
 
 /** Forget the loaded overrides — used by tests and after an edit. */
 function reload() { _overrides = null; return _load(); }
+
+/**
+ * Read overrides from `file` instead of the deployment's — a test seam, so a
+ * suite can prove the loader's refusals without writing into the file every
+ * other worker's application reads.
+ * @param {string} file
+ */
+function useOverrideFile(file) { overrideFile = file; _overrides = null; }
 
 /**
  * Check a set of overrides and return it, or throw naming the first problem.
@@ -148,4 +162,4 @@ function catalogue() {
   }));
 }
 
-module.exports = { CONTENT, KEYS, MAX_LENGTH, OVERRIDE_FILE, text, catalogue, reload, validateOverrides };
+module.exports = { CONTENT, KEYS, MAX_LENGTH, OVERRIDE_FILE, text, catalogue, reload, useOverrideFile, validateOverrides };
