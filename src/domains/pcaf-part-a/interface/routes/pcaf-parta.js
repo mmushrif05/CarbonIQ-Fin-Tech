@@ -2,8 +2,10 @@
 /**
  * CarbonIQ FinTech — PCAF Part A (financed emissions)
  *
- *   GET  /v1/pcaf/part-a/reference   asset classes, archetypes, data-quality options
- *   POST /v1/pcaf/part-a/assess      assess one exposure
+ *   GET  /v1/pcaf/part-a/reference                    asset classes, archetypes, data-quality options
+ *   POST /v1/pcaf/part-a/assess                       assess one exposure (§5.3 project finance)
+ *   POST /v1/pcaf/part-a/business-loans/assess        assess one exposure (§5.2)
+ *   POST /v1/pcaf/part-a/business-loans/portfolio     roll up a book and rank what to fix first (§5.2)
  *
  * Deterministic and synchronous. No model call, so none of the deadline
  * machinery the agent routes need applies here — an assessment is arithmetic
@@ -20,7 +22,10 @@ const validate   = require('../../../../platform/http/validate');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 
 const parta = require('../../domain');
+const { assessBusinessLoan } = require('../../domain/business-loans');
+const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
 const { assessRequestSchema } = require('../schemas/pcaf-parta');
+const { exposureSchema, portfolioRequestSchema } = require('../schemas/business-loans');
 
 const router = Router();
 
@@ -51,6 +56,26 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
           scopes: 'Scope 1 and 2 shall be reported. Scope 3 should be covered if relevant.',
           dataQualityOptions: parta.dataQuality.optionsFor('project-finance'),
           dataQualityTable: parta.dataQuality.tableFor('project-finance').table,
+        },
+        {
+          id: 'business-loans-unlisted-equity',
+          label: 'Business loans and unlisted equity',
+          section: '5.2',
+          definition: 'On-balance sheet loans and lines of credit to listed and unlisted businesses '
+            + 'for general corporate purposes — revolving credit, overdrafts and loans secured on '
+            + 'real estate included — and equity investments in companies not traded on a market. '
+            + 'Loans to governments are sovereign or sub-sovereign debt; a loan to a state-owned '
+            + 'enterprise is in this class.',
+          denominator: 'total company equity plus debt, or EVIC where the borrower is listed',
+          scopes: 'Scope 1, 2 and 3 of the borrower shall be reported, across all sectors, with '
+            + 'scope 3 disclosed separately from scope 1 and 2.',
+          instruments: {
+            loans: [...require('../../domain/business-loans/classify').LOANS],
+            equity: [...require('../../domain/business-loans/classify').EQUITY],
+          },
+          dataQualityOptions: parta.dataQuality.optionsFor('business-loans-unlisted-equity'),
+          dataQualityTable: parta.dataQuality.tableFor('business-loans-unlisted-equity').table,
+          thresholds: require('../../domain/business-loans/checks').DEFAULTS,
         },
       ],
       archetypes: parta.archetypes.list(),
@@ -103,6 +128,58 @@ router.post('/assess',
       const startedAt = Date.now();
       const result = parta.assessExposure(req.body);
       res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * §5.2 — one exposure.
+ *
+ * The response carries a `validation` block beside the figures: what the data
+ * says about itself, as findings that never refuse and never change a number.
+ * It is the half of the answer a bank cannot get from the standard.
+ */
+router.post('/business-loans/assess',
+  doc({ summary: 'PCAF Part A §5.2 financed emissions for one business loan or unlisted equity holding',
+    description: 'Six reporting lines, never netted; data quality by option from Table 5.2-1 and '
+      + 'never averaged; EVIC where the borrower is listed and total equity plus debt otherwise. '
+      + 'The validation block reports what the data says about itself — the footnote 71 year-end '
+      + 'fluctuation of a revolving facility, the age of the emissions figure, a denominator that '
+      + 'cannot have come from one balance sheet — as findings that change no figure.',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
+  validate({ body: exposureSchema }),
+  (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const result = assessBusinessLoan(req.body);
+      res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * §5.2 — a book.
+ *
+ * A read: nothing is stored and no id is issued, so the same request twice
+ * gives the same answer and moves nothing. The improvement plan is ordered by
+ * how much of the disclosed score each remedy holds down, because a score is a
+ * measurement and not a worklist.
+ */
+router.post('/business-loans/portfolio',
+  doc({ summary: 'Roll up a book of §5.2 exposures and rank what to fix first',
+    description: 'Six lines summed per group and never across lines; the disclosed score weighted '
+      + 'by outstanding amount with scope 3 apart; financial-sector borrowers rolled up separately. '
+      + 'Every figure under the improvement plan is a scenario run through the same weighting the '
+      + 'disclosure uses and is never the reported score. Stores nothing.',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
+  validate({ body: portfolioRequestSchema }),
+  (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const results = req.body.exposures.map(assessBusinessLoan);
+      const book = businessLoansPortfolio.rollUp(results, {
+        totalLoansAndInvestments: req.body.totalLoansAndInvestments,
+        improvementTarget: req.body.improvementTarget,
+      });
+      res.json({ ...book, exposures: results, elapsedMs: Date.now() - startedAt });
     } catch (err) { next(err); }
   });
 

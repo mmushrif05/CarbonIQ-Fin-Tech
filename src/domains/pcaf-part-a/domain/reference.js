@@ -138,10 +138,17 @@ const DQ_PROJECT_FINANCE = Object.freeze(checked('data/pcaf-parta/dq-project-fin
   require('../../../../data/pcaf-parta/dq-project-finance.json'), dqTableSchema));
 const DQ_LISTED_EQUITY = Object.freeze(checked('data/pcaf-parta/dq-listed-equity-corporate-bonds.json',
   require('../../../../data/pcaf-parta/dq-listed-equity-corporate-bonds.json'), dqTableSchema));
+/* §5.2's table carries the same scores as §5.1's, and it is held separately
+   anyway. Sharing one file would encode "these two are the same" as a fact
+   about the standard, which it is not: the real-estate tables put Option 2a at
+   3 and Option 3 at 5 on the same labels. A later edition moving one of these
+   two would then move both, silently. */
+const DQ_BUSINESS_LOANS = Object.freeze(checked('data/pcaf-parta/dq-business-loans-unlisted-equity.json',
+  require('../../../../data/pcaf-parta/dq-business-loans-unlisted-equity.json'), dqTableSchema));
 const COUNTRY_CONFIG = Object.freeze(checked('data/pcaf-parta/country-config.json',
   require('../../../../data/pcaf-parta/country-config.json'), countryConfigSchema));
 
 module.exports = {
-  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, COUNTRY_CONFIG,
+  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, COUNTRY_CONFIG,
   dqTableSchema, countryConfigSchema,
 };

@@ -111,3 +111,67 @@ describe('POST /v1/pcaf/part-a/assess', () => {
     await request(app).post('/v1/pcaf/part-a/assess').send(SOLAR).expect(401);
   });
 });
+
+describe('PCAF Part A §5.2 over HTTP', () => {
+  const EXPOSURE = {
+    reportingYear: 2020,
+    instrument: 'business-loan',
+    borrowerListed: false,
+    counterparty: { name: 'Ceylon Textiles (Pvt) Ltd', sector: 'Textiles' },
+    outstanding: { amount: 100000, averageOutstanding: 100000, asOf: '2020-12-31', currency: 'LKR' },
+    denominator: { totalEquity: 600000, totalDebt: 400000, asOf: '2020-12-31', currency: 'LKR' },
+    emissions: {
+      scope1: { value: 1000, basis: 'reported-unverified', period: '2020' },
+      scope2: { value: 100, basis: 'reported-unverified', period: '2020' },
+      scope3: { value: 5000, basis: 'reported-unverified', period: '2020' },
+    },
+  };
+
+  test('the reference endpoint serves §5.2 with its own table and the thresholds that are ours', async () => {
+    const res = await request(app).get('/v1/pcaf/part-a/reference').set('x-api-key', KEY).expect(200);
+    const bl = res.body.assetClasses.find(a => a.id === 'business-loans-unlisted-equity');
+    expect(bl.dataQualityTable).toBe('Table 5.2-1');
+    expect(bl.denominator).toMatch(/EVIC where the borrower is listed/);
+    expect(bl.instruments.loans).toContain('revolving-credit');
+    expect(bl.thresholds.fluctuationPct).toBe(25);
+  });
+
+  test('one exposure comes back with its figures and what the data says about itself', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess')
+      .set('x-api-key', KEY).send(EXPOSURE).expect(200);
+    expect(res.body.attribution.value).toBe(0.1);
+    expect(res.body.inventory.scope1.value).toBe(100);
+    expect(res.body.inventory.dataQuality.scope1And2.label).toBe('Data quality score: 2 (Option 1b)');
+    expect(res.body.validation.verdict).toBe('clean');
+  });
+
+  test('an engine refusal survives the route with its clause and its remedy', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess')
+      .set('x-api-key', KEY)
+      .send({ ...EXPOSURE, borrowerType: 'government' })
+      .expect(400);
+    expect(res.body.message).toMatch(/sovereign debt/i);
+    expect(res.body.message).toMatch(/state-owned-enterprise/);
+  });
+
+  test('a misspelled field is a named 400 rather than a key quietly ignored', async () => {
+    const res = await request(app).post('/v1/pcaf/part-a/business-loans/assess')
+      .set('x-api-key', KEY)
+      .send({ ...EXPOSURE, outstanding: { ...EXPOSURE.outstanding, averageOutstandng: 5 } })
+      .expect(400);
+    expect(JSON.stringify(res.body)).toMatch(/averageOutstandng/);
+  });
+
+  test('a book rolls up and ranks what to fix first, and stores nothing', async () => {
+    const body = { exposures: [EXPOSURE, { ...EXPOSURE, counterparty: { name: 'Second borrower', sector: 'Food' } }], totalLoansAndInvestments: 1000000 };
+    const a = await request(app).post('/v1/pcaf/part-a/business-loans/portfolio').set('x-api-key', KEY).send(body).expect(200);
+    const b = await request(app).post('/v1/pcaf/part-a/business-loans/portfolio').set('x-api-key', KEY).send(body).expect(200);
+
+    expect(a.body.total.lines.scope1.value).toBe(200);
+    expect(a.body.coverage.share).toBe(0.2);
+    expect(a.body.improvementPlan.reportedScore.basis).toBe('outstanding amount');
+    expect(a.body).not.toHaveProperty('id');
+    delete a.body.elapsedMs; delete b.body.elapsedMs;
+    expect(a.body).toEqual(b.body);
+  });
+});

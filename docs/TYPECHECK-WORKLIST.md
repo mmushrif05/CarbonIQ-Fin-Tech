@@ -19,16 +19,16 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **314**. Remaining: **177**.
+Checked across all three: **325**. Remaining: **182**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **264**. Remaining: **62** (384 errors, measured by
+Checked: **275**. Remaining: **66** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**1 of them raise no errors at all** and can be adopted by adding the
+**5 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -37,7 +37,7 @@ pragma and nothing else.
 | `src/domains/pcaf-part-c/agents/form.js` | 21 |
 | `src/domains/pcaf-part-a/domain/index.js` | 19 |
 | `src/domains/capital/interface/routes/capital.js` | 17 |
-| `src/domains/pcaf-part-a/domain/listed-equity/denominator.js` | 16 |
+| `src/domains/pcaf-part-a/domain/corporate/denominator.js` | 16 |
 | `src/domains/pcaf-part-a/domain/generation.js` | 15 |
 | `src/domains/lending/domain/decision-engine.js` | 14 |
 | `src/domains/pcaf-part-c/application/partc-registry.js` | 12 |
@@ -52,7 +52,7 @@ pragma and nothing else.
 | `src/domains/lending/interface/routes/covenant.js` | 7 |
 | `src/domains/pcaf-part-a/domain/country-config.js` | 7 |
 | `src/domains/pcaf-part-c/domain/data-quality.js` | 7 |
-| `src/domains/pcaf-part-a/domain/listed-equity/lines.js` | 6 |
+| `src/domains/pcaf-part-a/domain/corporate/lines.js` | 6 |
 | `src/domains/pcaf-part-c/domain/b1-refrigerant.js` | 6 |
 | `src/domains/gcf/application/reporting.js` | 5 |
 | `src/domains/lending/application/webhook.js` | 5 |
@@ -84,9 +84,9 @@ pragma and nothing else.
 | `src/domains/capital/domain/capital-pipeline.js` | 2 |
 | `src/domains/lending/application/reports.js` | 2 |
 | `src/domains/pcaf-part-a/domain/archetypes.js` | 2 |
-| `src/domains/pcaf-part-a/domain/listed-equity/estimate.js` | 2 |
+| `src/domains/pcaf-part-a/domain/corporate/estimate.js` | 2 |
+| `src/domains/pcaf-part-a/domain/corporate/options.js` | 2 |
 | `src/domains/pcaf-part-a/domain/listed-equity/intensity.js` | 2 |
-| `src/domains/pcaf-part-a/domain/listed-equity/options.js` | 2 |
 | `src/domains/pcaf-part-a/domain/listed-equity/portfolio.js` | 2 |
 | `src/domains/pcaf-part-c/application/methodology/factors.js` | 2 |
 | `src/domains/pcaf-part-c/application/partc-methodology.js` | 2 |
@@ -94,6 +94,10 @@ pragma and nothing else.
 | `src/domains/pcaf-part-c/interface/routes/pcaf-partc.js` | 2 |
 | `src/domains/pcaf-part-c/interface/routes/pcaf-partc/agents.js` | 2 |
 | `scripts/generate-conformance-doc.js` | 1 |
+| `src/domains/pcaf-part-a/domain/listed-equity/denominator.js` | 0 |
+| `src/domains/pcaf-part-a/domain/listed-equity/estimate.js` | 0 |
+| `src/domains/pcaf-part-a/domain/listed-equity/lines.js` | 0 |
+| `src/domains/pcaf-part-a/domain/listed-equity/options.js` | 0 |
 | `src/domains/pcaf-part-c/reporting/report-standard/facts.js` | 0 |
 
 ## The browser — `ui/`
@@ -131,7 +135,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **94** (1243 errors, measured by
+Checked: **42**. Remaining: **95** (1256 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **3 of them raise no errors at all** and can be adopted by adding the
@@ -172,6 +176,7 @@ pragma and nothing else.
 | `tests/agent-call-budget.test.js` | 16 |
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
+| `tests/parta-api.test.js` | 16 |
 | `tests/pcaf-partc-dq-scoring.test.js` | 16 |
 | `tests/pcaf-partc-lifecycle.test.js` | 15 |
 | `tests/desk-engine.test.js` | 14 |
@@ -182,7 +187,6 @@ pragma and nothing else.
 | `tests/partc-ui.test.js` | 11 |
 | `tests/projects.test.js` | 11 |
 | `tests/ndc-sdg.test.js` | 10 |
-| `tests/parta-api.test.js` | 10 |
 | `tests/pcaf-partc-e2e.test.js` | 10 |
 | `tests/audit.test.js` | 9 |
 | `tests/auth.test.js` | 9 |
@@ -196,6 +200,7 @@ pragma and nothing else.
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-journey.test.js` | 7 |
+| `tests/parta-business-loans.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
 | `tests/validate-middleware.test.js` | 6 |
