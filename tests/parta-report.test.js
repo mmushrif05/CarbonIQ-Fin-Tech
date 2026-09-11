@@ -15,7 +15,6 @@ const store = require('../src/platform/database/store');
 const register = require('../src/domains/pcaf-part-a/application/register');
 const svc = require('../src/domains/pcaf-part-a/application/parta-report');
 const reporting = require('../src/domains/pcaf-part-a/reporting/report');
-const { RULES } = require('../src/domains/pcaf-part-a/reporting/conformance');
 
 const ORG = 'org-parta-report';
 const asOf = '2024-12-31', c = 'LKR';
@@ -148,28 +147,5 @@ describe('The per-exposure report', () => {
     expect(facts.findings.some(f => f.code === 'FN71_YEAR_END_FLUCTUATION')).toBe(true);
     const lim = model.sections.find(s => s.id === 'limitations');
     expect(JSON.stringify(lim)).toMatch(/below the average balance/i);
-  });
-});
-
-describe('The conformance matrix resolves', () => {
-  const fs = require('fs');
-  const path = require('path');
-  const ROOT = path.join(__dirname, '..');
-
-  test('every cited file exists', () => {
-    for (const r of RULES) {
-      expect({ id: r.id, exists: fs.existsSync(path.join(ROOT, r.file)) }).toEqual({ id: r.id, exists: true });
-    }
-  });
-
-  test('every cited test name is a real test in a real file', () => {
-    for (const r of RULES) {
-      const [file, ...nameParts] = r.test.split(' › ');
-      const name = nameParts[nameParts.length - 1];
-      const full = path.join(ROOT, file);
-      expect({ id: r.id, exists: fs.existsSync(full) }).toEqual({ id: r.id, exists: true });
-      const src = fs.readFileSync(full, 'utf8');
-      expect({ id: r.id, named: src.includes(name) }).toEqual({ id: r.id, named: true });
-    }
   });
 });

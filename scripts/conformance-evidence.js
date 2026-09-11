@@ -34,6 +34,7 @@ const OUT = path.join(ROOT, 'docs', 'CONFORMANCE-EVIDENCE.md');
 
 /** @type {Array<{matrix: string, mod: {RULES: any[]}}>} */
 const MATRICES = [
+  { matrix: 'PCAF Part A §5.2', mod: require('../src/domains/pcaf-part-a/domain/conformance') },
   { matrix: 'PCAF Part C', mod: require('../src/domains/pcaf-part-c/domain/conformance') },
   { matrix: 'GCF pipeline', mod: require('../src/domains/gcf/domain/conformance') },
 ];
@@ -141,7 +142,7 @@ function write(rows, unproven) {
   let out = `# Conformance evidence — the cited test executes the cited code
 
 <!-- GENERATED FILE. Do not edit by hand.
-     Source: src/domains/pcaf-part-c/domain/conformance.js, src/domains/gcf/domain/conformance.js
+     Source: src/domains/pcaf-part-a/domain/conformance.js, src/domains/pcaf-part-c/domain/conformance.js, src/domains/gcf/domain/conformance.js
      Regenerate: npm run docs:conformance-evidence -->
 
 A conformance matrix that only proves its citations *resolve* proves nothing
@@ -165,7 +166,7 @@ proved or it is not.
   for (const r of rows) {
     out += `| ${esc(r.matrix)} | \`${esc(r.id)}\` | ${esc(r.clause)} | ${r.test ? `\`${esc(r.test)}\`` : '—'} | ${r.statements === null ? '—' : r.statements} | ${r.verdict} |\n`;
   }
-  out += `\n## Summary\n\n- ${rows.length} rules across both matrices\n- **${executed} proved by execution**\n`;
+  out += `\n## Summary\n\n- ${rows.length} rules across the conformance matrices\n- **${executed} proved by execution**\n`;
   out += `- ${rows.filter(r => r.verdict === 'out of scope').length} deliberately out of scope\n`;
   out += `- ${rows.filter(r => r.verdict === 'proved by absence').length} proved by the absence of a path\n`;
   out += `- ${rows.filter(r => r.verdict === 'no code path cited').length} evidenced by a data table rather than a code path\n`;

@@ -1,7 +1,7 @@
 # Conformance evidence — the cited test executes the cited code
 
 <!-- GENERATED FILE. Do not edit by hand.
-     Source: src/domains/pcaf-part-c/domain/conformance.js, src/domains/gcf/domain/conformance.js
+     Source: src/domains/pcaf-part-a/domain/conformance.js, src/domains/pcaf-part-c/domain/conformance.js, src/domains/gcf/domain/conformance.js
      Regenerate: npm run docs:conformance-evidence -->
 
 A conformance matrix that only proves its citations *resolve* proves nothing
@@ -21,6 +21,45 @@ proved or it is not.
 
 | Matrix | Rule | Clause | Proving test | Statements executed | Verdict |
 |---|---|---|---|---|---|
+| PCAF Part A §5.2 | `A-SCOPE-01` | Part A §5.2 (p.55) | `tests/parta-business-loans.test.js` | 42 | executed |
+| PCAF Part A §5.2 | `A-SCOPE-02` | Part A §5.2 (p.56) | `tests/parta-business-loans.test.js` | 3 | executed |
+| PCAF Part A §5.2 | `A-SCOPE-03` | Part A p.126 | `tests/parta-business-loans.test.js` | 3 | executed |
+| PCAF Part A §5.2 | `A-SCOPE-04` | Three scopes never merge (architecture) | `tests/architecture.test.js` | — | proved by absence |
+| PCAF Part A §5.2 | `A-SCOPE-05` | Part A §5.2; GHG Protocol "Built on" mark | `tests/parta-report.test.js` | 35 | executed |
+| PCAF Part A §5.2 | `A-CLASS-01` | Part A §5.2, footnote 86 (p.55) | `tests/parta-business-loans.test.js` | 42 | executed |
+| PCAF Part A §5.2 | `A-ATTR-01` | Part A §5.2 (p.56) | `tests/parta-business-loans.test.js` | 39 | executed |
+| PCAF Part A §5.2 | `A-ATTR-02` | Part A §5.2 — attribution factor | `tests/parta-business-loans.test.js` | 22 | executed |
+| PCAF Part A §5.2 | `A-OPT-01` | Part A §5.2, Table 5.2-1 (p.60) | `tests/parta-business-loans.test.js` | 46 | executed |
+| PCAF Part A §5.2 | `A-OPT-02` | Part A §5.2 fn 87 (p.61) | `tests/parta-business-loans.test.js` | 41 | executed |
+| PCAF Part A §5.2 | `A-OPT-03` | Data-quality rendering (the scale has a direction) | `tests/parta-business-loans.test.js` | 3 | executed |
+| PCAF Part A §5.2 | `A-EST-01` | Part A §5.2 (p.62) | `tests/parta-business-loans.test.js` | 46 | executed |
+| PCAF Part A §5.2 | `A-EST-02` | Part A §5.2 (p.62) | `tests/parta-business-loans.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `A-EST-03` | Part A Box 6.1-5 (p.167) | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-LINE-01` | Part A §5.2, Tables 5.2-2/5.2-3 (p.63) | `tests/parta-business-loans.test.js` | 19 | executed |
+| PCAF Part A §5.2 | `A-FIND-01` | CarbonIQ — the engine blocks a claim, not a number | `tests/parta-business-loans.test.js` | 14 | executed |
+| PCAF Part A §5.2 | `A-FIND-02` | Part A footnote 71 (year-end balance) | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-FIND-03` | CarbonIQ — a check that had nothing to check does not pass | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-FIND-04` | CarbonIQ thresholds (stated on the finding, settable per request) | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-04` | DCL Part A (p.124) — coverage over the whole book | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-05` | Register — the roll-up reads a projection | `tests/parta-register.test.js` | 133 | executed |
+| PCAF Part A §5.2 | `A-REG-06` | Register — the band is resolved at call time | `tests/parta-register.test.js` | 19 | executed |
+| PCAF Part A §5.2 | `A-REG-07` | Register — a half-built lifecycle is worse than none | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-DQ-01` | Part A Box 6.1-6 (pp.167–168), p.128 | `tests/parta-business-loans.test.js` | 73 | executed |
+| PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 73 | executed |
+| PCAF Part A §5.2 | `A-DQ-03` | CarbonIQ — a score is a measurement, a plan is a task list | `tests/parta-business-loans.test.js` | 73 | executed |
+| PCAF Part A §5.2 | `A-DQ-04` | Comparability — a position of zero is a different claim | `tests/parta-business-loans.test.js` | 73 | executed |
+| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 38 | executed |
+| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 38 | executed |
+| PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 35 | executed |
+| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 38 | executed |
+| PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 44 | executed |
+| PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 35 | executed |
+| PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 19 | executed |
+| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 74 | executed |
 | PCAF Part C | `C-SCOPE-01` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-02` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-03` | Part C v2 §5.3 | `tests/pcaf-partc-registers.test.js` | — | out of scope |
@@ -94,9 +133,9 @@ proved or it is not.
 
 ## Summary
 
-- 70 rules across both matrices
-- **64 proved by execution**
+- 109 rules across the conformance matrices
+- **102 proved by execution**
 - 3 deliberately out of scope
-- 1 proved by the absence of a path
+- 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path
 - **0 unproven**
