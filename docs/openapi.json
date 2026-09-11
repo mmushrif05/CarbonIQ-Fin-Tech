@@ -26460,6 +26460,225 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/sovereign/assess": {
+      "post": {
+        "operationId": "postPcafPartASovereignAssess",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "PCAF Part A §5.9 financed emissions for one sovereign bond or loan",
+        "description": "Attribution is exposure ÷ PPP-adjusted GDP (international USD), not equity plus debt. Scope 1 (domestic territorial, UNFCCC production) is returned both including and excluding LULUCF and never summed; scope 2 and 3 are reported separately where held and absent — not zero — where not. Data quality is scored from Table 5.9-6 by the emissions source. Reproduces the standard’s worked example (Table 10.3-2): $1M to Singapore → 106 tCO2e, to Hong Kong → 91. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "instrument": {
+                    "type": "string",
+                    "enum": [
+                      "sovereign-bond",
+                      "sovereign-loan"
+                    ],
+                    "default": "sovereign-bond"
+                  },
+                  "exposure": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "USD"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "amount"
+                    ]
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2
+                  },
+                  "sovereign": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "iso3": {
+                        "type": "string",
+                        "minLength": 3,
+                        "maxLength": 3
+                      },
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope1InclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope2_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "scope3_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "pppGdp": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "emissionsYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "pppGdpYear": {
+                        "type": "integer",
+                        "minimum": 1900,
+                        "maximum": 2100
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 2000
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF",
+                      "pppGdp"
+                    ]
+                  },
+                  "dataQualityOption": {
+                    "type": "string",
+                    "enum": [
+                      "1a",
+                      "1b",
+                      "2",
+                      "3a",
+                      "3b"
+                    ]
+                  },
+                  "dataQualityOverrideJustification": {
+                    "type": "string",
+                    "maxLength": 500
+                  }
+                },
+                "required": [
+                  "exposure"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "elapsedMs": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "elapsedMs": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/storage": {
       "get": {
         "operationId": "getPcafPartAStorage",
