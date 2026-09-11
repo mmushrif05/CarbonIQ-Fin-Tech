@@ -45,6 +45,23 @@ const sovereignRequestSchema = Joi.object({
 
   dataQualityOption: Joi.string().valid('1a', '1b', '2', '3a', '3b').optional(),
   dataQualityOverrideJustification: Joi.string().max(500).optional(),
+
+  /* A second source for the country's emissions, so the independent-path check
+     can report the divergence rather than say it could not run. */
+  crossCheck: Joi.object({
+    scope1ExclLULUCF: Joi.number().min(0).required(),
+    source: Joi.string().max(200).optional(),
+  }).optional(),
+
+  /* The data-truth thresholds that are CarbonIQ's rather than PCAF's, settable
+     per request; each is stated as ours on the finding it raises. */
+  thresholds: Joi.object({
+    emissionsLagYears: Joi.number().integer().min(0).max(50).optional(),
+    gdpYearGapYears: Joi.number().integer().min(0).max(50).optional(),
+    intensityLow: Joi.number().min(0).optional(),
+    intensityHigh: Joi.number().positive().optional(),
+    sourceDivergencePct: Joi.number().min(0).max(1000).optional(),
+  }).optional(),
 }).or('country', 'sovereign');
 
 module.exports = { sovereignRequestSchema };

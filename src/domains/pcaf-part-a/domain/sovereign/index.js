@@ -31,6 +31,8 @@
 const dataset = require('./dataset');
 const { sovereignAttributionFactor, REF } = require('./attribution');
 const { resolveOption } = require('./options');
+const checks = require('./checks');
+const { register } = require('../corporate/findings');
 const { traced, absent } = require('../provenance');
 
 const STANDARD = 'PCAF (2025). The Global GHG Accounting and Reporting Standard '
@@ -124,6 +126,7 @@ function assessSovereign(input) {
   const {
     reportingYear, instrument = 'sovereign-bond', exposure = {},
     dataQualityOption, dataQualityOverrideJustification,
+    thresholds = {}, crossCheck = null,
   } = input;
 
   const currency = (exposure.currency || 'USD').toUpperCase();
@@ -198,6 +201,17 @@ function assessSovereign(input) {
       })
     : null;
 
+  /* What the data says about itself — findings that refuse nothing and change
+     no figure, the third verdict §5.2 established, applied to a sovereign. */
+  const validation = register()
+    .add(checks.proxyCountry(dq))
+    .add(checks.lulucfCoverage({ exclHeld: exclVal !== null, inclHeld: figureValue(c.inclLULUCF) !== null }))
+    .add(checks.emissionsLag({ emissionsYear: c.exclLULUCF.year, reportingYear, thresholdYears: thresholds.emissionsLagYears }))
+    .add(checks.vintageGap({ emissionsYear: c.exclLULUCF.year, gdpYear: c.pppGdp.year, thresholdYears: thresholds.gdpYearGapYears }))
+    .add(checks.intensityPlausibility({ intensity: productionIntensity ? productionIntensity.value : null, low: thresholds.intensityLow, high: thresholds.intensityHigh }))
+    .add(checks.independentSource({ heldExclLULUCF: exclVal, crossCheck, thresholdPct: thresholds.sourceDivergencePct }))
+    .result();
+
   return {
     standard: STANDARD,
     sovereign: {
@@ -246,6 +260,11 @@ function assessSovereign(input) {
        container to net against anything. */
     removalsNote: 'Land-use removals are carried within scope 1 including LULUCF, not as a '
       + 'separate line; nothing is netted against the territorial inventory.',
+
+    /* The half a bank cannot get from the standard: what the country data says
+       about itself. Nothing here refused and nothing changed a figure. */
+    validation,
+    thresholds: { ...checks.DEFAULTS, ...thresholds },
   };
 }
 

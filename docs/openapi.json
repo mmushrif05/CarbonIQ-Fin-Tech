@@ -26589,6 +26589,50 @@
                   "dataQualityOverrideJustification": {
                     "type": "string",
                     "maxLength": 500
+                  },
+                  "crossCheck": {
+                    "type": "object",
+                    "properties": {
+                      "scope1ExclLULUCF": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "source": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "scope1ExclLULUCF"
+                    ]
+                  },
+                  "thresholds": {
+                    "type": "object",
+                    "properties": {
+                      "emissionsLagYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "gdpYearGapYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 50
+                      },
+                      "intensityLow": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "intensityHigh": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "sourceDivergencePct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000
+                      }
+                    }
                   }
                 },
                 "required": [
