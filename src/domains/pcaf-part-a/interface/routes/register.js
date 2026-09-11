@@ -355,4 +355,62 @@ router.post('/exposures/:exposureId/report', authenticate, defaultLimiter,
     await deliver(res, built, req.body.format || 'json', 'exposure');
   }));
 
+// ---------------------------------------------------------------------------
+// The §5.9 sovereign disclosure and the per-holding report
+// ---------------------------------------------------------------------------
+
+/*
+ * The §5.9 mirror of the two §5.2 report routes, over the sovereign register
+ * and its own content model — scope 1 on two LULUCF boundaries, PPP-GDP
+ * attribution, one score weighted by outstanding. Read-scoped and stores
+ * nothing; the engine did the arithmetic and this path never recomputes it.
+ * A `POST /sovereign/exposures/:id/report` is read-scoped despite being a POST,
+ * so `scopes.js` carries a rule for it ahead of the write rule for
+ * `/sovereign/exposures`, exactly as the §5.2 report route does.
+ */
+
+const sovereignReport = require('../../application/sovereign-report');
+const SR = require('../../reporting/sovereign/report');
+
+const deliverSovereign = async (res, built, format, kind) => {
+  const isHolding = Boolean(built.input.result);
+  if (format === 'docx') {
+    const buf = await (isHolding ? SR.holdingDOCX(built.input) : SR.disclosureDOCX(built.input));
+    return sendDocx(res, buf, `${built.safeName}.docx`, kind);
+  }
+  if (format === 'pdf') {
+    const docu = isHolding ? SR.holdingPDF(built.input) : SR.disclosurePDF(built.input);
+    return sendPdf(res, docu, `${built.safeName}.pdf`, kind);
+  }
+  return res.json({ report: { cover: built.model.cover, checklist: built.model.checklist, facts: built.facts } });
+};
+
+router.get('/sovereign/disclosure/:year', authenticate, defaultLimiter,
+  validate({ query: disclosureQuerySchema }),
+  doc({ summary: 'The annual PCAF Part A §5.9 sovereign-debt disclosure — JSON, PDF or Word',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    description: 'Built from the sovereign reporting-year position, in the order PCAF Chapter 6 '
+      + 'reads. Scope 1 is reported on both LULUCF boundaries and never summed; the score is weighted '
+      + 'by outstanding amount. A year holding no sovereign exposures is a 409. The checklist covers '
+      + 'the §5.9 asset class only, so it cannot reach a hundred per cent.',
+    response: body({ report: obj }, ['report']) }),
+  handle(async (req, res) => {
+    const built = await sovereignReport.annualDisclosure(req.orgId, req.params.year, {
+      insurer: req.query.insurer, currency: req.query.currency,
+    });
+    await deliverSovereign(res, built, req.query.format || 'json', 'disclosure');
+  }));
+
+router.post('/sovereign/exposures/:exposureId/report', authenticate, defaultLimiter,
+  validate({ body: reportRequestSchema }),
+  doc({ summary: 'The per-holding §5.9 report for one recorded sovereign exposure — JSON, PDF or Word',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    response: body({ report: obj }, ['report']) }),
+  handle(async (req, res) => {
+    const built = await sovereignReport.holdingReport(req.orgId, req.params.exposureId, {
+      insurer: req.body.insurer,
+    });
+    await deliverSovereign(res, built, req.body.format || 'json', 'holding');
+  }));
+
 module.exports = router;

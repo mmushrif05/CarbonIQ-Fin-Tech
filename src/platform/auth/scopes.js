@@ -98,6 +98,7 @@ const OVERRIDES = Object.freeze([
      `/sovereign/exposures` does not match the `/exposures` rule above. The POST
      rule covers both recording and recompute. `/sovereign/assess` is not under
      `/exposures`, so it stays read on the catch-all. */
+  { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures\/[^/]+\/report$/, scope: 'read', why: 'renders a report from a held sovereign exposure; stores nothing' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures/, scope: 'write', why: 'records or recomputes a sovereign exposure in the register' },
   { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures/, scope: 'write', why: 'changes a recorded sovereign exposure' },
   { method: 'DELETE', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures/, scope: 'write', why: 'removes a sovereign exposure from the register' },

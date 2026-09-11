@@ -2,8 +2,9 @@
 /**
  * CarbonIQ FinTech — PCAF Part A §5.2: Conformance Matrix
  *
- * A machine-readable statement of what the §5.2 engine (business loans and
- * unlisted equity) claims to implement, where each rule lives in code, and
+ * A machine-readable statement of what the Part A engines built so far —
+ * §5.2 business loans and unlisted equity, and §5.9 sovereign debt — claim to
+ * implement, where each rule lives in code, and
  * which test proves it still holds. This is the model the north star sets:
  * every module carries its own conformance evidence or it is not done.
  *
@@ -16,8 +17,8 @@
  * restricted to the files it cites, so a rule that names code no path reaches
  * is reported unproven rather than passing on a citation that merely resolves.
  *
- * This is the §5.2 asset class, one input to a bank's Chapter 6 disclosure,
- * not the disclosure. It is kept apart from Part C's matrix
+ * These are Part A asset classes, each one input to a bank's Chapter 6
+ * disclosure, not the disclosure. The matrix is kept apart from Part C's
  * (`src/domains/pcaf-part-c/domain/conformance.js`) because the two scopes
  * never merge, and the option-to-score mapping is not shared between them: the
  * numerals mean different things and reusing one for the other would be wrong
@@ -45,7 +46,8 @@
 'use strict';
 
 const STANDARD = 'PCAF Global GHG Accounting and Reporting Standard — Part A: Financed Emissions, '
-  + 'Third Edition (December 2025), §5.2 (business loans and unlisted equity) and Chapter 6';
+  + 'Third Edition (December 2025), the built asset classes §5.2 (business loans and unlisted equity) '
+  + 'and §5.9 (sovereign debt), and Chapter 6';
 
 const { RULES } = require('./conformance-rules');
 

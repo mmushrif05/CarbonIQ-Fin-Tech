@@ -5,7 +5,7 @@
  *   GET  /v1/pcaf/part-a/reference                    asset classes, archetypes, data-quality options
  *   POST /v1/pcaf/part-a/assess                       assess one exposure (§5.3 project finance)
  *   GET  /v1/pcaf/part-a/factors                      the Option 3 sector factor library and its release
- *   GET  /v1/pcaf/part-a/conformance                  the §5.2 conformance matrix: rule → code → test
+ *   GET  /v1/pcaf/part-a/conformance                  the Part A conformance matrix: rule → code → test
  *   POST /v1/pcaf/part-a/business-loans/assess        assess one exposure (§5.2)
  *   POST /v1/pcaf/part-a/business-loans/portfolio     roll up a book and rank what to fix first (§5.2)
  *
@@ -170,8 +170,8 @@ router.get('/factors', authenticate, defaultLimiter, referenceCache(),
  * mistaken for behaviour.
  */
 router.get('/conformance', authenticate, defaultLimiter, referenceCache(),
-  doc({ summary: 'PCAF Part A §5.2 conformance matrix — clause, implementation and proving test per rule',
-    description: 'A self-declaration of conformance with the published §5.2 method, offered with the '
+  doc({ summary: 'PCAF Part A conformance matrix (§5.2 and §5.9) — clause, implementation and proving test per rule',
+    description: 'A self-declaration of conformance with the published Part A method for the built asset classes, offered with the '
       + 'evidence needed to check it. PCAF does not approve, endorse or certify software, and the '
       + 'Third Edition asset-class additions have not been reviewed by the GHG Protocol.',
     response: body({ standard: str, rules: arr(), summary: obj }, ['standard', 'rules', 'summary']) }),

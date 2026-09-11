@@ -1,0 +1,98 @@
+COVER: PCAF Part A §5.9 — Sri Lanka
+  subtitle: Financed emissions of one sovereign bond or loan
+  insurer: Demo Bank PLC
+  standard: PCAF (2025). The Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition, §5.9 and Chapter 6.
+  assurance: self_declared — Self-declared
+
+SECTION 2 [coverage] Scope and coverage
+    callout [What this report covers]: This report covers one PCAF asset class — sovereign debt (Part A §5.9). It is one input to a Chapter 6 financed-emissions disclosure, not the disclosure: the reporting entity’s own gross scope 1, 2 and 3 inventory is a separate and larger claim, made where the entity states it.
+    body: Asset class: Sovereign debt (§5.9). Reporting year: 2024. The position is taken at the fiscal year-end, which is how Part A accounts for financed emissions (Chapter 4).
+    body: This report describes one sovereign holding. A hundred per cent of a one-holding inventory is not a claim about the reporting entity’s book, and coverage of the book is stated only in the annual disclosure.
+
+SECTION 3 [gases] Gases and units
+    body: Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), using the IPCC 100-year global warming potentials of the latest assessment report. A sovereign figure is the country’s own national inventory reported to the UNFCCC, covering the seven Kyoto Protocol gases the inventory reports.
+    table [3 cols] head: Gas | Formula | Where it arises in a national inventory
+      row: Carbon dioxide | CO2 | Fuel combustion, industry and land use across the national territory.
+      row: Methane | CH4 | Agriculture, waste and fossil-fuel supply in the national inventory.
+      row: Nitrous oxide | N2O | Agricultural soils and combustion in the national inventory.
+      row: Hydrofluorocarbons | HFCs | Refrigeration and air-conditioning reported to the UNFCCC.
+      row: Perfluorocarbons | PFCs | Aluminium and electronics production in the national inventory.
+      row: Sulphur hexafluoride | SF6 | Electrical transmission and distribution equipment.
+      row: Nitrogen trifluoride | NF3 | Electronics manufacture, where the national inventory reports it.
+    body: Land-use, land-use change and forestry (LULUCF) is reported as a boundary on scope 1 — both including and excluding it — rather than netted against the fossil inventory (§5.9, p.141).
+
+SECTION 4 [absolute] Absolute emissions
+    figure: Financed scope 1 — territorial, excluding LULUCF = 236.01 tCO2e
+      score: Data quality score: 5 (Option 3b, Table 5.9-6). 1 is the highest quality, 5 the lowest.
+    figure: Financed scope 1 — territorial, including LULUCF = 202.29 tCO2e
+      note: The same emissions on the other LULUCF boundary — never summed with the above.
+    figure: Financed scope 3 — a separate line = — tCO2e
+      note: Scope 3 (non-energy imports) is a §5.9 should and no figure is held. OECD trade-embodied CO2 is the source PCAF names, CO2 only, with a four-year lag (Table 10.3-4).
+    table [3 cols] head: Line | tCO2e | Note
+      row: Financed scope 1, excl. LULUCF | 236.01 | Domestic territorial emissions attributed by PPP-GDP; the headline (§5.9, p.141).
+      row: Financed scope 1, incl. LULUCF | 202.29 | The same emissions including land use — never added to the line above.
+      row: Financed scope 2 | — | Imported grid energy: a should, reported absent.
+      row: Financed scope 3 | — | Non-energy imports: a should, reported absent.
+    caption: No row sums scope 1 excluding LULUCF with scope 1 including LULUCF — they are the same emissions on two boundaries — and no row sums scope 3 into scope 1 and 2 (§5.9, p.141).
+
+SECTION 5 [methodology] Methodology
+    body: Financed emissions of sovereign debt are the country’s territorial emissions multiplied by an attribution factor: the exposure in international USD over the sovereign’s PPP-adjusted GDP in international USD (§5.9, p.144). The denominator is PPP-adjusted GDP, never equity plus debt: debt alone is a poor denominator — a near-debt-free sovereign would attribute a thousandfold more per dollar — so output stands in for enterprise value (Annex 10.3, pp.201–204).
+    body: The engine performs every arithmetic operation. Nothing in this report is computed by a language model, and no figure here rests on one. Each figure traces to the holding the register holds and to the sovereign dataset named below.
+    body: Sovereign dataset: sovereign-dataset v1.0.0 (provisional); SHA-256 over the canonical form, <checksum>. Provisional pending a released set: sovereign-dataset. A provisional row carries the gap it stands in for.
+    body: The public sources PCAF names for this class (Table 10.3-4, pp.205–206): the UNFCCC data interface, Climate Watch, EDGAR (a four-year lag), OECD trade-embodied CO2 for scope 2 and 3, and World Bank PPP GDP.
+
+SECTION 6 [dataquality] Data quality
+    body: PCAF scores sovereign data quality on a 1–5 scale by the source the figure rests on (Table 5.9-6, p.147): verified UNFCCC-reported is 1, unverified is 2, physical energy activity is 3, sectoral revenue is 4, a proxy country is 5. 1 is the highest quality, 5 the lowest; a score is a category, not a mark out of five.
+    table [3 cols] head: Basis | Option | Score
+      row: as recorded | 3b | 5
+
+SECTION 7 [recalculation] Recalculation and significance
+    body: A recalculation of the base year is a "shall" under Chapter 6 when the book, the method or a figure changes materially. The base year and the significance threshold belong to the reporting entity; where none has been set, this report states so rather than implying the current year.
+    table [2 cols] head: Item | This reporting entity
+      row: Inventory base year | Not yet stated for this reporting entity
+      row: Significance threshold — triggers a recalculation of base-year emissions | Not stated
+    h2: What triggers a recalculation
+    body: No recalculation protocol has been stated for this reporting entity. A §5.9 disclosure requires one.
+    callout [Open item]: No base year is stated for this reporting entity. The report says so rather than implying the current year, because a base year is a claim about history and belongs to the entity, not to its software.
+    body: The register holds both the input a bank keyed and the result the engine computed. A recomputation reruns the engine over the input already held and reports what moved across scope 1 on both LULUCF boundaries, scope 2 and 3, the data-quality score and the findings — so a change in the sovereign dataset is a decision somebody takes rather than something that happens to them.
+
+SECTION 8 [intensity] Emission intensity
+    figure: Production emission intensity = 118 tCO2e per million international USD (PPP)
+      note: Country scope 1 excluding LULUCF over PPP-adjusted GDP — a country-level figure, not attributed (§5.9, p.144). The plausibility check reads it: PPP-GDP exists to remove the distortion an implausible value would show.
+
+SECTION 9 [limitations] Limitations, and what the data says about itself
+    body: The checks below follow the rule that where an independent path to a figure exists it is recomputed and the divergence reported, and where none exists the gap is stated rather than passed over. None of them refuses a figure or changes one; each records something a reader of the figure should know.
+    table [3 cols] head: Severity | What the data says | What would clear it
+      row: material | This country’s emissions are estimated from a proxy country (Option 3b), not from its own inventory. | Source the country’s own production emissions from its UNFCCC submission (di.unfccc.int) or Climate Watch and record them, which moves the figure to Option 1a/1b.
+      row: material | The country emissions are for 2018, 6 year(s) behind the 2024 reporting year. | Source a more recent inventory year, or state the lag beside the figure. Threshold 2 year(s) is CarbonIQ’s, not PCAF’s (PCAF permits a lag and sets none), and is settable.
+      row: advisory | Only one source for this country’s emissions is held, so the figure could not be cross-checked against an independent one. | Supply a second source under crossCheck (UNFCCC, Climate Watch or EDGAR give independent estimates) and the divergence will be reported.
+    caption: Export- and import-embodied emissions are not held for this sovereign. PCAF recommends the consumption view as an additional metric (p.142) with stated limitations (input-output dependence, ~2-year lag, CO2 only); it is never summed with the territorial figure.
+
+SECTION 10 [conformance] Conformance statement
+    body: The method in this report conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025), §5.9 and Chapter 6. PCAF sets the method; it does not approve, endorse or certify this report or the figures in it. Sovereign debt is an asset class the Third Edition adds, and it has not been reviewed by the GHG Protocol; this report does not carry the GHG Protocol’s "Built on" mark for it.
+    body: This report states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the report or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
+
+ANNEX A [annexDataset] Sovereign dataset and governed baselines
+    body: The sovereign dataset the figures rest on. A register of values a reader cannot tie to a released version is a list, not a citation.
+    table [6 cols] head: Table | Version | Effective from | Status | Rows | Checksum
+      row: sovereign-dataset | 1.0.0 | <date> | provisional | — | <checksum>
+
+ANNEX B [annexChecklist] PCAF disclosure checklist — completed
+    checklist
+
+CHECKLIST: 15 items, 12 Yes, 1 No
+  GOV-1: Yes
+  COV-1: Not applicable
+  COV-2: Yes
+  GAS-1: Yes
+  ABS-1: Yes
+  SOV-LULUCF: Yes
+  ABS-2: Yes
+  ABS-3: Not applicable
+  MTH-1: Yes
+  DQ-1: Yes
+  REC-1: Yes
+  INV-1: No
+  INT-1: Yes
+  SOV-CON: Yes
+  ASR-1: Yes

@@ -61,8 +61,25 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 44 | executed |
 | PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 35 | executed |
 | PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 19 | executed |
-| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 86 | executed |
+| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 91 | executed |
 | PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 39 | executed |
+| PCAF Part A §5.2 | `SOV-ATTR-01` | Part A §5.9 (p.144); Annex 10.3 (pp.201–204) | `tests/parta-sovereign.test.js` | 14 | executed |
+| PCAF Part A §5.2 | `SOV-ATTR-02` | Part A §5.9; Table 10.3-2 (p.202) | `tests/parta-sovereign.test.js` | 55 | executed |
+| PCAF Part A §5.2 | `SOV-LULUCF` | Part A §5.9 (p.141) | `tests/parta-sovereign-register.test.js` | 89 | executed |
+| PCAF Part A §5.2 | `SOV-SCOPE23` | Part A §5.9 (p.141) | `tests/parta-sovereign-report-golden.test.js` | 34 | executed |
+| PCAF Part A §5.2 | `SOV-DQ-TABLE` | Part A Table 5.9-6 (p.147) | `tests/parta-sovereign-data.test.js` | 3 | executed |
+| PCAF Part A §5.2 | `SOV-DQ-WEIGHT` | PCAF Disclosure Checklist Part A (p.128) | `tests/parta-sovereign-register.test.js` | 67 | executed |
+| PCAF Part A §5.2 | `SOV-COVERAGE` | PCAF Disclosure Checklist Part A (p.124) | `tests/parta-sovereign-register.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `SOV-CHECK-PROXY` | Part A Table 5.9-6 (p.147); CarbonIQ | `tests/parta-sovereign-checks.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `SOV-CHECK-LAG` | Part A ch.4 (p.31); Table 10.3-4 (pp.205–206); CarbonIQ threshold | `tests/parta-sovereign-checks.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `SOV-CHECK-INTENSITY` | Part A Annex 10.3 (pp.201–204); CarbonIQ threshold | `tests/parta-sovereign-checks.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `SOV-CHECK-INDEP` | CarbonIQ (the GCF independent-path rule) | `tests/parta-sovereign-checks.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `SOV-REGISTER` | CarbonIQ; the §5.2 register (migrations 0008/0009) | `tests/parta-sovereign-register.test.js` | 87 | executed |
+| PCAF Part A §5.2 | `SOV-PROJECTION` | CarbonIQ (the partc_assessments.rollup discipline) | `tests/parta-sovereign-register.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `SOV-EMPTY` | PCAF Disclosure Checklist Part A (p.124) | `tests/parta-sovereign-register.test.js` | 87 | executed |
+| PCAF Part A §5.2 | `SOV-REPORT` | Part A Chapter 6 (pp.160–174); Annex 10.2 (pp.199–200) | `tests/parta-sovereign-report-golden.test.js` | 149 | executed |
+| PCAF Part A §5.2 | `SOV-REPORT-INV` | Part A ch.6 (p.160); SLFRS S2 §29(a) | `tests/parta-sovereign-report-golden.test.js` | 45 | executed |
+| PCAF Part A §5.2 | `SOV-SCALE` | Part A Table 5.9-6 (p.147); docs/GLOSSARY.md §1 | `tests/parta-sovereign-data.test.js` | 5 | executed |
 | PCAF Part C | `C-SCOPE-01` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-02` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-03` | Part C v2 §5.3 | `tests/pcaf-partc-registers.test.js` | — | out of scope |
@@ -136,8 +153,8 @@ proved or it is not.
 
 ## Summary
 
-- 112 rules across the conformance matrices
-- **105 proved by execution**
+- 129 rules across the conformance matrices
+- **122 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

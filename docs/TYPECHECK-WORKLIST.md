@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **359**. Remaining: **198**.
+Checked across all three: **366**. Remaining: **199**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **308**. Remaining: **67** (384 errors, measured by
+Checked: **315**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -138,7 +138,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **43**. Remaining: **108** (1360 errors, measured by
+Checked: **43**. Remaining: **109** (1360 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **5 of them raise no errors at all** and can be adopted by adding the
@@ -239,13 +239,14 @@ pragma and nothing else.
 | `tests/health.test.js` | 2 |
 | `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
-| `tests/pcaf-parta-conformance.test.js` | 2 |
 | `tests/schemas.test.js` | 2 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |
 | `tests/parta-report-golden.test.js` | 1 |
 | `tests/parta-sovereign-checks.test.js` | 1 |
 | `tests/parta-sovereign-data.test.js` | 1 |
+| `tests/parta-sovereign-report-golden.test.js` | 1 |
+| `tests/pcaf-parta-conformance.test.js` | 1 |
 | `tests/reports.test.js` | 1 |
 | `tests/score.test.js` | 1 |
 | `tests/v1-info.test.js` | 1 |

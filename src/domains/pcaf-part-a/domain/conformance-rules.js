@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * PCAF Part A §5.2 — the conformance matrix rules.
+ * PCAF Part A — the conformance matrix rules (§5.2 and §5.9).
  *
  * The rule list is a large, flat data structure, so it lives in its own file
  * rather than swelling the module that computes over it: `conformance.js`
@@ -12,6 +12,8 @@
  */
 
 'use strict';
+
+const { SOVEREIGN_RULES } = require('./conformance-rules-sovereign');
 
 const RULES = [
   // ---- Scope ------------------------------------------------------------
@@ -446,6 +448,8 @@ const RULES = [
     test: 'tests/parta-report.test.js › the recalculation section prints the entity’s protocol and says so when no base year is set',
     status: 'implemented',
   },
+
+  ...SOVEREIGN_RULES,
 ];
 
 module.exports = { RULES };
