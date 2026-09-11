@@ -96,6 +96,38 @@ invites someone to go looking for a credential that would open it, and there is
 not one. The sign-in screen offers the form only where the server says the
 window is open.
 
+**Once the window has closed, there is the build (`scripts/first-admin.js`).**
+The bootstrap route creates exactly one account and then answers 410 for
+good; the account it created is the only way in, and a password nobody can
+reproduce leaves the deployment with an administrator no one can be. A shell
+beside the database would run `user:passwd`; a serverless deployment has
+none. What it has is a build that already reaches the database — the same
+step that runs the migrations — so the build ends with
+`first-admin.js --if-configured`, which takes its inputs from the deployment
+environment and never from the repository, because the repository is public:
+
+| Variable | What it is |
+|---|---|
+| `FIRST_ADMIN_EMAIL` · `FIRST_ADMIN_PASSWORD` | The account. Mark the password secret. |
+| `FIRST_ADMIN_ORG` | Needed only to create — an organisation is required, and there is no sensible default. |
+| `FIRST_ADMIN_RESET` | `true` lets the password of an account that already holds the address be replaced. |
+
+No account for the address: it is created, role `admin`, the password its own
+— the person who set the variable chose it. An account exists and `RESET` is
+set: the password is replaced and every session that account holds is ended.
+An account exists and `RESET` is not set: nothing changes and the build log
+says so. It never creates a second account for an address, never prints the
+password, and never touches any other account; with the variables unset it is
+a no-op, so the build command is the same on every deployment, and a
+half-set pair (an address without its password) is reported and skipped
+rather than failing the deploy of everything else. A deploy preview never
+runs it, for the reason `db-migrate.js` gives. It adds no door: whoever can
+set the deployment's environment already holds `DATABASE_URL`.
+
+**Delete `FIRST_ADMIN_PASSWORD` and `FIRST_ADMIN_RESET` once you have signed
+in.** While `RESET` stands, every build sets the password back to that value —
+including the one after you change it on the Accounts screen.
+
 After the first administrator, accounts are issued from the Accounts screen or
 the API by anyone holding `admin`.
 

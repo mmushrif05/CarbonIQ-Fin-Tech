@@ -294,6 +294,7 @@ Copy `.env.example` to `.env` and fill in:
 | `JOBS_TOKEN` · `JOBS_URL` · `JOBS_INLINE` | The job queue's background worker token and site URL; inline forces a job to run inside its request (see `docs/JOBS.md`) |
 | `ASSURANCE_MODE` | `self_declared` (default) or `verified` — the deployment-wide operating mode (see `docs/ASSURANCE-MODE.md`) |
 | `ADMIN_BOOTSTRAP_TOKEN` | Lets the first administrator be created at `POST /v1/auth/bootstrap` on a deployment with no shell; the window closes with the account it creates (see `docs/AUTHENTICATION.md`) |
+| `FIRST_ADMIN_EMAIL` · `FIRST_ADMIN_PASSWORD` · `FIRST_ADMIN_ORG` · `FIRST_ADMIN_RESET` | The first administrator from the build, once the bootstrap window has closed: create the account, or with `RESET` replace its password; delete the password afterwards (`scripts/first-admin.js`, see `docs/AUTHENTICATION.md`) |
 | `PREVIEW_ACCESS` | `off` closes the public door onto the sample book; on by default (see `docs/AUTHENTICATION.md`) |
 | `ALLOW_UNSCOPED_KEYS` | A migration window for keys issued before scopes existed; refused in production (see `docs/AUTHENTICATION.md`) |
 | `ALLOW_PREVIEW_MIGRATIONS` | Lets a deploy preview run migrations, which it otherwise refuses because it may share the production database |
