@@ -79,6 +79,17 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/covenant/, scope: 'read', why: 'covenant check, stateless' },
   { method: 'POST', pattern: /^\/v1\/carbon-pricing/, scope: 'read', why: 'carbon-pricing exposure, stateless' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-c\/dq-preview$/, scope: 'read', why: 'data-quality preview, nothing persisted' },
+  /* Part A is now two surfaces behind one prefix, and they need different
+     scopes. The engine routes compute and store nothing, so a read-only key
+     may ask them. The register WRITES — it is the book a disclosure is built
+     from — so it needs `write`, and the two rules sit in this order because
+     the first match wins and the broad stateless rule would otherwise hand a
+     read-only key the ability to record exposures. `recompute` is the same:
+     it rewrites a stored figure. */
+  { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'records or recomputes an exposure in the register' },
+  { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'changes a recorded exposure' },
+  { method: 'DELETE', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'removes an exposure from the register' },
+  { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/book$/, scope: 'write', why: 'states the book total coverage is computed against' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\//, scope: 'read', why: 'Part A engine, stateless' },
   { method: 'POST', pattern: /^\/v1\/partc\/projects\/:[A-Za-z]+\/boq\/compare$/, scope: 'read', why: 'BOQ comparison, stores nothing' },
   { method: 'POST', pattern: /^\/v1\/desk\/scenario$/, scope: 'read', why: 'scenario, stores nothing' },

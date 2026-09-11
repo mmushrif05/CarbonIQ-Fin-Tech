@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-172 routes.
+183 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -153,9 +153,20 @@ relationship manager read, write, assess; auditor and borrower read.
 | PUT | `/v1/partc/settings` | `write` | changes a record |
 | GET | `/v1/partc/storage` | `read` | read |
 | POST | `/v1/pcaf/part-a/assess` | `read` | Part A engine, stateless |
+| PUT | `/v1/pcaf/part-a/book` | `write` | states the book total coverage is computed against |
+| GET | `/v1/pcaf/part-a/book/:year` | `read` | read |
 | POST | `/v1/pcaf/part-a/business-loans/assess` | `read` | Part A engine, stateless |
 | POST | `/v1/pcaf/part-a/business-loans/portfolio` | `read` | Part A engine, stateless |
+| GET | `/v1/pcaf/part-a/exposures` | `read` | read |
+| POST | `/v1/pcaf/part-a/exposures` | `write` | records or recomputes an exposure in the register |
+| GET | `/v1/pcaf/part-a/exposures/:exposureId` | `read` | read |
+| PUT | `/v1/pcaf/part-a/exposures/:exposureId` | `write` | changes a recorded exposure |
+| DELETE | `/v1/pcaf/part-a/exposures/:exposureId` | `write` | removes an exposure from the register |
+| POST | `/v1/pcaf/part-a/exposures/:exposureId/recompute` | `write` | records or recomputes an exposure in the register |
+| GET | `/v1/pcaf/part-a/position/:year` | `read` | read |
 | GET | `/v1/pcaf/part-a/reference` | `read` | read |
+| GET | `/v1/pcaf/part-a/storage` | `read` | read |
+| GET | `/v1/pcaf/part-a/years` | `read` | read |
 | POST | `/v1/pcaf/part-c/agent/disclose` | `assess` | Part C runs, forms, reports and agents |
 | POST | `/v1/pcaf/part-c/agent/intake` | `assess` | Part C runs, forms, reports and agents |
 | POST | `/v1/pcaf/part-c/agent/map` | `assess` | Part C runs, forms, reports and agents |

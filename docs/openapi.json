@@ -21929,6 +21929,248 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/book": {
+      "put": {
+        "operationId": "putPcafPartABook",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "State the total loans and investments for a reporting year",
+        "description": "Coverage is assessed outstanding over the whole book (PCAF Disclosure Checklist Part A, p.124). Nothing here can derive an institution's book total, so it is recorded as declared, with who stated it, and that travels with every coverage figure it produces. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  },
+                  "totalLoansAndInvestments": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "currency": {
+                    "type": "string",
+                    "maxLength": 10
+                  },
+                  "statedBy": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "note": {
+                    "type": "string",
+                    "maxLength": 2000
+                  }
+                },
+                "required": [
+                  "reportingYear",
+                  "totalLoansAndInvestments"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "book": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "book"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "book": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "book"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/book/{year}": {
+      "get": {
+        "operationId": "getPcafPartABookByYear",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The reporting entity's stated total loans and investments for a year",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "book": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "book": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/business-loans/assess": {
       "post": {
         "operationId": "postPcafPartABusinessLoansAssess",
@@ -23221,6 +23463,1933 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/exposures": {
+      "get": {
+        "operationId": "getPcafPartAExposures",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "A reporting year's exposures, a page at a time",
+        "description": "Requires a year: the register is organised by reporting year because Part A accounts for positions at one date, and a list across years is two books in one table. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/limit"
+          },
+          {
+            "$ref": "#/components/parameters/cursor"
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "x-paged": true,
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "exposures": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "reportingYear": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposures"
+                      ]
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "page": {
+                          "$ref": "#/components/schemas/Page"
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "allOf": [
+                        {
+                          "type": "object",
+                          "properties": {
+                            "exposures": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "reportingYear": {
+                              "type": "string"
+                            }
+                          },
+                          "additionalProperties": true,
+                          "required": [
+                            "exposures"
+                          ]
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "page": {
+                              "$ref": "#/components/schemas/Page"
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postPcafPartAExposures",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Record one exposure in the register",
+        "description": "The engine runs before anything is written, so an exposure the standard refuses never reaches the book. Both halves are kept — the input the bank keyed and the result the engine computed — so a later factor correction is a decision somebody takes rather than something that happens to them. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "identifiers": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "lei": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "accountNumber": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  },
+                  "counterparty": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "country": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "sector": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "naceL2": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "financialInstitution": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "instrument": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "borrowerListed": {
+                    "type": "boolean"
+                  },
+                  "borrowerType": {
+                    "type": "string",
+                    "enum": [
+                      "company",
+                      "nonprofit",
+                      "state-owned-enterprise",
+                      "government",
+                      "sovereign",
+                      "municipality"
+                    ]
+                  },
+                  "isInvestmentFund": {
+                    "type": "boolean"
+                  },
+                  "onBalanceSheetAtYearEnd": {
+                    "type": "boolean"
+                  },
+                  "offBalanceSheet": {
+                    "type": "boolean"
+                  },
+                  "useOfProceedsKnown": {
+                    "type": "boolean"
+                  },
+                  "proceedsPurpose": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "outstanding": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "disbursed": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "repayments": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sharesHeld": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "totalShares": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "investeeTotalEquity": {
+                        "type": "number"
+                      },
+                      "averageOutstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "peakOutstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10
+                      }
+                    },
+                    "required": [
+                      "asOf"
+                    ]
+                  },
+                  "denominator": {
+                    "type": "object",
+                    "properties": {
+                      "marketCapOrdinary": {
+                        "type": "number"
+                      },
+                      "marketCapPreferred": {
+                        "type": "number"
+                      },
+                      "totalDebtInterestBearing": {
+                        "type": "number"
+                      },
+                      "totalDebtNonInterestBearing": {
+                        "type": "number"
+                      },
+                      "minorityInterests": {
+                        "type": "number"
+                      },
+                      "totalEquity": {
+                        "type": "number"
+                      },
+                      "totalDebt": {
+                        "type": "number"
+                      },
+                      "totalAssets": {
+                        "type": "number"
+                      },
+                      "customerDeposits": {
+                        "type": "number"
+                      },
+                      "financialInstitution": {
+                        "type": "boolean"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10
+                      },
+                      "entity": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "issuer": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "recourseReason": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "attributionOverrideJustification": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "emissions": {
+                    "type": "object",
+                    "properties": {
+                      "scope1": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope2": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope3": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope3AbsentReason": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "dataQualityClaims": {
+                    "type": "object",
+                    "properties": {
+                      "scope12": {
+                        "type": "string",
+                        "maxLength": 6
+                      },
+                      "scope3": {
+                        "type": "string",
+                        "maxLength": 6
+                      },
+                      "justification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "removals": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "creditsRetired": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "creditsGenerated": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "deflator": {
+                    "type": "object",
+                    "properties": {
+                      "ratio": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "index": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "ratio"
+                    ]
+                  },
+                  "plausibility": {
+                    "type": "object",
+                    "properties": {
+                      "revenue": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sectorBand": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "high": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ]
+                      }
+                    }
+                  },
+                  "thresholds": {
+                    "type": "object",
+                    "properties": {
+                      "fluctuationPct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "emissionsLagYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20
+                      }
+                    }
+                  },
+                  "assetClass": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  }
+                },
+                "required": [
+                  "instrument",
+                  "outstanding",
+                  "reportingYear"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/exposures/{exposureId}": {
+      "delete": {
+        "operationId": "deletePcafPartAExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Remove an exposure from the register",
+        "description": "Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposureId": {
+                      "type": "string"
+                    },
+                    "removed": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposureId"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposureId": {
+                          "type": "string"
+                        },
+                        "removed": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposureId"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "operationId": "getPcafPartAExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "One exposure, with the input it was computed from and its whole trace",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "operationId": "putPcafPartAExposuresByExposureId",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Change a recorded exposure; the engine reruns over the new input",
+        "description": "There is no partial update of a figure. The figures are derived, and changing one without rerunning the engine would put a number in the book that no equation produces. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "identifiers": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "lei": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "accountNumber": {
+                        "type": "string",
+                        "maxLength": 80
+                      }
+                    }
+                  },
+                  "counterparty": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "country": {
+                        "type": "string",
+                        "maxLength": 80
+                      },
+                      "sector": {
+                        "type": "string",
+                        "maxLength": 120
+                      },
+                      "naceL2": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "financialInstitution": {
+                        "type": "boolean"
+                      }
+                    }
+                  },
+                  "instrument": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "borrowerListed": {
+                    "type": "boolean"
+                  },
+                  "borrowerType": {
+                    "type": "string",
+                    "enum": [
+                      "company",
+                      "nonprofit",
+                      "state-owned-enterprise",
+                      "government",
+                      "sovereign",
+                      "municipality"
+                    ]
+                  },
+                  "isInvestmentFund": {
+                    "type": "boolean"
+                  },
+                  "onBalanceSheetAtYearEnd": {
+                    "type": "boolean"
+                  },
+                  "offBalanceSheet": {
+                    "type": "boolean"
+                  },
+                  "useOfProceedsKnown": {
+                    "type": "boolean"
+                  },
+                  "proceedsPurpose": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "outstanding": {
+                    "type": "object",
+                    "properties": {
+                      "amount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "disbursed": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "repayments": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sharesHeld": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "totalShares": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "investeeTotalEquity": {
+                        "type": "number"
+                      },
+                      "averageOutstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "peakOutstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10
+                      }
+                    },
+                    "required": [
+                      "asOf"
+                    ]
+                  },
+                  "denominator": {
+                    "type": "object",
+                    "properties": {
+                      "marketCapOrdinary": {
+                        "type": "number"
+                      },
+                      "marketCapPreferred": {
+                        "type": "number"
+                      },
+                      "totalDebtInterestBearing": {
+                        "type": "number"
+                      },
+                      "totalDebtNonInterestBearing": {
+                        "type": "number"
+                      },
+                      "minorityInterests": {
+                        "type": "number"
+                      },
+                      "totalEquity": {
+                        "type": "number"
+                      },
+                      "totalDebt": {
+                        "type": "number"
+                      },
+                      "totalAssets": {
+                        "type": "number"
+                      },
+                      "customerDeposits": {
+                        "type": "number"
+                      },
+                      "financialInstitution": {
+                        "type": "boolean"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 30
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10
+                      },
+                      "entity": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "issuer": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "recourseReason": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "attributionOverrideJustification": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "emissions": {
+                    "type": "object",
+                    "properties": {
+                      "scope1": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope2": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope3": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "source": {
+                            "type": "string",
+                            "maxLength": 300
+                          },
+                          "verifier": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "provider": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "providerMethod": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          },
+                          "method": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "alreadyAttributed": {
+                            "type": "boolean"
+                          },
+                          "activity": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "required": [
+                          "basis"
+                        ]
+                      },
+                      "scope3AbsentReason": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "dataQualityClaims": {
+                    "type": "object",
+                    "properties": {
+                      "scope12": {
+                        "type": "string",
+                        "maxLength": 6
+                      },
+                      "scope3": {
+                        "type": "string",
+                        "maxLength": 6
+                      },
+                      "justification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      }
+                    }
+                  },
+                  "removals": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "creditsRetired": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "creditsGenerated": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "period": {
+                        "anyOf": [
+                          {
+                            "type": "number"
+                          },
+                          {
+                            "type": "string",
+                            "maxLength": 20
+                          }
+                        ]
+                      },
+                      "basis": {
+                        "type": "string",
+                        "maxLength": 120
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
+                  },
+                  "deflator": {
+                    "type": "object",
+                    "properties": {
+                      "ratio": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "index": {
+                        "type": "string",
+                        "maxLength": 200
+                      }
+                    },
+                    "required": [
+                      "ratio"
+                    ]
+                  },
+                  "plausibility": {
+                    "type": "object",
+                    "properties": {
+                      "revenue": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "sectorBand": {
+                        "type": "object",
+                        "properties": {
+                          "low": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "high": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "low",
+                          "high"
+                        ]
+                      }
+                    }
+                  },
+                  "thresholds": {
+                    "type": "object",
+                    "properties": {
+                      "fluctuationPct": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1000
+                      },
+                      "emissionsLagYears": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 20
+                      }
+                    }
+                  },
+                  "assetClass": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "reportingYear": {
+                    "type": "integer",
+                    "minimum": 2000,
+                    "maximum": 2100
+                  }
+                },
+                "required": [
+                  "instrument",
+                  "outstanding",
+                  "reportingYear"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/exposures/{exposureId}/recompute": {
+      "post": {
+        "operationId": "postPcafPartAExposuresByExposureIdRecompute",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Rerun the engine over the input already held, and say what moved",
+        "description": "Nothing recomputes on read, so a figure somebody was shown yesterday is the figure they see today until this is called. The response reports the movement and the standard edition on each side of it. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "exposureId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "exposure": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "movement": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "exposure",
+                    "movement"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "exposure": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "movement": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "exposure",
+                        "movement"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/position/{year}": {
+      "get": {
+        "operationId": "getPcafPartAPositionByYear",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The reporting-year position, rolled up from the recorded exposures",
+        "description": "Read from the stored roll-up projection rather than the whole records: an exposure is several kilobytes, most of it the provenance trace, and the roll-up needs eighteen fields. Coverage is real here — assessed outstanding over the stated book total. A year holding no exposures is a 409, because an empty book and an unmeasured one are different claims. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reportingYear": {
+                      "type": "string"
+                    },
+                    "total": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "coverage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "exposures": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "reportingYear",
+                    "total"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reportingYear": {
+                          "type": "string"
+                        },
+                        "total": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "coverage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "exposures": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "reportingYear",
+                        "total"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/reference": {
       "get": {
         "operationId": "getPcafPartAReference",
@@ -23311,6 +25480,212 @@
                       "required": [
                         "standard",
                         "assetClasses"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/storage": {
+      "get": {
+        "operationId": "getPcafPartAStorage",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "What this deployment can actually persist for Part A",
+        "description": "Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "storage"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "storage"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/years": {
+      "get": {
+        "operationId": "getPcafPartAYears",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The reporting years this book holds exposures for",
+        "description": "Each says whether the entity has stated its total loans and investments for that year, because without it coverage cannot be a percentage of anything. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "years": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "years"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "years": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "years"
                       ]
                     },
                     "meta": {

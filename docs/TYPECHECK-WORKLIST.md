@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **325**. Remaining: **182**.
+Checked across all three: **329**. Remaining: **184**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **275**. Remaining: **66** (384 errors, measured by
+Checked: **279**. Remaining: **66** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **5 of them raise no errors at all** and can be adopted by adding the
@@ -135,7 +135,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **42**. Remaining: **95** (1256 errors, measured by
+Checked: **42**. Remaining: **97** (1301 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **3 of them raise no errors at all** and can be adopted by adding the
@@ -161,6 +161,7 @@ pragma and nothing else.
 | `tests/partc-assessments.test.js` | 26 |
 | `tests/desk-api.test.js` | 24 |
 | `tests/ui-config.test.js` | 24 |
+| `tests/parta-register-api.test.js` | 23 |
 | `tests/parta-engine.test.js` | 22 |
 | `tests/partc-methodology.test.js` | 22 |
 | `tests/pcaf-partc-api.test.js` | 22 |
@@ -173,6 +174,7 @@ pragma and nothing else.
 | `tests/partc-report-output.test.js` | 18 |
 | `tests/scopes.test.js` | 18 |
 | `tests/capital-basket.test.js` | 17 |
+| `tests/parta-register.test.js` | 17 |
 | `tests/agent-call-budget.test.js` | 16 |
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
@@ -196,6 +198,7 @@ pragma and nothing else.
 | `tests/authorization.test.js` | 8 |
 | `tests/capital-engine.test.js` | 8 |
 | `tests/ip-surface.test.js` | 8 |
+| `tests/pg-scale.test.js` | 8 |
 | `tests/supervisor.test.js` | 8 |
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
@@ -219,7 +222,6 @@ pragma and nothing else.
 | `tests/pcaf-partc-conformance.test.js` | 4 |
 | `tests/structure.test.js` | 4 |
 | `tests/capital-anchor.test.js` | 3 |
-| `tests/pg-scale.test.js` | 3 |
 | `tests/accounts-ui.test.js` | 2 |
 | `tests/baseline-registry.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |

@@ -14,16 +14,34 @@ which is the reference guide this class was built from.
 ## 1. The shape
 
 ```
-POST /v1/pcaf/part-a/business-loans/assess      one exposure
-POST /v1/pcaf/part-a/business-loans/portfolio   a book, rolled up and ranked
-GET  /v1/pcaf/part-a/reference                  the class, its options, its thresholds
+                                                 scope    stores
+POST /v1/pcaf/part-a/business-loans/assess       read     nothing
+POST /v1/pcaf/part-a/business-loans/portfolio    read     nothing
+GET  /v1/pcaf/part-a/reference                   read     —
+
+GET    /v1/pcaf/part-a/years                     read     —
+GET    /v1/pcaf/part-a/book/:year                read     —
+PUT    /v1/pcaf/part-a/book                      write    the book total
+GET    /v1/pcaf/part-a/exposures?reportingYear=  read     —
+POST   /v1/pcaf/part-a/exposures                 write    one exposure
+GET    /v1/pcaf/part-a/exposures/:id             read     —
+PUT    /v1/pcaf/part-a/exposures/:id             write    replaces the input, reruns the engine
+POST   /v1/pcaf/part-a/exposures/:id/recompute   write    reruns on the same input
+DELETE /v1/pcaf/part-a/exposures/:id             write    —
+GET    /v1/pcaf/part-a/position/:year            read     —
+GET    /v1/pcaf/part-a/storage                   read     —
 ```
 
-Both POSTs carry the `read` scope: they compute and store nothing, issue no id,
-and the same request twice returns the same answer. A persisted exposure
-register is the next step and is not built — see §7.
+**The two surfaces need different scopes and that is not a detail.** The engine
+routes compute and store nothing, so a read-only key may ask them. The register
+writes — it is the book a disclosure is built from — so it needs `write`. The
+two rules sit in that order in `scopes.js` because the first match wins, and
+the broad "Part A engine, stateless" rule would otherwise have handed a
+read-only key the ability to record exposures.
 
 ```
+application/register.js      the register: record, change, recompute, the position
+infrastructure/store.js      the two collections behind the seam
 domain/business-loans/
   classify.js    the Figure 5-1 gate, and which denominator applies
   numerator.js   the outstanding amount, which this chapter defines twice
@@ -232,13 +250,53 @@ not.
 
 ---
 
-## 7. What is not built
+## 7. The register
 
-- **No persisted exposure register.** Both routes are reads. A book has to be
-  posted whole each time, which is right for a pilot and wrong for a bank with
-  five thousand loans. The register — reporting entity → year → exposure, with
-  coverage against the whole book — is row 2 of the plan in
-  `docs/PCAF-PART-A-RESEARCH.md` §11 and is the next thing to build.
+Migration `0008` gives §5.2 a book: `parta_exposures`, one row per exposure per
+reporting year, and `parta_book`, one row per year carrying the entity's own
+total loans and investments.
+
+**Both halves are kept.** A row holds the input the bank keyed *and* the result
+the engine computed, with the instant and the standard edition beside them.
+Keeping only the input would mean a factor correction silently rewrote a figure
+somebody had already been shown; keeping only the result would mean nobody
+could see what it was computed from. `POST /exposures/:id/recompute` reruns the
+engine over the input already held and **reports what moved** — nothing
+recomputes on read, so a figure a person saw yesterday is the figure they see
+today until somebody decides otherwise and can see the difference.
+
+**Coverage is now a figure rather than an absence.** PCAF asks for assessed
+outstanding over total loans and investments (DCL p.124). A posted body was
+only ever what somebody chose to send, so the denominator was unknowable. The
+entity states its book total once per year, at `PUT /v1/pcaf/part-a/book`, and
+it is recorded as **declared** with who stated it — nothing here can derive an
+institution's balance sheet, and that provenance travels with every coverage
+percentage it produces. A book total of zero is refused: a book of zero has no
+coverage rather than full coverage.
+
+**The roll-up reads a projection, and that is why it is fast.** A stored
+exposure is several kilobytes, most of it the provenance trace, and the
+reporting-year position needs about twenty fields. `parta_exposure_rollup()`
+computes exactly those into a generated column at write time. Every path in it
+is a path **into the record**, never a flattened shape of its own — which is
+what lets the in-memory store project the same set with no column at all, and
+is the only reason the suite can prove on either store that the projected
+roll-up equals the whole-record roll-up figure for figure. Measured: **316 ms
+over 10,000 exposures**, against a one-second bound.
+
+One detail worth knowing, because it silently returns the opposite of the
+truth: `jsonb_strip_nulls` removes a null field and leaves the object that held
+it, so an exposure with no attribution factor (Option 3b or 3c) projects as
+`attribution: {}` — which is truthy. `inflate()` normalises it, and a test
+pins the count.
+
+## 8. What is still not built
+
+- **No lifecycle.** An exposure is recorded and can be changed; there is no
+  lock and no supersede. Nothing publishes from this register yet, and a
+  half-built lifecycle is worse than none. `lock()` refuses with a 501 naming
+  the step that builds it, and the `status` column exists in 0008 so that step
+  needs no migration.
 - **No §5.2 report.** The figures are there; the document PCAF's Chapter 6 and
   the Disclosure Checklist ask for is row 8 of that plan.
 - **No screen.** The surface is the API.
