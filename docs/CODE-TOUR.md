@@ -166,7 +166,7 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 6 | 1,121 |
+|       `src/domains/pcaf-part-a/application/` | 6 | 1,122 |
 |       `src/domains/pcaf-part-a/domain/` | 14 | 2,544 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
@@ -204,7 +204,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **341** | **57,422** |
+| **total** | **341** | **57,423** |
 
 <!-- END MODULE-MAP -->
 

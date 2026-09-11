@@ -61,7 +61,7 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 44 | executed |
 | PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 35 | executed |
 | PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 19 | executed |
-| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 76 | executed |
+| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 86 | executed |
 | PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 39 | executed |
 | PCAF Part C | `C-SCOPE-01` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-02` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
