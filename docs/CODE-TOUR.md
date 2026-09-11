@@ -196,7 +196,7 @@ flowchart TD
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,876 |
 |       `src/platform/database/adapters/` | 6 | 496 |
-|     `src/platform/http/` | 22 | 2,571 |
+|     `src/platform/http/` | 22 | 2,578 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 4 | 337 |
@@ -204,7 +204,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **342** | **57,479** |
+| **total** | **342** | **57,486** |
 
 <!-- END MODULE-MAP -->
 
