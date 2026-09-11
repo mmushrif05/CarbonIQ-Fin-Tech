@@ -5,7 +5,7 @@
   # during the build, not in the function's runtime environment, so without
   # this step /health cannot report the running commit — which is the one
   # question it exists to answer.
-  command = "npm install && npm run build:info && npm run build:ui && node scripts/db-migrate.js up --if-configured"
+  command = "npm install && npm run build:info && npm run build:ui && node scripts/db-migrate.js up --if-configured && node scripts/first-admin.js --if-configured"
   # The built frontend (scripts/build-ui.js): ui/ minified, paths preserved.
   # esbuild is a runtime dependency, not a dev one: NODE_ENV=production below
   # makes `npm install` omit devDependencies, and the build step needs it.

@@ -1,0 +1,45 @@
+# A read of the live deployment from a runner that can reach it.
+#
+# Every endpoint here is credential-free by design and carries no secret:
+# /health reports booleans and variable *names*, GET /v1/auth/bootstrap says
+# whether the first-run window is open and why not, GET /v1/auth/preview says
+# whether the sample book is offered, and a sign-in with a made-up address is
+# refused with the same generic answer whether or not the address exists —
+# so the refusal code tells you the deployment's state, not anybody's account.
+name: Production diagnose
+
+on:
+  # The GitHub integration this is driven from may not dispatch a workflow, so
+  # a push to the working branch is the trigger as well. Not on main.
+  push:
+    branches: ['claude/**']
+    paths: ['.github/workflows/prod-diagnose.yml']
+  workflow_dispatch:
+    inputs:
+      site:
+        description: The deployment to read
+        required: true
+        default: https://carboniqfintech.netlify.app
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GET /health
+        run: |
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/health")
+          echo "HTTP $code"; jq . body.json || cat body.json
+      - name: GET /v1/auth/bootstrap
+        run: |
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/bootstrap")
+          echo "HTTP $code"; jq . body.json || cat body.json
+      - name: GET /v1/auth/preview
+        run: |
+          code=$(curl -sS -o body.json -w '%{http_code}' "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/preview")
+          echo "HTTP $code"; jq . body.json || cat body.json
+      - name: POST /v1/auth/login with an address that exists nowhere
+        run: |
+          code=$(curl -sS -o body.json -w '%{http_code}' -H 'content-type: application/json' \
+            -d '{"email":"probe@example.invalid","password":"not-a-real-password-1"}' \
+            "${{ inputs.site || 'https://carboniqfintech.netlify.app' }}/v1/auth/login")
+          echo "HTTP $code"; jq . body.json || cat body.json
