@@ -149,3 +149,26 @@ describe('The per-exposure report', () => {
     expect(JSON.stringify(lim)).toMatch(/below the average balance/i);
   });
 });
+
+describe('The recalculation section (Chapter 6)', () => {
+  test('the recalculation section prints the entity’s protocol and says so when no base year is set', async () => {
+    await seed();
+    const { model } = await svc.annualDisclosure(ORG, 2024, { insurer: 'B' });
+    const sec = model.sections.find(s => s.id === 'recalculation');
+    const flat = JSON.stringify(sec);
+    /* No base year has been set for this entity, so the section says so on its
+       face rather than implying the current year. */
+    expect(flat).toMatch(/Not yet stated/);
+    expect(flat).toMatch(/Open item/);
+    /* The triggers the entity's protocol carries are printed. */
+    expect(flat).toMatch(/triggers a recalculation|What triggers a recalculation/i);
+
+    await register.saveSettings(ORG, { baseYear: 2020, significanceThresholdPct: 7 });
+    const after = await svc.annualDisclosure(ORG, 2024, { insurer: 'B' });
+    const sec2 = after.model.sections.find(s => s.id === 'recalculation');
+    const flat2 = JSON.stringify(sec2);
+    expect(flat2).toMatch(/2020/);
+    expect(flat2).toMatch(/7% movement/);
+    expect(flat2).not.toMatch(/Open item/);
+  });
+});

@@ -166,15 +166,15 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 4 | 771 |
-|       `src/domains/pcaf-part-a/domain/` | 12 | 2,401 |
+|       `src/domains/pcaf-part-a/application/` | 5 | 852 |
+|       `src/domains/pcaf-part-a/domain/` | 14 | 2,537 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
-|       `src/domains/pcaf-part-a/infrastructure/` | 1 | 102 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 472 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 305 |
-|       `src/domains/pcaf-part-a/reporting/` | 5 | 851 |
+|       `src/domains/pcaf-part-a/infrastructure/` | 1 | 116 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 498 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 3 | 319 |
+|       `src/domains/pcaf-part-a/reporting/` | 5 | 893 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -193,7 +193,7 @@ flowchart TD
 |     `src/platform/auth/` | 12 | 2,180 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
-|     `src/platform/database/` | 10 | 1,842 |
+|     `src/platform/database/` | 10 | 1,843 |
 |       `src/platform/database/adapters/` | 6 | 496 |
 |     `src/platform/http/` | 22 | 2,571 |
 |     `src/platform/jobs/` | 3 | 413 |
@@ -203,7 +203,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **329** | **55,542** |
+| **total** | **332** | **55,856** |
 
 <!-- END MODULE-MAP -->
 
@@ -400,6 +400,11 @@ erDiagram
     string owner_org_id
     jsonb record
     string reporting_year "reportingYear"
+  }
+  parta_settings {
+    string id PK
+    string owner_org_id
+    jsonb record
   }
   partc_clients ||--o{ partc_projects : "restrict"
   partc_projects ||--o{ partc_boq_revisions : "restrict"

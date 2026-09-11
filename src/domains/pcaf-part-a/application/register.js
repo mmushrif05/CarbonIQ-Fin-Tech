@@ -40,6 +40,8 @@ const repo = require('../infrastructure/store');
 const { assessBusinessLoan, STANDARD } = require('../domain/business-loans');
 const { withSectorBand } = require('./plausibility');
 const { rollUp } = require('../domain/business-loans/portfolio');
+const { movementSignificance } = require('../domain/recalculation');
+const settingsService = require('./parta-settings');
 
 /** @typedef {import('../../../shared/types').AppError} AppError */
 
@@ -245,6 +247,10 @@ async function recompute(orgId, exposureId) {
   const existing = await get(orgId, exposureId);
   store.assertWritable();
 
+  /* The entity's own significance threshold, so a movement can be judged
+     against the protocol it publishes rather than a figure hidden in code. */
+  const settings = await settingsService.getSettings(orgId);
+
   const engine = engineFor(existing.assetClass);
   /* The band in force now, not the one that applied when it was recorded:
      a newly released band is exactly what a recomputation is for. */
@@ -288,6 +294,12 @@ async function recompute(orgId, exposureId) {
   await repo.saveExposure(orgId, next);
 
   const headline = movementOf('scope1And2');
+  /* The largest line movement is judged beside the headline, because a change
+     reaching only scope 3 can be significant while scope 1 and 2 did not. */
+  const largestLinePct = lines
+    .map(l => Number(l.movementPct))
+    .filter(p => Number.isFinite(p))
+    .reduce((m, p) => (Math.abs(p) > Math.abs(m) ? p : m), 0);
   return {
     exposure: next,
     movement: {
@@ -296,6 +308,9 @@ async function recompute(orgId, exposureId) {
       before: headline.before, after: headline.after, movementPct: headline.movementPct,
       lines, dataQuality, findings,
       moved,
+      significance: movementSignificance(
+        { moved, headlinePct: headline.movementPct, largestLinePct },
+        settings.significanceThresholdPct),
       previousStandard: existing.standard,
       standard: STANDARD,
       note: !moved
@@ -352,6 +367,9 @@ async function stateBook(orgId, { reportingYear, totalLoansAndInvestments, curre
 async function getBook(orgId, reportingYear) {
   return repo.getBook(orgId, reportingYear);
 }
+
+// The entity's settings live in ./parta-settings, re-exported below.
+const { DEFAULT_SETTINGS, getSettings, saveSettings } = settingsService;
 
 // ---------------------------------------------------------------------------
 // The reporting-year position
@@ -473,9 +491,9 @@ async function lock() {
 }
 
 module.exports = {
-  ASSET_CLASSES, STATUS,
+  ASSET_CLASSES, STATUS, DEFAULT_SETTINGS,
   record, get, update, remove, recompute, listExposures,
-  stateBook, getBook,
+  stateBook, getBook, getSettings, saveSettings,
   position, years, lock,
   _inflate: inflate,
 };

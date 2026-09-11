@@ -148,6 +148,7 @@ const COLLECTIONS = Object.freeze({
       ] },
     } },
   parta_book:          { table: 'parta_book', keys: { reportingYear: 'reporting_year' }, dependsOn: [] },
+  parta_settings:      { table: 'parta_settings', keys: {}, dependsOn: [] },
 });
 
 function definition(collection) {

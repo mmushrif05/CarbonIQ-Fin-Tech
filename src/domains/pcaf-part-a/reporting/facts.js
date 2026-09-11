@@ -51,6 +51,22 @@ const DEFAULT_ASSURANCE = (() => {
 const tval = line => (line && Number.isFinite(line.value) ? line.value : null);
 
 /**
+ * The entity's recalculation protocol, normalised for the section that prints
+ * it. A missing settings object is not an error — it means the entity has not
+ * stated a base year, which the report says rather than implying the current
+ * year.
+ */
+function recalculationOf(r) {
+  const s = r || {};
+  return {
+    baseYear: (s.baseYear === null || s.baseYear === undefined) ? null : s.baseYear,
+    significanceThresholdPct: Number.isFinite(Number(s.significanceThresholdPct)) ? Number(s.significanceThresholdPct) : null,
+    triggers: Array.isArray(s.recalculationTriggers) ? s.recalculationTriggers : [],
+    policy: s.recalculationPolicy || '',
+  };
+}
+
+/**
  * The scope 1/2 and scope 3 lines from a roll-up total, as tonnes, with the
  * count of exposures that carried each. Scope 3 stays a separate line from
  * scope 1 and 2 — §5.2 requires it (p.56) and never sums the two.
@@ -78,6 +94,7 @@ function lines(total) {
  * @param {string} [input.currency]
  * @param {any} [input.assurance]    the resolved assurance position
  * @param {any} [input.band]         the sector-band baseline resolution in force
+ * @param {any} [input.recalculation] the entity's recalculation protocol (base year, threshold, triggers)
  * @param {object} [input.meta]      publishedAt, reportId, url
  */
 function disclosureFacts(input) {
@@ -149,6 +166,7 @@ function disclosureFacts(input) {
 
     factorSet: factorRelease(),
     band: input.band || null,
+    recalculation: recalculationOf(input.recalculation),
 
     assurance,
     /* The endorsement scanner reads these strings; they are the only free

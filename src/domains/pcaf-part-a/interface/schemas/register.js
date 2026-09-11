@@ -41,6 +41,20 @@ const positionQuerySchema = Joi.object({
 }).unknown(true);
 
 /**
+ * The reporting entity's recalculation protocol (Chapter 6). Every field is
+ * optional so a caller can set one without restating the rest; `baseYear`
+ * accepts null, because clearing a base year back to unstated is a legitimate
+ * act and different from leaving it unchanged.
+ */
+const settingsSchema = Joi.object({
+  baseYear: Joi.number().integer().min(2000).max(2100).allow(null),
+  significanceThresholdPct: Joi.number().min(0).max(100)
+    .description('Movement in a reported figure that triggers a recalculation, per the GHG Protocol Scope 3 Standard'),
+  recalculationTriggers: Joi.array().items(Joi.string().trim().max(300)).max(20),
+  recalculationPolicy: Joi.string().allow('').max(4000),
+}).unknown(false);
+
+/**
  * A recomputation takes no body: the input is the one already held, which is
  * what makes it a recomputation rather than a change. Closed rather than
  * absent, so a caller that sends a body is told it was not used instead of
@@ -61,4 +75,4 @@ const disclosureQuerySchema = Joi.object({
 }).unknown(false);
 
 
-module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema, reportRequestSchema, disclosureQuerySchema };
+module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema };

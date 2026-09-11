@@ -35,14 +35,15 @@ function safe(s) { return String(s || 'report').replace(/[^a-z0-9]+/gi, '-').rep
  */
 async function annualDisclosure(orgId, year, opts = {}) {
   const position = await register.position(orgId, String(year));
-  const [assurance, band] = await Promise.all([
+  const [assurance, band, recalculation] = await Promise.all([
     positionFor(orgId).catch(fallback('parta.report.assurance', null)),
     bandBasis(orgId, opts.country),
+    register.getSettings(orgId).catch(fallback('parta.report.settings', register.DEFAULT_SETTINGS)),
   ]);
   const input = {
     position, reportingYear: String(year), insurer: opts.insurer,
     currency: opts.currency || (position.coverage && /** @type {any} */ (position.coverage).currency) || 'LKR',
-    assurance: assurance || undefined, band, meta: opts.meta || {},
+    assurance: assurance || undefined, band, recalculation, meta: opts.meta || {},
   };
   return {
     facts: reporting.disclosureFacts(input),

@@ -23,9 +23,9 @@ numerals are not interchangeable between them.
 
 | Status | Rules |
 |---|---|
-| Implemented | 38 |
+| Implemented | 41 |
 | Partial | 1 |
-| **Total** | **39** |
+| **Total** | **42** |
 
 ## How to verify any row
 
@@ -316,6 +316,16 @@ actually ran.
 
 **Limitation.** The lock-and-supersede lifecycle is a later release. It is an absent capability that refuses explicitly, not a disabled one, so nothing can publish from the register in the meantime.
 
+### A-REG-08 — Implemented
+
+**Clause:** Chapter 6 — recalculation and significance
+
+**Rule.** A recomputation reports whether the movement reaches the entity’s own significance threshold: a movement at or above it is a recalculation trigger that, once the lock-and-supersede lifecycle exists, requires a restatement with a recorded reason; below it, the movement is reported but is not a trigger. The threshold judged against is the one the disclosure publishes, not a figure hidden in code.
+
+**Implementation.** src/domains/pcaf-part-a/application/register.js — recompute() reads the entity settings and attaches a significance verdict using src/domains/pcaf-part-a/domain/recalculation.js significanceOf() against the stated threshold
+
+**Evidence.** `tests/parta-register.test.js › a recomputation says whether the movement reaches the significance threshold`
+
 ## The disclosed score and the improvement plan
 
 ### A-DQ-01 — Implemented
@@ -357,6 +367,18 @@ actually ran.
 **Implementation.** src/domains/pcaf-part-a/domain/business-loans/portfolio.js — rollUp() refuses an empty book rather than returning a total of zero
 
 **Evidence.** `tests/parta-business-loans.test.js › an empty book is refused rather than rendered as a position of zero`
+
+## Recalculation and significance
+
+### A-RECALC-01 — Implemented
+
+**Clause:** Chapter 6 — recalculation and significance
+
+**Rule.** The reporting entity’s recalculation protocol — a base year, a significance threshold and the triggers that force a recalculation — is a "shall". It is held as the entity’s own settings, and the base year is null until the entity sets one, because a base year is a claim about history and belongs to the entity, not to its software.
+
+**Implementation.** src/domains/pcaf-part-a/application/parta-settings.js — getSettings()/saveSettings() over an org-wide parta_settings record (re-exported through register.js); src/domains/pcaf-part-a/domain/recalculation.js holds the default triggers and the significance test
+
+**Evidence.** `tests/parta-register.test.js › the recalculation protocol is the entity’s own settings, base year null until set`
 
 ## The disclosure and the per-exposure report
 
@@ -449,6 +471,16 @@ actually ran.
 **Implementation.** src/domains/pcaf-part-a/interface/routes/register.js delivers via src/platform/reporting/pdf-response.js; annualDisclosure refuses an empty year with a 409
 
 **Evidence.** `tests/parta-report-api.test.js › a well-formed PDF is delivered and an empty year is a 409`
+
+### A-REPORT-10 — Implemented
+
+**Clause:** Chapter 6 — recalculation and significance
+
+**Rule.** The disclosure prints the entity’s recalculation protocol — base year, significance threshold and triggers — from its settings, and where no base year is set it says so on the page rather than implying the current year.
+
+**Implementation.** src/domains/pcaf-part-a/reporting/sections.js — recalculationSection() prints the base year (or "Not yet stated"), the threshold and the triggers, with an Open item callout when no base year is set
+
+**Evidence.** `tests/parta-report.test.js › the recalculation section prints the entity’s protocol and says so when no base year is set`
 
 ## Known limitations, stated plainly
 
