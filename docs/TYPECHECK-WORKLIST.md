@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **368**. Remaining: **200**.
+Checked across all three: **373**. Remaining: **201**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **317**. Remaining: **67** (384 errors, measured by
+Checked: **322**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -138,10 +138,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **43**. Remaining: **110** (1363 errors, measured by
+Checked: **43**. Remaining: **111** (1363 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**5 of them raise no errors at all** and can be adopted by adding the
+**6 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -253,6 +253,7 @@ pragma and nothing else.
 | `tests/v1-info.test.js` | 1 |
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
+| `tests/parta-real-estate.test.js` | 0 |
 | `tests/parta-register-ui.test.js` | 0 |
 | `tests/parta-sovereign-ui.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |

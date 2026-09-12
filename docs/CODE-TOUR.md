@@ -171,11 +171,11 @@ flowchart TD
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
-|         `src/domains/pcaf-part-a/domain/real-estate/` | 1 | 132 |
+|         `src/domains/pcaf-part-a/domain/real-estate/` | 5 | 595 |
 |         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 953 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 194 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 726 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 4 | 399 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 757 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 5 | 458 |
 |       `src/domains/pcaf-part-a/reporting/` | 5 | 893 |
 |         `src/domains/pcaf-part-a/reporting/sovereign/` | 5 | 849 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
@@ -206,7 +206,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **350** | **58,825** |
+| **total** | **355** | **59,378** |
 
 <!-- END MODULE-MAP -->
 

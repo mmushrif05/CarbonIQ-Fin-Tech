@@ -26104,6 +26104,254 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/real-estate/assess": {
+      "post": {
+        "operationId": "postPcafPartARealEstateAssess",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "PCAF Part A §5.4 / §5.5 financed emissions for one property (CRE or mortgage)",
+        "description": "Attribution is outstanding ÷ property value at origination, fixed thereafter and updated only on a modification. Scope 1 and 2 are reported combined at minimum with the split carried; the option, and so the data-quality score, follows how the energy is known (metered → 1a/1b, label × floor area → 2a, type statistics × floor area → 2b, statistics × building count → 3). Stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "class": {
+                    "type": "string",
+                    "enum": [
+                      "commercial-real-estate",
+                      "mortgages"
+                    ]
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "default": "LK"
+                  },
+                  "buildingType": {
+                    "type": "string",
+                    "maxLength": 60
+                  },
+                  "borrowerListed": {
+                    "type": "boolean"
+                  },
+                  "securedForOtherPurpose": {
+                    "type": "boolean"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "purchase",
+                      "refinance",
+                      "construction",
+                      "renovation",
+                      "hel",
+                      "heloc"
+                    ]
+                  },
+                  "exposure": {
+                    "type": "object",
+                    "properties": {
+                      "outstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "LKR"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "outstanding"
+                    ]
+                  },
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "atOrigination": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "latest": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "modification": {
+                        "type": "object",
+                        "properties": {
+                          "newValuation": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "date": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "newValuation"
+                        ]
+                      }
+                    }
+                  },
+                  "energy": {
+                    "type": "object",
+                    "properties": {
+                      "electricity_kWh": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "fuel_kWh": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "fuelSource": {
+                        "type": "string",
+                        "enum": [
+                          "diesel",
+                          "lpg"
+                        ]
+                      },
+                      "emissionFactorBasis": {
+                        "type": "string",
+                        "enum": [
+                          "supplier",
+                          "average"
+                        ],
+                        "default": "average"
+                      },
+                      "electricityFactor": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "fuelFactor": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  },
+                  "label": {
+                    "type": "string",
+                    "maxLength": 4
+                  },
+                  "floorArea_m2": {
+                    "type": "number",
+                    "exclusiveMinimum": 0
+                  },
+                  "buildingCount": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "developerConstructionEmissions_tCO2e": {
+                    "type": "number",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "class",
+                  "exposure",
+                  "value"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "elapsedMs": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "elapsedMs": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/reference": {
       "get": {
         "operationId": "getPcafPartAReference",
