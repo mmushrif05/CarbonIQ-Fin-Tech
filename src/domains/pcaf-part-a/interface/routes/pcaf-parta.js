@@ -32,6 +32,8 @@ const sovereignData = require('../../domain/sovereign/dataset');
 const realEstateData = require('../../domain/real-estate/dataset');
 const { assessSovereign } = require('../../domain/sovereign');
 const { sovereignRequestSchema } = require('../schemas/sovereign');
+const { assessRealEstate } = require('../../domain/real-estate');
+const { realEstateRequestSchema } = require('../schemas/real-estate');
 const { withSectorBand } = require('../../application/plausibility');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
@@ -249,6 +251,35 @@ router.post('/sovereign/assess',
     try {
       const startedAt = Date.now();
       const result = assessSovereign(req.body);
+      res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * §5.4 / §5.5 — one property exposure.
+ *
+ * One engine for both classes: financed building scope 1 and 2 = building
+ * scope 1 and 2 × (outstanding ÷ property value at origination). How the
+ * building's energy is known sets the option and so the data-quality score
+ * (Tables 5.4-1 / 5.5-1, its own numbers — 2a is 3 and 2b is 4). Construction
+ * emissions are optional (CRE) or not required (mortgages) and reported absent
+ * by default, a developer figure carried as scope 3 category 15 apart. A listed
+ * owner is redirected to §5.1, a property-secured loan for another purpose to
+ * §5.2.
+ */
+router.post('/real-estate/assess',
+  doc({ summary: 'PCAF Part A §5.4 / §5.5 financed emissions for one property (CRE or mortgage)',
+    description: 'Attribution is outstanding ÷ property value at origination, fixed thereafter and '
+      + 'updated only on a modification. Scope 1 and 2 are reported combined at minimum with the '
+      + 'split carried; the option, and so the data-quality score, follows how the energy is known '
+      + '(metered → 1a/1b, label × floor area → 2a, type statistics × floor area → 2b, statistics × '
+      + 'building count → 3). Stores nothing.',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
+  validate({ body: realEstateRequestSchema }),
+  (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const result = assessRealEstate(req.body);
       res.json({ ...result, elapsedMs: Date.now() - startedAt });
     } catch (err) { next(err); }
   });
