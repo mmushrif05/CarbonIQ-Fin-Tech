@@ -1,0 +1,59 @@
+{
+  "table": "Tables 5.4-1 / 5.5-1",
+  "assetClass": "real-estate",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.4 Commercial real estate (p.80) and 5.5 Mortgages (p.86)",
+  "page": 80,
+  "detail": "Annex Table 10.1-4 / 10.1-5 — data needs and equations per option",
+  "status": "required",
+  "note": "Commercial real estate (§5.4) and mortgages (§5.5) share one data-quality table of the same shape and the same scores, so it is held once and both classes read it. Its numbers are its own and must never be substituted for the corporate classes': Option 2a is score 3 here where §5.1/§5.2 put it at 2, and Option 2b is score 4 here where they put it at 3. The option is decided by how the building's energy is known: 1a metered energy consumption with a supplier-specific (market-based) emission factor; 1b metered energy with an average (location-based) factor; 2a an official energy label (or an equivalent certificate the FI judges comparable, fn 129) with floor area and statistical energy per label class; 2b building-type and location statistics with floor area; 3 building-type and location statistics with the number of buildings alone. The attribution factor is outstanding over the property value at origination (§5.4 p.78, §5.5 p.84), fixed thereafter and updated only on a modification, renewal, refinance or extension with a new valuation. PCAF records that easily accessible data for many countries currently sits between score 4 and 5 (p.85).",
+  "scale": "1 is the highest data quality, 5 the lowest. A score is a category, never a mark out of five.",
+  "options": [
+    {
+      "option": "1a",
+      "score": 1,
+      "family": "Option 1: Actual building emissions",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "Actual metered building energy consumption (per energy source) is available, with a supplier-specific (market-based) emission factor for each source.",
+      "emissionsBasis": ["metered-supplier-factor"]
+    },
+    {
+      "option": "1b",
+      "score": 2,
+      "family": "Option 1: Actual building emissions",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "Actual metered building energy consumption (per energy source) is available, with an average (location-based) emission factor for each source.",
+      "emissionsBasis": ["metered-average-factor"]
+    },
+    {
+      "option": "2a",
+      "score": 3,
+      "family": "Option 2: Estimated building emissions from floor area",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "An official energy label (or an equivalent certificate the FI judges comparable, fn 129) and the building's floor area are available; energy is estimated from statistical energy consumption per label class and floor area.",
+      "emissionsBasis": ["label-floor-area"]
+    },
+    {
+      "option": "2b",
+      "score": 4,
+      "family": "Option 2: Estimated building emissions from floor area",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "The building's floor area, type and location are available; energy is estimated from building-type and location statistical energy consumption and floor area.",
+      "emissionsBasis": ["type-location-floor-area"]
+    },
+    {
+      "option": "3",
+      "score": 5,
+      "family": "Option 3: Estimated building emissions from building count",
+      "scopes": ["1", "2"],
+      "attributionFactor": true,
+      "when": "Only the number of buildings and their type and location are available; energy is estimated from building-type and location statistical energy consumption per building.",
+      "emissionsBasis": ["type-location-building-count"],
+      "footnote": "Where no floor area is held, statistical energy per building stands in and the figure is the lowest quality on the scale."
+    }
+  ]
+}

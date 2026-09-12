@@ -29,6 +29,7 @@ const handle = require('../../../../platform/http/async-handler');
 const parta = require('../../domain');
 const library = require('../../domain/sector-factors');
 const sovereignData = require('../../domain/sovereign/dataset');
+const realEstateData = require('../../domain/real-estate/dataset');
 const { assessSovereign } = require('../../domain/sovereign');
 const { sovereignRequestSchema } = require('../schemas/sovereign');
 const { withSectorBand } = require('../../application/plausibility');
@@ -105,6 +106,36 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
           countriesHeld: sovereignData.countriesHeld(),
           dataset: sovereignData.release(),
           thresholds: require('../../domain/sovereign/checks').DEFAULTS,
+        },
+        {
+          id: 'commercial-real-estate',
+          label: 'Commercial real estate',
+          section: '5.4',
+          definition: 'Loans to buy or refinance income-producing property, and CRE investments '
+            + 'without operational control. Listed CRE is §5.1; a loan secured on CRE for another '
+            + 'purpose is a business loan (§5.2). Construction and renovation loans are optional.',
+          denominator: 'Property value at origination (land, building and improvements) — fixed thereafter, updated only on a modification with a new valuation',
+          scopes: 'Scope 1 and 2 of the building\u2019s operational energy use. Construction '
+            + 'emissions are optional; if the developer reports them they are scope 3 category 15.',
+          dataQualityOptions: parta.dataQuality.optionsFor('commercial-real-estate'),
+          dataQualityTable: parta.dataQuality.tableFor('commercial-real-estate').table,
+          buildingTypes: realEstateData.buildingTypes().map(t => ({ key: t.key, label: t.label })),
+          dataset: realEstateData.release(),
+        },
+        {
+          id: 'mortgages',
+          label: 'Mortgages',
+          section: '5.5',
+          definition: 'Residential purchase and refinance, including small multifamily. HELs and '
+            + 'HELOCs are not required; construction and renovation mortgages are not required '
+            + '\u2014 the homeowner does not account for the builder\u2019s emissions.',
+          denominator: 'Property value at origination \u2014 the same fixing rule as CRE',
+          scopes: 'Scope 1 and 2 of the property\u2019s energy use; the whole property for '
+            + 'multifamily with shared facilities, the unit alone for a single apartment.',
+          dataQualityOptions: parta.dataQuality.optionsFor('mortgages'),
+          dataQualityTable: parta.dataQuality.tableFor('mortgages').table,
+          buildingTypes: realEstateData.buildingTypes().map(t => ({ key: t.key, label: t.label })),
+          dataset: realEstateData.release(),
         },
       ],
       archetypes: parta.archetypes.list(),

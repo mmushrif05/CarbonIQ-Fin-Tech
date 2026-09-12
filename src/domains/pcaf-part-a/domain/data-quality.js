@@ -22,6 +22,10 @@ const TABLES = {
   'listed-equity-corporate-bonds': require('./reference').DQ_LISTED_EQUITY,
   'business-loans-unlisted-equity': require('./reference').DQ_BUSINESS_LOANS,
   'sovereign-debt': require('./reference').DQ_SOVEREIGN,
+  /* CRE (§5.4) and mortgages (§5.5) share one table (5.4-1 / 5.5-1), so both
+     class keys resolve to the same object; it is never the corporate one. */
+  'commercial-real-estate': require('./reference').DQ_REAL_ESTATE,
+  'mortgages': require('./reference').DQ_REAL_ESTATE,
 };
 
 /** The data-quality table for an asset class, or an error naming the gap. */
