@@ -1,0 +1,19 @@
+{
+  "note": "GENERATED. Regenerate with: npm run docs:parta-realestate-manifest",
+  "purpose": "The Part A §5.4/§5.5 real-estate energy-statistics set a financed-emissions figure was computed on: version, effective date, status and checksum.",
+  "algorithm": "SHA-256 over the canonical form (keys sorted at every level)",
+  "checksum": "c05b3cf296d6ea6d6cfa855832085f881483d0f26451455a8784ed79a6194ac1",
+  "provisionalTables": [
+    "real-estate-energy-statistics"
+  ],
+  "tables": [
+    {
+      "table": "real-estate-energy-statistics",
+      "version": "1.0.0",
+      "effectiveFrom": "2026-01-01",
+      "status": "provisional",
+      "rowCount": 6,
+      "checksum": "2a1db4c38a256eee93e2e1d1dcc303db9e6f88e1349c73965267e813a1068ab7"
+    }
+  ]
+}

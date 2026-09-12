@@ -1,0 +1,41 @@
+{
+  "version": "1.0.0",
+  "effectiveFrom": "2026-01-01",
+  "status": "provisional",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition, §5.4 and §5.5.",
+  "note": "PROVISIONAL, and it says so on every figure it produces. Building-energy intensities are order-of-magnitude figures drawn from published global ranges (CBECS, IEA, published Sri Lankan building-energy studies) at an indicative level — not a licensed dataset and not a national Sri Lankan measurement programme. Sri Lanka has no official building energy-label scheme, so Option 2a is rarely reachable on a Sri Lankan book and a figure will usually rest on Option 2b (type-and-floor-area statistics, score 4) or Option 3 (statistics per building, score 5). The label-class intensities below are illustrative for a country that adopts an equivalent certificate (fn 129); they are not a Sri Lankan scheme. Emission factors are provisional grid and fuel figures pending a released regional baseline.",
+  "emissionFactors": {
+    "unit": "kgCO2e per kWh delivered",
+    "byCountry": {
+      "LK": {
+        "electricity_grid": { "value": 0.53, "provisional": true, "source": "Indicative Sri Lanka grid emission factor (CEB generation mix); provisional pending a released baseline." },
+        "diesel": { "value": 0.267, "provisional": true, "source": "IPCC/DEFRA-range diesel combustion factor per kWh (net CV); provisional." },
+        "lpg": { "value": 0.215, "provisional": true, "source": "IPCC/DEFRA-range LPG combustion factor per kWh (net CV); provisional." }
+      }
+    }
+  },
+  "buildingTypes": [
+    { "key": "office", "label": "Office", "electricityShare": 0.85, "fuelSource": "diesel",
+      "intensity_kWh_per_m2_yr": { "value": 160, "provisional": true }, "source": "Indicative office energy-use intensity, global temperate/tropical range; provisional." },
+    { "key": "retail", "label": "Retail", "electricityShare": 0.9, "fuelSource": "diesel",
+      "intensity_kWh_per_m2_yr": { "value": 210, "provisional": true }, "source": "Indicative retail energy-use intensity; provisional." },
+    { "key": "hotel", "label": "Hotel", "electricityShare": 0.7, "fuelSource": "lpg",
+      "intensity_kWh_per_m2_yr": { "value": 290, "provisional": true }, "source": "Indicative hotel energy-use intensity (24-hour operation, cooling load); provisional." },
+    { "key": "industrial", "label": "Industrial / warehouse", "electricityShare": 0.6, "fuelSource": "diesel",
+      "intensity_kWh_per_m2_yr": { "value": 130, "provisional": true }, "source": "Indicative light-industrial/warehouse intensity; provisional." },
+    { "key": "residential_apartment", "label": "Residential — apartment", "electricityShare": 0.95, "fuelSource": "lpg",
+      "intensity_kWh_per_m2_yr": { "value": 95, "provisional": true }, "source": "Indicative apartment energy-use intensity; provisional." },
+    { "key": "residential_house", "label": "Residential — house", "electricityShare": 0.9, "fuelSource": "lpg",
+      "intensity_kWh_per_m2_yr": { "value": 110, "provisional": true }, "source": "Indicative single-house energy-use intensity; provisional." }
+  ],
+  "perBuildingFloorArea_m2": {
+    "note": "Option 3 has no floor area, only a building count, so a typical floor area per building type stands in. Provisional and indicative.",
+    "office": 1200, "retail": 800, "hotel": 6000, "industrial": 2500,
+    "residential_apartment": 90, "residential_house": 150
+  },
+  "labelClasses": {
+    "note": "Illustrative label-class energy intensities for a country that adopts an official or equivalent certificate (Option 2a, fn 129). Not a Sri Lankan scheme; a book with no label cannot reach Option 2a.",
+    "unit": "kWh per m2 per year",
+    "classes": { "A": 50, "B": 90, "C": 130, "D": 180, "E": 240, "F": 310, "G": 400 }
+  }
+}

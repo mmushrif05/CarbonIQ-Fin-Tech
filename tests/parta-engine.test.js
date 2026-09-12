@@ -33,9 +33,10 @@ describe('Data quality is a table per asset class, not a global lookup', () => {
 
   test('an asset class with no table held is refused, never given another class\'s', () => {
     // The mapping is not uniform across classes, so substituting a table would
-    // return a plausible number that is wrong.
-    expect(() => dq.score('mortgages', '2a')).toThrow(/no pcaf part a data quality table/i);
-    try { dq.score('mortgages', '2a'); } catch (e) { expect(e.code).toBe('DQ_TABLE_NOT_HELD'); }
+    // return a plausible number that is wrong. Motor-vehicle loans (§5.6) is a
+    // class the plan reaches later and whose table is not held yet.
+    expect(() => dq.score('motor-vehicles', '2a')).toThrow(/no pcaf part a data quality table/i);
+    try { dq.score('motor-vehicles', '2a'); } catch (e) { expect(e.code).toBe('DQ_TABLE_NOT_HELD'); }
   });
 
   test('an option outside the table is refused and the valid ones are named', () => {

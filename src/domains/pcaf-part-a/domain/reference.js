@@ -151,6 +151,9 @@ const DQ_BUSINESS_LOANS = Object.freeze(checked('data/pcaf-parta/dq-business-loa
    option→score mapping is a fact about this chapter, not the standard. */
 const DQ_SOVEREIGN = Object.freeze(checked('data/pcaf-parta/dq-sovereign.json',
   require('../../../../data/pcaf-parta/dq-sovereign.json'), dqTableSchema));
+
+const DQ_REAL_ESTATE = Object.freeze(checked('data/pcaf-parta/dq-real-estate.json',
+  require('../../../../data/pcaf-parta/dq-real-estate.json'), dqTableSchema));
 const COUNTRY_CONFIG = Object.freeze(checked('data/pcaf-parta/country-config.json',
   require('../../../../data/pcaf-parta/country-config.json'), countryConfigSchema));
 
@@ -163,7 +166,7 @@ const SECTOR_FACTORS = Object.freeze(checked('data/pcaf-parta/sector-factors.jso
   require('../../../../data/pcaf-parta/sector-factors.json'), sectorFactorTableSchema));
 
 module.exports = {
-  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, DQ_SOVEREIGN, COUNTRY_CONFIG,
+  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, DQ_SOVEREIGN, DQ_REAL_ESTATE, COUNTRY_CONFIG,
   SECTORS, SECTOR_FACTORS,
   dqTableSchema, countryConfigSchema,
 };
