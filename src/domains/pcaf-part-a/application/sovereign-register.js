@@ -211,6 +211,8 @@ function inflate(row) {
     country: row.country || { code: null, name: (row.result && row.result.sovereign && row.result.sovereign.name) || null },
     provisional: Boolean(row.result && row.result.sovereign && row.result.sovereign.provisional),
     outstanding: (row.input && row.input.exposure && Number(row.input.exposure.amount)) || null,
+    attributionFactor: (row.result && row.result.attribution && Number.isFinite(row.result.attribution.value))
+      ? row.result.attribution.value : null,
     attributed: {
       scope1Excl: v(s1.exclLULUCF),
       scope1Incl: v(s1.inclLULUCF),
@@ -255,6 +257,16 @@ async function listExposures(orgId, reportingYear, opts = {}) {
   return sovRepo.pageForYear(orgId, reportingYear, { limit, cursor });
 }
 
+/**
+ * Every holding of a year as the roll-up sees it — the projected row, one per
+ * holding, for the disclosure's audit-trail annex. The same projection
+ * `position()` reads; an empty year is an empty list here.
+ */
+async function rows(orgId, reportingYear) {
+  const found = await sovRepo.rollupsForYear(orgId, reportingYear);
+  return found.map(inflate);
+}
+
 async function years(orgId) {
   const found = await sovRepo.years(orgId);
   const books = await repo.listBooks(orgId);
@@ -264,6 +276,6 @@ async function years(orgId) {
 
 module.exports = {
   ASSET_CLASS, STATUS,
-  record, get, update, remove, recompute, position, listExposures, years,
+  record, get, update, remove, recompute, position, listExposures, rows, years,
   _inflate: inflate,
 };

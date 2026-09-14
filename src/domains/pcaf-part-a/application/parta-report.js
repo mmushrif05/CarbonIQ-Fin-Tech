@@ -1,12 +1,18 @@
 // @ts-check
 /**
- * The PCAF Part A §5.2 reporting service: assemble the facts a document is
- * built from, from the register and the registries, and render it.
+ * The §5.2 documents, assembled: the annual disclosure from the register's
+ * reporting-year position, and the per-exposure report from one held result.
  *
- * The register holds the figures; the assurance position and the sector-band
- * baseline are read from their registries; the reporting layer arranges them.
- * Nothing here computes an emission — the register's position already carries
- * the engine's own results, and this service never recomputes them.
+ * Both draw the same entity facts and the same assurance position, so the two
+ * documents from one book cannot describe two entities or two postures. The
+ * per-exposure report used to be built without the entity's settings, and so
+ * printed "no recalculation protocol has been stated" beside an annual
+ * disclosure that stated one — two documents from one book contradicting
+ * each other on a "shall" item. Both receive the settings now.
+ *
+ * The exposure rows the roll-up read travel into the annual disclosure as the
+ * audit-trail annex; the assurance declaration travels in so a verified cover
+ * names its verifier.
  */
 
 'use strict';
@@ -14,11 +20,11 @@
 const register = require('./register');
 const reporting = require('../reporting/report');
 const { positionFor } = require('../../baseline/application/assurance-position');
+const declaration = require('../../lending/application/assurance');
 const baselines = require('../../baseline/application/registry');
 const { METRIC: BAND_METRIC, DEFAULT_COUNTRY } = require('./plausibility');
 const { fallback } = require('../../../platform/observability/logger');
 
-/** The band resolution in force, as a basis line for the methodology section. */
 async function bandBasis(orgId, country) {
   const r = await baselines.effective(BAND_METRIC, { country: country || DEFAULT_COUNTRY, orgId })
     .catch(fallback('parta.report.band', null));
@@ -28,41 +34,47 @@ async function bandBasis(orgId, country) {
 
 function safe(s) { return String(s || 'report').replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase(); }
 
-/**
- * The annual §5.2 disclosure of one reporting year. Refuses an empty year the
- * same way the position does — a 409, because "we lent nothing" and "we have
- * not measured yet" are different claims.
- */
-async function annualDisclosure(orgId, year, opts = {}) {
-  const position = await register.position(orgId, String(year));
-  const [assurance, band, recalculation] = await Promise.all([
+/** The facts every §5.2 document shares: assurance, its declaration, the entity's settings, the band. */
+async function shared(orgId, country) {
+  const [assurance, assuranceDeclaration, band, settings] = await Promise.all([
     positionFor(orgId).catch(fallback('parta.report.assurance', null)),
-    bandBasis(orgId, opts.country),
+    declaration.read(orgId).catch(fallback('parta.report.declaration', null)),
+    bandBasis(orgId, country),
     register.getSettings(orgId).catch(fallback('parta.report.settings', register.DEFAULT_SETTINGS)),
   ]);
+  return { assurance: assurance || undefined, assuranceDeclaration: assuranceDeclaration || undefined, band, settings };
+}
+
+async function annualDisclosure(orgId, year, opts = {}) {
+  const [position, rows, common] = await Promise.all([
+    register.position(orgId, String(year)),
+    register.rows(orgId, String(year)),
+    shared(orgId, opts.country),
+  ]);
   const input = {
-    position, reportingYear: String(year), insurer: opts.insurer,
+    position, rows, reportingYear: String(year), insurer: opts.insurer,
     currency: opts.currency || (position.coverage && /** @type {any} */ (position.coverage).currency) || 'LKR',
-    assurance: assurance || undefined, band, recalculation, meta: opts.meta || {},
+    assurance: common.assurance, assuranceDeclaration: common.assuranceDeclaration,
+    band: common.band, recalculation: common.settings, meta: opts.meta || {},
   };
+  const facts = reporting.disclosureFacts(input);
   return {
-    facts: reporting.disclosureFacts(input),
+    facts,
     model: reporting.disclosureModel(input),
     input,
-    safeName: `${safe(opts.insurer)}-part-a-${year}`,
+    safeName: `${safe(facts.insurer !== 'Reporting entity not stated' ? facts.insurer : opts.insurer)}-part-a-${year}`,
   };
 }
 
-/** The per-exposure report for one recorded exposure. */
 async function exposureReport(orgId, exposureId, opts = {}) {
-  const exposure = await register.get(orgId, exposureId);
-  const [assurance, band] = await Promise.all([
-    positionFor(orgId).catch(fallback('parta.report.assurance', null)),
-    bandBasis(orgId, opts.country),
+  const [exposure, common] = await Promise.all([
+    register.get(orgId, exposureId),
+    shared(orgId, opts.country),
   ]);
   const input = {
     result: exposure.result, insurer: opts.insurer,
-    assurance: assurance || undefined, band,
+    assurance: common.assurance, assuranceDeclaration: common.assuranceDeclaration,
+    band: common.band, recalculation: common.settings,
     meta: { reportId: exposure.exposureId, ...(opts.meta || {}) },
   };
   return {
@@ -73,4 +85,4 @@ async function exposureReport(orgId, exposureId, opts = {}) {
   };
 }
 
-module.exports = { annualDisclosure, exposureReport };
+module.exports = { annualDisclosure, exposureReport, shared };

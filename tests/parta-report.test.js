@@ -47,12 +47,23 @@ describe('The annual §5.2 disclosure', () => {
     await seed();
     const { model } = await svc.annualDisclosure(ORG, 2024, { insurer: 'Test Bank PLC' });
     const titles = model.sections.map(s => s.title);
+    /* Chapter 6's order, with what a verifier reads first in front of it
+       (the reporting entity and its boundary) and the two sections that
+       collect what the standard asks to be stated somewhere — the year-end
+       fluctuation of revolving facilities, and the uncertainty statement
+       with everything the document does not contain — in the places the
+       checklist reads them. */
     expect(titles).toEqual([
+      'Reporting entity and boundary',
       'Scope and coverage', 'Gases and units', 'Absolute emissions', 'Methodology',
       'Data quality', 'Recalculation and significance', 'Emission intensity',
-      'Limitations and the improvement plan', 'Conformance statement',
+      'Year-end fluctuation of revolving facilities',
+      'Limitations and the improvement plan',
+      'Uncertainty, and what this document does not contain',
+      'Conformance statement',
     ]);
-    expect(model.annexes.map(a => a.annex)).toEqual(['A', 'B', 'C']);
+    /* Factor set · Annex 10.2 · the exposure register · the regulatory mapping · the checklist. */
+    expect(model.annexes.map(a => a.annex)).toEqual(['A', 'B', 'C', 'D', 'E']);
   });
 
   test('scope 3 is a separate line and nothing is netted', async () => {

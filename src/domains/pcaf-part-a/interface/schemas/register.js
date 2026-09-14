@@ -46,12 +46,33 @@ const positionQuerySchema = Joi.object({
  * accepts null, because clearing a base year back to unstated is a legitimate
  * act and different from leaving it unchanged.
  */
+const personSchema = Joi.object({
+  name: Joi.string().trim().max(200).required(),
+  role: Joi.string().trim().allow('').max(200).optional(),
+  date: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional().description('YYYY-MM-DD'),
+}).allow(null);
+
 const settingsSchema = Joi.object({
   baseYear: Joi.number().integer().min(2000).max(2100).allow(null),
   significanceThresholdPct: Joi.number().min(0).max(100)
     .description('Movement in a reported figure that triggers a recalculation, per the GHG Protocol Scope 3 Standard'),
   recalculationTriggers: Joi.array().items(Joi.string().trim().max(300)).max(20),
   recalculationPolicy: Joi.string().allow('').max(4000),
+
+  /* The reporting entity and its boundary — facts only the entity can state,
+     printed on the face of every Part A document and answered by its checklist. */
+  reportingEntity: Joi.string().trim().max(200).allow(null).description('The legal name of the reporting financial institution'),
+  consolidationApproach: Joi.string().valid('operational_control', 'financial_control', 'equity_share').allow(null)
+    .description('The GHG Protocol consolidation approach the inventory boundary follows'),
+  boundaryNote: Joi.string().allow('').max(2000).description('What the organisational boundary includes and excludes'),
+  fiscalYearEnd: Joi.string().pattern(/^\d{2}-\d{2}$/).allow(null).description('MM-DD; the position is taken at this date in the reporting year'),
+  gwpBasis: Joi.string().trim().max(120).allow(null).description('The IPCC assessment report and horizon the CO2e rests on, e.g. "IPCC AR6, 100-year"'),
+  preparedBy: personSchema.description('Who prepared the disclosure'),
+  approvedBy: personSchema.description('Who approved the disclosure, and on what date'),
+  assetClassesNotReported: Joi.array().items(Joi.object({
+    assetClass: Joi.string().max(60).required(),
+    reason: Joi.string().trim().max(500).required(),
+  })).max(12).description('Part A asset classes the entity does not report, each with its reason (Chapter 6, p.162)'),
 }).unknown(false);
 
 /**

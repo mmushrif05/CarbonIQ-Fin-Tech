@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **373**. Remaining: **201**.
+Checked across all three: **385**. Remaining: **202**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **322**. Remaining: **67** (384 errors, measured by
+Checked: **334**. Remaining: **67** (384 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -138,10 +138,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **43**. Remaining: **111** (1363 errors, measured by
+Checked: **43**. Remaining: **112** (1356 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**6 of them raise no errors at all** and can be adopted by adding the
+**8 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -162,7 +162,6 @@ pragma and nothing else.
 | `tests/observability.test.js` | 27 |
 | `tests/partc-registry.test.js` | 27 |
 | `tests/api-key.test.js` | 26 |
-| `tests/parta-register.test.js` | 26 |
 | `tests/partc-assessments.test.js` | 26 |
 | `tests/desk-api.test.js` | 24 |
 | `tests/ui-config.test.js` | 24 |
@@ -176,6 +175,7 @@ pragma and nothing else.
 | `tests/gcf-reporting.test.js` | 19 |
 | `tests/parta-api.test.js` | 19 |
 | `tests/parta-listed-equity.test.js` | 19 |
+| `tests/parta-register.test.js` | 19 |
 | `tests/partc-report-output.test.js` | 18 |
 | `tests/scopes.test.js` | 18 |
 | `tests/capital-basket.test.js` | 17 |
@@ -204,11 +204,12 @@ pragma and nothing else.
 | `tests/parta-business-loans.test.js` | 8 |
 | `tests/parta-factor-provenance.test.js` | 8 |
 | `tests/parta-report-api.test.js` | 8 |
-| `tests/pg-scale.test.js` | 8 |
 | `tests/supervisor.test.js` | 8 |
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-journey.test.js` | 7 |
+| `tests/parta-consolidated.test.js` | 7 |
+| `tests/pg-scale.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
 | `tests/parta-sovereign.test.js` | 6 |
@@ -219,7 +220,6 @@ pragma and nothing else.
 | `tests/capital-curve.test.js` | 5 |
 | `tests/factor-provenance.test.js` | 5 |
 | `tests/gcf-ui.test.js` | 5 |
-| `tests/parta-report.test.js` | 5 |
 | `tests/pdf-response.test.js` | 5 |
 | `tests/storage-seam.test.js` | 5 |
 | `tests/config.test.js` | 4 |
@@ -231,22 +231,21 @@ pragma and nothing else.
 | `tests/structure.test.js` | 4 |
 | `tests/capital-anchor.test.js` | 3 |
 | `tests/parta-real-estate-data.test.js` | 3 |
-| `tests/parta-sovereign-register.test.js` | 3 |
 | `tests/accounts-ui.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |
 | `tests/constants.test.js` | 2 |
 | `tests/csp-inline.test.js` | 2 |
 | `tests/deploy-freshness.test.js` | 2 |
 | `tests/health.test.js` | 2 |
+| `tests/parta-report.test.js` | 2 |
+| `tests/parta-sovereign-register.test.js` | 2 |
 | `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
 | `tests/schemas.test.js` | 2 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |
-| `tests/parta-report-golden.test.js` | 1 |
 | `tests/parta-sovereign-checks.test.js` | 1 |
 | `tests/parta-sovereign-data.test.js` | 1 |
-| `tests/parta-sovereign-report-golden.test.js` | 1 |
 | `tests/pcaf-parta-conformance.test.js` | 1 |
 | `tests/reports.test.js` | 1 |
 | `tests/score.test.js` | 1 |
@@ -255,5 +254,7 @@ pragma and nothing else.
 | `tests/netlify-function.test.js` | 0 |
 | `tests/parta-real-estate.test.js` | 0 |
 | `tests/parta-register-ui.test.js` | 0 |
+| `tests/parta-report-golden.test.js` | 0 |
+| `tests/parta-sovereign-report-golden.test.js` | 0 |
 | `tests/parta-sovereign-ui.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |

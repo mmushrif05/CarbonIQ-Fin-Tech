@@ -1,0 +1,193 @@
+COVER: PCAF Part A — Financed emissions disclosure
+  Reporting entity: Demo Bank PLC
+  responsible: Prepared by A. Perera, Head of Sustainability
+  responsible: Approved by S. Fernando, Chief Financial Officer on <date>
+SECTION 1 [entity] Reporting entity and boundary
+    body: The facts in this section are the reporting entity’s own statements about itself. None of them can be derived from a lending book, so where the entity has not stated one the table says so and the checklist answers No — a default printed in its place would be a claim the entity never made.
+    table: Fact | As stated by the reporting entity
+      row: Reporting entity | Demo Bank PLC
+      row: Consolidation approach | Operational control
+      row: Organisational boundary | The bank and its wholly owned subsidiaries.
+      row: Reporting year | 2024
+      row: Reporting period | <date> to <date>
+      row: Position taken at | <date>
+      row: Global warming potentials | IPCC AR6, 100-year
+      row: Currency of the book | LKR
+      row: Prepared by | A. Perera, Head of Sustainability
+      row: Approved by | S. Fernando, Chief Financial Officer, <date>
+    table: Asset class not reported | Section | Reason stated by the entity
+      row: Motor vehicle loans | §5.6 | Immaterial: below one per cent of total loans and investments.
+SECTION 2 [coverage] Scope and coverage
+    callout [What this disclosure covers]: This is the reporting entity’s PCAF Part A financed-emissions disclosure for the reporting year: every asset class the entity reports, side by side, against one book total. Financed emissions are scope 3 Category 15 of the entity’s own inventory; the entity’s gross scope 1, 2 and 3 (SLFRS S2 §29(a)) is a separate and larger claim, made where the entity states it, and this document is the Category 15 input to it.
+    body: Reporting year 2024. The position is taken at the fiscal year-end, which is how Part A accounts for financed emissions (Chapter 4). Every Part A asset class is listed: the ones reported with their outstanding and coverage, the ones not reported with the reason Chapter 6 asks for (p.162).
+    table: Asset class | Section | Status | Exposures | Outstanding | Currency | Coverage
+      row: Listed equity and corporate bonds | §5.1 | Not reported — not built | — | — | — | —
+      row: Business loans and unlisted equity | §5.2 | Reported | 2 | 520,000,000 | LKR | 3.71%
+      row: Project finance | §5.3 | Not reported — no register yet | — | — | — | —
+      row: Commercial real estate | §5.4 | Not reported — no register yet | — | — | — | —
+      row: Mortgages | §5.5 | Not reported — no register yet | — | — | — | —
+      row: Motor vehicle loans | §5.6 | Not reported — not built | — | — | — | —
+      row: Use of proceeds | §5.7 | Not reported — not built | — | — | — | —
+      row: Securitizations and structured products | §5.8 | Not reported — not built | — | — | — | —
+      row: Sovereign debt | §5.9 | Reported | 2 | 2,000,000 | USD | —
+      row: Sub-sovereign debt | §5.10 | Not reported — not built | — | — | — | —
+    h2: Coverage of the book
+    figure: Share of total loans and investments assessed = 3.71%
+    body: Coverage is the assessed outstanding amount of the classes in the book’s currency over the reporting entity’s total loans and investments for the year, 3.71% (DCL p.124).
+    caption: Excluded from the combined share, in their own currency: Sovereign debt (2,000,000 USD). Nothing here converts a currency at a rate the system does not hold.
+    table: Asset class not reported | Section | Reason | Stated by
+      row: Listed equity and corporate bonds | §5.1 | The engine is built and reachable from no route or register yet. | This system
+      row: Project finance | §5.3 | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | This system
+      row: Commercial real estate | §5.4 | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | This system
+      row: Mortgages | §5.5 | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | This system
+      row: Motor vehicle loans | §5.6 | Immaterial: below one per cent of total loans and investments. | Reporting entity
+      row: Use of proceeds | §5.7 | No methodology is built for this class in this system yet. | This system
+      row: Securitizations and structured products | §5.8 | No methodology is built for this class in this system yet. | This system
+      row: Sub-sovereign debt | §5.10 | No methodology is built for this class in this system yet. | This system
+SECTION 3 [gases] Gases and units
+    body: Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), on the 100-year global warming potentials of IPCC AR6, 100-year, as stated by the reporting entity. Each class covers the seven Kyoto Protocol gases as its own section describes: a borrower’s inventory where reported, a national inventory for a sovereign, and whichever gases an emission factor covers where a figure is estimated.
+    table: Gas | Formula | Where it arises
+      row: Carbon dioxide | CO2 | The dominant gas in every borrower inventory: fuel combustion, process emissions and purchased electricity.
+      row: Methane | CH4 | Fossil-fuel supply chains, agriculture and waste in the borrowers financed.
+      row: Nitrous oxide | N2O | Combustion and, for agricultural borrowers, fertiliser use.
+      row: Hydrofluorocarbons | HFCs | Refrigeration and cooling in a borrower’s operations.
+      row: Perfluorocarbons | PFCs | Aluminium smelting and some electronics manufacture.
+      row: Sulphur hexafluoride | SF6 | Electrical switchgear at industrial and utility borrowers.
+      row: Nitrogen trifluoride | NF3 | Electronics manufacture; accounted for where a borrower reports it.
+    body: Biogenic carbon, where reported, is stated separately from the fossil inventory and never netted against it; land-use removals sit within a sovereign’s scope 1 including LULUCF and are never netted against its excluding figure.
+SECTION 4 [absolute] Absolute emissions
+    figure: Financed emissions across the classes reported — the headline = 1984.900 tCO2e
+    figure: Financed scope 3 across the classes — a separate line = 3120.000 tCO2e
+    table: Asset class | Headline | tCO2e | Scope 3 tCO2e | Data quality
+      row: Business loans and unlisted equity (§5.2) | Financed scope 1 and 2 | 1788.000 | 3120.000 | 2.23
+      row: Sovereign debt (§5.9) | Financed scope 1, excluding LULUCF | 196.900 | — | 2
+      row: Total across 2 class(es) | Sum of the headlines above | 1984.900 | 3120.000 | per class
+    caption: The headline sums each recorded class on the boundary its section reports: §5.2 contributes financed scope 1 and 2, §5.9 contributes financed scope 1 excluding LULUCF. Scope 3 is summed apart and never into it; scope 1 including LULUCF is never added to the excluding figure.
+SECTION 5 [methodology] Methodology
+    body: Each asset class is attributed on the rule its section of Part A sets. Business loans and unlisted equity: the outstanding amount over the borrower’s total equity plus debt (EVIC where listed), times the borrower’s emissions, reported or estimated by option (§5.2, p.57). Sovereign debt: the exposure in international USD over the sovereign’s PPP-adjusted GDP, times its territorial emissions on both LULUCF boundaries (§5.9, p.144). The per-class documents carry each method in full; this disclosure lays their results side by side and computes nothing.
+    body: The engine performs every arithmetic operation. Nothing in this disclosure is computed by a language model, and no figure here rests on one.
+    body: Regional sector factor set: sector-factors v1.0.0 (provisional), sectors v1.0.0 (vocabulary); SHA-256 over the canonical form, <sha256>. Provisional: sector-factors.
+    body: Sovereign dataset: sovereign-dataset v1.0.0 (provisional); SHA-256 over the canonical form, <sha256>. Provisional: sovereign-dataset.
+    body: Sector intensity bands (the plausibility check): Sector carbon-intensity plausibility bands — illustrative dataset, not a released baseline. These are illustrative until a baseline is released.
+SECTION 6 [dataquality] Data quality
+    body: One score per class, weighted by outstanding amount within it (DCL p.128). Scores are never averaged across classes: §5.2 and §5.9 score on different tables, and a mean of two categories from two scales means nothing.
+    body: 1 is the highest quality, 5 the lowest; a score is a category, never a mark out of five. Within a class the score is weighted by outstanding amount (DCL p.128), and an exposure with no score is excluded from the weighting rather than counted as zero.
+    table: Asset class | Weighted score | Scored on | Weighted by
+      row: Business loans and unlisted equity (§5.2) | 2.23 | Box 6.1-6 option mapping (Table 5.2-1) | outstanding amount
+      row: Sovereign debt (§5.9) | 2 | Table 5.9-6 | outstanding amount
+    caption: No row combines two classes. The per-class documents show where each score sits by option.
+SECTION 7 [recalculation] Recalculation and significance
+    body: A recalculation of the base year is a "shall" under Chapter 6 when the book, the method or a factor changes materially. The base year and the significance threshold belong to the reporting entity and apply to every class alike; where none has been set, this disclosure states so rather than implying the current year.
+    table: Item | This reporting entity
+      row: Inventory base year | Not yet stated for this reporting entity
+      row: Significance threshold — triggers a recalculation of base-year emissions | 5% movement in a reported figure
+    h2: What triggers a recalculation
+    bullets:
+      - Structural change to the book — an acquisition, disposal or merger that moves exposures into or out of the inventory.
+      - A change of calculation methodology, or of the emission factors relied on, that materially changes reported emissions.
+      - A change in the boundary of what is measured — an asset class or a business line entering or leaving the inventory.
+      - Discovery of a material error, or of several errors that are material in aggregate.
+      - A released sector-factor set or a released sector intensity band that moves a reported figure by at least the significance threshold.
+    callout [Open item]: No base year is stated for this reporting entity. The disclosure says so rather than implying the current year, because a base year is a claim about history and belongs to the entity, not to its software.
+SECTION 8 [intensity] Emission intensity
+    figure: Economic emission intensity across the classes in the book’s currency = 3.44 tCO2e per million LKR
+    table: Asset class | Economic intensity | Unit
+      row: Business loans and unlisted equity (§5.2) | 3.44 | tCO2e per million LKR
+      row: Sovereign debt (§5.9) | 98.45 | tCO2e per million USD
+    body: Financed emissions per million of the currency outstanding (DCL p.127). A physical intensity is not reported at this level: each class holds a different physical denominator, and a sovereign’s production intensity is a country-level figure the §5.9 document carries.
+SECTION 9 [limitations] Limitations, and what is still outstanding
+    body: The per-class documents carry the data checks and the improvement plan for each class — 2 finding(s) across business loans and unlisted equity; 6 finding(s) across sovereign debt. What is listed here is what the disclosure itself still needs from the reporting entity before it can be filed as complete.
+    table: Outstanding | Why | Clause
+      row: State why Listed equity and corporate bonds (§5.1) is not reported, or record it | The engine is built and reachable from no route or register yet. | Part A ch.6 (p.162)
+      row: State why Project finance (§5.3) is not reported, or record it | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: State why Commercial real estate (§5.4) is not reported, or record it | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: State why Mortgages (§5.5) is not reported, or record it | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: State why Use of proceeds (§5.7) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: State why Securitizations and structured products (§5.8) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: State why Sub-sovereign debt (§5.10) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: Sovereign debt is denominated in USD; the book total is in LKR | Its outstanding is excluded from the combined coverage share rather than converted at a rate this system does not hold. | DCL p.124
+SECTION 10 [uncertainty] Uncertainty, and what this document does not contain
+    body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
+    table: Score | Share of assessed outstanding | What the figure’s uncertainty rests on
+      row: 2 | 92.3% | Reported by the counterparty, unverified. The uncertainty is that of the counterparty’s own measurement and boundary choices, which this document does not see.
+      row: 5 | 7.7% | Estimated from the outstanding amount and a sector-average factor, with no counterparty data at all. The lowest quality the scale holds; it should be read as a placeholder the improvement plan exists to replace.
+    h2: Not contained in this document
+    table: What | Why it is absent | Clause
+      row: Sovereign debt in the combined coverage share | Denominated in USD; the book total is in LKR. Excluded rather than converted at a rate this system does not hold. | DCL p.124
+      row: Listed equity and corporate bonds (§5.1) | The engine is built and reachable from no route or register yet. | Part A ch.6 (p.162)
+      row: Project finance (§5.3) | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: Commercial real estate (§5.4) | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: Mortgages (§5.5) | The assessment engine is built; the register that holds exposures for a reporting year is not yet built, so nothing can be disclosed for this class. | Part A ch.6 (p.162)
+      row: Motor vehicle loans (§5.6) | Immaterial: below one per cent of total loans and investments. (stated by the reporting entity) | Part A ch.6 (p.162)
+      row: Use of proceeds (§5.7) | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: Securitizations and structured products (§5.8) | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: Sub-sovereign debt (§5.10) | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
+      row: The inventory base year | Not stated by the reporting entity. | Part A ch.6 (p.164)
+      row: Prior-year comparatives and restatements | No register holds a locked prior position yet; nothing can be restated until the lock-and-supersede lifecycle exists. | Part A ch.6 (p.164)
+      row: A released regional sector factor set | The set in use is provisional (sector-factors); every provisional row carries the gap it stands in for. | Part A Box 6.1-5 (p.167)
+      row: A released sovereign dataset | The set in use is provisional (sovereign-dataset); every provisional row carries the gap it stands in for. | Part A Box 6.1-5 (p.167)
+      row: The reporting entity’s own gross scope 1, 2 and 3 inventory | Financed emissions are Category 15 of it; the whole is stated where the entity states it. | SLFRS S2 §29(a); Part A ch.6 (p.160)
+    caption: An absent item is reported absent rather than filled: a figure invented to close a gap reads as a measurement to anyone who did not watch it being invented.
+SECTION 11 [conformance] Conformance statement
+    body: The method in this disclosure conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025) for each asset class reported, and to Chapter 6 for the disclosure itself. PCAF sets the method; it does not approve, endorse or certify this disclosure or the figures in it. Of the classes reported: business loans and unlisted equity (§5.2) carries the GHG Protocol’s "Built on" mark; sovereign debt (§5.9) is a Third Edition addition not reviewed by the GHG Protocol.
+    body: This disclosure states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the disclosure or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
+ANNEX A [annexFactors] Factor sets, datasets and governed baselines
+    body: Every factor set or dataset a class’s figures rest on, with its version, effective date and the whole SHA-256 checksum, so a copy can be verified against it. The per-class documents print each set’s rows.
+    table: Regional sector factor set | Version | Effective from | Status | Rows | SHA-256
+      row: sector-factors | 1.0.0 | <date> | provisional | 23 | <sha256>
+      row: sectors | 1.0.0 | <date> | vocabulary | 23 | <sha256>
+    table: Sovereign dataset | Version | Effective from | Status | Rows | SHA-256
+      row: sovereign-dataset | 1.0.0 | <date> | provisional | 3 | <sha256>
+    body: Sector intensity bands: Sector carbon-intensity plausibility bands — illustrative dataset, not a released baseline.
+ANNEX B [annexTable] Annex 10.2 — scope 3 Category 15 by asset class
+    body: The template PCAF Annex 10.2 gives (pp.199–200): each asset class disaggregated — by sector for business loans, by sovereign for sovereign debt — with outstanding covered, the headline, scope 3 where the class reports it, and the weighted score per row.
+    h2: Business loans and unlisted equity (§5.2), by sector
+    table: Sector | Exposures | Outstanding | Scope 1+2 tCO2e | Scope 3 tCO2e | DQ
+      row: Textiles | 1 | 480,000,000 | 1752.000 | 3120.000 | 2
+      row: unclassified | 1 | 40,000,000 | 36.000 | — | 5
+    h2: Sovereign debt (§5.9), by sovereign
+    table: Sovereign | Holdings | Outstanding USD | Scope 1 excl. LULUCF tCO2e
+      row: Singapore (SG) | 1 | 1,000,000 | 105.99
+      row: Hong Kong SAR (HK) | 1 | 1,000,000 | 90.91
+ANNEX C [annexRegister] Exposure register across classes — the audit trail
+    body: One row per exposure of every class reported, from the same stored projections the totals were rolled up from. A verifier samples from this table; every identifier resolves to the stored record, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
+    table: Class | Exposure | Counterparty | Sector / country | Outstanding | Ccy | AF | Opt | DQ | Headline | Scope 3 | Checks
+      row: §5.2 | <id> | Lanka Apparel | Textiles | 480,000,000 | — | 0.1200 | 1b | 2 | 1752.000 | 3120.000 | clean
+      row: §5.2 | <id> | Ratnapura Rubber | — | 40,000,000 | — | — | 3b | 5 | 36.000 | — | accepted_with_findings (2)
+      row: §5.9 | <id> | Singapore | SG | 1,000,000 | USD | 0.0000 | 1b | 2 | 105.990 | — | accepted_with_findings (3)
+      row: §5.9 | <id> | Hong Kong SAR | HK | 1,000,000 | USD | 0.0000 | 1b | 2 | 90.910 | — | accepted_with_findings (3)
+    caption: 4 row(s). Each identifier resolves to the stored exposure, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
+ANNEX D [annexRegulatory] Where the regulatory lines come from
+    body: Each requirement a Sri Lankan bank files financed emissions against, and the section of this document that answers it — or the reason it does not. A document that maps every line to itself is claiming to be the whole disclosure; this one is the PCAF Part A input to it.
+    table: Requirement | Clause | Answered | Where
+      row: Absolute gross financed emissions — scope 1, 2 and 3 — by asset class and by industry | SLFRS S2 §29(a)(vi); B61(a) | Yes | Section 4; Annex B
+      row: Gross exposure (outstanding) by asset class and industry | SLFRS S2 B61(b) | Yes | Section 2; Annex B
+      row: Percentage of gross exposure included in the financed-emissions calculation | SLFRS S2 B61(c); DCL p.124 | Yes | Section 2 — coverage of the book
+      row: Methodology, inputs and assumptions per asset class, including the standard applied | SLFRS S2 B61(d); §29(a)(iv) | Yes | Section 5; Annex A
+      row: Economic emission intensity | SLFRS S2 §29(b); DCL p.127 | Yes | Section 8
+      row: Data-quality approach and score per asset class | PCAF DCL p.128; SLFRS S2 B63 | Yes | Section 6
+      row: Asset classes not reported, with the reason | PCAF Part A ch.6 (p.162) | Yes | Section 1; Section 2
+      row: The reporting entity’s own gross scope 1, 2 and 3 inventory | SLFRS S2 §29(a)(i)–(iii) | No | Not this document: financed emissions are Category 15 of that inventory, stated where the entity states the whole
+      row: Sustainable-finance classification of the lending book under the SLGFT | CBSL Direction No. 05 of 2022 | Elsewhere | The taxonomy screen and the Green Loan Certificate, not a financed-emissions document
+ANNEX E [annexChecklist] PCAF disclosure checklist — completed
+    checklist
+CHECKLIST: 19 items
+  GOV-1: Yes
+  GOV-2: Yes
+  PER-1: Yes
+  COV-1: Yes
+  COV-2: Yes
+  GAS-1: Yes
+  ABS-1: Yes
+  ABS-2: Yes
+  ABS-3: Yes
+  MTH-1: Yes
+  DQ-1: Yes
+  REC-1: Yes
+  INV-1: No
+  TRC-1: Yes
+  UNC-1: Yes
+  INT-1: Yes
+  DOC-1: Yes
+  ASR-1: Yes
+  ASR-2: Not applicable

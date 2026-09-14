@@ -6,16 +6,17 @@
  * year, and the per-exposure report of one borrower — so a requirement
  * satisfied in one cannot quietly go missing from the other.
  *
- * Section order: scope and coverage · gases and units · absolute emissions ·
- * methodology · data quality · recalculation and significance · emission
- * intensity · limitations and the data checks · conformance. The annexes
- * follow — the factor set and baseline versions, the Annex 10.2 table, and
- * the completed disclosure checklist.
+ * Section order: reporting entity and boundary · scope and coverage · gases
+ * and units · absolute emissions · methodology · data quality · recalculation
+ * and significance · emission intensity · year-end fluctuation · limitations
+ * and the improvement plan · uncertainty and what is not contained ·
+ * conformance. The annexes follow in model.js.
  */
 
 'use strict';
 
 const { b, keep } = require('../../../platform/reporting/report-standard/blocks');
+const { entitySection, uncertaintySection } = require('./common-sections');
 
 const N = n => (n === null || n === undefined) ? 'not stated'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -51,14 +52,16 @@ function coverageSection(f) {
 }
 
 function gasesSection(f) {
+  const gwp = f.entity && f.entity.gwpBasis;
   return {
     id: 'gases', title: 'Gases and units',
     blocks: keep([
-      b.body('Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), '
-        + 'using the IPCC 100-year global warming potentials of the latest assessment '
-        + 'report. Borrower figures cover the seven Kyoto Protocol gases where the '
-        + 'borrower reports them; a sector-average estimate carries whichever gases its '
-        + 'emission factor covers, which the factor register names.'),
+      b.body('Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), on '
+        + (gwp ? `the 100-year global warming potentials of ${gwp}, as stated by the reporting entity. `
+          : 'IPCC 100-year global warming potentials; the reporting entity has not stated which assessment report, and this document says so rather than assuming one. ')
+        + 'Borrower figures cover the seven Kyoto Protocol gases where the borrower reports them; '
+        + 'a sector-average estimate carries whichever gases its emission factor covers, which the '
+        + 'factor register names.'),
       b.table({
         head: ['Gas', 'Formula', 'Where it arises for a lending book'],
         widths: [1.6, 0.8, 3.6], align: ['left', 'left', 'left'], zebra: true,
@@ -71,8 +74,8 @@ function gasesSection(f) {
 }
 
 function absoluteSection(f) {
+  const l = f.lines;
   if (f.kind === 'exposure') {
-    const l = f.lines;
     return {
       id: 'absolute', title: 'Absolute emissions',
       blocks: keep([
@@ -83,7 +86,9 @@ function absoluteSection(f) {
         b.table({
           head: ['Line', 'tCO2e', 'Note'], widths: [2, 1, 3], align: ['left', 'right', 'left'],
           rows: [
-            ['Financed scope 1 and 2', T(l.scope1And2), 'The insurer’s attributed share of the borrower’s scope 1 and 2.'],
+            ['Financed scope 1', l.scope1 === null ? '—' : T(l.scope1), 'The attributed share of the borrower’s direct emissions.'],
+            ['Financed scope 2', l.scope2 === null ? '—' : T(l.scope2), 'The attributed share of the borrower’s purchased energy.'],
+            ['Financed scope 1 and 2', T(l.scope1And2), 'The two lines above, combined — the minimum Chapter 6 asks for.'],
             ['Financed scope 3', l.scope3 === null ? '—' : T(l.scope3), l.scope3Reason || 'A separate line.'],
             ['Removals', l.removals === null ? '—' : T(l.removals), 'Reported apart from the inventory, netted against nothing (Part A, p.126).'],
             ['Carbon credits generated', l.creditsGenerated === null ? '—' : T(l.creditsGenerated), 'Apart from the inventory.'],
@@ -94,7 +99,6 @@ function absoluteSection(f) {
       ])
     };
   }
-  const l = f.lines;
   return {
     id: 'absolute', title: 'Absolute emissions',
     blocks: keep([
@@ -105,7 +109,9 @@ function absoluteSection(f) {
       b.table({
         head: ['Line', 'tCO2e', 'Note'], widths: [2, 1, 3], align: ['left', 'right', 'left'],
         rows: [
-          ['Financed scope 1 and 2', T(l.scope1And2), 'Scope 3 Category 15 in full — the attributed share of borrower scope 1 and 2.'],
+          ['Financed scope 1', l.scope1 === null ? '—' : T(l.scope1), `The attributed share of borrower direct emissions; ${l.scope1Counted} exposure(s) carried it.`],
+          ['Financed scope 2', l.scope2 === null ? '—' : T(l.scope2), `The attributed share of borrower purchased energy; ${l.scope2Counted} exposure(s) carried it.`],
+          ['Financed scope 1 and 2', T(l.scope1And2), 'Scope 3 Category 15 in full — the two lines above, combined.'],
           ['Financed scope 3', T(l.scope3), 'A separate line; never summed with scope 1 and 2.'],
           ['Removals', l.removals === null ? '—' : T(l.removals), 'Reported apart from the inventory (Part A, p.126).'],
           ['Carbon credits generated', l.creditsGenerated === null ? '—' : T(l.creditsGenerated), 'Apart.'],
@@ -123,6 +129,9 @@ function absoluteSection(f) {
   };
 }
 
+/* A table with no status is the sector vocabulary: names, not values. */
+const statusOf = t => t.status || (t.table === 'sectors' ? 'vocabulary' : 'released');
+
 function methodologySection(f) {
   const set = f.factorSet;
   return {
@@ -136,8 +145,8 @@ function methodologySection(f) {
       b.body('The engine performs every arithmetic operation. Nothing in this report is '
         + 'computed by a language model, and no figure here rests on one. Each figure traces '
         + 'to the exposure the register holds and to the factor set named below.'),
-      set ? b.body(`Sector factor set: ${set.tables.map(t => `${t.table} v${t.version} (${t.status})`).join(', ')}; `
-        + `SHA-256 over the canonical form, ${set.checksum.slice(0, 16)}. `
+      set ? b.body(`Sector factor set: ${set.tables.map(t => `${t.table} v${t.version} (${statusOf(t)})`).join(', ')}; `
+        + `SHA-256 over the canonical form, ${set.checksum}. `
         + (set.provisionalTables.length
           ? `Provisional pending a released regional value: ${set.provisionalTables.join(', ')}. A provisional row carries the gap it stands in for.`
           : 'Every table is released.')) : null,
@@ -167,6 +176,7 @@ function dataQualitySection(f) {
       ])
     };
   }
+  const dist = f.optionDistribution || [];
   return {
     id: 'dataquality', title: 'Data quality',
     blocks: keep([
@@ -182,6 +192,15 @@ function dataQualitySection(f) {
         ]
       }),
       dq.note ? b.caption(dq.note) : null,
+      b.h2('Where the score sits — the options used'),
+      dist.length ? b.table({
+        head: ['Option', 'Score', 'Exposures', `Outstanding ${f.currency}`, 'Share of assessed'],
+        widths: [0.9, 0.7, 1, 1.8, 1.3], align: ['left', 'right', 'right', 'right', 'right'], zebra: true,
+        rows: dist.map(d => [String(d.option), String(d.score), String(d.exposures), N(d.outstanding),
+          d.shareOfBook === null ? '—' : `${(d.shareOfBook * 100).toFixed(1)}%`]),
+      }) : b.body('No scored exposure is in the book for the year.'),
+      b.caption('Every band, not only the ones the plan targets: a single weighted number says where the '
+        + 'book stands, this table says where the evidence sits.'),
     ])
   };
 }
@@ -237,14 +256,41 @@ function intensitySection(f) {
       ])
     };
   }
+  const i = f.intensity || {};
   return {
     id: 'intensity', title: 'Emission intensity',
     blocks: keep([
-      b.body('Economic emission intensity — financed scope 1 and 2 per million of the '
-        + 'currency outstanding — is reported per exposure and can be aggregated across the '
-        + 'class (p.127). A physical intensity per sector is not reported: it needs a '
-        + 'physical activity denominator this asset class does not hold.'),
+      b.figure({ label: 'Economic emission intensity across the class', value: i.value === null || i.value === undefined ? '—' : N(i.value),
+        unit: i.unit || `tCO2e per million ${f.currency}`, note: i.basis }),
+      b.body('Financed scope 1 and 2 per million of the currency outstanding, over the assessed '
+        + 'book and per sector in Annex B (p.127). A physical intensity per sector is not '
+        + 'reported: it needs a physical activity denominator this asset class does not hold.'),
     ])
+  };
+}
+
+/* Footnote 71: the year-end fluctuation of revolving facilities, answered from the book. */
+function fluctuationSection(f) {
+  const x = f.fluctuation || {};
+  return {
+    id: 'fluctuation', title: 'Year-end fluctuation of revolving facilities',
+    blocks: keep([
+      b.body(x.basis || ''),
+      b.table({
+        head: ['Item', 'This book'], widths: [3.2, 2.8], align: ['left', 'left'],
+        rows: [
+          ['Revolving facilities recorded', String(x.revolvingExposures || 0)],
+          [`Outstanding on them at year-end, ${f.currency}`, N(x.revolvingOutstanding || 0)],
+          ['Flagged: year-end balance below the annual average, or no average held', String(x.flaggedExposures || 0)],
+        ],
+      }),
+      x.findings && x.findings.length ? b.table({
+        head: ['Finding', 'Exposures', 'What would clear it'],
+        widths: [1.8, 0.9, 3.3], align: ['left', 'right', 'left'], zebra: true,
+        rows: x.findings.map(y => [y.code, String(y.exposures), y.remedy]),
+      }) : (x.revolvingExposures ? b.body('Every revolving facility held an annual average at or below its year-end balance.')
+        : b.body('No revolving facility is in the book, so no fluctuation applies.')),
+    ]),
   };
 }
 
@@ -268,19 +314,28 @@ function limitationsSection(f) {
     };
   }
   const plan = f.improvementPlan;
+  const steps = f.improvementSteps || [];
   return {
     id: 'limitations', title: 'Limitations and the improvement plan',
     blocks: keep([
       b.body('A disclosed score is a measurement, not a task list. The plan below is every '
-        + 'finding grouped by what would clear it and every option band ordered by '
-        + 'outstanding amount times the score points above the target — because ordering by '
-        + 'count sends a bank to many small borrowers before the one exposure carrying a '
-        + 'fifth of the book. Every figure in it is a scenario run through the same weighting '
-        + 'the disclosure uses, never presented as the reported score.'),
+        + 'option band above the target, ordered by outstanding amount times the score points '
+        + 'above it — because ordering by count sends a bank to many small borrowers before the '
+        + 'one exposure carrying a fifth of the book — and then every finding grouped by what '
+        + 'would clear it. Every score under "if these reached" is a scenario run through the '
+        + 'same weighting the disclosure uses, never presented as the reported score.'),
+      steps.length ? b.table({
+        head: ['Option', 'Score', 'Exposures', `Outstanding ${f.currency}`, 'Share', 'If these reached', 'Score would be'],
+        widths: [0.8, 0.6, 0.9, 1.6, 0.7, 1, 1], align: ['left', 'right', 'right', 'right', 'right', 'right', 'right'], zebra: true,
+        rows: steps.map(s => [String(s.option), String(s.currentScore), String(s.exposures), N(s.outstanding),
+          s.shareOfBook === null ? '—' : `${(s.shareOfBook * 100).toFixed(1)}%`, String(s.ifTheseReachedScore),
+          s.scenarioScore === null ? '—' : `${s.scenarioScore} (scenario)`]),
+      }) : b.body('Every scored exposure is at or above the target option; no step is proposed.'),
+      f.improvementTargetNote ? b.caption(f.improvementTargetNote) : null,
       plan && plan.byRemedy && plan.byRemedy.length ? b.table({
-        head: ['Finding', 'Severity', 'What would clear it'],
-        widths: [1.6, 1, 3.4], align: ['left', 'left', 'left'], zebra: true,
-        rows: plan.byRemedy.map(r => [r.code, r.severity, r.remedy])
+        head: ['Finding', 'Severity', 'Exposures', 'What would clear it'],
+        widths: [1.6, 0.9, 0.9, 2.6], align: ['left', 'left', 'right', 'left'], zebra: true,
+        rows: plan.byRemedy.map(r => [r.code, r.severity, String(r.exposures || 0), r.remedy])
       }) : b.body('No findings across the book.'),
     ])
   };
@@ -295,13 +350,15 @@ function conformanceSection(f) {
         + 'body, has approved, endorsed or certified the report or the figures in it. '
         + 'Independent assurance of the figures, where obtained, is a separate exercise '
         + 'recorded on the cover.'),
+      f.assuranceDetail ? b.body(f.assuranceDetail) : null,
     ])
   };
 }
 
 /** The whole document, in the checklist's order. */
 function buildSections(f) {
-  return [
+  return keep([
+    entitySection(f),
     coverageSection(f),
     gasesSection(f),
     absoluteSection(f),
@@ -309,9 +366,11 @@ function buildSections(f) {
     dataQualitySection(f),
     recalculationSection(f),
     intensitySection(f),
+    f.kind === 'disclosure' ? fluctuationSection(f) : null,
     limitationsSection(f),
+    uncertaintySection(f),
     conformanceSection(f),
-  ];
+  ]);
 }
 
 module.exports = { buildSections, INTENSIVE, N, T, pct, score };

@@ -61,11 +61,20 @@ const scope3Score = r => (r.inventory.dataQuality.scope3 && !r.inventory.dataQua
   ? r.inventory.dataQuality.scope3.score : null;
 
 function group(results, label) {
+  const outstanding = +results.reduce((s, r) => s + amountOf(r), 0).toFixed(2);
+  const lines = sumLines(results);
+  /* Economic emission intensity across the group — financed scope 1 and 2 per
+     million of the currency outstanding (DCL p.127). The engine computes it
+     here so the disclosure prints a figure it did not compute itself; null
+     where nothing is outstanding or no scope 1 and 2 line is held. */
+  const economicIntensity = (outstanding > 0 && lines.scope1And2.value !== null)
+    ? +(lines.scope1And2.value / (outstanding / 1e6)).toFixed(4) : null;
   return {
     label,
     exposures: results.length,
-    outstanding: +results.reduce((s, r) => s + amountOf(r), 0).toFixed(2),
-    lines: sumLines(results),
+    outstanding,
+    lines,
+    economicIntensity_tCO2e_per_M: economicIntensity,
     dataQuality: {
       scope1And2: weighted(results, scope12Score),
       scope3: weighted(results, scope3Score),
@@ -139,9 +148,21 @@ function improvementPlan(results, { target = 2 } = {}) {
       };
     });
 
+  /* The distribution of options actually used, every band and not only the
+     ones above the target: a verifier's sampling design starts from it, and a
+     disclosure that prints one weighted number hides where the score sits. */
+  const distribution = [...byOption.values()]
+    .map(row => ({
+      option: row.option, score: row.score, exposures: row.exposures,
+      outstanding: +row.outstanding.toFixed(2),
+      shareOfBook: totalOutstanding > 0 ? +(row.outstanding / totalOutstanding).toFixed(4) : null,
+    }))
+    .sort((a, b) => a.score - b.score || String(a.option).localeCompare(String(b.option)));
+
   return {
     reportedScore: current,
     target,
+    byOption: distribution,
     targetNote: `The target is score ${target} — the borrower's own reported figure, unverified (Option 1b). `
       + 'Score 1 needs third-party verification, which is the borrower\'s decision and not the lender\'s, so '
       + 'it is not the default target.',

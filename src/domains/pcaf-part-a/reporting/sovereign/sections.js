@@ -5,14 +5,16 @@
  * to Word. Two documents share it — the annual disclosure of one reporting
  * year, and the per-holding report of one bond or loan.
  *
- * Section order: scope and coverage · gases and units · absolute emissions ·
- * methodology · data quality · recalculation and significance · emission
- * intensity · limitations and the data checks · conformance.
+ * Section order: reporting entity and boundary · scope and coverage · gases
+ * and units · absolute emissions · methodology · data quality · recalculation
+ * and significance · emission intensity · limitations and the data checks ·
+ * uncertainty and what is not contained · conformance.
  */
 
 'use strict';
 
 const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
+const { entitySection, uncertaintySection } = require('../common-sections');
 
 const N = n => (n === null || n === undefined) ? 'not stated'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -44,12 +46,14 @@ function coverageSection(f) {
 }
 
 function gasesSection(f) {
+  const gwp = f.entity && f.entity.gwpBasis;
   return {
     id: 'gases', title: 'Gases and units',
     blocks: keep([
-      b.body('Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), using '
-        + 'the IPCC 100-year global warming potentials of the latest assessment report. A '
-        + 'sovereign figure is the country’s own national inventory reported to the UNFCCC, '
+      b.body('Emissions are reported in tonnes of carbon dioxide equivalent (tCO2e), on '
+        + (gwp ? `the 100-year global warming potentials of ${gwp}, as stated by the reporting entity. `
+          : 'IPCC 100-year global warming potentials; the reporting entity has not stated which assessment report, and this document says so rather than assuming one. ')
+        + 'A sovereign figure is the country’s own national inventory reported to the UNFCCC, '
         + 'covering the seven Kyoto Protocol gases the inventory reports.'),
       b.table({
         head: ['Gas', 'Formula', 'Where it arises in a national inventory'],
@@ -136,8 +140,8 @@ function methodologySection(f) {
       b.body('The engine performs every arithmetic operation. Nothing in this report is '
         + 'computed by a language model, and no figure here rests on one. Each figure traces to '
         + 'the holding the register holds and to the sovereign dataset named below.'),
-      d ? b.body(`Sovereign dataset: ${d.tables.map(t => `${t.table} v${t.version} (${t.status})`).join(', ')}; `
-        + `SHA-256 over the canonical form, ${String(d.checksum || '').slice(0, 16)}. `
+      d ? b.body(`Sovereign dataset: ${d.tables.map(t => `${t.table} v${t.version} (${t.status || 'released'})`).join(', ')}; `
+        + `SHA-256 over the canonical form, ${String(d.checksum || '')}. `
         + (d.provisionalTables && d.provisionalTables.length
           ? `Provisional pending a released set: ${d.provisionalTables.join(', ')}. A provisional row carries the gap it stands in for.`
           : 'The shipped set is provisional where a row says so.')) : null,
@@ -165,6 +169,7 @@ function dataQualitySection(f) {
       ]),
     };
   }
+  const dist = f.optionDistribution || [];
   return {
     id: 'dataquality', title: 'Data quality',
     blocks: keep([
@@ -178,6 +183,13 @@ function dataQualitySection(f) {
         widths: [2.2, 1.4, 1.4, 1.4], align: ['left', 'right', 'right', 'right'],
         rows: [['Sovereign debt', score(dq.score), String(dq.scored || 0), String(dq.excluded || 0)]],
       }),
+      b.h2('Where the score sits — the options used'),
+      dist.length ? b.table({
+        head: ['Option', 'Score', 'Holdings', `Outstanding ${f.currency}`, 'Share of assessed'],
+        widths: [0.9, 0.7, 1, 1.8, 1.3], align: ['left', 'right', 'right', 'right', 'right'], zebra: true,
+        rows: dist.map(x => [String(x.option), String(x.score), String(x.exposures), N(x.outstanding),
+          x.shareOfBook === null ? '—' : `${(x.shareOfBook * 100).toFixed(1)}%`]),
+      }) : b.body('No scored holding is in the book for the year.'),
     ]),
   };
 }
@@ -228,17 +240,20 @@ function intensitySection(f) {
             + 'the distortion an implausible value would show.' })
           : b.body('Production intensity is not available for this sovereign: it needs the country '
             + 'scope 1 figure and PPP-GDP, and one of them is not held.'),
+        b.body(f.consumptionStatement),
       ]),
     };
   }
+  const i = f.intensity || {};
   return {
     id: 'intensity', title: 'Emission intensity',
     blocks: keep([
+      b.figure({ label: 'Economic emission intensity across the class', value: i.value === null || i.value === undefined ? '—' : N(i.value),
+        unit: i.unit || `tCO2e per million ${f.currency}`, note: i.basis }),
       b.body('Production emission intensity — a sovereign’s territorial scope 1 (excluding '
         + 'LULUCF) over its PPP-adjusted GDP — is reported per holding (§5.9, p.144). PCAF also '
-        + 'recommends a consumption-per-capita intensity and at least five years of history; the '
-        + 'consumption view needs trade-embodied data this dataset does not yet hold, and is '
-        + 'reported as not computed rather than invented.'),
+        + 'recommends a consumption-per-capita intensity and at least five years of history.'),
+      b.body(f.consumptionStatement),
     ]),
   };
 }
@@ -290,6 +305,7 @@ function conformanceSection(f) {
       b.body('This report states PCAF conformance. It does not claim that PCAF, or any other '
         + 'body, has approved, endorsed or certified the report or the figures in it. Independent '
         + 'assurance of the figures, where obtained, is a separate exercise recorded on the cover.'),
+      f.assuranceDetail ? b.body(f.assuranceDetail) : null,
     ]),
   };
 }
@@ -297,6 +313,7 @@ function conformanceSection(f) {
 /** The whole document, in the checklist's order. */
 function buildSections(f) {
   return [
+    entitySection(f),
     coverageSection(f),
     gasesSection(f),
     absoluteSection(f),
@@ -305,6 +322,7 @@ function buildSections(f) {
     recalculationSection(f),
     intensitySection(f),
     limitationsSection(f),
+    uncertaintySection(f),
     conformanceSection(f),
   ];
 }

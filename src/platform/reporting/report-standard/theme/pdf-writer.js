@@ -73,7 +73,8 @@ function pcafWriter(doc, meta = {}) {
    * preparer's mark. The chevrons are a low-contrast watermark: present
    * enough to read as designed, faint enough never to compete with the text.
    */
-  function cover({ title, subtitle, insurer, reportingYear, publishedAt, standard, preparedBy, reportId, assuranceLabel, assuranceStatement }) {
+  function cover({ title, subtitle, insurer, reportingYear, publishedAt, standard, preparedBy, reportId, assuranceLabel, assuranceStatement,
+    entityLabel, responsibleParty, identity }) {
     const w = doc.page.width, h = doc.page.height;
     doc.save();
     doc.rect(0, 0, w, h).fill(PALETTE.slate);
@@ -100,12 +101,20 @@ function pcafWriter(doc, meta = {}) {
     }
 
     doc.moveDown(1.4).fillColor(PALETTE.white).font(F.sansBold).fontSize(15)
-       .text(insurer || 'Re/insurer not stated', { width: width() - 90 });
+       .text(insurer || `${entityLabel || 'Re/insurer'} not stated`, { width: width() - 90 });
     doc.moveDown(0.25).fillColor('#C3CEDA').font(F.sans).fontSize(11)
        .text(`Reporting year ${reportingYear}`, { width: width() - 90 });
 
     doc.moveDown(1.6).fillColor('#AFBDCC').font(F.sans).fontSize(9)
        .text(standard, { width: width() - 110, lineGap: 2 });
+
+    /* The responsible party, on the face: who prepared and who approved. A
+       model that states none prints nothing here, so a document that never
+       carried one is unchanged. */
+    if (Array.isArray(responsibleParty) && responsibleParty.length) {
+      doc.moveDown(0.8).fillColor('#D6DEE7').font(F.sans).fontSize(9);
+      for (const line of responsibleParty) doc.text(line, { width: width() - 110, lineGap: 1.5 });
+    }
 
     /* The posture, on the face of the document.
        A reader who is not told that the inputs rest on the entity's own
@@ -123,6 +132,10 @@ function pcafWriter(doc, meta = {}) {
     doc.fillColor('#AFBDCC').font(F.sans).fontSize(9)
        .text(`Published ${publishedAt}`, left, h - 190, { width: width() - 200 });
     if (reportId) doc.text(`Report reference ${reportId}`, { width: width() - 200 });
+    /* Document identity — the build that produced it and a hash over its
+       content — so two renders of one position can be told apart, and a
+       filed copy can be matched to what was filed. */
+    if (Array.isArray(identity)) for (const line of identity) doc.text(line, { width: width() - 200 });
 
     /* The white angled corner block holding the preparer's lockup. The whole
        block is drawn outside the margins: it sits in the bleed below the

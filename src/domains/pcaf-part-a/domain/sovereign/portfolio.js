@@ -58,6 +58,13 @@ function rollUpSovereign(rows, opts = {}) {
     },
     financedScope2: { value: s2Held.length ? r2(sum(s2Held.map(r => r.attributed.scope2))) : null, heldCount: s2Held.length },
     financedScope3: { value: s3Held.length ? r2(sum(s3Held.map(r => r.attributed.scope3))) : null, heldCount: s3Held.length },
+    /* Economic intensity across the class — financed scope 1 (excl. LULUCF)
+       per million of the currency outstanding (DCL p.127). Computed here so
+       the disclosure prints a figure the engine produced. */
+    economicIntensity_tCO2e_per_M: (() => {
+      const out = sum(rows.map(r => (Number.isFinite(r.outstanding) ? r.outstanding : 0)));
+      return out > 0 && exclHeld.length ? +(sum(exclHeld.map(r => r.attributed.scope1Excl)) / (out / 1e6)).toFixed(4) : null;
+    })(),
     note: 'Scope 1 is reported on both LULUCF boundaries and the two are never summed; scope 3 is '
       + 'reported apart from scope 1 and never summed into it.',
     category: 'Scope 3 Category 15 (investments) of the reporting financial institution',
