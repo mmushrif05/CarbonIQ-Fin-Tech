@@ -1,9 +1,12 @@
 /* ============================================================
    CarbonIQ — the GCF pipeline screen
 
-   Six sub-tabs over one set of records. Three rules the renderer
-   is responsible for, each of which is a way to draw a confident
-   screen that is wrong:
+   Seven sub-tabs over one set of records. The Pipeline tab — the
+   portfolio, the cycle and one project at a time — lives in
+   gcf-pipeline.js; this module is the shell, the six other panels
+   and the intake form. Three rules the renderer is responsible
+   for, each of which is a way to draw a confident screen that is
+   wrong:
 
      Never combine two carbon boundaries. Mitigation, embodied and
      financed appear as separate figures and no total on this page
@@ -27,18 +30,27 @@ const GCFPage = (() => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const num = (n, d = 0) => (n === null || n === undefined || n === '')
+  const num = (n, d = 0) => (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)))
     ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const usd = n => (n === null || n === undefined ? '—' : `$${num(n)}`);
+  const usd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `$${num(n)}`);
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
+  const words = s => String(s ?? '').replace(/_/g, ' ');
 
   const WEIGHT_KEY = 'carboniq.gcf.weights';
   const TIERS = ['measured', 'modelled', 'benchmark', 'declared'];
 
   const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false };
+
+  /* A preview session holds `read`; the server is the control and the
+     screen withholds the buttons it would refuse. */
+  const preview = () => {
+    try { return typeof Auth !== 'undefined' && typeof Auth.isPreview === 'function' && Boolean(Auth.isPreview()); }
+    catch (_) { return false; }
+  };
+  const canWrite = () => !preview();
 
   async function call(path, opts) {
     const res = await window.CARBONIQ_fetch('/v1/gcf' + path, opts);
@@ -50,6 +62,7 @@ const GCFPage = (() => {
     }
     return data;
   }
+  const json = (method, body) => ({ method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
   /* ── The weighting overlay ─────────────────────────────────
      Held in the browser and never on the book: a weighting is one
@@ -91,87 +104,22 @@ const GCFPage = (() => {
     if (!loaded[panel]) { loaded[panel] = true; LOADERS[panel](); }
   }
 
-  /* ── 1. Pipeline ──────────────────────────────────────────── */
-  const tierPill = t => t
-    ? `<span class="gcf-pill gcf-pill-tier">${esc(t)}</span>` : '';
-  const statusPill = s => {
-    const cls = s === 'excluded' ? 'stop' : (s === 'flagged' ? 'flag' : 'ok');
-    return `<span class="gcf-pill gcf-pill-${cls}">${esc(s)}</span>`;
-  };
-
-  async function loadPipeline() {
-    try {
-      const [{ pipeline }, { screening }] = await Promise.all([
-        call('/pipeline'), call('/screening'),
-      ]);
-      state.pipeline = pipeline.projects;
-      state.sample = pipeline.sample;
-
-      if (pipeline.sample) {
-        const b = $('gcfSampleBanner');
-        if (b) { b.hidden = false; b.textContent = pipeline.sampleNote; }
-      }
-
-      const totalCost = pipeline.projects.reduce((a, p) => a + (p.financing?.totalCost || 0), 0);
-      const gcfAsk = pipeline.projects.reduce((a, p) => a + (p.financing?.gcfAsk || 0), 0);
-      setHtml('gcfPipelineFigures', [
-        figure('Candidates', num(pipeline.count), pipeline.source === 'seed'
-          ? 'the shipped illustrative pipeline' : 'recorded by your organisation'),
-        figure('Total project cost', usd(totalCost), 'across the pool'),
-        figure('GCF ask', usd(gcfAsk),
-          `${totalCost ? (totalCost / gcfAsk).toFixed(2) : '—'}x mobilisation — a fact, not a threshold: GCF sets no minimum co-financing`),
-      ].join(''));
-
-      const byId = Object.fromEntries(screening.rows.map(r => [r.id, r]));
-      setHtml('gcfPoolTable', `
-        <thead><tr>
-          <th>Code</th><th>Project</th><th>Stream</th><th>Area</th><th>Stage</th>
-          <th class="num">Cost</th><th class="num">GCF ask</th><th>Status</th><th>Weakest evidence</th>
-        </tr></thead>
-        <tbody>${pipeline.projects.map(p => {
-          const s = byId[p.id] || {};
-          return `<tr>
-            <td><strong>${esc(p.code)}</strong></td>
-            <td>${esc(p.name)}</td>
-            <td>${esc(p.stream)}</td>
-            <td>${esc(p.resultsArea)}</td>
-            <td>${esc(p.stage)}</td>
-            <td class="num">${usd(p.financing?.totalCost)}</td>
-            <td class="num">${usd(p.financing?.gcfAsk)}</td>
-            <td>${statusPill(s.status || 'eligible')}</td>
-            <td>${tierPill(weakestOf(p))}</td>
-          </tr>`;
-        }).join('')}</tbody>`);
-
-      const flagged = screening.rows.filter(r => r.flags && r.flags.length);
-      const card = $('gcfFlagsCard');
-      if (card) card.hidden = flagged.length === 0;
-      setHtml('gcfFlags', flagged.map(r => `
-        <div style="margin-bottom:12px">
-          <strong>${esc(r.code)} — ${esc(r.name)}</strong>
-          <ul style="margin:6px 0 0;padding-left:18px;font-size:12.5px;color:var(--gcf-muted)">
-            ${r.flags.map(f => `<li>${esc(f.detail)}</li>`).join('')}
-          </ul>
-        </div>`).join(''));
-    } catch (err) {
-      setHtml('gcfPipelineFigures', `<div class="gcf-warn">${esc(err.message)}</div>`);
-    }
+  /* The sample pill follows what the server says is showing: on while the
+     shipped pipeline is, off the moment a record replaces it. */
+  function onSample(sample, sampleNote) {
+    state.sample = Boolean(sample);
+    const b = $('gcfSampleBanner');
+    if (b) { b.hidden = !sample; b.textContent = sample ? (sampleNote || '') : ''; }
   }
 
-  /** The weakest tier in a record, so a reader knows what to ask about first. */
-  function weakestOf(project) {
-    const rank = { measured: 1, modelled: 2, benchmark: 3, declared: 4 };
-    let worst = null;
-    const walk = n => {
-      if (!n || typeof n !== 'object') return;
-      if (typeof n.tier === 'string' && rank[n.tier]) {
-        if (!worst || rank[n.tier] > rank[worst]) worst = n.tier;
-        return;
-      }
-      Object.values(n).forEach(walk);
-    };
-    walk(project);
-    return worst;
+  /* ── 1. Pipeline — the portfolio, the cycle, one project ──── */
+  async function loadPipeline() {
+    try {
+      const { pipeline } = await call('/pipeline');
+      state.pipeline = pipeline.projects;
+      onSample(pipeline.sample, pipeline.sampleNote);
+    } catch (_) { /* the portfolio load reports the failure on screen */ }
+    await GCFPipeline.load();
   }
 
   const figure = (label, value, note, unit) => `
@@ -190,7 +138,7 @@ const GCFPage = (() => {
       /* Three separate cards. Nothing here adds two of them, and the
          adaptation line is never folded into the headline. */
       setHtml('gcfEmissionFigures', [
-        figure('Mitigation — annual', num(emissions.headline.annual_tCO2e), 
+        figure('Mitigation — annual', num(emissions.headline.annual_tCO2e),
           `${emissions.headline.projects} mitigation projects — GCF Core Indicator 1`, 'tCO₂e / year'),
         figure('Mitigation — lifetime', num(emissions.headline.lifetime_tCO2e),
           'reduced, avoided and removed, as GCF\'s indicator defines it', 'tCO₂e'),
@@ -379,27 +327,64 @@ const GCFPage = (() => {
     ['strategyNarrative', 'Climate opportunities and the response (§9)', 'textarea'],
     ['riskManagementProcess', 'Risk identification and monitoring (§25)', 'textarea'],
   ];
+  const ACCREDITATION_FIELDS = [
+    ['decision', 'Board decision', 'text'],
+    ['sizeCategory', 'Size category', 'select', ['micro', 'small', 'medium', 'large']],
+    ['ceiling', 'Ceiling per project (USD)', 'number'],
+    ['essCategory', 'Environmental and social category', 'text'],
+    ['grantModality', 'Grant modality', 'select', ['no', 'yes']],
+    ['accreditedAt', 'Accredited on', 'date'],
+    ['amaEffectiveAt', 'Accreditation master agreement effective', 'date'],
+    ['modalities', 'Fiduciary standards held (comma-separated)', 'text'],
+    ['source', 'Source', 'text'],
+  ];
+  const SIZE_CEILING = { micro: 10e6, small: 50e6, medium: 250e6, large: null };
+
+  function control(id, kind, options, value = '') {
+    if (kind === 'textarea') return `<textarea id="${id}" rows="2">${esc(value)}</textarea>`;
+    if (kind === 'select') return `<select id="${id}">${options.map(o => `<option value="${o}" ${String(o) === String(value) ? 'selected' : ''}>${esc(words(o))}</option>`).join('')}</select>`;
+    return `<input type="${kind === 'number' ? 'number' : kind === 'date' ? 'date' : 'text'}" id="${id}" value="${esc(value)}">`;
+  }
 
   async function loadReporting() {
     setHtml('gcfEntityForm', ENTITY_FIELDS.map(([k, label, kind]) => `
       <div class="gcf-field ${kind === 'textarea' ? 'gcf-field-wide' : ''}">
-        <label for="gcfE-${k}">${esc(label)}</label>
-        ${kind === 'textarea'
-          ? `<textarea id="gcfE-${k}" rows="2"></textarea>`
-          : `<input type="text" id="gcfE-${k}">`}
+        <label for="gcfE-${k}">${esc(label)}</label>${control(`gcfE-${k}`, kind)}
       </div>`).join(''));
 
-    try {
-      const { entity } = await call('/entity');
-      if (entity) {
-        for (const [k] of ENTITY_FIELDS) {
-          const el = $(`gcfE-${k}`);
-          if (el && entity[k]) el.value = entity[k];
-        }
+    let entity = null;
+    try { entity = (await call('/entity')).entity; } catch (_) { /* nothing recorded yet — the form stands empty */ }
+    if (entity) {
+      for (const [k] of ENTITY_FIELDS) {
+        const el = $(`gcfE-${k}`);
+        if (el && entity[k]) el.value = entity[k];
       }
-    } catch (_) { /* nothing recorded yet — the form stands empty */ }
+    }
+    const acc = (entity && entity.accreditation) || (state.reference && state.reference.accreditation) || {};
+    const current = {
+      ...acc, ceiling: acc.sizeRange_usd ? acc.sizeRange_usd[1] : '', grantModality: acc.grantModality ? 'yes' : 'no',
+      modalities: (acc.modalities || []).join(', '),
+    };
+    setHtml('gcfAccreditationForm', ACCREDITATION_FIELDS.map(([k, label, kind, options]) => `
+      <div class="gcf-field"><label for="gcfA-${k}">${esc(label)}</label>${control(`gcfA-${k}`, kind, options, current[k] ?? '')}</div>`).join(''));
+    say('gcfAccreditationHint', entity && entity.accreditation ? 'Recorded by the entity.' : 'Showing the shipped accreditation. Record the entity’s own to replace it.');
+    on('gcfA-sizeCategory', 'change', () => { const c = SIZE_CEILING[$('gcfA-sizeCategory').value]; if (c) $('gcfA-ceiling').value = c; });
 
+    for (const el of document.querySelectorAll('#gcfPanel-reporting [data-writes]')) el.hidden = !canWrite();
     await refreshReport();
+  }
+
+  async function saveEntity(extra) {
+    const body = {};
+    for (const [k] of ENTITY_FIELDS) {
+      const v = ($(`gcfE-${k}`)?.value || '').trim();
+      if (v) body[k] = v;
+    }
+    let entity = null;
+    try { entity = (await call('/entity')).entity; } catch (_) { /* none yet */ }
+    if (entity && entity.accreditation) body.accreditation = entity.accreditation;
+    Object.assign(body, extra || {});
+    await call('/entity', json('PUT', body));
   }
 
   async function refreshReport() {
@@ -451,9 +436,12 @@ const GCFPage = (() => {
     }
     const sel = $('gcfCnProject');
     if (sel) {
+      const was = sel.value;
       sel.innerHTML = state.pipeline.map(p =>
         `<option value="${esc(p.id)}">${esc(p.code)} — ${esc(p.name)}</option>`).join('');
-      sel.addEventListener('change', renderCn);
+      if (was && state.pipeline.some(p => p.id === was)) sel.value = was;
+      /* One listener, however many times the panel reloads. */
+      sel.onchange = renderCn;
     }
     await renderCn();
   }
@@ -472,7 +460,7 @@ const GCFPage = (() => {
       const r = pkg.readiness;
       setHtml('gcfCnReadiness', `
         <div class="gcf-figures">
-          ${figure('Inputs held', `${r.held} / ${r.total}`, `${r.pctHeld}% of the package`)}
+          ${figure('Inputs held', `${r.held} of ${r.total}`, `${r.pctHeld}% of the package`)}
           ${figure('External', num(r.external), 'documents and legal instruments this system cannot produce')}
           ${figure('Partial', num(r.partial), 'held in part — not to be mistaken for complete')}
         </div>
@@ -492,7 +480,7 @@ const GCFPage = (() => {
         <details style="margin-bottom:8px">
           <summary style="cursor:pointer;font-weight:600;font-size:13px;padding:6px 0">
             Section ${esc(s.id)} — ${esc(s.title)}
-            <span class="gcf-hint">(${s.fields.filter(f => f.status === 'held').length}/${s.fields.length} held)</span>
+            <span class="gcf-hint">(${s.fields.filter(f => f.status === 'held').length} of ${s.fields.length} held)</span>
           </summary>
           <div class="gcf-scroll"><table class="gcf-table">
             <tbody>${s.fields.map(f => `<tr>
@@ -510,7 +498,7 @@ const GCFPage = (() => {
   }
 
   /* Fetched as a blob rather than opened in a tab: the request carries the
-     API key in a header, and a plain link would arrive unauthenticated —
+     session in a header, and a plain link would arrive unauthenticated —
      which reads to a user as a broken download rather than a rejected one. */
   async function downloadCn(format) {
     const id = $('gcfCnProject')?.value;
@@ -543,64 +531,93 @@ const GCFPage = (() => {
   const tierSelect = id => `<select id="${id}">${
     TIERS.map(t => `<option value="${t}">${t}</option>`).join('')}</select>`;
 
-  const INTAKE = [
+  /* The record's vocabularies — stages, results areas, instruments, barriers,
+     document kinds — come from the reference, so the form offers exactly what
+     the schema accepts and labels it the way the screen does. */
+  const refv = k => ((state.reference && state.reference.vocabulary) || {})[k] || [];
+  const refStages = () => Object.entries((state.reference && state.reference.cycle && state.reference.cycle.recordStages) || {});
+  const refAreas = () => ((state.reference && state.reference.resultsAreas) || {}).areas || [];
+  const refInstruments = () => ((state.reference && state.reference.instruments) || {}).instruments || [];
+  const refBarriers = () => ((state.reference && state.reference.instruments) || {}).barriers || [];
+
+  const INTAKE = () => [
+    { group: 'The project' },
     { id: 'code', label: 'Code', kind: 'text' },
     { id: 'name', label: 'Project name', kind: 'text' },
     { id: 'sector', label: 'Sector', kind: 'text' },
     { id: 'province', label: 'Province', kind: 'text' },
-    { id: 'stream', label: 'Stream', kind: 'select', options: ['mitigation', 'adaptation'] },
-    { id: 'resultsArea', label: 'GCF results area', kind: 'select',
-      options: ['EP', 'LT', 'BA', 'FL', 'VC', 'HW', 'IB', 'EE'] },
-    { id: 'stage', label: 'Stage', kind: 'select',
-      options: ['concept', 'pre_feasibility', 'cn_drafted', 'cn_submitted', 'ppf', 'fp', 'board'] },
-    { id: 'essCategory', label: 'E&S category', kind: 'select', options: ['B', 'C', 'I-2', 'I-3', 'A', 'I-1'] },
+    { id: 'stream', label: 'Stream', kind: 'select', options: refv('streams').map(s => [s, s]) },
+    { id: 'resultsArea', label: 'GCF results area', kind: 'select', options: refAreas().map(a => [a.code, `${a.code} — ${a.name}`]) },
+    { id: 'stage', label: 'Stage on the project cycle', kind: 'select', options: refStages().map(([k, v]) => [k, v.label]) },
+    { id: 'essCategory', label: 'Environmental and social category', kind: 'select', options: refv('essCategories').map(s => [s, s]) },
+    { id: 'taxonomyBand', label: 'Sri Lanka taxonomy band', kind: 'select', options: [['green', 'green'], ['amber', 'amber'], ['red', 'red'], ['unclassified', 'unclassified']] },
+    { id: 'ndcTargets', label: 'NDC 3.0 sector targets (comma-separated)', kind: 'text' },
+    { group: 'Money' },
     { id: 'totalCost', label: 'Total cost (USD)', kind: 'number' },
     { id: 'gcfAsk', label: 'GCF ask (USD)', kind: 'number' },
     { id: 'dfcc', label: 'DFCC contribution (USD)', kind: 'number' },
     { id: 'other', label: 'Other co-financing (USD)', kind: 'number' },
+    { id: 'instrument', label: 'GCF instrument', kind: 'select', options: refInstruments().map(i => [i.id, i.name]) },
+    { id: 'viable', label: 'Viable without GCF support', kind: 'select', options: [['no', 'No'], ['yes', 'Yes']] },
+    { id: 'viabilityReason', label: 'Viability without GCF — the reason', kind: 'wide' },
+    { id: 'barriers', label: 'Barriers to commercial finance', kind: 'checks', options: refBarriers().map(b => [b.id, b.label]) },
+    { group: 'Results — with the evidence tier on every figure' },
     { id: 'annual', label: 'Annual tCO₂e', kind: 'tiered' },
     { id: 'lifetime', label: 'Lifetime tCO₂e', kind: 'tiered' },
     { id: 'direct', label: 'Direct beneficiaries', kind: 'tiered' },
     { id: 'indirect', label: 'Indirect beneficiaries', kind: 'tiered' },
-    { id: 'baselineType', label: 'Baseline type', kind: 'select', options: ['avoided', 'reduced', 'removal'] },
+    { id: 'hectares', label: 'Hectares under improved management', kind: 'tiered' },
+    { id: 'assets', label: 'Assets made resilient (USD)', kind: 'tiered' },
+    { id: 'baselineType', label: 'Baseline type', kind: 'select', options: refv('baselineTypes').map(s => [s, s]) },
     { id: 'baselineDesc', label: 'Baseline', kind: 'wide' },
     { id: 'counterfactual', label: 'Counterfactual — what happens without the project', kind: 'wide' },
+    { group: 'The case' },
     { id: 'selectionReason', label: 'Why this project (40 characters minimum)', kind: 'wide' },
-    { id: 'viabilityReason', label: 'Viability without GCF — the reason', kind: 'wide' },
   ];
 
   function renderIntake() {
-    setHtml('gcfIntakeForm', INTAKE.map(f => {
-      const wide = f.kind === 'wide' ? ' gcf-field-wide' : '';
-      let control;
+    setHtml('gcfIntakeForm', INTAKE().map(f => {
+      if (f.group) return `<div class="gcf-group">${esc(f.group)}</div>`;
+      const wide = f.kind === 'wide' || f.kind === 'checks' ? ' gcf-field-wide' : '';
+      let ctl;
       if (f.kind === 'select') {
-        control = `<select id="gcfI-${f.id}">${f.options.map(o =>
-          `<option value="${o}">${o}</option>`).join('')}</select>`;
+        ctl = `<select id="gcfI-${f.id}">${f.options.map(([v, l]) =>
+          `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select>`;
+      } else if (f.kind === 'checks') {
+        ctl = `<div class="gcf-checks" id="gcfI-${f.id}">${f.options.map(([v, l]) =>
+          `<label><input type="checkbox" value="${esc(v)}"> ${esc(l)}</label>`).join('')}</div>`;
       } else if (f.kind === 'tiered') {
         /* A figure and its evidence tier are entered together, because the
            schema refuses the number without it. */
-        control = `<div class="gcf-tiered">
+        ctl = `<div class="gcf-tiered">
           <input type="number" id="gcfI-${f.id}" step="any">
           ${tierSelect(`gcfI-${f.id}-tier`)}
         </div>`;
       } else if (f.kind === 'wide') {
-        control = `<textarea id="gcfI-${f.id}" rows="2"></textarea>`;
+        ctl = `<textarea id="gcfI-${f.id}" rows="2"></textarea>`;
       } else {
-        control = `<input type="${f.kind === 'number' ? 'number' : 'text'}" id="gcfI-${f.id}">`;
+        ctl = `<input type="${f.kind === 'number' ? 'number' : 'text'}" id="gcfI-${f.id}">`;
       }
       return `<div class="gcf-field${wide}">
-        <label for="gcfI-${f.id}">${esc(f.label)}</label>${control}</div>`;
+        <label for="gcfI-${f.id}">${esc(f.label)}</label>${ctl}</div>`;
     }).join(''));
   }
 
   const val = id => ($(`gcfI-${id}`)?.value ?? '').trim();
   const numVal = id => { const v = val(id); return v === '' ? null : Number(v); };
-  const tiered = id => ({ value: numVal(id), tier: $(`gcfI-${id}-tier`)?.value || 'declared' });
+  const tiered = id => (numVal(id) === null ? null : { value: numVal(id), tier: $(`gcfI-${id}-tier`)?.value || 'declared' });
+  const checked = id => Array.from(document.querySelectorAll(`#gcfI-${id} input:checked`)).map(i => i.value);
 
   async function saveIntake() {
     const err = $('gcfIntakeError');
     if (err) err.hidden = true;
     const code = val('code');
+    const reason = val('selectionReason');
+    if (reason.length < 40) {
+      if (err) { err.hidden = false; err.textContent = 'The selection reasoning needs at least 40 characters.'; }
+      return;
+    }
+    const adaptation = val('stream') === 'adaptation';
     const payload = {
       id: `gcf_${code.toLowerCase().replace(/[^a-z0-9]+/g, '_') || Date.now()}`,
       code,
@@ -610,42 +627,47 @@ const GCFPage = (() => {
       resultsArea: val('resultsArea'),
       stream: val('stream'),
       stage: val('stage'),
-      selectionReason: val('selectionReason'),
+      selectionReason: reason,
       essCategory: val('essCategory'),
-      taxonomy: { framework: 'SLGFT', band: 'green' },
-      barriers: [],
+      taxonomy: { framework: 'SLGFT', band: val('taxonomyBand') },
+      ndcSectorTargets: val('ndcTargets').split(',').map(s => s.trim()).filter(Boolean),
+      barriers: checked('barriers'),
       financing: {
         currency: 'USD',
         totalCost: numVal('totalCost'),
         gcfAsk: numVal('gcfAsk'),
         dfcc: numVal('dfcc'),
         other: numVal('other') ?? 0,
-        instrument: 'concessional_credit_line',
-        viabilityWithoutGcf: { viable: false, reason: val('viabilityReason') },
+        instrument: val('instrument'),
+        viabilityWithoutGcf: { viable: val('viable') === 'yes', reason: val('viabilityReason') },
       },
       mitigation: {
-        annual_tCO2e: tiered('annual'),
-        lifetime_tCO2e: tiered('lifetime'),
+        annual_tCO2e: tiered('annual') || { value: null, tier: 'declared' },
+        lifetime_tCO2e: tiered('lifetime') || { value: null, tier: 'declared' },
         baseline: {
           description: val('baselineDesc'),
           counterfactual: val('counterfactual'),
           type: val('baselineType'),
         },
-        isCoBenefit: val('stream') === 'adaptation',
+        isCoBenefit: adaptation,
       },
-      beneficiaries: { direct: tiered('direct'), indirect: tiered('indirect') },
+      beneficiaries: {
+        direct: tiered('direct') || { value: null, tier: 'declared' },
+        indirect: tiered('indirect') || { value: null, tier: 'declared' },
+      },
+      area: tiered('hectares') ? { hectares: tiered('hectares') } : {},
+      assets: tiered('assets') ? { valueProtected_usd: tiered('assets') } : {},
+      timeline: { conceptStarted: new Date().toISOString().slice(0, 10) },
     };
 
     try {
-      await call('/pipeline', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      await call('/pipeline', json('POST', payload));
       say('gcfIntakeHint', `${code} recorded.`);
       /* A new record changes every panel, so they are all re-read rather than
          showing what they said before the write. */
       refreshAll();
+      GCFPipeline.openProject(payload.id);
+      show('pipeline');
     } catch (e) {
       if (err) { err.hidden = false; err.textContent = e.message; }
       say('gcfIntakeHint', '');
@@ -654,6 +676,7 @@ const GCFPage = (() => {
 
   async function loadIntake() {
     renderIntake();
+    for (const el of document.querySelectorAll('#gcfPanel-intake [data-writes]')) el.hidden = !canWrite();
     try {
       const { pipeline } = await call('/pipeline');
       const s = pipeline.storage || {};
@@ -691,10 +714,12 @@ const GCFPage = (() => {
       const ref = await call('/reference');
       state.reference = ref;
       state.defaults = ref.defaultWeights || {};
-      const a = ref.accreditation || {};
-      say('gcfSubtitle', `Direct Access Entity, Board decision ${a.decision} — `
-        + `${a.sizeCategory} size, E&S category ${a.essCategory}`);
     } catch (_) { /* the banner keeps its static text */ }
+
+    GCFPipeline.init({
+      call, canWrite, onSample, refreshAll,
+      reference: () => state.reference,
+    });
 
     document.querySelectorAll('#gcfTabs .gcf-tab').forEach(t => {
       t.addEventListener('click', () => show(t.dataset.panel));
@@ -721,26 +746,40 @@ const GCFPage = (() => {
     });
 
     on('gcfEntitySave', 'click', async () => {
-      const body = {};
-      for (const [k] of ENTITY_FIELDS) {
-        const v = ($(`gcfE-${k}`)?.value || '').trim();
-        if (v) body[k] = v;
-      }
       try {
-        await call('/entity', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
+        await saveEntity();
         say('gcfEntityHint', 'Recorded. The gaps that depend on these are now closed.');
         refreshReport();
       } catch (e) { say('gcfEntityHint', e.message); }
     });
 
+    on('gcfAccreditationSave', 'click', async () => {
+      const g = id => ($(`gcfA-${id}`)?.value || '').trim();
+      const ceiling = Number(g('ceiling'));
+      const accreditation = {
+        decision: g('decision'), sizeCategory: g('sizeCategory'),
+        sizeRange_usd: [0, Number.isFinite(ceiling) && ceiling > 0 ? ceiling : (SIZE_CEILING[g('sizeCategory')] || 0)],
+        essCategory: g('essCategory'), grantModality: g('grantModality') === 'yes',
+        modalities: g('modalities').split(',').map(s => s.trim()).filter(Boolean),
+        accreditedAt: g('accreditedAt') || undefined, amaEffectiveAt: g('amaEffectiveAt') || undefined,
+        source: g('source') || undefined,
+      };
+      try {
+        await saveEntity({ accreditation });
+        say('gcfAccreditationHint', 'Recorded. Every gate now reads the entity’s own accreditation.');
+        refreshAll();
+      } catch (e) { say('gcfAccreditationHint', e.message); }
+    });
+
     on('gcfExport', 'click', async () => {
       try {
         const pkg = await call('/export');
-        say('gcfExportHint', `${pkg.projects.length} projects — checksum ${pkg.checksum.slice(0, 12)}…`);
+        const url = URL.createObjectURL(new Blob([JSON.stringify(pkg, null, 2)], { type: 'application/json' }));
+        const a = document.createElement('a');
+        a.href = url; a.download = `gcf-period-package-${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+        say('gcfExportHint', `${pkg.projects.length} projects — checksum ${pkg.checksum.slice(0, 12)}… downloaded.`);
       } catch (e) { say('gcfExportHint', e.message); }
     });
 
@@ -752,6 +791,7 @@ const GCFPage = (() => {
         const r = await call('/pipeline/adopt', { method: 'POST' });
         say('gcfIntakeHint', `${r.adopted} projects adopted — they are now yours to edit.`);
         refreshAll();
+        show('pipeline');
       } catch (e) { say('gcfIntakeHint', e.message); }
     });
 

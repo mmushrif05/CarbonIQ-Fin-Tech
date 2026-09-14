@@ -6,8 +6,8 @@
 
 **Source of requirements:** DFCC Bank PLC DAE Readiness Pre-Qualified Delivery Partner Terms of Reference, version 21 November 2025
 
-**Status:** 29 implemented · 1 partial · 2 deliberately excluded
-(32 rules).
+**Status:** 38 implemented · 1 partial · 2 deliberately excluded
+(41 rules).
 
 > Nothing here is endorsed by the Green Climate Fund, and this system does not score a
 > proposal on GCF's behalf. This is a self-declaration of what has been built against a
@@ -175,6 +175,15 @@ exactly how a matrix goes quietly wrong.
 | **Proving test** | `tests/gcf-cn-package.test.js › DFCC's own accreditation conditions travel with the package › the two open accreditation conditions appear as external inputs` |
 | **Limitation** | Two of the three conditions are surfaced. The ESMS audit condition is a DFCC institutional obligation with no per-project input, so it is not carried on a project package. |
 
+### G-ACCR-05 — Every gate reads the entity’s own accreditation once recorded, and the shipped one only until then; the answer says which.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | Board decision B.36/10 — DFCC’s accreditation envelope; the entity’s own where recorded |
+| **Implementation** | `src/domains/gcf/infrastructure/store.js — accreditation()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The cycle over HTTP › the entity’s own accreditation, once recorded, is what every gate reads` |
+
 
 ## Lot 2 — screening, instruments, the answer
 
@@ -231,6 +240,81 @@ exactly how a matrix goes quietly wrong.
 | **Requirement** | GCF investment policy — no minimum co-financing requirement |
 | **Implementation** | `src/domains/gcf/application/reporting.js — capitalDeployment.note; src/domains/gcf/domain/screening.js — efficiency metric` |
 | **Proving test** | `tests/gcf-reporting.test.js › The pipeline is not the entity inventory, and the report says so › the pipeline is disclosed where it belongs, on three §29 lines` |
+
+
+## The project cycle — stages, readiness, criteria, the portfolio
+
+### G-CYCLE-01 — The record’s stage vocabulary maps onto GCF’s ten stages in GCF’s order, runs past Board approval to closure, and a stage the cycle does not have is refused.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF project activity cycle — ten stages from programming to closure |
+| **Implementation** | `src/domains/gcf/domain/cycle.js — CYCLE, STAGE_INFO, stageInfo(), nextStage()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The cycle is GCF’s, in GCF’s order › every record stage maps onto one cycle stage, and the record’s vocabulary is the cycle’s` |
+
+### G-CYCLE-02 — A stage move is dated into the project’s history with who made it, and the milestone dates that travel with it land on the timeline in the same write; a stage is never overwritten silently.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 1, Milestone 4 — systems and procedures to capture data; a pipeline has a time axis |
+| **Implementation** | `src/domains/gcf/infrastructure/store.js — moveStage()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The cycle over HTTP › a stage move is dated into the history, carries its milestone dates, and answers with the new readiness` |
+
+### G-CYCLE-03 — A date the Fund’s published timing implies is marked projected and names the standard it rests on; a recorded date never is; nothing is projected from nothing.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF-2 service standards — six weeks for concept-note feedback, nine months to approval, eleven months to first disbursement |
+| **Implementation** | `src/domains/gcf/domain/cycle.js — TIMING, projections(), timeline()` |
+| **Proving test** | `tests/gcf-cycle.test.js › Time on the cycle › a projected date is marked projected and names the standard it rests on; a recorded one is not` |
+
+### G-CYCLE-04 — What each stage needs is answered from the record as held, partial or missing with the clause and the remedy; it judges nothing, and a gap never refuses a project or a move.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | Concept note template v2.2 and funding proposal template — what each stage must contain; Sri Lanka NDA Operation Manual |
+| **Implementation** | `src/domains/gcf/domain/readiness.js — REQUIREMENTS, assess()` |
+| **Proving test** | `tests/gcf-cycle.test.js › Readiness is answered from the record and judges nothing › a gap never refuses: assess answers for a record with almost nothing on it` |
+
+### G-CYCLE-05 — SAP eligibility is bounded by USD 25 million of GCF funding and category C or I-3, and PPF support by a tenth of the ask and USD 1.5 million; each answer names the condition that failed.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | Board decision B.32/05 — Simplified Approval Process; Project Preparation Facility guidelines |
+| **Implementation** | `src/domains/gcf/domain/readiness.js — sapEligibility(), ppfEligibility()` |
+| **Proving test** | `tests/gcf-cycle.test.js › Readiness is answered from the record and judges nothing › SAP is bounded by the ask and the safeguards category, and says which condition failed` |
+
+### G-CYCLE-06 — The six criteria are answered as evidence held on the record — evidenced, partial or absent — never as a score, and the three the engine does not score are named unscored.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF investment framework — six investment criteria and their sub-criteria |
+| **Implementation** | `src/domains/gcf/domain/criteria.js — CRITERIA, assess()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The six investment criteria are evidence held, never a score › nothing in the answer is a number out of anything` |
+
+### G-CYCLE-07 — The portfolio view composes the emissions model, the gate, the readiness checklist and the criteria and computes nothing of its own: the three carbon boundaries stay on separate keys, direct and indirect beneficiaries are never summed, and the accreditation ceiling applies per project.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund |
+| **Implementation** | `src/domains/gcf/domain/portfolio.js — portfolio()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The portfolio computes nothing and merges nothing › the results are the emissions model’s own figures, on their separate boundaries` |
+
+### G-CYCLE-08 — The shipped sample is read-only: a change or a move on it is refused with the remedy to adopt the pipeline first, because one edited copy would replace the whole illustrative set with a single record.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it |
+| **Implementation** | `src/domains/gcf/infrastructure/store.js — recordedOrRefuse(), patch()` |
+| **Proving test** | `tests/gcf-cycle.test.js › The cycle over HTTP › the shipped sample cannot be edited or moved — the refusal says to adopt it first` |
 
 
 ## Statutory reporting

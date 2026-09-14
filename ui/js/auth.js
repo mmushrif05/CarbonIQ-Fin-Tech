@@ -78,6 +78,7 @@ const Auth = (() => {
     'parta-sovereign': 60,  // esg_analyst+ — the §5.9 sovereign book, same bar as the other PCAF screens
     'monitoring':     60,   // esg_analyst+
     'pipeline':       60,   // esg_analyst+
+    'gcf':            60,   // esg_analyst+ — candidates are recorded and moved through the cycle here
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
     'taxonomy':       30,   // auditor+

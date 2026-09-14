@@ -274,19 +274,19 @@ screen wrong.
 | 6 | Accreditation from sample metadata | The entity's own accreditation on `gcf_entity`, the sample as fallback |
 | 7 | Sample pill lies after adopt | The pill follows `pipeline.sample` on every render |
 | 8 | No edit, no delete, thin intake | A grouped form over the whole schema; edit pre-fills; delete with confirmation |
-| 9 | Free-text instrument and barriers | Validated against the catalogue; the screen offers the catalogue |
-| 10 | `technical` untyped | Typed, `lifetimeYears` a traced figure |
+| 9 | Free-text instrument and barriers | The screen offers the catalogue and the barrier vocabulary; the schema still accepts free text, because two shipped records name instruments the catalogue does not hold and refusing them would refuse the sample |
+| 10 | `technical` untyped | Left as an open object. The figures the cycle reads live on typed blocks (`mitigation`, `beneficiaries`, `area`, `assets`); `technical` carries per-project engineering notes and no engine reads it |
 
 ---
 
 ## 11. The build (this step)
 
 **Domain.** `domain/cycle.js` — the ten stages, the mapping from the record's `stage` values,
-gates and next steps. `domain/readiness.js` — what each stage needs, answered held / partial /
+the next step per stage, the GCF-2 service standards as projections. `domain/readiness.js` — what each stage needs, answered held / partial /
 missing from the record, with the field and the remedy; SAP and PPF eligibility. `domain/criteria.js`
 — the six criteria as evidence coverage. `domain/portfolio.js` — the dashboard roll-up, reading
 `emissions.portfolioEmissions` and `screening.screen` rather than restating them. `domain/record.js`
-— the optional process sub-schemas; the extended stage list; `technical` typed.
+— the optional process sub-schemas; the extended stage list.
 
 **Routes.** `GET /v1/gcf/portfolio`; `GET /v1/gcf/pipeline/:id/readiness`; `PATCH /v1/gcf/pipeline/:id`
 (a deep merge, revalidated); `POST /v1/gcf/pipeline/:id/stage` (a move, dated, into the history).
@@ -295,7 +295,9 @@ Accreditation readable and settable on the entity.
 **Screen.** The Pipeline tab becomes the dashboard: portfolio tiles, the stage rail, the board,
 and a project page with the cycle, the next step, the checklist, the money, the results, the
 criteria and the documents. The other six sub-tabs stay and lose their preambles. The intake
-becomes a grouped form over the whole record with edit and delete. Styles move to `ui/css/gcf.css`.
+becomes a grouped form over the record with the catalogue's instruments and barriers; edit and delete
+live on the project page (a merge through PATCH, a dated move through the stage route). Styles move to
+`ui/css/gcf.css`; the Pipeline tab is its own module, `ui/js/gcf-pipeline.js`.
 
 **Proof.** Conformance rules for each new fact, proved by execution; the journey test extended
 through a stage move and a recorded no-objection; a browser journey that records a real project,
@@ -311,3 +313,6 @@ watches the sample pill clear, moves it a stage, and downloads the pack.
 | 2026-09-14 | §1 | **DFCC's dates recorded**: accredited 12 July 2023; AMA executed 2 August 2024, effective 27 September 2024. The module had carried the decision number alone | GCF AE profile for DFCC Bank PLC |
 | 2026-09-14 | §2 | **The cycle has ten stages and the record knew seven values ending at the Board.** Extended through approval, FAA, implementation and closure so a pipeline can carry a project past the day it is approved | GCF project cycle page |
 | 2026-09-14 | §2 | **GCF-2's timing commitments are facts a dashboard can draw**: six weeks for CN feedback, nine months CN to approval, about eleven months approval to first disbursement. Drawn as projections, hatched, never as dates the Fund has given | Annual progress report 2024; revised CN submission process (Dec 2024) |
+| 2026-09-14 | §9–§11 | **Built.** `domain/cycle.js`, `readiness.js`, `criteria.js`, `portfolio.js`; the record carries timeline, history, NDA, safeguards, co-financing, documents, narrative; accreditation on the entity; `GET /portfolio`, `GET /pipeline/:id/readiness`, `PATCH /pipeline/:id`, `POST /pipeline/:id/stage`; the Pipeline tab as the dashboard with a project page; nine conformance rules (G-CYCLE-01…08, G-ACCR-05) proved by execution | this repository |
+| 2026-09-14 | §10 | **Rows 9 and 10 corrected against what shipped**: instruments and barriers are offered from the catalogue on screen but not enforced in the schema, because two shipped records name structures the catalogue does not hold; `technical` stays untyped because no engine reads it | `src/domains/gcf/domain/record.js` |
+| 2026-09-14 | §4 | **The gate tiles partition the pool.** The screening engine's `eligible` list includes the flagged projects; three tiles that read 5 + 1 + 0 over five candidates are a count that is wrong, so the portfolio counts one verdict per project from the screening row | `src/domains/gcf/domain/portfolio.js` |
