@@ -154,7 +154,10 @@ test('a preview visitor sees the sample position and is offered nothing the serv
 
   await openPage(page);
   await expect(page.locator('#fe-body')).toBeVisible();
-  await expect(page.locator('#fe-classes .fe-state-recorded')).toHaveCount(1);
+  /* The sample book installs the lending book and the sovereign book, so
+     at least the §5.2 class is recorded and the coverage is a real figure. */
+  await expect(page.locator('#fe-classes .fe-state-recorded').first()).toBeVisible();
+  await expect(page.locator('#fe-classes')).toContainText('Business loans and unlisted equity');
   await expect(page.locator('#fe-coverage')).toContainText('%');
 
   for (const id of ['fe-entity-form', 'fe-book-form']) {
