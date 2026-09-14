@@ -22,7 +22,11 @@ const { test, expect } = require('@playwright/test');
 const KEY = 'ck_test_e2e00000000000000000000000000000';
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
 
-const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
+/* An account of this spec's own. The limiter counts requests per signed-in
+   user, so specs running in parallel on one shared account starve each other
+   — a 429 on the years list left the select without the seeded year and this
+   journey timing out on CI while every step of it was right. */
+const USER = { email: 'lending@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
   password: 'an end to end passphrase', mustChangePassword: false };
 
 async function ensureAccount(request) {
@@ -89,7 +93,7 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   await expect(page.locator('#pr-weighting-note')).toContainText('1 is the highest quality');
 
   /* The plan names the footnote 71 finding the overdraft raised. */
-  await expect(page.locator('#pr-plan')).toContainText('fn71');
+  await expect(page.locator('#pr-plan')).toContainText('footnote 71');
 
   /* Open the revolving exposure: its finding is inline with what clears it. */
   const row = page.locator(`#pr-rows .pr-row[data-id="${revolving.exposure.exposureId}"]`);

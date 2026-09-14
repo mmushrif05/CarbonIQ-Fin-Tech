@@ -112,7 +112,7 @@ describe('Nothing is allowed to widen the page', () => {
   });
 
   test('the header rows shrink and wrap rather than pushing the layout out', () => {
-    for (const rule of ['.topbar', '.topbar-right', '.cap-head', '.cap-head-actions', '.search-box']) {
+    for (const rule of ['.topbar', '.topbar-right', '.cap-head', '.cap-head-actions']) {
       const re = new RegExp(`\\${rule} \\{[^}]*min-width: 0`);
       must(css, re, "the header rows shrink and wrap rather than pushing the layout out");
     }

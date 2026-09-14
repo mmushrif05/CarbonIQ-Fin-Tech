@@ -318,7 +318,7 @@ describe('A hidden element stays hidden', () => {
   });
 
   test('the chart caption names both levels rather than one labelled wrongly', () => {
-    must(moduleSrc, 'tCO2e financed over', "the chart caption names both levels rather than one labelled wrongly");
+    must(moduleSrc, 'tCO₂e financed over', "the chart caption names both levels rather than one labelled wrongly");
     must(moduleSrc, 'at project level, of which this bank finances', "the chart caption names both levels rather than one labelled wrongly");
   });
 

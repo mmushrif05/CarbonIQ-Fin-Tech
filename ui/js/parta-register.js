@@ -48,6 +48,21 @@ const PartARegisterPage = (() => {
 
   const sevChip = sev => `<span class="partc-sev">${sev === 'material' ? 'material' : 'advisory'}</span>`;
 
+  /* Each finding code, in the reader's words. The code is the engine's stable
+     key for grouping; what a bank reads is what the finding is about. A code
+     not listed here is spelled out from its own words. */
+  const FINDING_WORDS = {
+    FN71_AVERAGE_NOT_HELD: 'Year-end balance with no annual average to check it against (footnote 71)',
+    FN71_YEAR_END_FLUCTUATION: 'Year-end balance well below the year’s average (footnote 71)',
+    EMISSIONS_DATA_LAG: 'Borrower emissions from an earlier year than the reporting year',
+    DENOMINATOR_EXCEEDS_ASSETS: 'Company value stated above the borrower’s total assets',
+    INTENSITY_BAND_NOT_HELD: 'No sector intensity band held to check the figure against',
+    INTENSITY_OUTSIDE_SECTOR_BAND: 'Emissions intensity outside the sector’s band',
+    FACTOR_VINTAGE_STALE: 'Sector factor older than the vintage threshold, no deflator applied',
+    HIGH_ATTRIBUTION_SHARE: 'Attribution share high enough to read as control',
+  };
+  const words = code => FINDING_WORDS[code] || String(code || '').replace(/_/g, ' ').toLowerCase();
+
   /* `Auth` is a top-level const in a classic script — a global lexical
      binding, not a property of window — so it is reached by name, the way
      app.js reaches every page module. */
@@ -111,10 +126,12 @@ const PartARegisterPage = (() => {
       position = await call(`/position/${year}`);
     } catch (err) {
       /* An empty year is a 409 by design — a book with nothing in it and a
-         book nobody has measured are different claims. Say so, and offer
-         the form. */
+         book nobody has measured are different claims. It is told apart from
+         a failure: one is the next step, the other is a fault to report. */
       show('pr-body', false);
-      say('pr-status', err.message);
+      say('pr-status', err.status === 409
+        ? `No exposures recorded in FY${year} yet.${preview() ? '' : ' Record an exposure to begin.'}`
+        : `Could not read the book: ${err.message}`);
       return;
     }
     let list = [];
@@ -181,7 +198,7 @@ const PartARegisterPage = (() => {
     const fin = p.financialSector;
     setHtml('pr-groups', `
       <div class="pr-scroll"><table class="partc-table">
-        <thead><tr><th>Group</th><th></th><th>Exposures</th><th>Outstanding</th><th>Scope 1+2</th><th>Scope 3</th><th>Score</th></tr></thead>
+        <thead><tr><th>Grouped by</th><th>Group</th><th>Exposures</th><th>Outstanding</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th></tr></thead>
         <tbody>
           ${groups.map(x => `<tr>
             <td>${esc(x.label)}</td><td>${esc(x.key)}</td>
@@ -220,10 +237,10 @@ const PartARegisterPage = (() => {
     const remedies = plan.byRemedy.length
       ? `<h5 class="partc-subhead">By remedy — what would clear each finding</h5>
         <div class="pr-scroll"><table class="partc-table">
-          <thead><tr><th></th><th>Finding</th><th>Exposures</th><th>Outstanding</th><th>What clears it</th></tr></thead>
+          <thead><tr><th>Severity</th><th>Finding</th><th>Exposures</th><th>Outstanding</th><th>What clears it</th></tr></thead>
           <tbody>${plan.byRemedy.map(r => `<tr>
             <td>${sevChip(r.severity)}</td>
-            <td>${esc(r.code.replace(/_/g, ' ').toLowerCase())}</td>
+            <td>${esc(words(r.code))}</td>
             <td class="num">${r.exposures}</td>
             <td class="num">${fmt(r.outstanding, 0)}</td>
             <td>${esc(r.remedy)}</td>
@@ -237,7 +254,7 @@ const PartARegisterPage = (() => {
     setHtml('pr-rows', rows.length === 0
       ? '<p class="partc-hint">No exposures recorded in this year.</p>'
       : `<div class="pr-scroll"><table class="partc-table">
-          <thead><tr><th>Borrower</th><th>Instrument</th><th>Outstanding</th><th>AF</th><th>Scope 1+2</th><th>Scope 3</th><th>Score</th><th>Checks</th></tr></thead>
+          <thead><tr><th>Borrower</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th><th>Checks</th></tr></thead>
           <tbody>${rows.map(r => {
             const x = r.result || {};
             const inv = x.inventory || {};
@@ -342,6 +359,32 @@ const PartARegisterPage = (() => {
       say('pr-detail-status', movement.note);
     } catch (err) { say('pr-detail-status', err.message); }
   }
+
+  /* A document is read whole and checked before a file is offered: a
+     refusal — an empty year is a 409 — is shown as its message, never saved
+     as a file that will not open. */
+  async function download(path, opts, filename, label, statusId) {
+    say(statusId, `Preparing the ${label}…`);
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-a' + path, opts);
+      if (!res.ok) {
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* empty */ }
+        throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      say(statusId, `${label} downloaded.`);
+    } catch (err) { say(statusId, err.message); }
+  }
+  const disclosure = format => download(`/disclosure/${encodeURIComponent(year)}?format=${format}`, {},
+    `part-a-business-loans-fy${year}.${format}`, `FY${year} §5.2 disclosure (${format.toUpperCase()})`, 'pr-status');
+  const exposureReport = () => openId && download(`/exposures/${encodeURIComponent(openId)}/report`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: 'pdf' }) },
+    `part-a-exposure-${openId}.pdf`, 'Exposure report (PDF)', 'pr-detail-status');
 
   async function remove() {
     if (!openId) return;
@@ -473,6 +516,9 @@ const PartARegisterPage = (() => {
     on('pr-detail-close', 'click', closeDetail);
     on('pr-detail-recompute', 'click', recompute);
     on('pr-detail-remove', 'click', remove);
+    on('pr-detail-report', 'click', exposureReport);
+    on('pr-pdf', 'click', () => disclosure('pdf'));
+    on('pr-docx', 'click', () => disclosure('docx'));
     for (const id of ['pr-f-listed', 'pr-f-instrument', 'pr-f-s1', 'pr-f-s2', 'pr-f-equity', 'pr-f-debt', 'pr-f-mcap']) {
       on(id, 'change', applyDenominatorMode);
       on(id, 'input', applyDenominatorMode);

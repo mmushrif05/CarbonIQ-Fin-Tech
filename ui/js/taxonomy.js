@@ -138,7 +138,7 @@ const Taxonomy = (() => {
     const total = FRAMEWORKS.length;
     const badge = $$('tax-summary-badge');
     if (badge) {
-      badge.textContent = `${aligned} / ${total} frameworks aligned`;
+      badge.textContent = `${aligned} of ${total} frameworks aligned`;
       badge.className = 'kpi-badge ' + (aligned === total ? 'badge-green' : aligned >= 2 ? 'badge-amber' : 'badge-red');
     }
   }

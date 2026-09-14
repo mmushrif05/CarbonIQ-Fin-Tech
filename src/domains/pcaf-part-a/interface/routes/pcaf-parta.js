@@ -56,11 +56,14 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
       + 'applied across classes would be wrong for some of them, silently.',
     response: body({ standard: str, assetClasses: arr() }, ['standard', 'assetClasses']) }), (_req, res, next) => {
   try {
+    /* Each class names the route that prices it, so a form offers a class
+       only where the route it posts to can answer. */
     res.json({
       standard: parta.STANDARD,
       assetClasses: [
         {
           id: 'project-finance',
+          assessRoute: '/v1/pcaf/part-a/assess',
           label: 'Project finance',
           section: '5.3',
           definition: 'On-balance sheet loans or equity to projects or activities designated '
@@ -73,6 +76,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
         },
         {
           id: 'business-loans-unlisted-equity',
+          assessRoute: '/v1/pcaf/part-a/assess',
           label: 'Business loans and unlisted equity',
           section: '5.2',
           definition: 'On-balance sheet loans and lines of credit to listed and unlisted businesses '
@@ -93,6 +97,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
         },
         {
           id: 'sovereign-debt',
+          assessRoute: '/v1/pcaf/part-a/sovereign/assess',
           label: 'Sovereign debt',
           section: '5.9',
           definition: 'Sovereign bonds and loans of any maturity or currency, including issuance '
@@ -111,6 +116,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
         },
         {
           id: 'commercial-real-estate',
+          assessRoute: '/v1/pcaf/part-a/real-estate/assess',
           label: 'Commercial real estate',
           section: '5.4',
           definition: 'Loans to buy or refinance income-producing property, and CRE investments '
@@ -126,6 +132,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
         },
         {
           id: 'mortgages',
+          assessRoute: '/v1/pcaf/part-a/real-estate/assess',
           label: 'Mortgages',
           section: '5.5',
           definition: 'Residential purchase and refinance, including small multifamily. HELs and '
