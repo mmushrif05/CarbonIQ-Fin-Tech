@@ -168,7 +168,7 @@ const PCAFPartAPage = (() => {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
   const fmt = (n, dp = 2) => (Number.isFinite(n)
-    ? n.toLocaleString('en-GB', { minimumFractionDigits: dp, maximumFractionDigits: dp })
+    ? n.toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp })
     : '—');
 
 
@@ -195,8 +195,8 @@ const PCAFPartAPage = (() => {
 
   function _magnitude(n) {
     const a = Math.abs(n);
-    if (a >= 1e9) return `${(n / 1e9).toLocaleString('en-GB', { maximumFractionDigits: 2 })}B`;
-    if (a >= 1e6) return `${(n / 1e6).toLocaleString('en-GB', { maximumFractionDigits: 1 })}M`;
+    if (a >= 1e9) return `${(n / 1e9).toLocaleString('en-US', { maximumFractionDigits: 2 })}B`;
+    if (a >= 1e6) return `${(n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 })}M`;
     return null;
   }
 
@@ -212,7 +212,7 @@ const PCAFPartAPage = (() => {
     if (raw === '' || !Number.isFinite(n)) { echo.textContent = ''; return; }
 
     const ccy = (el('pa-currency') && el('pa-currency').value.trim()) || '';
-    const grouped = n.toLocaleString('en-GB', { maximumFractionDigits: 2 });
+    const grouped = n.toLocaleString('en-US', { maximumFractionDigits: 2 });
     const mag = _magnitude(n);
     echo.textContent = [ccy, grouped].filter(Boolean).join(' ') + (mag ? ` · ${mag}` : '');
   }
@@ -255,8 +255,12 @@ const PCAFPartAPage = (() => {
   }
 
   function _populateSelectors() {
+    /* Only the classes this form's route prices. Sovereign debt and real
+       estate have engines and routes of their own; offered here they came
+       back as a refusal, which read as the screen being broken. */
     const ac = el('pa-assetClass');
     ac.innerHTML = _reference.assetClasses
+      .filter(c => !c.assessRoute || c.assessRoute === '/v1/pcaf/part-a/assess')
       .map(c => `<option value="${esc(c.id)}">${esc(c.label)} — §${esc(c.section)}</option>`).join('');
 
     const arch = el('pa-archetype');
@@ -558,7 +562,7 @@ const PCAFPartAPage = (() => {
     const rem = el('paRemovalsBox');
     rem.hidden = !inv.removals;
     if (inv.removals) {
-      el('paRemovals').textContent = `${fmt(inv.removals.value)} tCO2e`;
+      el('paRemovals').textContent = `${fmt(inv.removals.value)} tCO₂e`;
       el('paRemovalsNote').textContent = inv.removalsNote || '';
     }
 
@@ -567,7 +571,7 @@ const PCAFPartAPage = (() => {
     const ei = inv.economicIntensity_tCO2e_per_M;
     el('paIntensity').textContent = ei === null ? '—' : fmt(ei);
     el('paIntensityUnit').textContent = ei === null
-      ? '' : `tCO2e per million ${r.project.currency || ''}`.trim();
+      ? '' : `tCO₂e per million ${r.project.currency || ''}`.trim();
     el('paIntensityNote').textContent = inv.economicIntensityNote || '';
 
     /* The label the engine composed — "Data quality score: 3 (Option 2b)" —
@@ -715,7 +719,7 @@ const PCAFPartAPage = (() => {
       el('paCheckBox').className = 'parta-card parta-plaus';
     } else {
       el('paCheckCf').textContent = `${p.capacityFactorPct}%`;
-      el('paSpecificYield').textContent = p.specificYield_kWh_per_kWp.toLocaleString('en-GB');
+      el('paSpecificYield').textContent = p.specificYield_kWh_per_kWp.toLocaleString('en-US');
       el('paCheckBand').textContent = p.hasBand
         ? `band ${(p.band.low * 100).toFixed(0)}–${(p.band.high * 100).toFixed(0)}% · ${p.reference}`
         : `reference ${(p.referenceCf * 100).toFixed(1)}% · ${p.reference}`;
@@ -743,7 +747,7 @@ const PCAFPartAPage = (() => {
      series the engine actually summed, so it cannot drift from the total
      printed above it. */
 
-  const _round = (n, dp) => Number(n).toLocaleString('en-GB',
+  const _round = (n, dp) => Number(n).toLocaleString('en-US',
     { minimumFractionDigits: dp, maximumFractionDigits: dp });
 
 
@@ -913,7 +917,7 @@ const PCAFPartAPage = (() => {
     seg(el('paAttribLender'), 0, pct);
 
     el('paMeansInventory').textContent =
-      `This is the ${fmt(inv.scope1And2.value)} tCO2e the bank puts in its own scope 3 Category 15 `
+      `This is the ${fmt(inv.scope1And2.value)} tCO₂e the bank puts in its own scope 3 Category 15 `
       + `inventory for this exposure — not the project's total, but the ${_round(pct, 1)}% share its `
       + `lending attributes to it. ${inv.dataQuality.label}, on a scale where 1 is the best `
       + `evidence and 5 the weakest. `
@@ -958,13 +962,13 @@ const PCAFPartAPage = (() => {
     const hits = series.map((d, i) => {
       const w = plotW / series.length;
       return `<rect class="parta-area-hit" x="${(x(i) - w / 2).toFixed(1)}" y="${PAD_T}"
-        width="${w.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${d.year}: ${fmt(d.avoided_tCO2e)} tCO2e</title></rect>`;
+        width="${w.toFixed(1)}" height="${plotH.toFixed(1)}"><title>${d.year}: ${fmt(d.avoided_tCO2e)} tCO₂e</title></rect>`;
     }).join('');
 
     const first = series[0], last = series[series.length - 1];
     el('paChartBody').innerHTML = `
       <svg viewBox="0 0 ${W} ${H}" role="img" preserveAspectRatio="none"
-           aria-label="Financed avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO2e over ${series.length} years">
+           aria-label="Financed avoided emissions declining from ${fmt(first.avoided_tCO2e)} to ${fmt(last.avoided_tCO2e)} tCO₂e over ${series.length} years">
         <defs>
           <linearGradient id="partaAreaGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stop-color="#5e5ce6" stop-opacity="0.30"/>
@@ -990,7 +994,7 @@ const PCAFPartAPage = (() => {
        year — otherwise ex-post and ex-ante sit together unlabelled. */
     const metered = r.generation && r.generation.mode === 'metered';
     el('paChartSub').textContent =
-      `${fmt(life.value, 0)} tCO2e financed over ${life.years} years`
+      `${fmt(life.value, 0)} tCO₂e financed over ${life.years} years`
       + (Number.isFinite(life.projectTotal)
         ? ` · ${fmt(life.projectTotal, 0)} at project level, of which this bank finances `
           + `${_round(life.attributionFactor * 100, 1)}%`
@@ -1005,7 +1009,7 @@ const PCAFPartAPage = (() => {
 
     el('paMeansImpact').textContent =
       `Avoided emissions are what the grid did not emit because this plant generated instead. They `
-      + `are NOT part of the ${fmt(r.inventory.scope1And2.value)} tCO2e above and are never added to `
+      + `are NOT part of the ${fmt(r.inventory.scope1And2.value)} tCO₂e above and are never added to `
       + `it — PCAF requires them reported separately, and they rest on supplemental guidance rather `
       + `than on Part A itself. A lender may cite them alongside the inventory, never inside it.`;
   }
@@ -1016,7 +1020,7 @@ const PCAFPartAPage = (() => {
     const items = [];
     const pct = _round(r.attribution.value * 100, 1);
 
-    items.push(`This bank reports <b>${fmt(inv.scope1And2.value)} tCO2e</b> of financed scope 1 and 2 `
+    items.push(`This bank reports <b>${fmt(inv.scope1And2.value)} tCO₂e</b> of financed scope 1 and 2 `
       + `for this exposure, being its <b>${pct}%</b> share of the project.`);
 
     if (g) {
@@ -1095,7 +1099,7 @@ const PCAFPartAPage = (() => {
     if (lt) {
       el('paLifetimeLabel').textContent =
         `Lifetime, financed — ${lt.years} years at ${lt.degradationPct}% degradation`;
-      el('paLifetime').textContent = `${fmt(lt.value)} tCO2e`;
+      el('paLifetime').textContent = `${fmt(lt.value)} tCO₂e`;
       el('paLifetimeNote').textContent = `${lt.trajectoryNote} ${lt.degradationNote}`;
     }
 
@@ -1111,7 +1115,7 @@ const PCAFPartAPage = (() => {
           <summary><span>${esc(label)}</span><b>${fmt(t.value)} ${esc(t.unit)}</b></summary>
           <code class="parta-eq">${esc(t.equation)}</code>
           <dl>${Object.entries(t.inputs).map(([k, v]) =>
-            `<div><dt>${esc(k)}</dt><dd>${esc(typeof v === 'number' ? v.toLocaleString('en-GB') : v)}</dd></div>`).join('')}</dl>
+            `<div><dt>${esc(k)}</dt><dd>${esc(typeof v === 'number' ? v.toLocaleString('en-US') : v)}</dd></div>`).join('')}</dl>
           <p class="parta-ref">${esc(t.basis)}${t.reference ? ` — ${esc(t.reference)}` : ''}</p>
         </details>`);
     };
@@ -1141,7 +1145,7 @@ const PCAFPartAPage = (() => {
 
     /* Every field, not just the ones this preset names. Writing only the keys a
        preset owns left the previous preset's values standing — switching from
-       Cement to Solar carried 480,000 tCO2e of scope 1 across with it. */
+       Cement to Solar carried 480,000 tCO₂e of scope 1 across with it. */
     for (const [field] of FIELDS) {
       writeField('pa-' + field, Object.prototype.hasOwnProperty.call(p, field) ? p[field] : '');
     }

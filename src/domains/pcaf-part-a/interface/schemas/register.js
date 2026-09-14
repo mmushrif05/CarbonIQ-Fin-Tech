@@ -67,8 +67,8 @@ const settingsSchema = Joi.object({
   boundaryNote: Joi.string().allow('').max(2000).description('What the organisational boundary includes and excludes'),
   fiscalYearEnd: Joi.string().pattern(/^\d{2}-\d{2}$/).allow(null).description('MM-DD; the position is taken at this date in the reporting year'),
   gwpBasis: Joi.string().trim().max(120).allow(null).description('The IPCC assessment report and horizon the CO2e rests on, e.g. "IPCC AR6, 100-year"'),
-  preparedBy: personSchema.description('Who prepared the disclosure'),
-  approvedBy: personSchema.description('Who approved the disclosure, and on what date'),
+  preparedBy: personSchema.allow(null).description('Who prepared the disclosure; null clears it'),
+  approvedBy: personSchema.allow(null).description('Who approved the disclosure, and on what date; null clears it'),
   assetClassesNotReported: Joi.array().items(Joi.object({
     assetClass: Joi.string().max(60).required(),
     reason: Joi.string().trim().max(500).required(),

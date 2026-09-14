@@ -17,6 +17,7 @@ const PAGE_META = {
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
+  'parta-position': { title: 'Financed Emissions', subtitle: 'The whole PCAF Part A position for a reporting year — every asset class, what the disclosure still needs, and the document filed from it' },
   'parta-register': { title: 'Lending Book',      subtitle: 'The exposures behind the Part A figures — position, coverage, and what to fix first' },
   'parta-sovereign': { title: 'Sovereign Book',    subtitle: 'The §5.9 sovereign holdings — attribution on PPP-adjusted GDP, scope 1 on both LULUCF boundaries' },
   'pcaf-partc':  { title: 'PCAF Part C',         subtitle: 'Insurance-associated emissions — construction A4+A5 · use-stage separate' },
@@ -61,6 +62,13 @@ const DYNAMIC_PAGES = {
   'pcaf-parta': {
     src:  'pages/pcaf-parta.html',
     init: () => typeof PCAFPartAPage !== 'undefined' && PCAFPartAPage.init(),
+  },
+  'parta-position': {
+    src:  'pages/parta-position.html',
+    init: () => typeof PartAPositionPage !== 'undefined' && PartAPositionPage.init(),
+    // An exposure recorded on either book, or a fact recorded about the
+    // entity, changes this position, so a return visit re-reads it.
+    refresh: () => typeof PartAPositionPage !== 'undefined' && PartAPositionPage.refresh(),
   },
   'parta-register': {
     src:  'pages/parta-register.html',

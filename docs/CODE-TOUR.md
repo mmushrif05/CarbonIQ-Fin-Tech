@@ -174,7 +174,7 @@ flowchart TD
 |         `src/domains/pcaf-part-a/domain/real-estate/` | 5 | 595 |
 |         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 960 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 194 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 3 | 838 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 3 | 845 |
 |         `src/domains/pcaf-part-a/interface/schemas/` | 5 | 479 |
 |       `src/domains/pcaf-part-a/reporting/` | 8 | 1,529 |
 |         `src/domains/pcaf-part-a/reporting/consolidated/` | 5 | 768 |
@@ -207,7 +207,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **367** | **61,830** |
+| **total** | **367** | **61,837** |
 
 <!-- END MODULE-MAP -->
 

@@ -1,0 +1,144 @@
+<!-- PCAF Part A — the whole financed-emissions position for a reporting year,
+     every asset class side by side, and the one document a bank files from
+     it. Every figure is one the register returned; the page computes nothing.
+     The headline sums each class on the boundary its section reports; scope 3
+     is a separate line; one data-quality score per class, never averaged. -->
+
+<div class="partc parta-position">
+
+  <div class="partc-banner">
+    <div class="partc-banner-badge">A</div>
+    <div>
+      <strong id="fe-title">Financed emissions</strong>
+      <span id="fe-subtitle">PCAF Part A — the whole book for one reporting year, and the disclosure filed from it</span>
+    </div>
+  </div>
+
+  <section class="partc-card">
+    <div class="partc-actions">
+      <label class="partc-year">Reporting year
+        <select id="fe-year"></select>
+      </label>
+      <button class="btn btn-secondary" id="fe-refresh">Refresh</button>
+      <span class="fe-spacer"></span>
+      <button class="btn btn-primary" id="fe-pdf">Disclosure — PDF</button>
+      <button class="btn btn-secondary" id="fe-docx">Word</button>
+      <button class="btn btn-secondary" id="fe-json">JSON</button>
+      <button class="btn btn-secondary" id="fe-csv">Exposure register — CSV</button>
+    </div>
+    <p class="partc-hint" id="fe-status"></p>
+  </section>
+
+  <div id="fe-body" hidden>
+
+    <!-- What the disclosure still needs before it can be filed. Every item
+         names the clause that asks for it and where on this screen or the
+         book it is answered. -->
+    <section class="partc-card" id="fe-readiness">
+      <div class="partc-card-head">
+        <h3>Ready to file <span class="fe-pill" id="fe-ready-pill">—</span></h3>
+        <span class="partc-hint">What Chapter 6 asks for that is not yet on the record. A disclosure prints an unstated fact as absent, never as a default.</span>
+      </div>
+      <div id="fe-outstanding"></div>
+    </section>
+
+    <div class="partc-figures">
+      <div class="partc-figure partc-figure-primary">
+        <span class="partc-figure-label">Financed emissions — headline</span>
+        <span class="partc-figure-value" id="fe-headline">—</span>
+        <span class="partc-figure-unit">tCO₂e · scope 3 category 15 of the reporting entity</span>
+        <span class="partc-figure-dq" id="fe-headline-basis"></span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Financed scope 3 — separate line, never summed into the headline</span>
+        <span class="partc-figure-value" id="fe-s3">—</span>
+        <span class="partc-figure-unit">tCO₂e</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Coverage of the book</span>
+        <span class="partc-figure-value" id="fe-coverage">—</span>
+        <span class="partc-figure-unit" id="fe-coverage-unit">of total loans and investments</span>
+      </div>
+      <div class="partc-figure">
+        <span class="partc-figure-label">Economic intensity</span>
+        <span class="partc-figure-value" id="fe-intensity">—</span>
+        <span class="partc-figure-unit" id="fe-intensity-unit">tCO₂e per million</span>
+      </div>
+    </div>
+    <p class="partc-hint" id="fe-headline-note"></p>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Asset classes</h3>
+        <span class="partc-hint">Every Part A class of the Third Edition, recorded or named with its reason — PCAF Part A Chapter 6 (p.162). One data-quality score per class, weighted by outstanding amount within it (p.128), never averaged across classes. 1 is the highest quality, 5 the lowest.</span></div>
+      <div id="fe-classes"></div>
+    </section>
+
+    <div class="partc-panels">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Book total</h3>
+          <span class="partc-hint">Coverage is assessed outstanding over total loans and investments — PCAF Disclosure Checklist Part A, p.124.</span></div>
+        <div id="fe-book"></div>
+        <form id="fe-book-form" class="fe-inline" data-writes hidden>
+          <label>Total loans and investments <input id="fe-book-total" type="number" min="1" step="any" required></label>
+          <label>Currency <input id="fe-book-currency" type="text" maxlength="10" value="LKR"></label>
+          <label>Stated by <input id="fe-book-by" type="text" maxlength="200" placeholder="e.g. Group CFO"></label>
+          <button class="btn btn-primary" type="submit">State it</button>
+          <span class="partc-hint" id="fe-book-status"></span>
+        </form>
+      </section>
+
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Data quality by class</h3>
+          <span class="partc-hint" id="fe-dq-note"></span></div>
+        <div id="fe-dq"></div>
+      </section>
+    </div>
+
+    <!-- The facts only the reporting entity can state. A verifier under
+         ISO 14064-3 starts from these; the document prints each as stated or
+         as absent. -->
+    <section class="partc-card" id="fe-entity">
+      <div class="partc-card-head"><h3>Reporting entity</h3>
+        <span class="partc-hint">The legal entity, its organisational boundary, the period, who prepared and who approved the disclosure, and the recalculation protocol — PCAF Part A Chapter 6 (p.161); ISO 14064-3 §5.2; ISAE 3000 §12(a).</span></div>
+      <div id="fe-entity-view"></div>
+      <form id="fe-entity-form" class="fe-form" data-writes hidden autocomplete="off">
+        <div class="fe-grid">
+          <label>Legal name <input id="fe-e-name" type="text" maxlength="200" placeholder="as registered"></label>
+          <label>Consolidation approach
+            <select id="fe-e-approach">
+              <option value="">Not stated</option>
+              <option value="operational_control">Operational control</option>
+              <option value="financial_control">Financial control</option>
+              <option value="equity_share">Equity share</option>
+            </select></label>
+          <label>Fiscal year-end (MM-DD) <input id="fe-e-fye" type="text" maxlength="5" placeholder="12-31" pattern="[0-9]{2}-[0-9]{2}"></label>
+          <label>GWP basis <input id="fe-e-gwp" type="text" maxlength="120" placeholder="e.g. IPCC AR6, 100-year"></label>
+          <label class="fe-wide">Boundary note <input id="fe-e-boundary" type="text" maxlength="2000" placeholder="subsidiaries included or excluded, and why"></label>
+        </div>
+        <h5 class="partc-subhead">Responsible parties</h5>
+        <div class="fe-grid">
+          <label>Prepared by <input id="fe-e-prep-name" type="text" maxlength="200"></label>
+          <label>Role <input id="fe-e-prep-role" type="text" maxlength="200" placeholder="e.g. Head of Sustainable Finance"></label>
+          <label>Date <input id="fe-e-prep-date" type="date"></label>
+          <label>Approved by <input id="fe-e-appr-name" type="text" maxlength="200"></label>
+          <label>Role <input id="fe-e-appr-role" type="text" maxlength="200" placeholder="e.g. Chief Risk Officer"></label>
+          <label>Date <input id="fe-e-appr-date" type="date"></label>
+        </div>
+        <h5 class="partc-subhead">Recalculation protocol</h5>
+        <div class="fe-grid">
+          <label>Base year <input id="fe-e-base-year" type="number" min="2000" max="2100" placeholder="not set"></label>
+          <label>Significance threshold (%) <input id="fe-e-threshold" type="number" min="0" max="100" step="any"></label>
+          <label class="fe-wide">Policy <input id="fe-e-policy" type="text" maxlength="2000" placeholder="how a restatement is decided and recorded"></label>
+        </div>
+        <h5 class="partc-subhead">Asset classes not reported — the reason the disclosure prints</h5>
+        <p class="partc-hint">Chapter 6 asks for each class not reported and why (p.162). Left blank, the disclosure prints what this system knows about the class.</p>
+        <div class="fe-grid" id="fe-e-not-reported"></div>
+        <div class="partc-actions">
+          <button class="btn btn-primary" type="submit" id="fe-entity-save">Record</button>
+          <span class="partc-hint" id="fe-entity-status"></span>
+        </div>
+      </form>
+    </section>
+
+  </div>
+</div>

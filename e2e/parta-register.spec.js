@@ -89,7 +89,7 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   await expect(page.locator('#pr-weighting-note')).toContainText('1 is the highest quality');
 
   /* The plan names the footnote 71 finding the overdraft raised. */
-  await expect(page.locator('#pr-plan')).toContainText('fn71');
+  await expect(page.locator('#pr-plan')).toContainText('footnote 71');
 
   /* Open the revolving exposure: its finding is inline with what clears it. */
   const row = page.locator(`#pr-rows .pr-row[data-id="${revolving.exposure.exposureId}"]`);

@@ -1805,6 +1805,7 @@ const Dashboard = (() => {
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
       _renderBaseline(),
+      _renderFinanced(),
     ]);
     /* The drawer recomputes through the same path a control does, so an
        adjusted figure and an adjusted assumption reach the screen the same
@@ -1850,7 +1851,29 @@ const Dashboard = (() => {
       _fetchCapital().then(_renderDashboard),
       _fetchData().then((data) => { _renderDemoBanner(data); _renderPortfolio(data); }),
       _renderBaseline(),
+      _renderFinanced(),
     ]);
+  }
+
+  /**
+   * The bank's own PCAF Part A position, in one band. The Financed Emissions
+   * page owns the reading and the rendering; the dashboard only asks for it,
+   * so the two screens cannot show different figures for one year.
+   */
+  async function _renderFinanced() {
+    const open = document.getElementById('fe-band-open');
+    if (open && !open.dataset.wired) {
+      open.dataset.wired = 'true';
+      open.addEventListener('click', () => {
+        const item = document.querySelector('.nav-item[data-page="parta-position"]');
+        if (item) item.click();
+      });
+    }
+    try {
+      if (typeof PartAPositionPage !== 'undefined') await PartAPositionPage.band();
+    } catch (_) {
+      /* A dashboard that cannot reach the register still shows the book. */
+    }
   }
 
   /** Re-read the book alone — used by the weighting slider and the filter. */

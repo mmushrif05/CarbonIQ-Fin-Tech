@@ -43,6 +43,19 @@ const PartASovereignPage = (() => {
 
   const sevChip = sev => `<span class="partc-sev">${sev === 'material' ? 'material' : 'advisory'}</span>`;
 
+  /* Each finding code, in the reader's words. The code is the engine's stable
+     key for grouping; what a bank reads is what the finding is about. */
+  const FINDING_WORDS = {
+    SOVEREIGN_PROXY_COUNTRY: 'Figures taken from a proxy country',
+    SOVEREIGN_EMISSIONS_LAG: 'Emissions from an earlier year than the reporting year',
+    SOVEREIGN_LULUCF_ONE_SIDED: 'Scope 1 held on one LULUCF boundary only',
+    SOVEREIGN_INTENSITY_IMPLAUSIBLE: 'Production intensity outside the plausible band',
+    SOVEREIGN_EMISSIONS_GDP_YEAR_GAP: 'Emissions and GDP from different years',
+    SOVEREIGN_NO_INDEPENDENT_SOURCE: 'No independent source to check the figure against',
+    SOVEREIGN_SOURCE_DIVERGENCE: 'Independent source diverges from the held figure',
+  };
+  const words = code => FINDING_WORDS[code] || String(code || '').replace(/_/g, ' ').toLowerCase();
+
   const preview = () => {
     try { return typeof Auth !== 'undefined' && typeof Auth.isPreview === 'function' && Boolean(Auth.isPreview()); }
     catch (_) { return false; }
@@ -102,8 +115,12 @@ const PartASovereignPage = (() => {
     try {
       position = await call(`/sovereign/position/${year}`);
     } catch (err) {
+      /* An empty year is a 409 by design, told apart from a failure: one is
+         the next step, the other is a fault to report. */
       show('ps-body', false);
-      say('ps-status', err.message);
+      say('ps-status', err.status === 409
+        ? `No sovereign holdings recorded in FY${year} yet.${preview() ? '' : ' Record a holding to begin.'}`
+        : `Could not read the book: ${err.message}`);
       return;
     }
     let list = [];
@@ -181,10 +198,10 @@ const PartASovereignPage = (() => {
     say('ps-plan-note', 'Every finding grouped by what would clear it, the material ones first.');
     setHtml('ps-plan', `
       <div class="ps-scroll"><table class="partc-table">
-        <thead><tr><th></th><th>Finding</th><th>Holdings</th><th>Sovereigns</th><th>What clears it</th></tr></thead>
+        <thead><tr><th>Severity</th><th>Finding</th><th>Holdings</th><th>Sovereigns</th><th>What clears it</th></tr></thead>
         <tbody>${plan.map(r => `<tr>
           <td>${sevChip(r.severity)}</td>
-          <td>${esc(r.code.replace(/_/g, ' ').toLowerCase())}</td>
+          <td>${esc(words(r.code))}</td>
           <td class="num">${r.count}</td>
           <td>${esc((r.sovereigns || []).join(', '))}</td>
           <td>${esc(r.remedy)}</td>
@@ -196,7 +213,7 @@ const PartASovereignPage = (() => {
     setHtml('ps-rows', rows.length === 0
       ? '<p class="partc-hint">No sovereign holdings recorded in this year.</p>'
       : `<div class="ps-scroll"><table class="partc-table">
-          <thead><tr><th>Sovereign</th><th>Instrument</th><th>Outstanding</th><th>AF</th><th>Scope 1 excl.</th><th>Scope 1 incl.</th><th>Score</th><th>Checks</th></tr></thead>
+          <thead><tr><th>Sovereign</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 excl. LULUCF</th><th>Scope 1 incl. LULUCF</th><th>Score</th><th>Checks</th></tr></thead>
           <tbody>${rows.map(r => {
             const x = r.result || {};
             const inv = x.inventory || {};
@@ -301,6 +318,32 @@ const PartASovereignPage = (() => {
     } catch (err) { say('ps-detail-status', err.message); }
   }
 
+  /* A document is read whole and checked before a file is offered: a
+     refusal — an empty year is a 409 — is shown as its message, never saved
+     as a file that will not open. */
+  async function download(path, opts, filename, label, statusId) {
+    say(statusId, `Preparing the ${label}…`);
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-a' + path, opts);
+      if (!res.ok) {
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* empty */ }
+        throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      say(statusId, `${label} downloaded.`);
+    } catch (err) { say(statusId, err.message); }
+  }
+  const disclosure = format => download(`/sovereign/disclosure/${encodeURIComponent(year)}?format=${format}`, {},
+    `part-a-sovereign-debt-fy${year}.${format}`, `FY${year} §5.9 disclosure (${format.toUpperCase()})`, 'ps-status');
+  const holdingReport = () => openId && download(`/sovereign/exposures/${encodeURIComponent(openId)}/report`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: 'pdf' }) },
+    `part-a-sovereign-${openId}.pdf`, 'Holding report (PDF)', 'ps-detail-status');
+
   async function remove() {
     if (!openId) return;
     if (!window.confirm('Remove this sovereign holding from the register?')) return;
@@ -402,6 +445,9 @@ const PartASovereignPage = (() => {
     on('ps-detail-close', 'click', closeDetail);
     on('ps-detail-recompute', 'click', recompute);
     on('ps-detail-remove', 'click', remove);
+    on('ps-detail-report', 'click', holdingReport);
+    on('ps-pdf', 'click', () => disclosure('pdf'));
+    on('ps-docx', 'click', () => disclosure('docx'));
     on('ps-f-country', 'change', applyCountryMode);
     for (const el of document.querySelectorAll('.parta-sovereign [data-writes]')) el.hidden = preview();
     await loadCountries();

@@ -164,49 +164,6 @@ body {
 .page-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
 .page-subtitle { font-size: 13px; color: var(--text-secondary); }
 .topbar-right { display: flex; align-items: center; gap: 16px; }
-.search-box {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 6px 12px;
-  color: var(--text-tertiary);
-}
-.search-box input {
-  border: none;
-  background: none;
-  outline: none;
-  font-family: var(--font);
-  font-size: 13px;
-  color: var(--text-primary);
-  width: 180px;
-}
-.search-box input::placeholder { color: var(--text-tertiary); }
-.icon-btn {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-  transition: all var(--transition);
-}
-.icon-btn:hover { background: var(--bg); }
-.notification-dot {
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 7px; height: 7px;
-  background: var(--red);
-  border-radius: 50%;
-  border: 2px solid var(--surface);
-}
-.topbar-date { font-size: 13px; color: var(--text-secondary); font-weight: 500; }
 
 .page-content { padding: 24px 32px 48px; }
 .page { display: none; }
@@ -1998,7 +1955,12 @@ body {
   padding: 8px 11px; min-height: 38px;
   border-radius: 9px; border: 1px solid var(--border);
   background: var(--surface); color: var(--text-primary);
+  /* A select sizes to its widest option, not to its container. */
+  min-width: 0; max-width: 100%;
 }
+/* The financed-emissions band on the landing dashboard. The readiness tile
+   carries a short phrase rather than a figure, so it takes the body size. */
+.fe-band-ready { font-size: 18px; letter-spacing: -0.3px; }
 .dash-link {
   appearance: none; cursor: pointer;
   font-family: var(--font); font-size: 12px; font-weight: 600;
@@ -2932,7 +2894,6 @@ body.adj-open { overflow: hidden; }
 .topbar-right { min-width: 0; flex-wrap: wrap; justify-content: flex-end; }
 .cap-head { min-width: 0; }
 .cap-head-actions { min-width: 0; justify-content: flex-end; }
-.search-box { min-width: 0; }
 
 /* Tiles in a row are equal height, so a short one carries slack. The slack
    goes below the last line, where it reads as padding — pushing the note to

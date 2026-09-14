@@ -1,0 +1,84 @@
+/* ============================================================
+   CarbonIQ — PCAF Part A, the financed-emissions position
+   ============================================================
+   The page borrows the Part C vocabulary (cards, figures, tables, the data
+   quality badge) so a score means the same thing on every PCAF screen. What
+   is here is only what this page adds.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets. The UA stylesheet's
+   [hidden]{display:none} carries almost no specificity, and a single class
+   rule with display:grid outranks it — the entity form and the book form are
+   both grids that open and close with el.hidden. */
+.parta-position [hidden] { display: none !important; }
+
+.parta-position .fe-spacer { flex: 1 1 auto; }
+
+.parta-position .fe-form { display: flex; flex-direction: column; gap: 14px; margin-top: 8px; }
+
+/* Columns collapse rather than push the page: minmax(min(100%, …)) is the
+   whole difference at 430px. */
+.parta-position .fe-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 10px 14px;
+}
+.parta-position .fe-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; }
+.parta-position .fe-grid input,
+.parta-position .fe-grid select,
+.parta-position .fe-inline input {
+  font: inherit; font-size: 14px; padding: 7px 9px; border-radius: 8px;
+  border: 1px solid var(--p-separator, #d1d1d6); background: var(--p-bg, #fff); color: inherit;
+  min-width: 0; max-width: 100%;
+}
+.parta-position .fe-grid input:focus-visible,
+.parta-position .fe-grid select:focus-visible,
+.parta-position .fe-inline input:focus-visible { outline: 2px solid var(--brand, #0a7a4c); outline-offset: 1px; }
+.parta-position .fe-wide { grid-column: 1 / -1; }
+
+.parta-position .fe-inline { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 10px; }
+.parta-position .fe-inline label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--p-label-2); min-width: 0; flex: 1 1 160px; }
+
+/* A select sizes to its widest option, not to its container. */
+.parta-position select { min-width: 0; max-width: 100%; }
+
+/* The readiness pill: neutral when there is work to do, teal when there is
+   none. Amber is for something a reader has to act on now; an outstanding
+   item is a fact about the record, not a fault. */
+.parta-position .fe-pill {
+  display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: 0;
+  padding: 3px 10px; border-radius: 999px; background: var(--p-fill); color: var(--p-label-2);
+  vertical-align: middle;
+}
+.parta-position .fe-pill-ready { background: var(--p-accent-bg); color: var(--p-accent); }
+
+/* One row per outstanding item: what, why, the clause, and where it is
+   answered. */
+.parta-position .fe-item { display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; padding: 10px 0; border-bottom: 1px solid var(--p-separator); align-items: start; }
+.parta-position .fe-item:last-child { border-bottom: none; }
+.parta-position .fe-item p { margin: 0; font-size: 13.5px; line-height: 1.45; min-width: 0; overflow-wrap: anywhere; }
+.parta-position .fe-item .partc-hint { display: block; }
+.parta-position .fe-item-go { font-size: 13px; white-space: nowrap; background: none; border: none; color: var(--p-accent); cursor: pointer; font-family: inherit; padding: 0; }
+.parta-position .fe-item-go:hover { text-decoration: underline; }
+@media (max-width: 480px) {
+  .parta-position .fe-item { grid-template-columns: 1fr; }
+}
+
+/* Class status chips. A class that is not recorded is a row, not a
+   silence; the chip says which of the four states it is in. */
+.parta-position .fe-state { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; background: var(--p-fill); color: var(--p-label-2); white-space: nowrap; }
+.parta-position .fe-state-recorded { background: var(--p-accent-bg); color: var(--p-accent); }
+
+.parta-position .fe-row-go { background: none; border: none; color: var(--p-accent); cursor: pointer; font: inherit; font-size: 13px; padding: 0; white-space: nowrap; }
+.parta-position .fe-row-go:hover { text-decoration: underline; }
+
+/* A wide table scrolls inside its own box; the page never scrolls sideways. */
+.parta-position .fe-scroll { overflow-x: auto; max-width: 100%; }
+
+/* The label column takes its own width until the panel cannot give it,
+   then wraps — a `max-content` track with no floor is the one that pushes
+   a panel past a phone. */
+.parta-position .fe-kv { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 4px 14px; font-size: 13.5px; }
+.parta-position .fe-kv dt { color: var(--p-label-2); min-width: 0; overflow-wrap: anywhere; }
+.parta-position .fe-kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
+.parta-position .fe-absent { color: var(--p-label-3); font-style: italic; }

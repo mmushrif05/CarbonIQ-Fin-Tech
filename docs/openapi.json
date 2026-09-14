@@ -27113,7 +27113,7 @@
                     "required": [
                       "name"
                     ],
-                    "description": "Who prepared the disclosure"
+                    "description": "Who prepared the disclosure; null clears it"
                   },
                   "approvedBy": {
                     "type": [
@@ -27138,7 +27138,7 @@
                     "required": [
                       "name"
                     ],
-                    "description": "Who approved the disclosure, and on what date"
+                    "description": "Who approved the disclosure, and on what date; null clears it"
                   },
                   "assetClassesNotReported": {
                     "type": "array",
