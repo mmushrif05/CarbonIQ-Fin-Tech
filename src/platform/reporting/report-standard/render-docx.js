@@ -21,13 +21,22 @@ async function renderStandardDOCX(model, theme = defaultTheme) {
 
   children.push(theme.wH1(model.cover.title));
   children.push(theme.wCaption(model.cover.subtitle || ''));
+  /* The entity label is the model's: a Part C document names a re/insurer, a
+     Part A document a reporting entity. The default keeps every existing
+     document byte-identical. */
+  const entityLabel = model.cover.entityLabel || 'Re/insurer';
   children.push(theme.wTable(['Field', 'Value'], [
-    ['Re/insurer', model.cover.insurer],
+    [entityLabel, model.cover.insurer],
     ['Reporting year', String(model.cover.reportingYear)],
     ['Published', model.cover.publishedAt],
     ['Report reference', model.cover.reportId || '—'],
     ['Standard', model.cover.standard],
     ['Prepared by', model.cover.preparedBy],
+    /* The responsible party and the document identity, where the model
+       states them — a verifier signs a named document a named person
+       approved, so both sit on the face. */
+    ...((model.cover.responsibleParty || []).map(line => ['Responsibility', line])),
+    ...((model.cover.identity || []).map(line => ['Document identity', line])),
     /* The posture, on the face rather than in an annex — the same rule the
        PDF cover follows. */
     ['Assurance', model.cover.assuranceLabel || 'Self-declared']
@@ -71,7 +80,7 @@ async function renderStandardDOCX(model, theme = defaultTheme) {
     children.push(theme.wBody(c.provenance));
     children.push(theme.wH2('Header'));
     children.push(theme.wTable(['Field', 'Stated'], [
-      ['Re/insurer', c.header.reinsurer],
+      [c.header.entityLabel || 'Re/insurer', c.header.entity ?? c.header.reinsurer],
       ['Report title', c.header.reportTitle],
       ['Reporting year', String(c.header.reportingYear ?? 'not stated')],
       ['Publication date', c.header.publicationDate || 'not stated'],

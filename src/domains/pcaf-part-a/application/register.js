@@ -322,51 +322,11 @@ async function recompute(orgId, exposureId) {
 }
 
 // ---------------------------------------------------------------------------
-// The book total — what coverage is a percentage of
+// The book total — what coverage is a percentage of — lives in ./parta-book
+// and is re-exported below, so every caller keeps its import.
 // ---------------------------------------------------------------------------
 
-/**
- * State the entity's own totals for a reporting year.
- *
- * `totalLoansAndInvestments` is a claim the reporting entity makes about its
- * own balance sheet and nothing here can derive it. It is recorded as declared
- * — who stated it and when — because coverage rests on it and a reader is
- * entitled to know it was asserted rather than measured.
- */
-async function stateBook(orgId, { reportingYear, totalLoansAndInvestments, currency, statedBy, note }) {
-  if (!reportingYear) throw refuse('REPORTING_YEAR_REQUIRED', 'State which reporting year this book total is for.');
-  const total = Number(totalLoansAndInvestments);
-  if (!Number.isFinite(total) || total <= 0) {
-    throw refuse('BOOK_TOTAL_INVALID',
-      'Total loans and investments must be a positive number. Coverage is assessed outstanding over the '
-      + 'whole book (PCAF Disclosure Checklist Part A, p.124); a book of zero has no coverage rather than '
-      + 'full coverage.');
-  }
-  store.assertWritable();
-
-  const now = _now();
-  const existing = await repo.getBook(orgId, reportingYear);
-  const record_ = {
-    reportingYear: String(reportingYear),
-    orgId: String(orgId),
-    totalLoansAndInvestments: total,
-    currency: currency || null,
-    basis: 'declared',
-    basisNote: 'Stated by the reporting entity. Nothing in this system can derive an institution\'s total '
-      + 'loans and investments, so it is recorded as declared and travels with the coverage figure it '
-      + 'produces.',
-    statedBy: statedBy || null,
-    note: note || null,
-    createdAt: existing ? existing.createdAt : now,
-    updatedAt: now,
-  };
-  await repo.saveBook(orgId, record_);
-  return record_;
-}
-
-async function getBook(orgId, reportingYear) {
-  return repo.getBook(orgId, reportingYear);
-}
+const { stateBook, getBook } = require('./parta-book');
 
 // The entity's settings live in ./parta-settings, re-exported below.
 const { DEFAULT_SETTINGS, getSettings, saveSettings } = settingsService;
@@ -472,6 +432,18 @@ async function listExposures(orgId, reportingYear, opts = {}) {
   return repo.pageForYear(orgId, reportingYear, { limit, cursor });
 }
 
+/**
+ * Every exposure of a year, as the roll-up sees it — the projected row, one
+ * per exposure, in the shape the disclosure's audit-trail annex prints. The
+ * same projection `position()` reads, so a figure in the annex is the figure
+ * in the total; an empty year is an empty list here rather than a 409, because
+ * an annex reads beside a position that has already refused.
+ */
+async function rows(orgId, reportingYear) {
+  const found = await repo.rollupsForYear(orgId, reportingYear);
+  return found.map(inflate);
+}
+
 /** Which reporting years this book holds anything for. */
 async function years(orgId) {
   const found = await repo.years(orgId);
@@ -492,7 +464,7 @@ async function lock() {
 
 module.exports = {
   ASSET_CLASSES, STATUS, DEFAULT_SETTINGS,
-  record, get, update, remove, recompute, listExposures,
+  record, get, update, remove, recompute, listExposures, rows,
   stateBook, getBook, getSettings, saveSettings,
   position, years, lock,
   _inflate: inflate,

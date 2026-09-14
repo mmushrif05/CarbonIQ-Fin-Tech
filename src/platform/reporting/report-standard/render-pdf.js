@@ -61,7 +61,7 @@ function renderStandardPDF(model, theme = defaultTheme) {
     w.table({
       head: ['Field', 'Stated'], widths: [1.6, 4.4],
       rows: [
-        ['Re/insurer', c.header.reinsurer],
+        [c.header.entityLabel || 'Re/insurer', c.header.entity ?? c.header.reinsurer],
         ['Report title', c.header.reportTitle],
         ['Reporting year', String(c.header.reportingYear ?? 'not stated')],
         ['Publication date', c.header.publicationDate || 'not stated'],

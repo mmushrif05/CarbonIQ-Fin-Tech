@@ -25,7 +25,7 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-SCOPE-02` | Part A §5.2 (p.56) | `tests/parta-business-loans.test.js` | 3 | executed |
 | PCAF Part A §5.2 | `A-SCOPE-03` | Part A p.126 | `tests/parta-business-loans.test.js` | 3 | executed |
 | PCAF Part A §5.2 | `A-SCOPE-04` | Three scopes never merge (architecture) | `tests/architecture.test.js` | — | proved by absence |
-| PCAF Part A §5.2 | `A-SCOPE-05` | Part A §5.2; GHG Protocol "Built on" mark | `tests/parta-report.test.js` | 37 | executed |
+| PCAF Part A §5.2 | `A-SCOPE-05` | Part A §5.2; GHG Protocol "Built on" mark | `tests/parta-report.test.js` | 99 | executed |
 | PCAF Part A §5.2 | `A-CLASS-01` | Part A §5.2, footnote 86 (p.55) | `tests/parta-business-loans.test.js` | 42 | executed |
 | PCAF Part A §5.2 | `A-ATTR-01` | Part A §5.2 (p.56) | `tests/parta-business-loans.test.js` | 39 | executed |
 | PCAF Part A §5.2 | `A-ATTR-02` | Part A §5.2 — attribution factor | `tests/parta-business-loans.test.js` | 22 | executed |
@@ -40,46 +40,62 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-FIND-02` | Part A footnote 71 (year-end balance) | `tests/parta-business-loans.test.js` | 53 | executed |
 | PCAF Part A §5.2 | `A-FIND-03` | CarbonIQ — a check that had nothing to check does not pass | `tests/parta-business-loans.test.js` | 53 | executed |
 | PCAF Part A §5.2 | `A-FIND-04` | CarbonIQ thresholds (stated on the finding, settable per request) | `tests/parta-business-loans.test.js` | 53 | executed |
-| PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-REG-04` | DCL Part A (p.124) — coverage over the whole book | `tests/parta-register.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-REG-05` | Register — the roll-up reads a projection | `tests/parta-register.test.js` | 141 | executed |
+| PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 126 | executed |
+| PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 126 | executed |
+| PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 126 | executed |
+| PCAF Part A §5.2 | `A-REG-04` | DCL Part A (p.124) — coverage over the whole book | `tests/parta-register.test.js` | 126 | executed |
+| PCAF Part A §5.2 | `A-REG-05` | Register — the roll-up reads a projection | `tests/parta-register.test.js` | 131 | executed |
 | PCAF Part A §5.2 | `A-REG-06` | Register — the band is resolved at call time | `tests/parta-register.test.js` | 19 | executed |
-| PCAF Part A §5.2 | `A-REG-07` | Register — a half-built lifecycle is worse than none | `tests/parta-register.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-REG-08` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 146 | executed |
-| PCAF Part A §5.2 | `A-RECALC-01` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 32 | executed |
-| PCAF Part A §5.2 | `A-DQ-01` | Part A Box 6.1-6 (pp.167–168), p.128 | `tests/parta-business-loans.test.js` | 73 | executed |
-| PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 73 | executed |
-| PCAF Part A §5.2 | `A-DQ-03` | CarbonIQ — a score is a measurement, a plan is a task list | `tests/parta-business-loans.test.js` | 73 | executed |
-| PCAF Part A §5.2 | `A-DQ-04` | Comparability — a position of zero is a different claim | `tests/parta-business-loans.test.js` | 73 | executed |
-| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 39 | executed |
-| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 39 | executed |
-| PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 37 | executed |
-| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 39 | executed |
-| PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 43 | executed |
-| PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 44 | executed |
-| PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 35 | executed |
-| PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 19 | executed |
+| PCAF Part A §5.2 | `A-REG-07` | Register — a half-built lifecycle is worse than none | `tests/parta-register.test.js` | 126 | executed |
+| PCAF Part A §5.2 | `A-REG-08` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 136 | executed |
+| PCAF Part A §5.2 | `A-RECALC-01` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 43 | executed |
+| PCAF Part A §5.2 | `A-DQ-01` | Part A Box 6.1-6 (pp.167–168), p.128 | `tests/parta-business-loans.test.js` | 79 | executed |
+| PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 79 | executed |
+| PCAF Part A §5.2 | `A-DQ-03` | CarbonIQ — a score is a measurement, a plan is a task list | `tests/parta-business-loans.test.js` | 79 | executed |
+| PCAF Part A §5.2 | `A-DQ-04` | Comparability — a position of zero is a different claim | `tests/parta-business-loans.test.js` | 79 | executed |
+| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 99 | executed |
+| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 56 | executed |
+| PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 62 | executed |
+| PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 47 | executed |
+| PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 21 | executed |
 | PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 91 | executed |
-| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 39 | executed |
+| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 48 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-01` | Part A §5.9 (p.144); Annex 10.3 (pp.201–204) | `tests/parta-sovereign.test.js` | 14 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-02` | Part A §5.9; Table 10.3-2 (p.202) | `tests/parta-sovereign.test.js` | 55 | executed |
-| PCAF Part A §5.2 | `SOV-LULUCF` | Part A §5.9 (p.141) | `tests/parta-sovereign-register.test.js` | 89 | executed |
+| PCAF Part A §5.2 | `SOV-LULUCF` | Part A §5.9 (p.141) | `tests/parta-sovereign-register.test.js` | 93 | executed |
 | PCAF Part A §5.2 | `SOV-SCOPE23` | Part A §5.9 (p.141) | `tests/parta-sovereign-report-golden.test.js` | 34 | executed |
 | PCAF Part A §5.2 | `SOV-DQ-TABLE` | Part A Table 5.9-6 (p.147) | `tests/parta-sovereign-data.test.js` | 3 | executed |
-| PCAF Part A §5.2 | `SOV-DQ-WEIGHT` | PCAF Disclosure Checklist Part A (p.128) | `tests/parta-sovereign-register.test.js` | 67 | executed |
-| PCAF Part A §5.2 | `SOV-COVERAGE` | PCAF Disclosure Checklist Part A (p.124) | `tests/parta-sovereign-register.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `SOV-DQ-WEIGHT` | PCAF Disclosure Checklist Part A (p.128) | `tests/parta-sovereign-register.test.js` | 71 | executed |
+| PCAF Part A §5.2 | `SOV-COVERAGE` | PCAF Disclosure Checklist Part A (p.124) | `tests/parta-sovereign-register.test.js` | 139 | executed |
 | PCAF Part A §5.2 | `SOV-CHECK-PROXY` | Part A Table 5.9-6 (p.147); CarbonIQ | `tests/parta-sovereign-checks.test.js` | 43 | executed |
 | PCAF Part A §5.2 | `SOV-CHECK-LAG` | Part A ch.4 (p.31); Table 10.3-4 (pp.205–206); CarbonIQ threshold | `tests/parta-sovereign-checks.test.js` | 43 | executed |
 | PCAF Part A §5.2 | `SOV-CHECK-INTENSITY` | Part A Annex 10.3 (pp.201–204); CarbonIQ threshold | `tests/parta-sovereign-checks.test.js` | 43 | executed |
 | PCAF Part A §5.2 | `SOV-CHECK-INDEP` | CarbonIQ (the GCF independent-path rule) | `tests/parta-sovereign-checks.test.js` | 43 | executed |
 | PCAF Part A §5.2 | `SOV-REGISTER` | CarbonIQ; the §5.2 register (migrations 0008/0009) | `tests/parta-sovereign-register.test.js` | 87 | executed |
-| PCAF Part A §5.2 | `SOV-PROJECTION` | CarbonIQ (the partc_assessments.rollup discipline) | `tests/parta-sovereign-register.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `SOV-PROJECTION` | CarbonIQ (the partc_assessments.rollup discipline) | `tests/parta-sovereign-register.test.js` | 139 | executed |
 | PCAF Part A §5.2 | `SOV-EMPTY` | PCAF Disclosure Checklist Part A (p.124) | `tests/parta-sovereign-register.test.js` | 87 | executed |
-| PCAF Part A §5.2 | `SOV-REPORT` | Part A Chapter 6 (pp.160–174); Annex 10.2 (pp.199–200) | `tests/parta-sovereign-report-golden.test.js` | 149 | executed |
-| PCAF Part A §5.2 | `SOV-REPORT-INV` | Part A ch.6 (p.160); SLFRS S2 §29(a) | `tests/parta-sovereign-report-golden.test.js` | 45 | executed |
-| PCAF Part A §5.2 | `SOV-SCALE` | Part A Table 5.9-6 (p.147); docs/GLOSSARY.md §1 | `tests/parta-sovereign-data.test.js` | 5 | executed |
+| PCAF Part A §5.2 | `SOV-REPORT` | Part A Chapter 6 (pp.160–174); Annex 10.2 (pp.199–200) | `tests/parta-sovereign-report-golden.test.js` | 244 | executed |
+| PCAF Part A §5.2 | `SOV-REPORT-INV` | Part A ch.6 (p.160); SLFRS S2 §29(a) | `tests/parta-sovereign-report-golden.test.js` | 58 | executed |
+| PCAF Part A §5.2 | `SOV-SCALE` | Part A Table 5.9-6 (p.147); docs/GLOSSARY.md §1 | `tests/parta-sovereign-data.test.js` | 6 | executed |
+| PCAF Part A §5.2 | `A-DOC-01` | Part A ch.6 (p.161); GHG Protocol Corporate Standard ch.3 | `tests/parta-report-golden.test.js` | 97 | executed |
+| PCAF Part A §5.2 | `A-DOC-02` | ISAE 3000 §12(a); ISO 14064-3 §5.2 | `tests/parta-report-golden.test.js` | 98 | executed |
+| PCAF Part A §5.2 | `A-DOC-03` | ISAE 3000 §69; ISO 14064-3 §9 | `tests/parta-report-golden.test.js` | 20 | executed |
+| PCAF Part A §5.2 | `A-DOC-04` | Part A ch.6 (p.161) | `tests/parta-report-golden.test.js` | 103 | executed |
+| PCAF Part A §5.2 | `A-DOC-05` | ISO 14064-3 §6.1.3; ISAE 3000 §48 | `tests/parta-report-golden.test.js` | 174 | executed |
+| PCAF Part A §5.2 | `A-DOC-06` | SLFRS S2 §29(a)(vi); Part A ch.6 (p.163) | `tests/parta-report-golden.test.js` | 149 | executed |
+| PCAF Part A §5.2 | `A-DOC-07` | DCL p.127 | `tests/parta-report-golden.test.js` | 125 | executed |
+| PCAF Part A §5.2 | `A-DOC-08` | Part A Box 6.1-5 (p.167) | `tests/parta-report-golden.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-09` | Part A ch.6 (p.164) | `tests/parta-report-golden.test.js` | 21 | executed |
+| PCAF Part A §5.2 | `A-DOC-10` | Part A ch.6 (pp.160–169) | `tests/parta-report-golden.test.js` | 62 | executed |
+| PCAF Part A §5.2 | `A-DOC-16` | Part A ch.6 (pp.160–169); §5.9 | `tests/parta-sovereign-report-golden.test.js` | 58 | executed |
+| PCAF Part A §5.2 | `A-DOC-11` | Part A ch.6 (p.162) | `tests/parta-consolidated.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-12` | Part A §5.2 (p.56); §5.9 (p.141); p.126 | `tests/parta-consolidated.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-13` | DCL p.128; Part A Box 6.1-6; Table 5.9-6 | `tests/parta-consolidated.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-14` | DCL p.124 | `tests/parta-consolidated.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-15` | Part A ch.6 (p.160) | `tests/parta-consolidated.test.js` | 36 | executed |
 | PCAF Part C | `C-SCOPE-01` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-02` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-03` | Part C v2 §5.3 | `tests/pcaf-partc-registers.test.js` | — | out of scope |
@@ -153,8 +169,8 @@ proved or it is not.
 
 ## Summary
 
-- 129 rules across the conformance matrices
-- **122 proved by execution**
+- 145 rules across the conformance matrices
+- **138 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

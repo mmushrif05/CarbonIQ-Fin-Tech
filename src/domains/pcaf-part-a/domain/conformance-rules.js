@@ -14,6 +14,7 @@
 'use strict';
 
 const { SOVEREIGN_RULES } = require('./conformance-rules-sovereign');
+const { DISCLOSURE_RULES } = require('./conformance-rules-disclosure');
 
 const RULES = [
   // ---- Scope ------------------------------------------------------------
@@ -450,6 +451,7 @@ const RULES = [
   },
 
   ...SOVEREIGN_RULES,
+  ...DISCLOSURE_RULES,
 ];
 
 module.exports = { RULES };

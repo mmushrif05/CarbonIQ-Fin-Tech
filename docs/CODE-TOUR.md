@@ -166,18 +166,19 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 8 | 1,242 |
-|       `src/domains/pcaf-part-a/domain/` | 15 | 2,745 |
-|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,266 |
+|       `src/domains/pcaf-part-a/application/` | 10 | 1,722 |
+|       `src/domains/pcaf-part-a/domain/` | 16 | 2,921 |
+|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,287 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
 |         `src/domains/pcaf-part-a/domain/real-estate/` | 5 | 595 |
-|         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 953 |
+|         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 960 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 194 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 2 | 757 |
-|         `src/domains/pcaf-part-a/interface/schemas/` | 5 | 458 |
-|       `src/domains/pcaf-part-a/reporting/` | 5 | 893 |
-|         `src/domains/pcaf-part-a/reporting/sovereign/` | 5 | 849 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 3 | 838 |
+|         `src/domains/pcaf-part-a/interface/schemas/` | 5 | 479 |
+|       `src/domains/pcaf-part-a/reporting/` | 8 | 1,529 |
+|         `src/domains/pcaf-part-a/reporting/consolidated/` | 5 | 768 |
+|         `src/domains/pcaf-part-a/reporting/sovereign/` | 5 | 1,087 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
 |         `src/domains/pcaf-part-c/application/methodology/` | 3 | 387 |
@@ -198,15 +199,15 @@ flowchart TD
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,876 |
 |       `src/platform/database/adapters/` | 6 | 496 |
-|     `src/platform/http/` | 22 | 2,578 |
+|     `src/platform/http/` | 22 | 2,580 |
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 4 | 337 |
-|       `src/platform/reporting/report-standard/` | 4 | 299 |
-|         `src/platform/reporting/report-standard/theme/` | 4 | 720 |
+|       `src/platform/reporting/report-standard/` | 4 | 308 |
+|         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,913 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **355** | **59,378** |
+| **total** | **367** | **61,830** |
 
 <!-- END MODULE-MAP -->
 

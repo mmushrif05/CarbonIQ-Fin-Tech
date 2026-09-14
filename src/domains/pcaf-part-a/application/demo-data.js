@@ -119,6 +119,23 @@ const EXPOSURES = [
 const BOOK = { reportingYear: YEAR, totalLoansAndInvestments: 14_000_000_000, currency,
   statedBy: 'Sample book', note: 'Illustrative figure for the sample lending book.' };
 
+/* The facts a reporting entity states about itself, for the sample book —
+   so the sample disclosure shows the complete document rather than a page of
+   "not stated". Every value is plainly illustrative. */
+const SETTINGS = {
+  reportingEntity: 'Sample Bank PLC (illustrative)',
+  consolidationApproach: 'operational_control',
+  boundaryNote: 'The bank and its wholly owned subsidiaries; associates held below fifty per cent are excluded. Illustrative.',
+  fiscalYearEnd: '12-31',
+  gwpBasis: 'IPCC AR6, 100-year',
+  preparedBy: { name: 'Sample preparer', role: 'Head of Sustainability' },
+  approvedBy: { name: 'Sample approver', role: 'Chief Financial Officer', date: `${YEAR + 1}-03-31` },
+  assetClassesNotReported: [
+    { assetClass: 'listed-equity-corporate-bonds', reason: 'Immaterial on the sample book: below one per cent of total loans and investments.' },
+    { assetClass: 'motor-vehicle-loans', reason: 'Data: the vehicle register does not yet carry fuel type or distance.' },
+  ],
+};
+
 /**
  * Install the sample lending book into an organisation.
  *
@@ -126,14 +143,17 @@ const BOOK = { reportingYear: YEAR, totalLoansAndInvestments: 14_000_000_000, cu
  * and a row that the standard would refuse cannot be seeded — a sample book
  * that bypassed its own rules would demonstrate the wrong thing.
  *
- * @param {{ record: Function, stateBook: Function }} register
+ * @param {{ record: Function, stateBook: Function, saveSettings?: Function }} register
  * @param {string} orgId
  */
 async function seedSampleBook(register, orgId) {
   const exposures = [];
   for (const e of EXPOSURES) exposures.push(await register.record(orgId, e));
   const book = await register.stateBook(orgId, BOOK);
-  return { exposures, book };
+  /* The entity facts the sample disclosure prints; a register handed in
+     without a settings writer (a test double) simply seeds the book. */
+  const settings = typeof register.saveSettings === 'function' ? await register.saveSettings(orgId, SETTINGS) : null;
+  return { exposures, book, settings };
 }
 
-module.exports = { seedSampleBook, EXPOSURES, BOOK, YEAR };
+module.exports = { seedSampleBook, EXPOSURES, BOOK, SETTINGS, YEAR };
