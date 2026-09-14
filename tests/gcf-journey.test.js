@@ -206,6 +206,35 @@ describe('One project, entered once, read everywhere', () => {
     expect(after).toEqual(before);
   });
 
+  test('a stage move and a recorded no-objection reach the portfolio, the readiness and the Concept Note package', async () => {
+    /* The same record, moved a stage and given its NDA no-objection, read
+       back from every route that carries process state. */
+    const moved = (await auth(api().post('/v1/gcf/pipeline/gcf_journey_hydro/stage'))
+      .send({ stage: 'cn_submitted', at: '2026-09-01', timeline: { cnSubmitted: '2026-09-01' } }).expect(200)).body;
+    expect(moved.project.stageHistory.map(h => h.stage)).toEqual(['cn_submitted']);
+    await auth(api().patch('/v1/gcf/pipeline/gcf_journey_hydro'))
+      .send({ nda: { status: 'issued', issuedAt: '2026-09-10', reference: 'NDA/2026/J1' } }).expect(200);
+
+    const { portfolio } = await get('/v1/gcf/portfolio');
+    const row = portfolio.rows.find(r => r.id === 'gcf_journey_hydro');
+    expect(row.stage).toBe('cn_submitted');
+    expect(row.cycle).toBe(3);
+    expect(row.nda).toBe('issued');
+    expect(portfolio.byCycle.find(c => c.n === 3).ids).toContain('gcf_journey_hydro');
+    expect(portfolio.upcoming.some(u => u.id === 'gcf_journey_hydro' && u.projected)).toBe(true);
+
+    const { readiness } = await get('/v1/gcf/pipeline/gcf_journey_hydro/readiness');
+    expect(readiness.stage).toBe('cn_submitted');
+    expect(readiness.items.find(i => i.id === 'nda_informed').status).toBe('held');
+    expect(readiness.timeline.recorded.map(m => m.key)).toContain('cnSubmitted');
+    expect(readiness.timeline.projected.map(m => m.key)).toContain('cnFeedbackDue');
+
+    const { package: pkg } = await get('/v1/gcf/cn/gcf_journey_hydro');
+    const flat = JSON.stringify(pkg.sections);
+    expect(flat).toContain('NDA/2026/J1');
+    expect(flat).toContain('Concept note submitted');
+  });
+
   test('the conformance matrix is servable alongside the work it describes', async () => {
     const m = await get('/v1/gcf/conformance');
     expect(m.summary.implemented).toBeGreaterThan(20);

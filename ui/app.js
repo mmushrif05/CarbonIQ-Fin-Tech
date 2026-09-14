@@ -28,7 +28,7 @@ const PAGE_META = {
   'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
   'desk':            { title: 'Fund Desk', subtitle: 'Position, delivery, attributed emissions and the GCF pipeline' },
-  'gcf':             { title: 'GCF Pipeline', subtitle: 'DFCC post-accreditation — candidate screening, emissions, disclosure and Concept Note inputs' },
+  'gcf':             { title: 'GCF Pipeline', subtitle: 'The candidate pipeline on the GCF project cycle — readiness, screening, emissions, disclosure and Concept Note inputs' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
   'baselines':       { title: 'Baselines', subtitle: 'The governed figures this product screens against — in force, by country and by institution, with the version behind each' },
   'accounts':        { title: 'Accounts', subtitle: 'Who can sign in, under which role, and until when' },

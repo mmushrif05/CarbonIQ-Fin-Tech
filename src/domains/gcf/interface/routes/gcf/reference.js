@@ -18,6 +18,9 @@ const { RESULTS_AREAS: AREAS, IRMF, INSTRUMENT_CATALOGUE: INSTRUMENTS } = requir
 const { NDC3 } = require('../../../../../shared/ndc');
 
 const conformance = require('../../../domain/conformance');
+const cycle = require('../../../domain/cycle');
+const record = require('../../../domain/record');
+const readiness = require('../../../domain/readiness');
 
 const router = Router();
 
@@ -27,7 +30,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
       + 'benchmark, declared — and are deliberately not PCAF\'s 1-5 data-quality scale.',
     response: body({
       resultsAreas: obj, irmf: obj, ndc3: obj, instruments: obj,
-      criteria: arr(), defaultWeights: obj, accreditation: obj, storage: obj,
+      criteria: arr(), defaultWeights: obj, accreditation: obj, cycle: obj, vocabulary: obj, storage: obj,
     }, ['resultsAreas', 'irmf', 'ndc3', 'instruments']) }), (_req, res) => {
   res.json({
     resultsAreas: AREAS,
@@ -36,7 +39,22 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
     instruments: INSTRUMENTS,
     criteria: screening.GCF_CRITERIA,
     defaultWeights: screening.DEFAULT_WEIGHTS,
+    /* The shipped accreditation — reference data, cached. The entity's own,
+       once recorded, is read by every gate and by GET /v1/gcf/portfolio. */
     accreditation: store.seedMeta().accreditation,
+    /* The project cycle as the screen draws it: the ten stages, the record's
+       stage vocabulary on them, the next step per stage, the milestone keys,
+       the service standards with their sources. */
+    cycle: {
+      stages: cycle.CYCLE, recordStages: cycle.STAGE_INFO, nextStep: cycle.NEXT_STEP,
+      milestones: cycle.MILESTONES, timing: cycle.TIMING,
+    },
+    vocabulary: {
+      tiers: record.TIERS, essCategories: record.ESS_CATEGORIES, streams: record.STREAMS,
+      documentKinds: record.DOCUMENT_KINDS, ndaStatuses: record.NDA_STATUSES,
+      coFinancingStatuses: record.COFINANCING_STATUSES, baselineTypes: record.BASELINE_TYPES,
+      requirements: readiness.REQUIREMENTS.map(r => ({ id: r.id, cycle: r.cycle, label: r.label, clause: r.clause })),
+    },
     storage: partcStore.capability(),
   });
 });

@@ -14,11 +14,14 @@ const { listView, paged } = require('../../../../../platform/http/pagination');
 const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../../platform/http/rate-limit');
 const validate = require('../../../../../platform/http/validate');
-const { gcfProjectSchema } = require('../../schemas/gcf');
+const { gcfProjectSchema, gcfStageMoveSchema, gcfPatchSchema } = require('../../schemas/gcf');
 const store = require('../../../infrastructure/store');
 const record = require('../../../domain/record');
 const emissions = require('../../../domain/emissions');
 const ndc = require('../../../domain/ndc-contribution');
+const portfolio = require('../../../domain/portfolio');
+const readiness = require('../../../domain/readiness');
+const criteria = require('../../../domain/criteria');
 const partcStore = require('../../../../../platform/database/store');
 const handle = require('../../../../../platform/http/async-handler');
 const { emptyBody } = require('../../../../../platform/http/validate').schemas;
@@ -77,7 +80,7 @@ router.get('/pipeline/:id', authenticate, defaultLimiter,
       figures: record.tracedFigures(project),
     },
     accreditation: record.withinAccreditation(project, {
-      sizeRange: store.seedMeta().accreditation.sizeRange_usd,
+      sizeRange: (await store.accreditation(req.orgId)).sizeRange_usd,
     }),
   });
 }));
@@ -116,7 +119,7 @@ router.delete('/pipeline/:id', authenticate, defaultLimiter,
 router.post('/pipeline/adopt', authenticate, validate({ body: emptyBody }), defaultLimiter,
   doc({ summary: 'Copy the shipped illustrative pipeline into this organisation, to edit',
     status: 201,
-    response: body({ adopted: num, projects: arr(), storage: obj }) }),
+    response: body({ adopted: num, note: str, storage: obj }, ['adopted']) }),
   handle(async (req, res) => {
   const written = await store.adoptSeed(req.orgId, { by: (req.actor && req.actor.label) || req.orgId });
   res.status(201).json({
@@ -125,6 +128,94 @@ router.post('/pipeline/adopt', authenticate, validate({ body: emptyBody }), defa
       + 'The figures remain illustrative; each record carries its origin in provenance.source.',
     storage: partcStore.capability(),
   });
+}));
+
+/**
+ * The portfolio view — the whole pipeline as a bank's board and the Fund's
+ * Secretariat read it: money, the accreditation envelope, the gate, the
+ * results on their separate boundaries, where every project sits on the
+ * ten-stage cycle, what is due, and what to do next. Every figure is one an
+ * engine already owns; this route composes and computes nothing of its own.
+ */
+router.get('/portfolio', authenticate, defaultLimiter,
+  doc({ summary: 'The pipeline as a portfolio — money, envelope, gate, results, stages, readiness and what is next',
+    description: 'Composed from the emissions model, the screening gate, the readiness checklist and the six '
+      + 'investment criteria. Mitigation, embodied and financed emissions stay on separate keys; '
+      + 'adaptation is never ranked on carbon. `source` says whether the recorded book or the shipped '
+      + 'illustrative set is showing.',
+    response: body({ portfolio: obj, source: str, sample: bool, sampleNote: orNull(str), storage: obj }, ['portfolio', 'source']) }),
+  handle(async (req, res) => {
+  const { projects, source, sample, meta } = await store.list(req.orgId);
+  const accreditation = await store.accreditation(req.orgId);
+  res.json({
+    portfolio: portfolio.portfolio(projects, { accreditation }),
+    source,
+    sample,
+    sampleNote: sample ? meta.sampleNote : null,
+    storage: partcStore.capability(),
+  });
+}));
+
+/**
+ * One project against the cycle: what its current stage needs and holds,
+ * what the next stage will ask for, the six investment criteria as evidenced
+ * or not, SAP and PPF eligibility, and its timeline — recorded dates apart
+ * from projected ones.
+ */
+router.get('/pipeline/:id/readiness', authenticate, defaultLimiter,
+  doc({ summary: 'One candidate against the GCF project cycle — what it holds, what is missing, what is next',
+    description: 'Held means the record holds the fact, not that the Secretariat will accept it. Projected '
+      + 'dates carry `projected: true` and the GCF-2 service standard they rest on.',
+    response: body({ readiness: obj, criteria: obj, source: str, sample: bool }, ['readiness', 'criteria']) }),
+  handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+  res.json({
+    id: project.id,
+    name: project.name,
+    readiness: readiness.assess(project),
+    criteria: criteria.assess(project),
+    source,
+    sample,
+  });
+}));
+
+/**
+ * A partial change to a recorded project. The shipped sample is read-only —
+ * a 409 says to adopt it first — because recording one edited copy would
+ * replace the whole illustrative set with a single project.
+ */
+router.patch('/pipeline/:id', authenticate, defaultLimiter,
+  validate({ body: gcfPatchSchema }, { stripUnknown: false }),
+  doc({ summary: 'Change part of a recorded candidate; the merged record is held to the whole schema',
+    description: 'Objects merge a level at a time and arrays replace. `id`, `provenance` and `stageHistory` '
+      + 'cannot be set this way. A project from the shipped illustrative pipeline answers 409 '
+      + '`SAMPLE_NOT_EDITABLE` with the remedy: adopt the pipeline first.',
+    response: body({ project: obj, storage: obj }, ['project']) }),
+  handle(async (req, res) => {
+  const saved = await store.patch(req.orgId, req.params.id, req.body, { by: (req.actor && req.actor.label) || req.orgId });
+  res.json({ project: saved, storage: partcStore.capability() });
+}));
+
+/**
+ * A stage move, dated, into the history. The milestone dates that usually
+ * travel with a move — the submission date, the Board date — land on the
+ * timeline in the same write.
+ */
+router.post('/pipeline/:id/stage', authenticate, defaultLimiter,
+  validate({ body: gcfStageMoveSchema }),
+  doc({ summary: 'Move a recorded candidate to another stage of the GCF project cycle, dated, into its history',
+    description: 'The move is appended to `stageHistory` with who made it; a stage is never overwritten silently. '
+      + 'Milestone dates in `timeline` land with the move. The shipped sample answers 409 `SAMPLE_NOT_EDITABLE`.',
+    response: body({ project: obj, readiness: obj, storage: obj }, ['project']) }),
+  handle(async (req, res) => {
+  const saved = await store.moveStage(req.orgId, req.params.id, req.body, { by: (req.actor && req.actor.label) || req.orgId });
+  res.json({ project: saved, readiness: readiness.assess(saved), storage: partcStore.capability() });
 }));
 
 /**

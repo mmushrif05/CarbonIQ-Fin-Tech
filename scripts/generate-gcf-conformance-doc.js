@@ -29,6 +29,7 @@ const groups = [
   ['Sri Lanka NDC 3.0', r => r.id.startsWith('G-NDC')],
   ['Accreditation', r => r.id.startsWith('G-ACCR')],
   ['Lot 2 — screening, instruments, the answer', r => r.id.startsWith('G-LOT2')],
+  ['The project cycle — stages, readiness, criteria, the portfolio', r => r.id.startsWith('G-CYCLE')],
   ['Statutory reporting', r => r.id.startsWith('G-REPORT')],
   ['Concept Note package', r => r.id.startsWith('G-CN')],
   ['Deliberately out of scope', r => r.id.startsWith('G-EXCL')],
@@ -55,6 +56,12 @@ resolving — including a test renamed inside a file that still exists, which is
 exactly how a matrix goes quietly wrong.
 
 `;
+
+const ungrouped = RULES.filter(r => !groups.some(([, match]) => match(r)));
+if (ungrouped.length) {
+  process.stderr.write(`Rules with no group in the document: ${ungrouped.map(r => r.id).join(', ')}\n`);
+  process.exit(1);
+}
 
 for (const [title, match] of groups) {
   const rows = RULES.filter(match);

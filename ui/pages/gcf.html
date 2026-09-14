@@ -1,172 +1,16 @@
 <!-- GCF pipeline — DFCC post-accreditation work.
-     Six sub-tabs over one set of records: nothing on this screen is re-keyed,
+     Seven sub-tabs over one set of records: nothing on this screen is re-keyed,
      every figure carries its evidence tier, and the three carbon boundaries
-     are drawn apart wherever they appear. -->
-
-<style>
-  /* Scoped to this page. Tokens first, so both themes resolve as a set. */
-  .gcf {
-    --gcf-ink: #0f172a;
-    --gcf-muted: #64748b;
-    --gcf-line: #e2e8f0;
-    --gcf-surface: #ffffff;
-    --gcf-sunk: #f8fafc;
-    --gcf-accent: #0f766e;          /* teal — GCF's own register */
-    --gcf-accent-soft: #ccfbf1;
-    --gcf-warn: #b45309;
-    --gcf-warn-soft: #fef3c7;
-    --gcf-stop: #b91c1c;
-    --gcf-stop-soft: #fee2e2;
-    --gcf-ok: #15803d;
-    color: var(--gcf-ink);
-    min-width: 0;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .gcf {
-      --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
-      --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
-      --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
-      --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
-      --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a; --gcf-ok: #86efac;
-    }
-  }
-  :root[data-theme="dark"] .gcf {
-    --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
-    --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
-    --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
-    --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
-    --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a; --gcf-ok: #86efac;
-  }
-
-  .gcf-banner {
-    display: flex; gap: 14px; align-items: center; min-width: 0;
-    padding: 14px 16px; margin-bottom: 14px; border-radius: 10px;
-    background: var(--gcf-accent-soft); border: 1px solid var(--gcf-line);
-  }
-  .gcf-banner strong { display: block; font-size: 15px; }
-  .gcf-banner span { font-size: 12.5px; color: var(--gcf-muted); }
-
-  /* Sub-tabs. A row that scrolls rather than wrapping into a ragged block. */
-  .gcf-tabs {
-    display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px;
-    margin-bottom: 14px; border-bottom: 1px solid var(--gcf-line);
-  }
-  .gcf-tab {
-    flex: 0 0 auto; padding: 8px 14px; border-radius: 8px 8px 0 0;
-    border: 1px solid transparent; border-bottom: none; background: none;
-    color: var(--gcf-muted); font-size: 13px; font-weight: 600; cursor: pointer;
-    white-space: nowrap;
-  }
-  .gcf-tab:hover { color: var(--gcf-ink); }
-  .gcf-tab[aria-selected="true"] {
-    background: var(--gcf-surface); border-color: var(--gcf-line);
-    color: var(--gcf-accent); margin-bottom: -1px;
-  }
-  .gcf-tab:focus-visible { outline: 2px solid var(--gcf-accent); outline-offset: 2px; }
-
-  /* [hidden] is display:none from the UA sheet and ANY class rule that sets
-     display beats it. This has covered a page from load once already. */
-  .gcf-panel[hidden] { display: none !important; }
-
-  .gcf-card {
-    background: var(--gcf-surface); border: 1px solid var(--gcf-line);
-    border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0;
-  }
-  .gcf-card h4 { margin: 0 0 4px; font-size: 14px; }
-  .gcf-card > p { margin: 0 0 12px; font-size: 12.5px; color: var(--gcf-muted); }
-
-  /* Explicit column counts per breakpoint. auto-fit with a spanning child
-     strands columns, which is how the dashboard fragmented. */
-  .gcf-figures { display: grid; gap: 12px; grid-template-columns: 1fr; }
-  @media (min-width: 720px)  { .gcf-figures { grid-template-columns: repeat(2, 1fr); } }
-  @media (min-width: 1100px) { .gcf-figures { grid-template-columns: repeat(3, 1fr); } }
-
-  .gcf-figure {
-    background: var(--gcf-sunk); border: 1px solid var(--gcf-line);
-    border-radius: 8px; padding: 12px 14px; min-width: 0;
-  }
-  .gcf-figure-label {
-    display: block; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--gcf-muted); margin-bottom: 6px;
-  }
-  .gcf-figure-value {
-    display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
-    overflow-wrap: anywhere;
-  }
-  .gcf-figure-unit { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 2px; }
-  .gcf-figure-note { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 8px; }
-
-  .gcf-rule {
-    font-size: 12px; color: var(--gcf-muted); border-left: 3px solid var(--gcf-accent);
-    padding: 6px 0 6px 12px; margin: 12px 0;
-  }
-  .gcf-warn {
-    font-size: 12.5px; background: var(--gcf-warn-soft); color: var(--gcf-warn);
-    border-radius: 6px; padding: 10px 12px; margin: 10px 0;
-  }
-  /* A data-provenance label, not a warning: illustrative figures are the
-     screen working normally, not a fault to be flagged in amber. */
-  .gcf-chip-note {
-    display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 600;
-    letter-spacing: .02em; padding: 5px 11px; border-radius: 999px; margin: 0 0 12px;
-    background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line);
-  }
-
-  .gcf-scroll { overflow-x: auto; }
-  .gcf-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
-  .gcf-table th {
-    text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
-    color: var(--gcf-muted); padding: 8px 10px; border-bottom: 1px solid var(--gcf-line);
-    white-space: nowrap;
-  }
-  .gcf-table td { padding: 9px 10px; border-bottom: 1px solid var(--gcf-line); vertical-align: top; }
-  .gcf-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-
-  .gcf-pill {
-    display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
-    text-transform: uppercase; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
-  }
-  .gcf-pill-ok      { background: var(--gcf-accent-soft); color: var(--gcf-accent); }
-  .gcf-pill-flag    { background: var(--gcf-warn-soft);   color: var(--gcf-warn); }
-  .gcf-pill-stop    { background: var(--gcf-stop-soft);   color: var(--gcf-stop); }
-  .gcf-pill-tier    { background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line); }
-
-  .gcf-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; min-width: 0; }
-  /* A select sizes itself to its WIDEST option, not to its container, so one
-     long project name pushed the whole page 78px wide at 430px — the same
-     shape as the dashboard overflow. It has to be told it may shrink. */
-  .gcf-actions select { max-width: 100%; min-width: 0; flex: 1 1 180px; }
-  .gcf-hint { font-size: 12px; color: var(--gcf-muted); }
-
-  .gcf-two { display: grid; gap: 14px; grid-template-columns: 1fr; }
-  @media (min-width: 1000px) { .gcf-two { grid-template-columns: 1fr 1fr; } }
-
-  /* display:block matters. As an inline span the height and background simply
-     do not apply, and the bar renders as nothing at all — which reads as a
-     score of zero rather than as a missing element. */
-  .gcf-bar { display: block; height: 6px; border-radius: 3px; background: var(--gcf-line); overflow: hidden; }
-  .gcf-bar > i { display: block; height: 100%; background: var(--gcf-accent); }
-
-  .gcf-form { display: grid; gap: 12px; grid-template-columns: 1fr; }
-  @media (min-width: 760px) { .gcf-form { grid-template-columns: 1fr 1fr; } }
-  .gcf-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-  .gcf-field > label { font-size: 11.5px; font-weight: 600; color: var(--gcf-muted); }
-  .gcf-field input, .gcf-field select, .gcf-field textarea {
-    padding: 8px 10px; border: 1px solid var(--gcf-line); border-radius: 6px;
-    background: var(--gcf-surface); color: var(--gcf-ink); font: inherit; font-size: 13px;
-    min-width: 0; width: 100%;
-  }
-  .gcf-field-wide { grid-column: 1 / -1; }
-  .gcf-tiered { display: grid; grid-template-columns: 1fr 130px; gap: 6px; }
-</style>
+     are drawn apart wherever they appear. Styles live in css/gcf.css. -->
 
 <div class="gcf">
 
   <div class="gcf-banner">
-    <div style="min-width:0">
-      <strong>GCF pipeline — DFCC Bank PLC</strong>
-      <span id="gcfSubtitle">Direct Access Entity, Board decision B.36/10 — medium size, E&amp;S category B/I-2</span>
+    <div>
+      <strong id="gcfEntityName">GCF pipeline — DFCC Bank PLC</strong>
+      <span id="gcfSubtitle">Direct Access Entity, Board decision B.36/10</span>
     </div>
+    <dl class="gcf-envelope" id="gcfEnvelope"></dl>
   </div>
 
   <div id="gcfSampleBanner" class="gcf-chip-note" hidden></div>
@@ -181,18 +25,168 @@
     <button class="gcf-tab" role="tab" data-panel="intake"      aria-selected="false">Intake</button>
   </div>
 
-  <!-- 1 — Pipeline -->
+  <!-- 1 — Pipeline: the portfolio, the cycle, the board, and one project at a time -->
   <section class="gcf-panel" id="gcfPanel-pipeline" role="tabpanel">
-    <div class="gcf-figures" id="gcfPipelineFigures"></div>
-    <div class="gcf-card">
-      <h4>The candidate pool</h4>
-      <p>Accreditation is a gate, not a score. An excluded project is one DFCC cannot carry as the
-         accredited entity; a flagged project is eligible with something to resolve or verify.</p>
-      <div class="gcf-scroll"><table class="gcf-table" id="gcfPoolTable"></table></div>
+
+    <div id="gcfPortfolio">
+      <div class="gcf-figures gcf-figures-4" id="gcfMoney"></div>
+      <div class="gcf-figures gcf-figures-4" id="gcfResults"></div>
+
+      <div class="gcf-card">
+        <div class="gcf-card-head">
+          <div>
+            <h4>The project cycle</h4>
+            <p>Where each candidate sits on the Fund's ten stages, with the GCF ask at each. Select a stage to filter the board.</p>
+          </div>
+          <span class="gcf-hint" id="gcfRailHint"></span>
+        </div>
+        <div class="gcf-rail" id="gcfRail"></div>
+        <div class="gcf-figures" id="gcfGate"></div>
+      </div>
+
+      <div class="gcf-two">
+        <div class="gcf-card">
+          <h4>What to do next</h4>
+          <p>The next step for each candidate, furthest along first, with what the record still needs before it.</p>
+          <ul class="gcf-list" id="gcfActions"></ul>
+        </div>
+        <div class="gcf-card">
+          <h4>Coming up</h4>
+          <p>Targets the bank has set and dates the Fund's service standards imply. A projected date is marked as one.</p>
+          <ul class="gcf-list" id="gcfUpcoming"></ul>
+          <h5>Eligibility</h5>
+          <div id="gcfEligibility" class="gcf-hint"></div>
+        </div>
+      </div>
+
+      <div class="gcf-card">
+        <div class="gcf-card-head">
+          <div>
+            <h4>The candidate pool</h4>
+            <p>Accreditation is a gate, not a score. An excluded project is one DFCC cannot carry as the
+               accredited entity; a flagged project is eligible with something to resolve or verify.
+               Select a row to open the project.</p>
+          </div>
+          <div class="gcf-actions" style="margin:0">
+            <button class="btn btn-secondary btn-sm" id="gcfBoardCsv">Download the pipeline (CSV)</button>
+          </div>
+        </div>
+        <div class="gcf-scroll"><table class="gcf-table" id="gcfPoolTable"></table></div>
+      </div>
+      <div class="gcf-card" id="gcfFlagsCard" hidden>
+        <h4>To resolve</h4>
+        <div id="gcfFlags"></div>
+      </div>
     </div>
-    <div class="gcf-card" id="gcfFlagsCard" hidden>
-      <h4>To resolve</h4>
-      <div id="gcfFlags"></div>
+
+    <div id="gcfProject" hidden>
+      <div class="gcf-project-head">
+        <button class="gcf-back" id="gcfProjectBack">← All candidates</button>
+        <h3 id="gcfProjectTitle"></h3>
+        <span id="gcfProjectPills"></span>
+      </div>
+      <div class="gcf-figures gcf-figures-4" id="gcfProjectFigures"></div>
+
+      <div class="gcf-card">
+        <div class="gcf-card-head">
+          <div>
+            <h4>On the cycle</h4>
+            <p id="gcfProjectStageLine"></p>
+          </div>
+          <span class="gcf-hint" id="gcfProjectDays"></span>
+        </div>
+        <div class="gcf-steps" id="gcfProjectSteps"></div>
+        <div class="gcf-two">
+          <div>
+            <h5>Next step</h5>
+            <div id="gcfProjectNext"></div>
+            <div id="gcfProjectMove" data-writes></div>
+          </div>
+          <div>
+            <h5>Milestones</h5>
+            <ul class="gcf-list" id="gcfProjectTimeline"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="gcf-two">
+        <div class="gcf-card">
+          <div class="gcf-card-head">
+            <div>
+              <h4>What this stage needs</h4>
+              <p>Held means the record holds the fact; whether it is enough is for the Secretariat and the iTAP.</p>
+            </div>
+            <span class="gcf-hint" id="gcfProjectReadyPct"></span>
+          </div>
+          <div id="gcfProjectChecklist"></div>
+          <h5>The next stage will ask for</h5>
+          <div id="gcfProjectNextChecklist"></div>
+        </div>
+        <div class="gcf-card">
+          <h4>The six investment criteria</h4>
+          <p>Evidence held on the record for each criterion. Three are scored by the screening engine; the other three are named unscored.</p>
+          <div id="gcfProjectCriteria"></div>
+        </div>
+      </div>
+
+      <div class="gcf-two">
+        <div class="gcf-card">
+          <h4>Money and structure</h4>
+          <dl class="gcf-facts" id="gcfProjectMoney"></dl>
+          <h5>Co-financing</h5>
+          <div id="gcfProjectCofin"></div>
+          <div id="gcfProjectCofinForm" data-writes></div>
+        </div>
+        <div class="gcf-card">
+          <h4>Results — IRMF core indicators</h4>
+          <p>Direct and indirect beneficiaries are two indicators and are never summed. Every figure carries its evidence tier.</p>
+          <dl class="gcf-facts" id="gcfProjectImpact"></dl>
+          <div class="gcf-rule" id="gcfProjectBaseline"></div>
+        </div>
+      </div>
+
+      <div class="gcf-two">
+        <div class="gcf-card">
+          <h4>The NDA and the executing entity</h4>
+          <dl class="gcf-facts" id="gcfProjectNda"></dl>
+          <div id="gcfProjectNdaForm" data-writes></div>
+        </div>
+        <div class="gcf-card">
+          <h4>Safeguards, gender and consent</h4>
+          <dl class="gcf-facts" id="gcfProjectSafeguards"></dl>
+          <div id="gcfProjectSafeguardsForm" data-writes></div>
+        </div>
+      </div>
+
+      <div class="gcf-two">
+        <div class="gcf-card">
+          <h4>Documents</h4>
+          <p>What has been produced for this project, by kind. The Concept Note package reads the same list.</p>
+          <div id="gcfProjectDocs"></div>
+          <div id="gcfProjectDocsForm" data-writes></div>
+        </div>
+        <div class="gcf-card">
+          <h4>Narrative for the unscored criteria</h4>
+          <p>Paradigm shift, sustainable development and the needs of the recipient rest on judgement. The bank's own words are the evidence.</p>
+          <div id="gcfProjectNarrative"></div>
+          <div id="gcfProjectNarrativeForm" data-writes></div>
+        </div>
+      </div>
+
+      <div class="gcf-card">
+        <h4>Milestone dates</h4>
+        <p>Targets the bank sets and the dates the Fund gives. A recorded date is never projected.</p>
+        <dl class="gcf-facts gcf-facts-4" id="gcfProjectDatesView"></dl>
+        <div id="gcfProjectDatesForm" data-writes></div>
+      </div>
+
+      <div class="gcf-card" data-writes id="gcfProjectAdmin">
+        <h4>Selection and record</h4>
+        <div id="gcfProjectAdminForm"></div>
+      </div>
+
+      <div class="gcf-warn" id="gcfProjectError" hidden></div>
+      <div class="gcf-hint" id="gcfProjectHint"></div>
     </div>
   </section>
 
@@ -292,10 +286,19 @@
         <p>Board oversight, the strategy narrative, the risk process and the entity's own targets
            cannot be computed from a pipeline. Record them here or they are reported absent.</p>
         <div class="gcf-form" id="gcfEntityForm"></div>
-        <div class="gcf-actions" style="margin-top:12px">
+        <div class="gcf-actions" style="margin-top:12px" data-writes>
           <button class="btn btn-primary" id="gcfEntitySave">Save entity facts</button>
           <span class="gcf-hint" id="gcfEntityHint"></span>
         </div>
+      </div>
+    </div>
+    <div class="gcf-card">
+      <h4>Accreditation</h4>
+      <p>The envelope every gate reads. The shipped one is DFCC's under Board decision B.36/10; record the entity's own to replace it.</p>
+      <div class="gcf-form gcf-form-3" id="gcfAccreditationForm"></div>
+      <div class="gcf-actions" style="margin-top:12px" data-writes>
+        <button class="btn btn-primary" id="gcfAccreditationSave">Record accreditation</button>
+        <span class="gcf-hint" id="gcfAccreditationHint"></span>
       </div>
     </div>
     <div class="gcf-card">
@@ -314,8 +317,7 @@
     <div class="gcf-card">
       <div class="gcf-actions">
         <label class="gcf-hint" for="gcfCnProject">Project</label>
-        <select id="gcfCnProject"
-                style="padding:7px 10px;border-radius:6px;border:1px solid var(--gcf-line);background:var(--gcf-surface);color:var(--gcf-ink)"></select>
+        <select id="gcfCnProject" class="gcf-select"></select>
         <button class="btn btn-secondary" id="gcfCnPdf">PDF</button>
         <button class="btn btn-secondary" id="gcfCnDocx">Word</button>
         <span class="gcf-hint" id="gcfCnHint"></span>
@@ -339,9 +341,10 @@
     <div class="gcf-card">
       <h4>Record a candidate project</h4>
       <p>Every figure carries an evidence tier. A bare number is refused at the door, because that
-         is the only way a benchmark default cannot quietly become a measured fact downstream.</p>
+         is the only way a benchmark default cannot quietly become a measured fact downstream.
+         Dates, the no-objection, safeguards and documents are recorded on the project once it exists.</p>
       <div class="gcf-form" id="gcfIntakeForm"></div>
-      <div class="gcf-actions" style="margin-top:14px">
+      <div class="gcf-actions" style="margin-top:14px" data-writes>
         <button class="btn btn-primary" id="gcfIntakeSave">Record project</button>
         <button class="btn btn-secondary" id="gcfAdopt">Adopt the shipped pipeline</button>
         <span class="gcf-hint" id="gcfIntakeHint"></span>

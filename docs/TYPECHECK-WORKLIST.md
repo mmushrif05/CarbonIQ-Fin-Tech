@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **385**. Remaining: **204**.
+Checked across all three: **389**. Remaining: **206**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **334**. Remaining: **67** (384 errors, measured by
+Checked: **338**. Remaining: **67** (385 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -46,9 +46,9 @@ pragma and nothing else.
 | `src/domains/capital/domain/capital-forecast.js` | 9 |
 | `src/domains/pcaf-part-a/domain/attribution.js` | 9 |
 | `src/domains/pcaf-part-c/agents/documents.js` | 9 |
+| `scripts/generate-gcf-conformance-doc.js` | 8 |
 | `src/domains/gcf/application/cn-package.js` | 8 |
 | `src/domains/gcf/domain/screening.js` | 8 |
-| `scripts/generate-gcf-conformance-doc.js` | 7 |
 | `src/domains/lending/interface/routes/covenant.js` | 7 |
 | `src/domains/pcaf-part-a/domain/country-config.js` | 7 |
 | `src/domains/pcaf-part-c/domain/data-quality.js` | 7 |
@@ -105,7 +105,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **24** (1586 errors, measured by
+Checked: **8**. Remaining: **25** (1684 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -115,10 +115,12 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/pcaf-parta.js` | 206 |
 | `ui/js/dashboard.js` | 118 |
 | `ui/js/pcaf-demo.js` | 95 |
+| `ui/js/gcf-pipeline.js` | 77 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
 | `ui/js/baselines.js` | 52 |
 | `ui/js/parta-register.js` | 51 |
+| `ui/js/gcf.js` | 48 |
 | `ui/js/capital-record.js` | 47 |
 | `ui/js/login.js` | 47 |
 | `ui/js/agents.js` | 40 |
@@ -128,7 +130,6 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/parta-sovereign.js` | 35 |
 | `ui/js/extract.js` | 30 |
 | `ui/js/new-project.js` | 29 |
-| `ui/js/gcf.js` | 27 |
 | `ui/js/parta-position.js` | 27 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |
@@ -139,7 +140,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **43**. Remaining: **113** (1356 errors, measured by
+Checked: **43**. Remaining: **114** (1391 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **9 of them raise no errors at all** and can be adopted by adding the
@@ -153,6 +154,7 @@ pragma and nothing else.
 | `tests/parta-ui.test.js` | 42 |
 | `tests/parta-generation.test.js` | 37 |
 | `tests/desk-stages456.test.js` | 33 |
+| `tests/gcf-cycle.test.js` | 33 |
 | `tests/gcf-pipeline.test.js` | 33 |
 | `tests/jobs.test.js` | 33 |
 | `tests/partc-portfolio.test.js` | 32 |
@@ -196,6 +198,7 @@ pragma and nothing else.
 | `tests/pcaf-partc-e2e.test.js` | 10 |
 | `tests/audit.test.js` | 9 |
 | `tests/auth.test.js` | 9 |
+| `tests/gcf-journey.test.js` | 9 |
 | `tests/partc-comparatives.test.js` | 9 |
 | `tests/pcaf-partc-engine.test.js` | 9 |
 | `tests/agent-availability.test.js` | 8 |
@@ -208,7 +211,6 @@ pragma and nothing else.
 | `tests/supervisor.test.js` | 8 |
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
-| `tests/gcf-journey.test.js` | 7 |
 | `tests/parta-consolidated.test.js` | 7 |
 | `tests/pg-scale.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |

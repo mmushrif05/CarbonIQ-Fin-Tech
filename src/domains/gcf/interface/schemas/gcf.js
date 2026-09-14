@@ -67,4 +67,23 @@ const gcfImportSchema = Joi.object({
   checksumNote: Joi.any().optional(),
 }).unknown(true);
 
-module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema };
+/**
+ * A stage move: the new stage, the instant (today by default), and a note.
+ * Milestone dates may travel with it — a move to "concept note submitted"
+ * usually carries the submission date.
+ */
+const gcfStageMoveSchema = Joi.object({
+  stage: Joi.string().valid(...record.STAGES).required(),
+  at: Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  note: Joi.string().max(600).allow('', null).optional(),
+  timeline: Joi.object().unknown(true).optional(),
+}).unknown(false);
+
+/**
+ * A partial change to a recorded project. Objects are merged a level at a
+ * time and arrays replaced; the merged record is then held to the whole
+ * schema, so a patch cannot leave a record the schema would refuse.
+ */
+const gcfPatchSchema = Joi.object().unknown(true).min(1);
+
+module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema, gcfStageMoveSchema, gcfPatchSchema };

@@ -12204,6 +12204,89 @@
                     ],
                     "maxLength": 200
                   },
+                  "accreditation": {
+                    "type": "object",
+                    "properties": {
+                      "decision": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "accreditedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "amaExecutedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "amaEffectiveAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "sizeCategory": {
+                        "type": "string",
+                        "enum": [
+                          "micro",
+                          "small",
+                          "medium",
+                          "large"
+                        ]
+                      },
+                      "sizeRange_usd": {
+                        "type": "array",
+                        "items": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "minItems": 2,
+                        "maxItems": 2
+                      },
+                      "essCategory": {
+                        "type": "string",
+                        "maxLength": 20
+                      },
+                      "modalities": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "maxLength": 60
+                        }
+                      },
+                      "grantModality": {
+                        "type": "boolean"
+                      },
+                      "grantNote": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 600
+                      },
+                      "source": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 300
+                      }
+                    },
+                    "required": [
+                      "decision",
+                      "sizeCategory",
+                      "sizeRange_usd",
+                      "essCategory",
+                      "grantModality"
+                    ]
+                  },
                   "climateGovernance": {
                     "type": [
                       "string",
@@ -13352,7 +13435,12 @@
                       "cn_submitted",
                       "ppf",
                       "fp",
-                      "board"
+                      "fp_submitted",
+                      "board",
+                      "approved",
+                      "faa",
+                      "implementation",
+                      "closed"
                     ]
                   },
                   "selectedForCN": {
@@ -13423,6 +13511,692 @@
                   "technical": {
                     "type": "object",
                     "additionalProperties": true
+                  },
+                  "timeline": {
+                    "type": "object",
+                    "properties": {
+                      "conceptStarted": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "cnSubmissionTarget": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "cnSubmitted": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "cnFeedback": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "ppfRequested": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "ppfApproved": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "fpSubmissionTarget": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "fpSubmitted": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "boardTarget": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "boardDecision": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "faaSigned": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "faaEffective": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "firstDisbursement": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "implementationStart": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "commissioning": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "completion": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      }
+                    }
+                  },
+                  "stageHistory": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "stage": {
+                          "type": "string",
+                          "enum": [
+                            "concept",
+                            "pre_feasibility",
+                            "cn_drafted",
+                            "cn_submitted",
+                            "ppf",
+                            "fp",
+                            "fp_submitted",
+                            "board",
+                            "approved",
+                            "faa",
+                            "implementation",
+                            "closed"
+                          ]
+                        },
+                        "at": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "by": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 160
+                        },
+                        "note": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 600
+                        }
+                      },
+                      "required": [
+                        "stage",
+                        "at"
+                      ]
+                    }
+                  },
+                  "nda": {
+                    "type": "object",
+                    "properties": {
+                      "status": {
+                        "type": "string",
+                        "enum": [
+                          "not_requested",
+                          "informed",
+                          "requested",
+                          "issued",
+                          "declined"
+                        ],
+                        "default": "not_requested"
+                      },
+                      "requestedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "issuedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                      },
+                      "reference": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "note": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 600
+                      }
+                    }
+                  },
+                  "safeguards": {
+                    "type": "object",
+                    "properties": {
+                      "esia": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "esmp": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "esap": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "genderAssessment": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "genderActionPlan": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "stakeholderConsultation": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "grm": {
+                        "type": "object",
+                        "properties": {
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_started",
+                              "in_progress",
+                              "complete"
+                            ],
+                            "default": "not_started"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          },
+                          "date": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      },
+                      "fpic": {
+                        "type": "object",
+                        "properties": {
+                          "required": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": [
+                              "not_required",
+                              "not_started",
+                              "in_progress",
+                              "obtained"
+                            ],
+                            "default": "not_started"
+                          },
+                          "communities": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 400
+                          },
+                          "note": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 600
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "coFinancing": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "role": {
+                          "type": "string",
+                          "enum": [
+                            "sponsor",
+                            "lender",
+                            "dfi",
+                            "government",
+                            "grant",
+                            "other"
+                          ],
+                          "default": "other"
+                        },
+                        "amount": {
+                          "type": "number",
+                          "minimum": 0
+                        },
+                        "currency": {
+                          "type": "string",
+                          "maxLength": 8,
+                          "default": "USD"
+                        },
+                        "instrument": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 60
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "indicative",
+                            "committed",
+                            "letter_received"
+                          ],
+                          "default": "indicative"
+                        },
+                        "reference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 200
+                        },
+                        "date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "amount"
+                      ]
+                    }
+                  },
+                  "executingEntity": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "role": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "trackRecord": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  },
+                  "documents": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "kind": {
+                          "type": "string",
+                          "enum": [
+                            "feasibility_study",
+                            "financial_model",
+                            "economic_analysis",
+                            "esia",
+                            "esmp",
+                            "esap",
+                            "gender_assessment",
+                            "gender_action_plan",
+                            "stakeholder_consultation",
+                            "procurement_plan",
+                            "me_plan",
+                            "risk_register",
+                            "term_sheet",
+                            "no_objection_letter",
+                            "cofinancing_letter",
+                            "ppf_application",
+                            "theory_of_change",
+                            "completion_report",
+                            "map",
+                            "other"
+                          ]
+                        },
+                        "title": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "reference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 300
+                        },
+                        "version": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 40
+                        },
+                        "date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "title"
+                      ]
+                    }
+                  },
+                  "narrative": {
+                    "type": "object",
+                    "properties": {
+                      "paradigmShift": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "enablingEnvironment": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "sustainableDevelopment": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "needsOfRecipient": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "theoryOfChange": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 3000
+                      }
+                    }
                   },
                   "financing": {
                     "type": "object",
@@ -14322,6 +15096,438 @@
             "BearerAuth": []
           }
         ]
+      },
+      "patch": {
+        "operationId": "patchGcfPipelineById",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "Change part of a recorded candidate; the merged record is held to the whole schema",
+        "description": "Objects merge a level at a time and arrays replace. `id`, `provenance` and `stageHistory` cannot be set this way. A project from the shipped illustrative pipeline answers 409 `SAMPLE_NOT_EDITABLE` with the remedy: adopt the pipeline first. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "project"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "project"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/pipeline/{id}/readiness": {
+      "get": {
+        "operationId": "getGcfPipelineByIdReadiness",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "One candidate against the GCF project cycle — what it holds, what is missing, what is next",
+        "description": "Held means the record holds the fact, not that the Secretariat will accept it. Projected dates carry `projected: true` and the GCF-2 service standard they rest on. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "readiness": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "criteria": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "readiness",
+                    "criteria"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "readiness": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "criteria": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "readiness",
+                        "criteria"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/pipeline/{id}/stage": {
+      "post": {
+        "operationId": "postGcfPipelineByIdStage",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "Move a recorded candidate to another stage of the GCF project cycle, dated, into its history",
+        "description": "The move is appended to `stageHistory` with who made it; a stage is never overwritten silently. Milestone dates in `timeline` land with the move. The shipped sample answers 409 `SAMPLE_NOT_EDITABLE`. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "stage": {
+                    "type": "string",
+                    "enum": [
+                      "concept",
+                      "pre_feasibility",
+                      "cn_drafted",
+                      "cn_submitted",
+                      "ppf",
+                      "fp",
+                      "fp_submitted",
+                      "board",
+                      "approved",
+                      "faa",
+                      "implementation",
+                      "closed"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                  },
+                  "note": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 600
+                  },
+                  "timeline": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "stage"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "readiness": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "project"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "readiness": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "project"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/v1/gcf/pipeline/adopt": {
@@ -14370,19 +15576,18 @@
                     "adopted": {
                       "type": "number"
                     },
-                    "projects": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "additionalProperties": true
-                      }
+                    "note": {
+                      "type": "string"
                     },
                     "storage": {
                       "type": "object",
                       "additionalProperties": true
                     }
                   },
-                  "additionalProperties": true
+                  "additionalProperties": true,
+                  "required": [
+                    "adopted"
+                  ]
                 }
               },
               "application/vnd.carboniq.v1+json": {
@@ -14400,19 +15605,18 @@
                         "adopted": {
                           "type": "number"
                         },
-                        "projects": {
-                          "type": "array",
-                          "items": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
+                        "note": {
+                          "type": "string"
                         },
                         "storage": {
                           "type": "object",
                           "additionalProperties": true
                         }
                       },
-                      "additionalProperties": true
+                      "additionalProperties": true,
+                      "required": [
+                        "adopted"
+                      ]
                     },
                     "meta": {
                       "$ref": "#/components/schemas/Meta"
@@ -14436,6 +15640,140 @@
           },
           "429": {
             "$ref": "#/components/responses/RateLimited"
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/portfolio": {
+      "get": {
+        "operationId": "getGcfPortfolio",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "The pipeline as a portfolio — money, envelope, gate, results, stages, readiness and what is next",
+        "description": "Composed from the emissions model, the screening gate, the readiness checklist and the six investment criteria. Mitigation, embodied and financed emissions stay on separate keys; adaptation is never ranked on carbon. `source` says whether the recorded book or the shipped illustrative set is showing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "portfolio": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    },
+                    "sampleNote": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "portfolio",
+                    "source"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "portfolio": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        },
+                        "sampleNote": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "portfolio",
+                        "source"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
           },
           "default": {
             "$ref": "#/components/responses/Default"
@@ -14767,6 +16105,14 @@
                       "type": "object",
                       "additionalProperties": true
                     },
+                    "cycle": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "vocabulary": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
                     "storage": {
                       "type": "object",
                       "additionalProperties": true
@@ -14821,6 +16167,14 @@
                           "additionalProperties": true
                         },
                         "accreditation": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "cycle": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "vocabulary": {
                           "type": "object",
                           "additionalProperties": true
                         },

@@ -97,6 +97,61 @@ async function put(orgId, project, { by = null } = {}) {
   return validated;
 }
 
+function refuse(code, message, statusCode, remedy) {
+  const err = /** @type {any} */ (new Error(message));
+  err.statusCode = statusCode; err.code = code; if (remedy) err.remedy = remedy;
+  return err;
+}
+
+const isPlain = v => v && typeof v === 'object' && !Array.isArray(v);
+function merge(base, patch) {
+  const out = { ...base };
+  for (const [k, v] of Object.entries(patch || {})) {
+    out[k] = isPlain(v) && isPlain(base[k]) ? merge(base[k], v) : v;
+  }
+  return out;
+}
+
+/** The recorded project, or the refusal that says the sample must be adopted first. */
+async function recordedOrRefuse(orgId, id) {
+  const { project, source } = await get(orgId, id);
+  if (!project) throw refuse('PROJECT_NOT_FOUND', `No project with id "${id}" in the recorded book or the shipped pipeline.`, 404);
+  if (source !== 'recorded') {
+    throw refuse('SAMPLE_NOT_EDITABLE',
+      'This project is part of the shipped illustrative pipeline, which is read-only. Recording one edited copy of it '
+      + 'would replace the whole sample with a single project.', 409,
+      'Adopt the shipped pipeline into your organisation first (POST /v1/gcf/pipeline/adopt), or record your own projects.');
+  }
+  return project;
+}
+
+/**
+ * A partial change, merged into the recorded project and held to the whole
+ * schema — so a patch cannot leave behind a record the schema would refuse.
+ * Objects merge a level at a time; arrays replace.
+ */
+async function patch(orgId, id, changes, { by = null } = {}) {
+  store.assertWritable();
+  const current = await recordedOrRefuse(orgId, id);
+  const { id: _id, provenance: _prov, stageHistory: _hist, ...safe } = changes || {};
+  return put(orgId, merge(current, safe), { by });
+}
+
+/**
+ * Move a project to another stage: the history gains a dated entry, and any
+ * milestone dates travelling with the move land on the timeline.
+ */
+async function moveStage(orgId, id, { stage, at, note, timeline }, { by = null } = {}) {
+  store.assertWritable();
+  const current = await recordedOrRefuse(orgId, id);
+  const when = at || new Date().toISOString().slice(0, 10);
+  const history = [...(current.stageHistory || []), { stage, at: when, by: by || undefined, note: note || undefined }];
+  return put(orgId, {
+    ...current, stage, stageHistory: history,
+    timeline: merge(current.timeline || {}, timeline || {}),
+  }, { by });
+}
+
 async function remove(orgId, id) {
   store.assertWritable();
   await store.remove(COLLECTION, orgId, id);
@@ -127,6 +182,16 @@ async function adoptSeed(orgId, { by = null } = {}) {
  * Absent until the entity records them, which is what the report says.
  */
 
+/**
+ * The accreditation every gate reads: the entity's own where recorded, the
+ * shipped one — DFCC's under B.36/10 — where not, and the answer says which.
+ */
+async function accreditation(orgId) {
+  const entity = await entityDisclosures(orgId);
+  if (entity && entity.accreditation) return { ...entity.accreditation, recorded: true };
+  return { ...seedMeta().accreditation, recorded: false };
+}
+
 async function entityDisclosures(orgId) {
   return store.get(SETTINGS_COLLECTION, orgId, 'entity').catch(fallback('gcf.entity.get', null));
 }
@@ -143,7 +208,7 @@ async function setEntityDisclosures(orgId, body, { by = null } = {}) {
 }
 
 module.exports = {
-  list, get, put, remove, adoptSeed, seedProjects, seedMeta,
+  list, get, put, patch, moveStage, remove, adoptSeed, seedProjects, seedMeta, accreditation,
   entityDisclosures, setEntityDisclosures,
   COLLECTION, SETTINGS_COLLECTION,
 };

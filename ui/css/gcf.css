@@ -1,0 +1,278 @@
+/* ============================================================
+   The GCF pipeline screen.
+
+   Scoped to `.gcf`. Tokens first, so both themes resolve as a set;
+   the dark media query is guarded so an explicit light choice wins,
+   and the explicit dark stamp is redefined so the toggle wins the
+   other way. Every colour below is read from a token.
+
+   Four mechanical rules this codebase has shipped a fault against
+   once each, written where they apply:
+     [hidden] beats any class rule that sets display;
+     a bar is display:block or it renders as nothing;
+     a <select> may shrink below its widest option;
+     grids use explicit column counts, never auto-fit.
+   ============================================================ */
+
+.gcf {
+  --gcf-ink: #0f172a;
+  --gcf-muted: #64748b;
+  --gcf-line: #e2e8f0;
+  --gcf-surface: #ffffff;
+  --gcf-sunk: #f8fafc;
+  --gcf-accent: #0f766e;          /* teal — GCF's own register */
+  --gcf-accent-soft: #ccfbf1;
+  --gcf-warn: #b45309;
+  --gcf-warn-soft: #fef3c7;
+  --gcf-stop: #b91c1c;
+  --gcf-stop-soft: #fee2e2;
+  --gcf-ok: #15803d;
+  --gcf-ok-soft: #dcfce7;
+  --gcf-project: #4338ca;         /* a projected date, never a measured one */
+  --gcf-project-soft: #e0e7ff;
+  color: var(--gcf-ink);
+  min-width: 0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .gcf {
+    --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
+    --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
+    --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
+    --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
+    --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a;
+    --gcf-ok: #86efac; --gcf-ok-soft: #14532d;
+    --gcf-project: #a5b4fc; --gcf-project-soft: #1e1b4b;
+  }
+}
+:root[data-theme="dark"] .gcf {
+  --gcf-ink: #e2e8f0; --gcf-muted: #94a3b8; --gcf-line: #334155;
+  --gcf-surface: #1e293b; --gcf-sunk: #0f172a;
+  --gcf-accent: #5eead4; --gcf-accent-soft: #134e4a;
+  --gcf-warn: #fbbf24; --gcf-warn-soft: #451a03;
+  --gcf-stop: #fca5a5; --gcf-stop-soft: #450a0a;
+  --gcf-ok: #86efac; --gcf-ok-soft: #14532d;
+  --gcf-project: #a5b4fc; --gcf-project-soft: #1e1b4b;
+}
+
+/* ── The header: entity and accreditation envelope ─────────── */
+.gcf-banner {
+  display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: flex-start; min-width: 0;
+  padding: 14px 16px; margin-bottom: 14px; border-radius: 10px;
+  background: var(--gcf-accent-soft); border: 1px solid var(--gcf-line);
+}
+.gcf-banner > div { min-width: 0; }
+.gcf-banner strong { display: block; font-size: 15px; }
+.gcf-banner span { font-size: 12.5px; color: var(--gcf-muted); }
+.gcf-envelope {
+  display: grid; gap: 8px 18px; grid-template-columns: 1fr; flex: 1 1 360px; min-width: 0;
+}
+@media (min-width: 720px)  { .gcf-envelope { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .gcf-envelope { grid-template-columns: repeat(4, 1fr); } }
+.gcf-envelope dt { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--gcf-muted); margin: 0; }
+.gcf-envelope dd { font-size: 12.5px; margin: 2px 0 0; overflow-wrap: anywhere; }
+
+/* Sub-tabs. A row that scrolls rather than wrapping into a ragged block. */
+.gcf-tabs {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px;
+  margin-bottom: 14px; border-bottom: 1px solid var(--gcf-line);
+}
+.gcf-tab {
+  flex: 0 0 auto; padding: 8px 14px; border-radius: 8px 8px 0 0;
+  border: 1px solid transparent; border-bottom: none; background: none;
+  color: var(--gcf-muted); font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.gcf-tab:hover { color: var(--gcf-ink); }
+.gcf-tab[aria-selected="true"] {
+  background: var(--gcf-surface); border-color: var(--gcf-line);
+  color: var(--gcf-accent); margin-bottom: -1px;
+}
+.gcf-tab:focus-visible { outline: 2px solid var(--gcf-accent); outline-offset: 2px; }
+
+/* [hidden] is display:none from the UA sheet and ANY class rule that sets
+   display beats it. This has covered a page from load once already. */
+.gcf-panel[hidden] { display: none !important; }
+.gcf [hidden] { display: none !important; }
+
+.gcf-card {
+  background: var(--gcf-surface); border: 1px solid var(--gcf-line);
+  border-radius: 10px; padding: 16px; margin-bottom: 14px; min-width: 0;
+}
+.gcf-card h4 { margin: 0 0 4px; font-size: 14px; }
+.gcf-card h5 { margin: 14px 0 6px; font-size: 12.5px; }
+.gcf-card > p { margin: 0 0 12px; font-size: 12.5px; color: var(--gcf-muted); }
+.gcf-card-head { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; justify-content: space-between; }
+
+/* Explicit column counts per breakpoint. auto-fit with a spanning child
+   strands columns, which is how the dashboard fragmented. */
+.gcf-figures { display: grid; gap: 12px; grid-template-columns: 1fr; margin-bottom: 14px; }
+@media (min-width: 720px)  { .gcf-figures { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .gcf-figures { grid-template-columns: repeat(3, 1fr); } }
+@media (min-width: 1100px) { .gcf-figures-4 { grid-template-columns: repeat(4, 1fr); } }
+
+.gcf-figure {
+  background: var(--gcf-sunk); border: 1px solid var(--gcf-line);
+  border-radius: 8px; padding: 12px 14px; min-width: 0;
+}
+.gcf-figure-label {
+  display: block; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--gcf-muted); margin-bottom: 6px;
+}
+.gcf-figure-value {
+  display: block; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.gcf-figure-unit { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 2px; }
+.gcf-figure-note { display: block; font-size: 11.5px; color: var(--gcf-muted); margin-top: 8px; }
+.gcf-figure-gate { border-left: 4px solid var(--gcf-ok); }
+.gcf-figure-gate.flag { border-left-color: var(--gcf-warn); }
+.gcf-figure-gate.stop { border-left-color: var(--gcf-stop); }
+
+.gcf-rule {
+  font-size: 12px; color: var(--gcf-muted); border-left: 3px solid var(--gcf-accent);
+  padding: 6px 0 6px 12px; margin: 12px 0;
+}
+.gcf-warn {
+  font-size: 12.5px; background: var(--gcf-warn-soft); color: var(--gcf-warn);
+  border-radius: 6px; padding: 10px 12px; margin: 10px 0;
+}
+/* A data-provenance label, not a warning: illustrative figures are the
+   screen working normally, not a fault to be flagged in amber. */
+.gcf-chip-note {
+  display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 600;
+  letter-spacing: .02em; padding: 5px 11px; border-radius: 999px; margin: 0 0 12px;
+  background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line);
+}
+
+.gcf-scroll { overflow-x: auto; }
+.gcf-table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 520px; }
+.gcf-table th {
+  text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--gcf-muted); padding: 8px 10px; border-bottom: 1px solid var(--gcf-line);
+  white-space: nowrap;
+}
+.gcf-table td { padding: 9px 10px; border-bottom: 1px solid var(--gcf-line); vertical-align: top; }
+.gcf-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gcf-table tr.gcf-row { cursor: pointer; }
+.gcf-table tr.gcf-row:hover td { background: var(--gcf-sunk); }
+.gcf-table tr.gcf-row:focus-visible td { outline: 2px solid var(--gcf-accent); outline-offset: -2px; }
+
+.gcf-pill {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
+.gcf-pill-ok      { background: var(--gcf-accent-soft); color: var(--gcf-accent); }
+.gcf-pill-flag    { background: var(--gcf-warn-soft);   color: var(--gcf-warn); }
+.gcf-pill-stop    { background: var(--gcf-stop-soft);   color: var(--gcf-stop); }
+.gcf-pill-tier    { background: var(--gcf-sunk); color: var(--gcf-muted); border: 1px solid var(--gcf-line); }
+.gcf-pill-project { background: var(--gcf-project-soft); color: var(--gcf-project); }
+
+.gcf-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; min-width: 0; }
+/* A select sizes itself to its WIDEST option, not to its container, so one
+   long project name pushed the whole page 78px wide at 430px — the same
+   shape as the dashboard overflow. It has to be told it may shrink. */
+.gcf-actions select { max-width: 100%; min-width: 0; flex: 1 1 180px; }
+.gcf select { max-width: 100%; min-width: 0; }
+.gcf-hint { font-size: 12px; color: var(--gcf-muted); }
+.gcf-select {
+  padding: 7px 10px; border-radius: 6px; border: 1px solid var(--gcf-line);
+  background: var(--gcf-surface); color: var(--gcf-ink); font: inherit; font-size: 13px;
+}
+
+.gcf-two { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 1000px) { .gcf-two { grid-template-columns: 1fr 1fr; } }
+.gcf-two > * { min-width: 0; }
+
+/* display:block matters. As an inline span the height and background simply
+   do not apply, and the bar renders as nothing at all — which reads as a
+   score of zero rather than as a missing element. */
+.gcf-bar { display: block; height: 6px; border-radius: 3px; background: var(--gcf-line); overflow: hidden; }
+.gcf-bar > i { display: block; height: 100%; background: var(--gcf-accent); }
+.gcf-bar-row { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.gcf-bar-row > .gcf-bar { flex: 1 1 auto; min-width: 40px; }
+.gcf-bar-row > span { flex: 0 0 auto; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+.gcf-form { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media (min-width: 760px) { .gcf-form { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .gcf-form-3 { grid-template-columns: repeat(3, 1fr); } }
+.gcf-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gcf-field > label { font-size: 11.5px; font-weight: 600; color: var(--gcf-muted); }
+.gcf-field input, .gcf-field select, .gcf-field textarea {
+  padding: 8px 10px; border: 1px solid var(--gcf-line); border-radius: 6px;
+  background: var(--gcf-surface); color: var(--gcf-ink); font: inherit; font-size: 13px;
+  min-width: 0; width: 100%;
+}
+.gcf-field-wide { grid-column: 1 / -1; }
+.gcf-tiered { display: grid; grid-template-columns: 1fr 130px; gap: 6px; }
+.gcf-checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.gcf-checks label { font-size: 12.5px; display: inline-flex; gap: 6px; align-items: center; font-weight: 400; color: var(--gcf-ink); }
+.gcf-group { grid-column: 1 / -1; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--gcf-accent); margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--gcf-line); }
+.gcf-group:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+/* ── The cycle rail: ten stages, a count on each ─────────────── */
+.gcf-rail { display: flex; gap: 6px; overflow-x: auto; padding: 4px 0 10px; margin-bottom: 8px; }
+.gcf-rail-step {
+  flex: 0 0 132px; min-width: 0; text-align: left; cursor: pointer;
+  border: 1px solid var(--gcf-line); border-radius: 8px; padding: 8px 10px;
+  background: var(--gcf-sunk); color: var(--gcf-ink); font: inherit;
+}
+.gcf-rail-step:hover { border-color: var(--gcf-accent); }
+.gcf-rail-step[aria-pressed="true"] { border-color: var(--gcf-accent); background: var(--gcf-accent-soft); }
+.gcf-rail-step:focus-visible { outline: 2px solid var(--gcf-accent); outline-offset: 2px; }
+.gcf-rail-n { display: block; font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--gcf-muted); }
+.gcf-rail-label { display: block; font-size: 11.5px; font-weight: 600; line-height: 1.25; min-height: 2.5em; }
+.gcf-rail-count { display: block; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.gcf-rail-ask { display: block; font-size: 11px; color: var(--gcf-muted); font-variant-numeric: tabular-nums; }
+.gcf-rail-step.empty .gcf-rail-count { color: var(--gcf-muted); }
+
+/* ── The work list and what is due ───────────────────────────── */
+.gcf-list { list-style: none; margin: 0; padding: 0; }
+.gcf-list > li { padding: 10px 0; border-bottom: 1px solid var(--gcf-line); font-size: 12.5px; display: grid; gap: 4px 12px; grid-template-columns: 1fr; min-width: 0; }
+.gcf-list > li:last-child { border-bottom: none; }
+.gcf-list-title { font-weight: 600; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.gcf-list-title a { color: var(--gcf-accent); text-decoration: none; cursor: pointer; }
+.gcf-list-title a:hover { text-decoration: underline; }
+.gcf-list-meta { font-size: 11.5px; color: var(--gcf-muted); }
+.gcf-date { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gcf-overdue { color: var(--gcf-stop); font-weight: 600; }
+
+/* ── The project view ───────────────────────────────────────── */
+.gcf-project-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; min-width: 0; }
+.gcf-project-head h3 { margin: 0; font-size: 17px; flex: 1 1 320px; min-width: 0; overflow-wrap: anywhere; }
+.gcf-back { background: none; border: 1px solid var(--gcf-line); border-radius: 6px; padding: 6px 12px; color: var(--gcf-ink); font: inherit; font-size: 12.5px; cursor: pointer; }
+.gcf-back:hover { border-color: var(--gcf-accent); color: var(--gcf-accent); }
+
+/* The twelve record stages as steps; the one the project is on is marked,
+   and a dated step is one the history holds. */
+.gcf-steps { display: flex; gap: 0; overflow-x: auto; padding: 6px 0 12px; }
+.gcf-step { flex: 0 0 96px; min-width: 0; position: relative; padding: 0 6px 0 0; }
+.gcf-step::before { content: ""; display: block; height: 4px; border-radius: 2px; background: var(--gcf-line); margin-bottom: 6px; }
+.gcf-step.done::before { background: var(--gcf-accent); }
+.gcf-step.current::before { background: var(--gcf-accent); box-shadow: 0 0 0 2px var(--gcf-accent-soft); }
+.gcf-step-label { display: block; font-size: 10.5px; line-height: 1.25; color: var(--gcf-muted); }
+.gcf-step.current .gcf-step-label { color: var(--gcf-ink); font-weight: 700; }
+.gcf-step-date { display: block; font-size: 10.5px; color: var(--gcf-muted); font-variant-numeric: tabular-nums; }
+
+.gcf-check { display: grid; gap: 2px 10px; grid-template-columns: 74px 1fr; padding: 8px 0; border-bottom: 1px solid var(--gcf-line); font-size: 12.5px; min-width: 0; }
+.gcf-check:last-child { border-bottom: none; }
+.gcf-check-label { font-weight: 600; }
+.gcf-check-clause { font-size: 11.5px; color: var(--gcf-muted); }
+.gcf-check-remedy { font-size: 11.5px; color: var(--gcf-warn); grid-column: 2; }
+
+.gcf-crit { border: 1px solid var(--gcf-line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; min-width: 0; }
+.gcf-crit-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 13px; font-weight: 600; }
+.gcf-crit ul { margin: 6px 0 0; padding-left: 0; list-style: none; font-size: 12px; }
+.gcf-crit li { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; min-width: 0; }
+.gcf-crit li > span:last-child { min-width: 0; }
+
+.gcf-facts { display: grid; gap: 8px 16px; grid-template-columns: 1fr; margin: 0; }
+@media (min-width: 720px) { .gcf-facts { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .gcf-facts-4 { grid-template-columns: repeat(4, 1fr); } }
+.gcf-facts dt { font-size: 10.5px; letter-spacing: .04em; text-transform: uppercase; color: var(--gcf-muted); margin: 0; }
+.gcf-facts dd { font-size: 12.5px; margin: 2px 0 0; overflow-wrap: anywhere; min-width: 0; }
+
+.gcf-inline-form { display: grid; gap: 8px; grid-template-columns: 1fr; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--gcf-line); }
+@media (min-width: 760px) { .gcf-inline-form { grid-template-columns: repeat(2, 1fr); } }
+.gcf-inline-form .gcf-actions { grid-column: 1 / -1; margin: 0; }
+.gcf-danger { color: var(--gcf-stop); border-color: var(--gcf-stop-soft); }
+.gcf-remove { background: none; border: none; color: var(--gcf-stop); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0 4px; }

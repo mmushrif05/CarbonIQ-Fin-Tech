@@ -60,6 +60,71 @@ const held = (label, value, source) => ({ label, status: HELD, value, source: so
 const partial = (label, value, missing) => ({ label, status: PARTIAL, value, missing });
 const external = (label, needs, who) => ({ label, status: EXTERNAL, value: null, needs, from: who });
 
+/* An external input that the bank has since recorded as obtained — a document
+   reference, a safeguards status, a letter — is held, with its reference as
+   the source. The worklist shrinks as the bank works, which is the only way a
+   readiness figure can move. */
+const document = (project, kind) => (project.documents || []).find(d => d && d.kind === kind) || null;
+const docLine = (project, kind, label, needs, who) => {
+  const d = document(project, kind);
+  return d ? held(label, `${d.title}${d.version ? ` (${d.version})` : ''}${d.date ? ` — ${d.date}` : ''}`,
+    d.reference || 'Recorded on the project') : external(label, needs, who);
+};
+const safeguardLine = (project, key, label, needs, who) => {
+  const st = (project.safeguards || {})[key];
+  if (st && st.status === 'complete') return held(label, `Complete${st.date ? ` — ${st.date}` : ''}`, st.reference || 'Recorded on the project');
+  if (st && st.status === 'in_progress') return partial(label, `In progress${st.date ? ` — ${st.date}` : ''}`, needs);
+  return external(label, needs, who);
+};
+const stageLabel = (stage) => (require('../domain/cycle').STAGE_INFO[stage] || { label: stage }).label;
+
+const fpicRequired = (project) => Boolean((project.safeguards && project.safeguards.fpic && project.safeguards.fpic.required)
+  || (project.essFlags || []).includes('fpic_required'));
+
+function fpicLine(project) {
+  const f = (project.safeguards || {}).fpic || {};
+  const label = 'Free, Prior and Informed Consent (FPIC) process record';
+  const needs = 'Indigenous Peoples policy applies. FPIC is a process with affected communities, '
+    + 'evidenced by its record — it is not a document that can be drafted for them.';
+  if (f.status === 'obtained') return held(label, `Obtained${f.communities ? ` — ${f.communities}` : ''}`, f.note || 'Recorded on the project');
+  if (f.status === 'in_progress') return partial(label, `In progress${f.communities ? ` with ${f.communities}` : ''}`, needs);
+  return external(label, needs, 'Affected communities, facilitated independently');
+}
+
+function genderLine(project) {
+  const s = project.safeguards || {};
+  const a = s.genderAssessment && s.genderAssessment.status === 'complete';
+  const b = s.genderActionPlan && s.genderActionPlan.status === 'complete';
+  const label = 'Gender assessment and gender action plan';
+  const needs = 'Mandatory for every GCF funding proposal. GESI applies across all NDC 3.0 actions.';
+  if (a && b) return held(label, 'Assessment and action plan complete', (s.genderActionPlan.reference || s.genderAssessment.reference) || 'Recorded on the project');
+  if (a || b) return partial(label, a ? 'Assessment complete; action plan outstanding' : 'Action plan complete; assessment outstanding', needs);
+  return external(label, needs, 'Gender specialist');
+}
+
+function ndaLine(project) {
+  const n = project.nda || {};
+  const label = 'NDA no-objection letter';
+  const needs = 'Written no-objection from Sri Lanka\'s National Designated Authority. A legal '
+    + 'instrument; no analysis substitutes for it.';
+  if (n.status === 'issued') return held(label, `Issued${n.issuedAt ? ` ${n.issuedAt}` : ''}${n.reference ? ` — ${n.reference}` : ''}`, 'National Designated Authority');
+  if (n.status === 'requested') return partial(label, `Requested${n.requestedAt ? ` ${n.requestedAt}` : ''}`, needs);
+  return external(label, needs, 'National Designated Authority');
+}
+
+function cofinancingLine(project) {
+  const c = Array.isArray(project.coFinancing) ? project.coFinancing : [];
+  const label = 'Signed co-financing commitments';
+  const needs = 'Letters of commitment from each co-financier. GCF sets no minimum co-financing '
+    + 'requirement, but a co-financing figure stated without a commitment behind it is not '
+    + 'evidence.';
+  if (!c.length) return external(label, needs, 'Co-financiers');
+  const evidenced = c.filter(x => x.status === 'letter_received');
+  const summary = c.map(x => `${x.name} ${money(x.amount)} — ${x.status.replace(/_/g, ' ')}`).join('; ');
+  if (evidenced.length === c.length) return held(label, summary, 'Co-financing letters recorded on the project');
+  return partial(label, summary, `${c.length - evidenced.length} of ${c.length} co-financier(s) without a letter on record.`);
+}
+
 /**
  * The package for one project.
  */
@@ -84,10 +149,14 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
         held('GCF results area', `${project.resultsArea} (${project.stream})`),
         held('Project size', `${money(f.totalCost)} — within DFCC's ${accreditation.sizeCategory} accreditation`),
         held('Environmental and social category', project.essCategory),
-        held('Stage', project.stage),
-        external('Executing entity and its track record',
-          'The entity that will implement the project, its legal status and its delivery record.',
-          'DFCC origination'),
+        held('Stage', stageLabel(project.stage)),
+        project.executingEntity && project.executingEntity.name
+          ? (project.executingEntity.trackRecord
+            ? held('Executing entity and its track record', `${project.executingEntity.name} — ${project.executingEntity.trackRecord}`)
+            : partial('Executing entity and its track record', project.executingEntity.name, 'The entity is named; its delivery record is not.'))
+          : external('Executing entity and its track record',
+            'The entity that will implement the project, its legal status and its delivery record.',
+            'DFCC origination'),
       ],
     },
     {
@@ -100,14 +169,16 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
         held('Baseline and counterfactual',
           `${e.mitigation.baseline.description} — ${e.mitigation.baseline.counterfactual}`),
         held('Baseline type', e.mitigation.baseline.type),
-        external('Theory of change',
-          'The causal chain from activities to the result, and why it holds here. GCF reads this '
-          + 'as the core of the argument; it is a sector judgement, not a computation.',
-          'Project developer with DFCC'),
+        project.narrative && project.narrative.theoryOfChange
+          ? held('Theory of change', project.narrative.theoryOfChange)
+          : external('Theory of change',
+            'The causal chain from activities to the result, and why it holds here. GCF reads this '
+            + 'as the core of the argument; it is a sector judgement, not a computation.',
+            'Project developer with DFCC'),
         external('Detailed activity description and implementation timetable',
           'Work packages, sequencing, procurement approach and delivery milestones.',
           'Feasibility study'),
-        external('Feasibility study or pre-feasibility assessment',
+        docLine(project, 'feasibility_study', 'Feasibility study or pre-feasibility assessment',
           'Technical and economic feasibility at the depth GCF requires for the project stage.',
           'Project developer'),
       ],
@@ -133,12 +204,8 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           structuring.recommended
             ? `${structuring.recommended.name} — ${structuring.recommended.basis}`
             : structuring.recommendedNote),
-        external('Signed co-financing commitments',
-          'Letters of commitment from each co-financier. GCF sets no minimum co-financing '
-          + 'requirement, but a co-financing figure stated without a commitment behind it is not '
-          + 'evidence.',
-          'Co-financiers'),
-        external('Financial model',
+        cofinancingLine(project),
+        docLine(project, 'financial_model', 'Financial model',
           'Cash-flow model with the assumptions behind the viability statement above.',
           'Project developer'),
       ],
@@ -161,10 +228,7 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           f.gcfAsk ? `${(f.totalCost / f.gcfAsk).toFixed(2)}x total cost per USD of GCF ask` : null),
         ...screening.GCF_CRITERIA.filter(c => !c.scored).map(c =>
           external(`${c.name}`, c.reason, 'Sector and country specialists')),
-        external('NDA no-objection letter',
-          'Written no-objection from Sri Lanka\'s National Designated Authority. A legal '
-          + 'instrument; no analysis substitutes for it.',
-          'National Designated Authority'),
+        ndaLine(project),
       ],
     },
     {
@@ -189,7 +253,7 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
             + `(${project.beneficiaries.womenPct.tier})` : null,
           'A district population share is not a project beneficiary disaggregation. GCF requires '
           + 'it disaggregated at source.'),
-        external('Monitoring and evaluation arrangements',
+        docLine(project, 'me_plan', 'Monitoring and evaluation arrangements',
           'Who measures each indicator, how often, and against what verification protocol.',
           'DFCC with the executing entity'),
       ],
@@ -213,7 +277,7 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           ? [held('Deliverability finding', structuring.structuralGap.note)]
           : []),
         held('Structuring watch-out', structuring.recommended?.watchOut || null),
-        external('Full risk register',
+        docLine(project, 'risk_register', 'Full risk register',
           'Technical, financial, political, social and environmental risks with likelihood, impact '
           + 'and mitigation, at the depth GCF requires.',
           'Project developer with DFCC risk'),
@@ -231,19 +295,15 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
         held('Grant modality', accreditation.grantModality === false
           ? `Not held. ${accreditation.grantNote || ''}`.trim()
           : 'Held'),
-        external('Environmental and social impact assessment (ESIA) or ESMP',
+        safeguardLine(project, ['C', 'I-3'].includes(project.essCategory) ? 'esap' : 'esmp',
+          'Environmental and social impact assessment (ESIA) or ESMP',
           'Scaled to the category. A category B project requires an ESMP at minimum.',
           'Qualified E&S consultant'),
-        external('Gender assessment and gender action plan',
-          'Mandatory for every GCF funding proposal. GESI applies across all NDC 3.0 actions.',
-          'Gender specialist'),
-        ...((project.essFlags || []).includes('fpic_required')
-          ? [external('Free, Prior and Informed Consent (FPIC) process record',
-            'Indigenous Peoples policy applies. FPIC is a process with affected communities, '
-            + 'evidenced by its record — it is not a document that can be drafted for them.',
-            'Affected communities, facilitated independently')]
+        genderLine(project),
+        ...(fpicRequired(project)
+          ? [fpicLine(project)]
           : []),
-        external('Grievance redress mechanism',
+        safeguardLine(project, 'grm', 'Grievance redress mechanism',
           'One of DFCC\'s three open accreditation conditions. Its report is due to the GCF '
           + 'Secretariat.',
           'DFCC compliance'),
@@ -267,8 +327,8 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
         held('Arithmetic check', e.check.verifiable
           ? `Recomputed and ${e.check.agrees ? 'agrees' : 'DIVERGES'} — see the emissions model`
           : 'No independent recomputation path from the data held'),
-        external('Maps and site information', 'Project location maps and site descriptions.', 'Project developer'),
-        external('Procurement plan',
+        docLine(project, 'map', 'Maps and site information', 'Project location maps and site descriptions.', 'Project developer'),
+        docLine(project, 'procurement_plan', 'Procurement plan',
           'Procurement disclosure is one of DFCC\'s three open accreditation conditions.',
           'DFCC procurement'),
       ],

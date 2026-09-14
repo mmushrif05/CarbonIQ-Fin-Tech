@@ -46,8 +46,24 @@ const TIERS = IRMF.evidenceTiers.map(t => t.tier);
 const AREA_CODES = AREAS.areas.map(a => a.code);
 const STREAMS = ['mitigation', 'adaptation'];
 
-/** Where a project has reached. The ToR's own progression. */
-const STAGES = ['concept', 'pre_feasibility', 'cn_drafted', 'cn_submitted', 'ppf', 'fp', 'board'];
+/** Where a project has reached: the bank's working states, each mapped onto
+ *  one of the Fund's ten cycle stages in ./cycle.js. The list used to stop at
+ *  the Board; a pipeline has to carry a project past the day it is approved. */
+const STAGES = [...require('./cycle').STAGES];
+
+const ISO_DATE = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow(null);
+const DOC_STATUS = Joi.object({
+  status: Joi.string().valid('not_started', 'in_progress', 'complete').default('not_started'),
+  reference: Joi.string().max(200).allow('', null).optional(),
+  date: ISO_DATE.optional(),
+  note: Joi.string().max(600).allow('', null).optional(),
+});
+const DOCUMENT_KINDS = ['feasibility_study', 'financial_model', 'economic_analysis', 'esia', 'esmp', 'esap',
+  'gender_assessment', 'gender_action_plan', 'stakeholder_consultation', 'procurement_plan', 'me_plan',
+  'risk_register', 'term_sheet', 'no_objection_letter', 'cofinancing_letter', 'ppf_application',
+  'theory_of_change', 'completion_report', 'map', 'other'];
+const NDA_STATUSES = ['not_requested', 'informed', 'requested', 'issued', 'declined'];
+const COFINANCING_STATUSES = ['indicative', 'committed', 'letter_received'];
 
 /** GCF applies IFC Performance Standards on a scaled risk basis. DFCC is
  *  accredited to B/I-2, so category A is out of scope entirely — a gate the
@@ -160,6 +176,76 @@ const projectSchema = Joi.object({
   barriers: Joi.array().items(Joi.string().max(40)).default([]),
 
   technical: Joi.object().unknown(true).default({}),
+
+  /* The pipeline's time axis. Every milestone is a date the bank or the Fund
+     set; nothing here is projected. Targets sit beside actuals so an overdue
+     target is a fact the screen can state. */
+  timeline: Joi.object({
+    conceptStarted: ISO_DATE, cnSubmissionTarget: ISO_DATE, cnSubmitted: ISO_DATE, cnFeedback: ISO_DATE,
+    ppfRequested: ISO_DATE, ppfApproved: ISO_DATE, fpSubmissionTarget: ISO_DATE, fpSubmitted: ISO_DATE,
+    boardTarget: ISO_DATE, boardDecision: ISO_DATE, faaSigned: ISO_DATE, faaEffective: ISO_DATE,
+    firstDisbursement: ISO_DATE, implementationStart: ISO_DATE, commissioning: ISO_DATE, completion: ISO_DATE,
+  }).default({}),
+  stageHistory: Joi.array().items(Joi.object({
+    stage: Joi.string().valid(...STAGES).required(),
+    at: Joi.string().max(40).required(),
+    by: Joi.string().max(160).allow('', null).optional(),
+    note: Joi.string().max(600).allow('', null).optional(),
+  })).default([]),
+
+  /* The process state a concept note and a funding proposal are judged on —
+     the NDA's no-objection, the safeguards documents by category, gender,
+     consent, co-financing, the executing entity, the documents themselves.
+     Each used to exist only as a line of prose saying it was outstanding. */
+  nda: Joi.object({
+    status: Joi.string().valid(...NDA_STATUSES).default('not_requested'),
+    requestedAt: ISO_DATE.optional(), issuedAt: ISO_DATE.optional(),
+    reference: Joi.string().max(200).allow('', null).optional(),
+    note: Joi.string().max(600).allow('', null).optional(),
+  }).default({ status: 'not_requested' }),
+  safeguards: Joi.object({
+    esia: DOC_STATUS.optional(), esmp: DOC_STATUS.optional(), esap: DOC_STATUS.optional(),
+    genderAssessment: DOC_STATUS.optional(), genderActionPlan: DOC_STATUS.optional(),
+    stakeholderConsultation: DOC_STATUS.optional(), grm: DOC_STATUS.optional(),
+    fpic: Joi.object({
+      required: Joi.boolean().default(false),
+      status: Joi.string().valid('not_required', 'not_started', 'in_progress', 'obtained').default('not_started'),
+      communities: Joi.string().max(400).allow('', null).optional(),
+      note: Joi.string().max(600).allow('', null).optional(),
+    }).optional(),
+  }).default({}),
+  coFinancing: Joi.array().items(Joi.object({
+    name: Joi.string().max(200).required(),
+    role: Joi.string().valid('sponsor', 'lender', 'dfi', 'government', 'grant', 'other').default('other'),
+    amount: Joi.number().min(0).required(),
+    currency: Joi.string().max(8).default('USD'),
+    instrument: Joi.string().max(60).allow('', null).optional(),
+    status: Joi.string().valid(...COFINANCING_STATUSES).default('indicative'),
+    reference: Joi.string().max(200).allow('', null).optional(),
+    date: ISO_DATE.optional(),
+  })).default([]),
+  executingEntity: Joi.object({
+    name: Joi.string().max(200).required(),
+    role: Joi.string().max(200).allow('', null).optional(),
+    trackRecord: Joi.string().max(1200).allow('', null).optional(),
+  }).optional(),
+  documents: Joi.array().items(Joi.object({
+    kind: Joi.string().valid(...DOCUMENT_KINDS).required(),
+    title: Joi.string().max(200).required(),
+    reference: Joi.string().max(300).allow('', null).optional(),
+    version: Joi.string().max(40).allow('', null).optional(),
+    date: ISO_DATE.optional(),
+  })).default([]),
+  /* The evidence for the three criteria no engine can score — a reviewer's
+     question, answered by the bank in its own words. */
+  narrative: Joi.object({
+    paradigmShift: Joi.string().max(2000).allow('', null).optional(),
+    enablingEnvironment: Joi.string().max(2000).allow('', null).optional(),
+    sustainableDevelopment: Joi.string().max(2000).allow('', null).optional(),
+    needsOfRecipient: Joi.string().max(2000).allow('', null).optional(),
+    theoryOfChange: Joi.string().max(3000).allow('', null).optional(),
+  }).default({}),
+
   financing: financingSchema.required(),
   mitigation: mitigationSchema.required(),
   embodiedCarbon: Joi.object({
@@ -195,8 +281,25 @@ const projectSchema = Joi.object({
  * recorded the disclosure reports each one absent with the clause that
  * requires it.
  */
+const accreditationSchema = Joi.object({
+  decision: Joi.string().max(40).required(),
+  accreditedAt: ISO_DATE.optional(),
+  amaExecutedAt: ISO_DATE.optional(),
+  amaEffectiveAt: ISO_DATE.optional(),
+  sizeCategory: Joi.string().valid('micro', 'small', 'medium', 'large').required(),
+  sizeRange_usd: Joi.array().items(Joi.number().min(0)).length(2).required(),
+  essCategory: Joi.string().max(20).required(),
+  modalities: Joi.array().items(Joi.string().max(60)).default([]),
+  grantModality: Joi.boolean().required(),
+  grantNote: Joi.string().max(600).allow('', null).optional(),
+  source: Joi.string().max(300).allow('', null).optional(),
+});
+
 const entitySchema = Joi.object({
   entityName: Joi.string().max(200).allow('', null).optional(),
+  /* The entity's own accreditation. Until recorded the shipped one stands in
+     — DFCC's under B.36/10 — and every gate says which it read. */
+  accreditation: accreditationSchema.optional(),
   climateGovernance: Joi.string().max(4000).allow('', null).optional(),
   managementRole: Joi.string().max(4000).allow('', null).optional(),
   strategyNarrative: Joi.string().max(6000).allow('', null).optional(),
@@ -279,5 +382,5 @@ module.exports = {
   projectSchema, validate, entitySchema, validateEntity,
   weakestTier, tracedFigures, withinAccreditation,
   TIERS, AREA_CODES, STREAMS, STAGES, ESS_CATEGORIES, ESS_WITHIN_DFCC_ACCREDITATION,
-  BASELINE_TYPES,
+  BASELINE_TYPES, DOCUMENT_KINDS, NDA_STATUSES, COFINANCING_STATUSES, accreditationSchema,
 };
