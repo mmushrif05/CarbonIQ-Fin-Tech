@@ -123,7 +123,7 @@ router.get('/candidates', authenticate, defaultLimiter,
   res.json({
     candidates: {
       ...desk.candidates(pipeline.projects, effective.book.investments, {
-        accreditation: gcfStore.seedMeta().accreditation,
+        accreditation: await gcfStore.accreditation(req.orgId),
         weights,
       }),
       source: pipeline.source,
@@ -157,7 +157,7 @@ router.get('/readiness', authenticate, defaultLimiter,
   res.json({
     readiness: {
       ...desk.readiness(pipeline.projects, {
-        accreditation: gcfStore.seedMeta().accreditation,
+        accreditation: await gcfStore.accreditation(req.orgId),
         entityDisclosures,
         reportingYear: year,
         sample: pipeline.sample,

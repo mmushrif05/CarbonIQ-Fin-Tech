@@ -124,7 +124,7 @@ async function _adopt(orgId, input, project, source, portfolio) {
       'Amend that investment rather than adopting the record a second time.');
   }
 
-  const verdict = screening.screenOne(project, { accreditation: gcfStore.seedMeta().accreditation });
+  const verdict = screening.screenOne(project, { accreditation: await gcfStore.accreditation(orgId) });
 
   const fin = project.financing || {};
   const mit = project.mitigation || {};

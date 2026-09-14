@@ -32,7 +32,7 @@ router.get('/screening', authenticate, defaultLimiter,
   handle(async (req, res) => {
   const { projects, source, sample } = await store.list(req.orgId);
   res.json({
-    screening: screening.screen(projects, { accreditation: store.seedMeta().accreditation }),
+    screening: screening.screen(projects, { accreditation: await store.accreditation(req.orgId) }),
     source,
     sample,
   });
@@ -51,7 +51,7 @@ router.get('/ranking', authenticate, defaultLimiter,
   const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     ranking: screening.rank(projects, {
-      accreditation: store.seedMeta().accreditation,
+      accreditation: await store.accreditation(req.orgId),
       weights,
     }),
     source,
@@ -82,7 +82,7 @@ router.get('/recommendation', authenticate, defaultLimiter,
   const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     recommendation: screening.recommend(projects, {
-      accreditation: store.seedMeta().accreditation,
+      accreditation: await store.accreditation(req.orgId),
       weights,
       take,
     }),
@@ -102,7 +102,7 @@ router.get('/instruments', authenticate, defaultLimiter,
   const { projects, source, sample } = await store.list(req.orgId);
   res.json({
     instruments: instruments.structurePipeline(projects, {
-      accreditation: store.seedMeta().accreditation,
+      accreditation: await store.accreditation(req.orgId),
     }),
     source,
     sample,
@@ -122,7 +122,7 @@ router.get('/instruments/:id', authenticate, defaultLimiter,
   }
   res.json({
     structuring: instruments.structureFor(project, {
-      accreditation: store.seedMeta().accreditation,
+      accreditation: await store.accreditation(req.orgId),
     }),
     source,
     sample,
@@ -163,7 +163,7 @@ router.get('/cn/:id', authenticate, defaultLimiter,
   }
 
   const pkg = cnPackage.buildPackage(project, {
-    accreditation: store.seedMeta().accreditation,
+    accreditation: await store.accreditation(req.orgId),
     sample,
     sampleNote: store.seedMeta().sampleNote,
   });
