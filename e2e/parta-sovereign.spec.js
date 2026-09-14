@@ -18,7 +18,9 @@ const { test, expect } = require('@playwright/test');
 const KEY = 'ck_test_e2e00000000000000000000000000000';
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
 
-const USER = { email: 'ana@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
+/* An account of this spec's own: the limiter counts requests per signed-in
+   user, so specs running in parallel on one shared account starve each other. */
+const USER = { email: 'sovereign@bank.lk', name: 'Ana Perera', role: 'admin', orgId: 'ui',
   password: 'an end to end passphrase', mustChangePassword: false };
 
 async function ensureAccount(request) {
