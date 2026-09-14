@@ -25,7 +25,7 @@ Checked across all three: **389**. Remaining: **206**.
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **338**. Remaining: **67** (384 errors, measured by
+Checked: **338**. Remaining: **67** (385 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -46,9 +46,9 @@ pragma and nothing else.
 | `src/domains/capital/domain/capital-forecast.js` | 9 |
 | `src/domains/pcaf-part-a/domain/attribution.js` | 9 |
 | `src/domains/pcaf-part-c/agents/documents.js` | 9 |
+| `scripts/generate-gcf-conformance-doc.js` | 8 |
 | `src/domains/gcf/application/cn-package.js` | 8 |
 | `src/domains/gcf/domain/screening.js` | 8 |
-| `scripts/generate-gcf-conformance-doc.js` | 7 |
 | `src/domains/lending/interface/routes/covenant.js` | 7 |
 | `src/domains/pcaf-part-a/domain/country-config.js` | 7 |
 | `src/domains/pcaf-part-c/domain/data-quality.js` | 7 |
