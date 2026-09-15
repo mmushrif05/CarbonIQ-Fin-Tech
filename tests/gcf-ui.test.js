@@ -257,3 +257,33 @@ describe('Every sub-tab exists in both the markup and the router', () => {
     expect(panels.filter(p => !p.includes('hidden'))).toHaveLength(1);
   });
 });
+
+describe('The assessor validation panel (Phase 1 Stage 4)', () => {
+  test('the project page carries the panel and its containers', () => {
+    must(HTML, 'id="gcfValidationState"', "the validation panel has a state container");
+    must(HTML, 'id="gcfValidationCriteria"', "the validation panel has a per-criterion container");
+    must(HTML, 'id="gcfValidationHistory"', "the validation panel has a history container");
+  });
+
+  test('the sign-off form is a validate-gated control, not a write one', () => {
+    /* Hidden where the server would refuse: the validate scope is the
+       assessor's, and the screen must not draw a button the server rejects. */
+    must(HTML, /id="gcfValidationForm"[^>]*data-validates/, "the sign-off form is gated by data-validates");
+    must(PIPE, /\[data-validates\]/, "the module hides the validate controls where the caller cannot validate");
+    must(PIPE, /canValidate/, "the module asks whether the caller may validate");
+  });
+
+  test('the rating is a word, never a number', () => {
+    /* The rating is the assessor's judgement in words; a number here would be
+       read as a GCF or a PCAF score, which is exactly the confusion the
+       evidence tiers are kept apart to prevent. */
+    must(PIPE, /RATING_LABEL/, "ratings render as words");
+    mustNot(PIPE, /rating[^)]*\/\s*5/, "a rating is never rendered as a fraction");
+  });
+
+  test('the validation is fetched before the project renders, not after', () => {
+    /* Part of the same Promise.all as the project and readiness reads, so the
+       panel is populated on first paint rather than a beat later. */
+    must(PIPE, /\/validation`\),/, "the validation is fetched alongside the project");
+  });
+});

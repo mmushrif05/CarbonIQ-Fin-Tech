@@ -90,4 +90,22 @@ const gcfPatchSchema = Joi.object().unknown(true).min(1);
  *  schema, applied at the door — one shape, no second copy. */
 const gcfPreCheckSchema = record.preCheckSchema;
 
-module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema };
+/**
+ * One assessor change to a project's validation. `to` names the target state
+ * and is omitted for a rating-only update; the transition machine in
+ * `domain/validation.js` decides whether it is legal. Ratings are words, never
+ * a number, and the recommendation is required only to reach `validated` —
+ * which the domain enforces, so the schema only bounds the shapes.
+ */
+const gcfValidationSchema = Joi.object({
+  to: Joi.string().valid('draft', 'under_review', 'validated').optional(),
+  ratings: Joi.object().pattern(Joi.string().max(40), Joi.object({
+    rating: Joi.string().valid('strong', 'adequate', 'weak').required(),
+    note: Joi.string().max(1000).allow('', null).optional(),
+  }).unknown(false)).optional(),
+  recommendation: Joi.string().valid('recommend', 'recommend_with_conditions', 'not_recommend').allow(null).optional(),
+  recommendationNote: Joi.string().max(2000).allow('', null).optional(),
+  note: Joi.string().max(1000).allow('', null).optional(),
+}).unknown(false).min(1);
+
+module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema, gcfValidationSchema };

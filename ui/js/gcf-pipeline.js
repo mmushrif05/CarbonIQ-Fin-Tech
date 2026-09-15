@@ -45,7 +45,7 @@ const GCFPipeline = (() => {
   const words = s => String(s ?? '').replace(/_/g, ' ');
 
   let deps = null;
-  const view = { portfolio: null, filterStage: null, project: null, readiness: null, criteria: null, source: null };
+  const view = { portfolio: null, filterStage: null, project: null, readiness: null, criteria: null, validation: null, source: null };
 
   const ref = () => (deps && deps.reference()) || {};
   const stageLabel = s => (ref().cycle && ref().cycle.recordStages && ref().cycle.recordStages[s] ? ref().cycle.recordStages[s].label : words(s));
@@ -55,6 +55,10 @@ const GCFPipeline = (() => {
   const vocab = k => ((ref().vocabulary || {})[k]) || [];
 
   const canWrite = () => Boolean(deps && deps.canWrite()) && view.source === 'recorded';
+  /* The assessor's sign-off controls: shown only to a caller the server would
+     let validate, and never on the shipped sample. The server's validate scope
+     is the control; this is the courtesy of not drawing a button it refuses. */
+  const canValidate = () => Boolean(deps && deps.canValidate && deps.canValidate()) && view.source === 'recorded';
 
   const tierPill = t => (t ? `<span class="gcf-pill gcf-pill-tier">${esc(t)}</span>` : '');
   const gatePill = s => {
@@ -226,13 +230,15 @@ const GCFPipeline = (() => {
   /* ── One project ──────────────────────────────────────────── */
   async function openProject(id, { quiet = false } = {}) {
     try {
-      const [one, rd] = await Promise.all([
+      const [one, rd, val] = await Promise.all([
         deps.call(`/pipeline/${encodeURIComponent(id)}`),
         deps.call(`/pipeline/${encodeURIComponent(id)}/readiness`),
+        deps.call(`/pipeline/${encodeURIComponent(id)}/validation`),
       ]);
       view.project = one.project; view.source = one.source;
       view.readiness = rd.readiness; view.criteria = rd.criteria; view.logframe = rd.logframe;
-      renderProject(one, rd);
+      view.validation = val.validation;
+      renderProject(one, rd, val);
       $('gcfPortfolio').hidden = true;
       $('gcfProject').hidden = false;
       if (!quiet) { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { /* ignore */ } }
@@ -268,7 +274,7 @@ const GCFPipeline = (() => {
       </tr>`).join('')}</tbody></table></div>`);
   }
 
-  function renderProject(one, rd) {
+  function renderProject(one, rd, val) {
     const p = one.project; const r = rd.readiness; const c = rd.criteria;
     const write = canWrite();
     const gate = (view.portfolio && view.portfolio.rows.find(x => x.id === p.id)) || {};
@@ -330,6 +336,8 @@ const GCFPipeline = (() => {
         <div class="gcf-crit-head">${heldPill(cr.status)} ${esc(cr.label)} <span class="gcf-hint">${cr.scoredByEngine ? 'scored by the screening engine' : 'not scored — judgement'}</span></div>
         <ul>${cr.sub.map(s => `<li>${heldPill(s.status)}<span>${esc(s.label)}</span></li>`).join('')}</ul>
       </div>`).join('') + `<div class="gcf-rule">${esc(c.note || '')}</div>`);
+
+    renderValidation(p, (val && val.validation) || null, c);
 
     /* Money */
     const v = f.viabilityWithoutGcf || {};
@@ -501,6 +509,106 @@ const GCFPipeline = (() => {
     on('gcfAdmDelete', 'click', () => removeProject(p.id, p.code));
 
     for (const el of document.querySelectorAll('#gcfProject [data-writes]')) el.hidden = !write && el.id !== 'gcfProjectMove';
+    for (const el of document.querySelectorAll('#gcfProject [data-validates]')) el.hidden = !canValidate();
+  }
+
+  /* ── The assessor's validation ────────────────────────────────
+     State, the six criteria with the assessor's rating beside the engine's
+     evidence coverage, the recommendation and the dated history. The rating is
+     the assessor's word (strong/adequate/weak), never a number — the evidence
+     pill beside it is what the record holds. Sign-off controls appear only for
+     a caller holding validate; the server is the control either way. */
+  const STATE_LABEL = { draft: 'Draft', under_review: 'Under review', validated: 'Validated' };
+  const RATING_LABEL = { strong: 'Strong', adequate: 'Adequate', weak: 'Weak' };
+  const REC_LABEL = {
+    recommend: 'Recommend', recommend_with_conditions: 'Recommend with conditions', not_recommend: 'Do not recommend',
+  };
+  const statePill = s => `<span class="gcf-pill gcf-pill-${s === 'validated' ? 'ok' : s === 'under_review' ? 'flag' : 'tier'}">${esc(STATE_LABEL[s] || s)}</span>`;
+  const ratingPill = r => (r ? `<span class="gcf-pill gcf-pill-${r === 'strong' ? 'ok' : r === 'adequate' ? 'flag' : 'stop'}">${esc(RATING_LABEL[r] || r)}</span>` : '<span class="gcf-hint">not rated</span>');
+
+  function renderValidation(p, v, c) {
+    const val = v || { state: 'draft', ratings: {}, recommendation: null, recommendationNote: null, validatedBy: null, validatedAt: null, history: [] };
+    const can = canValidate();
+    const frozen = val.state === 'validated';
+
+    const signoff = frozen
+      ? ` — ${esc(REC_LABEL[val.recommendation] || val.recommendation || '')}, signed off by ${esc(val.validatedBy || '—')}${val.validatedAt ? ` on ${esc(String(val.validatedAt).slice(0, 10))}` : ''}`
+      : (val.recommendation ? ` — recommendation: ${esc(REC_LABEL[val.recommendation] || val.recommendation)}` : '');
+    setHtml('gcfValidationState', `<p>${statePill(val.state)}${signoff}${val.recommendationNote ? `<span class="gcf-hint"> — ${esc(val.recommendationNote)}</span>` : ''}</p>`);
+
+    /* One row per criterion: the engine's evidence coverage, then the
+       assessor's rating (a select when editable, the word otherwise). */
+    const critRows = (c.criteria || []).map(cr => {
+      const rated = val.ratings[cr.id] || {};
+      const control = (can && !frozen)
+        ? `<select data-rate="${esc(cr.id)}"><option value="">—</option>${['strong', 'adequate', 'weak'].map(o => `<option value="${o}" ${rated.rating === o ? 'selected' : ''}>${RATING_LABEL[o]}</option>`).join('')}</select>`
+        : ratingPill(rated.rating);
+      return `<tr><td>${esc(cr.label)}</td><td>${heldPill(cr.status)}</td><td>${control}</td></tr>`;
+    }).join('');
+    setHtml('gcfValidationCriteria', `<div class="gcf-scroll"><table class="gcf-table">
+      <thead><tr><th>Criterion</th><th>Evidence on the record</th><th>Assessor rating</th></tr></thead>
+      <tbody>${critRows}</tbody></table></div>`);
+
+    if (!can) {
+      setHtml('gcfValidationForm', `<p class="gcf-hint">${view.source !== 'recorded'
+        ? 'This is the shipped illustrative pipeline — adopt it to validate a recorded project.'
+        : 'Validation is the assessor’s. Sign in as an assessor to rate and sign off.'}</p>`);
+    } else {
+      const recSel = `<select id="gcfValRec"><option value="">—</option>${Object.entries(REC_LABEL).map(([k, l]) => `<option value="${k}" ${val.recommendation === k ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+      const buttons = [];
+      if (val.state === 'draft') buttons.push('<button class="btn btn-secondary btn-sm" id="gcfValStart">Start review</button>');
+      if (val.state === 'under_review') {
+        buttons.push('<button class="btn btn-secondary btn-sm" id="gcfValSaveRatings">Save ratings</button>');
+        buttons.push('<button class="btn btn-primary btn-sm" id="gcfValValidate">Validate and sign off</button>');
+      }
+      if (val.state === 'validated') buttons.push('<button class="btn btn-secondary btn-sm" id="gcfValReopen">Reopen</button>');
+      setHtml('gcfValidationForm', `
+        <div class="gcf-inline-form">
+          <div class="gcf-field"><label for="gcfValRec">Recommendation</label>${frozen ? ratingPill(null) : recSel}</div>
+          <div class="gcf-field gcf-field-wide"><label for="gcfValNote">Note</label><textarea id="gcfValNote" rows="2" ${frozen ? 'disabled' : ''}>${esc(val.recommendationNote || '')}</textarea></div>
+          <div class="gcf-actions gcf-field-wide">${buttons.join(' ')}</div>
+        </div>`);
+      on('gcfValStart', 'click', () => validateChange(p.id, { to: 'under_review', ...gatherRatings() }));
+      on('gcfValSaveRatings', 'click', () => validateChange(p.id, gatherRatings()));
+      on('gcfValValidate', 'click', () => validateChange(p.id, { to: 'validated', ...gatherRatings() }));
+      on('gcfValReopen', 'click', () => validateChange(p.id, { to: 'under_review', note: 'Reopened for re-assessment.' }));
+    }
+
+    const hist = (val.history || []).slice().reverse();
+    setHtml('gcfValidationHistory', hist.length
+      ? `<h5>History</h5><ul class="gcf-history">${hist.map(h => `<li>${statePill(h.to)} <span class="gcf-hint">${esc(String(h.at).slice(0, 10))}${h.by ? ` · ${esc(h.by)}` : ''}${h.note ? ` · ${esc(h.note)}` : ''}</span></li>`).join('')}</ul>`
+      : '');
+  }
+
+  /* The ratings and recommendation as the form holds them now, so a state move
+     carries the assessor's latest edits in the same request. Only a chosen
+     rating is sent; an untouched select is left as the record has it. */
+  function gatherRatings() {
+    const ratings = {};
+    document.querySelectorAll('#gcfValidationCriteria [data-rate]').forEach(sel => {
+      if (sel.value) ratings[sel.dataset.rate] = { rating: sel.value };
+    });
+    const rec = $('gcfValRec');
+    const note = $('gcfValNote');
+    const out = {};
+    if (Object.keys(ratings).length) out.ratings = ratings;
+    if (rec && rec.value) out.recommendation = rec.value;
+    if (note) out.recommendationNote = note.value.trim() || null;
+    return out;
+  }
+
+  async function validateChange(id, change) {
+    hint('Recording the validation…');
+    try {
+      await deps.call(`/pipeline/${encodeURIComponent(id)}/validation`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(change),
+      });
+      hint('Recorded.');
+      await openProject(id, { quiet: true });
+      deps.refreshAll();
+    } catch (err) {
+      hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
+    }
   }
 
   const facts = pairs => pairs.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`).join('');

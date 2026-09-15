@@ -24,6 +24,7 @@
 const store = require('../../../platform/database/store');
 const { fallback } = require('../../../platform/observability/logger');
 const record = require('../domain/record');
+const validation = require('../domain/validation');
 const SEED = require('../domain/reference').PIPELINE_SEED;
 const STARTER = require('../domain/reference').STARTER_BOOK;
 
@@ -153,6 +154,23 @@ async function moveStage(orgId, id, { stage, at, note, timeline }, { by = null }
   }, { by });
 }
 
+/**
+ * Apply an assessor's validation change and persist it. The transition and its
+ * rules live in `domain/validation.js`; this attributes it to the actor, writes
+ * the whole record back through the schema, and refuses the shipped sample the
+ * same way `moveStage` does — a validation is a fact about a recorded project,
+ * not the illustrative one.
+ */
+async function setValidation(orgId, id, change, { by = null } = {}) {
+  store.assertWritable();
+  const current = await recordedOrRefuse(orgId, id);
+  const next = validation.apply(current, change, { by });
+  return put(orgId, {
+    ...current,
+    validation: { ...next, updatedBy: by || undefined, updatedAt: new Date().toISOString() },
+  }, { by });
+}
+
 async function remove(orgId, id) {
   store.assertWritable();
   await store.remove(COLLECTION, orgId, id);
@@ -243,7 +261,7 @@ async function setEntityDisclosures(orgId, body, { by = null } = {}) {
 }
 
 module.exports = {
-  list, get, put, patch, moveStage, remove, adoptSeed, installStarter, seedProjects, seedMeta, accreditation,
+  list, get, put, patch, moveStage, setValidation, remove, adoptSeed, installStarter, seedProjects, seedMeta, accreditation,
   entityDisclosures, setEntityDisclosures,
   COLLECTION, SETTINGS_COLLECTION,
 };

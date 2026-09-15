@@ -296,6 +296,34 @@ const projectSchema = Joi.object({
      Optional, so nothing recorded before this existed is affected. */
   preCheck: preCheckSchema.optional(),
 
+  /* The assessor's validation — the sign-off lifecycle (domain/validation.js).
+     Optional and backward compatible: a project recorded before this existed
+     reads as an unvalidated draft. Ratings are words (strong/adequate/weak),
+     never a number, so they cannot be quoted as a GCF or a PCAF score; every
+     transition is a dated, attributed entry in `history`. Written only through
+     the validate-scoped route, never through the ordinary intake. */
+  validation: Joi.object({
+    state: Joi.string().valid('draft', 'under_review', 'validated').default('draft'),
+    ratings: Joi.object().pattern(Joi.string().max(40), Joi.object({
+      rating: Joi.string().valid('strong', 'adequate', 'weak').required(),
+      note: Joi.string().max(1000).allow('', null).optional(),
+    }).unknown(false)).default({}),
+    recommendation: Joi.string().valid('recommend', 'recommend_with_conditions', 'not_recommend').allow(null).default(null),
+    recommendationNote: Joi.string().max(2000).allow('', null).optional(),
+    validatedBy: Joi.string().max(160).allow(null).optional(),
+    validatedAt: Joi.string().max(40).allow(null).optional(),
+    history: Joi.array().items(Joi.object({
+      from: Joi.string().valid('draft', 'under_review', 'validated').required(),
+      to: Joi.string().valid('draft', 'under_review', 'validated').required(),
+      at: Joi.string().max(40).required(),
+      by: Joi.string().max(160).allow('', null).optional(),
+      note: Joi.string().max(1000).allow('', null).optional(),
+      changed: Joi.array().items(Joi.string().max(60)).default([]),
+    })).default([]),
+    updatedBy: Joi.string().max(160).optional(),
+    updatedAt: Joi.string().max(40).optional(),
+  }).optional(),
+
   /* Who entered this and when. Real data entered by a bank is evidence in a
      GCF submission and in a statutory disclosure; an unattributed figure is
      not evidence, and an audit that cannot say who keyed a number is not an
