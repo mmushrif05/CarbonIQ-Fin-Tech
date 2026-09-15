@@ -14830,6 +14830,117 @@
                       }
                     }
                   },
+                  "validation": {
+                    "type": "object",
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "draft",
+                          "under_review",
+                          "validated"
+                        ],
+                        "default": "draft"
+                      },
+                      "ratings": {
+                        "type": "object"
+                      },
+                      "recommendation": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "recommend",
+                          "recommend_with_conditions",
+                          "not_recommend"
+                        ]
+                      },
+                      "recommendationNote": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "validatedBy": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 160
+                      },
+                      "validatedAt": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 40
+                      },
+                      "history": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string",
+                              "enum": [
+                                "draft",
+                                "under_review",
+                                "validated"
+                              ]
+                            },
+                            "to": {
+                              "type": "string",
+                              "enum": [
+                                "draft",
+                                "under_review",
+                                "validated"
+                              ]
+                            },
+                            "at": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "by": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 160
+                            },
+                            "note": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 1000
+                            },
+                            "changed": {
+                              "type": "array",
+                              "items": {
+                                "type": "string",
+                                "maxLength": 60
+                              }
+                            }
+                          },
+                          "required": [
+                            "from",
+                            "to",
+                            "at"
+                          ]
+                        }
+                      },
+                      "updatedBy": {
+                        "type": "string",
+                        "maxLength": 160
+                      },
+                      "updatedAt": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    }
+                  },
                   "provenance": {
                     "type": "object",
                     "properties": {
@@ -15588,6 +15699,317 @@
                       "additionalProperties": true,
                       "required": [
                         "project"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/pipeline/{id}/validation": {
+      "get": {
+        "operationId": "getGcfPipelineByIdValidation",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "The assessor validation of a candidate — state, per-criterion ratings, recommendation and history",
+        "description": "The assessor's validation beside the engine's six-criteria evidence coverage. A project never validated reads as a draft with nothing rated. A read; stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "validation": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "criteria": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "validation"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "validation": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "criteria": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "validation"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postGcfPipelineByIdValidation",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "Record an assessor validation change — start review, rate, recommend, validate or reopen",
+        "description": "Requires the `validate` scope (the assessor's, and the administrator's through the ladder). `to` names the target state and is omitted for a rating-only update; the lifecycle is draft → under_review → validated, reopened back to under_review. Ratings are words (strong/adequate/weak), never a number; a recommendation is required to validate. Every change is a dated, attributed entry in the history. The shipped sample answers 409 `SAMPLE_NOT_EDITABLE`. Requires the `validate` scope.",
+        "x-scope": "validate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "enum": [
+                      "draft",
+                      "under_review",
+                      "validated"
+                    ]
+                  },
+                  "ratings": {
+                    "type": "object"
+                  },
+                  "recommendation": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "recommend",
+                      "recommend_with_conditions",
+                      "not_recommend"
+                    ]
+                  },
+                  "recommendationNote": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 2000
+                  },
+                  "note": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1000
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "validation": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "criteria": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "project",
+                    "validation"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "validation": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "criteria": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "project",
+                        "validation"
                       ]
                     },
                     "meta": {

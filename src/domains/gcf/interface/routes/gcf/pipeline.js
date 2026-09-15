@@ -14,7 +14,7 @@ const { listView, paged } = require('../../../../../platform/http/pagination');
 const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../../platform/http/rate-limit');
 const validate = require('../../../../../platform/http/validate');
-const { gcfProjectSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema } = require('../../schemas/gcf');
+const { gcfProjectSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema, gcfValidationSchema } = require('../../schemas/gcf');
 const store = require('../../../infrastructure/store');
 const record = require('../../../domain/record');
 const { precheck } = require('../../../domain/precheck');
@@ -23,6 +23,7 @@ const ndc = require('../../../domain/ndc-contribution');
 const portfolio = require('../../../domain/portfolio');
 const readiness = require('../../../domain/readiness');
 const criteria = require('../../../domain/criteria');
+const validation = require('../../../domain/validation');
 const { logframe } = require('../../../domain/logframe');
 const partcStore = require('../../../../../platform/database/store');
 const handle = require('../../../../../platform/http/async-handler');
@@ -262,6 +263,55 @@ router.post('/pipeline/:id/stage', authenticate, defaultLimiter,
   handle(async (req, res) => {
   const saved = await store.moveStage(req.orgId, req.params.id, req.body, { by: (req.actor && req.actor.label) || req.orgId });
   res.json({ project: saved, readiness: readiness.assess(saved), storage: partcStore.capability() });
+}));
+
+/**
+ * The assessor's validation of a project — its state, ratings and sign-off,
+ * read beside the engine's own evidence coverage of the six criteria so the
+ * assessor's judgement sits next to what the record actually holds. A read: it
+ * computes nothing and stores nothing.
+ */
+router.get('/pipeline/:id/validation', authenticate, defaultLimiter,
+  doc({ summary: 'The assessor validation of a candidate — state, per-criterion ratings, recommendation and history',
+    description: 'The assessor\'s validation beside the engine\'s six-criteria evidence coverage. A project '
+      + 'never validated reads as a draft with nothing rated. A read; stores nothing.',
+    response: body({ validation: obj, criteria: obj, source: str, sample: bool }, ['validation']) }),
+  handle(async (req, res) => {
+  const { project, source, sample } = await store.get(req.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+  res.json({ validation: validation.current(project), criteria: criteria.assess(project), source, sample });
+}));
+
+/**
+ * One assessor change to the validation — start the review, rate a criterion,
+ * record a recommendation, sign it off, or reopen it. The `validate` scope is
+ * the assessor's alone (with the administrator through the ladder): the person
+ * who prepares a submission does not validate it. The transition rules live in
+ * `domain/validation.js`; the shipped sample is refused with the same 409 as a
+ * stage move, because a validation is a fact about a recorded project.
+ */
+router.post('/pipeline/:id/validation', authenticate, defaultLimiter,
+  validate({ body: gcfValidationSchema }),
+  doc({ summary: 'Record an assessor validation change — start review, rate, recommend, validate or reopen',
+    description: 'Requires the `validate` scope (the assessor\'s, and the administrator\'s through the ladder). '
+      + '`to` names the target state and is omitted for a rating-only update; the lifecycle is '
+      + 'draft → under_review → validated, reopened back to under_review. Ratings are words '
+      + '(strong/adequate/weak), never a number; a recommendation is required to validate. Every change '
+      + 'is a dated, attributed entry in the history. The shipped sample answers 409 `SAMPLE_NOT_EDITABLE`.',
+    response: body({ project: obj, validation: obj, criteria: obj, storage: obj }, ['project', 'validation']) }),
+  handle(async (req, res) => {
+  const saved = await store.setValidation(req.orgId, req.params.id, req.body, { by: (req.actor && req.actor.label) || req.orgId });
+  res.json({
+    project: saved,
+    validation: validation.current(saved),
+    criteria: criteria.assess(saved),
+    storage: partcStore.capability(),
+  });
 }));
 
 /**

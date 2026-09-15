@@ -114,6 +114,10 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/capital\/compute$/, scope: 'read', why: 'adjusted dashboard, stores nothing' },
   { method: 'POST', pattern: /^\/v1\/ndc-sdg\/certificate\/verify$/, scope: 'read', why: 'certificate verification' },
   { method: 'POST', pattern: /^\/v1\/gcf\/pipeline\/adopt$/, scope: 'write', why: 'copies the illustrative pipeline into the organisation' },
+  /* The assessor's validation — the sign-off act, kept apart from write and
+     lock. It sits before the broad rule because the first match wins and a POST
+     defaults to write. */
+  { method: 'POST', pattern: /^\/v1\/gcf\/pipeline\/:[A-Za-z]+\/validation$/, scope: 'validate', why: 'the assessor validates a GCF assessment' },
 
   /* Engines that persist a run or call an AI agent. */
   { method: 'POST', pattern: /^\/v1\/assess$/, scope: 'assess', why: 'AI assessment' },

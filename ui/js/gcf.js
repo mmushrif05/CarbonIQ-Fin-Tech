@@ -52,6 +52,17 @@ const GCFPage = (() => {
   };
   const canWrite = () => !preview();
 
+  /* The validate permission is the assessor's (and the administrator's). The
+     screen withholds the sign-off controls where the server would refuse
+     them; the server's `validate` scope is the control either way. Read from
+     the role the server put on the session, not a flag the browser holds. */
+  const canValidate = () => {
+    try {
+      const r = typeof Auth !== 'undefined' && typeof Auth.getRoleKey === 'function' ? Auth.getRoleKey() : null;
+      return r === 'assessor' || r === 'admin';
+    } catch (_) { return false; }
+  };
+
   async function call(path, opts) {
     const res = await window.CARBONIQ_fetch('/v1/gcf' + path, opts);
     let data = {};
@@ -822,7 +833,7 @@ const GCFPage = (() => {
     } catch (_) { /* the banner keeps its static text */ }
 
     GCFPipeline.init({
-      call, canWrite, onSample, refreshAll,
+      call, canWrite, canValidate, onSample, refreshAll,
       reference: () => state.reference,
     });
 
