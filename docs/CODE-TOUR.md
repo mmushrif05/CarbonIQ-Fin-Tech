@@ -194,7 +194,7 @@ flowchart TD
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,189 |
+|     `src/platform/auth/` | 12 | 2,211 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,876 |
@@ -205,9 +205,9 @@ flowchart TD
 |     `src/platform/reporting/` | 4 | 337 |
 |       `src/platform/reporting/report-standard/` | 4 | 308 |
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
-|   `src/shared/` | 10 | 1,913 |
+|   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **373** | **63,200** |
+| **total** | **373** | **63,245** |
 
 <!-- END MODULE-MAP -->
 

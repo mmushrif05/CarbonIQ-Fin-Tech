@@ -109,6 +109,29 @@ const ROLES = {
     description: 'Carbon assessment, taxonomy screening, PCAF reporting, portfolio analysis',
   },
 
+  /*
+   * A GCF assessor — the named person who validates a project's assessment.
+   * Level 60 so they reach the GCF and assessment screens, but their scopes
+   * are resolved by role rather than by that level (`scopesForRole`): read and
+   * validate only. They read the whole book and validate an assessment; they
+   * do not write the book, run an engine or lock a Part C assessment. It is a
+   * role of its own because it makes a different claim from an ESG analyst who
+   * runs assessments — the assessor signs one off.
+   */
+  assessor: {
+    label: 'Assessor',
+    level: 60,
+    permissions: [
+      PERMISSIONS.PROJECT_READ,
+      PERMISSIONS.PORTFOLIO_READ,
+      PERMISSIONS.PIPELINE_READ,
+      PERMISSIONS.RUNS_READ,
+      PERMISSIONS.RUNS_READ_ALL,
+      PERMISSIONS.POLICY_VIEW,
+    ],
+    description: 'Validates a GCF assessment — reads the whole book and signs it off, writes nothing else',
+  },
+
   relationship_manager: {
     label: 'Relationship Manager',
     level: 40,

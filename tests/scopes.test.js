@@ -164,10 +164,21 @@ describe('The dashboard key and the person behind it', () => {
   });
 
   test('a user\'s scopes follow the role level', () => {
-    expect(scopes.scopesForRoleLevel(100)).toEqual(['read', 'write', 'lock', 'assess', 'admin']);
+    expect(scopes.scopesForRoleLevel(100)).toEqual(['read', 'write', 'lock', 'assess', 'admin', 'validate']);
     expect(scopes.scopesForRoleLevel(80)).toEqual(['read', 'write', 'lock', 'assess']);
     expect(scopes.scopesForRoleLevel(40)).toEqual(['read', 'write', 'assess']);
     expect(scopes.scopesForRoleLevel(30)).toEqual(['read']);
+  });
+
+  test('the assessor holds read and validate, and nothing else', () => {
+    // Resolved by role, not by level: an assessor at level 60 does not inherit
+    // the ladder's write/lock/assess — it reads and it validates.
+    expect(scopes.scopesForRole('assessor', 60)).toEqual(['read', 'validate']);
+    // Every other role resolves exactly by level, with no validate.
+    expect(scopes.scopesForRole('esg_analyst', 60)).toEqual(['read', 'write', 'lock', 'assess']);
+    expect(scopes.scopesForRole('esg_analyst', 60)).not.toContain('validate');
+    // The administrator holds validate through the ladder.
+    expect(scopes.scopesForRole('admin', 100)).toContain('validate');
   });
 });
 

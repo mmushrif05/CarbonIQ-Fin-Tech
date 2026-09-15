@@ -2,15 +2,19 @@
 /**
  * Scopes — what a credential may do, decided in one place for every route.
  *
- * Five scopes, coarse enough for a key administrator to tick and a reviewer
+ * Six scopes, coarse enough for a key administrator to tick and a reviewer
  * to read:
  *
- *   read    every GET, and the computations that store nothing
- *   write   create, change or delete a record
- *   lock    lock an assessment — the baseline-governance act, kept apart
- *           from write because a locked figure enters a disclosure
- *   assess  run an engine that persists a run or calls an AI agent
- *   admin   reserved; no route requires it yet
+ *   read     every GET, and the computations that store nothing
+ *   write    create, change or delete a record
+ *   lock     lock an assessment — the baseline-governance act, kept apart
+ *            from write because a locked figure enters a disclosure
+ *   assess   run an engine that persists a run or calls an AI agent
+ *   admin    reserved; no route requires it yet
+ *   validate the assessor's act — record a qualitative rating and validate a
+ *            GCF assessment. Kept apart from write and lock because it is a
+ *            different person's authority: an assessor reads and validates,
+ *            and does not write the book or run an engine.
  *
  * The required scope is resolved from the route itself — method, path
  * pattern, and for a status change the body — by `requiredScope()`, and
@@ -32,7 +36,8 @@
  * A JWT user's scopes follow the role level in src/shared/policies.js:
  * administrator everything; credit officer and ESG analyst read, write,
  * lock and assess; relationship manager read, write and assess; auditor and
- * borrower read.
+ * borrower read. The assessor is resolved by role rather than by level
+ * (`scopesForRole`): read and validate, and nothing else.
  */
 
 'use strict';
@@ -42,7 +47,7 @@ const { numberOr } = require('../../shared/numbers');
 
 /** @typedef {import('../../shared/types').AppError} AppError */
 
-const SCOPES = Object.freeze(['read', 'write', 'lock', 'assess', 'admin']);
+const SCOPES = Object.freeze(['read', 'write', 'lock', 'assess', 'admin', 'validate']);
 
 /** The dashboard's key: what an analyst does, and not key administration. */
 const UI_KEY_SCOPES = Object.freeze(['read', 'write', 'lock', 'assess']);
@@ -184,6 +189,23 @@ function scopesForRoleLevel(level) {
 }
 
 /**
+ * The scopes a person holds, from their role. The level sets the ordinary
+ * ladder (`scopesForRoleLevel`); a role may hold a scope the ladder does not
+ * grant. The assessor is the reason this exists: it reads and it validates a
+ * GCF assessment, and nothing else — it does not write the book, run an
+ * engine or lock a Part C assessment. The `validate` scope is the assessor's
+ * (and, through the ladder, the administrator's), so validation controls are
+ * a real permission rather than a hidden button. Every other role resolves
+ * exactly as before.
+ * @param {string|null|undefined} role
+ * @param {number} level
+ */
+function scopesForRole(role, level) {
+  if (role === 'assessor') return ['read', 'validate'];
+  return scopesForRoleLevel(level);
+}
+
+/**
  * The scopes a request's subject holds, or `null` for an unscoped key.
  * @returns {{scopes: string[]|null, unscoped: boolean}}
  */
@@ -196,7 +218,7 @@ function scopesForRoleLevel(level) {
  * @returns {{scopes: string[], unscoped: false}|{scopes: null, unscoped: true}}
  */
 function heldScopes(req) {
-  if (req.user) return { scopes: scopesForRoleLevel(req.user.roleLevel), unscoped: false };
+  if (req.user) return { scopes: scopesForRole(req.user.role, req.user.roleLevel), unscoped: false };
   if (req.apiKey) {
     if (Array.isArray(req.apiKey.scopes)) return { scopes: req.apiKey.scopes.filter(s => SCOPES.includes(s)), unscoped: false };
     return /** @type {{scopes: null, unscoped: true}} */ ({ scopes: null, unscoped: true });
@@ -341,6 +363,6 @@ function normaliseScopes(input) {
 
 module.exports = {
   SCOPES, UI_KEY_SCOPES, DEV_KEY_SCOPES, OVERRIDES, DEFAULT_BY_METHOD,
-  requiredScope, requiredScopeFor, routePattern, heldScopes, scopesForRoleLevel, enforceScope, admit, actorOf, normaliseScopes,
+  requiredScope, requiredScopeFor, routePattern, heldScopes, scopesForRoleLevel, scopesForRole, enforceScope, admit, actorOf, normaliseScopes,
   PASSWORD_CHANGE_ALLOWED,
 };
