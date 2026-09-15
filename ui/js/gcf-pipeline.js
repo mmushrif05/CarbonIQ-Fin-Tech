@@ -231,7 +231,7 @@ const GCFPipeline = (() => {
         deps.call(`/pipeline/${encodeURIComponent(id)}/readiness`),
       ]);
       view.project = one.project; view.source = one.source;
-      view.readiness = rd.readiness; view.criteria = rd.criteria;
+      view.readiness = rd.readiness; view.criteria = rd.criteria; view.logframe = rd.logframe;
       renderProject(one, rd);
       $('gcfPortfolio').hidden = true;
       $('gcfProject').hidden = false;
@@ -247,6 +247,25 @@ const GCFPipeline = (() => {
     $('gcfProject').hidden = true;
     $('gcfPortfolio').hidden = false;
     say('gcfProjectHint', '');
+  }
+
+  /* The results logframe — baseline, current and target per indicator, from
+     the readiness route. Every figure is one the route returned; this only
+     lays the rows out. Rows the project does not touch are left out. */
+  function renderLogframe(lf) {
+    const rows = ((lf && lf.rows) || []).filter(r => r.present);
+    if (!rows.length) {
+      setHtml('gcfProjectLogframe', '<p class="gcf-hint">No baseline or target recorded yet. Record them on the Intake form.</p>');
+      return;
+    }
+    const cell = f => (f && typeof f === 'object' && Number.isFinite(f.value) ? `${num(f.value)} ${tierPill(f.tier)}` : '—');
+    setHtml('gcfProjectLogframe', `<div class="gcf-scroll"><table class="gcf-table">
+      <thead><tr><th>Indicator</th><th>Baseline</th><th>Current</th><th>Target</th><th>By</th></tr></thead>
+      <tbody>${rows.map(r => `<tr>
+        <td>${esc(r.name)}${r.unit ? ` <span class="gcf-hint">(${esc(r.unit)})</span>` : ''}</td>
+        <td>${cell(r.baseline)}</td><td>${cell(r.current)}</td><td>${cell(r.target)}</td>
+        <td>${r.targetYear ? esc(String(r.targetYear)) : '—'}</td>
+      </tr>`).join('')}</tbody></table></div>`);
   }
 
   function renderProject(one, rd) {
@@ -356,6 +375,7 @@ const GCFPipeline = (() => {
       ['Embodied carbon A1–A5', p.embodiedCarbon ? `${traced(p.embodiedCarbon.a1a5_tCO2e)} tCO₂e — a payback, never netted` : 'not held'],
     ]));
     say('gcfProjectBaseline', mit.baseline ? `Baseline: ${mit.baseline.description}. Counterfactual: ${mit.baseline.counterfactual}. Type: ${mit.baseline.type}.${mit.isCoBenefit ? ' Reported apart from the mitigation headline.' : ''}` : 'No baseline recorded.');
+    renderLogframe(rd.logframe);
 
     /* NDA and executing entity */
     const nda = p.nda || { status: 'not_requested' }; const ex = p.executingEntity || {};

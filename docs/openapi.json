@@ -15359,6 +15359,10 @@
                       "type": "object",
                       "additionalProperties": true
                     },
+                    "logframe": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
                     "source": {
                       "type": "string"
                     },
@@ -15390,6 +15394,10 @@
                           "additionalProperties": true
                         },
                         "criteria": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "logframe": {
                           "type": "object",
                           "additionalProperties": true
                         },
