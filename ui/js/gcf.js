@@ -548,6 +548,13 @@ const GCFPage = (() => {
   const refv = k => ((state.reference && state.reference.vocabulary) || {})[k] || [];
   const refStages = () => Object.entries((state.reference && state.reference.cycle && state.reference.cycle.recordStages) || {});
   const refAreas = () => ((state.reference && state.reference.resultsAreas) || {}).areas || [];
+  /* GCF results areas belong to a stream — four mitigation, four adaptation —
+     so a mitigation project must not be offered an adaptation area and back.
+     A cross-cutting area (if the reference ever holds one) shows in both. An
+     unknown stream falls back to the whole list rather than an empty select. */
+  const areasFor = stream => refAreas()
+    .filter(a => !stream || a.stream === stream || a.stream === 'cross-cutting')
+    .map(a => [a.code, `${a.code} — ${a.name}`]);
   const refInstruments = () => ((state.reference && state.reference.instruments) || {}).instruments || [];
   const refBarriers = () => ((state.reference && state.reference.instruments) || {}).barriers || [];
 
@@ -558,7 +565,7 @@ const GCFPage = (() => {
     { id: 'sector', label: 'Sector', kind: 'text', help: 'The sector in plain words, for example renewable generation or climate-resilient agriculture.' },
     { id: 'province', label: 'Province', kind: 'text', help: 'Where the project is, so the pipeline can be read by region.' },
     { id: 'stream', label: 'Stream', kind: 'select', options: refv('streams').map(s => [s, s]), help: 'Mitigation reduces or avoids emissions; adaptation builds resilience. An adaptation project is never ranked on carbon.' },
-    { id: 'resultsArea', label: 'GCF results area', kind: 'select', options: refAreas().map(a => [a.code, `${a.code} — ${a.name}`]), help: 'The GCF results area the project contributes to. Pick the closest fit.' },
+    { id: 'resultsArea', label: 'GCF results area', kind: 'select', options: areasFor(refv('streams')[0]), help: 'The GCF results area the project contributes to. The list follows the stream — mitigation areas for a mitigation project, adaptation areas for an adaptation one.' },
     { id: 'stage', label: 'Stage on the project cycle', kind: 'select', options: refStages().map(([k, v]) => [k, v.label]), help: 'Where the project has reached on the ten-stage GCF cycle, from concept to closure.' },
     { id: 'essCategory', label: 'Environmental and social category', kind: 'select', options: refv('essCategories').map(s => [s, s]), help: 'A is significant or irreversible impacts, B is limited and mitigable, C is minimal. DFCC is accredited to B and I-2, so a category A project cannot be carried by DFCC.' },
     { id: 'taxonomyBand', label: 'Sri Lanka taxonomy band', kind: 'select', options: [['green', 'green'], ['amber', 'amber'], ['red', 'red'], ['unclassified', 'unclassified']], help: 'The Sri Lanka Green Finance Taxonomy band, if known.' },
@@ -626,6 +633,23 @@ const GCFPage = (() => {
       return `<div class="gcf-field${wide}">
         <label for="gcfI-${f.id}">${esc(f.label)}</label>${helpEl}${ctl}</div>`;
     }).join(''));
+
+    /* The results-area select depends on the stream: repopulate it whenever the
+       stream changes, keeping the current area if it is still valid and
+       otherwise falling to the first area of the new stream. */
+    const streamSel = $('gcfI-stream');
+    const areaSel = $('gcfI-resultsArea');
+    if (streamSel && areaSel) {
+      const syncAreas = () => {
+        const opts = areasFor(streamSel.value);
+        const keep = opts.some(([v]) => v === areaSel.value) ? areaSel.value : (opts[0] && opts[0][0]) || '';
+        areaSel.innerHTML = opts.map(([v, l]) =>
+          `<option value="${esc(v)}">${esc(l)}</option>`).join('');
+        areaSel.value = keep;
+      };
+      streamSel.addEventListener('change', syncAreas);
+      syncAreas();
+    }
   }
 
   const val = id => ($(`gcfI-${id}`)?.value ?? '').trim();
