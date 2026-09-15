@@ -25,6 +25,8 @@ const readiness = require('../../../domain/readiness');
 const criteria = require('../../../domain/criteria');
 const validation = require('../../../domain/validation');
 const { logframe } = require('../../../domain/logframe');
+const assessmentReport = require('../../../application/assessment-report');
+const { sendPdf, sendDocx } = require('../../../../../platform/reporting/pdf-response');
 const partcStore = require('../../../../../platform/database/store');
 const handle = require('../../../../../platform/http/async-handler');
 const { emptyBody } = require('../../../../../platform/http/validate').schemas;
@@ -312,6 +314,42 @@ router.post('/pipeline/:id/validation', authenticate, defaultLimiter,
     criteria: criteria.assess(saved),
     storage: partcStore.capability(),
   });
+}));
+
+/**
+ * The signable GCF assessment report — the appraisal a committee reads and the
+ * assessor signs. Built from the record, its validation and the engine's own
+ * evidence coverage; a read that stores nothing. A draft is told apart from a
+ * sign-off on the document's own face, so an unvalidated assessment is never
+ * mistaken for a completed one.
+ */
+router.get('/pipeline/:id/assessment-report', authenticate, defaultLimiter,
+  doc({ summary: 'The GCF assessment report for one candidate — JSON, PDF or Word',
+    description: 'DFCC’s own appraisal: the six criteria with the assessor’s rating beside the '
+      + 'engine’s evidence, the results logframe, the recommendation and a sign-off block naming the '
+      + 'assessor and the date. Not a GCF decision. `?format=pdf|word` for a document; JSON by default. '
+      + 'A read; stores nothing.',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+    query: { format: 'json (default), pdf or word' },
+    response: body({ report: obj }, ['report']) }),
+  handle(async (req, res) => {
+  const { project } = await store.get(req.orgId, req.params.id);
+  if (!project) {
+    return res.status(404).json({
+      error: 'PROJECT_NOT_FOUND',
+      message: `No project with id "${req.params.id}" in the recorded book or the shipped pipeline.`,
+    });
+  }
+  const ctx = { logframe: logframe(project) };
+  const facts = assessmentReport.assessmentFacts(project, ctx);
+  const format = req.query.format || 'json';
+  if (format === 'word' || format === 'docx') {
+    return sendDocx(res, await assessmentReport.assessmentDOCX(project, ctx), `${facts.safeName}.docx`, 'assessment');
+  }
+  if (format === 'pdf') {
+    return sendPdf(res, assessmentReport.assessmentPDF(project, ctx), `${facts.safeName}.pdf`, 'assessment');
+  }
+  res.json({ report: assessmentReport.assessmentJSON(project, ctx) });
 }));
 
 /**

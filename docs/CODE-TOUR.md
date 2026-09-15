@@ -151,11 +151,11 @@ flowchart TD
 |       `src/domains/capital/infrastructure/` | 3 | 781 |
 |         `src/domains/capital/interface/routes/` | 2 | 718 |
 |         `src/domains/capital/interface/schemas/` | 1 | 201 |
-|       `src/domains/gcf/application/` | 2 | 897 |
+|       `src/domains/gcf/application/` | 3 | 1,183 |
 |       `src/domains/gcf/domain/` | 14 | 3,452 |
 |       `src/domains/gcf/infrastructure/` | 1 | 268 |
 |         `src/domains/gcf/interface/routes/` | 1 | 23 |
-|           `src/domains/gcf/interface/routes/gcf/` | 5 | 852 |
+|           `src/domains/gcf/interface/routes/gcf/` | 5 | 890 |
 |         `src/domains/gcf/interface/schemas/` | 1 | 112 |
 |       `src/domains/lending/agents/` | 9 | 3,356 |
 |       `src/domains/lending/application/` | 6 | 1,454 |
@@ -207,7 +207,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **374** | **63,546** |
+| **total** | **375** | **63,870** |
 
 <!-- END MODULE-MAP -->
 

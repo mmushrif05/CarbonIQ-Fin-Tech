@@ -286,4 +286,14 @@ describe('The assessor validation panel (Phase 1 Stage 4)', () => {
        panel is populated on first paint rather than a beat later. */
     must(PIPE, /\/validation`\),/, "the validation is fetched alongside the project");
   });
+
+  test('the assessment report is downloadable, and it is a read not a validate control', () => {
+    /* The report is a read anyone may take (read scope), so its download sits
+       outside the validate-gated form — a viewer can download it without being
+       able to sign anything off. */
+    must(HTML, 'id="gcfValidationDownload"', "the validation panel has a report-download row");
+    mustNot(HTML, /id="gcfValidationDownload"[^>]*data-validates/, "the download row is not gated by data-validates");
+    must(PIPE, /assessment-report\?format=/, "the module fetches the assessment report by format");
+    must(PIPE, /data-report/, "the module wires the report-download buttons");
+  });
 });
