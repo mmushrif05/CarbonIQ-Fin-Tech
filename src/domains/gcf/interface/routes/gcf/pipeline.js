@@ -131,6 +131,32 @@ router.post('/pipeline/adopt', authenticate, validate({ body: emptyBody }), defa
 }));
 
 /**
+ * Load the DFCC starter book — realistic values Datum entered for DFCC to
+ * edit — into this organisation, so a real (not sample) editable pipeline
+ * appears from one click. On a serverless deployment there is no shell to run
+ * the recorder from, so this is how a real book first reaches the database.
+ * It refuses when the organisation already holds recorded projects, so it
+ * cannot overwrite a book somebody has begun.
+ */
+router.post('/pipeline/install-starter', authenticate, validate({ body: emptyBody }), defaultLimiter,
+  doc({ summary: 'Load the DFCC starter projects (real, editable) into this organisation',
+    status: 201,
+    description: 'Records a realistic starter pipeline into the caller\'s own organisation. Not the '
+      + 'illustrative sample — the records are recorded and fully editable. Refuses (409) when the '
+      + 'organisation already holds recorded projects, so it never overwrites an edited book.',
+    response: body({ installed: num, note: str, storage: obj }, ['installed']) }),
+  handle(async (req, res) => {
+  const written = await store.installStarter(req.orgId, { by: (req.actor && req.actor.label) || req.orgId });
+  res.status(201).json({
+    installed: written.length,
+    note: 'A starter pipeline is now recorded against your organisation and can be edited. The '
+      + 'figures are realistic starting values entered by Datum; replace each with the exact '
+      + 'confirmed figure. Each record carries its origin in provenance.source.',
+    storage: partcStore.capability(),
+  });
+}));
+
+/**
  * The portfolio view — the whole pipeline as a bank's board and the Fund's
  * Secretariat read it: money, the accreditation envelope, the gate, the
  * results on their separate boundaries, where every project sits on the

@@ -24,7 +24,20 @@ GET /health   →   storage.mode should be "postgres" (not "none")
 If it reads `none`, the operator must set `DATABASE_URL` on the deployment
 first (see `docs/DATA-LAYER.md`, *Provisioning the database*).
 
-## Two ways to record
+## The fastest start: load the starter book in one click
+
+On the deployed site there is no shell, so the simplest way to put a real,
+editable pipeline in the database is the **Load starter projects** button on the
+GCF Pipeline tab's Intake sub-tab (signed in with a `write` scope). It records
+`data/gcf/dfcc-starter-projects.json` — three realistic Sri Lankan projects
+Datum entered for DFCC to edit — into the signed-in organisation, through the
+same validated seam every write uses. These are recorded (not the illustrative
+sample): the sample pill switches off and every figure is editable. Replace each
+value with the exact confirmed figure. Pressing it again is refused (409) once
+the organisation holds recorded projects, so it never overwrites an edited book.
+The same action is available at `POST /v1/gcf/pipeline/install-starter`.
+
+## Two ways to record your own book
 
 **Through the dashboard.** The GCF Pipeline tab has an intake form. Signed in
 with a `write` scope, a project typed there is recorded through the same

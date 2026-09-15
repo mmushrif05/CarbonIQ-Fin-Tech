@@ -786,6 +786,14 @@ const GCFPage = (() => {
     on('gcfCnPdf', 'click', () => downloadCn('pdf'));
     on('gcfCnDocx', 'click', () => downloadCn('docx'));
     on('gcfIntakeSave', 'click', saveIntake);
+    on('gcfInstallStarter', 'click', async () => {
+      try {
+        const r = await call('/pipeline/install-starter', { method: 'POST' });
+        say('gcfIntakeHint', `${r.installed} starter projects loaded — they are recorded and yours to edit.`);
+        refreshAll();
+        show('pipeline');
+      } catch (e) { say('gcfIntakeHint', e.message); }
+    });
     on('gcfAdopt', 'click', async () => {
       try {
         const r = await call('/pipeline/adopt', { method: 'POST' });
