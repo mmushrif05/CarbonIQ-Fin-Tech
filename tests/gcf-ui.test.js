@@ -296,4 +296,15 @@ describe('The assessor validation panel (Phase 1 Stage 4)', () => {
     must(PIPE, /assessment-report\?format=/, "the module fetches the assessment report by format");
     must(PIPE, /data-report/, "the module wires the report-download buttons");
   });
+
+  test('the return-to-sponsor loop has its containers and is fetched on open', () => {
+    must(HTML, 'id="gcfReturnBlock"', "the panel has a return-to-sponsor block");
+    must(HTML, 'id="gcfReturnGaps"', "the return block shows the gap list");
+    must(HTML, 'id="gcfReturnComparison"', "the return block shows the resubmission comparison");
+    must(PIPE, /\/return`\),/, "the return state is fetched alongside the project");
+    must(PIPE, /return-letter\?format=/, "the module fetches the return letter by format");
+    /* The return control is the assessor's, gated in JS by canValidate; the
+       letter download is a read anyone may take. */
+    must(PIPE, /canValidate\(\) && g\.returnable/, "the return button is shown only when the caller may validate and it is returnable");
+  });
 });

@@ -14931,6 +14931,93 @@
                           ]
                         }
                       },
+                      "returns": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "at": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "by": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 160
+                            },
+                            "recommendation": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "enum": [
+                                "recommend",
+                                "recommend_with_conditions",
+                                "not_recommend"
+                              ]
+                            },
+                            "gaps": {
+                              "type": "array",
+                              "items": {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                      "evidence",
+                                      "rating"
+                                    ]
+                                  },
+                                  "criterionId": {
+                                    "type": "string",
+                                    "maxLength": 60
+                                  },
+                                  "criterion": {
+                                    "type": "string",
+                                    "maxLength": 200
+                                  },
+                                  "subId": {
+                                    "type": "string",
+                                    "maxLength": 60
+                                  },
+                                  "detail": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 400
+                                  },
+                                  "status": {
+                                    "type": "string",
+                                    "maxLength": 40
+                                  },
+                                  "rating": {
+                                    "type": "string",
+                                    "maxLength": 40
+                                  },
+                                  "remedy": {
+                                    "type": [
+                                      "string",
+                                      "null"
+                                    ],
+                                    "maxLength": 600
+                                  }
+                                },
+                                "required": [
+                                  "kind",
+                                  "criterionId",
+                                  "criterion"
+                                ]
+                              }
+                            }
+                          },
+                          "required": [
+                            "at"
+                          ]
+                        }
+                      },
                       "updatedBy": {
                         "type": "string",
                         "maxLength": 160
@@ -15662,6 +15749,423 @@
                       "type": "null"
                     }
                   }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/pipeline/{id}/return": {
+      "get": {
+        "operationId": "getGcfPipelineByIdReturn",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "The return-to-sponsor state — the gap list, the resubmission comparison and the returns history",
+        "description": "Gaps are drawn from the assessment: sub-criteria the record does not hold and criteria the assessor rated weak, each with a remedy. The comparison sorts today’s gaps against the last return into resolved, still-outstanding and newly-raised. A read; stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "gaps": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "comparison": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "returns": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "gaps",
+                    "comparison"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "gaps": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "comparison": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "returns": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "gaps",
+                        "comparison"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "operationId": "postGcfPipelineByIdReturn",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "Return a validated assessment to the sponsor, snapshotting the gap list",
+        "description": "Requires the `validate` scope. Refused with 409 `NOTHING_TO_RETURN` unless the assessment is validated with a recommendation of \"recommend with conditions\" or \"do not recommend\". The shipped sample answers 409 `SAMPLE_NOT_EDITABLE`. Requires the `validate` scope.",
+        "x-scope": "validate",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "gaps": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "comparison": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "storage": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "project",
+                    "gaps"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "gaps": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "comparison": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "storage": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "project",
+                        "gaps"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/pipeline/{id}/return-letter": {
+      "get": {
+        "operationId": "getGcfPipelineByIdReturnLetter",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "The return-to-sponsor letter for one candidate — JSON, PDF or Word",
+        "description": "The assessor’s decision, the gaps to address each with its remedy, and what happens next. A working document between DFCC and the sponsor, not a GCF decision. `?format=pdf|word`; JSON by default. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "json (default), pdf or word",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "letter": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "letter"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "letter": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "letter"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }

@@ -230,15 +230,17 @@ const GCFPipeline = (() => {
   /* ── One project ──────────────────────────────────────────── */
   async function openProject(id, { quiet = false } = {}) {
     try {
-      const [one, rd, val] = await Promise.all([
+      const [one, rd, val, ret] = await Promise.all([
         deps.call(`/pipeline/${encodeURIComponent(id)}`),
         deps.call(`/pipeline/${encodeURIComponent(id)}/readiness`),
         deps.call(`/pipeline/${encodeURIComponent(id)}/validation`),
+        deps.call(`/pipeline/${encodeURIComponent(id)}/return`),
       ]);
       view.project = one.project; view.source = one.source;
       view.readiness = rd.readiness; view.criteria = rd.criteria; view.logframe = rd.logframe;
-      view.validation = val.validation;
+      view.validation = val.validation; view.returnState = ret;
       renderProject(one, rd, val);
+      renderReturn(one.project, ret);
       $('gcfPortfolio').hidden = true;
       $('gcfProject').hidden = false;
       if (!quiet) { try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) { /* ignore */ } }
@@ -645,6 +647,88 @@ const GCFPipeline = (() => {
       hint('Recorded.');
       await openProject(id, { quiet: true });
       deps.refreshAll();
+    } catch (err) {
+      hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
+    }
+  }
+
+  /* ── The return-to-sponsor loop ───────────────────────────────
+     The gap list (a read anyone sees), the return control (the assessor's, so
+     validate-gated and shown only when the assessment is returnable), the
+     return-letter download (a read), and the resubmission comparison once a
+     return exists. The whole block is shown only when the loop is relevant —
+     a non-clean recommendation, or a return already made. */
+  function gapList(items) {
+    if (!items.length) return '<p class="gcf-hint">No specific gaps recorded.</p>';
+    return `<ul class="gcf-gaps">${items.map(g => `<li>${heldPill(g.kind === 'rating' ? 'partial' : g.status)}<span><strong>${esc(g.criterion)}</strong> — ${esc(g.remedy)}</span></li>`).join('')}</ul>`;
+  }
+
+  function renderReturn(p, ret) {
+    const block = $('gcfReturnBlock');
+    if (!block) return;
+    const g = ret.gaps || { items: [], count: 0, returnable: false, recommendation: null };
+    const cmp = ret.comparison || { hasReturn: false };
+    const relevant = view.source === 'recorded'
+      && (g.returnable || (ret.returns && ret.returns.length) || (g.recommendation && g.recommendation !== 'recommend'));
+    block.hidden = !relevant;
+    if (!relevant) return;
+
+    setHtml('gcfReturnGaps', `<p class="gcf-hint">${g.count} point${g.count === 1 ? '' : 's'} for the sponsor to address — each drawn from the assessment, with the step that clears it.</p>${gapList(g.items)}`);
+
+    const actions = [];
+    if (canValidate() && g.returnable) actions.push('<button class="btn btn-primary btn-sm" id="gcfReturnDo">Return to sponsor</button>');
+    actions.push('<span class="gcf-hint">Return letter:</span>'
+      + '<button class="btn btn-secondary btn-sm" data-letter="pdf">PDF</button>'
+      + '<button class="btn btn-secondary btn-sm" data-letter="word">Word</button>'
+      + '<button class="btn btn-secondary btn-sm" data-letter="json">JSON</button>');
+    setHtml('gcfReturnActions', actions.join(' '));
+    on('gcfReturnDo', 'click', () => returnToSponsor(p.id));
+    document.querySelectorAll('#gcfReturnActions [data-letter]').forEach(btn =>
+      btn.addEventListener('click', () => downloadLetter(p.id, p.code, btn.dataset.letter)));
+
+    if (cmp.hasReturn) {
+      const section = (title, arr) => `<div><span class="gcf-check-label">${title} (${arr.length})</span>${arr.length ? gapList(arr) : '<p class="gcf-hint">None.</p>'}</div>`;
+      setHtml('gcfReturnComparison', `<h5>Since the return of ${esc(String(cmp.returnedAt).slice(0, 10))}</h5>
+        <p class="gcf-hint">${esc(cmp.note)}</p>
+        ${section('Resolved', cmp.resolved)}
+        ${section('Still outstanding', cmp.outstanding)}
+        ${section('Newly raised', cmp.raised)}`);
+    } else {
+      setHtml('gcfReturnComparison', '');
+    }
+  }
+
+  async function returnToSponsor(id) {
+    hint('Returning to the sponsor…');
+    try {
+      await deps.call(`/pipeline/${encodeURIComponent(id)}/return`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      hint('Returned to the sponsor. The gap list has been snapshotted for the comparison.');
+      await openProject(id, { quiet: true });
+      deps.refreshAll();
+    } catch (err) {
+      hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
+    }
+  }
+
+  async function downloadLetter(id, code, format) {
+    const ext = format === 'word' ? 'docx' : format;
+    hint(`Preparing the return letter (${format.toUpperCase()})…`);
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/gcf/pipeline/${encodeURIComponent(id)}/return-letter?format=${format}`);
+      if (!res.ok) {
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* non-JSON */ }
+        throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      }
+      const blob = format === 'json'
+        ? new Blob([JSON.stringify(await res.json(), null, 2)], { type: 'application/json' })
+        : await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `gcf-return-letter-${String(code || id).replace(/[^A-Za-z0-9_-]/g, '')}.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      hint('Return letter downloaded.');
     } catch (err) {
       hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
     }

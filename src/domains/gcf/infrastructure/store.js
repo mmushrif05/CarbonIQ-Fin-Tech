@@ -25,6 +25,7 @@ const store = require('../../../platform/database/store');
 const { fallback } = require('../../../platform/observability/logger');
 const record = require('../domain/record');
 const validation = require('../domain/validation');
+const returnLoop = require('../domain/return-loop');
 const SEED = require('../domain/reference').PIPELINE_SEED;
 const STARTER = require('../domain/reference').STARTER_BOOK;
 
@@ -171,6 +172,31 @@ async function setValidation(orgId, id, change, { by = null } = {}) {
   }, { by });
 }
 
+/**
+ * Return a validated assessment to the sponsor: snapshot the gap list at this
+ * instant into `validation.returns`, so the resubmission comparison has a fixed
+ * point. Refuses unless the assessment is validated with a non-clean
+ * recommendation — a clean recommendation, or one not yet signed off, has
+ * nothing to return. The shipped sample is refused like every other write.
+ */
+async function returnToSponsor(orgId, id, { by = null } = {}) {
+  store.assertWritable();
+  const current = await recordedOrRefuse(orgId, id);
+  const g = returnLoop.gaps(current);
+  if (!g.returnable) {
+    throw refuse('NOTHING_TO_RETURN',
+      'This assessment cannot be returned: it must be validated with a recommendation of '
+      + '"recommend with conditions" or "do not recommend".', 409,
+      'Validate the assessment with conditions or against it first, then return it.');
+  }
+  const val = validation.current(current);
+  const next = { ...val, returns: [...(val.returns || []), returnLoop.snapshot(current, { by })] };
+  return put(orgId, {
+    ...current,
+    validation: { ...next, updatedBy: by || undefined, updatedAt: new Date().toISOString() },
+  }, { by });
+}
+
 async function remove(orgId, id) {
   store.assertWritable();
   await store.remove(COLLECTION, orgId, id);
@@ -261,7 +287,7 @@ async function setEntityDisclosures(orgId, body, { by = null } = {}) {
 }
 
 module.exports = {
-  list, get, put, patch, moveStage, setValidation, remove, adoptSeed, installStarter, seedProjects, seedMeta, accreditation,
+  list, get, put, patch, moveStage, setValidation, returnToSponsor, remove, adoptSeed, installStarter, seedProjects, seedMeta, accreditation,
   entityDisclosures, setEntityDisclosures,
   COLLECTION, SETTINGS_COLLECTION,
 };

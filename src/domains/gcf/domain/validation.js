@@ -75,6 +75,7 @@ function blank() {
     validatedBy: null,
     validatedAt: null,
     history: [],
+    returns: [],
   };
 }
 
@@ -173,6 +174,10 @@ function apply(project, change = {}, { by = null, at = new Date().toISOString() 
     validatedBy: to === 'validated' ? (by || cur.validatedBy || null) : null,
     validatedAt: to === 'validated' ? at : null,
     history: [...cur.history, entry],
+    /* The return-to-sponsor log is carried forward untouched — a lifecycle
+       change is not a return, and losing the returns here would move the fixed
+       point the resubmission comparison rests on. */
+    returns: cur.returns || [],
   };
 }
 
