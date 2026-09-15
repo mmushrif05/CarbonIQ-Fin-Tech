@@ -6,8 +6,8 @@
 
 **Source of requirements:** DFCC Bank PLC DAE Readiness Pre-Qualified Delivery Partner Terms of Reference, version 21 November 2025
 
-**Status:** 38 implemented · 1 partial · 2 deliberately excluded
-(41 rules).
+**Status:** 44 implemented · 1 partial · 2 deliberately excluded
+(47 rules).
 
 > Nothing here is endorsed by the Green Climate Fund, and this system does not score a
 > proposal on GCF's behalf. This is a self-declaration of what has been built against a
@@ -393,6 +393,63 @@ exactly how a matrix goes quietly wrong.
 | **Requirement** | Document delivery |
 | **Implementation** | `src/domains/gcf/application/cn-package.js — buildPackagePDF with pdfVersion 1.4; src/platform/reporting/pdf-response.js` |
 | **Proving test** | `tests/gcf-cn-package.test.js › Documents › the PDF is well formed and declares a version covering what it draws` |
+
+
+## The assessor flow — validation, report, return
+
+### G-VAL-01 — The assessor validation runs a state machine — draft → under_review → validated, reopened back — and a validated assessment cannot be signed off without a recommendation.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 2 — an accredited entity appraises and signs off a candidate before it is carried forward |
+| **Implementation** | `src/domains/gcf/domain/validation.js — apply()` |
+| **Proving test** | `tests/gcf-validation.test.js › the validation state machine › validating with a recommendation records the sign-off` |
+
+### G-VAL-02 — The per-criterion ratings are words (strong/adequate/weak), never a number, and a validated assessment is frozen until it is reopened.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF investment framework — a judgement, not a computed score |
+| **Implementation** | `src/domains/gcf/domain/validation.js — RATINGS and the frozen-ratings guard` |
+| **Proving test** | `tests/gcf-validation.test.js › the validation state machine › a validated assessment has frozen ratings until it is reopened` |
+
+### G-VAL-03 — Validation is the assessor’s own scope; a credential that can write the book but does not hold validate is refused.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | Separation of duties — the person who prepares a submission does not validate it |
+| **Implementation** | `src/platform/auth/scopes.js — the validate scope and the pipeline/:id/validation override` |
+| **Proving test** | `tests/gcf-validation.test.js › the validation route › the dashboard key holds no validate scope, so POST is refused naming it` |
+
+### G-RPT-01 — The assessment report is built from the record, its validation and the engine’s evidence coverage, and a draft is told apart from a sign-off on the document’s own face; it is DFCC’s appraisal, not a GCF decision.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 2 — the appraisal a committee reads and the assessor signs |
+| **Implementation** | `src/domains/gcf/application/assessment-report.js — assessmentJSON / buildModel` |
+| **Proving test** | `tests/gcf-assessment-report.test.js › the assessment report model › a draft is told apart from a sign-off` |
+
+### G-RET-01 — The gap list is drawn from the assessment (unheld evidence and weak-rated criteria), and a return snapshots it so the comparison sorts today’s gaps into resolved, still-outstanding and newly-raised.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 2 — the sponsor is told what to address, and the resubmission is compared against what was returned |
+| **Implementation** | `src/domains/gcf/domain/return-loop.js — gaps() / comparison()` |
+| **Proving test** | `tests/gcf-return-loop.test.js › the gap list and comparison › after a return, a resolved gap moves out of outstanding` |
+
+### G-RET-02 — A return is refused unless the assessment is validated with a non-clean recommendation, so there is always something to return.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | A return is a fact about a validated assessment, not a gesture |
+| **Implementation** | `src/domains/gcf/infrastructure/store.js — returnToSponsor()` |
+| **Proving test** | `tests/gcf-return-loop.test.js › the return store › a clean recommendation cannot be returned` |
 
 
 ## Deliberately out of scope

@@ -120,6 +120,65 @@ test('the cycle is on screen, the sample is adopted, a project moves a stage and
   expect(download.suggestedFilename()).toMatch(/^gcf-pipeline-\d{4}-\d{2}-\d{2}\.csv$/);
 });
 
+test('an assessor validates a project, downloads the report, and returns it to the sponsor', async ({ page, request }) => {
+  await signIn(page, request);
+  await openPage(page);
+
+  /* Adopt the sample so there is a recorded project to validate. */
+  await page.locator('#gcfTabs [data-panel="intake"]').click();
+  await expect(page.locator('#gcfIntakeForm')).toBeVisible();
+  if (await page.locator('#gcfSampleBanner').isVisible()) {
+    await page.locator('#gcfAdopt').click();
+    await expect(page.locator('#gcfIntakeHint')).toContainText('adopted');
+  }
+  await expect(page.locator('#gcfSampleBanner')).toBeHidden();
+
+  /* Back to the board (the adopt may have been done by an earlier journey, in
+     which case the panel is still the intake tab). */
+  await page.locator('#gcfTabs [data-panel="pipeline"]').click();
+  await expect(page.locator('#gcfPanel-pipeline')).toBeVisible();
+
+  /* Open a recorded project; its validation panel reads as a draft. */
+  await page.locator('#gcfPoolTable tr[data-open="gcf_p1_jaffna_solar"]').click();
+  await expect(page.locator('#gcfProject')).toBeVisible();
+  await expect(page.locator('#gcfValidationState')).toContainText('Draft');
+
+  /* Start the review, then rate a criterion, recommend with conditions and
+     sign off — the panel reloads between steps, so wait on the state text. */
+  await page.locator('#gcfValStart').click();
+  await expect(page.locator('#gcfValidationState')).toContainText('Under review');
+
+  await page.selectOption('[data-rate="impactPotential"]', 'strong');
+  await page.selectOption('[data-rate="paradigmShift"]', 'weak');
+  await page.selectOption('#gcfValRec', 'recommend_with_conditions');
+  await page.locator('#gcfValValidate').click();
+  await expect(page.locator('#gcfValidationState')).toContainText('Validated');
+  await expect(page.locator('#gcfValidationState')).toContainText('Recommend with conditions');
+  await noOverflow(page);
+
+  /* The assessment report downloads as a PDF. */
+  const [reportPdf] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#gcfValidationDownload [data-report="pdf"]').click(),
+  ]);
+  expect(reportPdf.suggestedFilename()).toMatch(/^gcf-assessment-.*\.pdf$/);
+
+  /* The return block is live now: a gap list and a return control. Return to
+     the sponsor and the comparison appears. */
+  await expect(page.locator('#gcfReturnBlock')).toBeVisible();
+  expect(await page.locator('#gcfReturnGaps .gcf-gaps li').count()).toBeGreaterThan(0);
+  await page.locator('#gcfReturnDo').click();
+  await expect(page.locator('#gcfReturnComparison')).toContainText('Since the return of');
+
+  /* The return letter downloads as a PDF. */
+  const [letterPdf] = await Promise.all([
+    page.waitForEvent('download'),
+    page.locator('#gcfReturnActions [data-letter="pdf"]').click(),
+  ]);
+  expect(letterPdf.suggestedFilename()).toMatch(/^gcf-return-letter-.*\.pdf$/);
+  await noOverflow(page);
+});
+
 test('a preview visitor sees the sample pipeline and is offered nothing the server would refuse', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#login-preview')).toBeVisible();

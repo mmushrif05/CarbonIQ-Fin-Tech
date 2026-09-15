@@ -173,13 +173,19 @@ proved or it is not.
 | GCF pipeline | `G-CYCLE-07` | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund | `tests/gcf-cycle.test.js` | 92 | executed |
 | GCF pipeline | `G-CYCLE-08` | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it | `tests/gcf-cycle.test.js` | 84 | executed |
 | GCF pipeline | `G-ACCR-05` | Board decision B.36/10 — DFCC’s accreditation envelope; the entity’s own where recorded | `tests/gcf-cycle.test.js` | 84 | executed |
+| GCF pipeline | `G-VAL-01` | ToR Lot 2 — an accredited entity appraises and signs off a candidate before it is carried forward | `tests/gcf-validation.test.js` | 47 | executed |
+| GCF pipeline | `G-VAL-02` | GCF investment framework — a judgement, not a computed score | `tests/gcf-validation.test.js` | 47 | executed |
+| GCF pipeline | `G-VAL-03` | Separation of duties — the person who prepares a submission does not validate it | `tests/gcf-validation.test.js` | 43 | executed |
+| GCF pipeline | `G-RPT-01` | ToR Lot 2 — the appraisal a committee reads and the assessor signs | `tests/gcf-assessment-report.test.js` | 57 | executed |
+| GCF pipeline | `G-RET-01` | ToR Lot 2 — the sponsor is told what to address, and the resubmission is compared against what was returned | `tests/gcf-return-loop.test.js` | 37 | executed |
+| GCF pipeline | `G-RET-02` | A return is a fact about a validated assessment, not a gesture | `tests/gcf-return-loop.test.js` | 48 | executed |
 | GCF pipeline | `G-EXCL-01` | ToR Lot 1, Milestones 1-3 and 5 | — | — | out of scope |
 | GCF pipeline | `G-EXCL-02` | GCF Funding Proposal preparation | — | — | out of scope |
 
 ## Summary
 
-- 154 rules across the conformance matrices
-- **147 proved by execution**
+- 160 rules across the conformance matrices
+- **153 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

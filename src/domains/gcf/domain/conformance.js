@@ -358,6 +358,56 @@ const RULES = [
     status: 'implemented',
   },
 
+  // ---- The assessor flow (Phase 1) — validation, report, return ----------
+  {
+    id: 'G-VAL-01',
+    clause: 'ToR Lot 2 — an accredited entity appraises and signs off a candidate before it is carried forward',
+    rule: 'The assessor validation runs a state machine — draft → under_review → validated, reopened back — and a validated assessment cannot be signed off without a recommendation.',
+    implementation: 'src/domains/gcf/domain/validation.js — apply()',
+    test: 'tests/gcf-validation.test.js › the validation state machine › validating with a recommendation records the sign-off',
+    status: 'implemented',
+  },
+  {
+    id: 'G-VAL-02',
+    clause: 'GCF investment framework — a judgement, not a computed score',
+    rule: 'The per-criterion ratings are words (strong/adequate/weak), never a number, and a validated assessment is frozen until it is reopened.',
+    implementation: 'src/domains/gcf/domain/validation.js — RATINGS and the frozen-ratings guard',
+    test: 'tests/gcf-validation.test.js › the validation state machine › a validated assessment has frozen ratings until it is reopened',
+    status: 'implemented',
+  },
+  {
+    id: 'G-VAL-03',
+    clause: 'Separation of duties — the person who prepares a submission does not validate it',
+    rule: 'Validation is the assessor’s own scope; a credential that can write the book but does not hold validate is refused.',
+    implementation: 'src/platform/auth/scopes.js — the validate scope and the pipeline/:id/validation override',
+    test: 'tests/gcf-validation.test.js › the validation route › the dashboard key holds no validate scope, so POST is refused naming it',
+    status: 'implemented',
+  },
+  {
+    id: 'G-RPT-01',
+    clause: 'ToR Lot 2 — the appraisal a committee reads and the assessor signs',
+    rule: 'The assessment report is built from the record, its validation and the engine’s evidence coverage, and a draft is told apart from a sign-off on the document’s own face; it is DFCC’s appraisal, not a GCF decision.',
+    implementation: 'src/domains/gcf/application/assessment-report.js — assessmentJSON / buildModel',
+    test: 'tests/gcf-assessment-report.test.js › the assessment report model › a draft is told apart from a sign-off',
+    status: 'implemented',
+  },
+  {
+    id: 'G-RET-01',
+    clause: 'ToR Lot 2 — the sponsor is told what to address, and the resubmission is compared against what was returned',
+    rule: 'The gap list is drawn from the assessment (unheld evidence and weak-rated criteria), and a return snapshots it so the comparison sorts today’s gaps into resolved, still-outstanding and newly-raised.',
+    implementation: 'src/domains/gcf/domain/return-loop.js — gaps() / comparison()',
+    test: 'tests/gcf-return-loop.test.js › the gap list and comparison › after a return, a resolved gap moves out of outstanding',
+    status: 'implemented',
+  },
+  {
+    id: 'G-RET-02',
+    clause: 'A return is a fact about a validated assessment, not a gesture',
+    rule: 'A return is refused unless the assessment is validated with a non-clean recommendation, so there is always something to return.',
+    implementation: 'src/domains/gcf/infrastructure/store.js — returnToSponsor()',
+    test: 'tests/gcf-return-loop.test.js › the return store › a clean recommendation cannot be returned',
+    status: 'implemented',
+  },
+
   // ---- Deliberately out of scope -----------------------------------------
   {
     id: 'G-EXCL-01',

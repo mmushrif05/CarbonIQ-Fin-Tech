@@ -152,7 +152,7 @@ flowchart TD
 |         `src/domains/capital/interface/routes/` | 2 | 718 |
 |         `src/domains/capital/interface/schemas/` | 1 | 201 |
 |       `src/domains/gcf/application/` | 4 | 1,328 |
-|       `src/domains/gcf/domain/` | 15 | 3,629 |
+|       `src/domains/gcf/domain/` | 15 | 3,679 |
 |       `src/domains/gcf/infrastructure/` | 1 | 294 |
 |         `src/domains/gcf/interface/routes/` | 1 | 23 |
 |           `src/domains/gcf/interface/routes/gcf/` | 6 | 1,007 |
@@ -207,7 +207,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **378** | **64,336** |
+| **total** | **378** | **64,386** |
 
 <!-- END MODULE-MAP -->
 
