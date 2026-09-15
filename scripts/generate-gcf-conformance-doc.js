@@ -32,6 +32,7 @@ const groups = [
   ['The project cycle — stages, readiness, criteria, the portfolio', r => r.id.startsWith('G-CYCLE')],
   ['Statutory reporting', r => r.id.startsWith('G-REPORT')],
   ['Concept Note package', r => r.id.startsWith('G-CN')],
+  ['The assessor flow — validation, report, return', r => r.id.startsWith('G-VAL') || r.id.startsWith('G-RPT') || r.id.startsWith('G-RET')],
   ['Deliberately out of scope', r => r.id.startsWith('G-EXCL')],
 ];
 
