@@ -118,6 +118,7 @@ const OVERRIDES = Object.freeze([
      lock. It sits before the broad rule because the first match wins and a POST
      defaults to write. */
   { method: 'POST', pattern: /^\/v1\/gcf\/pipeline\/:[A-Za-z]+\/validation$/, scope: 'validate', why: 'the assessor validates a GCF assessment' },
+  { method: 'POST', pattern: /^\/v1\/gcf\/pipeline\/:[A-Za-z]+\/return$/, scope: 'validate', why: 'the assessor returns a GCF assessment to the sponsor' },
 
   /* Engines that persist a run or call an AI agent. */
   { method: 'POST', pattern: /^\/v1\/assess$/, scope: 'assess', why: 'AI assessment' },

@@ -151,11 +151,11 @@ flowchart TD
 |       `src/domains/capital/infrastructure/` | 3 | 781 |
 |         `src/domains/capital/interface/routes/` | 2 | 718 |
 |         `src/domains/capital/interface/schemas/` | 1 | 201 |
-|       `src/domains/gcf/application/` | 3 | 1,183 |
-|       `src/domains/gcf/domain/` | 14 | 3,452 |
-|       `src/domains/gcf/infrastructure/` | 1 | 268 |
+|       `src/domains/gcf/application/` | 4 | 1,328 |
+|       `src/domains/gcf/domain/` | 15 | 3,629 |
+|       `src/domains/gcf/infrastructure/` | 1 | 294 |
 |         `src/domains/gcf/interface/routes/` | 1 | 23 |
-|           `src/domains/gcf/interface/routes/gcf/` | 5 | 890 |
+|           `src/domains/gcf/interface/routes/gcf/` | 6 | 1,007 |
 |         `src/domains/gcf/interface/schemas/` | 1 | 112 |
 |       `src/domains/lending/agents/` | 9 | 3,356 |
 |       `src/domains/lending/application/` | 6 | 1,454 |
@@ -194,7 +194,7 @@ flowchart TD
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,215 |
+|     `src/platform/auth/` | 12 | 2,216 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,876 |
@@ -207,7 +207,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **375** | **63,870** |
+| **total** | **378** | **64,336** |
 
 <!-- END MODULE-MAP -->
 

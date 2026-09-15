@@ -320,6 +320,24 @@ const projectSchema = Joi.object({
       note: Joi.string().max(1000).allow('', null).optional(),
       changed: Joi.array().items(Joi.string().max(60)).default([]),
     })).default([]),
+    /* The return-to-sponsor loop (Stage 6): each recorded return snapshots the
+       gap list at that instant, so the resubmission comparison has a fixed
+       point a later edit cannot move. Optional and backward compatible. */
+    returns: Joi.array().items(Joi.object({
+      at: Joi.string().max(40).required(),
+      by: Joi.string().max(160).allow('', null).optional(),
+      recommendation: Joi.string().valid('recommend', 'recommend_with_conditions', 'not_recommend').allow(null).optional(),
+      gaps: Joi.array().items(Joi.object({
+        kind: Joi.string().valid('evidence', 'rating').required(),
+        criterionId: Joi.string().max(60).required(),
+        criterion: Joi.string().max(200).required(),
+        subId: Joi.string().max(60).optional(),
+        detail: Joi.string().max(400).allow('', null).optional(),
+        status: Joi.string().max(40).optional(),
+        rating: Joi.string().max(40).optional(),
+        remedy: Joi.string().max(600).allow('', null).optional(),
+      }).unknown(false)).default([]),
+    }).unknown(false)).default([]),
     updatedBy: Joi.string().max(160).optional(),
     updatedAt: Joi.string().max(40).optional(),
   }).optional(),

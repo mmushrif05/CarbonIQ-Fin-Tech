@@ -259,6 +259,13 @@
 .gcf-check-clause { font-size: 11.5px; color: var(--gcf-muted); }
 .gcf-check-remedy { font-size: 11.5px; color: var(--gcf-warn); grid-column: 2; }
 
+/* The gap list and the validation history — one item per line, the pill and
+   its text on a row that wraps rather than pushing the panel wide. */
+.gcf-gaps, .gcf-history { list-style: none; margin: 6px 0; padding: 0; }
+.gcf-gaps li, .gcf-history li { display: flex; gap: 8px; align-items: baseline; padding: 5px 0; font-size: 12.5px; border-bottom: 1px solid var(--gcf-line); min-width: 0; }
+.gcf-gaps li:last-child, .gcf-history li:last-child { border-bottom: none; }
+.gcf-gaps li > span, .gcf-history li > span { min-width: 0; }
+
 .gcf-crit { border: 1px solid var(--gcf-line); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; min-width: 0; }
 .gcf-crit-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: 13px; font-weight: 600; }
 .gcf-crit ul { margin: 6px 0 0; padding-left: 0; list-style: none; font-size: 12px; }
