@@ -23,6 +23,7 @@ const ndc = require('../../../domain/ndc-contribution');
 const portfolio = require('../../../domain/portfolio');
 const readiness = require('../../../domain/readiness');
 const criteria = require('../../../domain/criteria');
+const { logframe } = require('../../../domain/logframe');
 const partcStore = require('../../../../../platform/database/store');
 const handle = require('../../../../../platform/http/async-handler');
 const { emptyBody } = require('../../../../../platform/http/validate').schemas;
@@ -210,7 +211,7 @@ router.get('/pipeline/:id/readiness', authenticate, defaultLimiter,
   doc({ summary: 'One candidate against the GCF project cycle — what it holds, what is missing, what is next',
     description: 'Held means the record holds the fact, not that the Secretariat will accept it. Projected '
       + 'dates carry `projected: true` and the GCF-2 service standard they rest on.',
-    response: body({ readiness: obj, criteria: obj, source: str, sample: bool }, ['readiness', 'criteria']) }),
+    response: body({ readiness: obj, criteria: obj, logframe: obj, source: str, sample: bool }, ['readiness', 'criteria']) }),
   handle(async (req, res) => {
   const { project, source, sample } = await store.get(req.orgId, req.params.id);
   if (!project) {
@@ -224,6 +225,7 @@ router.get('/pipeline/:id/readiness', authenticate, defaultLimiter,
     name: project.name,
     readiness: readiness.assess(project),
     criteria: criteria.assess(project),
+    logframe: logframe(project),
     source,
     sample,
   });
