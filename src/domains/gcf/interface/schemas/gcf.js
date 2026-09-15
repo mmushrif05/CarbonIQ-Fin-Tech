@@ -86,4 +86,8 @@ const gcfStageMoveSchema = Joi.object({
  */
 const gcfPatchSchema = Joi.object().unknown(true).min(1);
 
-module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema, gcfStageMoveSchema, gcfPatchSchema };
+/** The sponsor pre-check answers, read into an advisory. The record's own
+ *  schema, applied at the door — one shape, no second copy. */
+const gcfPreCheckSchema = record.preCheckSchema;
+
+module.exports = { gcfProjectSchema, gcfEntitySchema, gcfAdoptSchema, gcfImportSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema };

@@ -276,3 +276,19 @@
 .gcf-inline-form .gcf-actions { grid-column: 1 / -1; margin: 0; }
 .gcf-danger { color: var(--gcf-stop); border-color: var(--gcf-stop-soft); }
 .gcf-remove { background: none; border: none; color: var(--gcf-stop); font: inherit; font-size: 11.5px; cursor: pointer; padding: 0 4px; }
+
+/* Stage 1 — the guided intake help text, the results-target logframe row,
+   and the pre-check advisory. */
+.gcf-help { font-size: 11px; line-height: 1.4; color: var(--gcf-muted); margin: -1px 0 2px; }
+.gcf-logframe { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 110px); gap: 6px; min-width: 0; }
+.gcf-logframe .gcf-tiered { min-width: 0; }
+.gcf-precheck-summary { padding: 10px 12px; border-radius: 8px; background: var(--gcf-sunk);
+  border: 1px solid var(--gcf-line); border-left: 4px solid var(--gcf-muted); font-size: 13px; margin: 12px 0 10px; }
+.gcf-precheck-summary.state-ok { border-left-color: var(--gcf-ok); }
+.gcf-precheck-summary.state-attention { border-left-color: var(--gcf-warn); }
+.gcf-precheck-summary.state-stop { border-left-color: var(--gcf-stop); }
+.gcf-precheck-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.gcf-precheck-list li { font-size: 12.5px; border: 1px solid var(--gcf-line); border-radius: 8px; padding: 8px 10px; background: var(--gcf-surface); }
+.gcf-precheck-list li b { display: inline-block; margin: 4px 0 2px; }
+.gcf-precheck-list li div { color: var(--gcf-muted); }
+.gcf-pill-flag { background: var(--gcf-warn-soft); color: var(--gcf-warn); }
