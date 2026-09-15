@@ -120,7 +120,19 @@ const INSTRUMENT_CATALOGUE = Object.freeze(
 const PIPELINE_SEED = Object.freeze(
   checked('data/gcf/pipeline.seed.json', require('../../../../data/gcf/pipeline.seed.json'), pipelineSeedSchema));
 
+/* The DFCC starter book — realistic values Datum entered for DFCC to edit,
+   recorded (not sample) so the dashboard shows a real book from the first
+   load and every figure is editable. The shape is checked here; each project
+   is validated in full by `record.validate` when it is recorded, and a test
+   asserts every starter project passes that validation. */
+const starterBookSchema = Joi.object({
+  _meta: Joi.object().unknown(true).optional(),
+  projects: Joi.array().items(Joi.object().unknown(true)).min(1).required(),
+}).unknown(false);
+const STARTER_BOOK = Object.freeze(
+  checked('data/gcf/dfcc-starter-projects.json', require('../../../../data/gcf/dfcc-starter-projects.json'), starterBookSchema));
+
 module.exports = {
-  IRMF, RESULTS_AREAS, INSTRUMENT_CATALOGUE, PIPELINE_SEED,
-  irmfSchema, resultsAreasSchema, instrumentsSchema, pipelineSeedSchema,
+  IRMF, RESULTS_AREAS, INSTRUMENT_CATALOGUE, PIPELINE_SEED, STARTER_BOOK,
+  irmfSchema, resultsAreasSchema, instrumentsSchema, pipelineSeedSchema, starterBookSchema,
 };

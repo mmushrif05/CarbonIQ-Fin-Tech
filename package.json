@@ -17,6 +17,7 @@
     "setup:env": "node scripts/generate-env.js",
     "setup:verify": "node scripts/verify-setup.js",
     "setup:seed": "node scripts/seed-demo-data.js",
+    "gcf:record": "node scripts/gcf-record-projects.js",
     "setup:seed-clear": "node scripts/seed-demo-data.js --clear",
     "key:create": "node scripts/create-api-key.js create",
     "key:list": "node scripts/create-api-key.js list",

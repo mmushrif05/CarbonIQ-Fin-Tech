@@ -25,6 +25,7 @@ const store = require('../../../platform/database/store');
 const { fallback } = require('../../../platform/observability/logger');
 const record = require('../domain/record');
 const SEED = require('../domain/reference').PIPELINE_SEED;
+const STARTER = require('../domain/reference').STARTER_BOOK;
 
 const COLLECTION = 'gcf_projects';
 const SETTINGS_COLLECTION = 'gcf_entity';
@@ -176,6 +177,40 @@ async function adoptSeed(orgId, { by = null } = {}) {
   return written;
 }
 
+/**
+ * Load the DFCC starter book into the organisation's own store.
+ *
+ * The dashboard shows the illustrative sample until an organisation records
+ * something; this records a realistic starter book (Datum's values, for DFCC
+ * to edit) so a real, dynamic, editable pipeline appears from the first click.
+ * It is not the sample — `sample:false`, fully editable — and it is kept apart
+ * from it.
+ *
+ * It refuses when the organisation already holds recorded projects, so it can
+ * never overwrite a book somebody has begun editing; the caller is told how
+ * many are already there. `assertWritable()` refuses first on a deployment that
+ * cannot persist, rather than accepting a write it would lose.
+ */
+async function installStarter(orgId, { by = null } = {}) {
+  store.assertWritable();
+  const current = await list(orgId);
+  if (current.source === 'recorded' && current.projects.length) {
+    throw refuse('STARTER_NOT_EMPTY',
+      `This organisation already holds ${current.projects.length} recorded project(s), so the starter book was not loaded — it would not overwrite a book you have begun.`,
+      409,
+      'Edit the projects you have, or remove them first if you meant to start over.');
+  }
+  const source = (STARTER._meta && STARTER._meta.provenanceSource)
+    || 'Starter values entered by Datum Solutions for DFCC — edit to the exact confirmed figures.';
+  const written = [];
+  for (const p of STARTER.projects) {
+    const rest = /** @type {any} */ ({ ...p });
+    delete rest.provenance;
+    written.push(await put(orgId, { ...rest, provenance: { source } }, { by }));
+  }
+  return written;
+}
+
 /* ── Entity-level disclosures ──────────────────────────────────────────────
  *
  * One record per organisation, holding the facts the disclosure cannot compute.
@@ -208,7 +243,7 @@ async function setEntityDisclosures(orgId, body, { by = null } = {}) {
 }
 
 module.exports = {
-  list, get, put, patch, moveStage, remove, adoptSeed, seedProjects, seedMeta, accreditation,
+  list, get, put, patch, moveStage, remove, adoptSeed, installStarter, seedProjects, seedMeta, accreditation,
   entityDisclosures, setEntityDisclosures,
   COLLECTION, SETTINGS_COLLECTION,
 };

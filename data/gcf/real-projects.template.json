@@ -1,0 +1,161 @@
+{
+  "_README": [
+    "TEMPLATE for recording REAL GCF pipeline projects. Copy this file, rename it (e.g. data/gcf/real-projects.json),",
+    "replace the illustrative example values with the institution's real facts, then record them with:",
+    "    npm run gcf:record -- --org <orgId> --file data/gcf/real-projects.json --by \"Your name\"",
+    "Add --dry-run first to validate without writing anything.",
+    "",
+    "Every key beginning with an underscore (like this one, and the _help notes below) is guidance only —",
+    "the recorder ignores them, so you can leave them in place while you fill in the real values.",
+    "",
+    "The three projects below mirror the walk-through in the GCF Pipeline Playbook so you can see the shape:",
+    "one that passes every gate, one that is flagged, and one that is excluded. They are ILLUSTRATIVE — replace",
+    "the ids, names and every figure with the real projects before recording, or they will record as-is."
+  ],
+  "_vocabularies": {
+    "resultsArea": "One of: EP (energy access & power), LT (low-emission transport), BA (buildings/cities/industry/appliances), FL (forests & land use), VC (livelihoods of people & communities), HW (health/food/water security), IB (ecosystems & ecosystem services), EE (most vulnerable people & communities)",
+    "stream": "mitigation (reduces/avoids/removes emissions) or adaptation (builds resilience). An adaptation project is NEVER ranked on carbon.",
+    "stage": "concept, pre_feasibility, cn_drafted, cn_submitted, ppf, fp, fp_submitted, board, approved, faa, implementation, closed",
+    "essCategory": "A (significant/irreversible impacts — OUTSIDE DFCC's B/I-2 accreditation, will be excluded), B (limited, mitigable), C (minimal), or I-1/I-2/I-3 for on-lending portfolios",
+    "tier": "The evidence behind a figure: measured (metered/audited), modelled (calculated), benchmark (a published default), or declared (the sponsor's own statement). Not a PCAF score.",
+    "baseline.type": "reduced (project cuts existing emissions), avoided (emissions that would otherwise have happened), or removal (carbon taken out of the air). Decided by the counterfactual, not by the engine.",
+    "instrument": "One of the seven catalogue structures: concessional_credit_line, risk_sharing_facility, blended_sll, subordinated_debt, results_based_finance, green_bond_warehouse, fx_hedging_facility",
+    "barriers": "Why it is not already financed commercially: tenor, offtake_risk, currency, perceived_technology_risk, upfront_capex, no_revenue_stream, fragmented_borrowers"
+  },
+  "projects": [
+    {
+      "_help": "PROJECT A — passes every gate. Replace all values with a real project.",
+      "id": "gcf_example_a_replace_me",
+      "code": "GCF-A",
+      "name": "EXAMPLE A — Rooftop Solar for Commercial Estates (replace me)",
+      "location": { "province": "Western", "districts": ["Colombo", "Gampaha"], "country": "LK" },
+      "sector": "Renewable generation",
+      "resultsArea": "EP",
+      "stream": "mitigation",
+      "stage": "concept",
+      "_help_selectionReason": "40+ characters. Why this project, in the bank's own words. Required.",
+      "selectionReason": "Distributed rooftop solar on commercial estates that already carry DFCC facilities; a clean extension of an existing book with a known offtake.",
+      "essCategory": "B",
+      "essNote": "Rooftop installations on existing buildings; limited, site-specific, readily mitigated impacts.",
+      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
+      "barriers": ["tenor", "upfront_capex"],
+      "financing": {
+        "currency": "USD",
+        "totalCost": 18000000,
+        "gcfAsk": 6000000,
+        "dfcc": 8000000,
+        "other": 4000000,
+        "otherLabel": "Estate owners' equity",
+        "instrument": "concessional_credit_line",
+        "gcfInstrumentDetail": "Concessional tranche on-lent through DFCC to extend tenor. No grant element.",
+        "viabilityWithoutGcf": {
+          "viable": false,
+          "reason": "Commercial tenor tops out well short of the payback period on rooftop solar for these borrowers; GCF's tranche buys the missing years of tenor, not a margin subsidy."
+        }
+      },
+      "mitigation": {
+        "annual_tCO2e": { "value": 9800, "tier": "modelled", "method": "installed capacity x yield x grid emission factor" },
+        "lifetime_tCO2e": { "value": 196000, "tier": "modelled", "method": "annual x 20 years, undiscounted" },
+        "baseline": {
+          "description": "Grid electricity displaced at the Sri Lankan national average emission factor",
+          "counterfactual": "Without the project the estates draw the same demand from the national grid",
+          "type": "avoided"
+        }
+      },
+      "beneficiaries": {
+        "direct": { "value": 120, "tier": "declared", "definition": "Commercial estates connected" },
+        "indirect": { "value": 15000, "tier": "modelled", "definition": "People working on the served estates" }
+      }
+    },
+    {
+      "_help": "PROJECT B — flagged (a mandate question, not a rejection). Adaptation, so never ranked on carbon.",
+      "id": "gcf_example_b_replace_me",
+      "code": "GCF-B",
+      "name": "EXAMPLE B — Coastal Aquaculture Resilience (replace me)",
+      "location": { "province": "Eastern", "districts": ["Batticaloa", "Trincomalee"], "country": "LK" },
+      "sector": "Climate-resilient livelihoods",
+      "resultsArea": "VC",
+      "stream": "adaptation",
+      "stage": "concept",
+      "selectionReason": "Resilience of smallholder coastal aquaculture to warming and storm surge; a livelihoods project the NAP prioritises for the Eastern coast.",
+      "essCategory": "B",
+      "essNote": "Community-level works with a gender and stakeholder plan; no large infrastructure.",
+      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "A" },
+      "barriers": ["no_revenue_stream", "fragmented_borrowers"],
+      "financing": {
+        "currency": "USD",
+        "totalCost": 12000000,
+        "gcfAsk": 5000000,
+        "dfcc": 3000000,
+        "other": 4000000,
+        "otherLabel": "Government and community contribution",
+        "instrument": "results_based_finance",
+        "gcfInstrumentDetail": "Resilience outcomes are not paid for by any market; results-based finance is the structure that reaches them.",
+        "modalityGap": true,
+        "viabilityWithoutGcf": {
+          "viable": false,
+          "reason": "The adaptation benefit has no buyer, so no commercial structure prices it. The only instrument that reaches it depends on the grant modality DFCC does not currently hold — a mandate question to verify with DFCC and the NDA."
+        }
+      },
+      "mitigation": {
+        "annual_tCO2e": { "value": null, "tier": "declared", "note": "Adaptation project; mitigation is a co-benefit, not the objective, and is not the basis for ranking." },
+        "lifetime_tCO2e": { "value": null, "tier": "declared" },
+        "baseline": {
+          "description": "Not a mitigation project; no mitigation baseline is claimed",
+          "counterfactual": "Resilience of livelihoods, measured in beneficiaries reached, not in tonnes",
+          "type": "avoided",
+          "note": "Type is a required field; for a pure adaptation project it carries no weight because no mitigation tonnage is claimed."
+        },
+        "isCoBenefit": true,
+        "coBenefitNote": "Any emissions benefit is incidental to the resilience objective and sits on its own line."
+      },
+      "beneficiaries": {
+        "direct": { "value": 4200, "tier": "declared", "definition": "Smallholder aquaculture households" },
+        "indirect": { "value": 21000, "tier": "modelled", "definition": "Wider coastal community dependent on the fishery" }
+      }
+    },
+    {
+      "_help": "PROJECT C — excluded. Category A is outside DFCC's B/I-2 accreditation. It keeps its row and its reason.",
+      "id": "gcf_example_c_replace_me",
+      "code": "GCF-C",
+      "name": "EXAMPLE C — Cement Line Expansion with Efficiency Upgrade (replace me)",
+      "location": { "province": "North Western", "districts": ["Puttalam"], "country": "LK" },
+      "sector": "Industry",
+      "resultsArea": "BA",
+      "stream": "mitigation",
+      "stage": "concept",
+      "selectionReason": "A more efficient kiln per tonne of cement, brought as a mitigation project by the sponsor; recorded honestly so the gate can speak.",
+      "essCategory": "A",
+      "essNote": "A new cement line is a significant, category A industrial development.",
+      "taxonomy": { "framework": "SLGFT", "band": "amber", "objective": "M" },
+      "barriers": ["upfront_capex"],
+      "financing": {
+        "currency": "USD",
+        "totalCost": 60000000,
+        "gcfAsk": 15000000,
+        "dfcc": 25000000,
+        "other": 20000000,
+        "otherLabel": "Sponsor equity",
+        "instrument": "subordinated_debt",
+        "viabilityWithoutGcf": {
+          "viable": true,
+          "reason": "A commercial expansion the sponsor can finance; recorded to demonstrate the eligibility gate, not because it needs GCF support."
+        }
+      },
+      "mitigation": {
+        "annual_tCO2e": { "value": -35000, "tier": "declared", "method": "intensity improvement per tonne, but output doubles so absolute emissions rise" },
+        "lifetime_tCO2e": { "value": -700000, "tier": "declared", "note": "Negative because absolute emissions increase against the true counterfactual." },
+        "baseline": {
+          "description": "Per-tonne intensity improves, but the counterfactual is not 'the old kiln at the same output'",
+          "counterfactual": "Without the project the market is not served by this doubled output at all; total emissions rise",
+          "type": "reduced",
+          "note": "The climate rationale fails on the counterfactual — an efficiency gain per tonne alongside a doubling of output is not an emissions reduction."
+        }
+      },
+      "beneficiaries": {
+        "direct": { "value": 400, "tier": "declared", "definition": "Plant employees" },
+        "indirect": { "value": 0, "tier": "declared" }
+      }
+    }
+  ]
+}

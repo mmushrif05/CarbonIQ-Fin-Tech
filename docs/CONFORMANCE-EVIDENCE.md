@@ -137,7 +137,7 @@ proved or it is not.
 | GCF pipeline | `G-DATA-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data for sustainable reporting" | `tests/gcf-pipeline.test.js` | 64 | executed |
 | GCF pipeline | `G-DATA-02` | ToR Lot 1, Milestone 4 — data systems for carbon accounting | `tests/gcf-pipeline.test.js` | 64 | executed |
 | GCF pipeline | `G-DATA-03` | ToR Lot 1, Milestone 4 — data "should be stored and can be transferred and assessed" | `tests/gcf-reporting.test.js` | 72 | executed |
-| GCF pipeline | `G-DATA-04` | ToR Lot 1, Milestone 4 — durable capture | `tests/gcf-pipeline.test.js` | 41 | executed |
+| GCF pipeline | `G-DATA-04` | ToR Lot 1, Milestone 4 — durable capture | `tests/gcf-pipeline.test.js` | 42 | executed |
 | GCF pipeline | `G-CARBON-01` | ToR Lot 1, Milestone 4 — emissions | `tests/gcf-emissions.test.js` | 108 | executed |
 | GCF pipeline | `G-CARBON-02` | PCAF Part A p.126, applied to project appraisal | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-CARBON-03` | GCF Mitigation Core Indicator 1 (IRMF, decision B.29/01) | `tests/gcf-pipeline.test.js` | 64 | executed |
@@ -165,14 +165,14 @@ proved or it is not.
 | GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 167 | executed |
 | GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 167 | executed |
 | GCF pipeline | `G-CYCLE-01` | GCF project activity cycle — ten stages from programming to closure | `tests/gcf-cycle.test.js` | 46 | executed |
-| GCF pipeline | `G-CYCLE-02` | ToR Lot 1, Milestone 4 — systems and procedures to capture data; a pipeline has a time axis | `tests/gcf-cycle.test.js` | 70 | executed |
+| GCF pipeline | `G-CYCLE-02` | ToR Lot 1, Milestone 4 — systems and procedures to capture data; a pipeline has a time axis | `tests/gcf-cycle.test.js` | 82 | executed |
 | GCF pipeline | `G-CYCLE-03` | GCF-2 service standards — six weeks for concept-note feedback, nine months to approval, eleven months to first disbursement | `tests/gcf-cycle.test.js` | 46 | executed |
 | GCF pipeline | `G-CYCLE-04` | Concept note template v2.2 and funding proposal template — what each stage must contain; Sri Lanka NDA Operation Manual | `tests/gcf-cycle.test.js` | 85 | executed |
 | GCF pipeline | `G-CYCLE-05` | Board decision B.32/05 — Simplified Approval Process; Project Preparation Facility guidelines | `tests/gcf-cycle.test.js` | 85 | executed |
 | GCF pipeline | `G-CYCLE-06` | GCF investment framework — six investment criteria and their sub-criteria | `tests/gcf-cycle.test.js` | 52 | executed |
 | GCF pipeline | `G-CYCLE-07` | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund | `tests/gcf-cycle.test.js` | 92 | executed |
-| GCF pipeline | `G-CYCLE-08` | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it | `tests/gcf-cycle.test.js` | 70 | executed |
-| GCF pipeline | `G-ACCR-05` | Board decision B.36/10 — DFCC’s accreditation envelope; the entity’s own where recorded | `tests/gcf-cycle.test.js` | 70 | executed |
+| GCF pipeline | `G-CYCLE-08` | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it | `tests/gcf-cycle.test.js` | 82 | executed |
+| GCF pipeline | `G-ACCR-05` | Board decision B.36/10 — DFCC’s accreditation envelope; the entity’s own where recorded | `tests/gcf-cycle.test.js` | 82 | executed |
 | GCF pipeline | `G-EXCL-01` | ToR Lot 1, Milestones 1-3 and 5 | — | — | out of scope |
 | GCF pipeline | `G-EXCL-02` | GCF Funding Proposal preparation | — | — | out of scope |
 

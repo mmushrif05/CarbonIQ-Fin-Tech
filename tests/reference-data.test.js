@@ -66,6 +66,11 @@ describe('Every reference file goes through the guard', () => {
          nothing under src/; the tables themselves are what go through the
          guard, and the manifest test holds it to them. */
       if (path.basename(file) === 'MANIFEST.json') return false;
+      /* A `*.template.json` is an operator input to a recording script, filled
+         in and passed on the command line — it is never read by anything under
+         src/, so it has no arithmetic path to guard. The script validates the
+         book it is given through the domain schema at the door. */
+      if (file.endsWith('.template.json')) return false;
       if (src.includes(`checked('${file}'`)) return false;
       if (file.startsWith('data/factors/') && src.includes('checked(`data/factors/${name}.json`')) return false;
       return true;

@@ -398,3 +398,40 @@ describe('The cycle over HTTP', () => {
     expect(view.envelope.overCeiling.length).toBeGreaterThan(0);
   });
 });
+
+describe('The DFCC starter book — real, editable, loaded in one click', () => {
+  const starter = require('../data/gcf/dfcc-starter-projects.json');
+
+  test('every starter project passes the record schema', () => {
+    expect(starter.projects.length).toBeGreaterThanOrEqual(3);
+    for (const p of starter.projects) expect(() => record.validate(p)).not.toThrow();
+  });
+
+  test('installing records the starter book, recorded not sample, and attributed', async () => {
+    const before = await store.list('org-starter');
+    expect(before.source).toBe('seed');
+    const written = await store.installStarter('org-starter', { by: 'Analyst' });
+    expect(written.length).toBe(starter.projects.length);
+    const after = await store.list('org-starter');
+    expect(after.source).toBe('recorded');
+    expect(after.sample).toBe(false);
+    const one = await store.get('org-starter', 'gcf_dfcc_ci_solar');
+    expect(one.source).toBe('recorded');
+    expect(one.project.provenance.source).toMatch(/Datum/);
+    expect(one.project.provenance.enteredBy).toBe('Analyst');
+  });
+
+  test('installing again refuses rather than overwriting an edited book', async () => {
+    await store.installStarter('org-starter', { by: 'Analyst' });
+    await expect(store.installStarter('org-starter', { by: 'Analyst' }))
+      .rejects.toMatchObject({ statusCode: 409, code: 'STARTER_NOT_EMPTY' });
+  });
+
+  test('the route loads the starter book and then refuses a second load', async () => {
+    const r = (await auth(api().post('/v1/gcf/pipeline/install-starter')).expect(201)).body;
+    expect(r.installed).toBe(starter.projects.length);
+    const list = (await auth(api().get('/v1/gcf/pipeline')).expect(200)).body.pipeline.projects;
+    expect(list.some(p => p.id === 'gcf_dfcc_ebus')).toBe(true);
+    await auth(api().post('/v1/gcf/pipeline/install-starter')).expect(409);
+  });
+});
