@@ -536,6 +536,18 @@ const GCFPipeline = (() => {
       : (val.recommendation ? ` — recommendation: ${esc(REC_LABEL[val.recommendation] || val.recommendation)}` : '');
     setHtml('gcfValidationState', `<p>${statePill(val.state)}${signoff}${val.recommendationNote ? `<span class="gcf-hint"> — ${esc(val.recommendationNote)}</span>` : ''}</p>`);
 
+    /* The assessment report — a read anyone may take, so it is not gated by the
+       validate scope. The document's own sign-off block tells a draft apart
+       from a validated one, so downloading before sign-off is honest. */
+    setHtml('gcfValidationDownload', view.source === 'recorded'
+      ? `<span class="gcf-hint">Assessment report:</span>
+         <button class="btn btn-secondary btn-sm" data-report="pdf">PDF</button>
+         <button class="btn btn-secondary btn-sm" data-report="word">Word</button>
+         <button class="btn btn-secondary btn-sm" data-report="json">JSON</button>`
+      : '');
+    document.querySelectorAll('#gcfValidationDownload [data-report]').forEach(btn =>
+      btn.addEventListener('click', () => downloadReport(p.id, p.code, btn.dataset.report)));
+
     /* One row per criterion: the engine's evidence coverage, then the
        assessor's rating (a select when editable, the word otherwise). */
     const critRows = (c.criteria || []).map(cr => {
@@ -595,6 +607,33 @@ const GCFPipeline = (() => {
     if (rec && rec.value) out.recommendation = rec.value;
     if (note) out.recommendationNote = note.value.trim() || null;
     return out;
+  }
+
+  /* Fetch the assessment report and save it. JSON opens as text; PDF and Word
+     save as the binary the server rendered. Authenticated through the app's
+     own fetch, so the session token travels with it. */
+  async function downloadReport(id, code, format) {
+    const ext = format === 'word' ? 'docx' : format;
+    hint(`Preparing the assessment report (${format.toUpperCase()})…`);
+    try {
+      const res = await window.CARBONIQ_fetch(`/v1/gcf/pipeline/${encodeURIComponent(id)}/assessment-report?format=${format}`);
+      if (!res.ok) {
+        let data = {};
+        try { data = await res.json(); } catch (_) { /* non-JSON */ }
+        throw new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      }
+      const blob = format === 'json'
+        ? new Blob([JSON.stringify(await res.json(), null, 2)], { type: 'application/json' })
+        : await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `gcf-assessment-${String(code || id).replace(/[^A-Za-z0-9_-]/g, '')}.${ext}`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      hint('Assessment report downloaded.');
+    } catch (err) {
+      hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
+    }
   }
 
   async function validateChange(id, change) {
