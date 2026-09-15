@@ -29,13 +29,14 @@ const AccountsPage = (() => {
 
   const state = { users: [], roles: [], loaded: false };
 
-  /* The six roles, in the order they descend. Held here rather than fetched
+  /* The grantable roles, in the order they descend. Held here rather than fetched
      because the sign-in response already names the caller's, and a select
      that cannot be drawn until a request returns is a select that flickers. */
   const ROLES = [
     { id: 'admin', label: 'Administrator' },
     { id: 'credit_officer', label: 'Credit Officer' },
     { id: 'esg_analyst', label: 'ESG Analyst' },
+    { id: 'assessor', label: 'Assessor' },
     { id: 'relationship_manager', label: 'Relationship Manager' },
     { id: 'auditor', label: 'Auditor' },
     { id: 'borrower', label: 'Borrower' },

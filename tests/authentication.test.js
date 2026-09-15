@@ -117,7 +117,7 @@ describe('Signing in', () => {
 describe('The exit criterion: a role decides what a signed-in person may do', () => {
   test('an auditor holds read alone; an administrator holds every scope', () => {
     expect(scopesForRoleLevel(30)).toEqual(['read']);
-    expect(scopesForRoleLevel(100)).toEqual(['read', 'write', 'lock', 'assess', 'admin']);
+    expect(scopesForRoleLevel(100)).toEqual(['read', 'write', 'lock', 'assess', 'admin', 'validate']);
   });
 
   test('an auditor can read the book and cannot write to it', async () => {
