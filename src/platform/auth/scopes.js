@@ -79,6 +79,7 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/covenant/, scope: 'read', why: 'covenant check, stateless' },
   { method: 'POST', pattern: /^\/v1\/carbon-pricing/, scope: 'read', why: 'carbon-pricing exposure, stateless' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-c\/dq-preview$/, scope: 'read', why: 'data-quality preview, nothing persisted' },
+  { method: 'POST', pattern: /^\/v1\/gcf\/precheck$/, scope: 'read', why: 'GCF sponsor pre-check, nothing persisted' },
   /* Part A is now two surfaces behind one prefix, and they need different
      scopes. The engine routes compute and store nothing, so a read-only key
      may ask them. The register WRITES — it is the book a disclosure is built

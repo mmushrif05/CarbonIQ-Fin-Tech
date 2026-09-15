@@ -14,9 +14,10 @@ const { listView, paged } = require('../../../../../platform/http/pagination');
 const { doc, body, str, num, bool, obj, orNull, arr } = require('../../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../../platform/http/rate-limit');
 const validate = require('../../../../../platform/http/validate');
-const { gcfProjectSchema, gcfStageMoveSchema, gcfPatchSchema } = require('../../schemas/gcf');
+const { gcfProjectSchema, gcfStageMoveSchema, gcfPatchSchema, gcfPreCheckSchema } = require('../../schemas/gcf');
 const store = require('../../../infrastructure/store');
 const record = require('../../../domain/record');
+const { precheck } = require('../../../domain/precheck');
 const emissions = require('../../../domain/emissions');
 const ndc = require('../../../domain/ndc-contribution');
 const portfolio = require('../../../domain/portfolio');
@@ -128,6 +129,23 @@ router.post('/pipeline/adopt', authenticate, validate({ body: emptyBody }), defa
       + 'The figures remain illustrative; each record carries its origin in provenance.source.',
     storage: partcStore.capability(),
   });
+}));
+
+/**
+ * The sponsor pre-check — the plain-language self-screen answered before the
+ * full intake. It reads the answers into an advisory (held, attention, stop),
+ * against DFCC's accreditation, and stores nothing: it is the moment a sponsor
+ * learns whether this looks like a GCF project DFCC can carry, and what to
+ * check. A read; the same answers twice give the same read and issue no id.
+ */
+router.post('/precheck', authenticate, validate({ body: gcfPreCheckSchema }), defaultLimiter,
+  doc({ summary: 'Read the sponsor pre-check answers into an advisory (stores nothing)',
+    description: 'Turns the plain-language self-screen into held / attention / stop with the way forward, '
+      + 'against DFCC\'s accreditation. Nothing is persisted.',
+    response: body({ precheck: obj }, ['precheck']) }),
+  handle(async (req, res) => {
+  const accreditation = await store.accreditation(req.orgId);
+  res.json({ precheck: precheck(req.body || {}, { accreditation }) });
 }));
 
 /**

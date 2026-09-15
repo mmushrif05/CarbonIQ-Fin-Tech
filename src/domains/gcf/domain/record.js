@@ -139,6 +139,23 @@ const beneficiariesSchema = Joi.object({
   womenPct: traced().optional(),
 });
 
+/* The sponsor's pre-check answers — shared by the record (where they are
+   stored) and the stateless pre-check route (where they are read into an
+   advisory). Declared once so the two cannot drift. */
+const preCheckSchema = Joi.object({
+  counterfactual: Joi.string().max(1200).allow('', null).optional(),
+  essCategoryGuess: Joi.string().valid('A', 'B', 'C', 'unsure').optional(),
+  estimatedCost_usd: Joi.number().min(0).allow(null).optional(),
+  stream: Joi.string().valid(...STREAMS, 'unsure').optional(),
+  hasRevenueStream: Joi.boolean().optional(),
+  dependsOnGrant: Joi.boolean().optional(),
+  landAndConsent: Joi.string().valid('clear', 'in_progress', 'unclear', 'not_applicable').optional(),
+  ndaInformed: Joi.boolean().optional(),
+  sponsor: Joi.string().max(200).allow('', null).optional(),
+  answeredAt: Joi.string().max(40).optional(),
+  notes: Joi.string().max(1200).allow('', null).optional(),
+}).unknown(false);
+
 const projectSchema = Joi.object({
   id: Joi.string().max(80).required(),
   code: Joi.string().max(20).required(),
@@ -256,6 +273,28 @@ const projectSchema = Joi.object({
   beneficiaries: beneficiariesSchema.required(),
   area: Joi.object({ hectares: traced().allow(null).optional() }).default({}),
   assets: Joi.object({ valueProtected_usd: traced().allow(null).optional() }).default({}),
+
+  /* The results logframe GCF reports against: for each core indicator, where
+     the project starts (baseline), where it commits to reach (target) and by
+     when. The current/expected figure is the indicator field itself
+     (mitigation.lifetime_tCO2e, beneficiaries.direct, …); this holds the
+     baseline and target beside it so a reader sees "from X to Y by year Z".
+     Keyed by IRMF indicator id (MCI-1, ACI-1, ACI-2, SUP-AREA, SUP-ASSET);
+     every entry optional, so a project recorded before this existed is
+     unaffected. */
+  results: Joi.object().pattern(Joi.string().max(40), Joi.object({
+    baseline: traced().optional(),
+    target: traced().optional(),
+    targetYear: Joi.number().integer().min(2000).max(2100).allow(null).optional(),
+    note: Joi.string().max(600).allow('', null).optional(),
+  }).unknown(false)).default({}),
+
+  /* The sponsor's pre-check — the plain-language self-screen answered before
+     the full form. Recorded as given, never believed: the counterfactual and
+     the environmental category are the two that decide whether this is a GCF
+     project at all, and `domain/precheck.js` turns them into an advisory read.
+     Optional, so nothing recorded before this existed is affected. */
+  preCheck: preCheckSchema.optional(),
 
   /* Who entered this and when. Real data entered by a bank is evidence in a
      GCF submission and in a statutory disclosure; an unattributed figure is
@@ -379,7 +418,7 @@ function withinAccreditation(project, { sizeRange = [0, Infinity] } = {}) {
 }
 
 module.exports = {
-  projectSchema, validate, entitySchema, validateEntity,
+  projectSchema, validate, entitySchema, validateEntity, preCheckSchema,
   weakestTier, tracedFigures, withinAccreditation,
   TIERS, AREA_CODES, STREAMS, STAGES, ESS_CATEGORIES, ESS_WITHIN_DFCC_ACCREDITATION,
   BASELINE_TYPES, DOCUMENT_KINDS, NDA_STATUSES, COFINANCING_STATUSES, accreditationSchema,

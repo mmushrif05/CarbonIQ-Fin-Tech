@@ -14753,6 +14753,81 @@
                       }
                     }
                   },
+                  "results": {
+                    "type": "object"
+                  },
+                  "preCheck": {
+                    "type": "object",
+                    "properties": {
+                      "counterfactual": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "essCategoryGuess": {
+                        "type": "string",
+                        "enum": [
+                          "A",
+                          "B",
+                          "C",
+                          "unsure"
+                        ]
+                      },
+                      "estimatedCost_usd": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0
+                      },
+                      "stream": {
+                        "type": "string",
+                        "enum": [
+                          "mitigation",
+                          "adaptation",
+                          "unsure"
+                        ]
+                      },
+                      "hasRevenueStream": {
+                        "type": "boolean"
+                      },
+                      "dependsOnGrant": {
+                        "type": "boolean"
+                      },
+                      "landAndConsent": {
+                        "type": "string",
+                        "enum": [
+                          "clear",
+                          "in_progress",
+                          "unclear",
+                          "not_applicable"
+                        ]
+                      },
+                      "ndaInformed": {
+                        "type": "boolean"
+                      },
+                      "sponsor": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 200
+                      },
+                      "answeredAt": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "notes": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      }
+                    }
+                  },
                   "provenance": {
                     "type": "object",
                     "properties": {
@@ -15887,6 +15962,188 @@
                       "required": [
                         "portfolio",
                         "source"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/gcf/precheck": {
+      "post": {
+        "operationId": "postGcfPrecheck",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "Read the sponsor pre-check answers into an advisory (stores nothing)",
+        "description": "Turns the plain-language self-screen into held / attention / stop with the way forward, against DFCC's accreditation. Nothing is persisted. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "counterfactual": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1200
+                  },
+                  "essCategoryGuess": {
+                    "type": "string",
+                    "enum": [
+                      "A",
+                      "B",
+                      "C",
+                      "unsure"
+                    ]
+                  },
+                  "estimatedCost_usd": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "minimum": 0
+                  },
+                  "stream": {
+                    "type": "string",
+                    "enum": [
+                      "mitigation",
+                      "adaptation",
+                      "unsure"
+                    ]
+                  },
+                  "hasRevenueStream": {
+                    "type": "boolean"
+                  },
+                  "dependsOnGrant": {
+                    "type": "boolean"
+                  },
+                  "landAndConsent": {
+                    "type": "string",
+                    "enum": [
+                      "clear",
+                      "in_progress",
+                      "unclear",
+                      "not_applicable"
+                    ]
+                  },
+                  "ndaInformed": {
+                    "type": "boolean"
+                  },
+                  "sponsor": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 200
+                  },
+                  "answeredAt": {
+                    "type": "string",
+                    "maxLength": 40
+                  },
+                  "notes": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "maxLength": 1200
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "precheck": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "precheck"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "precheck": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "precheck"
                       ]
                     },
                     "meta": {

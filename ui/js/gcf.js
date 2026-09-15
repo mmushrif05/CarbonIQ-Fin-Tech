@@ -542,43 +542,47 @@ const GCFPage = (() => {
 
   const INTAKE = () => [
     { group: 'The project' },
-    { id: 'code', label: 'Code', kind: 'text' },
-    { id: 'name', label: 'Project name', kind: 'text' },
-    { id: 'sector', label: 'Sector', kind: 'text' },
-    { id: 'province', label: 'Province', kind: 'text' },
-    { id: 'stream', label: 'Stream', kind: 'select', options: refv('streams').map(s => [s, s]) },
-    { id: 'resultsArea', label: 'GCF results area', kind: 'select', options: refAreas().map(a => [a.code, `${a.code} — ${a.name}`]) },
-    { id: 'stage', label: 'Stage on the project cycle', kind: 'select', options: refStages().map(([k, v]) => [k, v.label]) },
-    { id: 'essCategory', label: 'Environmental and social category', kind: 'select', options: refv('essCategories').map(s => [s, s]) },
-    { id: 'taxonomyBand', label: 'Sri Lanka taxonomy band', kind: 'select', options: [['green', 'green'], ['amber', 'amber'], ['red', 'red'], ['unclassified', 'unclassified']] },
-    { id: 'ndcTargets', label: 'NDC 3.0 sector targets (comma-separated)', kind: 'text' },
+    { id: 'code', label: 'Code', kind: 'text', help: 'A short reference for this project, for example DFCC-1.' },
+    { id: 'name', label: 'Project name', kind: 'text', help: 'The name the sponsor uses for the project.' },
+    { id: 'sector', label: 'Sector', kind: 'text', help: 'The sector in plain words, for example renewable generation or climate-resilient agriculture.' },
+    { id: 'province', label: 'Province', kind: 'text', help: 'Where the project is, so the pipeline can be read by region.' },
+    { id: 'stream', label: 'Stream', kind: 'select', options: refv('streams').map(s => [s, s]), help: 'Mitigation reduces or avoids emissions; adaptation builds resilience. An adaptation project is never ranked on carbon.' },
+    { id: 'resultsArea', label: 'GCF results area', kind: 'select', options: refAreas().map(a => [a.code, `${a.code} — ${a.name}`]), help: 'The GCF results area the project contributes to. Pick the closest fit.' },
+    { id: 'stage', label: 'Stage on the project cycle', kind: 'select', options: refStages().map(([k, v]) => [k, v.label]), help: 'Where the project has reached on the ten-stage GCF cycle, from concept to closure.' },
+    { id: 'essCategory', label: 'Environmental and social category', kind: 'select', options: refv('essCategories').map(s => [s, s]), help: 'A is significant or irreversible impacts, B is limited and mitigable, C is minimal. DFCC is accredited to B and I-2, so a category A project cannot be carried by DFCC.' },
+    { id: 'taxonomyBand', label: 'Sri Lanka taxonomy band', kind: 'select', options: [['green', 'green'], ['amber', 'amber'], ['red', 'red'], ['unclassified', 'unclassified']], help: 'The Sri Lanka Green Finance Taxonomy band, if known.' },
+    { id: 'ndcTargets', label: 'NDC 3.0 sector targets', kind: 'text', help: 'The NDC 3.0 sectors this project supports, separated by commas.' },
     { group: 'Money' },
-    { id: 'totalCost', label: 'Total cost (USD)', kind: 'number' },
-    { id: 'gcfAsk', label: 'GCF ask (USD)', kind: 'number' },
-    { id: 'dfcc', label: 'DFCC contribution (USD)', kind: 'number' },
-    { id: 'other', label: 'Other co-financing (USD)', kind: 'number' },
-    { id: 'instrument', label: 'GCF instrument', kind: 'select', options: refInstruments().map(i => [i.id, i.name]) },
-    { id: 'viable', label: 'Viable without GCF support', kind: 'select', options: [['no', 'No'], ['yes', 'Yes']] },
-    { id: 'viabilityReason', label: 'Viability without GCF — the reason', kind: 'wide' },
-    { id: 'barriers', label: 'Barriers to commercial finance', kind: 'checks', options: refBarriers().map(b => [b.id, b.label]) },
+    { id: 'totalCost', label: 'Total cost (USD)', kind: 'number', help: 'The whole project cost, all sources together.' },
+    { id: 'gcfAsk', label: 'GCF ask (USD)', kind: 'number', help: 'The amount requested from the Green Climate Fund.' },
+    { id: 'dfcc', label: 'DFCC contribution (USD)', kind: 'number', help: 'What DFCC lends or invests from its own book.' },
+    { id: 'other', label: 'Other co-financing (USD)', kind: 'number', help: 'Sponsor equity, government or other lenders.' },
+    { id: 'instrument', label: 'GCF instrument', kind: 'select', options: refInstruments().map(i => [i.id, i.name]), help: 'The financing structure that answers the barrier below.' },
+    { id: 'viable', label: 'Viable without GCF support', kind: 'select', options: [['no', 'No'], ['yes', 'Yes']], help: 'Would this happen on commercial terms without GCF? If yes, it may not need GCF support.' },
+    { id: 'viabilityReason', label: 'Viability without GCF — the reason', kind: 'wide', help: 'Why commercial finance does not reach it: tenor, pricing, an unproven technology, or no buyer for the benefit.' },
+    { id: 'barriers', label: 'Barriers to commercial finance', kind: 'checks', options: refBarriers().map(b => [b.id, b.label]), help: 'Tick what stops a bank financing this today. The instrument should answer at least one of these.' },
     { group: 'Results — with the evidence tier on every figure' },
-    { id: 'annual', label: 'Annual tCO₂e', kind: 'tiered' },
-    { id: 'lifetime', label: 'Lifetime tCO₂e', kind: 'tiered' },
-    { id: 'direct', label: 'Direct beneficiaries', kind: 'tiered' },
-    { id: 'indirect', label: 'Indirect beneficiaries', kind: 'tiered' },
-    { id: 'hectares', label: 'Hectares under improved management', kind: 'tiered' },
-    { id: 'assets', label: 'Assets made resilient (USD)', kind: 'tiered' },
-    { id: 'baselineType', label: 'Baseline type', kind: 'select', options: refv('baselineTypes').map(s => [s, s]) },
-    { id: 'baselineDesc', label: 'Baseline', kind: 'wide' },
-    { id: 'counterfactual', label: 'Counterfactual — what happens without the project', kind: 'wide' },
+    { id: 'annual', label: 'Annual tCO₂e', kind: 'tiered', help: 'Tonnes of CO₂ equivalent reduced or avoided each year. Set the tier to how the figure was arrived at.' },
+    { id: 'lifetime', label: 'Lifetime tCO₂e', kind: 'tiered', help: 'Over the asset’s life. GCF core indicator 1. Leave blank for a pure adaptation project.' },
+    { id: 'direct', label: 'Direct beneficiaries', kind: 'tiered', help: 'People the project reaches directly. Never added to indirect beneficiaries.' },
+    { id: 'indirect', label: 'Indirect beneficiaries', kind: 'tiered', help: 'The wider population that benefits. Kept separate from direct beneficiaries.' },
+    { id: 'hectares', label: 'Hectares under improved management', kind: 'tiered', help: 'Land brought under low-emission or climate-resilient management, if any.' },
+    { id: 'assets', label: 'Assets made resilient (USD)', kind: 'tiered', help: 'Value of physical assets made more resilient, if any.' },
+    { id: 'baselineType', label: 'Baseline type', kind: 'select', options: refv('baselineTypes').map(s => [s, s]), help: 'Reduced cuts existing emissions, avoided prevents emissions that would have happened, removal takes carbon out of the air. The counterfactual decides which.' },
+    { id: 'baselineDesc', label: 'Baseline', kind: 'wide', help: 'What is being displaced or protected, in one line.' },
+    { id: 'counterfactual', label: 'Counterfactual — what happens without the project', kind: 'wide', help: 'The single most important line. The whole climate rationale rests on it.' },
+    { group: 'Results targets — where each figure starts, where it commits to reach, and by when' },
+    { id: 'lf-MCI-1', label: 'Lifetime tCO₂e — baseline → target', kind: 'logframe', indicator: 'MCI-1', help: 'Where emissions start and the reduction target the project commits to.' },
+    { id: 'lf-ACI-1', label: 'Direct beneficiaries — baseline → target', kind: 'logframe', indicator: 'ACI-1', help: 'How many are reached today and the target by the year given.' },
+    { id: 'lf-ACI-2', label: 'Indirect beneficiaries — baseline → target', kind: 'logframe', indicator: 'ACI-2', help: 'The wider population reached, from baseline to target.' },
     { group: 'The case' },
-    { id: 'selectionReason', label: 'Why this project (40 characters minimum)', kind: 'wide' },
+    { id: 'selectionReason', label: 'Why this project (40 characters minimum)', kind: 'wide', help: 'In the bank’s own words: why this project, why now, why GCF.' },
   ];
 
   function renderIntake() {
     setHtml('gcfIntakeForm', INTAKE().map(f => {
       if (f.group) return `<div class="gcf-group">${esc(f.group)}</div>`;
-      const wide = f.kind === 'wide' || f.kind === 'checks' ? ' gcf-field-wide' : '';
+      const wide = f.kind === 'wide' || f.kind === 'checks' || f.kind === 'logframe' ? ' gcf-field-wide' : '';
       let ctl;
       if (f.kind === 'select') {
         ctl = `<select id="gcfI-${f.id}">${f.options.map(([v, l]) =>
@@ -593,13 +597,23 @@ const GCFPage = (() => {
           <input type="number" id="gcfI-${f.id}" step="any">
           ${tierSelect(`gcfI-${f.id}-tier`)}
         </div>`;
+      } else if (f.kind === 'logframe') {
+        /* Baseline and target sit beside the current figure so a reader sees
+           "from X to Y by year Z" — the shape GCF reports against. Each half
+           carries its own evidence tier; the year is a plain number. */
+        ctl = `<div class="gcf-logframe" id="gcfR-${f.indicator}">
+          <div class="gcf-tiered"><input type="number" id="gcfR-${f.indicator}-baseline" step="any" placeholder="Baseline">${tierSelect(`gcfR-${f.indicator}-baseline-tier`)}</div>
+          <div class="gcf-tiered"><input type="number" id="gcfR-${f.indicator}-target" step="any" placeholder="Target">${tierSelect(`gcfR-${f.indicator}-target-tier`)}</div>
+          <input type="number" id="gcfR-${f.indicator}-year" step="1" placeholder="Target year">
+        </div>`;
       } else if (f.kind === 'wide') {
         ctl = `<textarea id="gcfI-${f.id}" rows="2"></textarea>`;
       } else {
         ctl = `<input type="${f.kind === 'number' ? 'number' : 'text'}" id="gcfI-${f.id}">`;
       }
+      const helpEl = f.help ? `<span class="gcf-help">${esc(f.help)}</span>` : '';
       return `<div class="gcf-field${wide}">
-        <label for="gcfI-${f.id}">${esc(f.label)}</label>${ctl}</div>`;
+        <label for="gcfI-${f.id}">${esc(f.label)}</label>${helpEl}${ctl}</div>`;
     }).join(''));
   }
 
@@ -607,6 +621,91 @@ const GCFPage = (() => {
   const numVal = id => { const v = val(id); return v === '' ? null : Number(v); };
   const tiered = id => (numVal(id) === null ? null : { value: numVal(id), tier: $(`gcfI-${id}-tier`)?.value || 'declared' });
   const checked = id => Array.from(document.querySelectorAll(`#gcfI-${id} input:checked`)).map(i => i.value);
+
+  /* The results logframe: for each core indicator, baseline and target (each
+     with its own tier) and a target year. Only indicators the user filled are
+     sent, so an untouched one is absent rather than a row of zeros. */
+  const RESULT_INDICATORS = ['MCI-1', 'ACI-1', 'ACI-2'];
+  function gatherResults() {
+    const out = {};
+    for (const ind of RESULT_INDICATORS) {
+      const bVal = $(`gcfR-${ind}-baseline`); const tVal = $(`gcfR-${ind}-target`); const yVal = $(`gcfR-${ind}-year`);
+      const num = el => (el && el.value !== '' ? Number(el.value) : null);
+      const baseline = num(bVal);
+      const target = num(tVal);
+      const year = num(yVal);
+      if (baseline === null && target === null && year === null) continue;
+      const row = {};
+      if (baseline !== null) row.baseline = { value: baseline, tier: $(`gcfR-${ind}-baseline-tier`)?.value || 'declared' };
+      if (target !== null) row.target = { value: target, tier: $(`gcfR-${ind}-target-tier`)?.value || 'declared' };
+      if (year !== null) row.targetYear = year;
+      out[ind] = row;
+    }
+    return out;
+  }
+
+  /* The sponsor pre-check — a plain-language self-screen. The answers feed the
+     advisory read and are stored on the record so the assessment can see what
+     the sponsor said. */
+  const PRECHECK = () => [
+    { id: 'sponsor', label: 'Who is bringing the project', kind: 'text', help: 'The sponsor or borrower name.' },
+    { id: 'counterfactual', label: 'What happens without the project?', kind: 'wide', help: 'One or two lines. The climate rationale rests on this.' },
+    { id: 'essCategoryGuess', label: 'Environmental and social category, as best you can tell', kind: 'select', options: [['unsure', 'Not sure'], ['A', 'A — significant or irreversible impacts'], ['B', 'B — limited, mitigable'], ['C', 'C — minimal']], help: 'DFCC is accredited to B and I-2; a category A project is outside its scope.' },
+    { id: 'estimatedCost_usd', label: 'Approximate total cost (USD)', kind: 'number', help: 'A rough figure is fine; it is checked against the accreditation ceiling.' },
+    { id: 'stream', label: 'Mitigation or adaptation?', kind: 'select', options: [['unsure', 'Not sure'], ['mitigation', 'Mitigation'], ['adaptation', 'Adaptation']] },
+    { id: 'hasRevenueStream', label: 'Is there a revenue stream that repays finance?', kind: 'yesno' },
+    { id: 'dependsOnGrant', label: 'Does the design depend on a grant?', kind: 'yesno' },
+    { id: 'landAndConsent', label: 'Land, resettlement and community consent', kind: 'select', options: [['clear', 'Clear'], ['in_progress', 'In progress'], ['unclear', 'Unclear'], ['not_applicable', 'Not applicable']] },
+    { id: 'ndaInformed', label: 'Has the National Designated Authority been informed?', kind: 'yesno' },
+  ];
+
+  function renderPreCheck() {
+    setHtml('gcfPreCheckForm', PRECHECK().map(f => {
+      let ctl;
+      if (f.kind === 'select') {
+        ctl = `<select id="gcfPC-${f.id}">${f.options.map(([v, l]) => `<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select>`;
+      } else if (f.kind === 'yesno') {
+        ctl = `<select id="gcfPC-${f.id}"><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select>`;
+      } else if (f.kind === 'wide') {
+        ctl = `<textarea id="gcfPC-${f.id}" rows="2"></textarea>`;
+      } else {
+        ctl = `<input type="${f.kind === 'number' ? 'number' : 'text'}" id="gcfPC-${f.id}">`;
+      }
+      const wide = f.kind === 'wide' ? ' gcf-field-wide' : '';
+      const helpEl = f.help ? `<span class="gcf-help">${esc(f.help)}</span>` : '';
+      return `<div class="gcf-field${wide}"><label for="gcfPC-${f.id}">${esc(f.label)}</label>${helpEl}${ctl}</div>`;
+    }).join(''));
+  }
+
+  const pcVal = id => ($(`gcfPC-${id}`)?.value ?? '').trim();
+  const pcYesNo = id => { const v = pcVal(id); return v === 'yes' ? true : v === 'no' ? false : undefined; };
+  function gatherPreCheck() {
+    const a = { answeredAt: new Date().toISOString() };
+    if (pcVal('sponsor')) a.sponsor = pcVal('sponsor');
+    if (pcVal('counterfactual')) a.counterfactual = pcVal('counterfactual');
+    if (pcVal('essCategoryGuess')) a.essCategoryGuess = pcVal('essCategoryGuess');
+    if (pcVal('estimatedCost_usd')) a.estimatedCost_usd = Number(pcVal('estimatedCost_usd'));
+    if (pcVal('stream')) a.stream = pcVal('stream');
+    if (pcYesNo('hasRevenueStream') !== undefined) a.hasRevenueStream = pcYesNo('hasRevenueStream');
+    if (pcYesNo('dependsOnGrant') !== undefined) a.dependsOnGrant = pcYesNo('dependsOnGrant');
+    if (pcVal('landAndConsent')) a.landAndConsent = pcVal('landAndConsent');
+    if (pcYesNo('ndaInformed') !== undefined) a.ndaInformed = pcYesNo('ndaInformed');
+    return a;
+  }
+
+  const PC_PILL = { ok: 'gcf-pill-ok', attention: 'gcf-pill-flag', stop: 'gcf-pill-stop' };
+  const PC_WORD = { ok: 'looks fine', attention: 'check this', stop: 'a problem' };
+  async function runPreCheck() {
+    try {
+      const { precheck } = await call('/precheck', json('POST', gatherPreCheck()));
+      const rows = precheck.items.map(i =>
+        `<li><span class="gcf-pill ${PC_PILL[i.verdict] || ''}">${esc(PC_WORD[i.verdict] || i.verdict)}</span>
+          <b>${esc(i.question)}</b><div>${esc(i.note)}</div></li>`).join('');
+      setHtml('gcfPreCheckResult',
+        `<div class="gcf-precheck-summary state-${esc(precheck.verdict)}">${esc(precheck.summary)}</div>
+         <ul class="gcf-precheck-list">${rows}</ul>`);
+    } catch (e) { setHtml('gcfPreCheckResult', `<div class="gcf-warn">${esc(e.message)}</div>`); }
+  }
 
   async function saveIntake() {
     const err = $('gcfIntakeError');
@@ -659,6 +758,11 @@ const GCFPage = (() => {
       assets: tiered('assets') ? { valueProtected_usd: tiered('assets') } : {},
       timeline: { conceptStarted: new Date().toISOString().slice(0, 10) },
     };
+    const results = gatherResults();
+    if (Object.keys(results).length) payload.results = results;
+    const pc = gatherPreCheck();
+    // Store the pre-check only if the sponsor actually answered something.
+    if (Object.keys(pc).length > 1) payload.preCheck = pc;
 
     try {
       await call('/pipeline', json('POST', payload));
@@ -675,6 +779,7 @@ const GCFPage = (() => {
   }
 
   async function loadIntake() {
+    renderPreCheck();
     renderIntake();
     for (const el of document.querySelectorAll('#gcfPanel-intake [data-writes]')) el.hidden = !canWrite();
     try {
@@ -786,6 +891,7 @@ const GCFPage = (() => {
     on('gcfCnPdf', 'click', () => downloadCn('pdf'));
     on('gcfCnDocx', 'click', () => downloadCn('docx'));
     on('gcfIntakeSave', 'click', saveIntake);
+    on('gcfPreCheckRun', 'click', runPreCheck);
     on('gcfInstallStarter', 'click', async () => {
       try {
         const r = await call('/pipeline/install-starter', { method: 'POST' });

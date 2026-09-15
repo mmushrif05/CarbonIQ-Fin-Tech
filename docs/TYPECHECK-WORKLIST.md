@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **390**. Remaining: **207**.
+Checked across all three: **391**. Remaining: **208**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **339**. Remaining: **67** (385 errors, measured by
+Checked: **340**. Remaining: **67** (385 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -105,7 +105,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **25** (1685 errors, measured by
+Checked: **8**. Remaining: **25** (1690 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -118,9 +118,9 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/gcf-pipeline.js` | 77 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
+| `ui/js/gcf.js` | 54 |
 | `ui/js/baselines.js` | 52 |
 | `ui/js/parta-register.js` | 51 |
-| `ui/js/gcf.js` | 49 |
 | `ui/js/capital-record.js` | 47 |
 | `ui/js/login.js` | 47 |
 | `ui/js/agents.js` | 40 |
@@ -140,7 +140,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **43**. Remaining: **115** (1403 errors, measured by
+Checked: **43**. Remaining: **116** (1406 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **9 of them raise no errors at all** and can be adopted by adding the
@@ -234,6 +234,7 @@ pragma and nothing else.
 | `tests/pcaf-partc-conformance.test.js` | 4 |
 | `tests/structure.test.js` | 4 |
 | `tests/capital-anchor.test.js` | 3 |
+| `tests/gcf-precheck.test.js` | 3 |
 | `tests/parta-real-estate-data.test.js` | 3 |
 | `tests/accounts-ui.test.js` | 2 |
 | `tests/certificate.test.js` | 2 |
