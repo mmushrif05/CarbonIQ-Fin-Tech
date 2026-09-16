@@ -73,6 +73,17 @@ test('the overview is on screen, a class tile opens the lending book at that cla
   await expect(page.locator('#bk-plan')).toContainText('Business loans');
   await expect(page.locator('#bk-baselines')).toContainText('baseline');
 
+  /* The charts are drawn from the position, and a class in focus follows the
+     choice into its own panel. */
+  await expect(page.locator('#bk-chart-emissions svg')).toBeVisible();
+  await expect(page.locator('#bk-chart-dq svg')).toBeVisible();
+  await expect(page.locator('#bk-ring-coverage svg')).toBeVisible();
+  await page.locator('#bk-chips .bank-chip[data-class="commercial-real-estate"]').click();
+  await expect(page.locator('#bk-focus')).toBeVisible();
+  await expect(page.locator('#bk-focus')).toContainText('Commercial real estate');
+  await page.locator('#bk-chips .bank-chip[data-class=""]').click();
+  await expect(page.locator('#bk-focus')).toBeHidden();
+
   await page.locator('#bk-classes .bank-tile[data-class="commercial-real-estate"]').click();
   await expect(page.locator('#page-parta-register')).toBeVisible();
   await expect(page.locator('#pr-subtitle')).toContainText('Commercial real estate');

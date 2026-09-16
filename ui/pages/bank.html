@@ -17,6 +17,8 @@
         </label>
         <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
         <button class="btn btn-primary" id="bk-pdf">Disclosure — PDF</button>
+        <button class="btn btn-secondary" id="bk-docx">Word</button>
+        <button class="btn btn-secondary" id="bk-csv">Register — CSV</button>
         <input type="text" id="bk-starter-name" class="bank-starter-name" placeholder="Bank’s legal name" maxlength="200" data-writes>
         <button class="btn btn-secondary" id="bk-starter" data-writes>Load starter book</button>
       </div>
@@ -55,6 +57,39 @@
   </section>
 
   <div id="bk-body" hidden>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Class in focus</h3>
+        <span class="partc-hint">Select a class to follow it across every panel; select it again to release it. One hue is one class on every chart.</span></div>
+      <div class="bank-chips" id="bk-chips"></div>
+      <div class="bank-focus" id="bk-focus" hidden></div>
+    </section>
+
+    <div class="partc-panels bank-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Financed emissions by asset class</h3>
+          <span class="partc-hint">tCO₂e. Scope 1 and scope 2 make the headline bar of each class; scope 3 is the separate bar beneath it and is never added to it.</span></div>
+        <div id="bk-chart-emissions"></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Data quality by asset class</h3>
+          <span class="partc-hint">The share of each class's outstanding at each PCAF score, by the option its exposures were estimated under. 1 is the highest quality, 5 the lowest; one score per class, never averaged across classes.</span></div>
+        <div id="bk-chart-dq"></div>
+      </section>
+    </div>
+
+    <div class="partc-panels bank-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Outstanding by asset class</h3>
+          <span class="partc-hint">Assessed outstanding per class, and the whole book's coverage of the stated total — Disclosure Checklist Part A, p.124.</span></div>
+        <div class="bank-ring-row"><div id="bk-ring-coverage"></div><div id="bk-chart-outstanding" class="bank-grow"></div></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Economic intensity by asset class</h3>
+          <span class="partc-hint">tCO₂e per million of outstanding, as each class's own roll-up computed it.</span></div>
+        <div id="bk-chart-intensity"></div>
+      </section>
+    </div>
 
     <section class="partc-card">
       <div class="partc-card-head"><h3>By asset class</h3>
