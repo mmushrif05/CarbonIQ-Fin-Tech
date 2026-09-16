@@ -89,12 +89,15 @@ describe('The four mechanical rules', () => {
     expect(preview).toBeLessThan(firstLoad);
     expect(yearWire).toBeLessThan(firstLoad);
     expect(init.indexOf('await loadYears()')).toBeLessThan(firstLoad);
+    /* The class is part of what the first request says. */
+    expect(init.indexOf("on('pr-class'")).toBeLessThan(firstLoad);
+    expect(init.indexOf('applyClass()')).toBeLessThan(firstLoad);
   });
 });
 
 describe('The screen renders the engine rather than repeating it', () => {
   test('the held vocabulary is loaded before the first request, and the form offers it', () => {
-    must(JS, /await loadVocabulary\(\);\s*await loadYears\(\);/, 'the vocabulary is loaded before the first request is sent');
+    must(JS, /await loadVocabulary\(\);\s*applyClass\(\);\s*await loadYears\(\);/, 'the vocabulary and the class are settled before the first request is sent');
     must(HTML, /id="pr-f-sector-key"/, 'the form carries a select over the held sectors');
     must(JS, /sectorKey: str\('pr-f-sector-key'\)/, 'the mapped sector reaches the request');
     must(JS, /plausibility: \{ revenue: num\('pr-f-revenue'\) \}/, 'the revenue for the band check reaches the request');
@@ -136,6 +139,33 @@ describe('The screen renders the engine rather than repeating it', () => {
   test('every scenario figure in the plan is labelled as one', () => {
     must(JS, /Every figure below is a scenario/, 'the plan says what it is');
     must(JS, /<span class="partc-hint">scenario<\/span>/, 'each scenario score carries the word');
+  });
+});
+
+describe('One register, every built class', () => {
+  test('the class is chosen on the screen, every request names it, and each class has its own form block', () => {
+    must(HTML, /id="pr-class"/, 'a class selector');
+    must(JS, /\/position\/\$\{year\}\?assetClass=\$\{encodeURIComponent\(cls\)\}/, 'the position is read per class');
+    must(JS, /&assetClass=\$\{encodeURIComponent\(cls\)\}&limit=200/, 'the rows are read per class');
+    for (const c of ['business-loans-unlisted-equity', 'commercial-real-estate mortgages', 'project-finance', 'listed-equity-corporate-bonds']) {
+      must(HTML, new RegExp(`data-class-form="${c}"`), `a form block for ${c}`);
+    }
+    must(JS, /el\.hidden = !el\.getAttribute\('data-class-form'\)\.split\(' '\)\.includes\(cls\)/, 'the blocks toggle through [hidden]');
+  });
+
+  test('a floor area travels with its unit and is never converted here', () => {
+    must(HTML, /id="pr-f-area-unit"/, 'the unit is chosen beside the area');
+    must(HTML, /<option value="ft2">ft²<\/option>/, 'square feet is offered');
+    must(JS, /body\.floorArea = \{ value: area, unit: str\('pr-f-area-unit'\) \|\| 'm2' \}/, 'the area and its unit reach the request as keyed');
+    mustNot(JS, /0\.0929|10\.764|\* ?0\.3048/, 'no conversion factor lives in the browser');
+    must(JS, /Floor area as keyed/, 'the detail shows the area as keyed');
+    must(JS, /floorAreaConversion/, 'and the conversion the engine ran');
+  });
+
+  test('the groupings and the downloads follow the class', () => {
+    must(JS, /Array\.isArray\(p\.groupings\)/, 'the groups table reads the class’s own groupings');
+    must(JS, /show\('pr-pdf', cls === DEFAULT_CLASS\)/, 'the §5.2 disclosure is offered for §5.2 only');
+    must(HTML, /never averaged with another/, 'the screen says a class is never averaged with another');
   });
 });
 

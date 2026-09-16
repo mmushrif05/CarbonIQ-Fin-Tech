@@ -14,6 +14,9 @@
 
   <section class="partc-card">
     <div class="partc-actions">
+      <label class="partc-year">Asset class
+        <select id="pr-class"></select>
+      </label>
       <label class="partc-year">Reporting year
         <select id="pr-year"></select>
       </label>
@@ -23,20 +26,28 @@
       <button class="btn btn-secondary" id="pr-docx">Word</button>
       <span class="partc-hint" id="pr-status"></span>
     </div>
+    <p class="partc-hint" id="pr-class-note">One register, every built Part A class. Each class is rolled up on its own table and never averaged with another; the consolidated disclosure on the Financed emissions screen lays them side by side.</p>
   </section>
 
   <!-- Record one exposure. Every figure comes back from the engine; the
-       form holds no arithmetic. -->
+       form holds no arithmetic — not a unit conversion, not an attribution
+       factor. The class selected above decides which block is shown and
+       which engine runs; each block is that class's own inputs. -->
   <section class="partc-card" id="pr-record" hidden data-writes>
     <div class="partc-card-head"><h3>Record an exposure</h3>
-      <span class="partc-hint">A business loan or unlisted equity holding. The engine runs before anything is written; a refusal names its clause.</span></div>
+      <span class="partc-hint" id="pr-record-hint">The engine runs before anything is written; a refusal names its clause.</span></div>
     <form id="pr-form" class="pr-form" autocomplete="off">
       <div class="pr-grid">
-        <label>Borrower <input id="pr-f-name" type="text" required maxlength="200"></label>
+        <label>Counterparty <input id="pr-f-name" type="text" required maxlength="200"></label>
+        <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>
+      </div>
+
+      <!-- §5.2 — business loans and unlisted equity -->
+      <div data-class-form="business-loans-unlisted-equity">
+      <div class="pr-grid">
         <label>Sector <input id="pr-f-sector" type="text" maxlength="120" placeholder="e.g. Textiles"></label>
         <label>Held sector
           <select id="pr-f-sector-key"><option value="">Not mapped</option></select></label>
-        <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>
         <label>Instrument
           <select id="pr-f-instrument">
             <option value="business-loan">Term loan</option>
@@ -57,11 +68,11 @@
 
       <h5 class="partc-subhead">Outstanding at year-end</h5>
       <div class="pr-grid">
-        <label>Amount <input id="pr-f-outstanding" type="number" min="0" step="any" required></label>
+        <label>Amount <input id="pr-f-outstanding" type="number" min="0" step="any"></label>
         <label>Average over the year <input id="pr-f-average" type="number" min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
         <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" min="0" step="any" placeholder="optional — runs the sector band check"></label>
         <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
-        <label>As of <input id="pr-f-asof" type="date" required></label>
+        <label>As of <input id="pr-f-asof" type="date"></label>
       </div>
 
       <h5 class="partc-subhead">Company value</h5>
@@ -97,6 +108,122 @@
         <label>Sector factor, scope 2 <input id="pr-f-sf2" type="number" min="0" step="any"></label>
         <label>Factor source <input id="pr-f-sf-source" type="text" maxlength="200" placeholder="e.g. EXIOBASE v3.8"></label>
         <label>Factor vintage <input id="pr-f-sf-vintage" type="number" min="2000" max="2100"></label>
+      </div>
+      </div>
+
+      <!-- §5.4 / §5.5 — a property. The floor area is keyed in the unit the
+           valuation states it in; the engine converts it once and the trace
+           shows the conversion. -->
+      <div data-class-form="commercial-real-estate mortgages" hidden>
+      <div class="pr-grid">
+        <label>Building type <select id="pr-f-building-type"></select></label>
+        <label>Product
+          <select id="pr-f-product">
+            <option value="purchase">Purchase</option>
+            <option value="refinance">Refinance</option>
+            <option value="construction">Construction</option>
+            <option value="renovation">Renovation</option>
+          </select></label>
+        <label>Country <input id="pr-f-re-country" type="text" maxlength="2" value="LK"></label>
+      </div>
+      <h5 class="partc-subhead">Outstanding and the property value at origination</h5>
+      <div class="pr-grid">
+        <label>Outstanding at year-end <input id="pr-f-re-outstanding" type="number" min="0" step="any"></label>
+        <label>Property value at origination <input id="pr-f-re-value" type="number" min="0" step="any"></label>
+        <label>Latest valuation <input id="pr-f-re-latest" type="number" min="0" step="any" placeholder="optional — used only where no origination value is held"></label>
+        <label>Currency <input id="pr-f-re-currency" type="text" maxlength="10" value="LKR"></label>
+        <label>As of <input id="pr-f-re-asof" type="date"></label>
+      </div>
+      <h5 class="partc-subhead">How the building’s energy is known</h5>
+      <p class="partc-hint">Metered energy reaches Option 1; an energy label with floor area Option 2a; a floor area alone Option 2b; a building count alone Option 3. The engine derives the option from what is supplied — PCAF Part A Tables 5.4-1 and 5.5-1.</p>
+      <div class="pr-grid">
+        <label>Floor area <input id="pr-f-area" type="number" min="0" step="any"></label>
+        <label>Floor area unit
+          <select id="pr-f-area-unit">
+            <option value="m2">m²</option>
+            <option value="ft2">ft²</option>
+          </select></label>
+        <label>Energy label class <input id="pr-f-label" type="text" maxlength="2" placeholder="A–G, optional"></label>
+        <label>Number of buildings <input id="pr-f-count" type="number" min="1" step="1" placeholder="Option 3 — no floor area held"></label>
+      </div>
+      <div class="pr-grid">
+        <label>Metered electricity, kWh per year <input id="pr-f-elec" type="number" min="0" step="any"></label>
+        <label>Metered fuel, kWh per year <input id="pr-f-fuel" type="number" min="0" step="any"></label>
+        <label>Fuel source
+          <select id="pr-f-fuel-source">
+            <option value="diesel">Diesel</option>
+            <option value="lpg">LPG</option>
+          </select></label>
+        <label>Emission factor basis
+          <select id="pr-f-ef-basis">
+            <option value="average">Average (location-based) — Option 1b</option>
+            <option value="supplier">Supplier-specific (market-based) — Option 1a</option>
+          </select></label>
+        <label>Supplier electricity factor, kgCO₂e/kWh <input id="pr-f-elec-factor" type="number" min="0" step="any"></label>
+        <label>Supplier fuel factor, kgCO₂e/kWh <input id="pr-f-fuel-factor" type="number" min="0" step="any"></label>
+      </div>
+      <div class="pr-grid" id="pr-re-construction">
+        <label class="pr-wide">Developer-reported construction emissions, tCO₂e <input id="pr-f-construction" type="number" min="0" step="any" placeholder="optional under §5.4 — carried as scope 3 category 15, apart"></label>
+      </div>
+      </div>
+
+      <!-- §5.3 — project finance -->
+      <div data-class-form="project-finance" hidden>
+      <div class="pr-grid">
+        <label>Project name <input id="pr-f-pf-project" type="text" maxlength="200"></label>
+        <label>Sector <input id="pr-f-pf-sector" type="text" maxlength="120"></label>
+        <label>Archetype <select id="pr-f-pf-archetype"></select></label>
+      </div>
+      <h5 class="partc-subhead">Outstanding and the project value</h5>
+      <div class="pr-grid">
+        <label>Outstanding at year-end <input id="pr-f-pf-outstanding" type="number" min="0" step="any"></label>
+        <label>Total project equity plus debt <input id="pr-f-pf-denominator" type="number" min="0" step="any"></label>
+        <label>Currency <input id="pr-f-pf-currency" type="text" maxlength="10" value="LKR"></label>
+      </div>
+      <h5 class="partc-subhead">Project emissions, tCO₂e</h5>
+      <div class="pr-grid">
+        <label>Scope 1 <input id="pr-f-pf-s1" type="number" min="0" step="any"></label>
+        <label>Scope 2 <input id="pr-f-pf-s2" type="number" min="0" step="any"></label>
+        <label>Scope 3 <input id="pr-f-pf-s3" type="number" min="0" step="any" placeholder="where relevant"></label>
+        <label>Data quality option <select id="pr-f-pf-option"></select></label>
+      </div>
+      </div>
+
+      <!-- §5.1 — listed equity and corporate bonds -->
+      <div data-class-form="listed-equity-corporate-bonds" hidden>
+      <div class="pr-grid">
+        <label>Instrument
+          <select id="pr-f-le-instrument">
+            <option value="listed-equity">Listed equity</option>
+            <option value="corporate-bond">Corporate bond</option>
+          </select></label>
+        <label>NACE level 2 <input id="pr-f-le-nace" type="text" maxlength="20" placeholder="e.g. 64"></label>
+        <label class="pr-check"><input id="pr-f-le-fi" type="checkbox"> Investee is a financial institution</label>
+      </div>
+      <h5 class="partc-subhead">Outstanding and the investee’s value (EVIC)</h5>
+      <div class="pr-grid">
+        <label>Outstanding at year-end <input id="pr-f-le-outstanding" type="number" min="0" step="any"></label>
+        <label>Market capitalisation, ordinary <input id="pr-f-le-mcap" type="number" min="0" step="any"></label>
+        <label>Market capitalisation, preferred <input id="pr-f-le-mcap-pref" type="number" min="0" step="any"></label>
+        <label>Total debt, interest-bearing <input id="pr-f-le-debt" type="number" min="0" step="any"></label>
+        <label>Minority interests <input id="pr-f-le-minorities" type="number" min="0" step="any"></label>
+        <label>Currency <input id="pr-f-le-currency" type="text" maxlength="10" value="LKR"></label>
+        <label>As of <input id="pr-f-le-asof" type="date"></label>
+      </div>
+      <h5 class="partc-subhead">Investee emissions, tCO₂e</h5>
+      <div class="pr-grid">
+        <label>Scope 1 <input id="pr-f-le-s1" type="number" min="0" step="any"></label>
+        <label>Scope 2 <input id="pr-f-le-s2" type="number" min="0" step="any"></label>
+        <label>Scope 3 <input id="pr-f-le-s3" type="number" min="0" step="any"></label>
+        <label>Basis
+          <select id="pr-f-le-basis">
+            <option value="reported-unverified">Reported by the company, unverified</option>
+            <option value="reported-verified">Reported and verified by a named third party</option>
+          </select></label>
+        <label>Verifier <input id="pr-f-le-verifier" type="text" maxlength="200"></label>
+        <label>Emissions year <input id="pr-f-le-period" type="number" min="2000" max="2100"></label>
+        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-le-s3-reason" type="text" maxlength="400"></label>
+      </div>
       </div>
 
       <div class="partc-actions">

@@ -26509,6 +26509,118 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/classes": {
+      "get": {
+        "operationId": "getPcafPartAClasses",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The Part A asset classes this one exposure register holds",
+        "description": "One register, several classes: each row names the class whose engine computed it, and the position is rolled up per class and never across them. A class listed here is one an exposure can be recorded under; the rest of Part A is built in the order docs/PCAF-PART-A-RESEARCH.md §11 gives. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "classes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "defaultClass": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "classes"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "classes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "defaultClass": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "classes"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/conformance": {
       "get": {
         "operationId": "getPcafPartAConformance",
@@ -26808,7 +26920,7 @@
           "pcaf"
         ],
         "summary": "A reporting year's exposures, a page at a time",
-        "description": "Requires a year: the register is organised by reporting year because Part A accounts for positions at one date, and a list across years is two books in one table. Requires the `read` scope.",
+        "description": "Requires a year: the register is organised by reporting year because Part A accounts for positions at one date, and a list across years is two books in one table. `assetClass` narrows the page to one class. Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {
@@ -26964,578 +27076,1758 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "identifiers": {
+                "anyOf": [
+                  {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "class": {
                         "type": "string",
-                        "maxLength": 120
-                      },
-                      "lei": {
-                        "type": "string",
-                        "maxLength": 40
-                      },
-                      "accountNumber": {
-                        "type": "string",
-                        "maxLength": 80
-                      }
-                    }
-                  },
-                  "counterparty": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "maxLength": 200
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
                       },
                       "country": {
                         "type": "string",
-                        "maxLength": 80
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "buildingType": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "securedForOtherPurpose": {
+                        "type": "boolean"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "purchase",
+                          "refinance",
+                          "construction",
+                          "renovation",
+                          "hel",
+                          "heloc"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "latest": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "modification": {
+                            "type": "object",
+                            "properties": {
+                              "newValuation": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "date": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "newValuation"
+                            ]
+                          }
+                        }
+                      },
+                      "energy": {
+                        "type": "object",
+                        "properties": {
+                          "electricity_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuel_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelSource": {
+                            "type": "string",
+                            "enum": [
+                              "diesel",
+                              "lpg"
+                            ]
+                          },
+                          "emissionFactorBasis": {
+                            "type": "string",
+                            "enum": [
+                              "supplier",
+                              "average"
+                            ],
+                            "default": "average"
+                          },
+                          "electricityFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "floorArea_m2": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "floorArea": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 12,
+                            "description": "m2 | ft2 (sqm and sqft accepted); a land unit is refused",
+                            "default": "m2"
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "buildingCount": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "developerConstructionEmissions_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "value",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "class": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "country": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "buildingType": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "securedForOtherPurpose": {
+                        "type": "boolean"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "purchase",
+                          "refinance",
+                          "construction",
+                          "renovation",
+                          "hel",
+                          "heloc"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "latest": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "modification": {
+                            "type": "object",
+                            "properties": {
+                              "newValuation": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "date": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "newValuation"
+                            ]
+                          }
+                        }
+                      },
+                      "energy": {
+                        "type": "object",
+                        "properties": {
+                          "electricity_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuel_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelSource": {
+                            "type": "string",
+                            "enum": [
+                              "diesel",
+                              "lpg"
+                            ]
+                          },
+                          "emissionFactorBasis": {
+                            "type": "string",
+                            "enum": [
+                              "supplier",
+                              "average"
+                            ],
+                            "default": "average"
+                          },
+                          "electricityFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "floorArea_m2": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "floorArea": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 12,
+                            "description": "m2 | ft2 (sqm and sqft accepted); a land unit is refused",
+                            "default": "m2"
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "buildingCount": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "developerConstructionEmissions_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "value",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "projectName": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "counterparty": {
+                        "type": "string",
+                        "maxLength": 200
                       },
                       "sector": {
                         "type": "string",
                         "maxLength": 120
                       },
-                      "sectorKey": {
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "enum": [
+                          "project-finance"
+                        ],
+                        "default": "project-finance"
+                      },
+                      "archetype": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "default": "general"
+                      },
+                      "outstandingAmount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "totalProjectEquityPlusDebt": {
+                        "type": "number"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "USD"
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "dataQualityOption": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "dataQualityOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "projectScope1_tCO2e": {
+                        "type": "number"
+                      },
+                      "projectScope2_tCO2e": {
+                        "type": "number"
+                      },
+                      "projectScope3_tCO2e": {
+                        "type": "number"
+                      },
+                      "scope3Relevant": {
+                        "type": "boolean"
+                      },
+                      "removals_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "generation": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 2
+                          },
+                          "technology": {
+                            "type": "string",
+                            "enum": [
+                              "solar_pv",
+                              "wind_on",
+                              "hydro_ror"
+                            ],
+                            "default": "solar_pv"
+                          },
+                          "basis": {
+                            "type": "string",
+                            "enum": [
+                              "projected",
+                              "metered"
+                            ],
+                            "default": "projected"
+                          },
+                          "installedCapacity_MW": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "annualGeneration_MWh": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "yieldBasis": {
+                            "type": "string",
+                            "enum": [
+                              "P50",
+                              "P90"
+                            ],
+                            "default": "P50"
+                          },
+                          "degradationRatePct": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          },
+                          "lifetimeYears": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 60
+                          },
+                          "auxiliaryConsumption_MWh": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "country"
+                        ]
+                      },
+                      "reduction": {
+                        "type": "object",
+                        "properties": {
+                          "baseYear": {
+                            "type": "integer"
+                          },
+                          "baseYearEmissions_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "targetYear": {
+                            "type": "integer"
+                          },
+                          "targetYearEmissions_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOfYear": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "baseYear",
+                          "baseYearEmissions_tCO2e",
+                          "targetYear",
+                          "targetYearEmissions_tCO2e"
+                        ]
+                      },
+                      "avoided": {
+                        "type": "object",
+                        "properties": {
+                          "projectAvoided_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "annualAvoided_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "counterfactual": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "counterfactualSource": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "estimationBasis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "years": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "reportingPeriod": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "counterpartyEmissionsPeriod": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "projectName",
+                      "reportingYear",
+                      "assetClass",
+                      "outstandingAmount",
+                      "totalProjectEquityPlusDebt"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "isin": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "lei": {
+                            "type": "string",
+                            "maxLength": 40
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "naceL2": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "instrument": {
                         "type": "string",
                         "enum": [
-                          "agriculture",
-                          "agriculture_tea",
-                          "agriculture_rice",
-                          "mining",
-                          "manufacturing",
-                          "manufacturing_textiles",
-                          "manufacturing_cement",
-                          "manufacturing_food",
-                          "manufacturing_rubber_plastics",
-                          "electricity",
-                          "water_waste",
-                          "construction",
-                          "wholesale_retail",
-                          "transport",
-                          "accommodation_food",
-                          "information",
-                          "finance",
-                          "real_estate",
-                          "professional",
-                          "admin_support",
-                          "education",
-                          "health",
-                          "other_services"
+                          "listed-equity",
+                          "corporate-bond"
                         ]
                       },
-                      "naceL2": {
-                        "type": "string",
-                        "maxLength": 20
-                      },
-                      "financialInstitution": {
-                        "type": "boolean"
-                      }
-                    }
-                  },
-                  "instrument": {
-                    "type": "string",
-                    "maxLength": 40
-                  },
-                  "borrowerListed": {
-                    "type": "boolean"
-                  },
-                  "borrowerType": {
-                    "type": "string",
-                    "enum": [
-                      "company",
-                      "nonprofit",
-                      "state-owned-enterprise",
-                      "government",
-                      "sovereign",
-                      "municipality"
-                    ]
-                  },
-                  "isInvestmentFund": {
-                    "type": "boolean"
-                  },
-                  "onBalanceSheetAtYearEnd": {
-                    "type": "boolean"
-                  },
-                  "offBalanceSheet": {
-                    "type": "boolean"
-                  },
-                  "useOfProceedsKnown": {
-                    "type": "boolean"
-                  },
-                  "proceedsPurpose": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "outstanding": {
-                    "type": "object",
-                    "properties": {
-                      "amount": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "disbursed": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "repayments": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "sharesHeld": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "totalShares": {
-                        "type": "number",
-                        "exclusiveMinimum": 0
-                      },
-                      "investeeTotalEquity": {
-                        "type": "number"
-                      },
-                      "averageOutstanding": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "peakOutstanding": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "asOf": {
-                        "type": "string",
-                        "maxLength": 30
-                      },
-                      "currency": {
-                        "type": "string",
-                        "maxLength": 10
-                      }
-                    },
-                    "required": [
-                      "asOf"
-                    ]
-                  },
-                  "denominator": {
-                    "type": "object",
-                    "properties": {
-                      "marketCapOrdinary": {
-                        "type": "number"
-                      },
-                      "marketCapPreferred": {
-                        "type": "number"
-                      },
-                      "totalDebtInterestBearing": {
-                        "type": "number"
-                      },
-                      "totalDebtNonInterestBearing": {
-                        "type": "number"
-                      },
-                      "minorityInterests": {
-                        "type": "number"
-                      },
-                      "totalEquity": {
-                        "type": "number"
-                      },
-                      "totalDebt": {
-                        "type": "number"
-                      },
-                      "totalAssets": {
-                        "type": "number"
-                      },
-                      "customerDeposits": {
-                        "type": "number"
-                      },
-                      "financialInstitution": {
+                      "issuerListed": {
                         "type": "boolean"
                       },
-                      "asOf": {
-                        "type": "string",
-                        "maxLength": 30
+                      "onBalanceSheetAtYearEnd": {
+                        "type": "boolean"
                       },
-                      "currency": {
-                        "type": "string",
-                        "maxLength": 10
+                      "heldForSale": {
+                        "type": "boolean"
                       },
-                      "entity": {
-                        "type": "string",
-                        "maxLength": 200
+                      "useOfProceedsKnown": {
+                        "type": "boolean"
                       },
-                      "issuer": {
-                        "type": "string",
-                        "maxLength": 200
-                      },
-                      "recourseReason": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "attributionOverrideJustification": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "emissions": {
-                    "type": "object",
-                    "properties": {
-                      "scope1": {
+                      "viaFund": {
                         "type": "object",
                         "properties": {
-                          "value": {
+                          "fundName": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "fundWeight": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "holdingsKnown": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "fundWeight"
+                        ]
+                      },
+                      "outstanding": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
                             "type": "number",
                             "minimum": 0
                           },
+                          "disbursed": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "repayments": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sharesHeld": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "totalShares": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "investeeTotalEquity": {
+                            "type": "number"
+                          },
+                          "averageOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "peakOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
                           "basis": {
                             "type": "string",
-                            "maxLength": 60
+                            "enum": [
+                              "market-value",
+                              "book-value"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "asOf"
+                        ]
+                      },
+                      "denominator": {
+                        "type": "object",
+                        "properties": {
+                          "marketCapOrdinary": {
+                            "type": "number"
                           },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                          "marketCapPreferred": {
+                            "type": "number"
+                          },
+                          "totalDebtInterestBearing": {
+                            "type": "number"
+                          },
+                          "totalDebtNonInterestBearing": {
+                            "type": "number"
+                          },
+                          "minorityInterests": {
+                            "type": "number"
+                          },
+                          "totalEquity": {
+                            "type": "number"
+                          },
+                          "totalDebt": {
+                            "type": "number"
+                          },
+                          "totalAssets": {
+                            "type": "number"
+                          },
+                          "customerDeposits": {
+                            "type": "number"
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
+                          "entity": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "issuer": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "recourseReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "emissions": {
+                        "type": "object",
+                        "properties": {
+                          "scope1": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
                               },
-                              {
+                              "basis": {
                                 "type": "string",
-                                "maxLength": 20
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
                               }
+                            },
+                            "required": [
+                              "basis"
                             ]
                           },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
+                          "scope2": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
                           },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
+                          "scope3": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
                           },
-                          "provider": {
+                          "scope3AbsentReason": {
                             "type": "string",
-                            "maxLength": 200
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "dataQualityClaims": {
+                        "type": "object",
+                        "properties": {
+                          "scope12": {
+                            "type": "string",
+                            "maxLength": 6
                           },
-                          "providerMethod": {
+                          "scope3": {
                             "type": "string",
-                            "maxLength": 60
+                            "maxLength": 6
                           },
                           "justification": {
                             "type": "string",
                             "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
-                            "type": "object",
-                            "additionalProperties": true
                           }
-                        },
-                        "required": [
-                          "basis"
-                        ]
+                        }
                       },
-                      "scope2": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
+                      "removals": {
+                        "anyOf": [
+                          {
                             "type": "number",
                             "minimum": 0
                           },
-                          "basis": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                          {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
                               },
-                              {
-                                "type": "string",
-                                "maxLength": 20
-                              }
-                            ]
-                          },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
-                          },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "provider": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "providerMethod": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "justification": {
-                            "type": "string",
-                            "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "required": [
-                          "basis"
-                        ]
-                      },
-                      "scope3": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "basis": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
                               },
-                              {
+                              "basis": {
                                 "type": "string",
-                                "maxLength": 20
+                                "maxLength": 120
                               }
+                            },
+                            "required": [
+                              "value"
                             ]
+                          }
+                        ]
+                      },
+                      "creditsRetired": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
                           },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
-                          },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "provider": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "providerMethod": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "justification": {
-                            "type": "string",
-                            "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
+                          {
                             "type": "object",
-                            "additionalProperties": true
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ]
                           }
-                        },
-                        "required": [
-                          "basis"
                         ]
                       },
-                      "scope3AbsentReason": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "dataQualityClaims": {
-                    "type": "object",
-                    "properties": {
-                      "scope12": {
-                        "type": "string",
-                        "maxLength": 6
-                      },
-                      "scope3": {
-                        "type": "string",
-                        "maxLength": 6
-                      },
-                      "justification": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "removals": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
+                      "creditsGenerated": {
                         "anyOf": [
                           {
-                            "type": "number"
+                            "type": "number",
+                            "minimum": 0
                           },
                           {
-                            "type": "string",
-                            "maxLength": 20
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ]
                           }
                         ]
                       },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "creditsRetired": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
-                        "anyOf": [
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "string",
-                            "maxLength": 20
-                          }
-                        ]
-                      },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "creditsGenerated": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
-                        "anyOf": [
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "string",
-                            "maxLength": 20
-                          }
-                        ]
-                      },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "deflator": {
-                    "type": "object",
-                    "properties": {
-                      "ratio": {
-                        "type": "number",
-                        "exclusiveMinimum": 0
-                      },
-                      "index": {
-                        "type": "string",
-                        "maxLength": 200
-                      }
-                    },
-                    "required": [
-                      "ratio"
-                    ]
-                  },
-                  "plausibility": {
-                    "type": "object",
-                    "properties": {
-                      "revenue": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "sectorBand": {
+                      "deflator": {
                         "type": "object",
                         "properties": {
-                          "low": {
+                          "ratio": {
                             "type": "number",
-                            "minimum": 0
+                            "exclusiveMinimum": 0
                           },
-                          "high": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "basis": {
+                          "index": {
                             "type": "string",
-                            "maxLength": 400
+                            "maxLength": 200
                           }
                         },
                         "required": [
-                          "low",
-                          "high"
+                          "ratio"
                         ]
-                      }
-                    }
-                  },
-                  "thresholds": {
-                    "type": "object",
-                    "properties": {
-                      "fluctuationPct": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 1000
                       },
-                      "emissionsLagYears": {
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "listed-equity-corporate-bonds"
+                        ]
+                      },
+                      "reportingYear": {
                         "type": "integer",
-                        "minimum": 0,
-                        "maximum": 20
-                      },
-                      "factorVintageYears": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 30
+                        "minimum": 2000,
+                        "maximum": 2100
                       }
-                    }
+                    },
+                    "required": [
+                      "instrument",
+                      "outstanding",
+                      "assetClass",
+                      "reportingYear"
+                    ]
                   },
-                  "assetClass": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "reportingYear": {
-                    "type": "integer",
-                    "minimum": 2000,
-                    "maximum": 2100
+                  {
+                    "type": "object",
+                    "properties": {
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "lei": {
+                            "type": "string",
+                            "maxLength": 40
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "sectorKey": {
+                            "type": "string",
+                            "enum": [
+                              "agriculture",
+                              "agriculture_tea",
+                              "agriculture_rice",
+                              "mining",
+                              "manufacturing",
+                              "manufacturing_textiles",
+                              "manufacturing_cement",
+                              "manufacturing_food",
+                              "manufacturing_rubber_plastics",
+                              "electricity",
+                              "water_waste",
+                              "construction",
+                              "wholesale_retail",
+                              "transport",
+                              "accommodation_food",
+                              "information",
+                              "finance",
+                              "real_estate",
+                              "professional",
+                              "admin_support",
+                              "education",
+                              "health",
+                              "other_services"
+                            ]
+                          },
+                          "naceL2": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "instrument": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "borrowerType": {
+                        "type": "string",
+                        "enum": [
+                          "company",
+                          "nonprofit",
+                          "state-owned-enterprise",
+                          "government",
+                          "sovereign",
+                          "municipality"
+                        ]
+                      },
+                      "isInvestmentFund": {
+                        "type": "boolean"
+                      },
+                      "onBalanceSheetAtYearEnd": {
+                        "type": "boolean"
+                      },
+                      "offBalanceSheet": {
+                        "type": "boolean"
+                      },
+                      "useOfProceedsKnown": {
+                        "type": "boolean"
+                      },
+                      "proceedsPurpose": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "outstanding": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "disbursed": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "repayments": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sharesHeld": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "totalShares": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "investeeTotalEquity": {
+                            "type": "number"
+                          },
+                          "averageOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "peakOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          }
+                        },
+                        "required": [
+                          "asOf"
+                        ]
+                      },
+                      "denominator": {
+                        "type": "object",
+                        "properties": {
+                          "marketCapOrdinary": {
+                            "type": "number"
+                          },
+                          "marketCapPreferred": {
+                            "type": "number"
+                          },
+                          "totalDebtInterestBearing": {
+                            "type": "number"
+                          },
+                          "totalDebtNonInterestBearing": {
+                            "type": "number"
+                          },
+                          "minorityInterests": {
+                            "type": "number"
+                          },
+                          "totalEquity": {
+                            "type": "number"
+                          },
+                          "totalDebt": {
+                            "type": "number"
+                          },
+                          "totalAssets": {
+                            "type": "number"
+                          },
+                          "customerDeposits": {
+                            "type": "number"
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
+                          "entity": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "issuer": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "recourseReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "emissions": {
+                        "type": "object",
+                        "properties": {
+                          "scope1": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope2": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope3": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope3AbsentReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "dataQualityClaims": {
+                        "type": "object",
+                        "properties": {
+                          "scope12": {
+                            "type": "string",
+                            "maxLength": 6
+                          },
+                          "scope3": {
+                            "type": "string",
+                            "maxLength": 6
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "removals": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "creditsRetired": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "creditsGenerated": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "deflator": {
+                        "type": "object",
+                        "properties": {
+                          "ratio": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "index": {
+                            "type": "string",
+                            "maxLength": 200
+                          }
+                        },
+                        "required": [
+                          "ratio"
+                        ]
+                      },
+                      "plausibility": {
+                        "type": "object",
+                        "properties": {
+                          "revenue": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sectorBand": {
+                            "type": "object",
+                            "properties": {
+                              "low": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "high": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 400
+                              }
+                            },
+                            "required": [
+                              "low",
+                              "high"
+                            ]
+                          }
+                        }
+                      },
+                      "thresholds": {
+                        "type": "object",
+                        "properties": {
+                          "fluctuationPct": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000
+                          },
+                          "emissionsLagYears": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 20
+                          },
+                          "factorVintageYears": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 30
+                          }
+                        }
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "business-loans-unlisted-equity"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      }
+                    },
+                    "required": [
+                      "instrument",
+                      "outstanding",
+                      "reportingYear"
+                    ]
                   }
-                },
-                "required": [
-                  "instrument",
-                  "outstanding",
-                  "reportingYear"
                 ]
               }
             }
@@ -27875,578 +29167,1758 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "identifiers": {
+                "anyOf": [
+                  {
                     "type": "object",
                     "properties": {
-                      "id": {
+                      "class": {
                         "type": "string",
-                        "maxLength": 120
-                      },
-                      "lei": {
-                        "type": "string",
-                        "maxLength": 40
-                      },
-                      "accountNumber": {
-                        "type": "string",
-                        "maxLength": 80
-                      }
-                    }
-                  },
-                  "counterparty": {
-                    "type": "object",
-                    "properties": {
-                      "name": {
-                        "type": "string",
-                        "maxLength": 200
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
                       },
                       "country": {
                         "type": "string",
-                        "maxLength": 80
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "buildingType": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "securedForOtherPurpose": {
+                        "type": "boolean"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "purchase",
+                          "refinance",
+                          "construction",
+                          "renovation",
+                          "hel",
+                          "heloc"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "latest": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "modification": {
+                            "type": "object",
+                            "properties": {
+                              "newValuation": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "date": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "newValuation"
+                            ]
+                          }
+                        }
+                      },
+                      "energy": {
+                        "type": "object",
+                        "properties": {
+                          "electricity_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuel_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelSource": {
+                            "type": "string",
+                            "enum": [
+                              "diesel",
+                              "lpg"
+                            ]
+                          },
+                          "emissionFactorBasis": {
+                            "type": "string",
+                            "enum": [
+                              "supplier",
+                              "average"
+                            ],
+                            "default": "average"
+                          },
+                          "electricityFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "floorArea_m2": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "floorArea": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 12,
+                            "description": "m2 | ft2 (sqm and sqft accepted); a land unit is refused",
+                            "default": "m2"
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "buildingCount": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "developerConstructionEmissions_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "value",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "class": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "country": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "buildingType": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "securedForOtherPurpose": {
+                        "type": "boolean"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "purchase",
+                          "refinance",
+                          "construction",
+                          "renovation",
+                          "hel",
+                          "heloc"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "latest": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "modification": {
+                            "type": "object",
+                            "properties": {
+                              "newValuation": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                              },
+                              "date": {
+                                "type": "string",
+                                "maxLength": 40
+                              }
+                            },
+                            "required": [
+                              "newValuation"
+                            ]
+                          }
+                        }
+                      },
+                      "energy": {
+                        "type": "object",
+                        "properties": {
+                          "electricity_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuel_kWh": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelSource": {
+                            "type": "string",
+                            "enum": [
+                              "diesel",
+                              "lpg"
+                            ]
+                          },
+                          "emissionFactorBasis": {
+                            "type": "string",
+                            "enum": [
+                              "supplier",
+                              "average"
+                            ],
+                            "default": "average"
+                          },
+                          "electricityFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "fuelFactor": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        }
+                      },
+                      "label": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "floorArea_m2": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "floorArea": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 12,
+                            "description": "m2 | ft2 (sqm and sqft accepted); a land unit is refused",
+                            "default": "m2"
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "buildingCount": {
+                        "type": "integer",
+                        "exclusiveMinimum": 0
+                      },
+                      "developerConstructionEmissions_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "commercial-real-estate",
+                          "mortgages"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "value",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "projectName": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "counterparty": {
+                        "type": "string",
+                        "maxLength": 200
                       },
                       "sector": {
                         "type": "string",
                         "maxLength": 120
                       },
-                      "sectorKey": {
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "enum": [
+                          "project-finance"
+                        ],
+                        "default": "project-finance"
+                      },
+                      "archetype": {
+                        "type": "string",
+                        "maxLength": 60,
+                        "default": "general"
+                      },
+                      "outstandingAmount": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "totalProjectEquityPlusDebt": {
+                        "type": "number"
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "USD"
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "dataQualityOption": {
+                        "type": "string",
+                        "maxLength": 4
+                      },
+                      "dataQualityOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 500
+                      },
+                      "projectScope1_tCO2e": {
+                        "type": "number"
+                      },
+                      "projectScope2_tCO2e": {
+                        "type": "number"
+                      },
+                      "projectScope3_tCO2e": {
+                        "type": "number"
+                      },
+                      "scope3Relevant": {
+                        "type": "boolean"
+                      },
+                      "removals_tCO2e": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "generation": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "string",
+                            "minLength": 2,
+                            "maxLength": 2
+                          },
+                          "technology": {
+                            "type": "string",
+                            "enum": [
+                              "solar_pv",
+                              "wind_on",
+                              "hydro_ror"
+                            ],
+                            "default": "solar_pv"
+                          },
+                          "basis": {
+                            "type": "string",
+                            "enum": [
+                              "projected",
+                              "metered"
+                            ],
+                            "default": "projected"
+                          },
+                          "installedCapacity_MW": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "annualGeneration_MWh": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "yieldBasis": {
+                            "type": "string",
+                            "enum": [
+                              "P50",
+                              "P90"
+                            ],
+                            "default": "P50"
+                          },
+                          "degradationRatePct": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 5
+                          },
+                          "lifetimeYears": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 60
+                          },
+                          "auxiliaryConsumption_MWh": {
+                            "type": "number",
+                            "minimum": 0
+                          }
+                        },
+                        "required": [
+                          "country"
+                        ]
+                      },
+                      "reduction": {
+                        "type": "object",
+                        "properties": {
+                          "baseYear": {
+                            "type": "integer"
+                          },
+                          "baseYearEmissions_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "targetYear": {
+                            "type": "integer"
+                          },
+                          "targetYearEmissions_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOfYear": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "baseYear",
+                          "baseYearEmissions_tCO2e",
+                          "targetYear",
+                          "targetYearEmissions_tCO2e"
+                        ]
+                      },
+                      "avoided": {
+                        "type": "object",
+                        "properties": {
+                          "projectAvoided_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "annualAvoided_tCO2e": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "counterfactual": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "counterfactualSource": {
+                            "type": "string",
+                            "maxLength": 500
+                          },
+                          "estimationBasis": {
+                            "type": "string",
+                            "maxLength": 60
+                          },
+                          "years": {
+                            "type": "integer",
+                            "minimum": 1
+                          },
+                          "reportingPeriod": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          },
+                          "counterpartyEmissionsPeriod": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string"
+                              }
+                            ]
+                          }
+                        }
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "projectName",
+                      "reportingYear",
+                      "assetClass",
+                      "outstandingAmount",
+                      "totalProjectEquityPlusDebt"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "isin": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "lei": {
+                            "type": "string",
+                            "maxLength": 40
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "naceL2": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "instrument": {
                         "type": "string",
                         "enum": [
-                          "agriculture",
-                          "agriculture_tea",
-                          "agriculture_rice",
-                          "mining",
-                          "manufacturing",
-                          "manufacturing_textiles",
-                          "manufacturing_cement",
-                          "manufacturing_food",
-                          "manufacturing_rubber_plastics",
-                          "electricity",
-                          "water_waste",
-                          "construction",
-                          "wholesale_retail",
-                          "transport",
-                          "accommodation_food",
-                          "information",
-                          "finance",
-                          "real_estate",
-                          "professional",
-                          "admin_support",
-                          "education",
-                          "health",
-                          "other_services"
+                          "listed-equity",
+                          "corporate-bond"
                         ]
                       },
-                      "naceL2": {
-                        "type": "string",
-                        "maxLength": 20
-                      },
-                      "financialInstitution": {
-                        "type": "boolean"
-                      }
-                    }
-                  },
-                  "instrument": {
-                    "type": "string",
-                    "maxLength": 40
-                  },
-                  "borrowerListed": {
-                    "type": "boolean"
-                  },
-                  "borrowerType": {
-                    "type": "string",
-                    "enum": [
-                      "company",
-                      "nonprofit",
-                      "state-owned-enterprise",
-                      "government",
-                      "sovereign",
-                      "municipality"
-                    ]
-                  },
-                  "isInvestmentFund": {
-                    "type": "boolean"
-                  },
-                  "onBalanceSheetAtYearEnd": {
-                    "type": "boolean"
-                  },
-                  "offBalanceSheet": {
-                    "type": "boolean"
-                  },
-                  "useOfProceedsKnown": {
-                    "type": "boolean"
-                  },
-                  "proceedsPurpose": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "outstanding": {
-                    "type": "object",
-                    "properties": {
-                      "amount": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "disbursed": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "repayments": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "sharesHeld": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "totalShares": {
-                        "type": "number",
-                        "exclusiveMinimum": 0
-                      },
-                      "investeeTotalEquity": {
-                        "type": "number"
-                      },
-                      "averageOutstanding": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "peakOutstanding": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "asOf": {
-                        "type": "string",
-                        "maxLength": 30
-                      },
-                      "currency": {
-                        "type": "string",
-                        "maxLength": 10
-                      }
-                    },
-                    "required": [
-                      "asOf"
-                    ]
-                  },
-                  "denominator": {
-                    "type": "object",
-                    "properties": {
-                      "marketCapOrdinary": {
-                        "type": "number"
-                      },
-                      "marketCapPreferred": {
-                        "type": "number"
-                      },
-                      "totalDebtInterestBearing": {
-                        "type": "number"
-                      },
-                      "totalDebtNonInterestBearing": {
-                        "type": "number"
-                      },
-                      "minorityInterests": {
-                        "type": "number"
-                      },
-                      "totalEquity": {
-                        "type": "number"
-                      },
-                      "totalDebt": {
-                        "type": "number"
-                      },
-                      "totalAssets": {
-                        "type": "number"
-                      },
-                      "customerDeposits": {
-                        "type": "number"
-                      },
-                      "financialInstitution": {
+                      "issuerListed": {
                         "type": "boolean"
                       },
-                      "asOf": {
-                        "type": "string",
-                        "maxLength": 30
+                      "onBalanceSheetAtYearEnd": {
+                        "type": "boolean"
                       },
-                      "currency": {
-                        "type": "string",
-                        "maxLength": 10
+                      "heldForSale": {
+                        "type": "boolean"
                       },
-                      "entity": {
-                        "type": "string",
-                        "maxLength": 200
+                      "useOfProceedsKnown": {
+                        "type": "boolean"
                       },
-                      "issuer": {
-                        "type": "string",
-                        "maxLength": 200
-                      },
-                      "recourseReason": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "attributionOverrideJustification": {
-                    "type": "string",
-                    "maxLength": 1000
-                  },
-                  "emissions": {
-                    "type": "object",
-                    "properties": {
-                      "scope1": {
+                      "viaFund": {
                         "type": "object",
                         "properties": {
-                          "value": {
+                          "fundName": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "fundWeight": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "holdingsKnown": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "fundWeight"
+                        ]
+                      },
+                      "outstanding": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
                             "type": "number",
                             "minimum": 0
                           },
+                          "disbursed": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "repayments": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sharesHeld": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "totalShares": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "investeeTotalEquity": {
+                            "type": "number"
+                          },
+                          "averageOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "peakOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
                           "basis": {
                             "type": "string",
-                            "maxLength": 60
+                            "enum": [
+                              "market-value",
+                              "book-value"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "asOf"
+                        ]
+                      },
+                      "denominator": {
+                        "type": "object",
+                        "properties": {
+                          "marketCapOrdinary": {
+                            "type": "number"
                           },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                          "marketCapPreferred": {
+                            "type": "number"
+                          },
+                          "totalDebtInterestBearing": {
+                            "type": "number"
+                          },
+                          "totalDebtNonInterestBearing": {
+                            "type": "number"
+                          },
+                          "minorityInterests": {
+                            "type": "number"
+                          },
+                          "totalEquity": {
+                            "type": "number"
+                          },
+                          "totalDebt": {
+                            "type": "number"
+                          },
+                          "totalAssets": {
+                            "type": "number"
+                          },
+                          "customerDeposits": {
+                            "type": "number"
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
+                          "entity": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "issuer": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "recourseReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "emissions": {
+                        "type": "object",
+                        "properties": {
+                          "scope1": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
                               },
-                              {
+                              "basis": {
                                 "type": "string",
-                                "maxLength": 20
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
                               }
+                            },
+                            "required": [
+                              "basis"
                             ]
                           },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
+                          "scope2": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
                           },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
+                          "scope3": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
                           },
-                          "provider": {
+                          "scope3AbsentReason": {
                             "type": "string",
-                            "maxLength": 200
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "dataQualityClaims": {
+                        "type": "object",
+                        "properties": {
+                          "scope12": {
+                            "type": "string",
+                            "maxLength": 6
                           },
-                          "providerMethod": {
+                          "scope3": {
                             "type": "string",
-                            "maxLength": 60
+                            "maxLength": 6
                           },
                           "justification": {
                             "type": "string",
                             "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
-                            "type": "object",
-                            "additionalProperties": true
                           }
-                        },
-                        "required": [
-                          "basis"
-                        ]
+                        }
                       },
-                      "scope2": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
+                      "removals": {
+                        "anyOf": [
+                          {
                             "type": "number",
                             "minimum": 0
                           },
-                          "basis": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                          {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
                               },
-                              {
-                                "type": "string",
-                                "maxLength": 20
-                              }
-                            ]
-                          },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
-                          },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "provider": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "providerMethod": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "justification": {
-                            "type": "string",
-                            "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
-                            "type": "object",
-                            "additionalProperties": true
-                          }
-                        },
-                        "required": [
-                          "basis"
-                        ]
-                      },
-                      "scope3": {
-                        "type": "object",
-                        "properties": {
-                          "value": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "basis": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "period": {
-                            "anyOf": [
-                              {
-                                "type": "number"
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
                               },
-                              {
+                              "basis": {
                                 "type": "string",
-                                "maxLength": 20
+                                "maxLength": 120
                               }
+                            },
+                            "required": [
+                              "value"
                             ]
+                          }
+                        ]
+                      },
+                      "creditsRetired": {
+                        "anyOf": [
+                          {
+                            "type": "number",
+                            "minimum": 0
                           },
-                          "source": {
-                            "type": "string",
-                            "maxLength": 300
-                          },
-                          "verifier": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "provider": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "providerMethod": {
-                            "type": "string",
-                            "maxLength": 60
-                          },
-                          "justification": {
-                            "type": "string",
-                            "maxLength": 1000
-                          },
-                          "method": {
-                            "type": "string",
-                            "maxLength": 200
-                          },
-                          "alreadyAttributed": {
-                            "type": "boolean"
-                          },
-                          "activity": {
+                          {
                             "type": "object",
-                            "additionalProperties": true
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ]
                           }
-                        },
-                        "required": [
-                          "basis"
                         ]
                       },
-                      "scope3AbsentReason": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "dataQualityClaims": {
-                    "type": "object",
-                    "properties": {
-                      "scope12": {
-                        "type": "string",
-                        "maxLength": 6
-                      },
-                      "scope3": {
-                        "type": "string",
-                        "maxLength": 6
-                      },
-                      "justification": {
-                        "type": "string",
-                        "maxLength": 1000
-                      }
-                    }
-                  },
-                  "removals": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
+                      "creditsGenerated": {
                         "anyOf": [
                           {
-                            "type": "number"
+                            "type": "number",
+                            "minimum": 0
                           },
                           {
-                            "type": "string",
-                            "maxLength": 20
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 120
+                              }
+                            },
+                            "required": [
+                              "value"
+                            ]
                           }
                         ]
                       },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "creditsRetired": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
-                        "anyOf": [
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "string",
-                            "maxLength": 20
-                          }
-                        ]
-                      },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "creditsGenerated": {
-                    "type": "object",
-                    "properties": {
-                      "value": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "period": {
-                        "anyOf": [
-                          {
-                            "type": "number"
-                          },
-                          {
-                            "type": "string",
-                            "maxLength": 20
-                          }
-                        ]
-                      },
-                      "basis": {
-                        "type": "string",
-                        "maxLength": 120
-                      }
-                    },
-                    "required": [
-                      "value"
-                    ]
-                  },
-                  "deflator": {
-                    "type": "object",
-                    "properties": {
-                      "ratio": {
-                        "type": "number",
-                        "exclusiveMinimum": 0
-                      },
-                      "index": {
-                        "type": "string",
-                        "maxLength": 200
-                      }
-                    },
-                    "required": [
-                      "ratio"
-                    ]
-                  },
-                  "plausibility": {
-                    "type": "object",
-                    "properties": {
-                      "revenue": {
-                        "type": "number",
-                        "minimum": 0
-                      },
-                      "sectorBand": {
+                      "deflator": {
                         "type": "object",
                         "properties": {
-                          "low": {
+                          "ratio": {
                             "type": "number",
-                            "minimum": 0
+                            "exclusiveMinimum": 0
                           },
-                          "high": {
-                            "type": "number",
-                            "minimum": 0
-                          },
-                          "basis": {
+                          "index": {
                             "type": "string",
-                            "maxLength": 400
+                            "maxLength": 200
                           }
                         },
                         "required": [
-                          "low",
-                          "high"
+                          "ratio"
                         ]
-                      }
-                    }
-                  },
-                  "thresholds": {
-                    "type": "object",
-                    "properties": {
-                      "fluctuationPct": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 1000
                       },
-                      "emissionsLagYears": {
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "listed-equity-corporate-bonds"
+                        ]
+                      },
+                      "reportingYear": {
                         "type": "integer",
-                        "minimum": 0,
-                        "maximum": 20
-                      },
-                      "factorVintageYears": {
-                        "type": "integer",
-                        "minimum": 0,
-                        "maximum": 30
+                        "minimum": 2000,
+                        "maximum": 2100
                       }
-                    }
+                    },
+                    "required": [
+                      "instrument",
+                      "outstanding",
+                      "assetClass",
+                      "reportingYear"
+                    ]
                   },
-                  "assetClass": {
-                    "type": "string",
-                    "maxLength": 60
-                  },
-                  "reportingYear": {
-                    "type": "integer",
-                    "minimum": 2000,
-                    "maximum": 2100
+                  {
+                    "type": "object",
+                    "properties": {
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "lei": {
+                            "type": "string",
+                            "maxLength": 40
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 80
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "sectorKey": {
+                            "type": "string",
+                            "enum": [
+                              "agriculture",
+                              "agriculture_tea",
+                              "agriculture_rice",
+                              "mining",
+                              "manufacturing",
+                              "manufacturing_textiles",
+                              "manufacturing_cement",
+                              "manufacturing_food",
+                              "manufacturing_rubber_plastics",
+                              "electricity",
+                              "water_waste",
+                              "construction",
+                              "wholesale_retail",
+                              "transport",
+                              "accommodation_food",
+                              "information",
+                              "finance",
+                              "real_estate",
+                              "professional",
+                              "admin_support",
+                              "education",
+                              "health",
+                              "other_services"
+                            ]
+                          },
+                          "naceL2": {
+                            "type": "string",
+                            "maxLength": 20
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          }
+                        }
+                      },
+                      "instrument": {
+                        "type": "string",
+                        "maxLength": 40
+                      },
+                      "borrowerListed": {
+                        "type": "boolean"
+                      },
+                      "borrowerType": {
+                        "type": "string",
+                        "enum": [
+                          "company",
+                          "nonprofit",
+                          "state-owned-enterprise",
+                          "government",
+                          "sovereign",
+                          "municipality"
+                        ]
+                      },
+                      "isInvestmentFund": {
+                        "type": "boolean"
+                      },
+                      "onBalanceSheetAtYearEnd": {
+                        "type": "boolean"
+                      },
+                      "offBalanceSheet": {
+                        "type": "boolean"
+                      },
+                      "useOfProceedsKnown": {
+                        "type": "boolean"
+                      },
+                      "proceedsPurpose": {
+                        "type": "string",
+                        "maxLength": 60
+                      },
+                      "outstanding": {
+                        "type": "object",
+                        "properties": {
+                          "amount": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "disbursed": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "repayments": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sharesHeld": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "totalShares": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "investeeTotalEquity": {
+                            "type": "number"
+                          },
+                          "averageOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "peakOutstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          }
+                        },
+                        "required": [
+                          "asOf"
+                        ]
+                      },
+                      "denominator": {
+                        "type": "object",
+                        "properties": {
+                          "marketCapOrdinary": {
+                            "type": "number"
+                          },
+                          "marketCapPreferred": {
+                            "type": "number"
+                          },
+                          "totalDebtInterestBearing": {
+                            "type": "number"
+                          },
+                          "totalDebtNonInterestBearing": {
+                            "type": "number"
+                          },
+                          "minorityInterests": {
+                            "type": "number"
+                          },
+                          "totalEquity": {
+                            "type": "number"
+                          },
+                          "totalDebt": {
+                            "type": "number"
+                          },
+                          "totalAssets": {
+                            "type": "number"
+                          },
+                          "customerDeposits": {
+                            "type": "number"
+                          },
+                          "financialInstitution": {
+                            "type": "boolean"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10
+                          },
+                          "entity": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "issuer": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "recourseReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "attributionOverrideJustification": {
+                        "type": "string",
+                        "maxLength": 1000
+                      },
+                      "emissions": {
+                        "type": "object",
+                        "properties": {
+                          "scope1": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope2": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope3": {
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "period": {
+                                "anyOf": [
+                                  {
+                                    "type": "number"
+                                  },
+                                  {
+                                    "type": "string",
+                                    "maxLength": 20
+                                  }
+                                ]
+                              },
+                              "source": {
+                                "type": "string",
+                                "maxLength": 300
+                              },
+                              "verifier": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "provider": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "providerMethod": {
+                                "type": "string",
+                                "maxLength": 60
+                              },
+                              "justification": {
+                                "type": "string",
+                                "maxLength": 1000
+                              },
+                              "method": {
+                                "type": "string",
+                                "maxLength": 200
+                              },
+                              "alreadyAttributed": {
+                                "type": "boolean"
+                              },
+                              "activity": {
+                                "type": "object",
+                                "additionalProperties": true
+                              }
+                            },
+                            "required": [
+                              "basis"
+                            ]
+                          },
+                          "scope3AbsentReason": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "dataQualityClaims": {
+                        "type": "object",
+                        "properties": {
+                          "scope12": {
+                            "type": "string",
+                            "maxLength": 6
+                          },
+                          "scope3": {
+                            "type": "string",
+                            "maxLength": 6
+                          },
+                          "justification": {
+                            "type": "string",
+                            "maxLength": 1000
+                          }
+                        }
+                      },
+                      "removals": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "creditsRetired": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "creditsGenerated": {
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "period": {
+                            "anyOf": [
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 20
+                              }
+                            ]
+                          },
+                          "basis": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        },
+                        "required": [
+                          "value"
+                        ]
+                      },
+                      "deflator": {
+                        "type": "object",
+                        "properties": {
+                          "ratio": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          },
+                          "index": {
+                            "type": "string",
+                            "maxLength": 200
+                          }
+                        },
+                        "required": [
+                          "ratio"
+                        ]
+                      },
+                      "plausibility": {
+                        "type": "object",
+                        "properties": {
+                          "revenue": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "sectorBand": {
+                            "type": "object",
+                            "properties": {
+                              "low": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "high": {
+                                "type": "number",
+                                "minimum": 0
+                              },
+                              "basis": {
+                                "type": "string",
+                                "maxLength": 400
+                              }
+                            },
+                            "required": [
+                              "low",
+                              "high"
+                            ]
+                          }
+                        }
+                      },
+                      "thresholds": {
+                        "type": "object",
+                        "properties": {
+                          "fluctuationPct": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1000
+                          },
+                          "emissionsLagYears": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 20
+                          },
+                          "factorVintageYears": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 30
+                          }
+                        }
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "business-loans-unlisted-equity"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      }
+                    },
+                    "required": [
+                      "instrument",
+                      "outstanding",
+                      "reportingYear"
+                    ]
                   }
-                },
-                "required": [
-                  "instrument",
-                  "outstanding",
-                  "reportingYear"
                 ]
               }
             }
@@ -29384,8 +31856,8 @@
         "tags": [
           "pcaf"
         ],
-        "summary": "The reporting-year position, rolled up from the recorded exposures",
-        "description": "Read from the stored roll-up projection rather than the whole records: an exposure is several kilobytes, most of it the provenance trace, and the roll-up needs eighteen fields. Coverage is real here — assessed outstanding over the stated book total. A year holding no exposures is a 409, because an empty book and an unmeasured one are different claims. Requires the `read` scope.",
+        "summary": "The reporting-year position of one asset class, rolled up from the recorded exposures",
+        "description": "Read from the stored roll-up projection rather than the whole records: an exposure is several kilobytes, most of it the provenance trace, and the roll-up needs eighteen fields. One class at a time — `assetClass` names it, §5.2 by default — because each class scores on its own table and a position across classes is the consolidated route's to lay side by side, never to sum. Coverage is real here — assessed outstanding over the stated book total. A year holding no exposures of the class is a 409, because an empty book and an unmeasured one are different claims. Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {
@@ -29397,10 +31869,32 @@
             }
           },
           {
+            "name": "improvementTarget",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 5
+            }
+          },
+          {
+            "name": "assetClass",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 60
+            }
+          },
+          {
             "$ref": "#/components/parameters/envelope"
           }
         ],
         "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
           "401": {
             "$ref": "#/components/responses/Unauthorized"
           },
@@ -29656,6 +32150,24 @@
                   "floorArea_m2": {
                     "type": "number",
                     "exclusiveMinimum": 0
+                  },
+                  "floorArea": {
+                    "type": "object",
+                    "properties": {
+                      "value": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      },
+                      "unit": {
+                        "type": "string",
+                        "maxLength": 12,
+                        "description": "m2 | ft2 (sqm and sqft accepted); a land unit is refused",
+                        "default": "m2"
+                      }
+                    },
+                    "required": [
+                      "value"
+                    ]
                   },
                   "buildingCount": {
                     "type": "integer",
@@ -32207,7 +34719,7 @@
           "pcaf"
         ],
         "summary": "The reporting years this book holds exposures for",
-        "description": "Each says whether the entity has stated its total loans and investments for that year, because without it coverage cannot be a percentage of anything. Requires the `read` scope.",
+        "description": "Each says whether the entity has stated its total loans and investments for that year, because without it coverage cannot be a percentage of anything, and how many exposures of each asset class it holds. Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {

@@ -22,6 +22,8 @@
 const { faceStatement, resolve: resolveAssuranceMode } = require('../../../../shared/assurance-mode');
 const { release: factorRelease } = require('../../domain/sector-factors');
 const { release: datasetRelease } = require('../../domain/sovereign/dataset');
+const { release: energyRelease } = require('../../domain/real-estate/dataset');
+const { release: gridRelease } = require('../../domain/country-config');
 const { entityOf } = require('../entity');
 const { identityOf } = require('../identity');
 const { assuranceDetailOf, recalculationOf, factorRows, KYOTO_GASES } = require('../facts');
@@ -132,9 +134,19 @@ function disclosureFacts(input) {
   const bl = recorded.find(c => c.assetClass === 'business-loans-unlisted-equity');
   const sv = recorded.find(c => c.assetClass === 'sovereign-debt');
 
-  const releases = [];
-  if (bl) releases.push({ name: 'regional sector factor set', ...factorRelease(), rows: factorRows() });
-  if (sv) releases.push({ name: 'sovereign dataset', ...datasetRelease(), rows: [] });
+  /* One release per recorded class, in section order — the set that class's
+     figures rest on, named with its checksum. The methodology checklist item
+     holds the count to the recorded classes, so a class that names no set
+     answers No rather than passing on another class's. */
+  const RELEASE = {
+    'listed-equity-corporate-bonds': () => ({ name: 'regional sector factor set (§5.1 estimates)', ...factorRelease(), rows: factorRows() }),
+    'business-loans-unlisted-equity': () => ({ name: 'regional sector factor set', ...factorRelease(), rows: factorRows() }),
+    'project-finance': () => ({ name: 'country grid factor set', ...gridRelease(), rows: [] }),
+    'commercial-real-estate': () => ({ name: 'real-estate energy statistics', ...energyRelease(), rows: [] }),
+    'mortgages': () => ({ name: 'real-estate energy statistics (§5.5)', ...energyRelease(), rows: [] }),
+    'sovereign-debt': () => ({ name: 'sovereign dataset', ...datasetRelease(), rows: [] }),
+  };
+  const releases = recorded.filter(c => RELEASE[c.assetClass]).map(c => RELEASE[c.assetClass]());
 
   const f = {
     kind: 'consolidated',

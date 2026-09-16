@@ -122,6 +122,42 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
+test('a property is recorded from the screen in square feet, and the trace shows the conversion the engine ran', async ({ page, request }) => {
+  await signIn(page, request);
+  await page.locator('.nav-item[data-page="parta-register"]').click();
+  await expect(page.locator('#pr-class')).toBeVisible();
+  await page.selectOption('#pr-class', 'commercial-real-estate');
+  await expect(page.locator('#pr-subtitle')).toContainText('Commercial real estate');
+  /* The §5.2 disclosure is §5.2's; it is not offered for a property book. */
+  await expect(page.locator('#pr-pdf')).toBeHidden();
+
+  await page.locator('#pr-record-toggle').click();
+  await expect(page.locator('[data-class-form="commercial-real-estate mortgages"]')).toBeVisible();
+  await expect(page.locator('[data-class-form="business-loans-unlisted-equity"]')).toBeHidden();
+  await page.fill('#pr-f-name', 'Colombo Office Tower');
+  await page.fill('#pr-f-ref', `CRE-${Date.now()}`);
+  await page.selectOption('#pr-f-building-type', 'office');
+  await page.fill('#pr-f-re-outstanding', '5000000');
+  await page.fill('#pr-f-re-value', '20000000');
+  await page.fill('#pr-f-area', '10763.91');
+  await page.selectOption('#pr-f-area-unit', 'ft2');
+  await page.locator('#pr-form-submit').click();
+  await expect(page.locator('#pr-detail')).toBeVisible();
+  await expect(page.locator('#pr-detail-body')).toContainText('Floor area as keyed');
+  await expect(page.locator('#pr-detail-body')).toContainText('ft²');
+  await expect(page.locator('#pr-detail-body')).toContainText('× 0.09290304');
+  await expect(page.locator('#pr-detail-body')).toContainText('Option 2b');
+  await expect(page.locator('#pr-s12')).not.toHaveText('—');
+
+  /* Back on the loan book, the property is not in the count. */
+  await page.selectOption('#pr-class', 'business-loans-unlisted-equity');
+  await expect(page.locator('#pr-subtitle')).toContainText('Business loans');
+  await expect(page.locator('#pr-detail')).toBeHidden();
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect(overflow).toBeLessThanOrEqual(0);
+});
+
 test('a preview visitor sees the sample lending book and is offered nothing the server would refuse', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('#login-preview')).toBeVisible();

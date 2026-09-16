@@ -88,6 +88,14 @@ function alternativesSchema(d) {
   for (const m of d.matches || []) {
     if (m.schema) options.push(fromDescription(m.schema));
     else {
+      /* A conditional: `.conditional(ref, { is, then, otherwise })` describes
+         one match; `.conditional(ref, { switch: [...] })` describes a list of
+         cases, the last of which may carry the `otherwise`. Each branch is one
+         shape the body may take, so every branch is offered. */
+      for (const c of m.switch || []) {
+        if (c.then) options.push(fromDescription(c.then));
+        if (c.otherwise) options.push(fromDescription(c.otherwise));
+      }
       if (m.then) options.push(fromDescription(m.then));
       if (m.otherwise) options.push(fromDescription(m.otherwise));
     }

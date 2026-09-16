@@ -41,6 +41,11 @@
 
 /* A select sizes to its widest option, not to its container. */
 .parta-register select { min-width: 0; max-width: 100%; }
+/* The class selector's longest option is wider than a phone. The label is a
+   flex item of the actions bar and a flex row itself, so both need a floor of
+   zero and a ceiling of the bar, or the option sets the page width. */
+.parta-register .partc-actions .partc-year { min-width: 0; max-width: 100%; }
+.parta-register .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }
 
 /* One row per finding: severity chip, then the three sentences a reader
    needs, in the order they need them — what is true, what it does, what

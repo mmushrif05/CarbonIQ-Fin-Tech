@@ -50,9 +50,15 @@ const realEstateRequestSchema = Joi.object({
   }).or('electricity_kWh', 'fuel_kWh').optional(),
   label: Joi.string().max(4).optional(),
   floorArea_m2: Joi.number().positive().optional(),
+  /* The area with the unit it was measured in; the engine converts once and
+     traces it. A land unit is refused by the engine, with the reason. */
+  floorArea: Joi.object({
+    value: Joi.number().positive().required(),
+    unit: Joi.string().max(12).default('m2').description('m2 | ft2 (sqm and sqft accepted); a land unit is refused'),
+  }).optional(),
   buildingCount: Joi.number().integer().positive().optional(),
 
   developerConstructionEmissions_tCO2e: Joi.number().min(0).optional(),
-}).unknown(false);
+}).oxor('floorArea_m2', 'floorArea').unknown(false);
 
 module.exports = { realEstateRequestSchema };

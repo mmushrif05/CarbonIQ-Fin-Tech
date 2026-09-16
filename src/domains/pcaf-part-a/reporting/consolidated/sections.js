@@ -105,16 +105,22 @@ function absoluteSection(f) {
   };
 }
 
+/* The attribution and estimation rule of each class, in its section's words. */
+const METHOD = Object.freeze({
+  'listed-equity-corporate-bonds': 'Listed equity and corporate bonds: the outstanding amount over the investee’s enterprise value including cash (EVIC), times the investee’s emissions, reported or estimated by option (§5.1, pp.41–44).',
+  'business-loans-unlisted-equity': 'Business loans and unlisted equity: the outstanding amount over the borrower’s total equity plus debt (EVIC where listed), times the borrower’s emissions, reported or estimated by option (§5.2, p.57).',
+  'project-finance': 'Project finance: the outstanding amount over the project’s total equity plus debt, times the project’s scope 1 and 2, reported or derived from generation and a named grid factor (§5.3).',
+  'commercial-real-estate': 'Commercial real estate: the outstanding amount over the property value at origination, times the building’s operational scope 1 and 2 from metered energy or from statistics by floor area, the option set by how the energy is known (§5.4, p.79).',
+  'mortgages': 'Mortgages: the outstanding amount over the property value at origination, times the dwelling’s operational scope 1 and 2 from metered energy or from statistics by floor area (§5.5).',
+  'sovereign-debt': 'Sovereign debt: the exposure in international USD over the sovereign’s PPP-adjusted GDP, times its territorial emissions on both LULUCF boundaries (§5.9, p.144).',
+});
+
 function methodologySection(f) {
   return {
     id: 'methodology', title: 'Methodology',
     blocks: keep([
-      b.body('Each asset class is attributed on the rule its section of Part A sets. Business loans and '
-        + 'unlisted equity: the outstanding amount over the borrower’s total equity plus debt (EVIC where '
-        + 'listed), times the borrower’s emissions, reported or estimated by option (§5.2, p.57). Sovereign '
-        + 'debt: the exposure in international USD over the sovereign’s PPP-adjusted GDP, times its '
-        + 'territorial emissions on both LULUCF boundaries (§5.9, p.144). The per-class documents carry '
-        + 'each method in full; this disclosure lays their results side by side and computes nothing.'),
+      b.body(`Each asset class is attributed on the rule its section of Part A sets. ${f.recorded.map(c => METHOD[c.assetClass]).filter(Boolean).join(' ')} `
+        + 'The per-class documents carry each method in full; this disclosure lays their results side by side and computes nothing.'),
       b.body('The engine performs every arithmetic operation. Nothing in this disclosure is computed by a '
         + 'language model, and no figure here rests on one.'),
       ...f.releases.map(r => b.body(`${r.name[0].toUpperCase()}${r.name.slice(1)}: ${r.tables.map(t => `${t.table} v${t.version} (${t.status || (t.table === 'sectors' ? 'vocabulary' : 'released')})`).join(', ')}; `

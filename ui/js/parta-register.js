@@ -8,8 +8,11 @@
    engine would agree until the day they did not, and the disagreement
    would surface in a disclosure.
 
-   So the loop is: choose a year, read the position, read the rows, render
-   what came back. Recording an exposure posts the form and renders the
+   So the loop is: choose a class and a year, read that class's position,
+   read its rows, render what came back. One register holds every built
+   Part A class; each is rolled up on its own table and never with another,
+   and the form shows the selected class's inputs — a property's floor area
+   travels with the unit it was measured in, and the engine converts it. Recording an exposure posts the form and renders the
    engine's answer — the figures, or the refusal with its clause.
 
    Three rules the render carries, each a way to draw a confident screen
@@ -34,10 +37,17 @@ const PartARegisterPage = (() => {
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
   const show = (id, yes) => { const el = $(id); if (el) el.hidden = !yes; };
 
+  const DEFAULT_CLASS = 'business-loans-unlisted-equity';
   let currency = 'LKR';
   let year = null;
+  let cls = DEFAULT_CLASS;
+  let classes = [];
+  let reference = null;
   let rows = [];
   let openId = null;
+
+  const classLabel = () => { const c = classes.find(x => x.assetClass === cls); return c ? `${c.label} — PCAF Part A ${c.section}` : cls; };
+  const isProperty = () => cls === 'commercial-real-estate' || cls === 'mortgages';
 
   /* A score is a category on a scale where 1 is best. Never a fraction of
      five. The weighted score across a book is shown to two decimals; a single
@@ -93,6 +103,29 @@ const PartARegisterPage = (() => {
      for. Loaded before the first request so the select is populated before
      anyone can open the form. */
   async function loadVocabulary() {
+    /* The classes this register holds, offered in the order the server lists
+       them; the selected one decides the form block, the position and the rows. */
+    try {
+      const { classes: held, defaultClass } = await call('/classes');
+      classes = held || [];
+      cls = defaultClass || DEFAULT_CLASS;
+      setHtml('pr-class', classes.map(c => `<option value="${esc(c.assetClass)}">${esc(c.label)} · ${esc(c.section)}</option>`).join(''));
+      if ($('pr-class')) $('pr-class').value = cls;
+    } catch (_) { classes = [{ assetClass: DEFAULT_CLASS, label: 'Business loans and unlisted equity', section: '§5.2' }]; }
+
+    /* Building types, archetypes and the data-quality options come from the
+       reference, so the form offers only what the engine holds. */
+    try {
+      reference = await call('/reference');
+      const at = id => (reference.assetClasses || []).find(c => c.id === id) || {};
+      const types = at('commercial-real-estate').buildingTypes || [];
+      setHtml('pr-f-building-type', types.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join(''));
+      setHtml('pr-f-pf-archetype', (reference.archetypes || [{ id: 'general', label: 'General' }])
+        .map(a => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join(''));
+      const pfOptions = at('project-finance').dataQualityOptions || [];
+      setHtml('pr-f-pf-option', pfOptions.map(o => `<option value="${esc(o.option)}">Option ${esc(o.option)} — score ${esc(o.score)}</option>`).join(''));
+    } catch (_) { /* the engine refuses a type or an option it does not hold, by name */ }
+
     const sel = $('pr-f-sector-key');
     if (!sel) return;
     try {
@@ -101,6 +134,23 @@ const PartARegisterPage = (() => {
       sel.innerHTML = '<option value="">Not mapped</option>' + sectors
         .map(x => `<option value="${esc(x.key)}">${esc(x.label)} · ISIC ${esc(x.isic)}${x.held ? '' : ' · no factor held'}</option>`).join('');
     } catch (_) { /* the free-text sector still records; the engine says what it could not map */ }
+  }
+
+  /* Show the selected class's block and nothing else's. */
+  function applyClass() {
+    cls = ($('pr-class') && $('pr-class').value) || cls;
+    for (const el of document.querySelectorAll('#pr-form [data-class-form]')) {
+      el.hidden = !el.getAttribute('data-class-form').split(' ').includes(cls);
+    }
+    show('pr-re-construction', cls === 'commercial-real-estate');
+    /* The §5.2 disclosure is §5.2's; the other classes are filed through the
+       consolidated disclosure on the Financed emissions screen. */
+    show('pr-pdf', cls === DEFAULT_CLASS);
+    show('pr-docx', cls === DEFAULT_CLASS);
+    say('pr-subtitle', `${classLabel()}`);
+    say('pr-record-hint', isProperty()
+      ? 'A property loan. Key the floor area in the unit the valuation states; the engine converts it and the trace shows the conversion.'
+      : 'The engine runs before anything is written; a refusal names its clause.');
   }
 
   // ── years ──────────────────────────────────────────────────
@@ -123,19 +173,19 @@ const PartARegisterPage = (() => {
     say('pr-status', 'Loading…');
     let position = null;
     try {
-      position = await call(`/position/${year}`);
+      position = await call(`/position/${year}?assetClass=${encodeURIComponent(cls)}`);
     } catch (err) {
       /* An empty year is a 409 by design — a book with nothing in it and a
          book nobody has measured are different claims. It is told apart from
          a failure: one is the next step, the other is a fault to report. */
       show('pr-body', false);
       say('pr-status', err.status === 409
-        ? `No exposures recorded in FY${year} yet.${preview() ? '' : ' Record an exposure to begin.'}`
+        ? `No ${classLabel().split(' — ')[0].toLowerCase()} exposures recorded in FY${year} yet.${preview() ? '' : ' Record an exposure to begin.'}`
         : `Could not read the book: ${err.message}`);
       return;
     }
     let list = [];
-    try { ({ exposures: list } = await call(`/exposures?reportingYear=${encodeURIComponent(year)}&limit=200`)); }
+    try { ({ exposures: list } = await call(`/exposures?reportingYear=${encodeURIComponent(year)}&assetClass=${encodeURIComponent(cls)}&limit=200`)); }
     catch (err) { say('pr-status', err.message); }
     rows = list;
     render(position);
@@ -146,7 +196,7 @@ const PartARegisterPage = (() => {
   function render(p) {
     currency = (p.coverage && p.coverage.currency) || currency;
     const L = p.total.lines;
-    say('pr-subtitle', `FY${p.reportingYear} · ${currency} · business loans and unlisted equity`);
+    say('pr-subtitle', `FY${p.reportingYear} · ${currency} · ${classLabel()}`);
     say('pr-s12', fmt(L.scope1And2.value, 2));
     say('pr-s3', L.scope3.value === null ? '—' : fmt(L.scope3.value, 2));
     say('pr-removals', L.removals.value === null ? '—' : fmt(L.removals.value, 2));
@@ -194,7 +244,12 @@ const PartARegisterPage = (() => {
   function renderGroups(p) {
     const groups = [];
     const g = (label, obj) => Object.entries(obj || {}).map(([k, v]) => ({ label, key: k, ...v }));
-    groups.push(...g('Sector', p.bySector), ...g('Kind', p.byKind), ...g('Borrower type', p.byBorrowerType));
+    /* The groupings are the class's own — sector, kind and borrower type for a
+       loan book; building type and product for a property book. */
+    const declared = Array.isArray(p.groupings) && p.groupings.length
+      ? p.groupings
+      : [{ key: 'bySector', label: 'Sector' }, { key: 'byKind', label: 'Kind' }, { key: 'byBorrowerType', label: 'Borrower type' }];
+    for (const d of declared) groups.push(...g(d.label, p[d.key]));
     const fin = p.financialSector;
     setHtml('pr-groups', `
       <div class="pr-scroll"><table class="partc-table">
@@ -214,7 +269,7 @@ const PartARegisterPage = (() => {
             <td class="num">${fin.lines.scope3.value === null ? '—' : fmt(fin.lines.scope3.value, 2)}</td>
             <td class="num">${dqBadge(fin.dataQuality.scope1And2.score, null, 2)}</td></tr>` : ''}
         </tbody></table></div>
-      ${fin ? `<p class="partc-hint">Loans to other financial institutions are rolled up apart — PCAF Part A §5.2 (p.56).</p>` : ''}`);
+      ${fin ? `<p class="partc-hint">Exposures to other financial institutions are rolled up apart — PCAF Part A §5.2 (p.56); §5.1 (p.41).</p>` : ''}`);
   }
 
   function renderPlan(plan) {
@@ -254,7 +309,7 @@ const PartARegisterPage = (() => {
     setHtml('pr-rows', rows.length === 0
       ? '<p class="partc-hint">No exposures recorded in this year.</p>'
       : `<div class="pr-scroll"><table class="partc-table">
-          <thead><tr><th>Borrower</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th><th>Checks</th></tr></thead>
+          <thead><tr><th>Counterparty</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th><th>Checks</th></tr></thead>
           <tbody>${rows.map(r => {
             const x = r.result || {};
             const inv = x.inventory || {};
@@ -331,6 +386,7 @@ const PartARegisterPage = (() => {
           ${x.exposure.counterparty.sectorKey ? `<p class="partc-hint">Held sector: ${esc(x.exposure.counterparty.sectorKey)}</p>` : ''}
         </div>
       </div>
+      ${nativePanel(x)}
       <h5 class="partc-subhead">What the data says about itself</h5>
       ${findings.length === 0
         ? `<p class="partc-hint">${esc((x.validation && x.validation.note) || 'No findings.')}</p>`
@@ -345,6 +401,50 @@ const PartARegisterPage = (() => {
           </div>`).join('')}
       <p class="partc-hint">Computed ${esc(e.computedAt)} · ${esc(e.standard)}</p>`);
     for (const el of document.querySelectorAll('#pr-detail [data-writes]')) el.hidden = preview();
+  }
+
+  /* The engine's own result for a class whose shape is not the seven lines —
+     the building's energy and the area as keyed, the project's derivation and
+     impact, the holding's classification. Read and rendered, never restated. */
+  function nativePanel(x) {
+    const n = x.native;
+    if (!n) return '';
+    const kv = pairs => `<dl class="pr-kv">${pairs.filter(p => p && p[1] !== undefined && p[1] !== null && p[1] !== '').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+    let body = '';
+    if (n.property) {
+      const en = (n.inventory && n.inventory.energy) || {};
+      const fx = (n.inventory && n.inventory.factors) || {};
+      const bl = fx.baselines || {};
+      const origin = b => (b ? (b.scope === 'table' ? 'provisional table' : `${b.scope} baseline${b.version ? ` v${b.version}` : ''}`) : '');
+      body = kv([
+        ['Class', `${esc(n.property.class)} (${esc(n.property.section)}) · ${esc(n.property.country)}`],
+        ['Building type', esc(n.property.buildingType || '—')],
+        ['Energy basis', esc(fx.basis || '')],
+        en.floorAreaAsKeyed ? ['Floor area as keyed', `${fmt(en.floorAreaAsKeyed.value, 2)} ${esc(en.floorAreaAsKeyed.unit)}`] : null,
+        en.floorAreaConversion ? ['Conversion', `<span class="pr-eq">${esc(en.floorAreaConversion)}</span>`] : null,
+        en.floorArea_m2 !== undefined ? ['Floor area', `${fmt(en.floorArea_m2, 2)} m²`] : null,
+        en.intensity_kWh_per_m2_yr !== undefined ? ['Energy intensity', `${fmt(en.intensity_kWh_per_m2_yr, 1)} kWh per m² per year · ${esc(origin(bl.intensity))}`] : null,
+        en.labelClass ? ['Energy label', esc(en.labelClass)] : null,
+        en.buildingCount ? ['Buildings', `${en.buildingCount} × ${fmt(en.floorAreaPerBuilding_m2, 0)} m² typical`] : null,
+        ['Electricity', `${fmt(en.electricity_kWh, 0)} kWh × ${esc(String(fx.electricity))} kgCO₂e/kWh · ${esc(origin(bl.electricity))}`],
+        ['Fuel', `${fmt(en.fuel_kWh, 0)} kWh ${esc(en.fuelSource || '')} × ${esc(String(fx.fuel))} kgCO₂e/kWh · ${esc(origin(bl.fuel))}`],
+        ['Building scope 1 and 2 (100%)', `${fmt(n.inventory.buildingEmissions.combined, 2)} tCO₂e`],
+        ['Origination value', `${fmt(x.denominator && x.denominator.value, 0)} · ${esc(x.denominator && x.denominator.state || '')}`],
+        n.provisional ? ['Provisional', 'A provisional factor or intensity is in use; the trace names it.'] : null,
+      ]);
+    } else if (n.project) {
+      const gen = n.generation;
+      const metrics = (n.impact && n.impact.metrics) || [];
+      body = kv([
+        ['Project', `${esc(n.project.projectName || '')} · ${esc(n.project.archetype)}`],
+        gen ? ['Derived from generation', `${esc(gen.technology || '')} · ${fmt(gen.annualGeneration && gen.annualGeneration.value, 0)} MWh · ${esc(gen.country || '')}`] : ['Scopes', 'Reported by the project'],
+        ...metrics.map(m => [esc(m.metric || m.label || 'Impact'), `${fmt(m.value, 2)} ${esc(m.unit || 'tCO₂e')} <span class="partc-hint">impact — outside the inventory</span>`]),
+        n.impact && n.impact.absent ? ['Avoided emissions', esc(n.impact.absent.reason || 'absent')] : null,
+      ]);
+    } else {
+      return '';
+    }
+    return `<h5 class="partc-subhead">Engine trace</h5>${body}`;
   }
 
   async function recompute() {
@@ -382,6 +482,7 @@ const PartARegisterPage = (() => {
   }
   const disclosure = format => download(`/disclosure/${encodeURIComponent(year)}?format=${format}`, {},
     `part-a-business-loans-fy${year}.${format}`, `FY${year} §5.2 disclosure (${format.toUpperCase()})`, 'pr-status');
+  /* The per-exposure document is §5.2's; the server says so for another class. */
   const exposureReport = () => openId && download(`/exposures/${encodeURIComponent(openId)}/report`,
     { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ format: 'pdf' }) },
     `part-a-exposure-${openId}.pdf`, 'Exposure report (PDF)', 'pr-detail-status');
@@ -401,8 +502,95 @@ const PartARegisterPage = (() => {
   const num = id => { const v = $(id) && $(id).value; return v === '' || v === undefined || v === null ? undefined : Number(v); };
   const str = id => { const v = $(id) && $(id).value; return v ? String(v).trim() : undefined; };
 
-  /** The request the engine takes, read from the form and nothing else. */
+  /** The request the engine takes, read from the form and nothing else — per class. */
   function collect() {
+    if (isProperty()) return collectProperty();
+    if (cls === 'project-finance') return collectProject();
+    if (cls === 'listed-equity-corporate-bonds') return collectListed();
+    return collectBusinessLoan();
+  }
+
+  /* §5.4 / §5.5. The floor area travels with its unit; nothing here converts. */
+  function collectProperty() {
+    const body = {
+      assetClass: cls,
+      reportingYear: Number(year),
+      country: (str('pr-f-re-country') || 'LK').toUpperCase(),
+      counterparty: { name: str('pr-f-name') },
+      buildingType: str('pr-f-building-type'),
+      productType: str('pr-f-product'),
+      exposure: { outstanding: num('pr-f-re-outstanding'), currency: str('pr-f-re-currency'), asOf: str('pr-f-re-asof') },
+      value: { atOrigination: num('pr-f-re-value'), latest: num('pr-f-re-latest') },
+    };
+    const ref = str('pr-f-ref');
+    if (ref) body.identifiers = { accountNumber: ref };
+    const area = num('pr-f-area');
+    if (area !== undefined) body.floorArea = { value: area, unit: str('pr-f-area-unit') || 'm2' };
+    if (str('pr-f-label')) body.label = str('pr-f-label').toUpperCase();
+    if (num('pr-f-count') !== undefined) body.buildingCount = num('pr-f-count');
+    const elec = num('pr-f-elec'), fuel = num('pr-f-fuel');
+    if (elec !== undefined || fuel !== undefined) {
+      const supplier = $('pr-f-ef-basis').value === 'supplier';
+      body.energy = { electricity_kWh: elec, fuel_kWh: fuel, fuelSource: str('pr-f-fuel-source'),
+        emissionFactorBasis: supplier ? 'supplier' : 'average',
+        electricityFactor: supplier ? num('pr-f-elec-factor') : undefined, fuelFactor: supplier ? num('pr-f-fuel-factor') : undefined };
+    }
+    if (cls === 'commercial-real-estate' && num('pr-f-construction') !== undefined) body.developerConstructionEmissions_tCO2e = num('pr-f-construction');
+    return prune(body);
+  }
+
+  /* §5.3. */
+  function collectProject() {
+    const body = {
+      assetClass: cls,
+      reportingYear: Number(year),
+      projectName: str('pr-f-pf-project') || str('pr-f-name'),
+      counterparty: str('pr-f-name'),
+      sector: str('pr-f-pf-sector'),
+      archetype: str('pr-f-pf-archetype') || 'general',
+      outstandingAmount: num('pr-f-pf-outstanding'),
+      totalProjectEquityPlusDebt: num('pr-f-pf-denominator'),
+      currency: str('pr-f-pf-currency'),
+      projectScope1_tCO2e: num('pr-f-pf-s1'),
+      projectScope2_tCO2e: num('pr-f-pf-s2'),
+      projectScope3_tCO2e: num('pr-f-pf-s3'),
+      scope3Relevant: num('pr-f-pf-s3') !== undefined ? true : undefined,
+      dataQualityOption: str('pr-f-pf-option'),
+    };
+    const ref = str('pr-f-ref');
+    if (ref) body.identifiers = { accountNumber: ref };
+    return prune(body);
+  }
+
+  /* §5.1. */
+  function collectListed() {
+    const asOf = str('pr-f-le-asof'), currency_ = str('pr-f-le-currency');
+    const instrument = $('pr-f-le-instrument').value;
+    const basis = $('pr-f-le-basis').value;
+    const period = str('pr-f-le-period');
+    const reported = v => v === undefined ? undefined
+      : { value: v, basis, period, verifier: basis === 'reported-verified' ? str('pr-f-le-verifier') : undefined };
+    const s1 = num('pr-f-le-s1'), s2 = num('pr-f-le-s2'), s3 = num('pr-f-le-s3');
+    const body = {
+      assetClass: cls,
+      reportingYear: Number(year),
+      instrument,
+      issuerListed: instrument === 'corporate-bond' ? true : undefined,
+      onBalanceSheetAtYearEnd: true,
+      counterparty: { name: str('pr-f-name'), naceL2: str('pr-f-le-nace'), financialInstitution: $('pr-f-le-fi').checked || undefined },
+      outstanding: { amount: num('pr-f-le-outstanding'), asOf, currency: currency_ },
+      denominator: { marketCapOrdinary: num('pr-f-le-mcap'), marketCapPreferred: num('pr-f-le-mcap-pref'),
+        totalDebtInterestBearing: num('pr-f-le-debt'), minorityInterests: num('pr-f-le-minorities'), asOf, currency: currency_ },
+      emissions: { scope1: reported(s1), scope2: reported(s2), scope3: reported(s3),
+        scope3AbsentReason: s3 === undefined ? str('pr-f-le-s3-reason') : undefined },
+    };
+    const ref = str('pr-f-ref');
+    if (ref) body.identifiers = { accountNumber: ref };
+    return prune(body);
+  }
+
+  /* §5.2. */
+  function collectBusinessLoan() {
     const listed = $('pr-f-listed').checked;
     const fi = $('pr-f-fi').checked;
     const instrument = $('pr-f-instrument').value;
@@ -471,7 +659,7 @@ const PartARegisterPage = (() => {
     say('pr-form-status', 'Recording…');
     try {
       const { exposure } = await post('/exposures', collect());
-      say('pr-form-status', `Recorded ${exposure.counterparty.name}. ${exposure.result.validation.note}`);
+      say('pr-form-status', `Recorded ${exposure.counterparty.name || 'the exposure'}. ${(exposure.result.validation && exposure.result.validation.note) || ''}`);
       $('pr-form').reset();
       applyDenominatorMode();
       show('pr-record', false);
@@ -509,7 +697,8 @@ const PartARegisterPage = (() => {
   async function init() {
     on('pr-refresh', 'click', load);
     on('pr-year', 'change', () => { closeDetail(); load(); });
-    on('pr-record-toggle', 'click', () => { show('pr-record', $('pr-record').hidden); applyDenominatorMode(); });
+    on('pr-class', 'change', () => { closeDetail(); applyClass(); load(); });
+    on('pr-record-toggle', 'click', () => { show('pr-record', $('pr-record').hidden); applyClass(); applyDenominatorMode(); });
     on('pr-form-cancel', 'click', () => show('pr-record', false));
     on('pr-form', 'submit', submitForm);
     on('pr-book-form', 'submit', submitBook);
@@ -523,9 +712,16 @@ const PartARegisterPage = (() => {
       on(id, 'change', applyDenominatorMode);
       on(id, 'input', applyDenominatorMode);
     }
-    if ($('pr-f-asof') && !$('pr-f-asof').value) $('pr-f-asof').value = `${new Date().getFullYear()}-12-31`;
-    for (const el of document.querySelectorAll('.parta-register [data-writes]')) el.hidden = preview();
+    for (const id of ['pr-f-asof', 'pr-f-re-asof', 'pr-f-le-asof']) {
+      if ($(id) && !$(id).value) $(id).value = `${new Date().getFullYear()}-12-31`;
+    }
+    /* A preview visitor is offered no write control. For everyone else the
+       markup's own state stands — the record form opens on the button, not on
+       load; `el.hidden = preview()` alone had been opening it for every
+       signed-in reader and the button then closed it. */
+    for (const el of document.querySelectorAll('.parta-register [data-writes]')) el.hidden = preview() || el.hidden;
     await loadVocabulary();
+    applyClass();
     await loadYears();
     await load();
   }

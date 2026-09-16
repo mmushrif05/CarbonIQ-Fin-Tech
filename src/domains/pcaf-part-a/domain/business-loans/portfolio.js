@@ -25,6 +25,13 @@
  * it never presents a scenario score as the reported one; they are separate
  * keys with separate labels, for the same reason the capital forecast is
  * hatched.
+ *
+ * The roll-up is Chapter 6's and not §5.2's alone: the same seven lines, the
+ * same outstanding-weighted score with scope 3 apart, the same plan. §5.2 is
+ * the default binding; the exposure register binds it per class — label,
+ * groupings, the sentence the target note reads — through `opts`, and each
+ * class is rolled up on its own and never with another, because the score
+ * tables differ between classes and a mean across them means nothing.
  */
 
 'use strict';
@@ -93,7 +100,16 @@ function group(results, label) {
  * by count would send a bank to two hundred small borrowers before the one
  * exposure carrying a fifth of the book.
  */
-function improvementPlan(results, { target = 2 } = {}) {
+const DEFAULT_TARGET_NOTE = target => `The target is score ${target} — the borrower's own reported figure, unverified (Option 1b). `
+  + 'Score 1 needs third-party verification, which is the borrower\'s decision and not the lender\'s, so '
+  + 'it is not the default target.';
+
+/**
+ * @param {Object[]} results
+ * @param {{ target?: number, targetNote?: string|function(number): string }} [opts]
+ */
+function improvementPlan(results, opts = {}) {
+  const { target = 2, targetNote } = opts;
   const totalOutstanding = results.reduce((s, r) => s + amountOf(r), 0);
   const current = weighted(results, scope12Score);
 
@@ -163,9 +179,7 @@ function improvementPlan(results, { target = 2 } = {}) {
     reportedScore: current,
     target,
     byOption: distribution,
-    targetNote: `The target is score ${target} — the borrower's own reported figure, unverified (Option 1b). `
-      + 'Score 1 needs third-party verification, which is the borrower\'s decision and not the lender\'s, so '
-      + 'it is not the default target.',
+    targetNote: typeof targetNote === 'function' ? targetNote(target) : (targetNote || DEFAULT_TARGET_NOTE(target)),
     steps,
     byRemedy: [...byRemedy.values()]
       .map(r => ({ ...r, outstanding: +r.outstanding.toFixed(2), shareOfBook: totalOutstanding > 0 ? +(r.outstanding / totalOutstanding).toFixed(4) : null }))
@@ -176,11 +190,32 @@ function improvementPlan(results, { target = 2 } = {}) {
   };
 }
 
+/** §5.2's own binding — the default when the register names no other class. */
+const BUSINESS_LOANS = Object.freeze({
+  assetClass: 'business-loans-unlisted-equity',
+  label: 'Business loans and unlisted equity',
+  groupings: [
+    { key: 'bySector', label: 'Sector', pick: r => r.exposure.counterparty.sector || r.exposure.counterparty.naceL2, fallback: 'unclassified' },
+    { key: 'byKind', label: 'Kind', pick: r => r.exposure.kind, fallback: 'business-loan' },
+    { key: 'byBorrowerType', label: 'Borrower type', pick: r => r.exposure.counterparty.borrowerType, fallback: 'company' },
+  ],
+  financialSectorNote: 'Reported separately, as PCAF recommends (§5.2, p.56): the scope 3 of a financial institution includes its own financed emissions, so the double count is made visible rather than hidden in the total.',
+  separation: 'Absolute emissions, emission removals and carbon credits are separate lines and are not netted '
+    + '(§5.2, pp.62–63). Scope 3 is separate from scope 1 and 2 (p.56).',
+  targetNote: DEFAULT_TARGET_NOTE,
+});
+
 /**
- * @param {Object[]} results  outputs of assessBusinessLoan
+ * @param {Object[]} results  outputs of assessBusinessLoan, or any class's result in the same lines shape
  * @param {Object} [opts]
  * @param {number} [opts.totalLoansAndInvestments]  the whole book, for coverage (DCL p.124)
  * @param {number} [opts.improvementTarget]
+ * @param {string} [opts.assetClass]   the class this book is; §5.2 by default
+ * @param {string} [opts.label]
+ * @param {Array<{key: string, label: string, pick: function(any): any, fallback: string}>} [opts.groupings]
+ * @param {string} [opts.financialSectorNote]
+ * @param {string} [opts.separation]
+ * @param {string|function(number): string} [opts.targetNote]
  */
 function rollUp(results, opts = {}) {
   if (!Array.isArray(results) || !results.length) {
@@ -189,6 +224,7 @@ function rollUp(results, opts = {}) {
     throw err;
   }
 
+  const binding = { ...BUSINESS_LOANS, ...Object.fromEntries(Object.entries(opts).filter(([, v]) => v !== undefined)) };
   const fin = results.filter(r => r.financialSector);
   const nonFin = results.filter(r => !r.financialSector);
 
@@ -200,27 +236,28 @@ function rollUp(results, opts = {}) {
     }
     return Object.fromEntries(Object.entries(m).map(([k, rs]) => [k, group(rs, k)]));
   };
+  /* Every grouping the class declares, each under its own key and once more
+     in a list a screen can iterate without knowing the class. */
+  const grouped = Object.fromEntries(binding.groupings.map(g => [g.key, by(g.pick, g.fallback)]));
 
-  const total = group(results, 'Business loans and unlisted equity');
+  const total = group(results, binding.label);
   const coverage = Number.isFinite(Number(opts.totalLoansAndInvestments)) && Number(opts.totalLoansAndInvestments) > 0
     ? { share: +(total.outstanding / Number(opts.totalLoansAndInvestments)).toFixed(4), basis: 'outstanding amount assessed ÷ total loans and investments', reference: 'PCAF Disclosure Checklist Part A, p.124' }
     : { share: null, reason: 'Total loans and investments not supplied; coverage cannot be stated (DCL p.124).' };
 
   return {
-    assetClass: 'business-loans-unlisted-equity',
+    assetClass: binding.assetClass,
     total,
     excludingFinancialSector: group(nonFin.length ? nonFin : results, 'Excluding financial-sector borrowers'),
     financialSector: fin.length
-      ? { ...group(fin, 'Financial-sector borrowers'), note: 'Reported separately, as PCAF recommends (§5.2, p.56): the scope 3 of a financial institution includes its own financed emissions, so the double count is made visible rather than hidden in the total.' }
+      ? { ...group(fin, 'Financial-sector borrowers'), note: binding.financialSectorNote }
       : null,
-    bySector: by(r => r.exposure.counterparty.sector || r.exposure.counterparty.naceL2, 'unclassified'),
-    byKind: by(r => r.exposure.kind, 'business-loan'),
-    byBorrowerType: by(r => r.exposure.counterparty.borrowerType, 'company'),
+    ...grouped,
+    groupings: binding.groupings.map(g => ({ key: g.key, label: g.label })),
     coverage,
-    improvementPlan: improvementPlan(results, { target: opts.improvementTarget }),
-    separation: 'Absolute emissions, emission removals and carbon credits are separate lines and are not netted '
-      + '(§5.2, pp.62–63). Scope 3 is separate from scope 1 and 2 (p.56).',
+    improvementPlan: improvementPlan(results, { target: opts.improvementTarget, targetNote: binding.targetNote }),
+    separation: binding.separation,
   };
 }
 
-module.exports = { rollUp, improvementPlan, LINES };
+module.exports = { rollUp, improvementPlan, LINES, BUSINESS_LOANS };

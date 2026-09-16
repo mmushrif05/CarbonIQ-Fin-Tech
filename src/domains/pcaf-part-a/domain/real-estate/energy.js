@@ -34,6 +34,7 @@ const r2 = n => +Number(n).toFixed(2);
  * @param {string} [p.label]        an official energy label class (A..G) — Option 2a
  * @param {string} [p.buildingType] a held building-type key — Options 2b / 3
  * @param {number} [p.floorArea_m2] Options 2a / 2b
+ * @param {Object} [p.floorArea]    the area as keyed and its conversion (`./area.js`), carried into the trace
  * @param {number} [p.buildingCount] Option 3 (no floor area)
  * @param {Object} [p.resolvedFactors] what the baseline registry resolved for this
  *   country and organisation, handed in by the application layer: `electricity_grid`,
@@ -106,7 +107,7 @@ function buildingEmissions(p) {
     }
     const energyKwh = li * Number(p.floorArea_m2);
     const e = emit(energyKwh);
-    return build('label-floor-area', '2a', { electricity_kWh: r2(e.elec), fuel_kWh: r2(e.fuel), fuelSource: type.fuelSource, energyKwh: r2(energyKwh), labelClass: String(p.label).toUpperCase() },
+    return build('label-floor-area', '2a', { electricity_kWh: r2(e.elec), fuel_kWh: r2(e.fuel), fuelSource: type.fuelSource, energyKwh: r2(energyKwh), labelClass: String(p.label).toUpperCase(), floorArea_m2: Number(p.floorArea_m2), ...areaTrace(p.floorArea) },
       e.scope1, e.scope2, { electricity: factors.electricity_grid.value, fuel: factors[type.fuelSource].value, basis: 'statistical (label class × floor area)', provisional: true, baselines: baselinesOf(factors, type.fuelSource) },
       ['Label-class intensities are illustrative, not a Sri Lankan scheme (fn 129).', ...factorNotes(factors, type.fuelSource)]);
   }
@@ -115,7 +116,7 @@ function buildingEmissions(p) {
   if (Number.isFinite(p.floorArea_m2) && Number(p.floorArea_m2) > 0) {
     const energyKwh = intensity * Number(p.floorArea_m2);
     const e = emit(energyKwh);
-    return build('type-location-floor-area', '2b', { electricity_kWh: r2(e.elec), fuel_kWh: r2(e.fuel), fuelSource: type.fuelSource, energyKwh: r2(energyKwh), intensity_kWh_per_m2_yr: intensity, floorArea_m2: Number(p.floorArea_m2) },
+    return build('type-location-floor-area', '2b', { electricity_kWh: r2(e.elec), fuel_kWh: r2(e.fuel), fuelSource: type.fuelSource, energyKwh: r2(energyKwh), intensity_kWh_per_m2_yr: intensity, floorArea_m2: Number(p.floorArea_m2), ...areaTrace(p.floorArea) },
       e.scope1, e.scope2, { electricity: factors.electricity_grid.value, fuel: factors[type.fuelSource].value, basis: 'statistical (building-type intensity × floor area)',
         provisional: intensityBaseline.provisional || factorsProvisional(factors, type.fuelSource), baselines: { ...baselinesOf(factors, type.fuelSource), intensity: intensityBaseline } },
       [intensityNote(type.key, intensityBaseline), ...factorNotes(factors, type.fuelSource)]);
@@ -161,6 +162,11 @@ function mergeFactors(table, resolved) {
   }
   return out.electricity_grid && out.diesel && out.lpg ? out : null;
 }
+
+/* The area as keyed and the factor that made it square metres, so a reader of
+   the trace sees "10,000 ft² × 0.09290304" and not a figure that appeared. */
+const areaTrace = a => (a && a.asKeyed && a.asKeyed.unit !== 'm²'
+  ? { floorAreaAsKeyed: a.asKeyed, floorAreaConversion: a.conversion } : {});
 
 const factorsProvisional = (f, fuel) => Boolean((f.electricity_grid.baseline || {}).provisional || (f[fuel].baseline || {}).provisional);
 const baselinesOf = (f, fuel) => ({ electricity: f.electricity_grid.baseline, fuel: f[fuel].baseline });

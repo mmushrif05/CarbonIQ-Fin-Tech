@@ -18,9 +18,10 @@
 
 'use strict';
 
-const { classify } = require('./classify');
+const { classify, refuse } = require('./classify');
 const { realEstateDenominator } = require('./denominator');
 const { buildingEmissions } = require('./energy');
+const { floorAreaM2 } = require('./area');
 const dataQuality = require('../data-quality');
 const { traced, absent } = require('../provenance');
 const rs = require('./dataset');
@@ -48,12 +49,25 @@ function assessRealEstate(input = {}) {
     currency: exposure.currency || 'LKR',
   });
 
+  /* The floor area arrives with its unit and is converted once, here — the
+     conversion is an arithmetic operation and belongs to the engine, and the
+     trace carries the area as keyed beside the square metres it became. A
+     bare `floorArea_m2` is still accepted; both at once is ambiguous and is
+     refused rather than one silently winning. */
+  if (input.floorArea !== undefined && input.floorArea_m2 !== undefined) {
+    throw refuse('FLOOR_AREA_AMBIGUOUS',
+      'Both floorArea (with a unit) and floorArea_m2 were supplied; state the area once.',
+      400, 'Send floorArea { value, unit } or floorArea_m2, not both.');
+  }
+  const area = floorAreaM2(input.floorArea !== undefined ? input.floorArea : input.floorArea_m2);
+
   const energy = buildingEmissions({
     country,
     metered: input.energy,
     label: input.label,
     buildingType: input.buildingType,
-    floorArea_m2: input.floorArea_m2,
+    floorArea_m2: area ? area.m2 : undefined,
+    floorArea: area,
     buildingCount: input.buildingCount,
   });
 

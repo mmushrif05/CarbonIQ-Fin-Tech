@@ -2,28 +2,85 @@
 /**
  * Joi validation for the PCAF Part A exposure register.
  *
- * The exposure body is §5.2's own schema with two register fields in front of
- * it: which asset class's engine should run, and the reporting year the row
- * belongs to. Both are the register's, not the engine's — `engineInputOf()` in
- * the service strips `assetClass` before the engine sees it, because the §5.2
- * schema is closed and a field the caller was right to send would otherwise be
- * a named 400.
+ * One register, several classes: the body is the class's own engine schema
+ * with the register's fields in front of it — which asset class's engine
+ * should run, the reporting year the row belongs to, and the identifiers and
+ * counterparty the register is browsed by. `assetClass` decides which shape
+ * applies, so a §5.4 property keyed with a floor area and a §5.2 loan keyed
+ * with a company value are each held to their own schema and neither is
+ * refused for a field the other needs. `engineInputOf()` in the service
+ * strips `assetClass` before an engine sees it, because the engine schemas
+ * are closed and a field the caller was right to send would otherwise be a
+ * named 400.
  *
  * Everything else stays where it is. The engine refuses what the standard
- * refuses, with the clause and the remedy; restating those rules here would be
- * a second place to keep in step and would answer with a generic message.
+ * refuses, with the clause and the remedy; restating those rules here would
+ * be a second place to keep in step and would answer with a generic message.
  */
 
 'use strict';
 
 const Joi = require('joi');
 const { exposureSchema } = require('./business-loans');
+const { realEstateRequestSchema } = require('./real-estate');
+const { assessRequestSchema } = require('./pcaf-parta');
+const { listedEquitySchema } = require('./listed-equity');
 
-/* `assetClass` is optional and defaults in the service rather than here: a
-   default written in two places is a default that can disagree with itself. */
-const registerExposureSchema = exposureSchema.append({
-  assetClass: Joi.string().max(60).optional(),
-  reportingYear: Joi.number().integer().min(2000).max(2100).required(),
+const reportingYear = Joi.number().integer().min(2000).max(2100).required();
+
+/* The register's own fields on an engine schema that does not carry them. */
+const registerFields = {
+  identifiers: Joi.object({
+    id: Joi.string().max(120).optional(),
+    accountNumber: Joi.string().max(80).optional(),
+  }).unknown(false).optional(),
+  counterparty: Joi.object({
+    name: Joi.string().max(200).optional(),
+    sector: Joi.string().max(120).optional(),
+  }).unknown(false).optional(),
+};
+
+/* §5.2 — `assetClass` is optional and defaults in the service rather than
+   here: a default written in two places is a default that can disagree with
+   itself. */
+const businessLoansRegisterSchema = exposureSchema.append({
+  assetClass: Joi.string().valid('business-loans-unlisted-equity').optional(),
+  reportingYear,
+});
+
+/* §5.4 / §5.5 — the class is the register's `assetClass`; the engine's own
+   `class` field may be sent but need not be, and the service refuses the two
+   disagreeing. */
+const realEstateRegisterSchema = realEstateRequestSchema
+  .fork('class', s => s.optional())
+  .append({
+    assetClass: Joi.string().valid('commercial-real-estate', 'mortgages').required(),
+    reportingYear,
+    ...registerFields,
+  });
+
+/* §5.3 — the engine takes the counterparty as a name; the register's
+   `identifiers` ride beside it. */
+const projectFinanceRegisterSchema = assessRequestSchema
+  .fork('reportingYear', () => reportingYear)
+  .fork('assetClass', s => s.valid('project-finance').required())
+  .append({ identifiers: registerFields.identifiers })
+  .unknown(false);
+
+/* §5.1 */
+const listedEquityRegisterSchema = listedEquitySchema.append({
+  assetClass: Joi.string().valid('listed-equity-corporate-bonds').required(),
+  reportingYear,
+});
+
+const registerExposureSchema = Joi.alternatives().conditional('.assetClass', {
+  switch: [
+    { is: 'commercial-real-estate', then: realEstateRegisterSchema },
+    { is: 'mortgages', then: realEstateRegisterSchema },
+    { is: 'project-finance', then: projectFinanceRegisterSchema },
+    { is: 'listed-equity-corporate-bonds', then: listedEquityRegisterSchema },
+  ],
+  otherwise: businessLoansRegisterSchema,
 });
 
 const bookSchema = Joi.object({
@@ -38,6 +95,7 @@ const bookSchema = Joi.object({
 
 const positionQuerySchema = Joi.object({
   improvementTarget: Joi.number().integer().min(1).max(5).optional(),
+  assetClass: Joi.string().max(60).optional(),
 }).unknown(true);
 
 /**

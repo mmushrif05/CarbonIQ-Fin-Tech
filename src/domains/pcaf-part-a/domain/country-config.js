@@ -22,6 +22,7 @@
 'use strict';
 
 const { absent } = require('./provenance');
+const { checksum } = require('../../../shared/checksum');
 
 const CONFIG = require('./reference').COUNTRY_CONFIG;
 
@@ -219,9 +220,31 @@ function coverage() {
   }));
 }
 
+/**
+ * The identity of the grid-factor set a §5.3 figure rests on: one table, the
+ * SHA-256 over its canonical form, provisional — the country rows are
+ * secondary-reported until re-read from their publishers (docs/BASELINE-REGISTER.md §5).
+ */
+function release() {
+  const table = {
+    table: 'country-grid-factors',
+    version: CONFIG.version || 'unversioned',
+    effectiveFrom: CONFIG.effectiveFrom || null,
+    status: 'provisional',
+    countryCount: Object.keys(CONFIG.countries).length,
+    checksum: checksum(CONFIG),
+  };
+  return {
+    tables: [table],
+    checksum: checksum([[table.table, table.checksum]]),
+    provisionalTables: [table.table],
+    algorithm: 'SHA-256 over the canonical form (keys sorted at every level)',
+  };
+}
+
 module.exports = {
   CONFIG, TECHNOLOGIES,
   countries, forCountry, staleness,
   displacementFactor, consumptionFactor,
-  technology, limits, physicalCheckAvailability, coverage,
+  technology, limits, physicalCheckAvailability, coverage, release,
 };
