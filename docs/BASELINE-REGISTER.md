@@ -664,7 +664,7 @@ tied to the revenue licence**; whether it records the odometer is unverified.
 
 1. Today, class field only → **3a, score 4** (3b only where even the class is unknown, which a CR-based file never is).
 2. **Free step to score 2:** the vehicle finance file already holds the DMT Certificate of Registration (make, model, year, engine cc, fuel, class) and a valuation — make/model efficiency plus a Sri Lankan km statistic is **2a = 2**; the valuation gives the denominator, so the 100 % fallback is never needed.
-3. **Score 1 from the odometer:** the lessor owns the asset and inspects it at origination, insurance renewal and (if recorded) the annual VET — two readings a year apart give actual distance → 1b = 1; fleet Ijarah supplies fuel invoices → 1a.
+3. **Score 1 from the odometer:** the lessor owns the asset and inspects it at origination, insurance renewal and (if recorded) the annual VET — two readings a year apart give actual distance → 1b = 1; a fleet borrower supplies fuel invoices → 1a.
 4. Record the option per line; apply lowest-in-mix per borrower; disclose excluded types (tractors, trailers) and the year-end convention.
 
 **Consequence for the repository:** `data/factors/vehicle-ef.json` assumes 0.19 kWh/km ×
