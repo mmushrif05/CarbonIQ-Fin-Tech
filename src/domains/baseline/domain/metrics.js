@@ -33,10 +33,12 @@ const SECTORS = checked('data/pcaf-parta/sectors.json',
  * @property {string} label
  * @property {string} unit
  * @property {string[]} fields the value keys a baseline for this metric carries
- * @property {'bands'|'single'|'sector_bands'} shape
+ * @property {'bands'|'single'|'sector_bands'|'margins'|'table'|'building_types'|'vehicle_classes'|'series'} shape
  * @property {string} governs what reads it — or that nothing does yet
  * @property {boolean} wired whether the product reads it today
  * @property {string} [direction] for bands: whether lower is better
+ * @property {boolean} [sparse] a table where a country may hold some fields and not others;
+ *   at least one is required and no field outside the list is accepted
  */
 
 /** @type {Record<string, MetricDefinition>} */
@@ -73,11 +75,11 @@ const METRICS = Object.freeze({
     unit: 'kgCO2e/kWh',
     shape: 'single',
     fields: ['value'],
-    governs: 'Site electricity in A5.2, and any figure converting kWh to carbon. '
-      + 'Today that comes from the factor tables under data/factors, each row '
-      + 'carrying its own tier and named source; a released baseline would '
-      + 'override the grid row for a country.',
-    wired: false,
+    governs: 'A financed building\'s scope 2 (§5.4/§5.5) — the property engine resolves '
+      + 'it here, location-based, and names the scope and version on the trace. Part C\'s '
+      + 'A5.2 site electricity still reads data/factors/a5-defaults.json; a released '
+      + 'baseline is the figure that row will be held to. Never a displacement factor.',
+    wired: true,
   },
 
   sector_intensity_tCO2e_per_million_revenue: {
@@ -95,6 +97,123 @@ const METRICS = Object.freeze({
       + 'the baseline version it was checked against. Nothing is refused and no figure changes. '
       + 'PCAF sets no such test; the bands are regional judgement, which is why they are governed here.',
     wired: true,
+  },
+
+  grid_displacement_factor_tCO2e_MWh: {
+    key: 'grid_displacement_factor_tCO2e_MWh',
+    label: 'Grid displacement factor — operating, build and combined margins',
+    unit: 'tCO2e/MWh',
+    shape: 'margins',
+    fields: ['operating_margin', 'build_margin', 'combined_margin'],
+    governs: 'The counterfactual a financed renewable displaces — avoided emissions only, '
+      + 'never a scope 2 factor (PCAF supplement Table A.1 prefers the operating margin; '
+      + 'CDM Tool 07 combines the margins at stated weights). Project finance reads it '
+      + 'from data/pcaf-parta/country-config.json today; a released baseline is the '
+      + 'figure that file will be held to.',
+    wired: false,
+  },
+
+  fuel_emission_factor_kgCO2e_kWh: {
+    key: 'fuel_emission_factor_kgCO2e_kWh',
+    label: 'Fuel combustion emission factors',
+    unit: 'kgCO2 per kWh of fuel, net calorific value',
+    shape: 'table',
+    fields: ['diesel', 'petrol', 'kerosene', 'furnace_oil', 'lpg', 'natural_gas', 'bituminous_coal'],
+    governs: 'On-site fuel combustion in a financed building (§5.4/§5.5), and every '
+      + 'scope 1 figure a class computes from fuel; the property engine reads diesel and '
+      + 'LPG from it. The standard\'s value wins (IPCC 2006 Vol. 2 Table 1.4) and the '
+      + 'registry holds the citation; a Sri Lankan density is what turns it into a '
+      + 'per-litre figure.',
+    wired: true,
+  },
+
+  gwp_100yr: {
+    key: 'gwp_100yr',
+    label: 'Global warming potentials, 100-year',
+    unit: 'kgCO2e per kg of gas',
+    shape: 'table',
+    fields: ['ch4_fossil', 'ch4_non_fossil', 'n2o', 'hfc32', 'hfc125', 'hfc134a', 'r410a', 'r404a', 'r407c', 'sf6', 'nf3'],
+    governs: 'The conversion of non-CO2 gases to CO2e (PCAF Third Edition p.162, p.176). '
+      + 'Nothing reads it yet: Part C\'s refrigerant table is fixed at AR5 and says so, '
+      + 'and a product-wide basis is decided once and recorded, not resolved per request.',
+    wired: false,
+  },
+
+  building_energy_intensity_kWh_m2: {
+    key: 'building_energy_intensity_kWh_m2',
+    label: 'Building energy intensity by type',
+    unit: 'kWh per m² per year, gross floor area',
+    shape: 'building_types',
+    fields: ['office', 'office_naturally_ventilated', 'retail', 'supermarket', 'hotel', 'hospital',
+      'industrial', 'warehouse', 'residential_apartment', 'residential_house'],
+    sparse: true,
+    governs: 'PCAF §5.4/§5.5 Option 2b (statistics × floor area, score 4) and Option 3. The '
+      + 'property engine reads a type\'s intensity from a released or shipped baseline and '
+      + 'falls back to the provisional energy-statistics table for a type the baseline '
+      + 'does not hold, naming which on the trace.',
+    wired: true,
+  },
+
+  building_energy_per_dwelling_kWh: {
+    key: 'building_energy_per_dwelling_kWh',
+    label: 'Residential energy per dwelling',
+    unit: 'kWh per dwelling per year',
+    shape: 'single',
+    fields: ['value'],
+    governs: 'PCAF §5.5 Option 3 — statistics per dwelling × number of dwellings (score 5). '
+      + 'No Sri Lankan figure has been read from its source; the registry reports it absent '
+      + 'rather than borrowing one.',
+    wired: false,
+  },
+
+  vehicle_annual_distance_km: {
+    key: 'vehicle_annual_distance_km',
+    label: 'Vehicle annual distance by class',
+    unit: 'km per vehicle per year',
+    shape: 'vehicle_classes',
+    fields: ['car_petrol', 'car_diesel', 'three_wheeler', 'motorcycle', 'van', 'bus', 'lorry'],
+    sparse: true,
+    governs: 'PCAF §5.6 Options 2a/2b/3a/3b — a Sri-Lanka-wide statistic is *local* (fn 146), '
+      + 'so make/model efficiency × this figure is Option 2a, score 2. The motor-vehicle '
+      + 'engine is not built yet; this is the baseline it will read.',
+    wired: false,
+  },
+
+  vehicle_fuel_economy_l_per_100km: {
+    key: 'vehicle_fuel_economy_l_per_100km',
+    label: 'Vehicle fuel economy by class',
+    unit: 'litres per 100 km (electric: kWh per 100 km)',
+    shape: 'vehicle_classes',
+    fields: ['car_petrol', 'car_diesel', 'three_wheeler', 'motorcycle', 'van', 'bus', 'lorry', 'ev_kwh_per_100km'],
+    sparse: true,
+    governs: 'PCAF §5.6 Options 3a/3b (vehicle-type efficiency). No Sri Lankan class-average '
+      + 'figure has been verified; make/model figures come from the registration certificate.',
+    wired: false,
+  },
+
+  carbon_price_usd_tCO2e: {
+    key: 'carbon_price_usd_tCO2e',
+    label: 'Carbon price — explicit and shadow',
+    unit: 'USD per tCO2e',
+    shape: 'table',
+    fields: ['explicit', 'shadow_low', 'shadow_high'],
+    sparse: true,
+    governs: 'Carbon-pricing exposure and transition-risk screens. Sri Lanka has no carbon '
+      + 'tax and no ETS (OECD 2024), so the explicit price is zero and says so.',
+    wired: false,
+  },
+
+  currency_lkr_per_usd_annual_average: {
+    key: 'currency_lkr_per_usd_annual_average',
+    label: 'Annual-average exchange rate, LKR per USD',
+    unit: 'LKR per USD, annual average',
+    shape: 'series',
+    fields: ['y2018', 'y2019', 'y2020', 'y2021', 'y2022', 'y2023', 'y2024', 'y2025', 'y2026'],
+    sparse: true,
+    governs: 'Re-basing a foreign-currency economic factor (PCAF Box 6.1-5). Nothing reads it '
+      + 'until the CBSL annual-average table has been read from its source; until then the '
+      + 'uncorrected figure is the minimum reported (p.65).',
+    wired: false,
   },
 
   data_quality_target_score: {
@@ -134,8 +253,12 @@ function validateValues(key, values) {
 
   if (def.shape === 'sector_bands') return validateSectorBands(values, def);
 
+  if (def.sparse && !def.fields.some(f => values[f] !== undefined)) {
+    return { ok: false, reason: `At least one of ${def.fields.join(', ')} is required (${def.unit}).` };
+  }
   for (const f of def.fields) {
     const n = values[f];
+    if (n === undefined && def.sparse) continue;
     if (typeof n !== 'number' || !Number.isFinite(n)) {
       return { ok: false, reason: `"${f}" must be a finite number (${def.unit}).` };
     }

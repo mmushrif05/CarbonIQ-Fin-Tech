@@ -23,21 +23,21 @@
       "name": "Sri Lanka",
       "iso3": "LKA",
       "provisional": true,
-      "gap": "Illustrative order-of-magnitude figures, not a released baseline and not audited. Replace with Sri Lanka's UNFCCC submissions (di.unfccc.int) for scope 1 and World Bank PPP-GDP for the denominator before any figure is disclosed.",
+      "gap": "Provisional: figures quoted from a description of Sri Lanka's Third National Communication (2010 inventory), not read from it, and superseded by the First Biennial Transparency Report (Dec 2024, inventory 2011–2021) which has not yet been opened. Re-read both and the World Bank PPP-GDP series (with the retrieval date) before any figure is disclosed; state option 1b, score 2, until a technical expert review report supports 1a.",
       "scope1": {
         "exclLULUCF": {
-          "value": 35000000,
+          "value": 22084620,
           "unit": "tCO2e",
-          "year": 2018,
+          "year": 2010,
           "basis": "provisional",
-          "source": "Illustrative order-of-magnitude, pending a released baseline. Source when released: Sri Lanka UNFCCC submissions (di.unfccc.int), production emissions excluding LULUCF."
+          "source": "Third National Communication of Sri Lanka (1 Dec 2022), 2010 inventory: total excluding LULUCF 22,084.62 Gg CO2e (energy 14,154.16 · IPPU 448.57 · agriculture 6,505.67 · waste 976.22). Verification: secondary_reported. https://unfccc.int/sites/default/files/resource/Third%20National%20Communication%20of%20Sri%20Lanka.pdf. EDGAR 2024 report gives 22 MtCO2e for 2023 on the same boundary."
         },
         "inclLULUCF": {
-          "value": 30000000,
+          "value": 3718450,
           "unit": "tCO2e",
-          "year": 2018,
+          "year": 2010,
           "basis": "provisional",
-          "source": "Illustrative order-of-magnitude, pending a released baseline. Sri Lanka reports a modest net LULUCF sink in some years; the direction and size of the LULUCF term are illustrative here and are not asserted."
+          "source": "Third National Communication, 2010: LULUCF gross emissions 21,460.13 Gg and removals −39,826.3 Gg, a net sink of 18,366 Gg; net total including LULUCF 3,718.45 Gg CO2e (43,544.75 − 39,826.3). Verification: secondary_reported (derived from quoted figures). The earlier provisional row carried the LULUCF term with the wrong sign."
         }
       },
       "pppGdp": {

@@ -46,15 +46,15 @@ SECTION 4 [gases] Gases and units
     body: Land-use, land-use change and forestry (LULUCF) is reported as a boundary on scope 1 — both including and excluding it — rather than netted against the fossil inventory (§5.9, p.141).
 
 SECTION 5 [absolute] Absolute emissions
-    figure: Financed scope 1 across the class — excluding LULUCF = 432.91 tCO2e
+    figure: Financed scope 1 across the class — excluding LULUCF = 345.82 tCO2e
       score: Weighted data quality score: 3.5 (Table 5.9-6, weighted by outstanding amount, p.128). 1 is the highest quality, 5 the lowest.
-    figure: Financed scope 1 across the class — including LULUCF = 202.29 tCO2e
+    figure: Financed scope 1 across the class — including LULUCF = 25.07 tCO2e
       note: Partial: the including-LULUCF figure is not held for every sovereign, so this sum covers 1 of 3 holdings. It is never added to the excluding-LULUCF sum.
     figure: Financed scope 3 — a separate line = — tCO2e
       note: 0 holding(s) carried a scope 3 figure; the rest reported it absent (a §5.9 should).
     table [3 cols] head: Line | tCO2e | Note
-      row: Financed scope 1, excl. LULUCF | 432.91 | The headline: domestic territorial emissions attributed by PPP-GDP (§5.9, p.141).
-      row: Financed scope 1, incl. LULUCF | 202.29 | The same emissions including land use — never added to the line above.
+      row: Financed scope 1, excl. LULUCF | 345.82 | The headline: domestic territorial emissions attributed by PPP-GDP (§5.9, p.141).
+      row: Financed scope 1, incl. LULUCF | 25.07 | The same emissions including land use — never added to the line above.
       row: Financed scope 2 | — | Imported grid energy: a should.
       row: Financed scope 3 | — | Non-energy imports: a should; a separate line.
     caption: Scope 1 is reported on both LULUCF boundaries and the two are never summed; scope 3 is reported apart from scope 1 and 2 and never summed into it (§5.9, p.141).
@@ -90,7 +90,7 @@ SECTION 8 [recalculation] Recalculation and significance
     body: The register holds both the input a bank keyed and the result the engine computed. A recomputation reruns the engine over the input already held and reports what moved across scope 1 on both LULUCF boundaries, scope 2 and 3, the data-quality score and the findings — so a change in the sovereign dataset is a decision somebody takes rather than something that happens to them.
 
 SECTION 9 [intensity] Emission intensity
-    figure: Economic emission intensity across the class = 108.23 tCO2e per million USD
+    figure: Economic emission intensity across the class = 86.46 tCO2e per million USD
       note: Financed scope 1 excluding LULUCF across the class over the assessed outstanding amount, in millions (DCL p.127).
     body: Production emission intensity — a sovereign’s territorial scope 1 (excluding LULUCF) over its PPP-adjusted GDP — is reported per holding (§5.9, p.144). PCAF also recommends a consumption-per-capita intensity and at least five years of history.
     body: A consumption-emissions view (production, less emissions embodied in exports, plus emissions embodied in imports) is recommended by §5.9 (pp.142–143). The sovereign dataset in use holds no trade-embodied emissions, so the consumption view is reported as not computed, with that reason, rather than invented.
@@ -102,6 +102,7 @@ SECTION 10 [limitations] Limitations and the improvement plan
       row: SOVEREIGN_LULUCF_ONE_SIDED | material | 2 | Source the including LULUCF figure from di.unfccc.int (the UNFCCC GHG profile carries both) and record it beside the one held.
       row: SOVEREIGN_PROXY_COUNTRY | material | 1 | Source the country’s own production emissions from its UNFCCC submission (di.unfccc.int) or Climate Watch and record them, which moves the figure to Option 1a/1b.
       row: SOVEREIGN_NO_INDEPENDENT_SOURCE | advisory | 3 | Supply a second source under crossCheck (UNFCCC, Climate Watch or EDGAR give independent estimates) and the divergence will be reported.
+      row: SOVEREIGN_EMISSIONS_GDP_YEAR_GAP | advisory | 1 | Use emissions and PPP-GDP from the same year where both are published. Threshold 3 year(s) is CarbonIQ’s and is settable.
 
 SECTION 11 [uncertainty] Uncertainty, and what this document does not contain
     body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
@@ -130,7 +131,7 @@ ANNEX A [annexDataset] Sovereign dataset
       row: sovereign-dataset | 1.0.0 | <date> | provisional | 3 | <sha256>
     h2: The country rows this book read
     table [5 cols] head: Sovereign | Scope 1 excl. LULUCF, tCO2e (year) | Scope 1 incl. LULUCF, tCO2e (year) | PPP-GDP, M int. USD (year) | Status
-      row: Sri Lanka (LK) | 35,000,000 (2018) | 30,000,000 (2018) | 296,600 (2020) | provisional
+      row: Sri Lanka (LK) | 22,084,620 (2010) | 3,718,450 (2010) | 296,600 (2020) | provisional
       row: Singapore (SG) | 61,451,586 (2018) | — | 579,762 (2020) | released
       row: Hong Kong SAR (HK) | 42,654,105 (2018) | — | 469,182 (2020) | released
     caption: A provisional country carries the gap it stands in for; its figures are order-of-magnitude placeholders pending a released set.
@@ -138,7 +139,7 @@ ANNEX A [annexDataset] Sovereign dataset
 ANNEX B [annexTable] Annex 10.2 — scope 3 Category 15 by sovereign
     body: The template PCAF Annex 10.2 gives (pp.199–200), disaggregated here by sovereign: holdings, outstanding covered and financed scope 1 excluding LULUCF. The including-LULUCF figure is in the register below where held.
     table [4 cols] head: Sovereign | Holdings | Outstanding USD | Scope 1 excl. LULUCF tCO2e
-      row: Sri Lanka (LK) | 1 | 2,000,000 | 236.01
+      row: Sri Lanka (LK) | 1 | 2,000,000 | 148.92
       row: Singapore (SG) | 1 | 1,000,000 | 105.99
       row: Hong Kong SAR (HK) | 1 | 1,000,000 | 90.91
 
@@ -147,7 +148,7 @@ ANNEX C [annexRegister] Holding register — the audit trail
     table [9 cols] head: Holding | Sovereign | Outstanding USD | AF | Opt | DQ | Scope 1 excl. | Scope 1 incl. | Checks
       row: <holding-id> | Singapore | 1,000,000 | 0.000002 | 1b | 2 | 105.99 | — | 3 finding(s)
       row: <holding-id> | Hong Kong SAR | 1,000,000 | 0.000002 | 1b | 2 | 90.91 | — | 3 finding(s)
-      row: <holding-id> | Sri Lanka (provisional) | 2,000,000 | 0.000007 | 3b | 5 | 236.01 | 202.29 | 3 finding(s)
+      row: <holding-id> | Sri Lanka (provisional) | 2,000,000 | 0.000007 | 3b | 5 | 148.92 | 25.07 | 4 finding(s)
     caption: 3 row(s). Each identifier resolves to the stored exposure, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
 
 ANNEX D [annexRegulatory] Where the regulatory lines come from

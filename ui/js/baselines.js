@@ -94,6 +94,86 @@ const BaselinesPage = (() => {
     return def.shape || 'bands';
   }
 
+  /* ── What each asset class reads ───────────────────────── */
+  const CLASSES = [
+    ['business-loans-unlisted-equity', 'Business loans and unlisted equity (§5.2)'],
+    ['listed-equity-corporate-bonds', 'Listed equity and corporate bonds (§5.1)'],
+    ['project-finance', 'Project finance (§5.3)'],
+    ['commercial-real-estate', 'Commercial real estate (§5.4)'],
+    ['mortgages', 'Mortgages (§5.5)'],
+    ['motor-vehicle-loans', 'Motor vehicle loans (§5.6)'],
+    ['use-of-proceeds', 'Use of proceeds (§5.7)'],
+    ['sovereign-debt', 'Sovereign debt (§5.9)'],
+    ['sub-sovereign-debt', 'Sub-sovereign debt (§5.10)'],
+    ['securitizations', 'Securitizations (§5.8)'],
+    ['part-b-facilitated', 'Facilitated emissions (Part B)'],
+    ['part-c-insurance', 'Insurance-associated emissions (Part C)'],
+  ];
+
+  function inForceCell(b) {
+    const r = b.effective;
+    if (!b.governed) return '<span class="bl-u">Not governed here — held in a data table</span>';
+    if (!r || !r.resolved) return `<span class="bl-u">${esc((r && r.basis) || 'Absent')}</span>`;
+    const vals = Object.entries(r.values || {}).slice(0, 4)
+      .map(([k, v]) => `<span class="bl-v">${num(v)}</span> <span class="bl-u">${esc(k)}</span>`).join(' · ');
+    const more = Object.keys(r.values || {}).length > 4 ? ' <span class="bl-u">…</span>' : '';
+    return `${vals}${more}<div class="bl-u">${esc(r.unit || '')}</div>`;
+  }
+
+  function scopeCell(b) {
+    const r = b.effective;
+    if (!b.governed || !r || !r.resolved) return '—';
+    if (r.provisional) return '<span class="bl-pill prov">Illustrative dataset — not client records.</span>';
+    return `<span class="bl-pill live">${esc(r.scope)} · version ${r.version}</span>`;
+  }
+
+  function proposedCell(b) {
+    const a = b.adopted;
+    if (!a) return `<span class="bl-u">${esc(b.absentReason || 'Nothing adoptable yet')}</span>`;
+    const v = typeof a.value === 'number' ? `<span class="bl-v">${num(a.value)}</span> ` : '';
+    return `${v}<span class="bl-u">${esc(a.publisher)}${a.vintage ? ` · ${a.vintage}` : ''} · ${esc(a.tier)}</span>`;
+  }
+
+  function verificationCell(b) {
+    const a = b.adopted;
+    if (!a) return '—';
+    const word = { primary: 'Read from the source', secondary_reported: 'Quoted — re-read before release', not_found: 'Not found' }[a.verification] || a.verification;
+    return `<a class="bl-src" href="${esc(a.url)}" target="_blank" rel="noopener">${esc(word)}</a>`;
+  }
+
+  function renderClass(data) {
+    const rows = $('bl-class-rows'); const empty = $('bl-class-empty');
+    if (!rows) return;
+    rows.innerHTML = (data.baselines || []).map(b => `<tr>
+      <td>${esc(b.label)}<div class="bl-u">${esc(b.unit)}</div></td>
+      <td>${esc((b.options || []).join(', '))}</td>
+      <td>${inForceCell(b)}</td>
+      <td>${scopeCell(b)}</td>
+      <td>${proposedCell(b)}</td>
+      <td>${verificationCell(b)}</td>
+    </tr>`).join('');
+    if (empty) {
+      empty.hidden = (data.baselines || []).length > 0;
+      empty.textContent = 'This class reads no baseline the register holds.';
+    }
+  }
+
+  async function loadClass() {
+    const sel = $('bl-class');
+    if (!sel) return;
+    try {
+      const data = await call(`/for/${encodeURIComponent(sel.value)}?country=${encodeURIComponent(state.country)}`);
+      renderClass(data);
+    } catch (e) { say(e.message, true); }
+  }
+
+  function initClassPicker() {
+    const sel = $('bl-class');
+    if (!sel) return;
+    sel.innerHTML = CLASSES.map(([id, label]) => `<option value="${esc(id)}">${esc(label)}</option>`).join('');
+    sel.addEventListener('change', loadClass);
+  }
+
   function renderEffective() {
     const host = $('bl-effective');
     if (!host) return;
@@ -289,9 +369,13 @@ const BaselinesPage = (() => {
     } catch (err) {
       say(err.message, true);
     }
+    /* The class panel reads the same country the position was read with, so
+       it is asked only once that is known. */
+    await loadClass();
   }
 
   function init() {
+    initClassPicker();
     /* Wired before the first request, so a country typed into the field is
        part of what that request asks for. */
     const country = $('bl-country');

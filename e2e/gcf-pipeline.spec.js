@@ -66,6 +66,17 @@ test('the cycle is on screen, the sample is adopted, a project moves a stage and
   /* Adopt it from the intake tab: the pill goes, the book is the bank's. */
   await page.locator('#gcfTabs [data-panel="intake"]').click();
   await expect(page.locator('#gcfIntakeForm')).toBeVisible();
+
+  /* The results-area dropdown follows the stream: mitigation offers only the
+     four mitigation areas, adaptation only the four adaptation areas. */
+  const areaCodes = async () => page.locator('#gcfI-resultsArea option')
+    .evaluateAll(os => os.map(o => o.value));
+  await page.selectOption('#gcfI-stream', 'mitigation');
+  expect((await areaCodes()).sort()).toEqual(['BA', 'EP', 'FL', 'LT']);
+  await page.selectOption('#gcfI-stream', 'adaptation');
+  expect((await areaCodes()).sort()).toEqual(['EE', 'HW', 'IB', 'VC']);
+  await page.selectOption('#gcfI-stream', 'mitigation');
+
   const sampleBefore = await page.locator('#gcfSampleBanner').isVisible();
   if (sampleBefore) {
     await page.locator('#gcfAdopt').click();

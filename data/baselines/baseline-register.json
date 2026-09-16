@@ -1,0 +1,1744 @@
+{
+  "_meta": {
+    "title": "The Baseline Register — every figure a financed-emissions disclosure rests on, linked to the asset classes that read it",
+    "document": "docs/BASELINE-REGISTER.md",
+    "compiledOn": "2026-09-16",
+    "purpose": "The machine-readable half of the register: one entry per baseline, the PCAF asset classes and options that read it, every candidate value with its provenance and verification level, the value proposed for release, and the improvement step. Part 2 seeds the governed registry (src/domains/baseline) from the adopted candidates; tests/baseline-register.test.js holds this file and the document to one another.",
+    "rule": "Where a published standard sets the figure, the standard's value wins and this holds only the citation; where none does, the figure is regional judgement and lives in the governed registry — scoped global → country → organisation, released, versioned, superseded only with a reason.",
+    "hierarchy": "Sri Lankan published source → regional → global, the tier printed beside the figure wherever it is used; within a tier, verified reported → reported → physical activity → economic activity.",
+    "verificationLevels": {
+      "primary": "The publishing document was opened and the number read from it, with page or table cited. A disclosure may rest on it.",
+      "secondary_reported": "The figure and its citation come from a description of the primary source (a search excerpt, a third-party summary, a republisher); the document was not opened. A disclosure may not rest on it until re-read from the source — it is a worklist row with a URL.",
+      "not_found": "The source is known to exist but no figure could be evidenced. Reported absent with what is needed."
+    },
+    "sessionConstraint": "Compiled from a cloud session whose network policy refuses every general website; only GitHub raw content, Google Cloud Storage and one Amazon S3 bucket were reachable, so every Sri Lankan government, IEA, UNFCCC, CEB, SLSEA, DCS and vendor figure is secondary_reported. PCAF documents held in the repository and open datasets on those hosts are primary.",
+    "noAdoptedRowIsInvented": true,
+    "classification": "Every product classifies by the substance of the financed asset into PCAF's asset classes — a home-purchase facility is a mortgage, a vehicle facility a motor vehicle loan, a facility to a business a business loan, a bond or sukuk holding a corporate bond or sovereign debt — exactly as for any bank. PCAF's classes are the only vocabulary; no instrument-specific layer sits on top."
+  },
+  "assetClasses": [
+    {
+      "id": "listed-equity-corporate-bonds",
+      "label": "Listed equity and corporate bonds",
+      "part": "A",
+      "section": "§5.1",
+      "engine": "built"
+    },
+    {
+      "id": "business-loans-unlisted-equity",
+      "label": "Business loans and unlisted equity",
+      "part": "A",
+      "section": "§5.2",
+      "engine": "built"
+    },
+    {
+      "id": "project-finance",
+      "label": "Project finance",
+      "part": "A",
+      "section": "§5.3",
+      "engine": "built"
+    },
+    {
+      "id": "commercial-real-estate",
+      "label": "Commercial real estate",
+      "part": "A",
+      "section": "§5.4",
+      "engine": "built"
+    },
+    {
+      "id": "mortgages",
+      "label": "Mortgages",
+      "part": "A",
+      "section": "§5.5",
+      "engine": "built"
+    },
+    {
+      "id": "motor-vehicle-loans",
+      "label": "Motor vehicle loans",
+      "part": "A",
+      "section": "§5.6",
+      "engine": "not built"
+    },
+    {
+      "id": "use-of-proceeds",
+      "label": "Use of proceeds structures",
+      "part": "A",
+      "section": "§5.7",
+      "engine": "not built"
+    },
+    {
+      "id": "securitizations",
+      "label": "Securitizations and structured products",
+      "part": "A",
+      "section": "§5.8",
+      "engine": "not built"
+    },
+    {
+      "id": "sovereign-debt",
+      "label": "Sovereign debt",
+      "part": "A",
+      "section": "§5.9",
+      "engine": "built"
+    },
+    {
+      "id": "sub-sovereign-debt",
+      "label": "Sub-sovereign debt",
+      "part": "A",
+      "section": "§5.10",
+      "engine": "not built"
+    },
+    {
+      "id": "part-b-facilitated",
+      "label": "Facilitated emissions (capital markets)",
+      "part": "B",
+      "section": "Part B",
+      "engine": "not built"
+    },
+    {
+      "id": "part-c-insurance",
+      "label": "Insurance-associated emissions",
+      "part": "C",
+      "section": "Part C",
+      "engine": "built"
+    }
+  ],
+  "baselines": [
+    {
+      "key": "grid_emission_factor_average",
+      "label": "Electricity grid emission factor — average (location-based)",
+      "metricKey": "grid_emission_factor_kgCO2e_kWh",
+      "shape": "single",
+      "unit": "tCO2e/MWh (= kgCO2e/kWh)",
+      "basis": "average",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "scope 2"
+          ]
+        },
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "1b",
+            "2a",
+            "2b",
+            "3"
+          ]
+        },
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "1b",
+            "2a",
+            "2b",
+            "3"
+          ]
+        },
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "EV",
+            "PHEV"
+          ]
+        },
+        {
+          "assetClass": "use-of-proceeds",
+          "options": [
+            "look-through"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "part-c-insurance",
+          "options": [
+            "A5.2 site electricity"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Part A Third Edition fn 127/136 (pp.79, 85): average emission factors are the same as location-based factors; supplier-specific (market-based) always preferred where available.",
+      "candidates": [
+        {
+          "id": "ember_2024",
+          "scope": "country",
+          "country": "LK",
+          "value": 0.37573,
+          "vintage": 2024,
+          "tier": "LK open data",
+          "publisher": "Ember",
+          "title": "Yearly Electricity Data — yearly_full_release_long_format.csv (file of 23 Jun 2026)",
+          "url": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv",
+          "page": "Sri Lanka rows; methodology PDF p.83",
+          "verification": "primary",
+          "licence": "CC BY 4.0 per site (secondary_reported)",
+          "provisional": true,
+          "notes": "CO2 not CO2e; generation not consumption; IRENA generation, IPCC factors. Series: 2019 518.30, 2020 512.73, 2021 418.05, 2022 410.15, 2023 417.33, 2024 375.73, 2025 321.16 gCO2/kWh."
+        },
+        {
+          "id": "ember_2023",
+          "scope": "country",
+          "country": "LK",
+          "value": 0.41733,
+          "vintage": 2023,
+          "tier": "LK open data",
+          "publisher": "Ember",
+          "title": "Yearly Electricity Data",
+          "url": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv",
+          "page": "Sri Lanka rows",
+          "verification": "primary",
+          "licence": "CC BY 4.0 per site",
+          "provisional": true,
+          "notes": "For FY2023 books."
+        },
+        {
+          "id": "ltgep_2023",
+          "scope": "country",
+          "country": "LK",
+          "value": 0.5,
+          "vintage": 2023,
+          "tier": "LK official planning figure",
+          "publisher": "Ceylon Electricity Board",
+          "title": "LTGEP 2023-2042 infographic",
+          "url": "https://www.ceb.lk/front_img/img_reports/1677831657LTGEP_Infographic_Final2.pdf",
+          "page": "infographic",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Rounded to one decimal; falls to 0.2 by 2042. Not an annual factor."
+        },
+        {
+          "id": "a5_defaults_placeholder",
+          "scope": "country",
+          "country": "LK",
+          "value": 0.53,
+          "vintage": null,
+          "tier": "placeholder",
+          "publisher": "CarbonIQ (data/factors/a5-defaults.json)",
+          "title": "Sri Lanka grid placeholder",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/factors/a5-defaults.json",
+          "page": "gridEF",
+          "verification": "not_found",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Retire — ~40 % above the evidenced 2024 average."
+        }
+      ],
+      "adopted": "ember_2024",
+      "stalenessYears": 1,
+      "improvement": [
+        "Open Energy Balance 2018/2019/2021/2023/2024 and record every year's margins with page cites",
+        "Obtain or compute a CEB/SLSEA-published national average and release it as the LK country baseline",
+        "Monthly/hourly factors from PUCSL generation statistics and the CEB live feed",
+        "Recognise market-based claims only on redeemed I-RECs (Green Certificate Company) or direct-line PPAs"
+      ],
+      "correctsRepo": [
+        "data/factors/a5-defaults.json gridEF 0.53",
+        "data/pcaf-parta/country-config.json LK grid_average 0.5 and stale_after_years 3"
+      ]
+    },
+    {
+      "key": "grid_displacement_factor",
+      "label": "Electricity grid displacement factor — operating, build and combined margins (avoided emissions only)",
+      "metricKey": "grid_displacement_factor_tCO2e_MWh",
+      "shape": "margins",
+      "unit": "tCO2e/MWh",
+      "basis": "operating_margin | build_margin | combined_margin (weights recorded)",
+      "appliesTo": [
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "avoided emissions (supplement)"
+          ]
+        },
+        {
+          "assetClass": "use-of-proceeds",
+          "options": [
+            "green-bond impact reporting"
+          ]
+        }
+      ],
+      "standardRule": "PCAF avoided-emissions supplement pp.24–25 Table A.1: operating margin preferred, average mix only as a last resort; reported apart from scope 1/2/3 (Part A p.15). CDM Tool 07: CM = w_OM·OM + w_BM·BM, 0.75/0.25 for wind and solar (secondary_reported).",
+      "candidates": [
+        {
+          "id": "slsea_2022",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "operating_margin": 0.7123,
+            "build_margin": 0.5841,
+            "combined_margin": 0.6482,
+            "weights": "0.5/0.5 as published; 0.6803 at Tool 07 wind/solar 0.75/0.25"
+          },
+          "vintage": 2022,
+          "tier": "LK official",
+          "publisher": "Sri Lanka Sustainable Energy Authority with the Climate Change Secretariat (DNA)",
+          "title": "Sri Lanka Energy Balance 2022 — grid emission factors",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
+          "page": "grid emission factor section",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Latest evidenced year. Also republished at http://www.climatechange.lk/DNA/Grid_Emission_Factors.html"
+        },
+        {
+          "id": "slsea_2020",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "operating_margin": 0.7084,
+            "build_margin": 0.794,
+            "combined_margin": 0.7512,
+            "weights": "0.5/0.5"
+          },
+          "vintage": 2020,
+          "tier": "LK official",
+          "publisher": "SLSEA / DNA",
+          "title": "Sri Lanka Energy Balance 2020",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2020.pdf",
+          "page": "grid emission factor section",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": ""
+        },
+        {
+          "id": "slsea_2017",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "operating_margin": 0.6993,
+            "build_margin": 0.9224,
+            "combined_margin": 0.8108,
+            "weights": "0.5/0.5"
+          },
+          "vintage": 2017,
+          "tier": "LK official",
+          "publisher": "SLSEA / DNA",
+          "title": "Sri Lanka Energy Balance 2017",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2017.pdf",
+          "page": "grid emission factor section",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Superseded. The repository labels 0.9224 as the operating margin — it is the build margin."
+        },
+        {
+          "id": "ifi_harmonised",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": null,
+          "tier": "IFI",
+          "publisher": "UNFCCC / IFI Technical Working Group",
+          "title": "Harmonized IFI Default Grid Emission Factors dataset",
+          "url": "https://unfccc.int/documents/198197",
+          "page": "Sri Lanka row",
+          "verification": "not_found",
+          "licence": "free",
+          "provisional": true,
+          "notes": "PCAF's own reference list cites this dataset (Part A p.188)."
+        }
+      ],
+      "adopted": "slsea_2022",
+      "stalenessYears": 2,
+      "improvement": [
+        "Fill 2018/2019/2021/2023/2024 from the Energy Balances",
+        "Read the IFI harmonised Sri Lanka row",
+        "Record the weighting used on every avoided-emissions figure"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/country-config.json LK: relabel 0.9224 → build_margin, add operating_margin 0.6993, add the 2020 and 2022 sets as a dated series"
+      ]
+    },
+    {
+      "key": "fuel_emission_factors",
+      "label": "Fuel combustion emission factors — diesel, petrol, kerosene, furnace oil, LPG, natural gas, coal, biomass",
+      "metricKey": "fuel_emission_factor_kgCO2e_kWh",
+      "shape": "table",
+      "unit": "kgCO2 per kWh (net CV); per litre with a stated density",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "scope 1"
+          ]
+        },
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "1a",
+            "1b"
+          ]
+        },
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "1a",
+            "1b"
+          ]
+        },
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "1a",
+            "1b",
+            "2a",
+            "2b",
+            "3a",
+            "3b"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "2a"
+          ]
+        },
+        {
+          "assetClass": "part-c-insurance",
+          "options": [
+            "A5.2 diesel"
+          ]
+        }
+      ],
+      "standardRule": "The standard's value wins: IPCC 2006 Guidelines Vol. 2 Table 1.4 (kg CO2/TJ) × Table 1.2 NCV × a stated density; CH4/N2O from Tables 2.2–2.5 and 3.2.2. PCAF p.48: name the source, reporting period or publication date. Sri Lanka has no biofuel blending mandate, so no biogenic deduction applies.",
+      "candidates": [
+        {
+          "id": "ipcc_2006_tier1",
+          "scope": "global",
+          "country": null,
+          "value": {
+            "diesel_kgCO2_per_kWh": 0.2668,
+            "petrol_kgCO2_per_kWh": 0.2495,
+            "kerosene_kgCO2_per_kWh": 0.2588,
+            "furnace_oil_kgCO2_per_kWh": 0.2786,
+            "lpg_kgCO2_per_kWh": 0.2272,
+            "natural_gas_kgCO2_per_kWh": 0.202,
+            "bituminous_coal_kgCO2_per_kWh": 0.3406,
+            "diesel_kgCO2_per_litre_at_0.84": 2.68,
+            "kg_per_TJ": {
+              "diesel": 74100,
+              "petrol": 69300,
+              "kerosene": 71900,
+              "furnace_oil": 77400,
+              "lpg": 63100,
+              "natural_gas": 56100,
+              "bituminous_coal": 94600,
+              "wood_biogenic_memo": 112000
+            },
+            "ncv_TJ_per_Gg": {
+              "diesel": 43.0,
+              "petrol": 44.3,
+              "kerosene": 43.8,
+              "furnace_oil": 40.4,
+              "lpg": 47.3,
+              "natural_gas": 48.0,
+              "bituminous_coal": 25.8
+            }
+          },
+          "vintage": 2006,
+          "tier": "global standard",
+          "publisher": "IPCC",
+          "title": "2006 IPCC Guidelines for National Greenhouse Gas Inventories, Vol. 2 Energy, Tables 1.2 and 1.4",
+          "url": "https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_1_Ch1_Introduction.pdf",
+          "page": "Tables 1.2, 1.4",
+          "verification": "secondary_reported",
+          "licence": "free; IPCC copyright, reproduced with citation",
+          "provisional": true,
+          "notes": "NCVs for petrol, kerosene, diesel and furnace oil snippet-confirmed; the kg/TJ values are the commonly quoted table values and must be re-read. Per-kWh figures are arithmetic on kg/TJ (1 TJ = 277,777.8 kWh). Density is not tabled in Vol. 2 — take from the SLSEA Energy Balance appendix."
+        },
+        {
+          "id": "desnz_2025_mineral",
+          "scope": "global",
+          "country": "GB",
+          "value": null,
+          "vintage": 2025,
+          "tier": "UK national set (proxy)",
+          "publisher": "UK Department for Energy Security and Net Zero",
+          "title": "Greenhouse gas reporting: conversion factors 2025 — Fuels, 100 % mineral diesel and petrol rows",
+          "url": "https://www.gov.uk/government/publications/greenhouse-gas-reporting-conversion-factors-2025",
+          "page": "Fuels sheet",
+          "verification": "not_found",
+          "licence": "Open Government Licence v3.0",
+          "provisional": true,
+          "notes": "Use the 100 % mineral rows, never the average-blend rows (which embed 3.02 % / 8.37 % UK biofuel volumes). Only 'diesel average blend ≈ 2.51 kgCO2e/l' surfaced."
+        }
+      ],
+      "adopted": "ipcc_2006_tier1",
+      "stalenessYears": null,
+      "improvement": [
+        "Sri Lankan NCV and density from the SLSEA Energy Balance appendix and CPC/LIOC specifications (Euro 4 Super Diesel 10 ppm S since 2 Jul 2018)",
+        "Supplier certificates of quality per batch — the route to Option 1a verified, score 1"
+      ],
+      "correctsRepo": [
+        "data/factors/a5-defaults.json dieselEF 2.68 'DEFRA-aligned' — re-source to IPCC × SLSEA density"
+      ]
+    },
+    {
+      "key": "gwp_set",
+      "label": "Global warming potential set",
+      "metricKey": "gwp_100yr",
+      "shape": "table",
+      "unit": "kgCO2e per kg of gas, 100-year horizon",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "use-of-proceeds",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "securitizations",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "sovereign-debt",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "sub-sovereign-debt",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "all"
+          ]
+        },
+        {
+          "assetClass": "part-c-insurance",
+          "options": [
+            "all"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Part A Third Edition p.162 (primary): the seven Kyoto gases, converted with 100-year GWPs — the AR5 values published by the GHG Protocol or the IPCC's most recent assessment report; glossary p.176: PCAF recommends 100-year GWPs without climate-carbon feedback from the most recent report; biogenic CO2 reported separately.",
+      "candidates": [
+        {
+          "id": "ar6_100yr",
+          "scope": "global",
+          "country": null,
+          "value": {
+            "CH4_fossil": 29.8,
+            "CH4_non_fossil": 27.0,
+            "N2O": 273,
+            "HFC-32": 771,
+            "HFC-125": 3740,
+            "HFC-134a": 1530,
+            "R-410A": 2256,
+            "R-404A": 4728,
+            "R-407C": 1908,
+            "SF6": 25200,
+            "NF3": 17400
+          },
+          "vintage": 2021,
+          "tier": "global standard",
+          "publisher": "IPCC",
+          "title": "AR6 WG1 Chapter 7, Table 7.15",
+          "url": "https://www.ipcc.ch/report/ar6/wg1/downloads/report/IPCC_AR6_WGI_Chapter07.pdf",
+          "page": "Table 7.15",
+          "verification": "secondary_reported",
+          "licence": "free; IPCC copyright",
+          "provisional": true,
+          "notes": "SF6 value to check (some tables 24,300)."
+        },
+        {
+          "id": "ar5_100yr",
+          "scope": "global",
+          "country": null,
+          "value": {
+            "CH4_fossil": 30,
+            "CH4_non_fossil": 28,
+            "N2O": 265,
+            "HFC-32": 677,
+            "HFC-125": 3170,
+            "HFC-134a": 1300,
+            "R-410A": 1924,
+            "R-404A": 3943,
+            "R-407C": 1624,
+            "SF6": 23500,
+            "NF3": 16100
+          },
+          "vintage": 2013,
+          "tier": "global standard",
+          "publisher": "IPCC",
+          "title": "AR5 WG1 Chapter 8, Table 8.A.1 (no climate-carbon feedback)",
+          "url": "https://www.ipcc.ch/site/assets/uploads/2018/07/WGI_AR5.Chap_.8_SM.pdf",
+          "page": "Table 8.A.1",
+          "verification": "secondary_reported",
+          "licence": "free; IPCC copyright",
+          "provisional": true,
+          "notes": "The basis data/factors/refrigerant-gwp.json is fixed at today."
+        }
+      ],
+      "adopted": "ar6_100yr",
+      "stalenessYears": null,
+      "improvement": [
+        "Open AR5 Table 8.A.1 and AR6 Table 7.15; decide the product-wide basis once and record the reason (Part C's refrigerant table restates R-410A 1,924 → 2,256)"
+      ],
+      "correctsRepo": [
+        "data/factors/refrigerant-gwp.json basis AR5 — product-wide decision pending"
+      ]
+    },
+    {
+      "key": "sector_emission_intensity",
+      "label": "Sector-average emission intensity per unit of revenue and per unit of assets (EEIO)",
+      "metricKey": "sector_emission_intensity_per_revenue",
+      "shape": "sector_table",
+      "unit": "kgCO2e per USD of revenue (base year 2023, producer price); re-based to LKR with CBSL FX and a DCS deflator, disclosed",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "3a",
+            "3b",
+            "3c"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "3a",
+            "3b",
+            "3c",
+            "loans to FIs (economy-wide, score 5)"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "3"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition Tables 5.1-2 p.46 and 5.2-1 p.60: 3a = 4, 3b = 5, 3c = 5; equations Annex Table 10.1-2 p.192; sector-specific factors (paddy rice, not agriculture) p.48/62; uncorrected figure as the minimum p.65; inflation adjustment of score 4–5 economic factors disclosed, Box 6.1-5 p.167.",
+      "candidates": [
+        {
+          "id": "open_ceda_2025_lka",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "sampleRows_kgCO2e_per_USD_2023": {
+              "grain_farming": 0.853,
+              "electric_power": 3.506,
+              "cement_manufacturing": 8.487,
+              "ready_mix_concrete": 2.282,
+              "iron_and_steel_mills": 2.428,
+              "apparel": 0.304,
+              "accommodation": 0.275,
+              "sugar_and_confectionery": 0.481
+            },
+            "sectors": 400,
+            "baseYear": 2023
+          },
+          "vintage": 2025,
+          "tier": "LK named country, open licence",
+          "publisher": "Watershed (CEDA by Watershed)",
+          "title": "Open CEDA 2025 — sheet GHG_t_Raw, row LKA",
+          "url": "https://open-ceda.s3.amazonaws.com/data/Open%20CEDA%202025%20by%20Watershed.xlsx",
+          "page": "GHG_t_Raw row LKA; Metadata; Country to region mapping",
+          "verification": "primary",
+          "licence": "CC BY-SA 4.0 (attribution 'CEDA by Watershed'; share-alike on derivatives)",
+          "provisional": true,
+          "notes": "One GHG total per sector, not split into scope 1 and scope 2; US BEA sector structure (concord SLSIC → CEDA-400); the workbook labels Sri Lanka 'Central Asia' — override to Southern Asia; its LKR conversion uses a US price index and Openexchangerates FX (LKR/USD 2022 316.53, 2023 330.38, 2024 305.25, 2025 298.40)."
+        },
+        {
+          "id": "pcaf_ef_database",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2025,
+          "tier": "PCAF signatory database",
+          "publisher": "PCAF",
+          "title": "PCAF Emission Factor Database (CEDA-based since 2025; DQS 3–5 on each row)",
+          "url": "https://carbonaccountingfinancials.com/files/database/PCAF-2025Database-2Pager-R2.pdf",
+          "page": "2-pager",
+          "verification": "secondary_reported",
+          "licence": "signatories only (PCAF Third Edition p.48, primary)",
+          "provisional": true,
+          "notes": "Confirm the Sri Lanka row is country-level, not 'RoW Asia and Pacific'."
+        },
+        {
+          "id": "exiobase_3_8_2_wa",
+          "scope": "regional",
+          "country": null,
+          "value": null,
+          "vintage": 2021,
+          "tier": "regional (RoW Asia and Pacific, 62 countries)",
+          "publisher": "EXIOBASE consortium",
+          "title": "EXIOBASE 3.8.2 — region WA, 163 industries, per M€",
+          "url": "https://zenodo.org/records/5589597",
+          "page": "IOT pxp/ixi + F extension",
+          "verification": "secondary_reported",
+          "licence": "CC BY-SA (3.8.2); current 3.9+/3.10 releases CC BY-NC-ND — not usable commercially without a licence from XIO-SA",
+          "provisional": true,
+          "notes": "The only open MRIO separating scope-1 direct intensity from the scope-2 electricity path. Region assignment from country_converter (primary)."
+        },
+        {
+          "id": "repo_sector_factors",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2022,
+          "tier": "global order-of-magnitude at an indicative LKR rate",
+          "publisher": "CarbonIQ (data/pcaf-parta/sector-factors.json)",
+          "title": "Provisional sector factor library v1.0.0",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/pcaf-parta/sector-factors.json",
+          "page": "all rows provisional",
+          "verification": "not_found",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Replace every row from Open CEDA LKA after concordance; re-derive the plausibility bands."
+        }
+      ],
+      "adopted": "open_ceda_2025_lka",
+      "stalenessYears": 1,
+      "improvement": [
+        "Build the SLSIC/ISIC Rev.4 → CEDA-400 concordance (1–2 analyst-weeks)",
+        "Join PCAF and reconcile the Sri Lanka rows",
+        "Scope-1/scope-2 split cross-check with EXIOBASE 3.8.2 WA (pymrio)",
+        "A Sri Lanka-specific EEIO: DCS SIOT 2010 or ADB-MRIO LKA (35 sectors, 2022) × BTR1 inventory × Energy Balance 2022, CBSL FX, DCS deflators — 3–6 months, verified by an ISO 14064 lead verifier"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/sector-factors.json every row",
+        "data/baselines/seed.json sector_intensity bands"
+      ]
+    },
+    {
+      "key": "sector_intensity_bands",
+      "label": "Sector carbon-intensity plausibility bands",
+      "metricKey": "sector_intensity_tCO2e_per_million_revenue",
+      "shape": "sector_bands",
+      "unit": "tCO2e per million LKR of revenue (scope 1 and 2), low–high",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "data-truth check"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "data-truth check"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "data-truth check"
+          ]
+        }
+      ],
+      "standardRule": "PCAF sets no such test; the bands are regional judgement — governed here.",
+      "candidates": [
+        {
+          "id": "seed_bands_lk",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2026,
+          "tier": "illustrative",
+          "publisher": "CarbonIQ (data/baselines/seed.json)",
+          "title": "Shipped provisional bands — ¼ to 4× the provisional sector factor",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/baselines/seed.json",
+          "page": "sector_intensity_tCO2e_per_million_revenue",
+          "verification": "primary",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Read from the shipped seed; illustrative. Re-derive from the adopted Open CEDA LKA rows."
+        }
+      ],
+      "adopted": "seed_bands_lk",
+      "stalenessYears": 1,
+      "improvement": [
+        "Re-derive from Open CEDA LKA once concorded; release as an LK country baseline with the version cited on every finding"
+      ],
+      "correctsRepo": []
+    },
+    {
+      "key": "building_energy_intensity",
+      "label": "Building energy intensity by type (kWh per m² per year)",
+      "metricKey": "building_energy_intensity_kWh_m2",
+      "shape": "building_type_table",
+      "unit": "kWh/m²/yr (gross floor area unless stated)",
+      "appliesTo": [
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "2b"
+          ]
+        },
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "2b"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition Tables 5.4-1 p.80 / 5.5-1 p.86: 2b building-type-and-location statistics × floor area = score 4; fn 130 p.81 floor-area basis must match the factor; fn 129/139 equivalent certificates where no official label exists. Floor area accepted in m² or ft² (1 m² = 10.7639 ft²); perches are land and are refused in the floor-area field.",
+      "candidates": [
+        {
+          "id": "supermarket_uom_2022",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "supermarket_total_floor": 465.4,
+            "supermarket_sales_floor": 780.0
+          },
+          "vintage": 2022,
+          "tier": "LK",
+          "publisher": "IEEE / University of Moratuwa",
+          "title": "Benchmarking Energy and Water Consumption of Supermarkets in Sri Lanka (n = 101)",
+          "url": "https://ieeexplore.ieee.org/document/9906145/",
+          "page": "abstract",
+          "verification": "secondary_reported",
+          "licence": "IEEE paywalled; UoM thesis copy may be open",
+          "provisional": true,
+          "notes": "Strongest Sri Lankan per-m² evidence found."
+        },
+        {
+          "id": "office_colombo_aggregate",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "office_ac_typical": 250,
+            "office_ac_range": [
+              235,
+              285
+            ]
+          },
+          "vintage": 2015,
+          "tier": "LK",
+          "publisher": "IESL SLEN and/or University of Moratuwa thesis (attribution unconfirmed)",
+          "title": "Building Energy Standards/Codes: Present Status and Way Forward; Electrical energy saving potential in Sri Lanka office buildings (87 Colombo offices, ~73,000 m²)",
+          "url": "https://iesl.lk/SLEN/46/Energy.php",
+          "page": "unconfirmed",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Open both documents to confirm which carries which number."
+        },
+        {
+          "id": "office_mdpi_2023",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "modern_office_cases": [
+              337.29,
+              210.99,
+              382.5
+            ],
+            "historic_naturally_ventilated_cases": [
+              143.74,
+              156.34,
+              209.39
+            ]
+          },
+          "vintage": 2023,
+          "tier": "LK",
+          "publisher": "MDPI Architecture 3(3):19",
+          "title": "Analysis of Operational Energy between Adaptive Reuse Historic Buildings and Modern Office Buildings: A Case Study in Sri Lanka",
+          "url": "https://doi.org/10.3390/architecture3030019",
+          "page": "results",
+          "verification": "secondary_reported",
+          "licence": "CC BY (not verified for this article)",
+          "provisional": true,
+          "notes": "n = 3 + 3."
+        },
+        {
+          "id": "slsea_benchmark_analysis",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": null,
+          "tier": "LK official",
+          "publisher": "Sri Lanka Sustainable Energy Authority",
+          "title": "Energy Consumption Benchmark Analysis (commercial, hospitality, apparel, tea); Gazette 2339/09 of 4 Jul 2023 benchmark regulation",
+          "url": "https://www.energy.gov.lk/images/energy-management/energy-consumption-benchmark-analysis.pdf",
+          "page": "unknown",
+          "verification": "not_found",
+          "licence": "public",
+          "provisional": true,
+          "notes": "The document most likely to settle office and hotel per-m² — first to open. Hotel benchmarks are per guest-night (SLSEA/PEEB, Nov 2025)."
+        },
+        {
+          "id": "cbecs_2018",
+          "scope": "global",
+          "country": "US",
+          "value": {
+            "all_commercial_site": 222.7
+          },
+          "vintage": 2018,
+          "tier": "global fallback",
+          "publisher": "US EIA",
+          "title": "CBECS 2018 — 70.6 kBtu/ft² site (1 kBtu/ft² = 3.1546 kWh/m²); per-type table not captured",
+          "url": "https://www.eia.gov/consumption/commercial/pba/overview.php",
+          "page": "overview",
+          "verification": "secondary_reported",
+          "licence": "public domain",
+          "provisional": true,
+          "notes": ""
+        },
+        {
+          "id": "crrem_apac",
+          "scope": "regional",
+          "country": null,
+          "value": null,
+          "vintage": 2026,
+          "tier": "regional proxy (India, Malaysia, Singapore)",
+          "publisher": "CRREM",
+          "title": "CRREM Global Pathways v2.05 — Sri Lanka not covered",
+          "url": "https://crrem.org/pathways/",
+          "page": "pathway files",
+          "verification": "secondary_reported",
+          "licence": "open for use; commercial embedding needs a CRREM License Partner agreement",
+          "provisional": true,
+          "notes": ""
+        },
+        {
+          "id": "repo_energy_statistics",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "office": 160,
+            "retail": 210,
+            "hotel": 290,
+            "residential": [
+              95,
+              110
+            ]
+          },
+          "vintage": 2026,
+          "tier": "provisional order-of-magnitude",
+          "publisher": "CarbonIQ (data/pcaf-parta/real-estate/energy-statistics.json)",
+          "title": "Provisional building-type intensities v1.0.0",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/pcaf-parta/real-estate/energy-statistics.json",
+          "page": "buildingTypes",
+          "verification": "not_found",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Office low against every LK figure found; retail under half the supermarket benchmark; hotel and residential unsupported."
+        }
+      ],
+      "adopted": "supermarket_uom_2022",
+      "stalenessYears": 3,
+      "improvement": [
+        "Open the SLSEA benchmark analysis and the IESL/UoM office studies; release LK values by type where evidenced, regional/global elsewhere with the tier printed",
+        "Floor area in ft² captured at origination from the valuation (score 5 → 4)",
+        "Statutory lever: consumers above 600,000 kWh/yr already report metered consumption under Gazette 1715/12 — ask for it (score 4 → 2)",
+        "CEB/LECO account data with consent (Option 1b)"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/real-estate/energy-statistics.json buildingTypes"
+      ]
+    },
+    {
+      "key": "building_energy_per_dwelling",
+      "label": "Residential energy per dwelling (Option 3 statistic)",
+      "metricKey": "building_energy_per_dwelling_kWh",
+      "shape": "single",
+      "unit": "kWh per dwelling per year",
+      "appliesTo": [
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "3"
+          ]
+        },
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "3"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Table 5.5-1 p.86: statistics per building × number of buildings = score 5; p.85 FIs without property size may use average consumption per building and region.",
+      "candidates": [
+        {
+          "id": "ceb_digest_domestic",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2024,
+          "tier": "LK official",
+          "publisher": "Ceylon Electricity Board",
+          "title": "Statistical Digest 2024 — domestic sales ÷ domestic accounts",
+          "url": "https://www.ceb.lk/publication-media/statistical-reports/141/en",
+          "page": "sales by tariff category; consumers by category",
+          "verification": "not_found",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Gives kWh/account/yr directly."
+        },
+        {
+          "id": "recon_sl",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2025,
+          "tier": "LK open dataset",
+          "publisher": "LIRNEasia / IEEE DataPort",
+          "title": "RECON-SL — 4,063 LECO households, Oct 2022–Jan 2025, 1,438 smart-metered, three survey waves",
+          "url": "https://ieee-dataport.org/open-access/residential-electricity-consumption-dataset-sri-lanka-recon-sl",
+          "page": "dataset",
+          "verification": "secondary_reported",
+          "licence": "open access (terms on page, not verified)",
+          "provisional": true,
+          "notes": "The route to a per-dwelling and possibly per-m² Sri Lankan baseline."
+        }
+      ],
+      "adopted": null,
+      "absentReason": "No Sri Lankan per-dwelling figure could be read from its source in this session: the CEB Statistical Digest tables (domestic sales ÷ domestic accounts) and RECON-SL are named as the sources to open; until one is read, mortgages Option 3 reports the statistic absent rather than a borrowed one.",
+      "stalenessYears": 1,
+      "improvement": [
+        "Open the CEB digest; derive per-m² from RECON-SL and release it (Option 2b, score 4)"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/real-estate/energy-statistics.json residential rows"
+      ]
+    },
+    {
+      "key": "vehicle_annual_distance",
+      "label": "Vehicle annual distance travelled by class",
+      "metricKey": "vehicle_annual_distance_km",
+      "shape": "vehicle_class_table",
+      "unit": "km per vehicle per year",
+      "appliesTo": [
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "2a",
+            "2b",
+            "3a",
+            "3b"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition fn 146 p.93: local statistics = province/state or small-country level — a Sri-Lanka-wide statistic is local (Option 2a, score 2); a South-Asian statistic is regional (2b, score 3). Table 5.6-1 p.94.",
+      "candidates": [
+        {
+          "id": "esmap_2000",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "car_petrol": 8274,
+            "car_diesel": 16759,
+            "three_wheeler_petrol": 19676,
+            "motorcycle_4stroke": 5171,
+            "motorcycle_2stroke": 5533
+          },
+          "vintage": 2000,
+          "tier": "LK (local)",
+          "publisher": "World Bank / ESMAP",
+          "title": "Sustainable Transport Options for Sri Lanka (ESM262)",
+          "url": "https://documents1.worldbank.org/curated/en/503521468105868544/txt/ESM2620v10CE0S1e0Transport01public1.txt",
+          "page": "vehicle-use table",
+          "verification": "secondary_reported",
+          "licence": "World Bank Open Knowledge (CC BY 3.0 IGO typical)",
+          "provisional": true,
+          "notes": "The only Sri Lankan per-class set found; 25 years old — vintage disclosed on every use. Vans, buses, lorries likely in the document."
+        },
+        {
+          "id": "sltb_bus_2019",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "sltb_bus_per_fleet_bus": 61509
+          },
+          "vintage": 2019,
+          "tier": "LK (derived)",
+          "publisher": "National Transport Commission via Team Watchdog transcription",
+          "title": "National Transport Statistics 2020–21 — SLTB operated km ÷ average fleet",
+          "url": "https://raw.githubusercontent.com/team-watchdog/databank-sri-lanka/main/datasets/transport-sri-lanka/",
+          "page": "SLTB Operational Data",
+          "verification": "secondary_reported",
+          "licence": "government statistics; mirror licence null",
+          "provisional": true,
+          "notes": "State buses only."
+        },
+        {
+          "id": "india_two_wheeler",
+          "scope": "regional",
+          "country": "IN",
+          "value": {
+            "two_wheeler": 8800,
+            "two_wheeler_ceew": 6300
+          },
+          "vintage": 2015,
+          "tier": "regional",
+          "publisher": "Transportation Research Part D (2015); CEEW",
+          "title": "Assessment of motor vehicle use characteristics in three Indian cities; India Transport Energy Outlook",
+          "url": "https://urbanemissions.info/wp-content/uploads/docs/2015-06-TRD-India-Three-Cities-Veh-Characteristics.pdf",
+          "page": "results",
+          "verification": "secondary_reported",
+          "licence": "journal / CEEW",
+          "provisional": true,
+          "notes": ""
+        }
+      ],
+      "adopted": "esmap_2000",
+      "stalenessYears": 5,
+      "improvement": [
+        "Open the ICAT transport MRV protocol (2019) and the NTC 2024 statistics for current km/day assumptions",
+        "Odometer readings at origination, insurance renewal and the annual VET (if recorded) → Option 1b, score 1"
+      ],
+      "correctsRepo": []
+    },
+    {
+      "key": "vehicle_fuel_economy",
+      "label": "Vehicle fuel economy by class and by make/model",
+      "metricKey": "vehicle_fuel_economy_l_per_100km",
+      "shape": "vehicle_table",
+      "unit": "L/100 km or km/L (cycle named); kWh/100 km for EVs",
+      "appliesTo": [
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "1b",
+            "2a",
+            "2b",
+            "3a",
+            "3b"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition p.95: make/model efficiency from fueleconomy.gov (US EPA) or the EEA WLTP csv; vehicle-type efficiency from the ICCT Roadmap; average vehicle = the weighted average in the geography (p.96). Record the test cycle beside the figure.",
+      "candidates": [
+        {
+          "id": "model_figures",
+          "scope": "global",
+          "country": null,
+          "value": {
+            "toyota_aqua_2021_km_per_L_WLTC": 33.6,
+            "honda_vezel_hev_2013_km_per_L_JC08": 27.0,
+            "bajaj_re_three_wheeler_km_per_L_claim": 40,
+            "nissan_leaf_40kWh_kWh_per_100km_WLTP": 14.0,
+            "byd_atto3_kWh_per_100km_WLTP": 13.8
+          },
+          "vintage": 2023,
+          "tier": "manufacturer / test-cycle",
+          "publisher": "Toyota Global Newsroom; Green Car Congress; dealer listings; EV-Database / InsideEVs",
+          "title": "Model-level figures for the common Sri Lankan makes",
+          "url": "https://global.toyota/en/newsroom/toyota/35584064.html",
+          "page": "various",
+          "verification": "secondary_reported",
+          "licence": "factual, citable",
+          "provisional": true,
+          "notes": "Wagon R, Prius, Grace, Hilux, Raize, Honda/TVS/Yadea two-wheelers not found. JC08 overstates real-world by roughly a quarter."
+        },
+        {
+          "id": "repo_vehicle_ef",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "ev_gCO2_per_km": 100
+          },
+          "vintage": 2026,
+          "tier": "placeholder",
+          "publisher": "CarbonIQ (data/factors/vehicle-ef.json)",
+          "title": "EV ≈ 0.19 kWh/km × 0.53 kgCO2/kWh",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/factors/vehicle-ef.json",
+          "page": "note",
+          "verification": "not_found",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "No citation; grid figure superseded."
+        }
+      ],
+      "adopted": "model_figures",
+      "stalenessYears": 3,
+      "improvement": [
+        "Read make/model figures from the DMT Certificate of Registration already in the vehicle finance file (Option 2a, score 2 at no cost)",
+        "Fleet borrowers' fuel invoices → Option 1a"
+      ],
+      "correctsRepo": [
+        "data/factors/vehicle-ef.json"
+      ]
+    },
+    {
+      "key": "sovereign_inventory",
+      "label": "Sovereign territorial emissions — with and without LULUCF — and PPP-adjusted GDP",
+      "metricKey": "sovereign_dataset",
+      "shape": "sovereign_record",
+      "unit": "tCO2e; million international USD (PPP, current)",
+      "appliesTo": [
+        {
+          "assetClass": "sovereign-debt",
+          "options": [
+            "1a",
+            "1b",
+            "2",
+            "3a",
+            "3b"
+          ]
+        },
+        {
+          "assetClass": "sub-sovereign-debt",
+          "options": [
+            "4a",
+            "4b"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition pp.141–147: scope 1 including and excluding LULUCF, two figures never summed; attribution = exposure ÷ PPP-adjusted GDP; Table 5.9-6 scores; fn 178 p.147 — a non-Annex I inventory is reviewed, not verified: option 1b, score 2, until a review report is published; fn 230 p.205 — record the World Bank retrieval date.",
+      "candidates": [
+        {
+          "id": "nc3_2010",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "scope1_excl_LULUCF_GgCO2e": 22084.62,
+            "scope1_incl_LULUCF_net_GgCO2e": 3718.45,
+            "LULUCF_gross_GgCO2e": 21460.13,
+            "LULUCF_removals_GgCO2e": -39826.3,
+            "sectors_GgCO2e": {
+              "energy": 14154.16,
+              "ippu": 448.57,
+              "agriculture": 6505.67,
+              "waste": 976.22
+            }
+          },
+          "vintage": 2010,
+          "tier": "LK official (UNFCCC)",
+          "publisher": "Ministry of Environment, Sri Lanka / UNFCCC",
+          "title": "Third National Communication of Sri Lanka (1 Dec 2022)",
+          "url": "https://unfccc.int/sites/default/files/resource/Third%20National%20Communication%20of%20Sri%20Lanka.pdf",
+          "page": "inventory chapter",
+          "verification": "secondary_reported",
+          "licence": "public UNFCCC submission",
+          "provisional": true,
+          "notes": "Net including LULUCF derived as 43,544.75 − 39,826.3. GWP set not found."
+        },
+        {
+          "id": "btr1_2021",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2021,
+          "tier": "LK official (UNFCCC)",
+          "publisher": "Ministry of Environment, Sri Lanka / UNFCCC",
+          "title": "First Biennial Transparency Report — Sri Lanka — 2024 (inventory 2011–2021)",
+          "url": "https://unfccc.int/sites/default/files/resource/First%20Biennial%20Transparancy%20Report%20-%20Sri%20Lanka%20-%202024.pdf",
+          "page": "inventory chapter",
+          "verification": "not_found",
+          "licence": "public UNFCCC submission",
+          "provisional": true,
+          "notes": "The document to open first; supersedes NC3."
+        },
+        {
+          "id": "edgar_2023",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "total_excl_LULUCF_MtCO2e": 22
+          },
+          "vintage": 2023,
+          "tier": "global compilation",
+          "publisher": "European Commission JRC",
+          "title": "GHG emissions of all world countries — 2024 Report",
+          "url": "https://edgar.jrc.ec.europa.eu/report_2024",
+          "page": "emissions table",
+          "verification": "secondary_reported",
+          "licence": "CC BY 4.0 (not verified)",
+          "provisional": true,
+          "notes": ""
+        },
+        {
+          "id": "wdi_ppp_gdp",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2024,
+          "tier": "World Bank",
+          "publisher": "World Bank",
+          "title": "GDP, PPP (current international $) — NY.GDP.MKTP.PP.CD",
+          "url": "https://api.worldbank.org/v2/country/LKA/indicator/NY.GDP.MKTP.PP.CD?format=json&date=2020:2024",
+          "page": "API",
+          "verification": "not_found",
+          "licence": "CC BY 4.0",
+          "provisional": true,
+          "notes": "Record the retrieval date and ICP round."
+        },
+        {
+          "id": "repo_sovereign_dataset",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "scope1_excl_LULUCF_tCO2e": 35000000,
+            "scope1_incl_LULUCF_tCO2e": 30000000,
+            "pppGdp_M_int_usd": 296600
+          },
+          "vintage": 2018,
+          "tier": "provisional",
+          "publisher": "CarbonIQ (data/pcaf-parta/sovereign/dataset.json)",
+          "title": "Sovereign dataset v1.0.0 — LK provisional row",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/pcaf-parta/sovereign/dataset.json",
+          "page": "LK",
+          "verification": "not_found",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Excl. figure ~60 % above NC3/EDGAR; the LULUCF sign is wrong — Sri Lanka's land sector is a net sink, so incl. LULUCF ≈ 4 Mt, not 30."
+        }
+      ],
+      "adopted": "nc3_2010",
+      "stalenessYears": 2,
+      "improvement": [
+        "Open BTR1 and record 2021 totals, GWP set, sector split and review status",
+        "Pull WDI PPP-GDP with the retrieval date",
+        "State option 1b / score 2 until a technical expert review report supports 1a"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/sovereign/dataset.json LK row — level and LULUCF sign"
+      ]
+    },
+    {
+      "key": "currency_and_deflators",
+      "label": "Exchange rates (annual average) and price deflators for re-basing economic factors",
+      "metricKey": "currency_lkr_per_usd_annual_average",
+      "shape": "series",
+      "unit": "LKR per USD / EUR (annual average); index (2021 = 100 CCPI/NCPI; GDP deflator, 2015 base)",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "3a",
+            "3b",
+            "3c — Box 6.1-5"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "3a",
+            "3b",
+            "3c — Box 6.1-5"
+          ]
+        },
+        {
+          "assetClass": "part-b-facilitated",
+          "options": [
+            "3"
+          ]
+        },
+        {
+          "assetClass": "sovereign-debt",
+          "options": [
+            "exposure conversion"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition p.167, Box 6.1-5: inflation adjustment of score 4–5 economic factors may be applied — CPI, PPI or GDP deflator — and the method shall be disclosed; the uncorrected figure is reported as the minimum (p.65).",
+      "candidates": [
+        {
+          "id": "cbsl_socio_economic_2025",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2025,
+          "tier": "LK official",
+          "publisher": "Central Bank of Sri Lanka",
+          "title": "Sri Lanka Socio-Economic Data 2025 — annual-average exchange rates",
+          "url": "https://www.cbsl.gov.lk/sites/default/files/cbslweb_documents/publications/otherpub/publication_sri_lanka_socio_economic_data_folder_2025_e.pdf",
+          "page": "exchange-rate table",
+          "verification": "not_found",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Year-end 2023 ≈ 324, 2024 ≈ 293 LKR/USD (FocusEconomics, secondary) — end-period, never used to re-base a flow."
+        },
+        {
+          "id": "wdi_fx_deflator",
+          "scope": "country",
+          "country": "LK",
+          "value": null,
+          "vintage": 2024,
+          "tier": "World Bank",
+          "publisher": "World Bank",
+          "title": "PA.NUS.FCRF (official annual average) and NY.GDP.DEFL.ZS",
+          "url": "https://api.worldbank.org/v2/country/LKA/indicator/PA.NUS.FCRF?format=json",
+          "page": "API",
+          "verification": "not_found",
+          "licence": "CC BY 4.0",
+          "provisional": true,
+          "notes": "Machine-readable fallback."
+        },
+        {
+          "id": "dcs_indices",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "ccpi_base": "2021 = 100 from Feb 2023",
+            "ncpi_base": "2021 = 100 from Jan 2023",
+            "gdp_base_year": 2015
+          },
+          "vintage": 2023,
+          "tier": "LK official",
+          "publisher": "Department of Census and Statistics",
+          "title": "CCPI / NCPI technical notes; National Accounts",
+          "url": "https://www.statistics.gov.lk/InflationAndPrices/StaticalInformation",
+          "page": "technical notes",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": ""
+        }
+      ],
+      "adopted": null,
+      "absentReason": "No CBSL annual-average exchange rate or DCS deflator series could be read in this session; the CBSL Socio-Economic Data 2025 table and WDI PA.NUS.FCRF / NY.GDP.DEFL.ZS are the sources to open. Until read, no re-basing is applied and the uncorrected figure is reported (PCAF p.65).",
+      "stalenessYears": 1,
+      "improvement": [
+        "Read the CBSL annual-average table for 2021–2025 and the DCS deflator series; disclose the index used per Box 6.1-5"
+      ],
+      "correctsRepo": [
+        "data/pcaf-parta/sector-factors.json 'indicative rate'"
+      ]
+    },
+    {
+      "key": "carbon_price",
+      "label": "Carbon price — explicit (Sri Lanka) and shadow",
+      "metricKey": "carbon_price_usd_tCO2e",
+      "shape": "single",
+      "unit": "USD per tCO2e",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "transition-risk"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "transition-risk"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "transition-risk"
+          ]
+        }
+      ],
+      "standardRule": "Not a PCAF input; used for carbon-pricing exposure and climate-risk screens. Sri Lanka has no carbon tax and no ETS.",
+      "candidates": [
+        {
+          "id": "lk_explicit_zero",
+          "scope": "country",
+          "country": "LK",
+          "value": 0,
+          "vintage": 2023,
+          "tier": "LK (OECD)",
+          "publisher": "OECD",
+          "title": "Pricing Greenhouse Gas Emissions: Key Findings for Sri Lanka (2024) — 0 % of emissions under a positive net effective carbon rate; fuel excise covers 28.9 %",
+          "url": "https://www.oecd.org/tax/tax-policy/carbon-pricing-sri-lanka.pdf",
+          "page": "key findings",
+          "verification": "secondary_reported",
+          "licence": "OECD",
+          "provisional": true,
+          "notes": "Consistent across OECD, World Bank State and Trends 2025 and ICAP."
+        },
+        {
+          "id": "ngfs_phase_v",
+          "scope": "global",
+          "country": null,
+          "value": 300,
+          "vintage": 2035,
+          "tier": "scenario",
+          "publisher": "NGFS",
+          "title": "Phase V scenarios — Net Zero 2050, ~USD 300/tCO2 by 2035 (dollar base year not obtained)",
+          "url": "https://www.ngfs.net/system/files/2025-01/20241108_ngfs_scenarios_phasev_outreach_public_v2.pdf",
+          "page": "outreach deck",
+          "verification": "secondary_reported",
+          "licence": "NGFS",
+          "provisional": true,
+          "notes": ""
+        },
+        {
+          "id": "adb_scc",
+          "scope": "regional",
+          "country": null,
+          "value": 36.3,
+          "vintage": 2016,
+          "tier": "ADB",
+          "publisher": "Asian Development Bank",
+          "title": "Social cost of carbon USD 36.30/tCO2 (2016) rising 2 %/yr real",
+          "url": "https://www.adb.org/sites/default/files/institutional-document/547351/ghg-emissions-accounting-guidance-note.pdf",
+          "page": "guidance note",
+          "verification": "secondary_reported",
+          "licence": "ADB",
+          "provisional": true,
+          "notes": ""
+        }
+      ],
+      "adopted": "lk_explicit_zero",
+      "stalenessYears": 1,
+      "improvement": [
+        "Fetch the NGFS Phase V price table with its dollar base year and the World Bank 2024 shadow-price note; ask the Sri Lanka Climate Fund for SCER transaction prices"
+      ],
+      "correctsRepo": []
+    },
+    {
+      "key": "construction_intensity_screen",
+      "label": "Construction carbon-intensity screen (green / transition bands)",
+      "metricKey": "construction_intensity_kgCO2e_m2",
+      "shape": "bands",
+      "unit": "kgCO2e/m²",
+      "appliesTo": [
+        {
+          "assetClass": "use-of-proceeds",
+          "options": [
+            "taxonomy screen"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "taxonomy screen"
+          ]
+        }
+      ],
+      "standardRule": "The SLGFT (May 2022, repository PDF, primary) sets no absolute kgCO2e/m² figure; the bands are CarbonIQ's own screen, governed in the registry.",
+      "candidates": [
+        {
+          "id": "seed_bands_520_780",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "green": 520,
+            "transition": 780
+          },
+          "vintage": 2026,
+          "tier": "CarbonIQ judgement",
+          "publisher": "Datum Solutions (data/baselines/seed.json)",
+          "title": "Shipped provisional construction-intensity bands",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/data/baselines/seed.json",
+          "page": "construction_intensity_kgCO2e_m2",
+          "verification": "primary",
+          "licence": "internal",
+          "provisional": true,
+          "notes": "Already governed; unchanged by this research."
+        }
+      ],
+      "adopted": "seed_bands_520_780",
+      "stalenessYears": null,
+      "improvement": [],
+      "correctsRepo": []
+    },
+    {
+      "key": "ndc3_targets",
+      "label": "NDC 3.0 national targets (reduction and removal — two ledgers, never summed)",
+      "metricKey": "ndc3_targets",
+      "shape": "record",
+      "unit": "% vs BAU, 2026–2035",
+      "appliesTo": [
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "NDC contribution (GCF)"
+          ]
+        },
+        {
+          "assetClass": "use-of-proceeds",
+          "options": [
+            "NDC contribution"
+          ]
+        }
+      ],
+      "standardRule": "Not a PCAF input. The GCF pipeline's NDC ledgers read it.",
+      "candidates": [
+        {
+          "id": "ndc3_reduction",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "reduction_pct": 20.09,
+            "unconditional_pct": 8.11,
+            "conditional_pct": 11.98
+          },
+          "vintage": 2025,
+          "tier": "LK official",
+          "publisher": "Government of Sri Lanka / UNFCCC NDC registry",
+          "title": "NDC 3.0 (September 2025)",
+          "url": "https://unfccc.int/ndc-3.0",
+          "page": "registry document — page cite outstanding",
+          "verification": "secondary_reported",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Confirmed across UNDP Climate Promise and climate-laws.org excerpts."
+        },
+        {
+          "id": "ndc3_removal",
+          "scope": "country",
+          "country": "LK",
+          "value": {
+            "removal_increase_pct": 4.49,
+            "unconditional_pct": 0.96,
+            "conditional_pct": 3.53
+          },
+          "vintage": 2025,
+          "tier": "LK official",
+          "publisher": "as held in data/gcf/ndc3.json (transcribed from the DFCC ToR)",
+          "title": "NDC 3.0 removal line",
+          "url": "https://unfccc.int/ndc-3.0",
+          "page": "not reproduced by any independent source",
+          "verification": "not_found",
+          "licence": "public",
+          "provisional": true,
+          "notes": "Verify against the registry PDF or strike."
+        }
+      ],
+      "adopted": "ndc3_reduction",
+      "stalenessYears": null,
+      "improvement": [
+        "Cite the registry PDF page for both lines; resolve the conflicting net-zero claim"
+      ],
+      "correctsRepo": [
+        "data/gcf/ndc3.json removal line"
+      ]
+    },
+    {
+      "key": "data_quality_target",
+      "label": "PCAF data-quality ambition (the score the book commits to reach)",
+      "metricKey": "data_quality_target_score",
+      "shape": "single",
+      "unit": "PCAF score (1 highest, 5 lowest)",
+      "appliesTo": [
+        {
+          "assetClass": "listed-equity-corporate-bonds",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "business-loans-unlisted-equity",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "project-finance",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "commercial-real-estate",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "mortgages",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "motor-vehicle-loans",
+          "options": [
+            "improvement plan"
+          ]
+        },
+        {
+          "assetClass": "sovereign-debt",
+          "options": [
+            "improvement plan"
+          ]
+        }
+      ],
+      "standardRule": "PCAF Third Edition p.167: explain how data quality is assessed, acknowledging it will improve over time; DCL asks for improvements versus last year. The target is an organisation-scoped baseline, reported beside the disclosed score and never blended into it.",
+      "candidates": [
+        {
+          "id": "default_target_2",
+          "scope": "global",
+          "country": null,
+          "value": 2,
+          "vintage": 2026,
+          "tier": "CarbonIQ default",
+          "publisher": "CarbonIQ",
+          "title": "Default target: the borrower's own unverified figure (score 2); score 1 needs third-party verification, which is the borrower's decision",
+          "url": "https://github.com/mmushrif05/CarbonIQ-Fin-Tech/blob/main/docs/PCAF-PART-A-BUSINESS-LOANS.md",
+          "page": "improvement plan",
+          "verification": "primary",
+          "licence": "internal",
+          "provisional": false,
+          "notes": ""
+        }
+      ],
+      "adopted": "default_target_2",
+      "stalenessYears": null,
+      "improvement": [],
+      "correctsRepo": []
+    }
+  ]
+}

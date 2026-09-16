@@ -31,6 +31,7 @@ const { doc, body, str, num, bool, obj, orNull, arr } =
   require('../../../../platform/http/openapi-hints');
 const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const registry = require('../../application/registry');
+const register = require('../../domain/register');
 const { heldScopes } = require('../../../../platform/auth/scopes');
 const { emptyBody } = require('../../../../platform/http/validate').schemas;
 const {
@@ -81,6 +82,40 @@ router.get('/effective',
       return res.json({ effective: { [String(req.query.metric)]: await registry.effective(String(req.query.metric), ctx) }, ...ctx });
     }
     res.json({ effective: await registry.effectiveAll(ctx), ...ctx });
+  }));
+
+router.get('/for/:assetClass',
+  authenticate, defaultLimiter,
+  doc({
+    summary: 'The baselines one asset class reads, each with the figure in force and where it came from',
+    query: { country: 'ISO 3166-1 alpha-2. Defaults to the organisation\'s own country.' },
+    description: 'From the Baseline Register (docs/BASELINE-REGISTER.md): every baseline the class '
+      + 'reads, the PCAF options that read it, the candidate the register proposes for release with '
+      + 'its verification level, and the resolution in force for this caller — released, shipped '
+      + '(provisional) or absent with what it needs. Nothing here is computed; it is what a screen '
+      + 'shows beside a figure when the class is selected.',
+    response: body({ assetClass: str, country: orNull(str), baselines: arr() }, ['assetClass', 'baselines']),
+  }),
+  handle(async (req, res) => {
+    const assetClass = String(req.params.assetClass);
+    if (!register.isAssetClass(assetClass)) {
+      return res.status(404).json({
+        error: 'ASSET_CLASS_NOT_HELD',
+        message: `"${assetClass}" is not an asset class the register declares.`,
+        remedy: `One of: ${register.register().assetClasses.map(c => c.id).join(', ')}.`,
+      });
+    }
+    const ctx = { country: countryOf(req), orgId: req.orgId || null };
+    const rows = [];
+    for (const b of register.baselinesFor(assetClass)) {
+      const governed = Boolean(registry.metrics().metrics.find(m => m.key === b.metricKey));
+      rows.push({
+        ...b,
+        governed,
+        effective: governed ? await registry.effective(b.metricKey, ctx) : null,
+      });
+    }
+    res.json({ assetClass, ...ctx, baselines: rows });
   }));
 
 router.get('/pledge',

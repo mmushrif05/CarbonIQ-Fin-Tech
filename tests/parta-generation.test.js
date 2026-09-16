@@ -34,9 +34,9 @@ const METERED = { country: 'LK', technology: 'solar_pv', basis: 'metered',
 describe('The two grid factors are never interchangeable', () => {
   test('displacement reads the combined margin; consumption reads the grid average', () => {
     expect(cc.displacementFactor('LK').key).toBe('combined_margin');
-    expect(cc.displacementFactor('LK').value).toBe(0.8108);
+    expect(cc.displacementFactor('LK').value).toBe(0.6482);
     expect(cc.consumptionFactor('LK').key).toBe('grid_average');
-    expect(cc.consumptionFactor('LK').value).toBe(0.5);
+    expect(cc.consumptionFactor('LK').value).toBe(0.3757);
   });
 
   /* The swap test. If someone wires scope 2 to the combined margin or avoided
@@ -44,17 +44,17 @@ describe('The two grid factors are never interchangeable', () => {
   test('scope 2 uses the grid average and avoided uses the combined margin', () => {
     const g = deriveFromGeneration({ ...METERED, mode: 'metered', reportingYear: 2026 });
 
-    // 90,600 x 0.5% = 453 MWh auxiliary, x 0.500 (average) = 226.5
-    expect(g.scope2.value).toBe(226.5);
-    expect(g.scope2.inputs.gridAverage_tCO2e_per_MWh).toBe(0.5);
+    // 90,600 x 0.5% = 453 MWh auxiliary, x 0.3757 (average, Ember 2024) = 170.19
+    expect(g.scope2.value).toBe(170.19);
+    expect(g.scope2.inputs.gridAverage_tCO2e_per_MWh).toBe(0.3757);
 
-    // 90,600 x 0.8108 (combined margin) = 73,458.48
-    expect(g.avoided.value).toBe(73458.48);
-    expect(g.avoided.inputs.combinedMargin_tCO2e_per_MWh).toBe(0.8108);
+    // 90,600 x 0.6482 (combined margin, 2022) = 58,726.92
+    expect(g.avoided.value).toBe(58726.92);
+    expect(g.avoided.inputs.combinedMargin_tCO2e_per_MWh).toBe(0.6482);
 
     // Swapped, these would be 367.29 and 45,300. Assert they are not.
-    expect(g.scope2.value).not.toBeCloseTo(453 * 0.8108, 2);
-    expect(g.avoided.value).not.toBeCloseTo(90600 * 0.5, 2);
+    expect(g.scope2.value).not.toBeCloseTo(453 * 0.6482, 2);
+    expect(g.avoided.value).not.toBeCloseTo(90600 * 0.3757, 2);
   });
 
   test('neither resolver takes a key, so neither can be handed the other\'s', () => {
@@ -222,7 +222,7 @@ describe('The physical check is per technology and per country', () => {
 });
 
 describe('Staleness is generic, not written for one country', () => {
-  test('the Sri Lanka 2017 factor and the Uganda 2022 factor both flag at 2026', () => {
+  test('the Sri Lanka 2022 factor and the Uganda 2022 factor both flag at 2026', () => {
     expect(cc.staleness(cc.displacementFactor('LK'), 2026).stale).toBe(true);
     expect(cc.staleness(cc.displacementFactor('UG'), 2026).stale).toBe(true);
     expect(cc.staleness(cc.consumptionFactor('SG'), 2026).stale).toBe(false);
@@ -230,8 +230,8 @@ describe('Staleness is generic, not written for one country', () => {
 
   test('the notice names the years rather than the country', () => {
     const n = cc.staleness(cc.displacementFactor('LK'), 2026).note;
-    expect(n).toMatch(/from 2017/);
-    expect(n).toMatch(/9 years old/);
+    expect(n).toMatch(/from 2022/);
+    expect(n).toMatch(/4 years old/);
     expect(n).not.toMatch(/Sri Lanka/);
   });
 });
