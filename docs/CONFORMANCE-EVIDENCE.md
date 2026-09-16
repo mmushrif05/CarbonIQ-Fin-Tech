@@ -48,9 +48,13 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-REG-06` | Register — the band is resolved at call time | `tests/parta-register.test.js` | 19 | executed |
 | PCAF Part A §5.2 | `A-REG-07` | Register — a half-built lifecycle is worse than none | `tests/parta-register.test.js` | 123 | executed |
 | PCAF Part A §5.2 | `A-REG-08` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 133 | executed |
-| PCAF Part A §5.2 | `A-REG-09` | Chapter 6 — one position per asset class (DCL p.128; §5.1–§5.5 tables) | `tests/parta-register-classes.test.js` | 292 | executed |
+| PCAF Part A §5.2 | `A-REG-09` | Chapter 6 — one position per asset class (DCL p.128; §5.1–§5.5 tables) | `tests/parta-register-classes.test.js` | 294 | executed |
 | PCAF Part A §5.2 | `A-REG-10` | §5.4 (p.79) / §5.5 — energy statistics per square metre of floor area | `tests/parta-register-classes.test.js` | 111 | executed |
 | PCAF Part A §5.2 | `A-REG-11` | Chapter 6 — a document states the class it reports | `tests/parta-register-classes.test.js` | 138 | executed |
+| PCAF Part A §5.2 | `A-MV-01` | §5.6 Table 5.6-1 (p.94); Annex Table 10.1-6 | `tests/parta-motor-vehicles.test.js` | 166 | executed |
+| PCAF Part A §5.2 | `A-MV-02` | §5.6 fn 146 (p.94) | `tests/parta-motor-vehicles.test.js` | 160 | executed |
+| PCAF Part A §5.2 | `A-MV-03` | §5.6 (p.93) — combination of options | `tests/parta-motor-vehicles.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-MV-04` | §5.6 (p.91) — attribution; (p.96) — hybrids and electric vehicles | `tests/parta-motor-vehicles.test.js` | 135 | executed |
 | PCAF Part A §5.2 | `A-RECALC-01` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 43 | executed |
 | PCAF Part A §5.2 | `A-DQ-01` | Part A Box 6.1-6 (pp.167–168), p.128 | `tests/parta-business-loans.test.js` | 88 | executed |
 | PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 88 | executed |
@@ -187,8 +191,8 @@ proved or it is not.
 
 ## Summary
 
-- 163 rules across the conformance matrices
-- **156 proved by execution**
+- 167 rules across the conformance matrices
+- **160 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

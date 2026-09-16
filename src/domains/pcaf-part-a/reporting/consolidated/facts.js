@@ -24,6 +24,7 @@ const { release: factorRelease } = require('../../domain/sector-factors');
 const { release: datasetRelease } = require('../../domain/sovereign/dataset');
 const { release: energyRelease } = require('../../domain/real-estate/dataset');
 const { release: gridRelease } = require('../../domain/country-config');
+const { release: vehicleRelease } = require('../../domain/motor-vehicles/dataset');
 const { entityOf } = require('../entity');
 const { identityOf } = require('../identity');
 const { assuranceDetailOf, recalculationOf, factorRows, KYOTO_GASES } = require('../facts');
@@ -144,6 +145,7 @@ function disclosureFacts(input) {
     'project-finance': () => ({ name: 'country grid factor set', ...gridRelease(), rows: [] }),
     'commercial-real-estate': () => ({ name: 'real-estate energy statistics', ...energyRelease(), rows: [] }),
     'mortgages': () => ({ name: 'real-estate energy statistics (§5.5)', ...energyRelease(), rows: [] }),
+    'motor-vehicle-loans': () => ({ name: 'vehicle statistics', ...vehicleRelease(), rows: [] }),
     'sovereign-debt': () => ({ name: 'sovereign dataset', ...datasetRelease(), rows: [] }),
   };
   const releases = recorded.filter(c => RELEASE[c.assetClass]).map(c => RELEASE[c.assetClass]());

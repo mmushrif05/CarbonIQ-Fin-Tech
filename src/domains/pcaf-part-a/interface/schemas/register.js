@@ -25,6 +25,7 @@ const { exposureSchema } = require('./business-loans');
 const { realEstateRequestSchema } = require('./real-estate');
 const { assessRequestSchema } = require('./pcaf-parta');
 const { listedEquitySchema } = require('./listed-equity');
+const { motorVehiclesRequestSchema } = require('./motor-vehicles');
 
 const reportingYear = Joi.number().integer().min(2000).max(2100).required();
 
@@ -67,6 +68,13 @@ const projectFinanceRegisterSchema = assessRequestSchema
   .append({ identifiers: registerFields.identifiers })
   .unknown(false);
 
+/* §5.6 */
+const motorVehiclesRegisterSchema = motorVehiclesRequestSchema.append({
+  assetClass: Joi.string().valid('motor-vehicle-loans').required(),
+  reportingYear,
+  ...registerFields,
+});
+
 /* §5.1 */
 const listedEquityRegisterSchema = listedEquitySchema.append({
   assetClass: Joi.string().valid('listed-equity-corporate-bonds').required(),
@@ -79,6 +87,7 @@ const registerExposureSchema = Joi.alternatives().conditional('.assetClass', {
     { is: 'mortgages', then: realEstateRegisterSchema },
     { is: 'project-finance', then: projectFinanceRegisterSchema },
     { is: 'listed-equity-corporate-bonds', then: listedEquityRegisterSchema },
+    { is: 'motor-vehicle-loans', then: motorVehiclesRegisterSchema },
   ],
   otherwise: businessLoansRegisterSchema,
 });

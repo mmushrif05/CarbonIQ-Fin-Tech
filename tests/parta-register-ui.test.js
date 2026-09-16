@@ -147,7 +147,7 @@ describe('One register, every built class', () => {
     must(HTML, /id="pr-class"/, 'a class selector');
     must(JS, /\/position\/\$\{year\}\?assetClass=\$\{encodeURIComponent\(cls\)\}/, 'the position is read per class');
     must(JS, /&assetClass=\$\{encodeURIComponent\(cls\)\}&limit=200/, 'the rows are read per class');
-    for (const c of ['business-loans-unlisted-equity', 'commercial-real-estate mortgages', 'project-finance', 'listed-equity-corporate-bonds']) {
+    for (const c of ['business-loans-unlisted-equity', 'commercial-real-estate mortgages', 'project-finance', 'listed-equity-corporate-bonds', 'motor-vehicle-loans']) {
       must(HTML, new RegExp(`data-class-form="${c}"`), `a form block for ${c}`);
     }
     must(JS, /el\.hidden = !el\.getAttribute\('data-class-form'\)\.split\(' '\)\.includes\(cls\)/, 'the blocks toggle through [hidden]');
@@ -160,6 +160,15 @@ describe('One register, every built class', () => {
     mustNot(JS, /0\.0929|10\.764|\* ?0\.3048/, 'no conversion factor lives in the browser');
     must(JS, /Floor area as keyed/, 'the detail shows the area as keyed');
     must(JS, /floorAreaConversion/, 'and the conversion the engine ran');
+  });
+
+  test('a vehicle’s efficiency and distance travel as keyed, and the browser derives no option', () => {
+    must(HTML, /id="pr-f-mv-eff-unit"/, 'the efficiency unit is chosen beside the figure');
+    must(HTML, /id="pr-f-mv-km-basis"/, 'the distance basis is chosen beside the distance');
+    must(JS, /unit: str\('pr-f-mv-eff-unit'\) \|\| 'km\/L', basis: 'make-model'/, 'the efficiency reaches the request in its own unit');
+    mustNot(JS, /100 \/ [a-z]+\b.*km\/L|\* 8\.94|\* 9\.97/, 'no unit conversion and no energy content in the browser');
+    mustNot(JS, /option: '(1a|1b|2a|2b|3a|3b)'/, 'the option is the engine’s to derive');
+    must(HTML, /Two options score 1 in this class/, 'the form says what the table says');
   });
 
   test('the groupings and the downloads follow the class', () => {

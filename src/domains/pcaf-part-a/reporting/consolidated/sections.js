@@ -112,6 +112,7 @@ const METHOD = Object.freeze({
   'project-finance': 'Project finance: the outstanding amount over the project’s total equity plus debt, times the project’s scope 1 and 2, reported or derived from generation and a named grid factor (§5.3).',
   'commercial-real-estate': 'Commercial real estate: the outstanding amount over the property value at origination, times the building’s operational scope 1 and 2 from metered energy or from statistics by floor area, the option set by how the energy is known (§5.4, p.79).',
   'mortgages': 'Mortgages: the outstanding amount over the property value at origination, times the dwelling’s operational scope 1 and 2 from metered energy or from statistics by floor area (§5.5).',
+  'motor-vehicle-loans': 'Motor vehicle loans: the outstanding amount over the total value at origination (100 % where unknown), times the vehicles’ scope 1 and 2 from fuel consumed or from distance × efficiency × fuel factor, the option set per vehicle and the borrower carrying the lowest quality in the mix (§5.6, pp.91–94).',
   'sovereign-debt': 'Sovereign debt: the exposure in international USD over the sovereign’s PPP-adjusted GDP, times its territorial emissions on both LULUCF boundaries (§5.9, p.144).',
 });
 

@@ -1,0 +1,202 @@
+{
+  "version": "0.1.0",
+  "effectiveFrom": "2026-09-16",
+  "status": "provisional",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition, §5.6 (pp.90–96).",
+  "note": "The vehicle-type statistics the §5.6 engine reaches for when a vehicle's make and model efficiency or its distance is not known (Options 3a and 3b), and the energy content that turns a litre of fuel into the kWh the fuel-factor baseline is held per. Every efficiency figure is PROVISIONAL and says so: an order-of-magnitude class average from published model figures and global ranges, not a Sri Lankan measurement and not a licensed dataset — docs/BASELINE-REGISTER.md §3.5.3 records that no Sri Lankan class-average figure has been verified. The annual distances are the registry's (vehicle_annual_distance_km, ESMAP 2000, disclosed as such); the ones held here are the fallback where the registry holds nothing for the class. A run that uses this set carries its version and checksum, and the report repeats the provisional mark.",
+  "energyContent": {
+    "unit": "kWh per litre (net calorific value × density)",
+    "petrol": {
+      "value": 8.94,
+      "provisional": false,
+      "source": "IPCC 2006 Guidelines Vol. 2 Table 1.2 (motor gasoline NCV 44.3 TJ/Gg) with a density of 0.74 kg/L: 32.8 MJ/L = 9.1 kWh/L; DEFRA 2024 uses 32.2 MJ/L — 8.94 kWh/L is the DEFRA figure, the lower of the two"
+    },
+    "diesel": {
+      "value": 9.97,
+      "provisional": false,
+      "source": "IPCC 2006 Vol. 2 Table 1.2 (gas/diesel oil NCV 43.0 TJ/Gg) with a density of 0.84 kg/L: 36.1 MJ/L = 10.0 kWh/L; DEFRA 2024 35.9 MJ/L = 9.97 kWh/L"
+    }
+  },
+  "classes": [
+    {
+      "key": "car_petrol",
+      "label": "Car — petrol",
+      "fuel": "petrol",
+      "efficiency": {
+        "value": 7.5,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for the Sri Lankan petrol car park (Toyota Aqua 33.6 km/L WLTC at the efficient end, a 1.5 L saloon at 7–8 L/100 km); not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 8274,
+        "provisional": true,
+        "source": "World Bank/ESMAP ESM262 (2000 fleet), secondary_reported — the registry's vehicle_annual_distance_km carries the same figure"
+      }
+    },
+    {
+      "key": "car_diesel",
+      "label": "Car — diesel",
+      "fuel": "diesel",
+      "efficiency": {
+        "value": 7.0,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for diesel cars and SUVs; not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 16759,
+        "provisional": true,
+        "source": "World Bank/ESMAP ESM262 (2000 fleet), secondary_reported"
+      }
+    },
+    {
+      "key": "car_hybrid",
+      "label": "Car — hybrid (non plug-in)",
+      "fuel": "petrol",
+      "efficiency": {
+        "value": 4.0,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Honda Vezel HEV 27.0 km/L JC08 (2013) and Toyota Aqua 33.6 km/L WLTC bracket 3–4 L/100 km; JC08 overstates real-world by roughly a quarter"
+      },
+      "annualDistance_km": {
+        "value": 8274,
+        "provisional": true,
+        "source": "As petrol cars, ESMAP ESM262 (2000)"
+      },
+      "distanceClass": "car_petrol"
+    },
+    {
+      "key": "car_electric",
+      "label": "Car — battery electric",
+      "fuel": "electricity",
+      "efficiency": {
+        "value": 14.0,
+        "unit": "kWh/100km",
+        "provisional": true,
+        "source": "Nissan Leaf 40 kWh 14.0 and BYD Atto 3 13.8 kWh/100 km WLTP (docs/BASELINE-REGISTER.md §3.5.3)"
+      },
+      "annualDistance_km": {
+        "value": 8274,
+        "provisional": true,
+        "source": "As petrol cars, ESMAP ESM262 (2000)"
+      },
+      "distanceClass": "car_petrol"
+    },
+    {
+      "key": "three_wheeler",
+      "label": "Three-wheeler",
+      "fuel": "petrol",
+      "efficiency": {
+        "value": 2.5,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Bajaj RE ~40 km/L, unofficial claim"
+      },
+      "annualDistance_km": {
+        "value": 19676,
+        "provisional": true,
+        "source": "World Bank/ESMAP ESM262 (2000 fleet), secondary_reported"
+      }
+    },
+    {
+      "key": "motorcycle",
+      "label": "Motorcycle",
+      "fuel": "petrol",
+      "efficiency": {
+        "value": 2.2,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for 100–150 cc commuter motorcycles (45 km/L); not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 5171,
+        "provisional": true,
+        "source": "World Bank/ESMAP ESM262 (2000 fleet), 4-stroke, secondary_reported"
+      }
+    },
+    {
+      "key": "two_wheeler_electric",
+      "label": "Electric two-wheeler",
+      "fuel": "electricity",
+      "efficiency": {
+        "value": 2.5,
+        "unit": "kWh/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for electric scooters (2–3 kWh/100 km); not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 5171,
+        "provisional": true,
+        "source": "As motorcycles, ESMAP ESM262 (2000)"
+      },
+      "distanceClass": "motorcycle"
+    },
+    {
+      "key": "van",
+      "label": "Van / dual purpose",
+      "fuel": "diesel",
+      "efficiency": {
+        "value": 9.0,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for light commercial vans; not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 16759,
+        "provisional": true,
+        "source": "As diesel cars, ESMAP ESM262 (2000) — vans and lorries were not verified (docs/BASELINE-REGISTER.md §3.5.2)"
+      }
+    },
+    {
+      "key": "lorry",
+      "label": "Lorry",
+      "fuel": "diesel",
+      "efficiency": {
+        "value": 25.0,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for medium rigid trucks; not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 30000,
+        "provisional": true,
+        "source": "Indicative; not verified for Sri Lanka"
+      }
+    },
+    {
+      "key": "bus",
+      "label": "Bus",
+      "fuel": "diesel",
+      "efficiency": {
+        "value": 30.0,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Order-of-magnitude for diesel buses; not a measured class average"
+      },
+      "annualDistance_km": {
+        "value": 61509,
+        "provisional": true,
+        "source": "SLTB operated km ÷ average fleet, NTC 2019 via mirror, derived (docs/BASELINE-REGISTER.md §3.5.2)"
+      }
+    },
+    {
+      "key": "average",
+      "label": "Average vehicle (type unknown)",
+      "fuel": "petrol",
+      "efficiency": {
+        "value": 7.5,
+        "unit": "L/100km",
+        "provisional": true,
+        "source": "Option 3b only: the petrol-car figure, because a car is the likeliest financed vehicle where nothing else is known; a run on this row scores 5 and says so"
+      },
+      "annualDistance_km": {
+        "value": 8274,
+        "provisional": true,
+        "source": "As petrol cars"
+      },
+      "distanceClass": "car_petrol"
+    }
+  ]
+}

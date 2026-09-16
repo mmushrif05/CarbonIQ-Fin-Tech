@@ -1,0 +1,19 @@
+{
+  "note": "GENERATED. Regenerate with: npm run docs:parta-vehicles-manifest",
+  "purpose": "The Part A §5.6 vehicle-statistics set a financed-emissions figure was computed on: version, effective date, status and checksum.",
+  "algorithm": "SHA-256 over the canonical form (keys sorted at every level)",
+  "checksum": "68f13836417ae5ed17cab8068b0f93e17096a3676c316088580851d12f4961e3",
+  "provisionalTables": [
+    "vehicle-statistics"
+  ],
+  "tables": [
+    {
+      "table": "vehicle-statistics",
+      "version": "0.1.0",
+      "effectiveFrom": "2026-09-16",
+      "status": "provisional",
+      "rowCount": 11,
+      "checksum": "346e765e6f301b66bb2c3e0bee6fe0a915908fa9dfcff909a6b581d8e24d0f76"
+    }
+  ]
+}

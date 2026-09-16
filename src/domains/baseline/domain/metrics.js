@@ -174,9 +174,9 @@ const METRICS = Object.freeze({
     fields: ['car_petrol', 'car_diesel', 'three_wheeler', 'motorcycle', 'van', 'bus', 'lorry'],
     sparse: true,
     governs: 'PCAF §5.6 Options 2a/2b/3a/3b — a Sri-Lanka-wide statistic is *local* (fn 146), '
-      + 'so make/model efficiency × this figure is Option 2a, score 2. The motor-vehicle '
-      + 'engine is not built yet; this is the baseline it will read.',
-    wired: false,
+      + 'so make/model efficiency × this figure is Option 2a, score 2. Read by the §5.6 engine '
+      + 'through application/vehicle-factors.js.',
+    wired: true,
   },
 
   vehicle_fuel_economy_l_per_100km: {

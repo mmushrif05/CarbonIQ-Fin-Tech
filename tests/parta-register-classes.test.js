@@ -121,12 +121,12 @@ describe('the floor area and its unit', () => {
 });
 
 describe('one register, every built class', () => {
-  test('the register names five classes, each with its section, and §5.2 is the default', () => {
+  test('the register names six classes, each with its section, and §5.2 is the default', () => {
     expect(register.classes().map(c => c.assetClass).sort()).toEqual(
-      ['business-loans-unlisted-equity', 'commercial-real-estate', 'listed-equity-corporate-bonds', 'mortgages', 'project-finance']);
+      ['business-loans-unlisted-equity', 'commercial-real-estate', 'listed-equity-corporate-bonds', 'mortgages', 'motor-vehicle-loans', 'project-finance']);
     expect(register.DEFAULT_CLASS).toBe('business-loans-unlisted-equity');
     expect(classes.classFor('mortgages').section).toBe('§5.5');
-    expect(() => classes.classFor('motor-vehicle-loans')).toThrow(expect.objectContaining({ statusCode: 501, code: 'ASSET_CLASS_NOT_REGISTERED' }));
+    expect(() => classes.classFor('use-of-proceeds')).toThrow(expect.objectContaining({ statusCode: 501, code: 'ASSET_CLASS_NOT_REGISTERED' }));
   });
 
   test('a property is recorded on the register in the one shape, with the engine’s own result kept whole beneath it', async () => {
@@ -213,7 +213,7 @@ describe('one register, every built class', () => {
     expect((await register.rows(ORG, YEAR)).length).toBe(rowsBefore.length);
     const byClass = await register.rowsByClass(ORG, YEAR);
     expect(Object.fromEntries(Object.entries(byClass).map(([k, v]) => [k, v.length])))
-      .toEqual({ 'business-loans-unlisted-equity': 1, 'commercial-real-estate': 1, 'project-finance': 1, 'listed-equity-corporate-bonds': 0, 'mortgages': 0 });
+      .toEqual({ 'business-loans-unlisted-equity': 1, 'commercial-real-estate': 1, 'project-finance': 1, 'listed-equity-corporate-bonds': 0, 'mortgages': 0, 'motor-vehicle-loans': 0 });
   });
 
   test('the years say how many of each class they hold', async () => {
@@ -240,7 +240,7 @@ describe('one register, every built class', () => {
     const pos = await consolidated.position(ORG, YEAR);
     const status = Object.fromEntries(pos.classes.map(c => [c.assetClass, c.status]));
     expect(status).toMatchObject({ 'business-loans-unlisted-equity': 'recorded', 'commercial-real-estate': 'recorded', 'project-finance': 'recorded',
-      'listed-equity-corporate-bonds': 'recorded', 'mortgages': 'not-recorded', 'sovereign-debt': 'not-recorded' });
+      'listed-equity-corporate-bonds': 'recorded', 'mortgages': 'not-recorded', 'motor-vehicle-loans': 'not-recorded', 'sovereign-debt': 'not-recorded' });
     expect(pos.dataQuality.byClass.map(c => [c.section, c.score])).toEqual([['§5.1', 2], ['§5.2', 2], ['§5.3', 2], ['§5.4', 4]]);
     const at = k => pos.classes.find(c => c.assetClass === k);
     expect(pos.totals.headline.value).toBe(+(at('business-loans-unlisted-equity').headline.value + at('commercial-real-estate').headline.value
@@ -259,7 +259,7 @@ describe('over HTTP', () => {
   test('the classes route lists what the register holds', async () => {
     const res = await request(app).get('/v1/pcaf/part-a/classes').set('x-api-key', KEY).expect(200);
     expect(res.body.defaultClass).toBe('business-loans-unlisted-equity');
-    expect(res.body.classes.map(c => c.section)).toEqual(['§5.2', '§5.1', '§5.3', '§5.4', '§5.5']);
+    expect(res.body.classes.map(c => c.section)).toEqual(['§5.2', '§5.1', '§5.3', '§5.4', '§5.5', '§5.6']);
   });
 
   test('a property posted in square feet is recorded, listed by class, and its position is read by class', async () => {

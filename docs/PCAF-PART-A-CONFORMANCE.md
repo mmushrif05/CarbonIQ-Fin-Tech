@@ -23,9 +23,9 @@ numerals are not interchangeable between them.
 
 | Status | Rules |
 |---|---|
-| Implemented | 77 |
+| Implemented | 81 |
 | Partial | 1 |
-| **Total** | **78** |
+| **Total** | **82** |
 
 ## How to verify any row
 
@@ -411,6 +411,46 @@ actually ran.
 **Evidence.** `tests/parta-register.test.js › the recalculation protocol is the entity’s own settings, base year null until set`
 
 ## The disclosure and the per-exposure report
+
+### A-MV-01 — Implemented
+
+**Clause:** §5.6 Table 5.6-1 (p.94); Annex Table 10.1-6
+
+**Rule.** The motor-vehicle option-to-score table is its own: 1a and 1b both score 1 — the one Part A table where two options do — 2a scores 2, 2b 3, 3a 4 and 3b 5. The option is derived per vehicle from the data actually supplied, never chosen from a list, and no other class’s table is substituted.
+
+**Implementation.** data/pcaf-parta/dq-motor-vehicles.json loaded by src/domains/pcaf-part-a/domain/reference.js; src/domains/pcaf-part-a/domain/motor-vehicles/index.js — assessVehicle() derives the option from fuel consumed, efficiency basis and distance basis
+
+**Evidence.** `tests/parta-motor-vehicles.test.js › two options score 1, and the rest are 2a→2, 2b→3, 3a→4, 3b→5 — the table is its own`
+
+### A-MV-02 — Implemented
+
+**Clause:** §5.6 fn 146 (p.94)
+
+**Rule.** A "local" distance statistic is the province, state or small-country level, so a Sri-Lanka-wide annual-km figure is local: make/model efficiency read off the registration certificate with the registry’s Sri Lankan distance baseline is Option 2a, score 2; a regional statistic is 2b. The statistic’s vintage and provenance travel on the trace.
+
+**Implementation.** src/domains/pcaf-part-a/application/vehicle-factors.js — resolves vehicle_annual_distance_km from the baseline registry; src/domains/pcaf-part-a/domain/motor-vehicles/index.js — the registry’s figure is taken as a local statistic and named with its scope and version
+
+**Evidence.** `tests/parta-motor-vehicles.test.js › make/model efficiency × the Sri-Lanka-wide statistic is Option 2a, score 2 — local under fn 146`
+
+### A-MV-03 — Implemented
+
+**Clause:** §5.6 (p.93) — combination of options
+
+**Rule.** Where a borrower’s vehicles are assessed under different options the borrower’s score is the lowest data quality in the mix — the one class where the standard states a combination rule — and the mix is printed beside the score rather than averaged into it.
+
+**Implementation.** src/domains/pcaf-part-a/domain/motor-vehicles/index.js — assessMotorVehicles() takes the worst vehicle’s option for the facility and carries the mix and the rule on dataQuality
+
+**Evidence.** `tests/parta-motor-vehicles.test.js › a borrower’s vehicles under different options carry the lowest quality in the mix (p.93)`
+
+### A-MV-04 — Implemented
+
+**Clause:** §5.6 (p.91) — attribution; (p.96) — hybrids and electric vehicles
+
+**Rule.** Attribution is outstanding over the total value at origination; where that value is unknown 100 % attribution is assumed, the standard’s own default, and the trace says the default was taken. A non-plug-in hybrid burns petrol only; a plug-in with no manufacturer usage split is 100 % combustion; an electric vehicle’s electricity is scope 2 on the grid factor in force.
+
+**Implementation.** src/domains/pcaf-part-a/domain/motor-vehicles/index.js — the assumed-100pct denominator state and the electricShare rule in assessVehicle()
+
+**Evidence.** `tests/parta-motor-vehicles.test.js › the value at origination unknown is 100 % attribution, the standard’s default, and the trace says so (p.91)`
 
 ### A-REPORT-01 — Implemented
 

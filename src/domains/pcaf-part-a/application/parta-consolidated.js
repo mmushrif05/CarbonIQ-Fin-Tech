@@ -57,6 +57,7 @@ const CAPABILITY = Object.freeze({
   'project-finance': 'register',
   'commercial-real-estate': 'register',
   'mortgages': 'register',
+  'motor-vehicle-loans': 'register',
   'sovereign-debt': 'register',
 });
 
@@ -68,6 +69,7 @@ const REGISTER_CLASS = Object.freeze({
   'project-finance': { basis: 'Attributed project scope 1 and 2 on total project equity plus debt (§5.3)', table: 'Table 5.3-1 option mapping' },
   'commercial-real-estate': { basis: 'Attributed building operational scope 1 and 2 on the origination value (§5.4, p.79)', table: 'Table 5.4-1 option mapping' },
   'mortgages': { basis: 'Attributed dwelling operational scope 1 and 2 on the origination value (§5.5)', table: 'Table 5.5-1 option mapping' },
+  'motor-vehicle-loans': { basis: 'Attributed vehicle use-phase scope 1 and 2 on the value at origination (§5.6, p.91)', table: 'Table 5.6-1 option mapping' },
 });
 
 const SYSTEM_REASON = Object.freeze({

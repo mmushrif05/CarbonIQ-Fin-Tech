@@ -167,6 +167,64 @@
       </div>
       </div>
 
+      <!-- §5.6 — a motor vehicle facility. One vehicle from the screen; the
+           API takes several. The option follows what is keyed: fuel consumed
+           → 1a; make/model efficiency with an odometer distance → 1b; with
+           the Sri Lankan statistic → 2a; the class alone → 3a. -->
+      <div data-class-form="motor-vehicle-loans" hidden>
+      <div class="pr-grid">
+        <label>Vehicle class <select id="pr-f-mv-class"><option value="">Not known — average vehicle</option></select></label>
+        <label>Make and model <input id="pr-f-mv-model" type="text" maxlength="120" placeholder="from the registration certificate"></label>
+        <label>Fuel
+          <select id="pr-f-mv-fuel">
+            <option value="">As the class</option>
+            <option value="petrol">Petrol</option>
+            <option value="diesel">Diesel</option>
+            <option value="hybrid">Hybrid (not plug-in)</option>
+            <option value="plug-in-hybrid">Plug-in hybrid</option>
+            <option value="electricity">Electric</option>
+          </select></label>
+        <label>Product
+          <select id="pr-f-mv-product">
+            <option value="vehicle-loan">Vehicle loan</option>
+            <option value="lease">Lease</option>
+            <option value="hire-purchase">Hire purchase</option>
+          </select></label>
+      </div>
+      <h5 class="partc-subhead">Outstanding and the value at origination</h5>
+      <div class="pr-grid">
+        <label>Outstanding at year-end <input id="pr-f-mv-outstanding" type="number" min="0" step="any"></label>
+        <label>Total value at origination <input id="pr-f-mv-value" type="number" min="0" step="any" placeholder="unknown — 100% attribution (p.91)"></label>
+        <label>Currency <input id="pr-f-mv-currency" type="text" maxlength="10" value="LKR"></label>
+        <label>As of <input id="pr-f-mv-asof" type="date"></label>
+      </div>
+      <h5 class="partc-subhead">How the vehicle’s use is known</h5>
+      <p class="partc-hint">Fuel consumed over the year reaches Option 1a; make/model efficiency with an odometer distance Option 1b; with the Sri Lankan distance statistic Option 2a; the class alone Option 3a — PCAF Part A Table 5.6-1. Two options score 1 in this class.</p>
+      <div class="pr-grid">
+        <label>Efficiency <input id="pr-f-mv-eff" type="number" min="0" step="any" placeholder="make/model figure"></label>
+        <label>Efficiency unit
+          <select id="pr-f-mv-eff-unit">
+            <option value="km/L">km per litre</option>
+            <option value="L/100km">litres per 100 km</option>
+            <option value="kWh/100km">kWh per 100 km (electric)</option>
+          </select></label>
+        <label>Test cycle <input id="pr-f-mv-cycle" type="text" maxlength="20" placeholder="WLTC, JC08…"></label>
+        <label>Distance over the year, km <input id="pr-f-mv-km" type="number" min="0" step="any" placeholder="leave empty for the statistic"></label>
+        <label>Distance basis
+          <select id="pr-f-mv-km-basis">
+            <option value="actual">Odometer readings</option>
+            <option value="local">Local statistic</option>
+            <option value="regional">Regional statistic</option>
+          </select></label>
+      </div>
+      <div class="pr-grid">
+        <label>Petrol consumed, litres <input id="pr-f-mv-petrol" type="number" min="0" step="any" placeholder="Option 1a"></label>
+        <label>Diesel consumed, litres <input id="pr-f-mv-diesel" type="number" min="0" step="any"></label>
+        <label>Electricity consumed, kWh <input id="pr-f-mv-kwh" type="number" min="0" step="any"></label>
+        <label>Production emissions, tCO₂e <input id="pr-f-mv-production" type="number" min="0" step="any" placeholder="new vehicle, first year only"></label>
+      </div>
+      </div>
+
       <!-- §5.3 — project finance -->
       <div data-class-form="project-finance" hidden>
       <div class="pr-grid">

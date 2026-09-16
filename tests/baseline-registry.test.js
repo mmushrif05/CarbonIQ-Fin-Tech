@@ -243,7 +243,8 @@ describe('The vocabulary is closed, and says what is wired', () => {
     const { metrics } = registry.metrics();
     const wired = metrics.filter(m => m.wired).map(m => m.key);
     expect(wired).toEqual(['construction_intensity_kgCO2e_m2', 'grid_emission_factor_kgCO2e_kWh',
-      'sector_intensity_tCO2e_per_million_revenue', 'fuel_emission_factor_kgCO2e_kWh', 'building_energy_intensity_kWh_m2']);
+      'sector_intensity_tCO2e_per_million_revenue', 'fuel_emission_factor_kgCO2e_kWh', 'building_energy_intensity_kWh_m2',
+      'vehicle_annual_distance_km']);
 
     const seed = require('../data/baselines/seed.json');
     const seeded = new Set(seed.baselines.map(b => b.metric));
