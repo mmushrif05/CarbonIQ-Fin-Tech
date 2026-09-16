@@ -1,7 +1,11 @@
 # The Baseline Register — every figure a financed-emissions disclosure rests on, and where it came from
 
-**Status: Part 1 research compiled, 16 September 2026. Nothing here is
-released into the baseline registry yet — Part 2 seeds the registry from it. This document is the reference the registry is
+**Status: Part 1 research compiled and Part 2 seeded, 16 September 2026. The adopted
+candidates for the metrics an engine reads — the grid average, the fuel factors, the
+building intensities — ship as the registry's provisional seed, labelled with their
+verification level; nothing is *released* until an operator has re-read the figure from its
+source. `GET /v1/baselines/for/:assetClass` and the Baselines screen show, per class, what
+is in force and what is proposed. This document is the reference the registry is
 seeded from, in the discipline `docs/PCAF-PART-A-RESEARCH.md` §0 sets: a finding is
 recorded here, with its source, before the code that acts on it.**
 
@@ -182,16 +186,16 @@ replacing ISAE 3410 (https://ifacweb.blob.core.windows.net/publicfiles/2025-08/I
 |---|---|---|---|---|---|---|---|---|---|---|---|
 | Grid emission factor — average (location-based) | `grid_emission_factor_kgCO2e_kWh` | Opt 2a | Opt 2a | scope 2 | 1b·2a·2b·3 | 1b·2a·2b·3 | EV | look-through | — | Opt 2a | A5.2 site electricity |
 | Grid displacement factor — OM / BM / CM | `grid_displacement_factor_tCO2e_MWh` | — | — | avoided emissions | — | — | — | green-bond impact | — | — | — |
-| Fuel combustion factors (diesel, petrol, LPG, kerosene, furnace oil) | `fuel_emission_factor_kgCO2e_per_unit` | Opt 2a | Opt 2a | scope 1 | 1a·1b | 1a·1b | 1a–3b | — | — | Opt 2a | A5.2 diesel |
-| Global warming potential set | `gwp_set` | all | all | all | all | all | all | all | all | all | all |
+| Fuel combustion factors (diesel, petrol, LPG, kerosene, furnace oil) | `fuel_emission_factor_kgCO2e_kWh` | Opt 2a | Opt 2a | scope 1 | 1a·1b | 1a·1b | 1a–3b | — | — | Opt 2a | A5.2 diesel |
+| Global warming potential set | `gwp_100yr` | all | all | all | all | all | all | all | all | all | all |
 | Sector intensity per revenue / per assets (EEIO) | `sector_emission_intensity_per_revenue` | Opt 3a·3b·3c | Opt 3a·3b·3c | — | — | — | — | — | — | Opt 3 | — |
 | Sector intensity plausibility bands | `sector_intensity_tCO2e_per_million_revenue` | check | check | — | — | — | — | — | — | check | — |
 | Building energy intensity by type (kWh/m²/yr) | `building_energy_intensity_kWh_m2` | — | — | — | Opt 2b | Opt 2b | — | — | — | — | — |
-| Building energy per building / per dwelling (kWh/yr) | `building_energy_per_unit_kWh` | — | — | — | Opt 3 | Opt 3 | — | — | — | — | — |
-| Vehicle fuel economy by class (L/100 km, kWh/100 km) | `vehicle_fuel_economy` | — | — | — | — | — | Opt 2b·3a·3b | — | — | — | — |
+| Building energy per building / per dwelling (kWh/yr) | `building_energy_per_dwelling_kWh` | — | — | — | Opt 3 | Opt 3 | — | — | — | — | — |
+| Vehicle fuel economy by class (L/100 km, kWh/100 km) | `vehicle_fuel_economy_l_per_100km` | — | — | — | — | — | Opt 2b·3a·3b | — | — | — | — |
 | Vehicle annual distance by class (km/yr) | `vehicle_annual_distance_km` | — | — | — | — | — | Opt 2b·3a·3b | — | — | — | — |
 | Sovereign inventory (with / without LULUCF) + PPP GDP | `sovereign_dataset` | — | — | — | — | — | — | — | Opt 1–3 | — | — |
-| Currency rates and deflators | `currency_and_deflators` | vintage rule | vintage rule | — | — | — | — | — | — | vintage rule | — |
+| Currency rates and deflators | `currency_lkr_per_usd_annual_average` | vintage rule | vintage rule | — | — | — | — | — | — | vintage rule | — |
 | Carbon price (shadow) | `carbon_price_usd_tCO2e` | risk | risk | risk | — | — | — | — | — | — | — |
 | Construction intensity screen | `construction_intensity_kgCO2e_m2` | — | — | — | — | — | — | taxonomy | — | — | — |
 | NDC 3.0 targets — reduction and removal, two ledgers | `ndc3_targets` | — | — | NDC contribution | — | — | — | NDC contribution | — | — | — |
@@ -893,5 +897,6 @@ never presented as the reported score.
 | Date | Sections | Change | Source |
 |---|---|---|---|
 | 2026-09-16 | 0, 2, 3.1, 3.4, 4, 5 | First compilation: the register's rules and the grid and building families; the OM/BM relabel finding; the verification worklist | Seven-family research run; PCAF Third Edition (repo copy); Ember/OWID open data |
+| 2026-09-16 | 0, 2, 4 | **Part 2.** Registry metrics added for every family (table metrics may be sparse); the adopted grid average, fuel factors and building intensities seeded, provisional, with verification in the source text; `country-config.json` relabelled (0.9224 is the 2017 build margin) and moved to the 2022 SLSEA set with Ember's 2024 average; the sovereign dataset's LK row corrected in level and LULUCF sign; the property engine resolves grid, fuel and intensity from the registry and names the baseline on the trace; the per-class route and screen panel; the Islamic-instrument layer removed — classification is by the financed asset as for any bank | `src/domains/baseline/domain/metrics.js`, `data/baselines/seed.json`, `application/property-factors.js`, `tests/baseline-wiring.test.js` |
 | 2026-09-16 | 1, 4, 5 | Market practice: the standard's own rules page-cited; the PCAF ecosystem and the unverified partner-programme name; Sri Lankan peers (a PCAF-hosted Commercial Bank disclosure, LB Finance) and the SLFRS S2 clock; Amana Bank's public profile, classified by the financed asset like any bank's; regional baseline authorities as models; the twelve practices adopted | PCAF Third Edition pp.2, 9, 30–31, 45–48, 126, 161–167, 191; DCL and FAQ; supplement pp.8–9 |
 | 2026-09-16 | 3.2, 3.3, 3.5, 3.6, 4, 5 | Fuels and GWP; sector EEIO (Sri Lanka named in Open CEDA 2025; EXIOBASE licence tightening); motor vehicles (Sri-Lanka-wide km is *local* → score 2 from the CR); sovereign (LULUCF sign error in the shipped dataset), sub-sovereign, project finance, UoP, carbon price (none in Sri Lanka), currency, NDC 3.0 (removal line unconfirmed) | PCAF Third Edition pp.31, 45–48, 59–65, 66–75, 90–96, 98–102, 140–158, 162, 167, 176, 192–206; Open CEDA 2025 workbook; NTC/CBSL tables via mirror |

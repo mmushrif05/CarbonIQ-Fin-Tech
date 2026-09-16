@@ -18,34 +18,40 @@
       "name": "Sri Lanka",
       "grid_factors": {
         "combined_margin": {
-          "value": 0.8108,
+          "value": 0.6482,
           "unit": "tCO2e/MWh",
-          "year": 2017,
-          "source": "National Grid Emission Factor, calculated with the UNFCCC Tool to calculate the emission factor for an electricity system v02.2.1, against Energy Balance 2017",
-          "url": "http://www.climatechange.lk/DNA/Grid_Emission_Factors.html",
-          "publisher": "DNA Sri Lanka — Climate Change Division, and Sri Lanka Sustainable Energy Authority",
+          "year": 2022,
+          "source": "Sri Lanka Energy Balance 2022, grid emission factors calculated with the UNFCCC Tool to calculate the emission factor for an electricity system: Simple Operating Margin 0.7123, Build Margin 0.5841, Combined Margin 0.6482 kgCO2/kWh (the published CM is the 50/50 average; CDM Tool 07 weights wind and solar 0.75/0.25, which gives 0.6803). Supersedes the 2017 set (OM 0.6993, BM 0.9224, CM 0.8108), which this file had mislabelled with 0.9224 as the operating margin.",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
+          "publisher": "Sri Lanka Sustainable Energy Authority with the Climate Change Secretariat (DNA)",
           "verification": "secondary_reported"
         },
         "operating_margin": {
-          "value": 0.9224,
+          "value": 0.7123,
           "unit": "tCO2e/MWh",
-          "year": 2017,
-          "source": "Operating margin published alongside the combined margin, same calculation",
-          "url": "http://www.climatechange.lk/DNA/Grid_Emission_Factors.html",
-          "publisher": "DNA Sri Lanka / SLSEA",
+          "year": 2022,
+          "source": "Simple operating margin published alongside the combined margin, same calculation — the fossil-dispatch factor, never an average.",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
+          "publisher": "SLSEA / DNA Sri Lanka",
           "verification": "secondary_reported"
         },
-        "build_margin": null,
-        "build_margin_absent_reason": "Not surfaced separately in the published summary held. The combined margin above already incorporates it.",
-        "grid_average": {
-          "value": 0.5,
+        "build_margin": {
+          "value": 0.5841,
           "unit": "tCO2e/MWh",
-          "year": 2023,
-          "source": "Average system emission factor stated in the Long Term Generation Expansion Plan 2023-2042, which projects a fall from about 0.5 to 0.2 kg/kWh by 2042",
-          "url": "https://www.ceb.lk/",
-          "publisher": "Ceylon Electricity Board",
-          "verification": "secondary_reported",
-          "caveat": "Read from planning-document reporting rather than an annual published factor. CEB should confirm the year-specific figure."
+          "year": 2022,
+          "source": "Build margin published alongside the combined margin, same calculation.",
+          "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
+          "publisher": "SLSEA / DNA Sri Lanka",
+          "verification": "secondary_reported"
+        },
+        "grid_average": {
+          "value": 0.3757,
+          "unit": "tCO2e/MWh",
+          "year": 2024,
+          "source": "Ember Yearly Electricity Data (file of 23 Jun 2026): Sri Lanka 2024 CO2 intensity 375.73 gCO2/kWh, generation-weighted average of all generation, CO2 only, no transmission-loss uplift. Replaces the LTGEP 2023-2042 planning figure of 0.5, which is rounded and not an annual factor. The grid is decarbonising fast (518 → 321 gCO2/kWh over 2019–2025), so this is updated every year.",
+          "url": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv",
+          "publisher": "Ember (open data); a CEB/SLSEA-published average replaces it on release",
+          "verification": "primary"
         }
       },
       "technologies": {

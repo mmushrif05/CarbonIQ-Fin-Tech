@@ -6580,6 +6580,15 @@
                 "embodied_carbon_benchmark_kgCO2e_m2",
                 "grid_emission_factor_kgCO2e_kWh",
                 "sector_intensity_tCO2e_per_million_revenue",
+                "grid_displacement_factor_tCO2e_MWh",
+                "fuel_emission_factor_kgCO2e_kWh",
+                "gwp_100yr",
+                "building_energy_intensity_kWh_m2",
+                "building_energy_per_dwelling_kWh",
+                "vehicle_annual_distance_km",
+                "vehicle_fuel_economy_l_per_100km",
+                "carbon_price_usd_tCO2e",
+                "currency_lkr_per_usd_annual_average",
                 "data_quality_target_score"
               ]
             }
@@ -6773,6 +6782,15 @@
                       "embodied_carbon_benchmark_kgCO2e_m2",
                       "grid_emission_factor_kgCO2e_kWh",
                       "sector_intensity_tCO2e_per_million_revenue",
+                      "grid_displacement_factor_tCO2e_MWh",
+                      "fuel_emission_factor_kgCO2e_kWh",
+                      "gwp_100yr",
+                      "building_energy_intensity_kWh_m2",
+                      "building_energy_per_dwelling_kWh",
+                      "vehicle_annual_distance_km",
+                      "vehicle_fuel_economy_l_per_100km",
+                      "carbon_price_usd_tCO2e",
+                      "currency_lkr_per_usd_annual_average",
                       "data_quality_target_score"
                     ]
                   },
@@ -7330,6 +7348,148 @@
         ]
       }
     },
+    "/v1/baselines/for/{assetClass}": {
+      "get": {
+        "operationId": "getBaselinesForByAssetClass",
+        "tags": [
+          "baselines"
+        ],
+        "summary": "The baselines one asset class reads, each with the figure in force and where it came from",
+        "description": "From the Baseline Register (docs/BASELINE-REGISTER.md): every baseline the class reads, the PCAF options that read it, the candidate the register proposes for release with its verification level, and the resolution in force for this caller — released, shipped (provisional) or absent with what it needs. Nothing here is computed; it is what a screen shows beside a figure when the class is selected. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "name": "assetClass",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "country",
+            "in": "query",
+            "description": "ISO 3166-1 alpha-2. Defaults to the organisation's own country.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "assetClass": {
+                      "type": "string"
+                    },
+                    "country": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "baselines": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "assetClass",
+                    "baselines"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "assetClass": {
+                          "type": "string"
+                        },
+                        "country": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "baselines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "assetClass",
+                        "baselines"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/baselines/metrics": {
       "get": {
         "operationId": "getBaselinesMetrics",
@@ -7645,6 +7805,15 @@
                       "embodied_carbon_benchmark_kgCO2e_m2",
                       "grid_emission_factor_kgCO2e_kWh",
                       "sector_intensity_tCO2e_per_million_revenue",
+                      "grid_displacement_factor_tCO2e_MWh",
+                      "fuel_emission_factor_kgCO2e_kWh",
+                      "gwp_100yr",
+                      "building_energy_intensity_kWh_m2",
+                      "building_energy_per_dwelling_kWh",
+                      "vehicle_annual_distance_km",
+                      "vehicle_fuel_economy_l_per_100km",
+                      "carbon_price_usd_tCO2e",
+                      "currency_lkr_per_usd_annual_average",
                       "data_quality_target_score"
                     ]
                   },

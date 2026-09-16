@@ -35,6 +35,7 @@ const { sovereignRequestSchema } = require('../schemas/sovereign');
 const { assessRealEstate } = require('../../domain/real-estate');
 const { realEstateRequestSchema } = require('../schemas/real-estate');
 const { withSectorBand } = require('../../application/plausibility');
+const { withPropertyFactors } = require('../../application/property-factors');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
 const { assessRequestSchema } = require('../schemas/pcaf-parta');
@@ -283,10 +284,10 @@ router.post('/real-estate/assess',
       + 'building count → 3). Stores nothing.',
     response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
   validate({ body: realEstateRequestSchema }),
-  (req, res, next) => {
+  async (req, res, next) => {
     try {
       const startedAt = Date.now();
-      const result = assessRealEstate(req.body);
+      const result = assessRealEstate(await withPropertyFactors(req.body, { orgId: req.orgId || null }));
       res.json({ ...result, elapsedMs: Date.now() - startedAt });
     } catch (err) { next(err); }
   });

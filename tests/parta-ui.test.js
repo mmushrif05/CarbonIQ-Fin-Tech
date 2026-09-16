@@ -169,7 +169,7 @@ describe('The worked examples produce the figures they promise', () => {
        rather than from a number frozen into the preset. */
     expect(r.generation.annualGeneration.value).toBe(82519.2);
     expect(r.generation.annualGeneration.source).toBe('derived');
-    expect(r.inventory.scope1And2.value).toBe(61.89);
+    expect(r.inventory.scope1And2.value).toBe(46.5);
 
     // 90,600 MWh from 60 MW is a 17.2% capacity factor — inside Sri Lanka's band.
     expect(r.generation.plausibility.capacityFactorPct).toBe(15.7);

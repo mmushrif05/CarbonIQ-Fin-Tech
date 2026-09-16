@@ -3,7 +3,8 @@
     "title": "Shipped baseline seed — illustrative, not released",
     "purpose": "Enough for the product to run and be demonstrated before an operator has released anything. Every value here resolves with provisional: true and is labelled on every screen and in every response that reads it.",
     "rule": "A released baseline replaces this entirely for that metric and scope. The two are never merged.",
-    "governance": "docs/BASELINE-GOVERNANCE.md"
+    "governance": "docs/BASELINE-GOVERNANCE.md",
+    "register": "Every entry here is a candidate the Baseline Register (docs/BASELINE-REGISTER.md, data/baselines/baseline-register.json) proposes for release, with its verification level in the source text. A secondary_reported entry is a figure quoted from a description of its source, not read from it — a demonstration runs on it; a disclosure does not, until an operator has re-read the figure and released it. A metric nothing reads yet is not seeded: its adopted candidate stays in the register until the engine that reads it exists."
   },
   "baselines": [
     {
@@ -73,6 +74,48 @@
       "source": "CarbonIQ FinTech — plausibility bands for a borrower's reported scope 1 and 2 intensity per million LKR of revenue, set at a quarter to four times the order-of-magnitude sector figure in data/pcaf-parta/sector-factors.json. PCAF sets no such test; the bands are regional judgement and are held here so they can be released, versioned and superseded with a reason.",
       "authority": "Datum Solutions",
       "note": "A borrower outside its band is recorded as a finding and nothing is refused and no figure changes: the check exists to catch a unit or a boundary error, not to police a borrower."
+    },
+    {
+      "metric": "grid_emission_factor_kgCO2e_kWh",
+      "scope": "country",
+      "country": "LK",
+      "values": {
+        "value": 0.3757
+      },
+      "source": "Ember, Yearly Electricity Data, file of 23 Jun 2026 — Sri Lanka 2024 CO2 intensity 375.73 gCO2/kWh: generation-weighted average of all generation, CO2 only, no transmission-loss uplift; series 2019 518.30 · 2020 512.73 · 2021 418.05 · 2022 410.15 · 2023 417.33 · 2024 375.73 · 2025 321.16. Verification: primary (file read). https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv. Location-based; a borrower's scope 2 only, never a displacement factor. Replaced by a CEB/SLSEA-published average on release; update yearly.",
+      "authority": "Ember (open data)",
+      "vintage": 2024,
+      "verification": "primary"
+    },
+    {
+      "metric": "fuel_emission_factor_kgCO2e_kWh",
+      "scope": "global",
+      "values": {
+        "diesel": 0.2668,
+        "petrol": 0.2495,
+        "kerosene": 0.2588,
+        "furnace_oil": 0.2786,
+        "lpg": 0.2272,
+        "natural_gas": 0.202,
+        "bituminous_coal": 0.3406
+      },
+      "source": "IPCC 2006 Guidelines for National Greenhouse Gas Inventories, Vol. 2 Energy, Table 1.4 default CO2 emission factors (kg/TJ: diesel 74,100 · petrol 69,300 · kerosene 71,900 · residual fuel oil 77,400 · LPG 63,100 · natural gas 56,100 · other bituminous coal 94,600) ÷ 277,777.8 kWh/TJ; CO2 only, net calorific value, 100 % oxidation. Verification: secondary_reported (table values to be re-read at https://www.ipcc-nggip.iges.or.jp/public/2006gl/pdf/2_Volume2/V2_1_Ch1_Introduction.pdf). Sri Lanka has no biofuel blending mandate, so no biogenic deduction applies; a per-litre figure needs a Sri Lankan density from the SLSEA Energy Balance appendix.",
+      "authority": "IPCC (the standard's value wins; the registry holds the citation)",
+      "vintage": 2006,
+      "verification": "secondary_reported"
+    },
+    {
+      "metric": "building_energy_intensity_kWh_m2",
+      "scope": "country",
+      "country": "LK",
+      "values": {
+        "office": 250,
+        "supermarket": 465.4
+      },
+      "source": "Office: ~250 kWh/m²/yr (building energy index range 235–285) for air-conditioned multi-storey offices in Colombo, an 87-building study (~73,000 m²) cited by IESL SLEN 'Building Energy Standards/Codes: Present Status and Way Forward' and/or the University of Moratuwa thesis 'Electrical energy saving potential in Sri Lanka office buildings' — attribution to be confirmed by opening https://iesl.lk/SLEN/46/Energy.php and http://dl.lib.uom.lk/handle/123/12434. Supermarket: 465.4 kWh/m²/yr per total floor area (780.0 per sales floor), IEEE/University of Moratuwa 'Benchmarking Energy and Water Consumption of Supermarkets in Sri Lanka', n = 101, 2022, https://ieeexplore.ieee.org/document/9906145/. Verification: secondary_reported. Types not held here (retail, hotel, industrial, residential) fall back to the provisional energy-statistics table and say so.",
+      "authority": "IESL / University of Moratuwa (published studies)",
+      "vintage": 2022,
+      "verification": "secondary_reported"
     }
   ]
 }

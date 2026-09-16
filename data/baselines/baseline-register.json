@@ -369,7 +369,7 @@
     {
       "key": "fuel_emission_factors",
       "label": "Fuel combustion emission factors — diesel, petrol, kerosene, furnace oil, LPG, natural gas, coal, biomass",
-      "metricKey": "fuel_emission_factor_kgCO2e_per_unit",
+      "metricKey": "fuel_emission_factor_kgCO2e_kWh",
       "shape": "table",
       "unit": "kgCO2 per kWh (net CV); per litre with a stated density",
       "appliesTo": [
@@ -505,7 +505,7 @@
     {
       "key": "gwp_set",
       "label": "Global warming potential set",
-      "metricKey": "gwp_set",
+      "metricKey": "gwp_100yr",
       "shape": "table",
       "unit": "kgCO2e per kg of gas, 100-year horizon",
       "appliesTo": [
@@ -1006,7 +1006,7 @@
     {
       "key": "building_energy_per_dwelling",
       "label": "Residential energy per dwelling (Option 3 statistic)",
-      "metricKey": "building_energy_per_unit_kWh",
+      "metricKey": "building_energy_per_dwelling_kWh",
       "shape": "single",
       "unit": "kWh per dwelling per year",
       "appliesTo": [
@@ -1158,7 +1158,7 @@
     {
       "key": "vehicle_fuel_economy",
       "label": "Vehicle fuel economy by class and by make/model",
-      "metricKey": "vehicle_fuel_economy",
+      "metricKey": "vehicle_fuel_economy_l_per_100km",
       "shape": "vehicle_table",
       "unit": "L/100 km or km/L (cycle named); kWh/100 km for EVs",
       "appliesTo": [
@@ -1365,7 +1365,7 @@
     {
       "key": "currency_and_deflators",
       "label": "Exchange rates (annual average) and price deflators for re-basing economic factors",
-      "metricKey": "currency_and_deflators",
+      "metricKey": "currency_lkr_per_usd_annual_average",
       "shape": "series",
       "unit": "LKR per USD / EUR (annual average); index (2021 = 100 CCPI/NCPI; GDP deflator, 2015 base)",
       "appliesTo": [

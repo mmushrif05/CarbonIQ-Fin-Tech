@@ -123,6 +123,25 @@
 
   <section class="bl-band">
     <div class="bl-card">
+      <h3 class="bl-h">What each asset class reads</h3>
+      <p class="bl-basis">Every figure a class computes rests on baselines from the register. Pick a class to see each one: the PCAF options that read it, the figure in force for this organisation with its scope and version, and the candidate the register proposes for release with its verification level.</p>
+      <div class="bl-form">
+        <label class="bl-field">Asset class
+          <select id="bl-class"></select>
+        </label>
+      </div>
+      <div class="bl-scroll">
+        <table class="bl-table" id="bl-class-table">
+          <thead><tr><th>Baseline</th><th>Read by</th><th>In force</th><th>Scope · version</th><th>Proposed for release</th><th>Verification</th></tr></thead>
+          <tbody id="bl-class-rows"></tbody>
+        </table>
+      </div>
+      <div class="bl-empty" id="bl-class-empty" hidden></div>
+    </div>
+  </section>
+
+  <section class="bl-band">
+    <div class="bl-card">
       <h3 class="bl-h">Pledge</h3>
       <div id="bl-pledge"></div>
     </div>

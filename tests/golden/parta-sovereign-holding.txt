@@ -42,15 +42,15 @@ SECTION 4 [gases] Gases and units
     body: Land-use, land-use change and forestry (LULUCF) is reported as a boundary on scope 1 — both including and excluding it — rather than netted against the fossil inventory (§5.9, p.141).
 
 SECTION 5 [absolute] Absolute emissions
-    figure: Financed scope 1 — territorial, excluding LULUCF = 236.01 tCO2e
+    figure: Financed scope 1 — territorial, excluding LULUCF = 148.92 tCO2e
       score: Data quality score: 5 (Option 3b, Table 5.9-6). 1 is the highest quality, 5 the lowest.
-    figure: Financed scope 1 — territorial, including LULUCF = 202.29 tCO2e
+    figure: Financed scope 1 — territorial, including LULUCF = 25.07 tCO2e
       note: The same emissions on the other LULUCF boundary — never summed with the above.
     figure: Financed scope 3 — a separate line = — tCO2e
       note: Scope 3 (non-energy imports) is a §5.9 should and no figure is held. OECD trade-embodied CO2 is the source PCAF names, CO2 only, with a four-year lag (Table 10.3-4).
     table [3 cols] head: Line | tCO2e | Note
-      row: Financed scope 1, excl. LULUCF | 236.01 | Domestic territorial emissions attributed by PPP-GDP; the headline (§5.9, p.141).
-      row: Financed scope 1, incl. LULUCF | 202.29 | The same emissions including land use — never added to the line above.
+      row: Financed scope 1, excl. LULUCF | 148.92 | Domestic territorial emissions attributed by PPP-GDP; the headline (§5.9, p.141).
+      row: Financed scope 1, incl. LULUCF | 25.07 | The same emissions including land use — never added to the line above.
       row: Financed scope 2 | — | Imported grid energy: a should, reported absent.
       row: Financed scope 3 | — | Non-energy imports: a should, reported absent.
     caption: No row sums scope 1 excluding LULUCF with scope 1 including LULUCF — they are the same emissions on two boundaries — and no row sums scope 3 into scope 1 and 2 (§5.9, p.141).
@@ -82,7 +82,7 @@ SECTION 8 [recalculation] Recalculation and significance
     body: The register holds both the input a bank keyed and the result the engine computed. A recomputation reruns the engine over the input already held and reports what moved across scope 1 on both LULUCF boundaries, scope 2 and 3, the data-quality score and the findings — so a change in the sovereign dataset is a decision somebody takes rather than something that happens to them.
 
 SECTION 9 [intensity] Emission intensity
-    figure: Production emission intensity = 118 tCO2e per million international USD (PPP)
+    figure: Production emission intensity = 74.46 tCO2e per million international USD (PPP)
       note: Country scope 1 excluding LULUCF over PPP-adjusted GDP — a country-level figure, not attributed (§5.9, p.144). The plausibility check reads it: PPP-GDP exists to remove the distortion an implausible value would show.
     body: A consumption-emissions view (production, less emissions embodied in exports, plus emissions embodied in imports) is recommended by §5.9 (pp.142–143). The sovereign dataset in use holds no trade-embodied emissions, so the consumption view is reported as not computed, with that reason, rather than invented.
 
@@ -90,7 +90,8 @@ SECTION 10 [limitations] Limitations, and what the data says about itself
     body: The checks below follow the rule that where an independent path to a figure exists it is recomputed and the divergence reported, and where none exists the gap is stated rather than passed over. None of them refuses a figure or changes one; each records something a reader of the figure should know.
     table [3 cols] head: Severity | What the data says | What would clear it
       row: material | This country’s emissions are estimated from a proxy country (Option 3b), not from its own inventory. | Source the country’s own production emissions from its UNFCCC submission (di.unfccc.int) or Climate Watch and record them, which moves the figure to Option 1a/1b.
-      row: material | The country emissions are for 2018, 6 year(s) behind the 2024 reporting year. | Source a more recent inventory year, or state the lag beside the figure. Threshold 2 year(s) is CarbonIQ’s, not PCAF’s (PCAF permits a lag and sets none), and is settable.
+      row: material | The country emissions are for 2010, 14 year(s) behind the 2024 reporting year. | Source a more recent inventory year, or state the lag beside the figure. Threshold 2 year(s) is CarbonIQ’s, not PCAF’s (PCAF permits a lag and sets none), and is settable.
+      row: advisory | The emissions are for 2010 and the PPP-adjusted GDP for 2020, 10 year(s) apart. | Use emissions and PPP-GDP from the same year where both are published. Threshold 3 year(s) is CarbonIQ’s and is settable.
       row: advisory | Only one source for this country’s emissions is held, so the figure could not be cross-checked against an independent one. | Supply a second source under crossCheck (UNFCCC, Climate Watch or EDGAR give independent estimates) and the divergence will be reported.
     caption: Export- and import-embodied emissions are not held for this sovereign. PCAF recommends the consumption view as an additional metric (p.142) with stated limitations (input-output dependence, ~2-year lag, CO2 only); it is never summed with the territorial figure.
 
@@ -116,7 +117,7 @@ ANNEX A [annexDataset] Sovereign dataset
       row: sovereign-dataset | 1.0.0 | <date> | provisional | 3 | <sha256>
     h2: The country rows this book read
     table [5 cols] head: Sovereign | Scope 1 excl. LULUCF, tCO2e (year) | Scope 1 incl. LULUCF, tCO2e (year) | PPP-GDP, M int. USD (year) | Status
-      row: Sri Lanka (LK) | 35,000,000 (2018) | 30,000,000 (2018) | 296,600 (2020) | provisional
+      row: Sri Lanka (LK) | 22,084,620 (2010) | 3,718,450 (2010) | 296,600 (2020) | provisional
     caption: A provisional country carries the gap it stands in for; its figures are order-of-magnitude placeholders pending a released set.
 
 ANNEX B [annexChecklist] PCAF disclosure checklist — completed
