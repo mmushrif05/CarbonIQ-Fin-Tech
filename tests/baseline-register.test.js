@@ -121,7 +121,7 @@ describe('the baseline register — document and data agree', () => {
     const unread = JSON.parse(JSON.stringify(REG));
     const sec = unread.baselines.flatMap(b => b.candidates).find(c => c.verification === 'secondary_reported') || {};
     sec.provisional = false;
-    expect(reg.registerSchema.validate(unread, { convert: false }).error.message).toMatch(/provisional/);
+    expect(String(reg.registerSchema.validate(unread, { convert: false }).error)).toMatch(/provisional/);
   });
 
   test('a candidate that was not read from its source is provisional', () => {
