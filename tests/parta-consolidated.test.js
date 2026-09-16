@@ -44,6 +44,15 @@ const LOANS = [
     outstanding: { amount: 40e6, asOf, currency: 'LKR' },
     emissions: { scope1: { basis: 'assets-sector' }, scope2: { basis: 'assets-sector' }, scope3AbsentReason: 'none held' } },
 ];
+/* A §5.4 property in the same register, keyed in square feet: the register
+   holds every built class, and the consolidated position lays it beside the
+   loans on its own table without averaging anything. */
+const PROPERTIES = [
+  { assetClass: 'commercial-real-estate', reportingYear: 2024, identifiers: { accountNumber: 'CRE-1' },
+    counterparty: { name: 'Colombo Office Tower' }, buildingType: 'office', productType: 'purchase',
+    exposure: { outstanding: 200e6, currency: 'LKR', asOf }, value: { atOrigination: 800e6 },
+    floorArea: { value: 10763.91, unit: 'ft2' } },
+];
 const HOLDINGS = [
   { reportingYear: 2024, country: 'SG', instrument: 'sovereign-bond', exposure: { amount: 1e6, currency: 'USD' }, identifiers: { accountNumber: 'SG-1' } },
   { reportingYear: 2024, country: 'HK', instrument: 'sovereign-bond', exposure: { amount: 1e6, currency: 'USD' }, identifiers: { accountNumber: 'HK-1' } },
@@ -93,6 +102,7 @@ beforeAll(async () => {
   ORG = issued.orgId;
   headers = { 'X-API-Key': issued.key };
   for (const e of LOANS) await register.record(ORG, e);
+  for (const e of PROPERTIES) await register.record(ORG, e);
   for (const h of HOLDINGS) await sovereign.record(ORG, h);
   await register.stateBook(ORG, { reportingYear: 2024, totalLoansAndInvestments: 14e9, currency: 'LKR', statedBy: 'Group CFO' });
   await register.saveSettings(ORG, ENTITY);
@@ -106,8 +116,10 @@ describe('The consolidated position across asset classes', () => {
     const byClass = Object.fromEntries(pos.classes.map(c => [c.assetClass, c]));
     expect(byClass['business-loans-unlisted-equity'].status).toBe('recorded');
     expect(byClass['sovereign-debt'].status).toBe('recorded');
-    expect(byClass['commercial-real-estate'].status).toBe('engine-only');
-    expect(byClass['mortgages'].status).toBe('engine-only');
+    expect(byClass['commercial-real-estate'].status).toBe('recorded');
+    expect(byClass['commercial-real-estate'].headline.basis).toMatch(/§5\.4/);
+    expect(byClass['mortgages'].status).toBe('not-recorded');
+    expect(byClass['mortgages'].reason).toMatch(/No exposures are recorded/);
     expect(byClass['securitizations'].status).toBe('not-built');
     for (const c of pos.classes.filter(x => x.status !== 'recorded')) expect(c.reason).toBeTruthy();
     /* The entity's stated reason overrides the system's, never the reverse. */
@@ -118,13 +130,18 @@ describe('The consolidated position across asset classes', () => {
 
   test('the headline sums each class on its own boundary and names them; scope 3 is summed apart', async () => {
     const pos = await consolidated.position(ORG, 2024);
-    const [bl, sv] = [pos.classes.find(c => c.assetClass === 'business-loans-unlisted-equity'), pos.classes.find(c => c.assetClass === 'sovereign-debt')];
+    const at = k => pos.classes.find(c => c.assetClass === k);
+    const [bl, cre, sv] = [at('business-loans-unlisted-equity'), at('commercial-real-estate'), at('sovereign-debt')];
     expect(bl.headline.label).toBe('Financed scope 1 and 2');
+    expect(cre.headline.label).toBe('Financed scope 1 and 2');
     expect(sv.headline.label).toBe('Financed scope 1, excluding LULUCF');
-    expect(pos.totals.headline.value).toBe(+(bl.headline.value + sv.headline.value).toFixed(2));
+    expect(pos.totals.headline.value).toBe(+(bl.headline.value + cre.headline.value + sv.headline.value).toFixed(2));
     expect(pos.totals.headline.basis).toMatch(/§5\.2.*scope 1 and 2/);
+    expect(pos.totals.headline.basis).toMatch(/§5\.4.*scope 1 and 2/);
     expect(pos.totals.headline.basis).toMatch(/§5\.9.*excluding LULUCF/);
     expect(pos.totals.headline.note).toMatch(/never into it/);
+    /* The property's construction scope 3 is absent, so scope 3 across classes is the loans' alone. */
+    expect(cre.scope3.value).toBeNull();
     expect(pos.totals.scope3.value).toBe(bl.scope3.value);
     /* No key anywhere holds headline plus scope 3. */
     const flat = JSON.stringify(pos.totals);
@@ -133,8 +150,10 @@ describe('The consolidated position across asset classes', () => {
 
   test('the data-quality score is one per class, never averaged across classes', async () => {
     const pos = await consolidated.position(ORG, 2024);
-    expect(pos.dataQuality.byClass).toHaveLength(2);
-    expect(pos.dataQuality.byClass.map(c => c.table)).toEqual(['Box 6.1-6 option mapping (Table 5.2-1)', 'Table 5.9-6']);
+    expect(pos.dataQuality.byClass).toHaveLength(3);
+    expect(pos.dataQuality.byClass.map(c => c.table)).toEqual(['Box 6.1-6 option mapping (Table 5.2-1)', 'Table 5.4-1 option mapping', 'Table 5.9-6']);
+    /* The property scores 4 (Option 2b) on its own table; the loans' score is not moved by it. */
+    expect(pos.dataQuality.byClass.find(c => c.assetClass === 'commercial-real-estate').score).toBe(4);
     expect(pos.dataQuality.note).toMatch(/never averaged/);
     expect(pos.dataQuality.score).toBeUndefined();
     expect(pos.dataQuality.weighted).toBeUndefined();
@@ -143,8 +162,8 @@ describe('The consolidated position across asset classes', () => {
   test('coverage sums only the classes in the book’s currency and names the class it excludes', async () => {
     const pos = await consolidated.position(ORG, 2024);
     expect(pos.coverage.currency).toBe('LKR');
-    expect(pos.coverage.assessedOutstanding).toBe(520e6);
-    expect(pos.coverage.sharePct).toBe(+((520e6 / 14e9) * 100).toFixed(2));
+    expect(pos.coverage.assessedOutstanding).toBe(720e6);
+    expect(pos.coverage.sharePct).toBe(+((720e6 / 14e9) * 100).toFixed(2));
     expect(pos.coverage.excluded).toEqual([expect.objectContaining({ assetClass: 'sovereign-debt', currency: 'USD', outstanding: 2e6 })]);
     expect(pos.outstandingItems.some(x => /denominated in USD/.test(x.what))).toBe(true);
   });
@@ -169,8 +188,12 @@ describe('The consolidated disclosure', () => {
 
   test('the register across classes is the audit trail: one row per exposure of every class, and the checklist reads it', async () => {
     const { model, facts } = await consolidated.annualDisclosure(ORG, 2024, {});
-    expect(facts.exposureRegister).toHaveLength(4);
-    expect(facts.exposureRegister.map(r => r.section).sort()).toEqual(['§5.2', '§5.2', '§5.9', '§5.9']);
+    expect(facts.exposureRegister).toHaveLength(5);
+    expect(facts.exposureRegister.map(r => r.section).sort()).toEqual(['§5.2', '§5.2', '§5.4', '§5.9', '§5.9']);
+    const cre = facts.exposureRegister.find(r => r.section === '§5.4');
+    expect(cre.counterparty).toBe('Colombo Office Tower');
+    expect(cre.option).toBe('2b');
+    expect(cre.score).toBe(4);
     const a = Object.fromEntries(model.checklist.items.map(i => [i.id, i.answer]));
     for (const id of ['GOV-1', 'GOV-2', 'PER-1', 'COV-1', 'COV-2', 'GAS-1', 'ABS-1', 'ABS-2', 'ABS-3', 'MTH-1', 'DQ-1', 'REC-1', 'TRC-1', 'INT-1', 'DOC-1']) {
       expect([id, a[id]]).toEqual([id, 'Yes']);
@@ -210,7 +233,7 @@ describe('The routes', () => {
     expect(csv.headers['content-type']).toMatch(/text\/csv/);
     const lines = csv.text.trim().split(/\r\n/);
     expect(lines[0]).toBe(consolidated.CSV_COLUMNS.join(','));
-    expect(lines).toHaveLength(5);
+    expect(lines).toHaveLength(6);
   });
 
   test('an empty year is a 409 on the document and a position of absences on the read', async () => {

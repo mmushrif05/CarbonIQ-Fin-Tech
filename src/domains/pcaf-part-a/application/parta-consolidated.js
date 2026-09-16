@@ -53,11 +53,21 @@ const { ASSET_CLASSES } = settingsService;
    docs/PCAF-PART-A-RESEARCH.md §11. */
 const CAPABILITY = Object.freeze({
   'business-loans-unlisted-equity': 'register',
+  'listed-equity-corporate-bonds': 'register',
+  'project-finance': 'register',
+  'commercial-real-estate': 'register',
+  'mortgages': 'register',
   'sovereign-debt': 'register',
-  'project-finance': 'engine',
-  'commercial-real-estate': 'engine',
-  'mortgages': 'engine',
-  'listed-equity-corporate-bonds': 'engine-unrouted',
+});
+
+/* What each register class contributes on the headline, in the words of its
+   own section — the consolidated headline names the boundary each summed on. */
+const REGISTER_CLASS = Object.freeze({
+  'business-loans-unlisted-equity': { basis: 'Attributed borrower scope 1 and 2 (§5.2, p.56)', table: 'Box 6.1-6 option mapping (Table 5.2-1)' },
+  'listed-equity-corporate-bonds': { basis: 'Attributed investee scope 1 and 2 on EVIC (§5.1, pp.41–44)', table: 'Table 5.1-2 option mapping' },
+  'project-finance': { basis: 'Attributed project scope 1 and 2 on total project equity plus debt (§5.3)', table: 'Table 5.3-1 option mapping' },
+  'commercial-real-estate': { basis: 'Attributed building operational scope 1 and 2 on the origination value (§5.4, p.79)', table: 'Table 5.4-1 option mapping' },
+  'mortgages': { basis: 'Attributed dwelling operational scope 1 and 2 on the origination value (§5.5)', table: 'Table 5.5-1 option mapping' },
 });
 
 const SYSTEM_REASON = Object.freeze({
@@ -81,21 +91,31 @@ async function tryPosition(fn) {
   }
 }
 
-function businessLoansRow(pos, bookCurrency) {
+/**
+ * A register class's position as a consolidated row. The register classes are
+ * assumed to be in the book's currency — the projection does not carry each
+ * exposure's currency, so a class recorded in another currency would be summed
+ * here; the sovereign register, denominated in USD by construction, is the one
+ * class handled apart.
+ */
+function registerRow(pos, bookCurrency, assetClass) {
   const t = pos.total || {};
   const l = t.lines || {};
   const v = k => (l[k] && num(l[k].value) ? l[k].value : null);
   const dq = t.dataQuality || {};
   const plan = pos.improvementPlan || {};
+  const meta = REGISTER_CLASS[assetClass] || REGISTER_CLASS['business-loans-unlisted-equity'];
   return {
     exposures: pos.exposures,
     outstanding: t.outstanding,
     currency: bookCurrency || 'LKR',
-    headline: { value: v('scope1And2'), label: 'Financed scope 1 and 2', basis: 'Attributed borrower scope 1 and 2 (§5.2, p.56)' },
+    headline: { value: v('scope1And2'), label: 'Financed scope 1 and 2', basis: meta.basis },
     scope1: { value: v('scope1') }, scope2: { value: v('scope2') },
-    scope3: { value: v('scope3'), note: 'A separate line; never summed with scope 1 and 2 (§5.2, p.56).' },
+    scope3: { value: v('scope3'), note: assetClass === 'business-loans-unlisted-equity'
+      ? 'A separate line; never summed with scope 1 and 2 (§5.2, p.56).'
+      : 'A separate line; never summed with scope 1 and 2 (Chapter 6).' },
     dataQuality: { score: dq.scope1And2 ? dq.scope1And2.score : null, scope3Score: dq.scope3 ? dq.scope3.score : null,
-      table: 'Box 6.1-6 option mapping (Table 5.2-1)', weighting: 'outstanding amount' },
+      table: meta.table, weighting: 'outstanding amount' },
     coveragePct: num(pos.coverage && pos.coverage.share) ? r2(pos.coverage.share * 100) : null,
     intensity: { value: num(t.economicIntensity_tCO2e_per_M) ? t.economicIntensity_tCO2e_per_M : null, unit: `tCO2e per million ${bookCurrency || 'LKR'}` },
     findings: ((plan.byRemedy) || []).reduce((s, x) => s + (x.exposures || 0), 0),
@@ -133,10 +153,10 @@ function sovereignRow(pos) {
  */
 async function position(orgId, reportingYear) {
   const year = String(reportingYear);
-  const [book, settings, bl, sv] = await Promise.all([
+  const [book, settings, reg, sv] = await Promise.all([
     register.getBook(orgId, year),
     settingsService.getSettings(orgId).catch(fallback('parta.consolidated.settings', settingsService.DEFAULT_SETTINGS)),
-    tryPosition(() => register.position(orgId, year)),
+    register.positions(orgId, year),
     tryPosition(() => sovereign.position(orgId, year)),
   ]);
   const bookCurrency = book ? book.currency : null;
@@ -145,7 +165,8 @@ async function position(orgId, reportingYear) {
   const classes = /** @type {any[]} */ (ASSET_CLASSES.map(c => {
     const cap = CAPABILITY[c.assetClass] || 'not-built';
     let row = /** @type {any} */ (null);
-    if (c.assetClass === 'business-loans-unlisted-equity' && bl.ok) row = { status: 'recorded', ...businessLoansRow(bl.value, bookCurrency) };
+    const held = reg.byClass[c.assetClass];
+    if (held) row = { status: 'recorded', ...registerRow(held, bookCurrency, c.assetClass) };
     else if (c.assetClass === 'sovereign-debt' && sv.ok) row = { status: 'recorded', ...sovereignRow(sv.value) };
     else if (cap === 'register') row = { status: 'not-recorded', reason: SYSTEM_REASON.empty, reasonStatedBy: 'system' };
     else if (cap === 'engine') row = { status: 'engine-only', reason: SYSTEM_REASON.engine, reasonStatedBy: 'system' };
@@ -174,8 +195,8 @@ async function position(orgId, reportingYear) {
     headline: {
       value: sum(recorded, c => c.headline.value),
       basis: recorded.map(c => `${c.label} (${c.section}): ${c.headline.label}`).join('; ') || 'No class recorded',
-      note: 'The headline sums each recorded class on the boundary its section reports: §5.2 contributes '
-        + 'financed scope 1 and 2, §5.9 contributes financed scope 1 excluding LULUCF. Scope 3 is summed '
+      note: 'The headline sums each recorded class on the boundary its section reports: §5.1 to §5.5 contribute '
+        + 'financed scope 1 and 2 on their own attribution, §5.9 contributes financed scope 1 excluding LULUCF. Scope 3 is summed '
         + 'apart and never into it; scope 1 including LULUCF is never added to the excluding figure.',
     },
     scope1: { value: sum(recorded, c => c.scope1 && c.scope1.value) },
@@ -231,7 +252,7 @@ async function position(orgId, reportingYear) {
     dataQuality: {
       byClass: recorded.map(c => ({ assetClass: c.assetClass, section: c.section, label: c.label, score: c.dataQuality.score, table: c.dataQuality.table, weighting: c.dataQuality.weighting })),
       note: 'One score per class, weighted by outstanding amount within it (DCL p.128). Scores are never averaged '
-        + 'across classes: §5.2 and §5.9 score on different tables, and a mean of two categories from two scales means nothing.',
+        + 'across classes: each class scores on its own table, and a mean of two categories from two scales means nothing.',
     },
     outstandingItems,
     exposures: recorded.reduce((s, c) => s + (c.exposures || 0), 0),
@@ -242,20 +263,24 @@ async function position(orgId, reportingYear) {
 /** Every exposure of every recorded class, one row each, with the class named. */
 async function registerRows(orgId, reportingYear) {
   const year = String(reportingYear);
-  const [bl, sv] = await Promise.all([register.rows(orgId, year), sovereign.rows(orgId, year)]);
+  const [byClass, sv] = await Promise.all([register.rowsByClass(orgId, year), sovereign.rows(orgId, year)]);
   const num_ = v => (num(v) ? v : null);
+  const section = new Map(ASSET_CLASSES.map(c => [c.assetClass, c.section]));
   const out = [];
-  for (const r of bl) {
-    const ex = r.exposure || {}; const cp = ex.counterparty || {}; const inv = r.inventory || {}; const dq = (inv.dataQuality || {}).scope1And2 || {};
-    out.push({
-      assetClass: 'business-loans-unlisted-equity', section: '§5.2', exposureId: ex.identifiers && ex.identifiers.id,
-      counterparty: cp.name || null, sector: cp.sector || cp.naceL2 || null, instrument: ex.instrument || ex.kind || null,
-      outstanding: ex.outstanding ? num_(ex.outstanding.value) : null, currency: (ex.outstanding && ex.outstanding.unit) || null,
-      attributionFactor: r.attribution ? num_(r.attribution.value) : null, option: dq.option || null, score: num_(dq.score),
-      headline: inv.scope1And2 ? num_(inv.scope1And2.value) : null, headlineLabel: 'scope 1 and 2',
-      scope3: inv.scope3 && !inv.scope3.absent ? num_(inv.scope3.value) : null,
-      verdict: (r.validation && r.validation.verdict) || 'clean', findings: (r.validation && r.validation.findings && r.validation.findings.length) || 0,
-    });
+  /* Every register class, in section order, each row naming its class. */
+  for (const c of ASSET_CLASSES) {
+    for (const r of byClass[c.assetClass] || []) {
+      const ex = r.exposure || {}; const cp = ex.counterparty || {}; const inv = r.inventory || {}; const dq = (inv.dataQuality || {}).scope1And2 || {};
+      out.push({
+        assetClass: c.assetClass, section: section.get(c.assetClass), exposureId: ex.identifiers && ex.identifiers.id,
+        counterparty: cp.name || null, sector: cp.sector || cp.naceL2 || null, instrument: ex.instrument || ex.kind || null,
+        outstanding: ex.outstanding ? num_(ex.outstanding.value) : null, currency: (ex.outstanding && ex.outstanding.unit) || null,
+        attributionFactor: r.attribution ? num_(r.attribution.value) : null, option: dq.option || null, score: num_(dq.score),
+        headline: inv.scope1And2 ? num_(inv.scope1And2.value) : null, headlineLabel: 'scope 1 and 2',
+        scope3: inv.scope3 && !inv.scope3.absent ? num_(inv.scope3.value) : null,
+        verdict: (r.validation && r.validation.verdict) || 'clean', findings: (r.validation && r.validation.findings && r.validation.findings.length) || 0,
+      });
+    }
   }
   for (const r of sv) {
     out.push({

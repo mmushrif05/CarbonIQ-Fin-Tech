@@ -144,7 +144,7 @@ describe('the book total and the position', () => {
   test('the years list says which have a stated book total', async () => {
     await request(app).post('/v1/pcaf/part-a/exposures').set('x-api-key', KEY).send(EXPOSURE).expect(201);
     const res = await request(app).get('/v1/pcaf/part-a/years').set('x-api-key', KEY).expect(200);
-    expect(res.body.years).toEqual([{ reportingYear: '2024', bookTotalStated: false }]);
+    expect(res.body.years).toEqual([{ reportingYear: '2024', bookTotalStated: false, exposures: 1, byClass: { 'business-loans-unlisted-equity': 1 } }]);
   });
 });
 

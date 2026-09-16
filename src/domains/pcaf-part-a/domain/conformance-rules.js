@@ -300,6 +300,40 @@ const RULES = [
     test: 'tests/parta-register.test.js › a recomputation says whether the movement reaches the significance threshold',
     status: 'implemented',
   },
+  {
+    id: 'A-REG-09',
+    clause: 'Chapter 6 — one position per asset class (DCL p.128; §5.1–§5.5 tables)',
+    rule: 'One exposure register holds every built Part A class, and each row names the class whose '
+      + 'engine computed it. The reporting-year position is rolled up per class, on that class’s own '
+      + 'data-quality table, label and groupings, from one read of the projection; no total and no '
+      + 'score is ever summed or averaged across classes, because the option-to-score tables differ '
+      + 'between classes and a mean of two categories from two tables means nothing.',
+    implementation: 'src/domains/pcaf-part-a/application/register-classes.js — each class’s engine, preparation and adapter onto the one register shape; src/domains/pcaf-part-a/application/register.js — position() filters the projection to one class and positions() rolls each class alone; src/domains/pcaf-part-a/domain/business-loans/portfolio.js — rollUp() bound per class through opts',
+    test: 'tests/parta-register-classes.test.js › the position is per class, from one read, and a class the year holds nothing of is a 409 naming what it does hold',
+    status: 'implemented',
+  },
+  {
+    id: 'A-REG-10',
+    clause: '§5.4 (p.79) / §5.5 — energy statistics per square metre of floor area',
+    rule: 'A floor area arrives with the unit it was measured in and is converted to square metres once, '
+      + 'in the engine, with the exact factor (1 ft = 0.3048 m); the trace carries the area as keyed '
+      + 'beside the square metres it became. A land unit — perch, acre, hectare — is refused by name, '
+      + 'because the intensity is per square metre of floor and the extent of the plot says nothing '
+      + 'about the building on it. No conversion lives in the browser.',
+    implementation: 'src/domains/pcaf-part-a/domain/real-estate/area.js — floorAreaM2(); src/domains/pcaf-part-a/domain/real-estate/index.js — the area resolved once and both forms refused together; src/domains/pcaf-part-a/domain/real-estate/energy.js — areaTrace() on the Option 2a/2b trace',
+    test: 'tests/parta-register-classes.test.js › an office keyed at 10,763.91 ft² is the 1,000 m² office, figure for figure, and the option is derived',
+    status: 'implemented',
+  },
+  {
+    id: 'A-REG-11',
+    clause: 'Chapter 6 — a document states the class it reports',
+    rule: 'The per-exposure §5.2 document refuses a row of another class by name rather than printing '
+      + 'it under §5.2 clauses; the row still reaches the consolidated disclosure and its register annex, '
+      + 'which names each row’s class and section.',
+    implementation: 'src/domains/pcaf-part-a/application/parta-report.js — exposureReport() refuses with REPORT_NOT_BUILT_FOR_CLASS; src/domains/pcaf-part-a/application/parta-consolidated.js — registerRows() over every register class',
+    test: 'tests/parta-register-classes.test.js › the per-exposure §5.2 report refuses a row of another class by name; the consolidated register carries it',
+    status: 'implemented',
+  },
 
   // ---- Recalculation protocol (Chapter 6) -------------------------------
   {

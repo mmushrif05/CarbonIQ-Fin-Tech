@@ -102,11 +102,12 @@ describe('a book that persists', () => {
 
   test('an asset class with no engine is a 501 naming what is registered', async () => {
     try {
-      await register.record(ORG, loan(0.1, { assetClass: 'mortgages' }));
+      await register.record(ORG, loan(0.1, { assetClass: 'motor-vehicle-loans' }));
       throw new Error('should have refused');
     } catch (e) {
       expect(e.statusCode).toBe(501);
       expect(e.message).toMatch(/business-loans-unlisted-equity/);
+      expect(e.message).toMatch(/commercial-real-estate/);
     }
   });
 
@@ -255,9 +256,10 @@ describe('the position, read from the stored projection', () => {
 
   test('years reports what is held and whether the book total was stated', async () => {
     await register.record(ORG, loan(0.1));
-    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: false }]);
+    const held = { exposures: 1, byClass: { 'business-loans-unlisted-equity': 1 } };
+    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: false, ...held }]);
     await register.stateBook(ORG, { reportingYear: 2020, totalLoansAndInvestments: 1e6 });
-    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: true }]);
+    expect(await register.years(ORG)).toEqual([{ reportingYear: '2020', bookTotalStated: true, ...held }]);
   });
 });
 

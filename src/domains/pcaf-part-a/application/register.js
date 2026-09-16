@@ -1,6 +1,14 @@
 // @ts-check
 /**
- * The exposure register — the book §5.2 computes over.
+ * The exposure register — one book, every built Part A class.
+ *
+ * Built for §5.2 and now shared: a §5.4 property, a §5.3 project and a §5.1
+ * holding are rows in the same table with `assetClass` naming the engine, and
+ * `./register-classes` gives each its engine, its preparation and the adapter
+ * onto the one shape the projection, the roll-up and the screen read. The
+ * position is rolled up **per class** from one read of the projection and is
+ * never summed or averaged across classes — the score tables differ, and a
+ * mean of two categories from two tables means nothing.
  *
  * §5.2 shipped as two stateless reads: a book had to be posted whole on every
  * call. This is the same engine over rows that persist, and three things
@@ -37,17 +45,18 @@
 const crypto = require('crypto');
 const store = require('../../../platform/database/store');
 const repo = require('../infrastructure/store');
-const { assessBusinessLoan, STANDARD } = require('../domain/business-loans');
-const { withSectorBand } = require('./plausibility');
+const classes = require('./register-classes');
 const { rollUp } = require('../domain/business-loans/portfolio');
 const { movementSignificance } = require('../domain/recalculation');
 const settingsService = require('./parta-settings');
 
 /** @typedef {import('../../../shared/types').AppError} AppError */
 
-const ASSET_CLASSES = Object.freeze({
-  'business-loans-unlisted-equity': assessBusinessLoan,
-});
+/* The classes this one register holds — each with its engine, its
+   preparation and its adapter onto the register's shape (./register-classes). */
+const ASSET_CLASSES = Object.freeze(Object.fromEntries(
+  Object.entries(classes.CLASSES).map(([k, c]) => [k, c.engine])));
+const DEFAULT_CLASS = classes.DEFAULT_CLASS;
 
 const STATUS = Object.freeze({ RECORDED: 'recorded' });
 
@@ -60,32 +69,6 @@ function refuse(code, message, statusCode = 400, remedy) {
   err.code = code;
   if (remedy) err.remedy = remedy;
   return err;
-}
-
-/**
- * The engine's input is the exposure without the register's own field.
- *
- * `assetClass` says which engine runs; it is not one of the engine's inputs,
- * and the §5.2 schema is closed, so passing it through would be a named 400 on
- * a field the caller was right to send.
- */
-function engineInputOf(input) {
-  const out = { ...input };
-  delete out.assetClass;
-  return out;
-}
-
-/** The engine for an asset class, or a refusal naming what is held. */
-function engineFor(assetClass) {
-  const engine = ASSET_CLASSES[assetClass];
-  if (!engine) {
-    throw refuse('ASSET_CLASS_NOT_REGISTERED',
-      `No Part A engine is registered for asset class "${assetClass}". Registered: `
-      + `${Object.keys(ASSET_CLASSES).join(', ')}.`,
-      501,
-      'Part A is built asset class by asset class; the order is in docs/PCAF-PART-A-RESEARCH.md §11.');
-  }
-  return engine;
 }
 
 /**
@@ -134,8 +117,8 @@ async function refuseDuplicateLoan(orgId, reportingYear, engineInput, exceptId) 
  * @param {Object} input   one exposure, in the shape POST /business-loans/assess takes
  */
 async function record(orgId, input) {
-  const assetClass = input.assetClass || 'business-loans-unlisted-equity';
-  const engine = engineFor(assetClass);
+  const assetClass = input.assetClass || DEFAULT_CLASS;
+  const cls = classes.classFor(assetClass);
 
   const reportingYear = input.reportingYear;
   if (!reportingYear) {
@@ -147,8 +130,7 @@ async function record(orgId, input) {
 
   store.assertWritable();
 
-  const engineInput = engineInputOf(input);
-  const result = engine(await withSectorBand(engineInput, { orgId }));
+  const { engineInput, result } = await classes.run(assetClass, input, { orgId });
 
   await refuseDuplicateLoan(orgId, String(reportingYear), engineInput, null);
 
@@ -172,7 +154,7 @@ async function record(orgId, input) {
     input: engineInput,
     result,
     computedAt: now,
-    standard: STANDARD,
+    standard: cls.standard,
     createdAt: now,
     updatedAt: now,
   };
@@ -199,9 +181,8 @@ async function update(orgId, exposureId, input) {
   store.assertWritable();
 
   const assetClass = input.assetClass || existing.assetClass;
-  const engine = engineFor(assetClass);
-  const engineInput = engineInputOf(input);
-  const result = engine(await withSectorBand(engineInput, { orgId }));
+  const cls = classes.classFor(assetClass);
+  const { engineInput, result } = await classes.run(assetClass, input, { orgId });
 
   await refuseDuplicateLoan(orgId, String(input.reportingYear || existing.reportingYear), engineInput, exposureId);
 
@@ -221,7 +202,7 @@ async function update(orgId, exposureId, input) {
     input: engineInput,
     result,
     computedAt: now,
-    standard: STANDARD,
+    standard: cls.standard,
     updatedAt: now,
   };
   await repo.saveExposure(orgId, next);
@@ -251,10 +232,11 @@ async function recompute(orgId, exposureId) {
      against the protocol it publishes rather than a figure hidden in code. */
   const settings = await settingsService.getSettings(orgId);
 
-  const engine = engineFor(existing.assetClass);
-  /* The band in force now, not the one that applied when it was recorded:
-     a newly released band is exactly what a recomputation is for. */
-  const result = engine(await withSectorBand(existing.input, { orgId }));
+  const cls = classes.classFor(existing.assetClass);
+  /* The band and the baselines in force now, not the ones that applied when
+     it was recorded: a newly released figure is exactly what a recomputation
+     is for. */
+  const { result } = await classes.run(existing.assetClass, existing.input, { orgId });
 
   /* Every line and both scores, not the headline alone: a factor that reaches
      only scope 3, or a table that re-scores one option, would otherwise be
@@ -290,7 +272,7 @@ async function recompute(orgId, exposureId) {
   findings.moved = findings.before.join('|') !== findings.after.join('|');
   const moved = lines.some(l => l.moved) || dataQuality.moved || findings.moved;
 
-  const next = { ...existing, result, computedAt: _now(), standard: STANDARD, updatedAt: _now() };
+  const next = { ...existing, result, computedAt: _now(), standard: cls.standard, updatedAt: _now() };
   await repo.saveExposure(orgId, next);
 
   const headline = movementOf('scope1And2');
@@ -312,7 +294,7 @@ async function recompute(orgId, exposureId) {
         { moved, headlinePct: headline.movementPct, largestLinePct },
         settings.significanceThresholdPct),
       previousStandard: existing.standard,
-      standard: STANDARD,
+      standard: cls.standard,
       note: !moved
         ? 'The engine produced the same figures and the same scores from the same input.'
         : `Moved on the same input: ${[...lines.filter(l => l.moved).map(l => l.line), ...(dataQuality.moved ? ['data quality'] : []), ...(findings.moved ? ['findings'] : [])].join(', ')}. `
@@ -351,24 +333,53 @@ const { DEFAULT_SETTINGS, getSettings, saveSettings } = settingsService;
  * and only one of them is true.
  */
 async function position(orgId, reportingYear, opts = {}) {
-  const { improvementTarget } = /** @type {{improvementTarget?: number}} */ (opts);
-  const rows = await repo.rollupsForYear(orgId, reportingYear);
+  const { improvementTarget, assetClass = DEFAULT_CLASS } = /** @type {{improvementTarget?: number, assetClass?: string}} */ (opts);
+  const cls = classes.classFor(assetClass);
+  const all = await repo.rollupsForYear(orgId, reportingYear);
+  const rows = all.filter(r => (r.assetClass || DEFAULT_CLASS) === assetClass);
   if (!rows.length) {
+    const others = [...new Set(all.map(r => r.assetClass || DEFAULT_CLASS))];
     throw refuse('EMPTY_YEAR',
-      `No exposures are recorded for ${reportingYear}. An empty year is not a position of zero — a book `
-      + 'with nothing in it and a book nobody has measured are different claims.',
-      409, 'Record exposures for this year first.');
+      `No ${cls.label} (${cls.section}) exposures are recorded for ${reportingYear}. An empty year is not a position `
+      + 'of zero — a book with nothing in it and a book nobody has measured are different claims.'
+      + (others.length ? ` The year holds exposures in: ${others.join(', ')}.` : ''),
+      409, 'Record exposures of this class for this year first.');
   }
-
   const book = await repo.getBook(orgId, reportingYear);
+  return rollClass(cls, rows, book, reportingYear, improvementTarget);
+}
+
+/**
+ * Every class's position for a reporting year, from one read of the
+ * projection — the consolidated disclosure's question. Each class is rolled
+ * up alone, on its own label, groupings and score table; a class the year
+ * holds nothing of is `null`, never a position of zero, and nothing here
+ * sums or averages across classes.
+ */
+async function positions(orgId, reportingYear, opts = {}) {
+  const { improvementTarget } = /** @type {{improvementTarget?: number}} */ (opts);
+  const all = await repo.rollupsForYear(orgId, reportingYear);
+  const book = all.length ? await repo.getBook(orgId, reportingYear) : null;
+  const byClass = {};
+  for (const cls of Object.values(classes.CLASSES)) {
+    const rows = all.filter(r => (r.assetClass || DEFAULT_CLASS) === cls.assetClass);
+    byClass[cls.assetClass] = rows.length ? rollClass(cls, rows, book, reportingYear, improvementTarget) : null;
+  }
+  return { reportingYear: String(reportingYear), byClass, exposures: all.length };
+}
+
+/** One class's rows rolled up on the class's own binding. */
+function rollClass(cls, rows, book, reportingYear, improvementTarget) {
   const rolled = rollUp(rows.map(inflate), {
+    ...cls.rollUp,
     totalLoansAndInvestments: book ? book.totalLoansAndInvestments : undefined,
     improvementTarget,
   });
-
   return {
     reportingYear: String(reportingYear),
     ...rolled,
+    section: cls.section,
+    label: cls.label,
     coverage: {
       ...rolled.coverage,
       ...(book
@@ -428,8 +439,9 @@ function inflate(row) {
  * projection instead.
  */
 async function listExposures(orgId, reportingYear, opts = {}) {
-  const { limit, cursor } = /** @type {{limit?: number, cursor?: string}} */ (opts);
-  return repo.pageForYear(orgId, reportingYear, { limit, cursor });
+  const { limit, cursor, assetClass } = /** @type {{limit?: number, cursor?: string, assetClass?: string}} */ (opts);
+  if (assetClass) classes.classFor(assetClass);
+  return repo.pageForYear(orgId, reportingYear, { limit, cursor, assetClass });
 }
 
 /**
@@ -439,17 +451,30 @@ async function listExposures(orgId, reportingYear, opts = {}) {
  * in the total; an empty year is an empty list here rather than a 409, because
  * an annex reads beside a position that has already refused.
  */
-async function rows(orgId, reportingYear) {
+async function rows(orgId, reportingYear, opts = {}) {
+  const { assetClass = DEFAULT_CLASS } = /** @type {{assetClass?: string}} */ (opts);
   const found = await repo.rollupsForYear(orgId, reportingYear);
-  return found.map(inflate);
+  return found.filter(r => (r.assetClass || DEFAULT_CLASS) === assetClass).map(inflate);
 }
 
-/** Which reporting years this book holds anything for. */
+/** Every class's rows for a year from one read, keyed by class — the consolidated annex. */
+async function rowsByClass(orgId, reportingYear) {
+  const found = await repo.rollupsForYear(orgId, reportingYear);
+  const out = {};
+  for (const cls of Object.keys(classes.CLASSES)) out[cls] = [];
+  for (const r of found) {
+    const k = r.assetClass || DEFAULT_CLASS;
+    (out[k] = out[k] || []).push(inflate(r));
+  }
+  return out;
+}
+
+/** Which reporting years this book holds anything for, and how many of each class. */
 async function years(orgId) {
-  const found = await repo.years(orgId);
+  const held = await repo.yearsHeld(orgId);
   const books = await repo.listBooks(orgId);
   const stated = new Set(books.map(b => String(b.reportingYear)));
-  return found.map(y => ({ reportingYear: y, bookTotalStated: stated.has(y) }));
+  return held.map(y => ({ reportingYear: y.reportingYear, bookTotalStated: stated.has(y.reportingYear), exposures: y.exposures, byClass: y.byClass }));
 }
 
 /** Not built, and it says which step builds it rather than pretending. */
@@ -463,9 +488,10 @@ async function lock() {
 }
 
 module.exports = {
-  ASSET_CLASSES, STATUS, DEFAULT_SETTINGS,
-  record, get, update, remove, recompute, listExposures, rows,
+  ASSET_CLASSES, DEFAULT_CLASS, STATUS, DEFAULT_SETTINGS,
+  record, get, update, remove, recompute, listExposures, rows, rowsByClass,
   stateBook, getBook, getSettings, saveSettings,
-  position, years, lock,
+  position, positions, years, lock,
+  classes: classes.list,
   _inflate: inflate,
 };

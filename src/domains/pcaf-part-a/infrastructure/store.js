@@ -70,17 +70,31 @@ async function rollupsForYear(orgId, reportingYear) {
  * asserts it does.
  */
 async function pageForYear(orgId, reportingYear, opts = {}) {
-  const { limit, cursor } = /** @type {{limit?: number, cursor?: string}} */ (opts);
+  const { limit, cursor, assetClass } = /** @type {{limit?: number, cursor?: string, assetClass?: string}} */ (opts);
   return store.page(EXPOSURES, String(orgId), {
-    where: { reportingYear: String(reportingYear) },
+    where: { reportingYear: String(reportingYear), ...(assetClass ? { assetClass } : {}) },
     limit, cursor,
   });
 }
 
 /** Every reporting year this organisation holds anything for. */
 async function years(orgId) {
-  const all = await store.query(EXPOSURES, String(orgId), { fields: ['reportingYear'] });
-  return [...new Set(all.map(r => String(r.reportingYear)))].sort();
+  return (await yearsHeld(orgId)).map(y => y.reportingYear);
+}
+
+/** The years held, each with how many exposures of each class — one query, two fields. */
+async function yearsHeld(orgId) {
+  const all = await store.query(EXPOSURES, String(orgId), { fields: ['reportingYear', 'assetClass'] });
+  const by = new Map();
+  for (const r of all) {
+    const y = String(r.reportingYear);
+    const row = by.get(y) || { reportingYear: y, exposures: 0, byClass: {} };
+    const k = r.assetClass || 'business-loans-unlisted-equity';
+    row.exposures += 1;
+    row.byClass[k] = (row.byClass[k] || 0) + 1;
+    by.set(y, row);
+  }
+  return [...by.values()].sort((a, b) => a.reportingYear.localeCompare(b.reportingYear));
 }
 
 async function saveBook(orgId, record) {
@@ -109,7 +123,7 @@ async function getSettings(orgId) {
 
 module.exports = {
   EXPOSURES, BOOK, SETTINGS, ROLLUP_FIELDS,
-  saveExposure, getExposure, removeExposure, exposuresForYear, rollupsForYear, pageForYear, years,
+  saveExposure, getExposure, removeExposure, exposuresForYear, rollupsForYear, pageForYear, years, yearsHeld,
   saveBook, getBook, listBooks,
   saveSettings, getSettings,
 };

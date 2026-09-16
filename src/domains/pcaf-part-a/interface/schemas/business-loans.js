@@ -151,4 +151,4 @@ const portfolioRequestSchema = Joi.object({
   improvementTarget: Joi.number().integer().min(1).max(5).optional(),
 }).unknown(false);
 
-module.exports = { exposureSchema, portfolioRequestSchema };
+module.exports = { exposureSchema, portfolioRequestSchema, scopeEntry, denominator, outstanding };

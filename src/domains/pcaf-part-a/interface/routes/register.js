@@ -2,7 +2,8 @@
 /**
  * The PCAF Part A exposure register over HTTP.
  *
- *   GET    /v1/pcaf/part-a/years                    which years this book holds
+ *   GET    /v1/pcaf/part-a/classes                  the asset classes this one register holds
+ *   GET    /v1/pcaf/part-a/years                    which years this book holds, and how many of each class
  *   GET    /v1/pcaf/part-a/book/:year               the entity's stated book total
  *   PUT    /v1/pcaf/part-a/book                     state it — coverage's denominator
  *   GET    /v1/pcaf/part-a/settings                 the entity's recalculation protocol
@@ -13,7 +14,7 @@
  *   PUT    /v1/pcaf/part-a/exposures/:id            change it; the engine reruns
  *   POST   /v1/pcaf/part-a/exposures/:id/recompute  rerun on the same input, and say what moved
  *   DELETE /v1/pcaf/part-a/exposures/:id            remove it
- *   GET    /v1/pcaf/part-a/position/:year           the reporting-year position
+ *   GET    /v1/pcaf/part-a/position/:year           the reporting-year position, per class (?assetClass=, §5.2 by default)
  *
  * These are the routes that write, so unlike §5.2's two stateless reads they
  * need a durable store: on a deployment that can persist nothing they answer
@@ -36,7 +37,7 @@ const register = require('../../application/register');
 const sovereign = require('../../application/sovereign-register');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
-const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema } = require('../schemas/register');
+const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema } = require('../schemas/register');
 const { sovereignExposureSchema } = require('../schemas/sovereign');
 
 const router = Router();
@@ -52,10 +53,22 @@ router.get('/storage', authenticate, defaultLimiter,
     res.json({ storage: store.capability() });
   });
 
+router.get('/classes', authenticate, defaultLimiter,
+  doc({ summary: 'The Part A asset classes this one exposure register holds',
+    description: 'One register, several classes: each row names the class whose engine computed it, '
+      + 'and the position is rolled up per class and never across them. A class listed here is one '
+      + 'an exposure can be recorded under; the rest of Part A is built in the order '
+      + 'docs/PCAF-PART-A-RESEARCH.md §11 gives.',
+    response: body({ classes: arr(), defaultClass: str }, ['classes']) }),
+  (_req, res) => {
+    res.json({ classes: register.classes(), defaultClass: register.DEFAULT_CLASS });
+  });
+
 router.get('/years', authenticate, defaultLimiter,
   doc({ summary: 'The reporting years this book holds exposures for',
     description: 'Each says whether the entity has stated its total loans and investments for '
-      + 'that year, because without it coverage cannot be a percentage of anything.',
+      + 'that year, because without it coverage cannot be a percentage of anything, and how many '
+      + 'exposures of each asset class it holds.',
     response: body({ years: arr() }, ['years']) }),
   handle(async (req, res) => {
     res.json({ years: await register.years(req.orgId) });
@@ -123,7 +136,8 @@ router.put('/settings', authenticate, defaultLimiter,
 router.get('/exposures', authenticate, defaultLimiter, paged(),
   doc({ summary: 'A reporting year\'s exposures, a page at a time',
     description: 'Requires a year: the register is organised by reporting year because Part A '
-      + 'accounts for positions at one date, and a list across years is two books in one table.',
+      + 'accounts for positions at one date, and a list across years is two books in one table. '
+      + '`assetClass` narrows the page to one class.',
     response: body({ exposures: arr(), reportingYear: str }, ['exposures']) }),
   handle(async (req, res) => {
     const year = req.query.reportingYear;
@@ -137,8 +151,10 @@ router.get('/exposures', authenticate, defaultLimiter, paged(),
     }
     const page = await register.listExposures(req.orgId, year, {
       limit: req.query.limit, cursor: req.query.cursor,
+      assetClass: req.query.assetClass ? String(req.query.assetClass) : undefined,
     });
-    return sendList(req, res, 'exposures', page.items, { reportingYear: String(year), nextCursor: page.nextCursor });
+    return sendList(req, res, 'exposures', page.items, { reportingYear: String(year), nextCursor: page.nextCursor,
+      ...(req.query.assetClass ? { assetClass: String(req.query.assetClass) } : {}) });
   }));
 
 router.post('/exposures', authenticate, defaultLimiter,
@@ -197,16 +213,20 @@ router.delete('/exposures/:exposureId', authenticate, defaultLimiter,
 // ---------------------------------------------------------------------------
 
 router.get('/position/:year', authenticate, defaultLimiter,
-  doc({ summary: 'The reporting-year position, rolled up from the recorded exposures',
+  doc({ summary: 'The reporting-year position of one asset class, rolled up from the recorded exposures',
     description: 'Read from the stored roll-up projection rather than the whole records: an exposure '
       + 'is several kilobytes, most of it the provenance trace, and the roll-up needs eighteen fields. '
-      + 'Coverage is real here — assessed outstanding over the stated book total. A year holding no '
-      + 'exposures is a 409, because an empty book and an unmeasured one are different claims.',
+      + 'One class at a time — `assetClass` names it, §5.2 by default — because each class scores on its '
+      + 'own table and a position across classes is the consolidated route\'s to lay side by side, never '
+      + 'to sum. Coverage is real here — assessed outstanding over the stated book total. A year holding '
+      + 'no exposures of the class is a 409, because an empty book and an unmeasured one are different claims.',
     response: body({ reportingYear: str, total: obj, coverage: obj, exposures: num }, ['reportingYear', 'total']) }),
+  validate({ query: positionQuerySchema }),
   handle(async (req, res) => {
     res.json(await register.position(req.orgId, req.params.year, {
       improvementTarget: req.query.improvementTarget === undefined
         ? undefined : Number(req.query.improvementTarget),
+      assetClass: req.query.assetClass ? String(req.query.assetClass) : undefined,
     }));
   }));
 

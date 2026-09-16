@@ -71,6 +71,18 @@ async function exposureReport(orgId, exposureId, opts = {}) {
     register.get(orgId, exposureId),
     shared(orgId, opts.country),
   ]);
+  /* The per-exposure document is §5.2's content model; a row of another class
+     is refused by name rather than printed under the wrong chapter's clauses.
+     Its figures still reach the consolidated disclosure's register annex. */
+  if (exposure.assetClass && exposure.assetClass !== register.DEFAULT_CLASS) {
+    const err = /** @type {import('../../../shared/types').AppError} */ (new Error(
+      `Exposure ${exposureId} is ${exposure.assetClass}; the per-exposure report is the §5.2 document and would `
+      + 'print this row under §5.2 clauses.'));
+    err.statusCode = 501; err.code = 'REPORT_NOT_BUILT_FOR_CLASS';
+    err.remedy = 'The row is in the consolidated disclosure (GET /v1/pcaf/part-a/financed-emissions/:year) and its '
+      + 'register annex; a per-exposure document for this class is a later step.';
+    throw err;
+  }
   const input = {
     result: exposure.result, insurer: opts.insurer,
     assurance: common.assurance, assuranceDeclaration: common.assuranceDeclaration,
