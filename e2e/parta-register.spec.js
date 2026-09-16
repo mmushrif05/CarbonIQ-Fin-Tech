@@ -116,6 +116,19 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   await page.locator('#pr-detail-recompute').click();
   await expect(page.locator('#pr-detail-status')).toContainText('same figures and the same scores');
 
+  /* Edit from the screen: the form opens prefilled, the outstanding is changed,
+     the engine reruns and the row carries the new figure. */
+  await page.locator('#pr-detail-edit').click();
+  await expect(page.locator('#pr-record')).toBeVisible();
+  await expect(page.locator('#pr-f-outstanding')).toHaveValue('50000');
+  await expect(page.locator('#pr-form-submit')).toHaveText('Save changes');
+  await page.fill('#pr-f-outstanding', '75000');
+  await page.locator('#pr-form-submit').click();
+  await expect(page.locator('#pr-form-status')).toContainText('Saved');
+  await expect(page.locator('#pr-detail')).toBeVisible();
+  await expect(row.locator('td').nth(2)).toContainText('75,000');
+  await expect(page.locator('#pr-form-submit')).toHaveText('Record');
+
   /* A phone width: the page body never scrolls sideways. */
   await page.setViewportSize({ width: 430, height: 900 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
