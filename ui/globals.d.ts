@@ -29,6 +29,8 @@ interface Window {
   CARBONIQ_fetch: (path: string, init?: RequestInit) => Promise<any>;
   /** Navigate the shell to a page id, as the sidebar does. */
   CARBONIQ_navigateTo: (pageId: string) => void;
+  /** Re-reads the reporting entity's name into the sidebar workspace label. */
+  CARBONIQ_labelWorkspace: () => Promise<void>;
   /** The capital adjust drawer, which must initialise before the first fetch. */
   CapitalAdjust?: { init: () => void; overlay: () => object | null; [key: string]: any };
   /**

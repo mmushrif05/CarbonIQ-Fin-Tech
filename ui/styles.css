@@ -86,6 +86,19 @@ body {
   color: var(--sidebar-muted);
   padding: 16px 12px 6px;
 }
+/* The reporting entity's name heads its own workspace. :not([hidden]) so the
+   user-agent [hidden] rule keeps governing the span — a bare class rule that
+   sets display would beat it, which is how a drawer once covered a page. */
+.nav-workspace-entity:not([hidden]) { display: block; }
+.nav-workspace-entity {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--sidebar-text);
+  margin-bottom: 3px;
+  overflow-wrap: anywhere;
+}
 .nav-item {
   display: flex;
   align-items: center;

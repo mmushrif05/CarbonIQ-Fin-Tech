@@ -53,11 +53,15 @@ async function seed(request) {
   } });
   expect(office.status()).toBe(201);
   await request.put('/v1/pcaf/part-a/book', { headers: h, data: { reportingYear: YEAR, totalLoansAndInvestments: 50000000, currency: 'LKR', statedBy: 'Ana' } });
+  const entity = await request.put('/v1/pcaf/part-a/settings', { headers: h, data: { reportingEntity: 'Overview Bank PLC' } });
+  expect(entity.status()).toBe(200);
 }
 
 test('the overview is on screen, a class tile opens the lending book at that class, and the page never widens', async ({ page, request }) => {
   await seed(request);
   await signIn(page, request);
+  /* The sidebar group is headed by the bank's own name, read after sign-in. */
+  await expect(page.locator('#nav-workspace-entity')).toHaveText('Overview Bank PLC');
   await page.locator('.nav-item[data-page="bank"]').click();
   await expect(page.locator('#page-bank')).toBeVisible();
   await expect(page.locator('#bk-year')).toBeVisible();

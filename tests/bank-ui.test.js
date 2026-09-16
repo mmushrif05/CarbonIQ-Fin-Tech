@@ -130,6 +130,29 @@ describe('The screen renders the engines rather than repeating them', () => {
 
   test('the write controls are marked, so a preview visitor is not offered a button the server refuses', () => {
     must(HTML, /id="bk-starter"[^>]*data-writes/, 'the starter button carries data-writes');
+    must(HTML, /id="bk-starter-name"[^>]*data-writes/, 'and so does the name field beside it');
+  });
+});
+
+describe('The workspace carries the bank’s own name', () => {
+  const STYLES = source('ui/styles.css');
+  const LOGIN = source('ui/js/login.js');
+  const POS = source('ui/js/parta-position.js');
+
+  test('the financed-emissions group is headed by the reporting entity once one is recorded', () => {
+    must(INDEX, /<span class="nav-workspace-entity" id="nav-workspace-entity" hidden><\/span>Financed emissions<\/div>/,
+      'the entity span sits inside the group label, hidden until a name is held');
+    must(APP, /CARBONIQ_fetch\('\/v1\/pcaf\/part-a\/settings'\)/, 'the name is read from the entity’s own settings, never typed into the shell');
+    must(APP, /addEventListener\('carboniq:entity'/, 'and re-read when a screen records the entity');
+    must(LOGIN, /CARBONIQ_labelWorkspace\(\)/, 'and read again at sign-in, not only at page load');
+    must(STYLES, /\.nav-workspace-entity:not\(\[hidden\]\)\s*\{\s*display:\s*block/, 'the display rule yields to [hidden]');
+  });
+
+  test('recording the entity or loading the starter book tells the sidebar', () => {
+    must(POS, /put\('\/settings'[\s\S]{0,240}?dispatchEvent\(new CustomEvent\('carboniq:entity'\)\)/, 'the entity form announces the name it recorded');
+    must(JS, /reportingEntity: name/, 'the starter carries the name typed beside it');
+    must(JS, /dispatchEvent\(new CustomEvent\('carboniq:entity'\)\)/, 'and announces it');
+    must(POS, /reportingEntity: name/, 'the position screen’s starter does the same');
   });
 });
 

@@ -111,6 +111,7 @@ const LoginPage = (() => {
 
   function _enter() {
     Auth.enforceAuth();
+    if (typeof window.CARBONIQ_labelWorkspace === 'function') window.CARBONIQ_labelWorkspace();
     const defaultPage = Auth.getDefaultPage();
     if (typeof window.CARBONIQ_navigateTo === 'function') {
       window.CARBONIQ_navigateTo(defaultPage);

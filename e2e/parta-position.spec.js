@@ -71,6 +71,10 @@ async function openPage(page) {
 
 test('both classes are on screen, the entity facts record from the screen, the disclosure downloads, and the page never widens', async ({ page, request }) => {
   await seed(request);
+  /* The entity facts are organisation-wide, and another journey may have recorded
+     a legal name into this organisation: clear it so the outstanding list is the
+     one this journey watches shrink. */
+  await request.put('/v1/pcaf/part-a/settings', { headers: { 'x-api-key': KEY }, data: { reportingEntity: null } });
   await signIn(page, request);
   await openPage(page);
 

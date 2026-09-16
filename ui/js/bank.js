@@ -239,10 +239,14 @@ const BankPage = (() => {
   }
 
   async function loadStarter() {
+    const nameEl = $('bk-starter-name');
+    const name = nameEl ? nameEl.value.trim() : '';
+    const body = name ? { reportingEntity: name } : {};
     if (!window.confirm('Load the illustrative starter book into this organisation? Every figure is a placeholder to edit.')) return;
     say('bk-status', 'Loading the starter book…');
     try {
-      const r = await partA('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await partA('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      document.dispatchEvent(new CustomEvent('carboniq:entity'));
       say('bk-status', `Starter book loaded: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes for FY${r.reportingYear}.`);
       await loadYears();
       if ($('bk-year')) $('bk-year').value = String(r.reportingYear);

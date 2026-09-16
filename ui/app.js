@@ -268,6 +268,30 @@ document.addEventListener('DOMContentLoaded', () => {
   // visible without having been navigated to.
   window.CARBONIQ_navigateTo = navigateTo;
 
+  // ── The client workspace ───────────────────────────────────
+  // The financed-emissions group is headed by the reporting entity's own
+  // name once it is recorded on the Part A settings, so a bank's book
+  // carries the bank's name in the sidebar rather than a generic heading.
+  // Read once the session exists, and again whenever a screen records the
+  // entity (the settings form, the starter book) — a label that only ever
+  // read at load would show the old name until the next reload.
+  async function _labelWorkspace() {
+    const el = document.getElementById('nav-workspace-entity');
+    if (!el || typeof window.CARBONIQ_fetch !== 'function') return;
+    if (typeof Auth !== 'undefined' && !Auth.isLoggedIn()) { el.hidden = true; return; }
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/pcaf/part-a/settings');
+      if (!res.ok) { el.hidden = true; return; }
+      const { settings } = await res.json();
+      const name = settings && settings.reportingEntity ? String(settings.reportingEntity).trim() : '';
+      el.textContent = name;
+      el.hidden = !name;
+    } catch (_) { el.hidden = true; }
+  }
+  window.CARBONIQ_labelWorkspace = _labelWorkspace;
+  document.addEventListener('carboniq:entity', () => { _labelWorkspace(); });
+  _labelWorkspace();
+
   function _landOnFirstPage() {
     const loggedIn = typeof Auth === 'undefined' || Auth.isLoggedIn();
     if (!loggedIn) return;   // the login screen owns the first navigation
