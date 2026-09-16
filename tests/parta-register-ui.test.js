@@ -200,8 +200,20 @@ describe('The request the form builds', () => {
       .toEqual({ a: 1, e: { f: 2 }, g: [1, undefined] });
   });
 
+  test('an exposure is edited through the same form and the same collectors, saved through PUT, and the engine reruns', () => {
+    must(HTML, /id="pr-detail-edit"[^>]*data-writes/, 'the edit control is on the detail and is a write control');
+    must(JS, /on\('pr-detail-edit', 'click', startEdit\)/, 'and it starts an edit');
+    must(JS, /await put\(`\/exposures\/\$\{encodeURIComponent\(editing\)\}`, collect\(\)\)/, 'a save is a PUT of what the collectors build — never a hand-made body');
+    must(JS, /fill\(current\.input \|\| \{\}\)/, 'the form is prefilled from the input the register holds');
+    for (const fn of ['fillBusinessLoan', 'fillProperty', 'fillVehicle', 'fillProject', 'fillListed']) {
+      must(JS, new RegExp(`function ${fn}\\(i\\)`), `${fn} fills its class's block`);
+    }
+    mustNot(JS, /0\.09290304|0\.3048/, 'no conversion factor lives in the browser, on the way in or out');
+    must(JS, /textContent = 'Save changes'/, 'the button says what it will do');
+  });
+
   test('the write controls are marked, so a preview visitor is not offered a button the server refuses', () => {
-    for (const id of ['pr-record-toggle', 'pr-record', 'pr-book-form', 'pr-detail-recompute', 'pr-detail-remove']) {
+    for (const id of ['pr-record-toggle', 'pr-record', 'pr-book-form', 'pr-detail-edit', 'pr-detail-recompute', 'pr-detail-remove']) {
       must(HTML, new RegExp(`id="${id}"[^>]*data-writes|data-writes[^>]*id="${id}"`), `${id} carries data-writes`);
     }
   });

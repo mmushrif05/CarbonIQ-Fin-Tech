@@ -45,6 +45,9 @@ const PartARegisterPage = (() => {
   let reference = null;
   let rows = [];
   let openId = null;
+  /* The exposure open in the detail, whole, and the one the form is editing. */
+  let current = null;
+  let editingId = null;
 
   const classLabel = () => { const c = classes.find(x => x.assetClass === cls); return c ? `${c.label} — PCAF Part A ${c.section}` : cls; };
   const isProperty = () => cls === 'commercial-real-estate' || cls === 'mortgages';
@@ -350,13 +353,14 @@ const PartARegisterPage = (() => {
     let exposure;
     try { ({ exposure } = await call(`/exposures/${encodeURIComponent(id)}`)); }
     catch (err) { say('pr-status', err.message); return; }
+    current = exposure;
     renderDetail(exposure);
     renderRows();
     show('pr-detail', true);
     $('pr-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function closeDetail() { openId = null; show('pr-detail', false); renderRows(); }
+  function closeDetail() { openId = null; current = null; show('pr-detail', false); renderRows(); }
 
   function renderDetail(e) {
     const x = e.result;
@@ -704,10 +708,14 @@ const PartARegisterPage = (() => {
 
   async function submitForm(ev) {
     ev.preventDefault();
-    say('pr-form-status', 'Recording…');
+    const editing = editingId;
+    say('pr-form-status', editing ? 'Saving — the engine reruns over the edited input…' : 'Recording…');
     try {
-      const { exposure } = await post('/exposures', collect());
-      say('pr-form-status', `Recorded ${exposure.counterparty.name || 'the exposure'}. ${(exposure.result.validation && exposure.result.validation.note) || ''}`);
+      const { exposure } = editing
+        ? await put(`/exposures/${encodeURIComponent(editing)}`, collect())
+        : await post('/exposures', collect());
+      say('pr-form-status', `${editing ? 'Saved' : 'Recorded'} ${exposure.counterparty.name || 'the exposure'}. ${(exposure.result.validation && exposure.result.validation.note) || ''}`);
+      endEdit();
       $('pr-form').reset();
       applyDenominatorMode();
       show('pr-record', false);
@@ -716,6 +724,113 @@ const PartARegisterPage = (() => {
     } catch (err) {
       say('pr-form-status', err.message);
     }
+  }
+
+  // ── editing ────────────────────────────────────────────────
+
+  /* Editing is the record form, prefilled from the input the register holds
+     for the exposure, and saved through PUT: the engine reruns over the
+     edited input, both halves are kept, and the position moves. The form is
+     filled field by field from the stored input — the collectors then build
+     the request exactly as they do for a new exposure, so an edit can never
+     send a key the schema refuses. */
+  function startEdit() {
+    if (!current) return;
+    editingId = current.exposureId;
+    cls = current.assetClass || cls;
+    if ($('pr-class')) $('pr-class').value = cls;
+    applyClass();
+    $('pr-form').reset();
+    fill(current.input || {});
+    applyDenominatorMode();
+    say('pr-record-hint', `Editing ${(current.counterparty && current.counterparty.name) || 'the exposure'} — the engine reruns over the saved input and the figures move.`);
+    if ($('pr-form-submit')) $('pr-form-submit').textContent = 'Save changes';
+    show('pr-record', true);
+    $('pr-record').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function endEdit() {
+    editingId = null;
+    if ($('pr-form-submit')) $('pr-form-submit').textContent = 'Record';
+  }
+
+  /* Sets a field where the input holds a value; leaves the form's own
+     default where it does not. A checkbox takes a boolean. */
+  const set = (id, v) => {
+    const el = $(id);
+    if (!el || v === undefined || v === null) return;
+    if (el.type === 'checkbox') el.checked = Boolean(v);
+    else el.value = String(v);
+  };
+
+  function fill(i) {
+    set('pr-f-ref', i.identifiers && i.identifiers.accountNumber);
+    if (isProperty()) return fillProperty(i);
+    if (cls === 'motor-vehicle-loans') return fillVehicle(i);
+    if (cls === 'project-finance') return fillProject(i);
+    if (cls === 'listed-equity-corporate-bonds') return fillListed(i);
+    return fillBusinessLoan(i);
+  }
+
+  function fillBusinessLoan(i) {
+    const cp = i.counterparty || {}, o = i.outstanding || {}, d = i.denominator || {}, e = i.emissions || {};
+    set('pr-f-name', cp.name); set('pr-f-sector', cp.sector); set('pr-f-sector-key', cp.sectorKey); set('pr-f-fi', cp.financialInstitution);
+    set('pr-f-instrument', i.instrument); set('pr-f-listed', i.borrowerListed); set('pr-f-borrower-type', i.borrowerType);
+    set('pr-f-revenue', i.plausibility && i.plausibility.revenue);
+    set('pr-f-outstanding', o.amount); set('pr-f-average', o.averageOutstanding); set('pr-f-asof', o.asOf); set('pr-f-currency', o.currency);
+    set('pr-f-mcap', d.marketCapOrdinary); set('pr-f-debt-ib', d.totalDebtInterestBearing); set('pr-f-minorities', d.minorityInterests);
+    set('pr-f-deposits', d.customerDeposits); set('pr-f-equity', d.totalEquity); set('pr-f-debt', d.totalDebt);
+    const s1 = e.scope1 || {}, s2 = e.scope2 || {}, s3 = e.scope3 || {};
+    set('pr-f-s1', s1.value); set('pr-f-s2', s2.value); set('pr-f-s3', s3.value);
+    set('pr-f-basis', s1.basis || s2.basis); set('pr-f-period', s1.period || s2.period); set('pr-f-verifier', s1.verifier || s2.verifier);
+    set('pr-f-s3-reason', e.scope3AbsentReason);
+    const f1 = s1.activity && s1.activity.factor, f2 = s2.activity && s2.activity.factor;
+    set('pr-f-sf1', f1 && f1.value); set('pr-f-sf2', f2 && f2.value);
+    set('pr-f-sf-source', (f1 && f1.source) || (f2 && f2.source)); set('pr-f-sf-vintage', (f1 && f1.vintage) || (f2 && f2.vintage));
+  }
+
+  function fillProperty(i) {
+    const cp = i.counterparty || {}, x = i.exposure || {}, v = i.value || {}, en = i.energy || {};
+    set('pr-f-name', cp.name); set('pr-f-re-country', i.country); set('pr-f-building-type', i.buildingType); set('pr-f-product', i.productType);
+    set('pr-f-re-outstanding', x.outstanding); set('pr-f-re-currency', x.currency); set('pr-f-re-asof', x.asOf);
+    set('pr-f-re-value', v.atOrigination); set('pr-f-re-latest', v.latest);
+    if (i.floorArea) { set('pr-f-area', i.floorArea.value); set('pr-f-area-unit', i.floorArea.unit); }
+    else if (i.floorArea_m2 !== undefined) { set('pr-f-area', i.floorArea_m2); set('pr-f-area-unit', 'm2'); }
+    set('pr-f-label', i.label); set('pr-f-count', i.buildingCount);
+    set('pr-f-elec', en.electricity_kWh); set('pr-f-fuel', en.fuel_kWh); set('pr-f-fuel-source', en.fuelSource);
+    set('pr-f-ef-basis', en.emissionFactorBasis); set('pr-f-elec-factor', en.electricityFactor); set('pr-f-fuel-factor', en.fuelFactor);
+    set('pr-f-construction', i.developerConstructionEmissions_tCO2e);
+  }
+
+  function fillVehicle(i) {
+    const cp = i.counterparty || {}, x = i.exposure || {}, v = i.value || {}, veh = (i.vehicles || [])[0] || {};
+    set('pr-f-name', cp.name); set('pr-f-mv-product', i.productType);
+    set('pr-f-mv-outstanding', x.outstanding); set('pr-f-mv-currency', x.currency); set('pr-f-mv-asof', x.asOf); set('pr-f-mv-value', v.atOrigination);
+    set('pr-f-mv-class', veh.vehicleClass); set('pr-f-mv-fuel', veh.fuel); set('pr-f-mv-model', veh.makeModel);
+    if (veh.efficiency) { set('pr-f-mv-eff', veh.efficiency.value); set('pr-f-mv-eff-unit', veh.efficiency.unit); set('pr-f-mv-cycle', veh.efficiency.cycle); }
+    if (veh.distance) { set('pr-f-mv-km', veh.distance.value_km); set('pr-f-mv-km-basis', veh.distance.basis); }
+    const fc = veh.fuelConsumed || {};
+    set('pr-f-mv-petrol', fc.petrol_L); set('pr-f-mv-diesel', fc.diesel_L); set('pr-f-mv-kwh', fc.electricity_kWh);
+    set('pr-f-mv-production', veh.productionEmissions_tCO2e);
+  }
+
+  function fillProject(i) {
+    set('pr-f-name', typeof i.counterparty === 'string' ? i.counterparty : (i.counterparty && i.counterparty.name));
+    set('pr-f-pf-project', i.projectName); set('pr-f-pf-sector', i.sector); set('pr-f-pf-archetype', i.archetype);
+    set('pr-f-pf-outstanding', i.outstandingAmount); set('pr-f-pf-denominator', i.totalProjectEquityPlusDebt); set('pr-f-pf-currency', i.currency);
+    set('pr-f-pf-s1', i.projectScope1_tCO2e); set('pr-f-pf-s2', i.projectScope2_tCO2e); set('pr-f-pf-s3', i.projectScope3_tCO2e);
+    set('pr-f-pf-option', i.dataQualityOption);
+  }
+
+  function fillListed(i) {
+    const cp = i.counterparty || {}, o = i.outstanding || {}, d = i.denominator || {}, e = i.emissions || {};
+    set('pr-f-name', cp.name); set('pr-f-le-nace', cp.naceL2); set('pr-f-le-fi', cp.financialInstitution); set('pr-f-le-instrument', i.instrument);
+    set('pr-f-le-outstanding', o.amount); set('pr-f-le-asof', o.asOf); set('pr-f-le-currency', o.currency);
+    set('pr-f-le-mcap', d.marketCapOrdinary); set('pr-f-le-mcap-pref', d.marketCapPreferred); set('pr-f-le-debt', d.totalDebtInterestBearing); set('pr-f-le-minorities', d.minorityInterests);
+    const s1 = e.scope1 || {}, s2 = e.scope2 || {}, s3 = e.scope3 || {};
+    set('pr-f-le-s1', s1.value); set('pr-f-le-s2', s2.value); set('pr-f-le-s3', s3.value);
+    set('pr-f-le-basis', s1.basis || s2.basis); set('pr-f-le-period', s1.period || s2.period); set('pr-f-le-verifier', s1.verifier || s2.verifier);
+    set('pr-f-le-s3-reason', e.scope3AbsentReason);
   }
 
   function applyDenominatorMode() {
@@ -746,8 +861,9 @@ const PartARegisterPage = (() => {
     on('pr-refresh', 'click', load);
     on('pr-year', 'change', () => { closeDetail(); load(); });
     on('pr-class', 'change', () => { closeDetail(); applyClass(); load(); });
-    on('pr-record-toggle', 'click', () => { show('pr-record', $('pr-record').hidden); applyClass(); applyDenominatorMode(); });
-    on('pr-form-cancel', 'click', () => show('pr-record', false));
+    on('pr-record-toggle', 'click', () => { const opening = $('pr-record').hidden; if (opening && editingId) { endEdit(); $('pr-form').reset(); } show('pr-record', opening); applyClass(); applyDenominatorMode(); });
+    on('pr-form-cancel', 'click', () => { endEdit(); show('pr-record', false); });
+    on('pr-detail-edit', 'click', startEdit);
     on('pr-form', 'submit', submitForm);
     on('pr-book-form', 'submit', submitBook);
     on('pr-detail-close', 'click', closeDetail);
