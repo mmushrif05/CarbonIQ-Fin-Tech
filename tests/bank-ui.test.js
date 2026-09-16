@@ -161,6 +161,16 @@ describe('The charts draw figures the engines returned, and nothing of their own
     must(HTML, /never added to it/, 'and the panel says so on its face');
   });
 
+  test('behind every figure is the lineage the disclosure prints, read from the document and never restated', () => {
+    must(HTML, /id="bk-behind" hidden/, 'the drawer is hidden until a figure is asked about');
+    for (const k of ['headline', 's3', 'coverage', 'intensity', 'approved']) must(HTML, new RegExp(`data-behind="${k}"`), `the ${k} figure carries its button`);
+    must(JS, /partA\(`\/financed-emissions\/\$\{encodeURIComponent\(year\)\}\/disclosure\?format=json`\)/, 'the lineage is the disclosure’s own facts');
+    must(JS, /cover\.reportId/, 'the document reference is printed');
+    must(JS, /cover\.identity/, 'and the content hash and build behind it');
+    must(JS, /facts\.releases/, 'and every factor set with its checksum');
+    must(JS, /lineage = null;\n    show\('bk-behind', false\);/, 'the lineage is dropped on every reload, so a drawer never shows a book that has since changed');
+  });
+
   test('approval is a figure the server counted, shown as a ring and a tile, never tallied here', () => {
     must(HTML, /id="bk-approved"/, 'the hero carries the approved count');
     must(JS, /Charts\.ring\(val\(ap\.approvedPct\)/, 'the ring is the server’s approvedPct');

@@ -66,6 +66,16 @@
 .bank-focus-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .bank-focus-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 4px 16px; margin-top: 10px; }
 .bank-tile { box-shadow: inset 4px 0 0 var(--swatch, transparent); }
+
+/* The lineage behind a figure. The button is a line of text under the figure
+   it belongs to; the drawer is a card that opens beneath the hero. */
+.bank-behind-btn { font: inherit; font-size: 12px; color: var(--p-accent, #0a7a4c); background: none; border: 0; padding: 0; margin-top: 4px; cursor: pointer; text-align: left; text-decoration: underline dotted; align-self: flex-start; }
+.bank-behind-btn:hover, .bank-behind-btn:focus-visible { text-decoration: underline; outline: none; }
+.bank-behind { margin-bottom: 16px; border-color: var(--p-accent, #0a7a4c); }
+.bank-behind .partc-card-head { align-items: flex-start; }
+.bank-behind .partc-card-head .btn { margin-left: auto; }
+.bank-behind h5 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--p-label-2, #6e6e73); }
+.bank-behind code { font-size: 12px; overflow-wrap: anywhere; }
 .bank-tile.is-dim { opacity: 0.45; }
 
 .bank select { min-width: 0; max-width: 100%; }
