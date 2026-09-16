@@ -185,7 +185,7 @@ describe('The worked examples produce the figures they promise', () => {
     // A projection reports EAE, annualised, against a counterfactual the
     // factor store supplied rather than a text box.
     const eae = r.impact.metrics.find(m => /EAE/.test(m.metric));
-    expect(eae.figure.value).toBe(20071.97);
+    expect(eae.figure.value).toBe(16046.68);
     expect(eae.figure.unit).toBe('tCO2e per year');
     expect(eae.counterfactualSource).toMatch(/DNA Sri Lanka/);
 

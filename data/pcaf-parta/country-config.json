@@ -23,7 +23,7 @@
           "year": 2022,
           "source": "Sri Lanka Energy Balance 2022, grid emission factors calculated with the UNFCCC Tool to calculate the emission factor for an electricity system: Simple Operating Margin 0.7123, Build Margin 0.5841, Combined Margin 0.6482 kgCO2/kWh (the published CM is the 50/50 average; CDM Tool 07 weights wind and solar 0.75/0.25, which gives 0.6803). Supersedes the 2017 set (OM 0.6993, BM 0.9224, CM 0.8108), which this file had mislabelled with 0.9224 as the operating margin.",
           "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
-          "publisher": "Sri Lanka Sustainable Energy Authority with the Climate Change Secretariat (DNA)",
+          "publisher": "DNA Sri Lanka — Climate Change Secretariat, with the Sri Lanka Sustainable Energy Authority",
           "verification": "secondary_reported"
         },
         "operating_margin": {
@@ -32,7 +32,7 @@
           "year": 2022,
           "source": "Simple operating margin published alongside the combined margin, same calculation — the fossil-dispatch factor, never an average.",
           "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
-          "publisher": "SLSEA / DNA Sri Lanka",
+          "publisher": "DNA Sri Lanka — Climate Change Secretariat, with the Sri Lanka Sustainable Energy Authority",
           "verification": "secondary_reported"
         },
         "build_margin": {
@@ -41,7 +41,7 @@
           "year": 2022,
           "source": "Build margin published alongside the combined margin, same calculation.",
           "url": "https://www.energy.gov.lk/images/energy-balance/energy-balance-2022.pdf",
-          "publisher": "SLSEA / DNA Sri Lanka",
+          "publisher": "DNA Sri Lanka — Climate Change Secretariat, with the Sri Lanka Sustainable Energy Authority",
           "verification": "secondary_reported"
         },
         "grid_average": {
