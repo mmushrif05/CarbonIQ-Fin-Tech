@@ -114,6 +114,7 @@ describe('the baseline register — document and data agree', () => {
     expect(perDwelling.absentReason).toMatch(/CEB/);
     expect(reg.isAssetClass('motor-vehicle-loans')).toBe(true);
     expect(reg.isAssetClass('loans')).toBe(false);
+    expect(reg.register()._meta.classification).toMatch(/substance of the financed asset/);
     /* A candidate nobody can check is refused by the schema, not by convention. */
     const bent = JSON.parse(JSON.stringify(REG));
     delete bent.baselines[0].candidates[0].url;
@@ -162,10 +163,4 @@ describe('the baseline register — document and data agree', () => {
     }
   });
 
-  test('the Islamic-instrument mapping states its basis and maps only onto declared classes', () => {
-    expect(REG.islamicInstrumentMapping.basis).toMatch(/inference/i);
-    for (const target of Object.values(REG.islamicInstrumentMapping.map)) {
-      expect(CLASS_IDS).toContain(target);
-    }
-  });
 });

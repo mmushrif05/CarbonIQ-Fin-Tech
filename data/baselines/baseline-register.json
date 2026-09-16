@@ -12,7 +12,8 @@
       "not_found": "The source is known to exist but no figure could be evidenced. Reported absent with what is needed."
     },
     "sessionConstraint": "Compiled from a cloud session whose network policy refuses every general website; only GitHub raw content, Google Cloud Storage and one Amazon S3 bucket were reachable, so every Sri Lankan government, IEA, UNFCCC, CEB, SLSEA, DCS and vendor figure is secondary_reported. PCAF documents held in the repository and open datasets on those hosts are primary.",
-    "noAdoptedRowIsInvented": true
+    "noAdoptedRowIsInvented": true,
+    "classification": "Every product classifies by the substance of the financed asset into PCAF's asset classes — a home-purchase facility is a mortgage, a vehicle facility a motor vehicle loan, a facility to a business a business loan, a bond or sukuk holding a corporate bond or sovereign debt — exactly as for any bank. PCAF's classes are the only vocabulary; no instrument-specific layer sits on top."
   },
   "assetClasses": [
     {
@@ -100,23 +101,6 @@
       "engine": "built"
     }
   ],
-  "islamicInstrumentMapping": {
-    "basis": "CarbonIQ's inference from PCAF's asset-class definitions — no Islamic standard (BNM VBIAF, IFSB GN-11, AAOIFI) maps contracts to PCAF classes. Every record carrying a mapped instrument states this.",
-    "map": {
-      "diminishing_musharakah_housing": "mortgages",
-      "ijarah_vehicle": "motor-vehicle-loans",
-      "murabaha_vehicle": "motor-vehicle-loans",
-      "ijarah_property": "commercial-real-estate",
-      "musharakah_business": "business-loans-unlisted-equity",
-      "mudarabah_business": "business-loans-unlisted-equity",
-      "murabaha_trade": "business-loans-unlisted-equity",
-      "sukuk_corporate": "listed-equity-corporate-bonds",
-      "sukuk_sovereign": "sovereign-debt",
-      "green_sukuk": "use-of-proceeds",
-      "wakala_placement_with_bank": "business-loans-unlisted-equity"
-    },
-    "notes": "Wakala placements with other banks are loans to financial institutions — the score-5 economy-wide path (PCAF Third Edition p.48, primary)."
-  },
   "baselines": [
     {
       "key": "grid_emission_factor_average",
@@ -1235,7 +1219,7 @@
       "adopted": "model_figures",
       "stalenessYears": 3,
       "improvement": [
-        "Read make/model figures from the DMT Certificate of Registration already in the Ijarah/Murabaha file (Option 2a, score 2 at no cost)",
+        "Read make/model figures from the DMT Certificate of Registration already in the vehicle finance file (Option 2a, score 2 at no cost)",
         "Fleet borrowers' fuel invoices → Option 1a"
       ],
       "correctsRepo": [

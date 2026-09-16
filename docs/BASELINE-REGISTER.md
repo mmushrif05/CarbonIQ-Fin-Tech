@@ -130,14 +130,11 @@ treasury/sukuk holdings. Its SDG page reports avoided emissions from financed mi
 biomass and solar ("12,040 Mt" — almost certainly tonnes, a units defect) — these belong
 on the separate avoided-emissions line, never against the inventory.
 
-**No Islamic standard maps contracts to PCAF classes.** BNM's VBIAF is an ESG impact-risk
-framework, not a GHG method; IFSB GN-11 (Dec 2025) covers climate-related financial risk
-(PCAF coverage unverified); AAOIFI has no carbon-accounting guidance. The
-substance-over-form mapping — Diminishing Musharakah on housing → mortgages; Ijarah/Murabaha
-on a vehicle → motor vehicle loans; Musharakah/Mudarabah in a business → business loans;
-Ijarah on property → CRE; corporate/sovereign Sukuk → corporate bonds / sovereign debt;
-Wakala placements with banks → loans to FIs at score 5 (p.48) — is **CarbonIQ's inference
-from PCAF's asset-class definitions**, and every record must say so.
+**Classification is by the substance of the financed asset, exactly as for any bank.** A
+home-purchase facility is a mortgage, a vehicle facility a motor vehicle loan, a facility to
+a business a business loan, a bond or sukuk holding a corporate bond or sovereign debt.
+PCAF's asset classes are the only vocabulary the product uses; no instrument-specific layer
+sits on top of them, and none is needed for emissions accounting.
 
 ### 1.5 Global practice and the improvement levers (`secondary_reported`)
 
@@ -164,7 +161,7 @@ replacing ISAE 3410 (https://ifacweb.blob.core.windows.net/publicfiles/2025-08/I
 
 ### 1.7 The practice this register adopts
 
-1. Classify by the substance of the financed asset; apply that class's own score table.
+1. Classify by the substance of the financed asset, as for any bank; apply that class's own score table.
 2. Per exposure: verified reported → reported → physical (supplier-specific first) → economic (sector-specific, then economy-wide).
 3. Per figure: Sri Lankan official → regional → global, tier printed beside the figure.
 4. Most recent vintage, year mismatch stated; source, period and publication date on every factor.
@@ -590,8 +587,8 @@ have no LK evidence. Nothing changes until re-read from source — logged here f
 
 ### 3.5 Motor vehicle loans — §5.6
 
-**Read by:** vehicle Ijarah/Murabaha and leases — the largest retail class on an Islamic
-bank's book after home finance.
+**Read by:** vehicle facilities and leases — a large retail class on a Sri Lankan bank's
+book after home finance.
 
 **What PCAF requires — `primary`, Third Edition pp.90–96, Annex Table 10.1-6 p.196.**
 Attribution = outstanding ÷ **total value at origination** (p.91); denominator unknown →
@@ -666,7 +663,7 @@ tied to the revenue licence**; whether it records the odometer is unverified.
 | EV car · e-two-wheeler | electricity (grid average, §3.1) | as ICE class | Leaf 14.0 · Atto 3 13.8 kWh/100 km | provisional |
 
 1. Today, class field only → **3a, score 4** (3b only where even the class is unknown, which a CR-based file never is).
-2. **Free step to score 2:** the Ijarah/Murabaha file already holds the DMT Certificate of Registration (make, model, year, engine cc, fuel, class) and a valuation — make/model efficiency plus a Sri Lankan km statistic is **2a = 2**; the valuation gives the denominator, so the 100 % fallback is never needed.
+2. **Free step to score 2:** the vehicle finance file already holds the DMT Certificate of Registration (make, model, year, engine cc, fuel, class) and a valuation — make/model efficiency plus a Sri Lankan km statistic is **2a = 2**; the valuation gives the denominator, so the 100 % fallback is never needed.
 3. **Score 1 from the odometer:** the lessor owns the asset and inspects it at origination, insurance renewal and (if recorded) the annual VET — two readings a year apart give actual distance → 1b = 1; fleet Ijarah supplies fuel invoices → 1a.
 4. Record the option per line; apply lowest-in-mix per borrower; disclose excluded types (tractors, trailers) and the year-end convention.
 
@@ -896,5 +893,5 @@ never presented as the reported score.
 | Date | Sections | Change | Source |
 |---|---|---|---|
 | 2026-09-16 | 0, 2, 3.1, 3.4, 4, 5 | First compilation: the register's rules and the grid and building families; the OM/BM relabel finding; the verification worklist | Seven-family research run; PCAF Third Edition (repo copy); Ember/OWID open data |
-| 2026-09-16 | 1, 4, 5 | Market practice: the standard's own rules page-cited; the PCAF ecosystem and the unverified partner-programme name; Sri Lankan peers (a PCAF-hosted Commercial Bank disclosure, LB Finance) and the SLFRS S2 clock; Amana Bank's public profile and the Islamic-instrument mapping stated as CarbonIQ's inference; regional baseline authorities as models; the twelve practices adopted | PCAF Third Edition pp.2, 9, 30–31, 45–48, 126, 161–167, 191; DCL and FAQ; supplement pp.8–9 |
+| 2026-09-16 | 1, 4, 5 | Market practice: the standard's own rules page-cited; the PCAF ecosystem and the unverified partner-programme name; Sri Lankan peers (a PCAF-hosted Commercial Bank disclosure, LB Finance) and the SLFRS S2 clock; Amana Bank's public profile, classified by the financed asset like any bank's; regional baseline authorities as models; the twelve practices adopted | PCAF Third Edition pp.2, 9, 30–31, 45–48, 126, 161–167, 191; DCL and FAQ; supplement pp.8–9 |
 | 2026-09-16 | 3.2, 3.3, 3.5, 3.6, 4, 5 | Fuels and GWP; sector EEIO (Sri Lanka named in Open CEDA 2025; EXIOBASE licence tightening); motor vehicles (Sri-Lanka-wide km is *local* → score 2 from the CR); sovereign (LULUCF sign error in the shipped dataset), sub-sovereign, project finance, UoP, carbon price (none in Sri Lanka), currency, NDC 3.0 (removal line unconfirmed) | PCAF Third Edition pp.31, 45–48, 59–65, 66–75, 90–96, 98–102, 140–158, 162, 167, 176, 192–206; Open CEDA 2025 workbook; NTC/CBSL tables via mirror |

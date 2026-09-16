@@ -97,6 +97,7 @@ const registerSchema = Joi.object({
     verificationLevels: Joi.object().pattern(Joi.string().valid(...VERIFICATION), Joi.string()).length(3).required(),
     sessionConstraint: Joi.string().required(),
     noAdoptedRowIsInvented: Joi.boolean().valid(true).required(),
+    classification: Joi.string().required(),
   }).required(),
   assetClasses: Joi.array().items(Joi.object({
     id: Joi.string().pattern(/^[a-z0-9-]+$/).required(),
@@ -105,11 +106,6 @@ const registerSchema = Joi.object({
     section: Joi.string().required(),
     engine: Joi.string().valid('built', 'not built').required(),
   })).min(1).required(),
-  islamicInstrumentMapping: Joi.object({
-    basis: Joi.string().pattern(/inference/i).required(),
-    map: Joi.object().pattern(Joi.string(), Joi.string()).required(),
-    notes: Joi.string().allow('').required(),
-  }).required(),
   baselines: Joi.array().items(baselineSchema).min(1).required(),
 }).custom((r, helpers) => {
   const classes = new Set(r.assetClasses.map(c => c.id));
@@ -119,9 +115,6 @@ const registerSchema = Joi.object({
         return helpers.message({ custom: `baseline "${b.key}" applies to "${a.assetClass}", which is not a declared asset class` });
       }
     }
-  }
-  for (const [instrument, target] of Object.entries(r.islamicInstrumentMapping.map)) {
-    if (!classes.has(target)) return helpers.message({ custom: `instrument "${instrument}" maps to "${target}", which is not a declared asset class` });
   }
   return r;
 });
