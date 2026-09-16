@@ -108,6 +108,7 @@ SECTION 9 [limitations] Limitations, and what is still outstanding
       row: State why Securitizations and structured products (§5.8) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
       row: State why Sub-sovereign debt (§5.10) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
       row: Sovereign debt is denominated in USD; the book total is in LKR | Its outstanding is excluded from the combined coverage share rather than converted at a rate this system does not hold. | DCL p.124
+      row: Approve 3 exposure(s) still recorded or under review | A figure the reporting entity has not approved is one it has not yet stood behind. | ISAE 3000 §12(a)
 SECTION 10 [uncertainty] Uncertainty, and what this document does not contain
     body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
     table: Score | Share of assessed outstanding | What the figure’s uncertainty rests on
@@ -177,9 +178,10 @@ ANNEX D [annexRegulatory] Where the regulatory lines come from
       row: Sustainable-finance classification of the lending book under the SLGFT | CBSL Direction No. 05 of 2022 | Elsewhere | The taxonomy screen and the Green Loan Certificate, not a financed-emissions document
 ANNEX E [annexChecklist] PCAF disclosure checklist — completed
     checklist
-CHECKLIST: 19 items
+CHECKLIST: 20 items
   GOV-1: Yes
   GOV-2: Yes
+  APR-1: No
   PER-1: Yes
   COV-1: Yes
   COV-2: Yes

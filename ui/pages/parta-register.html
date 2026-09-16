@@ -353,9 +353,13 @@
     </section>
 
     <section class="partc-card" id="pr-detail" hidden>
-      <div class="partc-card-head"><h3 id="pr-detail-title">Exposure</h3>
+      <div class="partc-card-head"><h3 id="pr-detail-title">Exposure</h3><span class="pr-state" id="pr-detail-state"></span>
         <div class="partc-actions">
           <button class="btn btn-secondary" id="pr-detail-report">Report — PDF</button>
+          <button class="btn btn-secondary" id="pr-detail-review" data-writes hidden>Send for review</button>
+          <button class="btn btn-primary" id="pr-detail-approve" data-writes hidden>Approve</button>
+          <button class="btn btn-secondary" id="pr-detail-draft" data-writes hidden>Return to recorded</button>
+          <button class="btn btn-secondary" id="pr-detail-reopen" data-writes hidden>Reopen</button>
           <button class="btn btn-secondary" id="pr-detail-edit" data-writes>Edit</button>
           <button class="btn btn-secondary" id="pr-detail-recompute" data-writes>Recompute</button>
           <button class="btn btn-secondary" id="pr-detail-remove" data-writes>Remove</button>

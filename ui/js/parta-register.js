@@ -100,6 +100,10 @@ const PartARegisterPage = (() => {
   const put = (path, body) => call(path, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   const del = path => call(path, { method: 'DELETE' });
 
+  /* Where an exposure stands in review — words, never a number. */
+  const STATE_LABEL = { recorded: 'Recorded', under_review: 'Under review', approved: 'Approved' };
+  const statePill = s => `<span class="pr-state pr-state-${esc(s || 'recorded')}">${esc(STATE_LABEL[s || 'recorded'] || s)}</span>`;
+
   // ── the held vocabulary ─────────────────────────────────────
 
   /* Reference data for the form: the sectors a factor and a band are held
@@ -321,7 +325,7 @@ const PartARegisterPage = (() => {
     setHtml('pr-rows', rows.length === 0
       ? '<p class="partc-hint">No exposures recorded in this year.</p>'
       : `<div class="pr-scroll"><table class="partc-table">
-          <thead><tr><th>Counterparty</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th><th>Checks</th></tr></thead>
+          <thead><tr><th>Counterparty</th><th>Instrument</th><th>Outstanding</th><th>Attribution factor</th><th>Scope 1 and 2</th><th>Scope 3</th><th>Score</th><th>Checks</th><th>Status</th></tr></thead>
           <tbody>${rows.map(r => {
             const x = r.result || {};
             const inv = x.inventory || {};
@@ -339,6 +343,7 @@ const PartARegisterPage = (() => {
               <td class="num">${inv.scope3 && inv.scope3.absent ? '—' : fmt(inv.scope3 && inv.scope3.value, 2)}</td>
               <td class="num">${dqBadge(dq.scope1And2 && dq.scope1And2.score, dq.scope1And2 && dq.scope1And2.option ? 'Option ' + dq.scope1And2.option : null)}</td>
               <td><span class="pr-verdict ${n === 0 ? 'pr-verdict-clean' : material ? 'pr-verdict-material' : ''}">${n === 0 ? 'clean' : `${n} finding${n === 1 ? '' : 's'}`}</span></td>
+              <td>${statePill(r.status)}</td>
             </tr>`;
           }).join('')}</tbody></table></div>`);
     for (const tr of document.querySelectorAll('#pr-rows .pr-row')) {
@@ -368,6 +373,8 @@ const PartARegisterPage = (() => {
     const cp = x.exposure.counterparty || {};
     say('pr-detail-title', cp.name || 'Exposure');
     say('pr-detail-status', '');
+    const stateEl = $('pr-detail-state');
+    if (stateEl) { stateEl.className = `pr-state pr-state-${e.status || 'recorded'}`; stateEl.textContent = STATE_LABEL[e.status || 'recorded'] || e.status; }
     const line = (label, l) => `<dt>${label}</dt><dd>${l && !l.absent && Number.isFinite(l.value) ? fmt(l.value, 2) + ' tCO₂e' : (l && l.reason ? esc(l.reason) : '—')}</dd>`;
     const dq = inv.dataQuality;
     const findings = (x.validation && x.validation.findings) || [];
@@ -412,8 +419,44 @@ const PartARegisterPage = (() => {
               <span class="partc-hint">${esc(f.reference)}</span>
             </div>
           </div>`).join('')}
+      ${e.approval && e.approval.approvedAt ? `<p class="partc-hint">Approved by ${esc(e.approval.approvedBy || 'the reporting entity')} at ${esc(e.approval.approvedAt)} — frozen until reopened with a reason.</p>` : ''}
+      ${e.approval && e.approval.history && e.approval.history.length ? `<p class="partc-hint">Review trail: ${e.approval.history.map(m => `${esc(STATE_LABEL[m.from] || m.from)} → ${esc(STATE_LABEL[m.to] || m.to)} (${esc(m.by || 'system')}${m.reason ? `: ${esc(m.reason)}` : ''})`).join('; ')}.</p>` : ''}
       <p class="partc-hint">Computed ${esc(e.computedAt)} · ${esc(e.standard)}</p>`);
     for (const el of document.querySelectorAll('#pr-detail [data-writes]')) el.hidden = preview();
+    applyState(e);
+  }
+
+  /* Which review controls the exposure's state allows. A preview visitor has
+     none; an approved exposure offers no edit, recomputation or removal — it
+     is frozen until reopened — and the server refuses either way. */
+  function applyState(e) {
+    const st = e.status || 'recorded';
+    const allow = (id, ok) => { const el = $(id); if (el) el.hidden = preview() || !ok; };
+    allow('pr-detail-review', st === 'recorded');
+    allow('pr-detail-approve', st === 'under_review');
+    allow('pr-detail-draft', st === 'under_review');
+    allow('pr-detail-reopen', st === 'approved');
+    allow('pr-detail-edit', st !== 'approved');
+    allow('pr-detail-recompute', st !== 'approved');
+    allow('pr-detail-remove', st !== 'approved');
+  }
+
+  /* One move through review. Reopening an approved exposure asks for the
+     reason, because the server records it and refuses without one. */
+  async function changeStatus(to) {
+    if (!openId || !current) return;
+    let reason;
+    if (to === 'under_review' && current.status === 'approved') {
+      reason = window.prompt('Why is this approved exposure being reopened? The reason is recorded on its trail.');
+      if (!reason || !reason.trim()) return;
+    }
+    say('pr-detail-status', 'Moving…');
+    try {
+      await post(`/exposures/${encodeURIComponent(openId)}/status`, reason ? { status: to, reason: reason.trim() } : { status: to });
+      await load();
+      if (openId) await openDetail(openId);
+      say('pr-detail-status', `Now ${(STATE_LABEL[to] || to).toLowerCase()}.`);
+    } catch (err) { say('pr-detail-status', err.message); }
   }
 
   /* The engine's own result for a class whose shape is not the seven lines —
@@ -864,6 +907,10 @@ const PartARegisterPage = (() => {
     on('pr-record-toggle', 'click', () => { const opening = $('pr-record').hidden; if (opening && editingId) { endEdit(); $('pr-form').reset(); } show('pr-record', opening); applyClass(); applyDenominatorMode(); });
     on('pr-form-cancel', 'click', () => { endEdit(); show('pr-record', false); });
     on('pr-detail-edit', 'click', startEdit);
+    on('pr-detail-review', 'click', () => changeStatus('under_review'));
+    on('pr-detail-approve', 'click', () => changeStatus('approved'));
+    on('pr-detail-draft', 'click', () => changeStatus('recorded'));
+    on('pr-detail-reopen', 'click', () => changeStatus('under_review'));
     on('pr-form', 'submit', submitForm);
     on('pr-book-form', 'submit', submitBook);
     on('pr-detail-close', 'click', closeDetail);

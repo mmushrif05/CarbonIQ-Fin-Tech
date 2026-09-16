@@ -69,6 +69,8 @@ test('the overview is on screen, a class tile opens the lending book at that cla
   await expect(page.locator('#bk-body')).toBeVisible();
   await expect(page.locator('#bk-headline')).not.toHaveText('—');
   await expect(page.locator('#bk-coverage')).toContainText('%');
+  await expect(page.locator('#bk-approved')).toContainText(' of ');
+  await expect(page.locator('#bk-ring-approval svg')).toBeVisible();
   await expect(page.locator('#bk-classes .bank-tile[data-class="commercial-real-estate"]')).toBeVisible();
   await expect(page.locator('#bk-plan')).toContainText('Business loans');
   await expect(page.locator('#bk-baselines')).toContainText('baseline');

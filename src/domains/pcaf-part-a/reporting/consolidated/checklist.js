@@ -42,6 +42,14 @@ const ITEMS = [
       : !entity(f).approvedBy ? 'Nobody is recorded as having approved the disclosure.' : 'The approval carries no date.',
   },
   {
+    id: 'APR-1', group: 'Governance', clause: 'ISAE 3000 §12(a); ISO 14064-3 §5.2', duty: SHALL, section: 'entity',
+    item: 'Every exposure in the register has been reviewed and approved by the reporting entity before the disclosure is filed.',
+    test: f => Boolean(f.approval && f.approval.total > 0 && f.approval.approved === f.approval.total),
+    justify: f => !f.approval || !f.approval.total
+      ? 'No exposure in a register class is recorded, so none stands approved.'
+      : `${f.approval.total - f.approval.approved} of ${f.approval.total} exposure(s) are not yet approved — recorded or under review.`,
+  },
+  {
     id: 'PER-1', group: 'Governance', clause: 'Part A ch.4; ch.6 (p.161)', duty: SHALL, section: 'entity',
     item: 'The reporting period is stated, with the fiscal year-end the position is taken at.',
     test: f => Boolean(entity(f).period),

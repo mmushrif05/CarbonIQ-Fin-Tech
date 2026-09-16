@@ -212,8 +212,17 @@ describe('The request the form builds', () => {
     must(JS, /textContent = 'Save changes'/, 'the button says what it will do');
   });
 
+  test('review is a move the server makes, in words, and an approved exposure offers no edit', () => {
+    must(JS, /post\(`\/exposures\/\$\{encodeURIComponent\(openId\)\}\/status`/, 'a move is a POST to the status route');
+    must(JS, /const STATE_LABEL = \{ recorded: 'Recorded', under_review: 'Under review', approved: 'Approved' \}/, 'the state is a word, never a number');
+    must(JS, /window\.prompt\('Why is this approved exposure being reopened/, 'reopening asks for the reason the server records');
+    must(JS, /allow\('pr-detail-edit', st !== 'approved'\)/, 'an approved exposure offers no edit');
+    must(JS, /allow\('pr-detail-remove', st !== 'approved'\)/, 'nor removal');
+    must(HTML, /id="pr-detail-state"/, 'the state is on the detail');
+  });
+
   test('the write controls are marked, so a preview visitor is not offered a button the server refuses', () => {
-    for (const id of ['pr-record-toggle', 'pr-record', 'pr-book-form', 'pr-detail-edit', 'pr-detail-recompute', 'pr-detail-remove']) {
+    for (const id of ['pr-record-toggle', 'pr-record', 'pr-book-form', 'pr-detail-edit', 'pr-detail-recompute', 'pr-detail-remove', 'pr-detail-review', 'pr-detail-approve', 'pr-detail-draft', 'pr-detail-reopen']) {
       must(HTML, new RegExp(`id="${id}"[^>]*data-writes|data-writes[^>]*id="${id}"`), `${id} carries data-writes`);
     }
   });

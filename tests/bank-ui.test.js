@@ -161,6 +161,13 @@ describe('The charts draw figures the engines returned, and nothing of their own
     must(HTML, /never added to it/, 'and the panel says so on its face');
   });
 
+  test('approval is a figure the server counted, shown as a ring and a tile, never tallied here', () => {
+    must(HTML, /id="bk-approved"/, 'the hero carries the approved count');
+    must(JS, /Charts\.ring\(val\(ap\.approvedPct\)/, 'the ring is the server’s approvedPct');
+    must(JS, /\$\{fmt\(ap\.approved, 0\)\} of \$\{fmt\(ap\.total, 0\)\}/, 'the tile prints approved of total, both the server’s');
+    mustNot(JS, /status === 'approved'\)\.length/, 'nothing is counted in the browser');
+  });
+
   test('the data-quality chart shares out what the server returned, and the ring shows the coverage the server computed', () => {
     must(JS, /o\.shareOfBook/, 'each share is the improvement plan’s own shareOfBook');
     must(JS, /Charts\.ring\(val\(cov\.sharePct\)/, 'the ring is the consolidated coverage figure');

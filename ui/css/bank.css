@@ -23,6 +23,7 @@
   --cls-motor-vehicle-loans: #0891b2;
   --cls-sovereign-debt: #475569;
   --cls-scope3: #a3a3a3;
+  --approved: #1d7a3a;
 }
 
 /* Charts: a drawing on an inline element renders as nothing, so every one is

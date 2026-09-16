@@ -77,13 +77,13 @@ const REGISTER_RULES = [
   },
   {
     id: 'A-REG-07',
-    clause: 'Register — a half-built lifecycle is worse than none',
-    rule: 'Nothing publishes from this register yet, so lock() refuses with a 501 naming the step '
-      + 'that builds it rather than doing half of a lock-and-supersede.',
-    implementation: 'src/domains/pcaf-part-a/application/register.js — lock() throws a 501 with the step that builds the lifecycle; the status column sits in migration 0008 so that step needs no migration',
-    test: 'tests/parta-register.test.js › locking refuses with a 501 rather than doing half of it',
-    status: 'partial',
-    limitation: 'The lock-and-supersede lifecycle is a later release. It is an absent capability that refuses explicitly, not a disabled one, so nothing can publish from the register in the meantime.',
+    clause: 'Register — one version of an approved row, never two',
+    rule: 'There is no supersede on this register: an approved exposure has exactly one version, a change to '
+      + 'it is refused rather than versioned, and reopening it records the reason on the same row. The stub that '
+      + 'once refused with a 501 is gone with the lifecycle that replaced it.',
+    implementation: 'src/domains/pcaf-part-a/application/register-lifecycle.js — assertNotApproved(); src/domains/pcaf-part-a/application/register.js — update(), recompute() and remove() refuse an approved exposure, and no supersede path exists',
+    test: 'tests/parta-approval.test.js › an approved exposure is frozen until reopened, and the consolidated position and checklist say how many stand approved',
+    status: 'implemented',
   },
   {
     id: 'A-REG-08',
@@ -129,6 +129,26 @@ const REGISTER_RULES = [
       + 'which names each row’s class and section.',
     implementation: 'src/domains/pcaf-part-a/application/parta-report.js — exposureReport() refuses with REPORT_NOT_BUILT_FOR_CLASS; src/domains/pcaf-part-a/application/parta-consolidated.js — registerRows() over every register class',
     test: 'tests/parta-register-classes.test.js › the per-exposure §5.2 report refuses a row of another class by name; the consolidated register carries it',
+    status: 'implemented',
+  },
+  {
+    id: 'A-REG-12',
+    clause: 'ISAE 3000 §12(a); ISO 14064-3 §5.2 — the responsible party stands behind the figures',
+    rule: 'An exposure moves recorded → under review → approved through one state machine, one step at a time; '
+      + 'approving needs the lock scope, a different authority from recording; every move is dated and attributed '
+      + 'on the exposure’s own trail; reopening an approved exposure requires a recorded reason.',
+    implementation: 'src/domains/pcaf-part-a/application/register-lifecycle.js — move(), TRANSITIONS, withMove(); src/domains/pcaf-part-a/application/register.js — setStatus(); src/platform/auth/scopes.js — a status of approved resolves to the lock scope',
+    test: 'tests/parta-approval.test.js › an exposure moves recorded → under review → approved, attributed and dated, and reopening needs a reason',
+    status: 'implemented',
+  },
+  {
+    id: 'A-REG-13',
+    clause: 'ISAE 3000 §12(a) — a figure the entity has stood behind does not move underneath the disclosure',
+    rule: 'An approved exposure is frozen: it cannot be changed, recomputed or removed until it is reopened, and a '
+      + 'changed input restarts review. The consolidated position counts approval per class and in total, names '
+      + 'what is still unapproved among the items outstanding, and the checklist answers No while any exposure is unapproved.',
+    implementation: 'src/domains/pcaf-part-a/application/register-lifecycle.js — assertNotApproved(), approvalOf(); src/domains/pcaf-part-a/application/register.js — update(), recompute() and remove() refuse an approved exposure; src/domains/pcaf-part-a/application/parta-consolidated.js — approval per class and in total; src/domains/pcaf-part-a/reporting/consolidated/checklist.js — APR-1',
+    test: 'tests/parta-approval.test.js › an approved exposure is frozen until reopened, and the consolidated position and checklist say how many stand approved',
     status: 'implemented',
   },
 

@@ -129,6 +129,23 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   await expect(row.locator('td').nth(2)).toContainText('75,000');
   await expect(page.locator('#pr-form-submit')).toHaveText('Record');
 
+  /* Review from the screen: sent for review, approved — frozen, no edit
+     offered — and reopened with a reason the server records. */
+  await expect(page.locator('#pr-detail-state')).toHaveText('Recorded');
+  await page.locator('#pr-detail-review').click();
+  await expect(page.locator('#pr-detail-state')).toHaveText('Under review');
+  await page.locator('#pr-detail-approve').click();
+  await expect(page.locator('#pr-detail-state')).toHaveText('Approved');
+  await expect(page.locator('#pr-detail-edit')).toBeHidden();
+  /* A session names the person the server established — the account's address — never a name the browser wrote down. */
+  await expect(page.locator('#pr-detail-body')).toContainText(`Approved by ${USER.email}`);
+  await expect(row.locator('.pr-state')).toHaveText('Approved');
+  page.once('dialog', d => d.accept('Balance restated after the audit'));
+  await page.locator('#pr-detail-reopen').click();
+  await expect(page.locator('#pr-detail-state')).toHaveText('Under review');
+  await expect(page.locator('#pr-detail-edit')).toBeVisible();
+  await expect(page.locator('#pr-detail-body')).toContainText('Balance restated after the audit');
+
   /* A phone width: the page body never scrolls sideways. */
   await page.setViewportSize({ width: 430, height: 900 });
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

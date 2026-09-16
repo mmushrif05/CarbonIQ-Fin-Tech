@@ -32,12 +32,9 @@
  * takes rather than something that happens to them — `recompute()` is a
  * separate call and it reports what moved.
  *
- * Lifecycle is deliberately not here. An exposure is recorded and it can be
- * changed; there is no lock and no supersede, because nothing yet publishes
- * from this register and a half-built lifecycle is worse than none. The
- * `status` column exists in migration 0008 so the step that adds the report
- * needs no schema change, `lock()` refuses with a 501 naming it, and
- * `docs/PCAF-PART-A-BUSINESS-LOANS.md` says so rather than leaving it found.
+ * The review lifecycle — recorded → under review → approved, an approved
+ * exposure frozen until reopened with a reason — lives in
+ * `register-lifecycle.js`; this file owns the read and the write around it.
  */
 
 'use strict';
@@ -58,7 +55,8 @@ const ASSET_CLASSES = Object.freeze(Object.fromEntries(
   Object.entries(classes.CLASSES).map(([k, c]) => [k, c.engine])));
 const DEFAULT_CLASS = classes.DEFAULT_CLASS;
 
-const STATUS = Object.freeze({ RECORDED: 'recorded' });
+const lifecycle = require('./register-lifecycle');
+const { STATUS, TRANSITIONS, assertNotApproved, withMove, approvalOf } = lifecycle;
 
 const _id = () => `pae_${Date.now().toString(36)}${crypto.randomBytes(4).toString('hex')}`;
 const _now = () => new Date().toISOString();
@@ -179,6 +177,7 @@ async function get(orgId, exposureId) {
 async function update(orgId, exposureId, input) {
   const existing = await get(orgId, exposureId);
   store.assertWritable();
+  assertNotApproved(existing, 'changed');
 
   const assetClass = input.assetClass || existing.assetClass;
   const cls = classes.classFor(assetClass);
@@ -188,9 +187,13 @@ async function update(orgId, exposureId, input) {
 
   const cp = result.exposure.counterparty || {};
   const now = _now();
+  /* A changed input restarts review, and the move is on the trail. */
+  const move = (existing.status || STATUS.RECORDED) === STATUS.RECORDED
+    ? { status: STATUS.RECORDED, approval: existing.approval || null }
+    : withMove(existing, STATUS.RECORDED, { reason: 'Input changed; review restarts.' });
   const next = {
     ...existing,
-    status: STATUS.RECORDED,
+    ...move,
     reportingYear: String(input.reportingYear || existing.reportingYear),
     assetClass,
     counterparty: {
@@ -210,8 +213,9 @@ async function update(orgId, exposureId, input) {
 }
 
 async function remove(orgId, exposureId) {
-  await get(orgId, exposureId);
+  const existing = await get(orgId, exposureId);
   store.assertWritable();
+  assertNotApproved(existing, 'removed');
   await repo.removeExposure(orgId, exposureId);
   return { exposureId, removed: true };
 }
@@ -227,6 +231,7 @@ async function remove(orgId, exposureId) {
 async function recompute(orgId, exposureId) {
   const existing = await get(orgId, exposureId);
   store.assertWritable();
+  assertNotApproved(existing, 'recomputed');
 
   /* The entity's own significance threshold, so a movement can be judged
      against the protocol it publishes rather than a figure hidden in code. */
@@ -387,29 +392,19 @@ function rollClass(cls, rows, book, reportingYear, improvementTarget) {
         : { remedy: 'State the reporting year\'s total loans and investments at PUT /v1/pcaf/part-a/book.' }),
     },
     exposures: rows.length,
+    approval: approvalOf(rows),
     source: 'Recorded exposures, read from the stored roll-up projection.',
   };
 }
 
+
 /**
- * A projected row, in the shape the roll-up reads.
- *
- * Almost nothing, and that is the point: every field in the projection is a
- * path into the stored record, so a projected row already carries
- * `result.exposure`, `result.inventory` and `result.validation` exactly as the
- * whole record does. Had the column held a flattened shape of its own, this
- * function would be a second place that knows the roll-up's inputs, and the
- * two would drift.
- *
+ * A projected row, in the shape the roll-up reads. Every projected field is a
+ * path into the stored record, so nothing here restates the roll-up's inputs.
  * Two normalisations, both because `jsonb_strip_nulls` removes a null field
- * and leaves the object that held it:
- *
- *   an exposure with no attribution factor (Option 3b or 3c) projects as
- *   `attribution: {}`, which is truthy — so the count of exposures carrying no
- *   factor would come back zero, which is the opposite of true;
- *
- *   an exposure with no findings projects with no `findings` key at all, and
- *   the improvement plan iterates it.
+ * and leaves the object that held it: an exposure with no attribution factor
+ * projects as `attribution: {}`, which is truthy; one with no findings
+ * projects with no `findings` key at all.
  */
 function inflate(row) {
   const r = row.result || {};
@@ -478,20 +473,25 @@ async function years(orgId) {
 }
 
 /** Not built, and it says which step builds it rather than pretending. */
-async function lock() {
-  throw refuse('LIFECYCLE_NOT_BUILT',
-    'An exposure cannot be locked yet. The register records and changes exposures; the lock-and-supersede '
-    + 'lifecycle belongs with the report that publishes from it, and nothing publishes from this register '
-    + 'yet. The status column exists in migration 0008 so that step needs no schema change.',
-    501,
-    'See docs/PCAF-PART-A-BUSINESS-LOANS.md §7 and docs/PCAF-PART-A-RESEARCH.md §11.');
+/**
+ * One move through review; the rules live in `register-lifecycle.js`.
+ * @param {string} orgId
+ * @param {string} exposureId
+ * @param {{status: string, reason?: string|null, actor?: string|null}} move
+ */
+async function setStatus(orgId, exposureId, move) {
+  const existing = await get(orgId, exposureId);
+  store.assertWritable();
+  const next = { ...existing, ...lifecycle.move(existing, move), updatedAt: _now() };
+  await repo.saveExposure(orgId, next);
+  return next;
 }
 
 module.exports = {
-  ASSET_CLASSES, DEFAULT_CLASS, STATUS, DEFAULT_SETTINGS,
-  record, get, update, remove, recompute, listExposures, rows, rowsByClass,
+  ASSET_CLASSES, DEFAULT_CLASS, STATUS, TRANSITIONS, DEFAULT_SETTINGS,
+  record, get, update, remove, recompute, setStatus, listExposures, rows, rowsByClass,
   stateBook, getBook, getSettings, saveSettings,
-  position, positions, years, lock,
+  position, positions, years,
   classes: classes.list,
   _inflate: inflate,
 };
