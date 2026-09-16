@@ -74,7 +74,9 @@ test('both classes are on screen, the entity facts record from the screen, the d
   /* The entity facts are organisation-wide, and another journey may have recorded
      a legal name into this organisation: clear it so the outstanding list is the
      one this journey watches shrink. */
-  await request.put('/v1/pcaf/part-a/settings', { headers: { 'x-api-key': KEY }, data: { reportingEntity: null } });
+  await request.put('/v1/pcaf/part-a/settings', { headers: { 'x-api-key': KEY }, data: {
+    reportingEntity: null, consolidationApproach: null, fiscalYearEnd: null, gwpBasis: null, preparedBy: null, approvedBy: null,
+  } });
   await signIn(page, request);
   await openPage(page);
 

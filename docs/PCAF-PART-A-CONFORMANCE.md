@@ -23,9 +23,8 @@ numerals are not interchangeable between them.
 
 | Status | Rules |
 |---|---|
-| Implemented | 81 |
-| Partial | 1 |
-| **Total** | **82** |
+| Implemented | 84 |
+| **Total** | **84** |
 
 ## How to verify any row
 
@@ -304,17 +303,15 @@ actually ran.
 
 **Evidence.** `tests/parta-register.test.js › a band the organisation releases changes what recompute reports, and the note says findings moved`
 
-### A-REG-07 — Partial
+### A-REG-07 — Implemented
 
-**Clause:** Register — a half-built lifecycle is worse than none
+**Clause:** Register — one version of an approved row, never two
 
-**Rule.** Nothing publishes from this register yet, so lock() refuses with a 501 naming the step that builds it rather than doing half of a lock-and-supersede.
+**Rule.** There is no supersede on this register: an approved exposure has exactly one version, a change to it is refused rather than versioned, and reopening it records the reason on the same row. The stub that once refused with a 501 is gone with the lifecycle that replaced it.
 
-**Implementation.** src/domains/pcaf-part-a/application/register.js — lock() throws a 501 with the step that builds the lifecycle; the status column sits in migration 0008 so that step needs no migration
+**Implementation.** src/domains/pcaf-part-a/application/register-lifecycle.js — assertNotApproved(); src/domains/pcaf-part-a/application/register.js — update(), recompute() and remove() refuse an approved exposure, and no supersede path exists
 
-**Evidence.** `tests/parta-register.test.js › locking refuses with a 501 rather than doing half of it`
-
-**Limitation.** The lock-and-supersede lifecycle is a later release. It is an absent capability that refuses explicitly, not a disabled one, so nothing can publish from the register in the meantime.
+**Evidence.** `tests/parta-approval.test.js › an approved exposure is frozen until reopened, and the consolidated position and checklist say how many stand approved`
 
 ### A-REG-08 — Implemented
 
@@ -355,6 +352,26 @@ actually ran.
 **Implementation.** src/domains/pcaf-part-a/application/parta-report.js — exposureReport() refuses with REPORT_NOT_BUILT_FOR_CLASS; src/domains/pcaf-part-a/application/parta-consolidated.js — registerRows() over every register class
 
 **Evidence.** `tests/parta-register-classes.test.js › the per-exposure §5.2 report refuses a row of another class by name; the consolidated register carries it`
+
+### A-REG-12 — Implemented
+
+**Clause:** ISAE 3000 §12(a); ISO 14064-3 §5.2 — the responsible party stands behind the figures
+
+**Rule.** An exposure moves recorded → under review → approved through one state machine, one step at a time; approving needs the lock scope, a different authority from recording; every move is dated and attributed on the exposure’s own trail; reopening an approved exposure requires a recorded reason.
+
+**Implementation.** src/domains/pcaf-part-a/application/register-lifecycle.js — move(), TRANSITIONS, withMove(); src/domains/pcaf-part-a/application/register.js — setStatus(); src/platform/auth/scopes.js — a status of approved resolves to the lock scope
+
+**Evidence.** `tests/parta-approval.test.js › an exposure moves recorded → under review → approved, attributed and dated, and reopening needs a reason`
+
+### A-REG-13 — Implemented
+
+**Clause:** ISAE 3000 §12(a) — a figure the entity has stood behind does not move underneath the disclosure
+
+**Rule.** An approved exposure is frozen: it cannot be changed, recomputed or removed until it is reopened, and a changed input restarts review. The consolidated position counts approval per class and in total, names what is still unapproved among the items outstanding, and the checklist answers No while any exposure is unapproved.
+
+**Implementation.** src/domains/pcaf-part-a/application/register-lifecycle.js — assertNotApproved(), approvalOf(); src/domains/pcaf-part-a/application/register.js — update(), recompute() and remove() refuse an approved exposure; src/domains/pcaf-part-a/application/parta-consolidated.js — approval per class and in total; src/domains/pcaf-part-a/reporting/consolidated/checklist.js — APR-1
+
+**Evidence.** `tests/parta-approval.test.js › an approved exposure is frozen until reopened, and the consolidated position and checklist say how many stand approved`
 
 ## The disclosed score and the improvement plan
 
@@ -884,7 +901,6 @@ actually ran.
 
 ## Known limitations, stated plainly
 
-- **A-REG-07** (Partial) — The lock-and-supersede lifecycle is a later release. It is an absent capability that refuses explicitly, not a disabled one, so nothing can publish from the register in the meantime.
 
 ## Factor provenance
 

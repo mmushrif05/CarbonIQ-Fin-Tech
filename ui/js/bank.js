@@ -134,6 +134,12 @@ const BankPage = (() => {
     say('bk-ready', items.length === 0 ? 'Yes' : String(items.length));
     say('bk-ready-unit', items.length === 0 ? 'every Chapter 6 item the bank must state is on the record' : 'items Chapter 6 still asks the bank for');
 
+    const ap = p.approval || {};
+    say('bk-approved', val(ap.total) ? `${fmt(ap.approved, 0)} of ${fmt(ap.total, 0)}` : '—');
+    say('bk-approved-unit', val(ap.total)
+      ? `exposures approved${val(ap.underReview) ? ` · ${fmt(ap.underReview, 0)} under review` : ''} — frozen until reopened with a reason`
+      : 'no exposure in a register class yet');
+
     renderClasses(p);
     renderChips(p);
     renderCharts(p);
@@ -164,6 +170,7 @@ const BankPage = (() => {
         <div class="bank-tile-row"><span>Outstanding</span><b>${esc(c.currency || '')} ${fmt(c.outstanding, 0)}</b></div>
         <div class="bank-tile-row"><span>Scope 3, apart</span><b>${c.scope3 && c.scope3.value !== null && c.scope3.value !== undefined ? fmt(c.scope3.value, 2) : '—'}</b></div>
         <div class="bank-tile-row"><span>Coverage</span><b>${c.coveragePct === null || c.coveragePct === undefined ? '—' : `${Number(c.coveragePct).toFixed(2)}%`}</b></div>
+        <div class="bank-tile-row"><span>Approved</span><b>${c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : '—'}</b></div>
         <span class="partc-hint">${esc(dq.table || '')}</span>
       </button>`;
     }).join(''));
@@ -276,6 +283,7 @@ const BankPage = (() => {
     if (!rec.length) {
       for (const id of ['bk-chart-emissions', 'bk-chart-dq', 'bk-chart-outstanding', 'bk-chart-intensity']) setHtml(id, '<p class="partc-hint">No class recorded yet.</p>');
       setHtml('bk-ring-coverage', '');
+      setHtml('bk-ring-approval', '');
       return;
     }
 
@@ -311,6 +319,9 @@ const BankPage = (() => {
     const cov = p.coverage || {};
     setHtml('bk-ring-coverage', Charts.ring(val(cov.sharePct), { label: 'Coverage of the book', color: 'var(--p-accent, #0a7a4c)' })
       + `<div class="bank-ring-caption">${val(cov.sharePct) === null ? esc(cov.remedy || 'book total not stated') : 'of total loans and investments'}</div>`);
+    const ap = p.approval || {};
+    setHtml('bk-ring-approval', Charts.ring(val(ap.approvedPct), { label: 'Exposures approved', color: 'var(--approved, #1d7a3a)' })
+      + `<div class="bank-ring-caption">${val(ap.total) ? 'of exposures approved' : 'no exposure to approve'}</div>`);
 
     setHtml('bk-chart-intensity', Charts.hbars(rec.map(c => ({
       key: c.assetClass, label: short(c), value: val(c.intensity && c.intensity.value), color: CLASS_COLOR(c.assetClass), dim: dim(c),

@@ -40,7 +40,7 @@ const sovereign = require('../../application/sovereign-register');
 const { installStarterBook } = require('../../application/starter-book');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
-const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema } = require('../schemas/register');
+const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema, statusChangeSchema } = require('../schemas/register');
 const { sovereignExposureSchema } = require('../schemas/sovereign');
 
 const router = Router();
@@ -221,6 +221,19 @@ router.post('/exposures/:exposureId/recompute', authenticate, defaultLimiter,
   validate({ body: noBodySchema }),
   handle(async (req, res) => {
     res.json(await register.recompute(req.orgId, req.params.exposureId));
+  }));
+
+router.post('/exposures/:exposureId/status', authenticate, defaultLimiter,
+  doc({ summary: 'Move an exposure through review: recorded → under review → approved, and back with a reason',
+    description: 'One step at a time. Approving needs the lock scope — a different authority from recording. '
+      + 'An approved exposure is frozen: it cannot be changed, recomputed or removed until it is reopened, and '
+      + 'reopening needs the reason recorded. Every move is dated and attributed on the exposure’s own trail.',
+    response: body({ exposure: obj }, ['exposure']) }),
+  validate({ body: statusChangeSchema }),
+  handle(async (req, res) => {
+    const actor = req.actor ? (req.actor.label || null) : null;
+    res.json({ exposure: await register.setStatus(req.orgId, req.params.exposureId,
+      { status: req.body.status, reason: req.body.reason, actor }) });
   }));
 
 router.delete('/exposures/:exposureId', authenticate, defaultLimiter,

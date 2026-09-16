@@ -163,4 +163,13 @@ const disclosureQuerySchema = Joi.object({
 }).unknown(false);
 
 
-module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema };
+/* A review move. The service decides whether the move is allowed from where
+   the exposure stands; the schema only closes the vocabulary. */
+const statusChangeSchema = Joi.object({
+  status: Joi.string().valid('recorded', 'under_review', 'approved').required()
+    .description('Where the exposure moves to — one step at a time'),
+  reason: Joi.string().trim().max(1000).optional()
+    .description('Required when reopening an approved exposure; recorded on its trail'),
+}).unknown(false);
+
+module.exports = { registerExposureSchema, bookSchema, positionQuerySchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, statusChangeSchema };

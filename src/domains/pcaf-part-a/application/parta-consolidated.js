@@ -124,6 +124,7 @@ function registerRow(pos, bookCurrency, assetClass) {
     bySector: pos.bySector || {},
     financialSector: pos.financialSector || null,
     optionDistribution: plan.byOption || [],
+    approval: pos.approval || null,
   };
 }
 
@@ -144,6 +145,8 @@ function sovereignRow(pos) {
     intensity: { value: num(t.economicIntensity_tCO2e_per_M) ? t.economicIntensity_tCO2e_per_M : null, unit: 'tCO2e per million USD' },
     findings: (pos.improvementPlan || []).reduce((s, x) => s + (x.count || 0), 0),
     bySovereign: pos.bySovereign || [],
+    /* The sovereign register carries no review lifecycle yet, and says so rather than counting nothing as approved. */
+    approval: null,
   };
 }
 
@@ -242,9 +245,26 @@ async function position(orgId, reportingYear) {
   }
   for (const x of excluded) outstandingItems.push({ what: `${x.label} is denominated in ${x.currency}; the book total is in ${bookCurrency || 'an unstated currency'}`, why: 'Its outstanding is excluded from the combined coverage share rather than converted at a rate this system does not hold.', clause: 'DCL p.124' });
 
+  /* Approval, per class and in total, from the register classes' own counts;
+     the sovereign register carries no lifecycle yet and is named as not counted. */
+  const withApproval = recorded.filter(c => c.approval);
+  const tally = k => withApproval.reduce((s, c) => s + (c.approval[k] || 0), 0);
+  const approval = {
+    total: tally('total'), approved: tally('approved'), underReview: tally('underReview'), recorded: tally('recorded'),
+    approvedPct: /** @type {number|null} */ (null), classes: withApproval.length,
+    note: 'Register classes only: the sovereign register carries no review lifecycle yet and is not counted. '
+      + 'An approved exposure is frozen until reopened with a recorded reason.',
+  };
+  approval.approvedPct = approval.total ? r2((approval.approved / approval.total) * 100) : null;
+  if (approval.total > approval.approved) {
+    outstandingItems.push({ what: `Approve ${approval.total - approval.approved} exposure(s) still recorded or under review`,
+      why: 'A figure the reporting entity has not approved is one it has not yet stood behind.', clause: 'ISAE 3000 §12(a)' });
+  }
+
   return {
     reportingYear: year,
     currency: bookCurrency,
+    approval,
     book: book ? { totalLoansAndInvestments: book.totalLoansAndInvestments, currency: book.currency, statedBy: book.statedBy || null } : null,
     entity: settings,
     classes,

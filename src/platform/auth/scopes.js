@@ -96,6 +96,7 @@ const OVERRIDES = Object.freeze([
      document from a figure already held — so it is `read`, and it sits
      before the broad write rule because the first match wins. */
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures\/[^/]+\/report$/, scope: 'read', why: 'renders a report from a held exposure; stores nothing' },
+  { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures\/[^/]+\/status$/, scope: 'write', why: 'review status change; approving needs lock' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'records or recomputes an exposure in the register' },
   { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'changes a recorded exposure' },
   { method: 'DELETE', pattern: /^\/v1\/pcaf\/part-a\/exposures/, scope: 'write', why: 'removes an exposure from the register' },
@@ -174,6 +175,9 @@ function requiredScopeFor(method, pattern, body) {
     if (o.method === m && o.pattern.test(pattern)) {
       if (/\/status$/.test(pattern) && body && String(body.status) === 'locked') {
         return { scope: 'lock', why: 'locks the assessment — it enters the disclosure' };
+      }
+      if (/\/status$/.test(pattern) && body && String(body.status) === 'approved') {
+        return { scope: 'lock', why: 'approves the exposure — the entity stands behind it in the disclosure' };
       }
       return { scope: o.scope, why: o.why };
     }

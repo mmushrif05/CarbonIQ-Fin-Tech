@@ -386,16 +386,11 @@ describe('a recomputation compares every line and both scores', () => {
   });
 });
 
-describe('the lifecycle is not built, and says which step builds it', () => {
-  test('locking refuses with a 501 rather than doing half of it', async () => {
-    try {
-      await register.lock();
-      throw new Error('should have refused');
-    } catch (e) {
-      expect(e.statusCode).toBe(501);
-      expect(e.message).toMatch(/lock-and-supersede lifecycle/);
-      expect(e.remedy).toMatch(/PCAF-PART-A-BUSINESS-LOANS/);
-    }
+describe('the lifecycle is built, and the stub that refused with a 501 is gone', () => {
+  test('setStatus moves an exposure through review and there is no lock() to refuse', () => {
+    expect(typeof register.setStatus).toBe('function');
+    expect(register.lock).toBeUndefined();
+    expect(register.TRANSITIONS).toEqual({ recorded: ['under_review'], under_review: ['approved', 'recorded'], approved: ['under_review'] });
   });
 });
 
