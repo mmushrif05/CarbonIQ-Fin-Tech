@@ -28254,6 +28254,223 @@
                   {
                     "type": "object",
                     "properties": {
+                      "country": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "vehicle-loan",
+                          "lease",
+                          "hire-purchase"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        }
+                      },
+                      "vehicles": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80
+                            },
+                            "vehicleClass": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "fuel": {
+                              "type": "string",
+                              "enum": [
+                                "petrol",
+                                "diesel",
+                                "electricity",
+                                "hybrid",
+                                "plug-in-hybrid"
+                              ]
+                            },
+                            "makeModel": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "registration": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "efficiency": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "enum": [
+                                    "L/100km",
+                                    "km/L",
+                                    "kWh/100km",
+                                    "km/kWh"
+                                  ],
+                                  "default": "L/100km"
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "enum": [
+                                    "make-model",
+                                    "class"
+                                  ],
+                                  "default": "make-model"
+                                },
+                                "cycle": {
+                                  "type": "string",
+                                  "maxLength": 20
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "maxLength": 300
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            },
+                            "distance": {
+                              "type": "object",
+                              "properties": {
+                                "value_km": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "enum": [
+                                    "actual",
+                                    "local",
+                                    "regional"
+                                  ],
+                                  "default": "local"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "maxLength": 300
+                                }
+                              },
+                              "required": [
+                                "value_km"
+                              ]
+                            },
+                            "fuelConsumed": {
+                              "type": "object",
+                              "properties": {
+                                "petrol_L": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "diesel_L": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "electricity_kWh": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              }
+                            },
+                            "electricShare": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "productionEmissions_tCO2e": {
+                              "type": "number",
+                              "minimum": 0
+                            }
+                          }
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "motor-vehicle-loans"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "vehicles",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
                       "identifiers": {
                         "type": "object",
                         "properties": {
@@ -30345,6 +30562,223 @@
                   {
                     "type": "object",
                     "properties": {
+                      "country": {
+                        "type": "string",
+                        "minLength": 2,
+                        "maxLength": 2,
+                        "default": "LK"
+                      },
+                      "productType": {
+                        "type": "string",
+                        "enum": [
+                          "vehicle-loan",
+                          "lease",
+                          "hire-purchase"
+                        ]
+                      },
+                      "exposure": {
+                        "type": "object",
+                        "properties": {
+                          "outstanding": {
+                            "type": "number",
+                            "minimum": 0
+                          },
+                          "currency": {
+                            "type": "string",
+                            "maxLength": 10,
+                            "default": "LKR"
+                          },
+                          "asOf": {
+                            "type": "string",
+                            "maxLength": 40
+                          }
+                        },
+                        "required": [
+                          "outstanding"
+                        ]
+                      },
+                      "value": {
+                        "type": "object",
+                        "properties": {
+                          "atOrigination": {
+                            "type": "number",
+                            "exclusiveMinimum": 0
+                          }
+                        }
+                      },
+                      "vehicles": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "maxLength": 80
+                            },
+                            "vehicleClass": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "fuel": {
+                              "type": "string",
+                              "enum": [
+                                "petrol",
+                                "diesel",
+                                "electricity",
+                                "hybrid",
+                                "plug-in-hybrid"
+                              ]
+                            },
+                            "makeModel": {
+                              "type": "string",
+                              "maxLength": 120
+                            },
+                            "registration": {
+                              "type": "string",
+                              "maxLength": 40
+                            },
+                            "efficiency": {
+                              "type": "object",
+                              "properties": {
+                                "value": {
+                                  "type": "number",
+                                  "exclusiveMinimum": 0
+                                },
+                                "unit": {
+                                  "type": "string",
+                                  "enum": [
+                                    "L/100km",
+                                    "km/L",
+                                    "kWh/100km",
+                                    "km/kWh"
+                                  ],
+                                  "default": "L/100km"
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "enum": [
+                                    "make-model",
+                                    "class"
+                                  ],
+                                  "default": "make-model"
+                                },
+                                "cycle": {
+                                  "type": "string",
+                                  "maxLength": 20
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "maxLength": 300
+                                }
+                              },
+                              "required": [
+                                "value"
+                              ]
+                            },
+                            "distance": {
+                              "type": "object",
+                              "properties": {
+                                "value_km": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "basis": {
+                                  "type": "string",
+                                  "enum": [
+                                    "actual",
+                                    "local",
+                                    "regional"
+                                  ],
+                                  "default": "local"
+                                },
+                                "source": {
+                                  "type": "string",
+                                  "maxLength": 300
+                                }
+                              },
+                              "required": [
+                                "value_km"
+                              ]
+                            },
+                            "fuelConsumed": {
+                              "type": "object",
+                              "properties": {
+                                "petrol_L": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "diesel_L": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "electricity_kWh": {
+                                  "type": "number",
+                                  "minimum": 0
+                                }
+                              }
+                            },
+                            "electricShare": {
+                              "type": "number",
+                              "minimum": 0,
+                              "maximum": 1
+                            },
+                            "productionEmissions_tCO2e": {
+                              "type": "number",
+                              "minimum": 0
+                            }
+                          }
+                        },
+                        "minItems": 1,
+                        "maxItems": 500
+                      },
+                      "assetClass": {
+                        "type": "string",
+                        "enum": [
+                          "motor-vehicle-loans"
+                        ]
+                      },
+                      "reportingYear": {
+                        "type": "integer",
+                        "minimum": 2000,
+                        "maximum": 2100
+                      },
+                      "identifiers": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "maxLength": 120
+                          },
+                          "accountNumber": {
+                            "type": "string",
+                            "maxLength": 80
+                          }
+                        }
+                      },
+                      "counterparty": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "maxLength": 200
+                          },
+                          "sector": {
+                            "type": "string",
+                            "maxLength": 120
+                          }
+                        }
+                      }
+                    },
+                    "required": [
+                      "exposure",
+                      "vehicles",
+                      "assetClass",
+                      "reportingYear"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
                       "identifiers": {
                         "type": "object",
                         "properties": {
@@ -31832,6 +32266,286 @@
                 "schema": {
                   "type": "string",
                   "format": "binary"
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/motor-vehicles/assess": {
+      "post": {
+        "operationId": "postPcafPartAMotorVehiclesAssess",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "PCAF Part A §5.6 financed emissions for one motor vehicle facility",
+        "description": "Attribution is outstanding ÷ total value at origination, or 100 % where that value is unknown (p.91). Per vehicle: actual fuel → Option 1a; make/model efficiency × actual distance → 1b; × a local statistical distance → 2a (a Sri-Lanka-wide figure is local, fn 146); × a regional distance → 2b; vehicle-type efficiency → 3a; an average vehicle → 3b. Two options score 1 and the borrower carries the lowest quality in the mix (p.93). Scope 3 is absent unless a new vehicle’s production emissions are reported as a first-year lump sum. Stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "default": "LK"
+                  },
+                  "productType": {
+                    "type": "string",
+                    "enum": [
+                      "vehicle-loan",
+                      "lease",
+                      "hire-purchase"
+                    ]
+                  },
+                  "exposure": {
+                    "type": "object",
+                    "properties": {
+                      "outstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 10,
+                        "default": "LKR"
+                      },
+                      "asOf": {
+                        "type": "string",
+                        "maxLength": 40
+                      }
+                    },
+                    "required": [
+                      "outstanding"
+                    ]
+                  },
+                  "value": {
+                    "type": "object",
+                    "properties": {
+                      "atOrigination": {
+                        "type": "number",
+                        "exclusiveMinimum": 0
+                      }
+                    }
+                  },
+                  "vehicles": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "maxLength": 80
+                        },
+                        "vehicleClass": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "fuel": {
+                          "type": "string",
+                          "enum": [
+                            "petrol",
+                            "diesel",
+                            "electricity",
+                            "hybrid",
+                            "plug-in-hybrid"
+                          ]
+                        },
+                        "makeModel": {
+                          "type": "string",
+                          "maxLength": 120
+                        },
+                        "registration": {
+                          "type": "string",
+                          "maxLength": 40
+                        },
+                        "efficiency": {
+                          "type": "object",
+                          "properties": {
+                            "value": {
+                              "type": "number",
+                              "exclusiveMinimum": 0
+                            },
+                            "unit": {
+                              "type": "string",
+                              "enum": [
+                                "L/100km",
+                                "km/L",
+                                "kWh/100km",
+                                "km/kWh"
+                              ],
+                              "default": "L/100km"
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "make-model",
+                                "class"
+                              ],
+                              "default": "make-model"
+                            },
+                            "cycle": {
+                              "type": "string",
+                              "maxLength": 20
+                            },
+                            "source": {
+                              "type": "string",
+                              "maxLength": 300
+                            }
+                          },
+                          "required": [
+                            "value"
+                          ]
+                        },
+                        "distance": {
+                          "type": "object",
+                          "properties": {
+                            "value_km": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "basis": {
+                              "type": "string",
+                              "enum": [
+                                "actual",
+                                "local",
+                                "regional"
+                              ],
+                              "default": "local"
+                            },
+                            "source": {
+                              "type": "string",
+                              "maxLength": 300
+                            }
+                          },
+                          "required": [
+                            "value_km"
+                          ]
+                        },
+                        "fuelConsumed": {
+                          "type": "object",
+                          "properties": {
+                            "petrol_L": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "diesel_L": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "electricity_kWh": {
+                              "type": "number",
+                              "minimum": 0
+                            }
+                          }
+                        },
+                        "electricShare": {
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1
+                        },
+                        "productionEmissions_tCO2e": {
+                          "type": "number",
+                          "minimum": 0
+                        }
+                      }
+                    },
+                    "minItems": 1,
+                    "maxItems": 500
+                  }
+                },
+                "required": [
+                  "exposure",
+                  "vehicles"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "elapsedMs": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "elapsedMs": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
                 }
               }
             }

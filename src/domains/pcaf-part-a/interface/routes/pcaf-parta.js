@@ -34,8 +34,12 @@ const { assessSovereign } = require('../../domain/sovereign');
 const { sovereignRequestSchema } = require('../schemas/sovereign');
 const { assessRealEstate } = require('../../domain/real-estate');
 const { realEstateRequestSchema } = require('../schemas/real-estate');
+const { motorVehiclesRequestSchema } = require('../schemas/motor-vehicles');
 const { withSectorBand } = require('../../application/plausibility');
 const { withPropertyFactors } = require('../../application/property-factors');
+const { withVehicleFactors } = require('../../application/vehicle-factors');
+const { assessMotorVehicles } = require('../../domain/motor-vehicles');
+const vehicleData = require('../../domain/motor-vehicles/dataset');
 const { assessBusinessLoan } = require('../../domain/business-loans');
 const businessLoansPortfolio = require('../../domain/business-loans/portfolio');
 const { assessRequestSchema } = require('../schemas/pcaf-parta');
@@ -146,6 +150,21 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
           dataQualityTable: parta.dataQuality.tableFor('mortgages').table,
           buildingTypes: realEstateData.buildingTypes().map(t => ({ key: t.key, label: t.label })),
           dataset: realEstateData.release(),
+        },
+        {
+          id: 'motor-vehicle-loans',
+          assessRoute: '/v1/pcaf/part-a/motor-vehicles/assess',
+          label: 'Motor vehicle loans',
+          section: '5.6',
+          definition: 'Loans and lines of credit to consumers and businesses to finance one or several '
+            + 'vehicles; the institution defines the vehicle types it includes and explains any it leaves out (p.90).',
+          denominator: 'Total value at origination; 100 % attribution where the value is unknown (p.91)',
+          scopes: 'Scope 1 (fuel) and scope 2 (electricity for electric and plug-in vehicles). Scope 3 is not '
+            + 'required; a new vehicle’s production emissions may be reported as a first-year lump sum.',
+          dataQualityOptions: parta.dataQuality.optionsFor('motor-vehicle-loans'),
+          dataQualityTable: parta.dataQuality.tableFor('motor-vehicle-loans').table,
+          vehicleClasses: vehicleData.classes().map(c => ({ key: c.key, label: c.label, fuel: c.fuel })),
+          dataset: vehicleData.release(),
         },
       ],
       archetypes: parta.archetypes.list(),
@@ -288,6 +307,31 @@ router.post('/real-estate/assess',
     try {
       const startedAt = Date.now();
       const result = assessRealEstate(await withPropertyFactors(req.body, { orgId: req.orgId || null }));
+      res.json({ ...result, elapsedMs: Date.now() - startedAt });
+    } catch (err) { next(err); }
+  });
+
+/**
+ * §5.6 — one motor vehicle facility, one or several vehicles.
+ *
+ * The option is derived per vehicle from what is supplied (Table 5.6-1) and
+ * the borrower carries the lowest quality in the mix (p.93). The grid, fuel and
+ * annual-distance baselines resolve from the registry on the way in.
+ */
+router.post('/motor-vehicles/assess',
+  doc({ summary: 'PCAF Part A §5.6 financed emissions for one motor vehicle facility',
+    description: 'Attribution is outstanding ÷ total value at origination, or 100 % where that value is '
+      + 'unknown (p.91). Per vehicle: actual fuel → Option 1a; make/model efficiency × actual distance → 1b; '
+      + '× a local statistical distance → 2a (a Sri-Lanka-wide figure is local, fn 146); × a regional '
+      + 'distance → 2b; vehicle-type efficiency → 3a; an average vehicle → 3b. Two options score 1 and the '
+      + 'borrower carries the lowest quality in the mix (p.93). Scope 3 is absent unless a new vehicle’s '
+      + 'production emissions are reported as a first-year lump sum. Stores nothing.',
+    response: body({ elapsedMs: num }) }), authenticate, defaultLimiter,
+  validate({ body: motorVehiclesRequestSchema }),
+  async (req, res, next) => {
+    try {
+      const startedAt = Date.now();
+      const result = assessMotorVehicles(await withVehicleFactors(req.body, { orgId: req.orgId || null }));
       res.json({ ...result, elapsedMs: Date.now() - startedAt });
     } catch (err) { next(err); }
   });

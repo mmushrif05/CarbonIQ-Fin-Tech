@@ -37,10 +37,12 @@
 const { assessBusinessLoan, STANDARD: STANDARD_BL } = require('../domain/business-loans');
 const { assessListedEquity, STANDARD: STANDARD_LE } = require('../domain/listed-equity');
 const { assessRealEstate, STANDARD: STANDARD_RE } = require('../domain/real-estate');
+const { assessMotorVehicles, STANDARD: STANDARD_MV } = require('../domain/motor-vehicles');
 const parta = require('../domain');
 const { traced, absent } = require('../domain/provenance');
 const { withSectorBand } = require('./plausibility');
 const { withPropertyFactors } = require('./property-factors');
+const { withVehicleFactors } = require('./vehicle-factors');
 
 const r2 = n => +Number(n).toFixed(2);
 const num = v => typeof v === 'number' && Number.isFinite(v);
@@ -109,6 +111,68 @@ function adaptRealEstate(native, input, assetClass) {
       },
       economicIntensity_tCO2e_per_M: num(outstanding) && outstanding > 0 ? r2(s12.combined / (outstanding / 1e6)) : null,
       separation: `Financed scope 1 and 2 are the building’s operational emissions attributed on the origination value; construction emissions are scope 3 category 15 and are never summed with them (${section}).`,
+      category: inv.category,
+    },
+    validation: clean('No data-truth checks are defined for this class yet; the engine refuses what the standard refuses.'),
+    financialSector: false,
+    provisional: native.provisional,
+    native,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// §5.6 — the vehicle engine's result on the seven lines; the vehicles kept under native
+// ---------------------------------------------------------------------------
+
+function adaptMotorVehicles(native, input) {
+  const inv = native.inventory;
+  const s12 = inv.financedScope1And2;
+  const cp = input.counterparty || {};
+  const outstanding = Number(input.exposure && input.exposure.outstanding);
+  const scope1And2 = traced({
+    value: s12.combined, unit: 'tCO2e',
+    equation: 'financed scope 1 and 2 = financed scope 1 + financed scope 2',
+    inputs: { financed_scope1_tCO2e: s12.scope1.value, financed_scope2_tCO2e: s12.scope2.value },
+    basis: s12.scope1.basis,
+    reference: 'PCAF Part A Third Edition §5.6 — reported combined at minimum, the split carried',
+  });
+  return {
+    standard: native.standard,
+    assetClass: 'motor-vehicle-loans',
+    exposure: {
+      identifiers: input.identifiers || {},
+      counterparty: {
+        name: cp.name || null,
+        /* The vehicle class stands where a borrower's sector stands. */
+        sector: native.facility.vehicleClasses.join(' + ') || null,
+        borrowerType: null, naceL2: null, financialInstitution: false,
+      },
+      kind: 'motor-vehicle-loans',
+      instrument: native.facility.productType,
+      reportingYear: input.reportingYear ? Number(input.reportingYear) : null,
+      outstanding: { value: num(outstanding) ? outstanding : null, unit: (input.exposure && input.exposure.currency) || 'LKR', asOf: input.exposure && input.exposure.asOf },
+      country: native.facility.country,
+      vehicles: native.facility.vehicles,
+    },
+    denominator: native.denominator.value !== null
+      ? { value: native.denominator.value, equation: 'total value at origination (§5.6, p.91)', assumptions: [], state: native.denominator.state }
+      : { value: null, equation: 'value at origination unknown — 100 % attribution assumed (§5.6, p.91)', assumptions: native.attribution.assumptions || [], state: native.denominator.state },
+    attribution: native.attribution,
+    inventory: {
+      scope1: s12.scope1,
+      scope2: s12.scope2,
+      scope1And2,
+      scope3: inv.productionScope3,
+      removals: notApplicable('Financed emission removals', '§5.6'),
+      creditsRetired: notApplicable('Carbon credits retired', '§5.6'),
+      creditsGenerated: notApplicable('Carbon credits generated', '§5.6'),
+      dataQuality: {
+        scope1And2: inv.dataQuality,
+        scope3: { absent: true, reason: 'Production emissions are a declared first-year lump sum carried apart; Table 5.6-1 scores the vehicles’ use-phase scope 1 and 2 only, so no scope 3 score is invented.' },
+        scale: inv.dataQuality.scale,
+      },
+      economicIntensity_tCO2e_per_M: num(outstanding) && outstanding > 0 ? r2(s12.combined / (outstanding / 1e6)) : null,
+      separation: 'Financed scope 1 and 2 are the vehicles’ fuel and electricity attributed on the value at origination; a new vehicle’s production emissions are scope 3, first year only, and are never summed with them (§5.6, p.91).',
       category: inv.category,
     },
     validation: clean('No data-truth checks are defined for this class yet; the engine refuses what the standard refuses.'),
@@ -288,6 +352,23 @@ const CLASSES = Object.freeze({
       financialSectorNote: 'Reported separately, as PCAF recommends.',
       separation: 'Financed scope 1 and 2 are the dwelling’s operational emissions; construction is not required under §5.5 (fn 132) and is never summed with them.',
       targetNote: scoreTarget('metered energy with an average emission factor', '1b'),
+    },
+  },
+  'motor-vehicle-loans': {
+    assetClass: 'motor-vehicle-loans', section: '§5.6', label: 'Motor vehicle loans',
+    standard: STANDARD_MV,
+    engine: input => assessMotorVehicles(input),
+    prepare: (input, ctx) => withVehicleFactors(input, ctx),
+    adapt: (r, input) => adaptMotorVehicles(r, input),
+    rollUp: {
+      assetClass: 'motor-vehicle-loans', label: 'Motor vehicle loans',
+      groupings: [
+        { key: 'bySector', label: 'Vehicle class', pick: r => r.exposure.counterparty.sector, fallback: 'unclassified' },
+        { key: 'byKind', label: 'Product', pick: r => r.exposure.instrument, fallback: 'vehicle-loan' },
+      ],
+      financialSectorNote: 'Reported separately, as PCAF recommends.',
+      separation: 'Financed scope 1 and 2 are the vehicles’ use-phase emissions; a new vehicle’s production emissions are scope 3, first year only, never summed with them (§5.6, p.91).',
+      targetNote: scoreTarget('make/model efficiency from the registration certificate with a local distance statistic', '2a'),
     },
   },
 });

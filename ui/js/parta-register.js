@@ -122,6 +122,9 @@ const PartARegisterPage = (() => {
       setHtml('pr-f-building-type', types.map(t => `<option value="${esc(t.key)}">${esc(t.label)}</option>`).join(''));
       setHtml('pr-f-pf-archetype', (reference.archetypes || [{ id: 'general', label: 'General' }])
         .map(a => `<option value="${esc(a.id)}">${esc(a.label)}</option>`).join(''));
+      const vehicleClasses = at('motor-vehicle-loans').vehicleClasses || [];
+      setHtml('pr-f-mv-class', '<option value="">Not known — average vehicle</option>' + vehicleClasses
+        .filter(c => c.key !== 'average').map(c => `<option value="${esc(c.key)}">${esc(c.label)}</option>`).join(''));
       const pfOptions = at('project-finance').dataQualityOptions || [];
       setHtml('pr-f-pf-option', pfOptions.map(o => `<option value="${esc(o.option)}">Option ${esc(o.option)} — score ${esc(o.score)}</option>`).join(''));
     } catch (_) { /* the engine refuses a type or an option it does not hold, by name */ }
@@ -432,6 +435,20 @@ const PartARegisterPage = (() => {
         ['Origination value', `${fmt(x.denominator && x.denominator.value, 0)} · ${esc(x.denominator && x.denominator.state || '')}`],
         n.provisional ? ['Provisional', 'A provisional factor or intensity is in use; the trace names it.'] : null,
       ]);
+    } else if (n.facility) {
+      const dq = n.inventory.dataQuality;
+      body = kv([
+        ['Facility', `${esc(n.facility.section)} · ${n.facility.vehicles} vehicle(s) · ${esc(n.facility.productType)}`],
+        ['Value at origination', n.denominator.value === null ? 'unknown — 100% attribution, the standard’s default (§5.6, p.91)' : fmt(n.denominator.value, 0)],
+        dq.mix && dq.mix.length > 1 ? ['Options in the mix', `${esc(dq.mix.join(', '))} — ${esc(dq.rule)}`] : null,
+        ['Vehicles (100%)', `${fmt(n.inventory.vehicleEmissions.combined, 2)} tCO₂e`],
+      ]) + n.inventory.vehicles.map(v => kv([
+        [esc(v.makeModel || v.label), `${dqBadge(v.score, 'Option ' + v.option)} ${esc(v.basis)}`],
+        v.efficiency ? ['Efficiency', `${fmt(v.efficiency.value, 2)} ${esc(v.efficiency.unit)}${v.efficiency.asKeyed && v.efficiency.conversion ? ` <span class="partc-hint">(${fmt(v.efficiency.asKeyed.value, 1)} ${esc(v.efficiency.asKeyed.unit)} as keyed)</span>` : ''} · ${esc(v.efficiency.basis)}`] : null,
+        v.distance ? ['Distance', `${fmt(v.distance.km, 0)} km · ${esc(v.distance.basis)} <span class="partc-hint">${esc(v.distance.source)}</span>`] : null,
+        ['Energy', `${v.energy.litres ? `${fmt(v.energy.litres, 0)} L ${esc(v.energy.fuel || '')} (${fmt(v.energy.fuel_kWh, 0)} kWh)` : ''}${v.energy.electricity_kWh ? ` ${fmt(v.energy.electricity_kWh, 0)} kWh electricity` : ''}`],
+        ['Scope 1 and 2 (100%)', `${fmt(v.emissions.scope1, 2)} + ${fmt(v.emissions.scope2, 2)} tCO₂e`],
+      ])).join('');
     } else if (n.project) {
       const gen = n.generation;
       const metrics = (n.impact && n.impact.metrics) || [];
@@ -505,6 +522,7 @@ const PartARegisterPage = (() => {
   /** The request the engine takes, read from the form and nothing else — per class. */
   function collect() {
     if (isProperty()) return collectProperty();
+    if (cls === 'motor-vehicle-loans') return collectVehicle();
     if (cls === 'project-finance') return collectProject();
     if (cls === 'listed-equity-corporate-bonds') return collectListed();
     return collectBusinessLoan();
@@ -536,6 +554,30 @@ const PartARegisterPage = (() => {
         electricityFactor: supplier ? num('pr-f-elec-factor') : undefined, fuelFactor: supplier ? num('pr-f-fuel-factor') : undefined };
     }
     if (cls === 'commercial-real-estate' && num('pr-f-construction') !== undefined) body.developerConstructionEmissions_tCO2e = num('pr-f-construction');
+    return prune(body);
+  }
+
+  /* §5.6. One vehicle from the screen; the efficiency and the distance travel
+     in the units and on the basis they were keyed, and the engine derives the
+     option from them. */
+  function collectVehicle() {
+    const vehicle = { vehicleClass: str('pr-f-mv-class'), fuel: str('pr-f-mv-fuel'), makeModel: str('pr-f-mv-model') };
+    if (num('pr-f-mv-eff') !== undefined) vehicle.efficiency = { value: num('pr-f-mv-eff'), unit: str('pr-f-mv-eff-unit') || 'km/L', basis: 'make-model', cycle: str('pr-f-mv-cycle') };
+    if (num('pr-f-mv-km') !== undefined) vehicle.distance = { value_km: num('pr-f-mv-km'), basis: str('pr-f-mv-km-basis') || 'local' };
+    const petrol = num('pr-f-mv-petrol'), diesel = num('pr-f-mv-diesel'), kwh = num('pr-f-mv-kwh');
+    if (petrol !== undefined || diesel !== undefined || kwh !== undefined) vehicle.fuelConsumed = { petrol_L: petrol, diesel_L: diesel, electricity_kWh: kwh };
+    if (num('pr-f-mv-production') !== undefined) vehicle.productionEmissions_tCO2e = num('pr-f-mv-production');
+    const body = {
+      assetClass: cls,
+      reportingYear: Number(year),
+      counterparty: { name: str('pr-f-name') },
+      productType: str('pr-f-mv-product'),
+      exposure: { outstanding: num('pr-f-mv-outstanding'), currency: str('pr-f-mv-currency'), asOf: str('pr-f-mv-asof') },
+      value: { atOrigination: num('pr-f-mv-value') },
+      vehicles: [vehicle],
+    };
+    const ref = str('pr-f-ref');
+    if (ref) body.identifiers = { accountNumber: ref };
     return prune(body);
   }
 
@@ -712,7 +754,7 @@ const PartARegisterPage = (() => {
       on(id, 'change', applyDenominatorMode);
       on(id, 'input', applyDenominatorMode);
     }
-    for (const id of ['pr-f-asof', 'pr-f-re-asof', 'pr-f-le-asof']) {
+    for (const id of ['pr-f-asof', 'pr-f-re-asof', 'pr-f-le-asof', 'pr-f-mv-asof']) {
       if ($(id) && !$(id).value) $(id).value = `${new Date().getFullYear()}-12-31`;
     }
     /* A preview visitor is offered no write control. For everyone else the

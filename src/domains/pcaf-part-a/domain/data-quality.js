@@ -26,6 +26,7 @@ const TABLES = {
      class keys resolve to the same object; it is never the corporate one. */
   'commercial-real-estate': require('./reference').DQ_REAL_ESTATE,
   'mortgages': require('./reference').DQ_REAL_ESTATE,
+  'motor-vehicle-loans': require('./reference').DQ_MOTOR_VEHICLES,
 };
 
 /** The data-quality table for an asset class, or an error naming the gap. */

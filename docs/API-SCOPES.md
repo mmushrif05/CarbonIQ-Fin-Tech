@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-218 routes.
+219 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -184,6 +184,7 @@ relationship manager read, write, assess; auditor and borrower read.
 | GET | `/v1/pcaf/part-a/financed-emissions/:year` | `read` | read |
 | GET | `/v1/pcaf/part-a/financed-emissions/:year/disclosure` | `read` | read |
 | GET | `/v1/pcaf/part-a/financed-emissions/:year/register.csv` | `read` | read |
+| POST | `/v1/pcaf/part-a/motor-vehicles/assess` | `read` | Part A engine, stateless |
 | GET | `/v1/pcaf/part-a/position/:year` | `read` | read |
 | POST | `/v1/pcaf/part-a/real-estate/assess` | `read` | Part A engine, stateless |
 | GET | `/v1/pcaf/part-a/reference` | `read` | read |

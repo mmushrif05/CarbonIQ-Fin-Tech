@@ -116,6 +116,22 @@
       "authority": "IESL / University of Moratuwa (published studies)",
       "vintage": 2022,
       "verification": "secondary_reported"
+    },
+    {
+      "metric": "vehicle_annual_distance_km",
+      "scope": "country",
+      "country": "LK",
+      "values": {
+        "car_petrol": 8274,
+        "car_diesel": 16759,
+        "three_wheeler": 19676,
+        "motorcycle": 5171,
+        "bus": 61509
+      },
+      "source": "Annual distance per vehicle by class, Sri Lanka — World Bank / ESMAP 'Sustainable Transport Options for Sri Lanka' (ESM262), 2000 fleet: petrol car 8,274 km, diesel car 16,759, petrol three-wheeler 19,676, 4-stroke motorcycle 5,171 (https://documents1.worldbank.org/curated/en/503521468105868544/txt/ESM2620v10CE0S1e0Transport01public1.txt). Bus 61,509 km per SLTB fleet bus derived from NTC 2019 operated km over the average fleet, via mirror. Verification: secondary_reported; the only Sri Lankan per-class set found is a 2000 fleet and a disclosure resting on it says so. A Sri-Lanka-wide statistic is local under PCAF §5.6 fn 146, so make/model efficiency × this figure is Option 2a, score 2. Vans and lorries are not held (not verified) and fall back to the provisional vehicle-statistics table. docs/BASELINE-REGISTER.md §3.5.2.",
+      "authority": "World Bank / ESMAP; National Transport Commission (derived)",
+      "vintage": 2000,
+      "verification": "secondary_reported"
     }
   ]
 }

@@ -154,6 +154,10 @@ const DQ_SOVEREIGN = Object.freeze(checked('data/pcaf-parta/dq-sovereign.json',
 
 const DQ_REAL_ESTATE = Object.freeze(checked('data/pcaf-parta/dq-real-estate.json',
   require('../../../../data/pcaf-parta/dq-real-estate.json'), dqTableSchema));
+/* §5.6 — the one Part A table where two options score 1 (1a and 1b), and the
+   one class where the standard states a combination rule (lowest in the mix). */
+const DQ_MOTOR_VEHICLES = Object.freeze(checked('data/pcaf-parta/dq-motor-vehicles.json',
+  require('../../../../data/pcaf-parta/dq-motor-vehicles.json'), dqTableSchema));
 const COUNTRY_CONFIG = Object.freeze(checked('data/pcaf-parta/country-config.json',
   require('../../../../data/pcaf-parta/country-config.json'), countryConfigSchema));
 
@@ -166,7 +170,7 @@ const SECTOR_FACTORS = Object.freeze(checked('data/pcaf-parta/sector-factors.jso
   require('../../../../data/pcaf-parta/sector-factors.json'), sectorFactorTableSchema));
 
 module.exports = {
-  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, DQ_SOVEREIGN, DQ_REAL_ESTATE, COUNTRY_CONFIG,
+  DQ_PROJECT_FINANCE, DQ_LISTED_EQUITY, DQ_BUSINESS_LOANS, DQ_SOVEREIGN, DQ_REAL_ESTATE, DQ_MOTOR_VEHICLES, COUNTRY_CONFIG,
   SECTORS, SECTOR_FACTORS,
   dqTableSchema, countryConfigSchema,
 };

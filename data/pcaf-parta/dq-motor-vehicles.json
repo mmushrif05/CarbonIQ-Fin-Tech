@@ -1,0 +1,31 @@
+{
+  "table": "Table 5.6-1",
+  "assetClass": "motor-vehicle-loans",
+  "standard": "PCAF (2025). Global GHG Accounting and Reporting Standard Part A: Financed Emissions. Third Edition.",
+  "section": "5.6 Motor vehicle loans (p.94)",
+  "page": 94,
+  "detail": "Annex Table 10.1-6 (p.196) — data needs and equations per option",
+  "status": "required",
+  "note": "Motor vehicle loans are the one Part A class where two options score 1: actual fuel consumption (1a) and make/model efficiency with actual distance travelled (1b) both reach the top of the scale, and Table 10.1-6 confirms it. Its numbers are its own and must never be substituted from another class. The option is decided by what is known about the vehicle and its use: 1a actual fuel or electricity consumed; 1b make/model efficiency × actual distance (an odometer read twice a year apart); 2a make/model efficiency × local statistical distance — and under fn 146 'local' is the province, state or small-country level, so a Sri-Lanka-wide annual-km statistic is local; 2b make/model efficiency × regional statistical distance (a South Asian figure); 3a vehicle-type efficiency × statistical distance; 3b an average vehicle where not even the type is known. Where a borrower's vehicles are assessed under different options, the borrower's score is the lowest data quality in the mix (p.93) — the one class where the standard states a combination rule. The attribution factor is outstanding over the total value at origination (p.91); where that value is unknown the standard's own default is to assume 100 % attribution. Scope 1 is the fuel burned, scope 2 the electricity an electric or plug-in vehicle draws; scope 3 (production, delivery, end of life) is not required, and an institution choosing to report a new vehicle's production emissions reports them as a lump sum under scope 3 in the first year only (p.91). A non-plug-in hybrid consumes petrol only; a plug-in hybrid splits by the manufacturer's usage figure, else a geography split, else 100 % combustion (p.96).",
+  "scale": "1 is the highest data quality, 5 the lowest. A score is a category, never a mark out of five.",
+  "options": [
+    { "option": "1a", "score": 1, "family": "Option 1: Actual vehicle emissions", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "Actual fuel consumption (and electricity for electric or plug-in vehicles) over the reporting year is available from the borrower.",
+      "emissionsBasis": ["actual-fuel"] },
+    { "option": "1b", "score": 1, "family": "Option 1: Actual vehicle emissions", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "The vehicle's make and model efficiency and its actual distance travelled over the year (an odometer read at two dates) are available.",
+      "emissionsBasis": ["make-model-actual-distance"] },
+    { "option": "2a", "score": 2, "family": "Option 2: Estimated vehicle emissions from make/model efficiency", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "The vehicle's make and model efficiency is available and distance is a local statistic — province, state or small-country level (fn 146).",
+      "emissionsBasis": ["make-model-local-distance"] },
+    { "option": "2b", "score": 3, "family": "Option 2: Estimated vehicle emissions from make/model efficiency", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "The vehicle's make and model efficiency is available and distance is a regional statistic.",
+      "emissionsBasis": ["make-model-regional-distance"] },
+    { "option": "3a", "score": 4, "family": "Option 3: Estimated vehicle emissions from vehicle type", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "Only the vehicle type is known; a vehicle-type average efficiency and a statistical distance are used.",
+      "emissionsBasis": ["type-statistical-distance"] },
+    { "option": "3b", "score": 5, "family": "Option 3: Estimated vehicle emissions from vehicle type", "scopes": ["1", "2"], "attributionFactor": true,
+      "when": "Not even the vehicle type is known; an average vehicle's efficiency and distance are used.",
+      "emissionsBasis": ["average-vehicle"] }
+  ]
+}

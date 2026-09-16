@@ -26,7 +26,7 @@ SECTION 2 [coverage] Scope and coverage
       row: Project finance | §5.3 | Not reported — nothing recorded | — | — | — | —
       row: Commercial real estate | §5.4 | Reported | 1 | 200,000,000 | LKR | 1.43%
       row: Mortgages | §5.5 | Not reported — nothing recorded | — | — | — | —
-      row: Motor vehicle loans | §5.6 | Not reported — not built | — | — | — | —
+      row: Motor vehicle loans | §5.6 | Not reported — nothing recorded | — | — | — | —
       row: Use of proceeds | §5.7 | Not reported — not built | — | — | — | —
       row: Securitizations and structured products | §5.8 | Not reported — not built | — | — | — | —
       row: Sovereign debt | §5.9 | Reported | 2 | 2,000,000 | USD | —

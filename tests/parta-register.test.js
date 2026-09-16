@@ -102,7 +102,7 @@ describe('a book that persists', () => {
 
   test('an asset class with no engine is a 501 naming what is registered', async () => {
     try {
-      await register.record(ORG, loan(0.1, { assetClass: 'motor-vehicle-loans' }));
+      await register.record(ORG, loan(0.1, { assetClass: 'use-of-proceeds' }));
       throw new Error('should have refused');
     } catch (e) {
       expect(e.statusCode).toBe(501);
