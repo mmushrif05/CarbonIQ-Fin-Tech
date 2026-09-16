@@ -415,6 +415,21 @@ const PartAPositionPage = (() => {
     }
   }
 
+  /* The starter book: recorded into this organisation through the same
+     services a keyed exposure goes through; the server refuses it over a
+     year that already holds one, and the refusal is shown as its message. */
+  async function loadStarter() {
+    if (!window.confirm('Load the illustrative starter book into this organisation? Every figure is a placeholder to edit.')) return;
+    say('fe-status', 'Loading the starter book…');
+    try {
+      const r = await call('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      say('fe-status', `Starter book loaded: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes for FY${r.reportingYear}. ${r.note}`);
+      await loadYears();
+      if ($('fe-year')) $('fe-year').value = String(r.reportingYear);
+      await load();
+    } catch (err) { say('fe-status', err.message); }
+  }
+
   // ── lifecycle ──────────────────────────────────────────────
 
   /* Everything that changes what the first request says — the year, the
@@ -429,6 +444,7 @@ const PartAPositionPage = (() => {
       `part-a-register-fy${year}.csv`, 'exposure register (CSV)'));
     on('fe-entity-form', 'submit', submitEntity);
     on('fe-book-form', 'submit', submitBook);
+    on('fe-starter', 'click', loadStarter);
     for (const el of document.querySelectorAll('.parta-position [data-writes]')) el.hidden = preview();
     await loadYears();
     await load();

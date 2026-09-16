@@ -3,6 +3,7 @@
  * The PCAF Part A exposure register over HTTP.
  *
  *   GET    /v1/pcaf/part-a/classes                  the asset classes this one register holds
+ *   POST   /v1/pcaf/part-a/starter                  load the illustrative starter book, once
  *   GET    /v1/pcaf/part-a/years                    which years this book holds, and how many of each class
  *   GET    /v1/pcaf/part-a/book/:year               the entity's stated book total
  *   PUT    /v1/pcaf/part-a/book                     state it — coverage's denominator
@@ -33,8 +34,10 @@ const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const handle = require('../../../../platform/http/async-handler');
 const store = require('../../../../platform/database/store');
 
+const Joi = require('joi');
 const register = require('../../application/register');
 const sovereign = require('../../application/sovereign-register');
+const { installStarterBook } = require('../../application/starter-book');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema } = require('../schemas/register');
@@ -63,6 +66,25 @@ router.get('/classes', authenticate, defaultLimiter,
   (_req, res) => {
     res.json({ classes: register.classes(), defaultClass: register.DEFAULT_CLASS });
   });
+
+/**
+ * The starter book: one press on a deployment with no shell. Recorded, not the
+ * sample — every row goes through the services and their engines — and
+ * refused over a year that already holds exposures.
+ */
+router.post('/starter', authenticate, defaultLimiter,
+  doc({ summary: 'Load the illustrative starter book into this organisation, across every built Part A class',
+    description: 'Fifteen exposures across §5.1–§5.6 and two sovereign holdings for FY2025, each computed by its '
+      + 'own engine on the way in, the book total stated and the entity’s boundary started; who prepared and '
+      + 'approved are left for the entity to state. Refused with 409 STARTER_NOT_EMPTY where the year already '
+      + 'holds exposures, and for the preview organisation. Every figure is illustrative and is yours to edit.',
+    response: body({ reportingYear: num, installed: obj, book: obj, settings: obj }, ['reportingYear', 'installed']) }),
+  validate({ body: Joi.object({ by: Joi.string().max(200).optional(), reportingEntity: Joi.string().max(200).optional() }).unknown(false) }),
+  handle(async (req, res) => {
+    const actor = req.actor && req.actor.name ? req.actor.name : (req.body.by || null);
+    res.status(201).json(await installStarterBook({ register, sovereign, store }, req.orgId,
+      { by: actor, reportingEntity: req.body.reportingEntity || null }));
+  }));
 
 router.get('/years', authenticate, defaultLimiter,
   doc({ summary: 'The reporting years this book holds exposures for',

@@ -73,6 +73,7 @@ const Auth = (() => {
     'new-project':    40,   // relationship_manager+
     'pcaf':           60,   // esg_analyst+
     'pcaf-parta':     60,   // esg_analyst+ — same bar as the other PCAF screens
+    'bank': 60,             // esg_analyst+ — the bank's own overview of its Part A position
     'parta-position': 60,   // esg_analyst+ — the whole Part A position and the disclosure filed from it
     'parta-register': 60,   // esg_analyst+ — the lending book behind the Part A figures
     'parta-sovereign': 60,  // esg_analyst+ — the §5.9 sovereign book, same bar as the other PCAF screens
@@ -103,7 +104,7 @@ const Auth = (() => {
    * show the product rather than a sidebar of screens that answer 403.
    */
   const PREVIEW_PAGES = [
-    'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'parta-position', 'parta-register', 'parta-sovereign',
+    'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'bank', 'parta-position', 'parta-register', 'parta-sovereign',
     'pcaf-partc', 'pcaf-demo', 'partc-book', 'partc-portfolio', 'gcf', 'taxonomy', 'ndc-sdg',
     'reports', 'carbon-pricing', 'baselines',
   ];
@@ -336,6 +337,10 @@ const Auth = (() => {
 
     // Borrowers start on AI Agents (coaching)
     if (session.role === 'borrower') return 'ai-agents';
+    // A bank signed in to its own organisation starts on its own overview;
+    // the demonstration organisation and a preview visitor keep the dashboard.
+    const org = String(session.orgId || session.organisation || '');
+    if (org && org !== 'ui' && org !== 'preview' && (ROLES[session.role].level || 0) >= 60) return 'bank';
     // Everyone else starts on dashboard
     return 'dashboard';
   }

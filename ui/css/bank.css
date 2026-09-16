@@ -1,0 +1,85 @@
+/* ============================================================
+   CarbonIQ — the Bank Overview
+   ============================================================
+   The bank's own landing over its PCAF Part A position. It borrows the
+   Part C vocabulary (cards, tables, the data-quality badge) so a score
+   means the same thing on every PCAF screen; what is here is only what
+   this page adds — the hero band, the figure tiles and the class tiles.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets. */
+.bank [hidden] { display: none !important; }
+
+.bank select { min-width: 0; max-width: 100%; }
+.bank .partc-actions .partc-year { min-width: 0; max-width: 100%; }
+.bank .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }
+
+/* The hero: a deeper ground than the cards, the entity's name set large. */
+.bank-hero {
+  background: linear-gradient(135deg, var(--p-accent-bg, #e6f2ec) 0%, var(--p-bg-2, #f6f7f5) 100%);
+  border: 1px solid var(--p-separator, #e5e5ea);
+  border-radius: 16px;
+  padding: 20px 22px 18px;
+  margin-bottom: 16px;
+}
+.bank-hero-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; justify-content: space-between; }
+.bank-hero-head > div { min-width: 0; }
+.bank-eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
+.bank-entity { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 650; color: var(--p-label, #1c1c1e); text-wrap: balance; }
+.bank-actions { margin-top: 0; }
+
+/* Figure tiles: collapse to one column at a phone width. */
+.bank-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.bank-figure {
+  min-width: 0;
+  background: var(--p-bg, #fff);
+  border: 1px solid var(--p-separator, #e5e5ea);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.bank-figure-primary { border-color: var(--p-accent, #0a7a4c); box-shadow: inset 4px 0 0 var(--p-accent, #0a7a4c); }
+.bank-figure-label { font-size: 12.5px; color: var(--p-label-2, #6e6e73); }
+.bank-figure-value { font-size: 26px; font-weight: 650; line-height: 1.1; color: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.bank-figure-unit { font-size: 12px; color: var(--p-label-2, #6e6e73); }
+.bank-bar { height: 6px; border-radius: 3px; background: var(--p-fill, #ececec); margin-top: 6px; overflow: hidden; }
+.bank-bar-fill { display: block; height: 100%; width: 0; background: var(--p-accent, #0a7a4c); border-radius: 3px; }
+
+/* Class tiles. */
+.bank-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 12px;
+}
+.bank-tile {
+  min-width: 0;
+  border: 1px solid var(--p-separator, #e5e5ea);
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: var(--p-bg, #fff);
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.bank-tile:hover, .bank-tile:focus-visible { border-color: var(--p-accent, #0a7a4c); outline: none; }
+.bank-tile-absent { cursor: default; opacity: 0.75; }
+.bank-tile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.bank-tile-title { font-weight: 600; font-size: 14px; }
+.bank-tile-section { font-size: 12px; color: var(--p-label-2, #6e6e73); white-space: nowrap; }
+.bank-tile-value { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.bank-tile-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--p-label-2, #6e6e73); }
+.bank-tile-row b { color: var(--p-label, #1c1c1e); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.bank .bk-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.bank .bk-kv { display: grid; grid-template-columns: minmax(0, max-content) 1fr; gap: 4px 14px; margin: 0; font-size: 13px; }
+.bank .bk-kv dt { color: var(--p-label-2, #6e6e73); }
+.bank .bk-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.bank .bk-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); margin-left: 6px; }
+.bank .bk-pill-released { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
