@@ -41,6 +41,12 @@ const BankPage = (() => {
      asking again. */
   let focus = null;
   const positions = new Map();
+  /* The disclosure's own lineage for this year — document identity, factor
+     sets, assurance — read once on demand and dropped on every reload, so a
+     drawer never shows the lineage of a book that has since changed. */
+  let lineage = null;
+  /* The baselines in force, as the registry answered them, kept for the drawer. */
+  let baselinesInForce = null;
 
   const SHORT = {
     'business-loans-unlisted-equity': 'Business loans', 'listed-equity-corporate-bonds': 'Listed equity & bonds',
@@ -84,6 +90,8 @@ const BankPage = (() => {
 
   async function load() {
     year = $('bk-year').value;
+    lineage = null;
+    show('bk-behind', false);
     say('bk-status', 'Reading the book…');
     try {
       position = await partA(`/financed-emissions/${encodeURIComponent(year)}`);
@@ -256,7 +264,8 @@ const BankPage = (() => {
     setHtml('bk-focus', `
       <div class="bank-focus-head"><i style="background:${CLASS_COLOR(c.assetClass)}"></i>
         <div><b>${esc(c.label)}</b> <span class="partc-hint">${esc(c.section)}${dq.table ? ` · ${esc(dq.table)}` : ''}</span></div>
-        <button type="button" class="btn btn-primary bank-focus-open">Open in the book</button></div>
+        <button type="button" class="btn btn-primary bank-focus-open">Open in the book</button>
+        <button type="button" class="bank-behind-btn bank-focus-behind">Behind this class</button></div>
       <div class="bank-focus-grid">
         <div><span class="bank-figure-label">${esc(c.headline && c.headline.label ? c.headline.label : 'Headline')}</span><span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)} <span class="bank-figure-unit">tCO₂e</span></span></div>
         <div><span class="bank-figure-label">Data quality</span><span class="bank-tile-value">${dqBadge(dq.score)}</span><span class="partc-hint">weighted by outstanding amount</span></div>
@@ -269,6 +278,8 @@ const BankPage = (() => {
     el.hidden = false;
     const open = el.querySelector('.bank-focus-open');
     if (open) open.addEventListener('click', () => openClass(c.assetClass));
+    const behind = el.querySelector('.bank-focus-behind');
+    if (behind) behind.addEventListener('click', () => openBehind('class', c.assetClass));
   }
 
   // ── the charts ─────────────────────────────────────────────
@@ -328,9 +339,114 @@ const BankPage = (() => {
     })), { label: 'Economic intensity by asset class, tCO2e per million outstanding', decimals: 2 }));
   }
 
+  // ── what stands behind a figure ─────────────────────────────
+
+  async function readLineage() {
+    if (lineage) return lineage;
+    const { report } = await partA(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=json`);
+    lineage = report;
+    return lineage;
+  }
+
+  /* Opens the lineage behind one figure: the drawer prints what the
+     disclosure prints, read from the document's own facts. */
+  async function openBehind(kind, key) {
+    const el = $('bk-behind');
+    if (!el || !position) return;
+    setHtml('bk-behind-body', '<p class="partc-hint">Reading the document lineage…</p>');
+    el.hidden = false;
+    let rep = null;
+    try { rep = await readLineage(); } catch (err) { rep = { error: err.message }; }
+    renderBehind(kind, key, rep);
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  const kv = pairs => `<dl class="bk-kv">${pairs.filter(([, v]) => v !== null && v !== undefined && v !== '').map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl>`;
+  const releaseRow = r => (r ? kv([
+    ['Set', esc(r.name || r.table || '')], ['Version', esc(r.version || '')], ['Effective from', esc(r.effectiveFrom || '')],
+    ['Status', esc(r.status || '')], ['SHA-256', r.checksum ? `<code>${esc(r.checksum)}</code>` : null],
+  ]) : '');
+
+  function renderBehind(kind, key, rep) {
+    const p = position;
+    const t = p.totals || {};
+    const cover = rep && rep.cover ? rep.cover : null;
+    const facts = rep && rep.facts ? rep.facts : null;
+    const recorded = (p.classes || []).filter(c => c.status === 'recorded');
+    const ap = p.approval || {};
+    const parts = [];
+    const TITLE = {
+      headline: 'Behind the headline — financed scope 1 and 2', s3: 'Behind the scope 3 line', coverage: 'Behind the coverage figure',
+      intensity: 'Behind the economic intensity', approved: 'Behind the approval count', class: 'Behind this class',
+    };
+    say('bk-behind-title', TITLE[kind] || 'What stands behind this figure');
+
+    if (kind === 'headline') {
+      parts.push(`<h5>What the figure is</h5>${kv([['Category', esc(t.category || '')], ['Boundaries summed', esc(t.headline && t.headline.basis || '')], ['Rule', esc(t.headline && t.headline.note || '')]])}`);
+    }
+    if (kind === 's3') {
+      parts.push(`<h5>What the figure is</h5>${kv([['Rule', esc(t.scope3 && t.scope3.note || '')], ['Per class', recorded.map(c => `${esc(short(c))}: ${esc(c.scope3 && c.scope3.note || '')}`).join('<br>')]])}`);
+    }
+    if (kind === 'coverage') {
+      const cov = p.coverage || {};
+      parts.push(`<h5>What the figure is</h5>${kv([
+        ['Assessed outstanding', cov.assessedOutstanding !== undefined && cov.assessedOutstanding !== null ? `${esc(cov.currency || '')} ${fmt(cov.assessedOutstanding, 0)}` : null],
+        ['Total loans and investments', cov.totalLoansAndInvestments !== undefined && cov.totalLoansAndInvestments !== null ? `${esc(cov.currency || '')} ${fmt(cov.totalLoansAndInvestments, 0)}${cov.statedBy ? ` — stated by ${esc(cov.statedBy)}` : ''}` : null],
+        ['Share', cov.sharePct !== undefined && cov.sharePct !== null ? `${Number(cov.sharePct).toFixed(2)}%` : esc(cov.remedy || 'not stated')],
+        ['Clause', 'Disclosure Checklist Part A, p.124'], ['Note', esc(cov.note || '')],
+        ['Excluded from the share', recorded.filter(c => !c.combinable).map(c => `${esc(short(c))} (${esc(c.currency || '')})`).join(', ') || null],
+      ])}`);
+    }
+    if (kind === 'intensity') {
+      const i = p.intensity || {};
+      parts.push(`<h5>What the figure is</h5>${kv([['Value', i.value === null || i.value === undefined ? '—' : `${fmt(i.value, 2)} ${esc(i.unit || '')}`], ['Basis', esc(i.basis || '')], ['Per class', recorded.map(c => `${esc(short(c))}: ${c.intensity && c.intensity.value !== null && c.intensity.value !== undefined ? fmt(c.intensity.value, 2) : '—'} ${esc(c.intensity && c.intensity.unit || '')}`).join('<br>')]])}`);
+    }
+    if (kind === 'approved' || kind === 'headline') {
+      parts.push(`<h5>Who stands behind the figures</h5>${kv([
+        ['Approved', val(ap.total) ? `${fmt(ap.approved, 0)} of ${fmt(ap.total, 0)} exposure(s)` : 'no exposure in a register class'],
+        ['Under review', val(ap.underReview) ? fmt(ap.underReview, 0) : null], ['Recorded, not yet reviewed', val(ap.recorded) ? fmt(ap.recorded, 0) : null],
+        ['Rule', esc(ap.note || '')], ['Authority', 'Approving needs the lock scope — a different authority from recording, as a Part C lock is'],
+      ])}`);
+    }
+    if (kind === 'class' && key) {
+      const c = recorded.find(x => x.assetClass === key);
+      if (c) {
+        const dq = c.dataQuality || {};
+        const idx = recorded.indexOf(c);
+        const release = facts && Array.isArray(facts.releases) ? facts.releases[idx] : null;
+        parts.push(`<h5>${esc(c.label)} — ${esc(c.section)}</h5>${kv([
+          ['Headline', `${fmt(c.headline && c.headline.value, 2)} tCO₂e — ${esc(c.headline && c.headline.label || '')}`], ['Boundary', esc(c.headline && c.headline.basis || '')],
+          ['Data quality', `${dqBadge(dq.score)} on ${esc(dq.table || 'its own table')}, weighted by ${esc(dq.weighting || 'outstanding amount')}`],
+          ['Options used', (c.optionDistribution || []).map(o => `Option ${esc(o.option)} → score ${esc(o.score)} on ${o.exposures} exposure(s)`).join('<br>') || null],
+          ['Exposures', `${fmt(c.exposures, 0)} · ${esc(c.currency || '')} ${fmt(c.outstanding, 0)} outstanding`],
+          ['Approved', c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : 'no review lifecycle on this register yet'],
+        ])}${release ? `<h5>The factor set this class rests on</h5>${releaseRow(release)}` : ''}`);
+      }
+    }
+    if (kind !== 'class' && facts && Array.isArray(facts.releases) && facts.releases.length) {
+      parts.push(`<h5>The factor sets the figures rest on</h5>${facts.releases.map(releaseRow).join('')}`);
+    }
+    if (baselinesInForce) {
+      const rows = Object.entries(baselinesInForce).filter(([, r]) => r && r.resolved);
+      parts.push(`<h5>The baselines in force</h5>${kv(rows.map(([k, r]) => [r.label || k, `${esc(r.scope === 'seed' ? 'shipped, provisional' : `${r.scope || ''} baseline${r.version ? ` v${r.version}` : ''}`)}${r.provisional && r.scope !== 'seed' ? ' — provisional' : ''}`]))}`);
+    }
+    if (cover) {
+      parts.push(`<h5>The document this lineage prints in</h5>${kv([
+        ['Reference', cover.reportId ? `<code>${esc(cover.reportId)}</code>` : null], ['Standard', esc(cover.standard || '')],
+        ['Identity', Array.isArray(cover.identity) ? cover.identity.map(esc).join('<br>') : null],
+        ['Assurance', `${esc(cover.assuranceLabel || cover.assuranceMode || '')}${cover.assuranceStatement ? ` — ${esc(cover.assuranceStatement)}` : ''}`],
+        ['Conformance', facts && facts.conformanceStatement ? esc(facts.conformanceStatement) : null],
+      ])}`);
+    } else if (rep && rep.error) {
+      parts.push(`<p class="partc-hint">The document could not be read: ${esc(rep.error)}</p>`);
+    }
+    setHtml('bk-behind-body', parts.join('') || '<p class="partc-hint">Nothing to show for this figure.</p>');
+  }
+
   /* The baselines in force for this bank, as the registry answers them. */
   async function renderBaselines() {
     const { effective } = await call('/v1/baselines/effective');
+    baselinesInForce = effective || null;
     const rows = Object.entries(effective || {}).filter(([, r]) => r && r.resolved);
     const absent = Object.entries(effective || {}).filter(([, r]) => r && !r.resolved);
     setHtml('bk-baselines', `<dl class="bk-kv">${rows.map(([key, r]) => `
@@ -407,6 +523,8 @@ const BankPage = (() => {
     on('bk-csv', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/register.csv`,
       `part-a-exposure-register-fy${year}.csv`, 'exposure register (CSV)'));
     on('bk-starter', 'click', loadStarter);
+    on('bk-behind-close', 'click', () => show('bk-behind', false));
+    for (const b of document.querySelectorAll('.bank [data-behind]')) b.addEventListener('click', () => openBehind(b.getAttribute('data-behind')));
     for (const el of document.querySelectorAll('.bank [data-writes]')) el.hidden = preview() || el.hidden;
     await loadYears();
     await load();

@@ -86,6 +86,16 @@ test('the overview is on screen, a class tile opens the lending book at that cla
   await page.locator('#bk-chips .bank-chip[data-class=""]').click();
   await expect(page.locator('#bk-focus')).toBeHidden();
 
+  /* Behind the headline: the document's reference and content hash, the factor
+     sets, the baselines in force and who stands behind the figures. */
+  await page.locator('.bank [data-behind="headline"]').click();
+  await expect(page.locator('#bk-behind')).toBeVisible();
+  await expect(page.locator('#bk-behind-body')).toContainText('PA-');
+  await expect(page.locator('#bk-behind-body')).toContainText('SHA-256');
+  await expect(page.locator('#bk-behind-body')).toContainText('baseline');
+  await page.locator('#bk-behind-close').click();
+  await expect(page.locator('#bk-behind')).toBeHidden();
+
   await page.locator('#bk-classes .bank-tile[data-class="commercial-real-estate"]').click();
   await expect(page.locator('#page-parta-register')).toBeVisible();
   await expect(page.locator('#pr-subtitle')).toContainText('Commercial real estate');

@@ -31,22 +31,26 @@
         <span class="bank-figure-value" id="bk-headline">—</span>
         <span class="bank-figure-unit">tCO₂e · scope 3 category 15 of the bank</span>
         <span class="partc-hint" id="bk-headline-basis"></span>
+        <button type="button" class="bank-behind-btn" data-behind="headline">Behind this figure</button>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Financed scope 3 — separate line</span>
         <span class="bank-figure-value" id="bk-s3">—</span>
         <span class="bank-figure-unit">tCO₂e · never summed with scope 1 and 2</span>
+        <button type="button" class="bank-behind-btn" data-behind="s3">Behind this figure</button>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Coverage of the book</span>
         <span class="bank-figure-value" id="bk-coverage">—</span>
         <span class="bank-figure-unit" id="bk-coverage-unit">of total loans and investments — Disclosure Checklist Part A, p.124</span>
         <div class="bank-bar" aria-hidden="true"><div class="bank-bar-fill" id="bk-coverage-bar"></div></div>
+        <button type="button" class="bank-behind-btn" data-behind="coverage">Behind this figure</button>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Economic intensity</span>
         <span class="bank-figure-value" id="bk-intensity">—</span>
         <span class="bank-figure-unit" id="bk-intensity-unit">tCO₂e per million lent</span>
+        <button type="button" class="bank-behind-btn" data-behind="intensity">Behind this figure</button>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Ready to file</span>
@@ -57,8 +61,16 @@
         <span class="bank-figure-label">Approved by the bank</span>
         <span class="bank-figure-value" id="bk-approved">—</span>
         <span class="bank-figure-unit" id="bk-approved-unit">exposures approved — frozen until reopened with a reason</span>
+        <button type="button" class="bank-behind-btn" data-behind="approved">Behind this figure</button>
       </div>
     </div>
+  </section>
+
+  <section class="partc-card bank-behind" id="bk-behind" hidden>
+    <div class="partc-card-head"><h3 id="bk-behind-title">What stands behind this figure</h3>
+      <span class="partc-hint">The lineage the disclosure prints: the document identity, the standard edition, every factor set with its checksum, the baselines in force, the assurance mode, and who stands behind the figures.</span>
+      <button type="button" class="btn btn-secondary" id="bk-behind-close">Close</button></div>
+    <div id="bk-behind-body"></div>
   </section>
 
   <div id="bk-body" hidden>
