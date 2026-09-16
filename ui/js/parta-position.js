@@ -336,6 +336,7 @@ const PartAPositionPage = (() => {
     try {
       await put('/settings', collectEntity());
       say('fe-entity-status', 'Recorded.');
+      document.dispatchEvent(new CustomEvent('carboniq:entity'));
       await load();
     } catch (err) { say('fe-entity-status', err.message); }
   }
@@ -419,10 +420,14 @@ const PartAPositionPage = (() => {
      services a keyed exposure goes through; the server refuses it over a
      year that already holds one, and the refusal is shown as its message. */
   async function loadStarter() {
+    const nameEl = document.getElementById('fe-starter-name');
+    const name = nameEl ? nameEl.value.trim() : '';
+    const body = name ? { reportingEntity: name } : {};
     if (!window.confirm('Load the illustrative starter book into this organisation? Every figure is a placeholder to edit.')) return;
     say('fe-status', 'Loading the starter book…');
     try {
-      const r = await call('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      const r = await call('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      document.dispatchEvent(new CustomEvent('carboniq:entity'));
       say('fe-status', `Starter book loaded: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes for FY${r.reportingYear}. ${r.note}`);
       await loadYears();
       if ($('fe-year')) $('fe-year').value = String(r.reportingYear);

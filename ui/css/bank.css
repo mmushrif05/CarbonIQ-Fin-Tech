@@ -27,6 +27,7 @@
 .bank-eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
 .bank-entity { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 650; color: var(--p-label, #1c1c1e); text-wrap: balance; }
 .bank-actions { margin-top: 0; }
+.bank-starter-name { flex: 0 1 14rem; min-width: 0; max-width: 100%; }
 
 /* Figure tiles: collapse to one column at a phone width. */
 .bank-figures {
