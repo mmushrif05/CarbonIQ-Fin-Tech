@@ -19,7 +19,7 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **413**. Remaining: **218**.
+Checked across all three: **413**. Remaining: **219**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
@@ -105,8 +105,11 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **26** (1748 errors, measured by
+Checked: **8**. Remaining: **27** (1748 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
+
+**1 of them raise no errors at all** and can be adopted by adding the
+pragma and nothing else.
 
 | File | Errors to fix before it joins |
 |---|---|
@@ -136,6 +139,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/bank.js` | 19 |
 | `ui/js/partc-portfolio.js` | 15 |
 | `ui/js/monitoring.js` | 11 |
+| `ui/js/charts.js` | 0 |
 
 ## The suite — `tests/`
 

@@ -36,6 +36,22 @@ const BankPage = (() => {
 
   let year = null;
   let position = null;
+  /* The class in focus, and each recorded class's own position as read for
+     the improvement plan — the focus panel reads the same answer rather than
+     asking again. */
+  let focus = null;
+  const positions = new Map();
+
+  const SHORT = {
+    'business-loans-unlisted-equity': 'Business loans', 'listed-equity-corporate-bonds': 'Listed equity & bonds',
+    'project-finance': 'Project finance', 'commercial-real-estate': 'Commercial real estate', 'mortgages': 'Mortgages',
+    'motor-vehicle-loans': 'Motor vehicles', 'sovereign-debt': 'Sovereign debt',
+  };
+  const short = c => SHORT[c.assetClass] || c.label;
+  const CLASS_COLOR = k => `var(--cls-${k}, var(--p-accent, #0a7a4c))`;
+  const DQ_COLOR = score => `var(--dq${Math.round(score)}, #999)`;
+  /* Absence is checked before the number is: Number(null) is 0. */
+  const val = v => (v === null || v === undefined || v === '' ? null : Number(v));
 
   async function call(path, opts = {}) {
     const res = await window.CARBONIQ_fetch(path, opts);
@@ -119,6 +135,9 @@ const BankPage = (() => {
     say('bk-ready-unit', items.length === 0 ? 'every Chapter 6 item the bank must state is on the record' : 'items Chapter 6 still asks the bank for');
 
     renderClasses(p);
+    renderChips(p);
+    renderCharts(p);
+    renderFocus(p);
     renderReadiness(p);
   }
 
@@ -137,7 +156,7 @@ const BankPage = (() => {
         </div>`;
       }
       const dq = c.dataQuality || {};
-      return `<button type="button" class="bank-tile" data-class="${esc(c.assetClass)}">
+      return `<button type="button" class="bank-tile${focus && focus !== c.assetClass ? ' is-dim' : ''}" data-class="${esc(c.assetClass)}" style="--swatch:${CLASS_COLOR(c.assetClass)}">
         <div class="bank-tile-head"><span class="bank-tile-title">${esc(c.label)}</span><span class="bank-tile-section">${esc(c.section)}</span></div>
         <span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)} <span class="bank-figure-unit">tCO₂e</span></span>
         <div class="bank-tile-row"><span>Data quality</span><b>${dqBadge(dq.score)}</b></div>
@@ -167,11 +186,16 @@ const BankPage = (() => {
   async function renderPlan(p) {
     const recorded = (p.classes || []).filter(c => c.status === 'recorded' && c.assetClass !== 'sovereign-debt');
     if (!recorded.length) { setHtml('bk-plan', '<p class="partc-hint">No class recorded yet.</p>'); return; }
+    positions.clear();
+    await Promise.all(recorded.map(async c => {
+      try { positions.set(c.assetClass, await partA(`/position/${encodeURIComponent(p.reportingYear)}?assetClass=${encodeURIComponent(c.assetClass)}`)); }
+      catch (_) { /* that class's plan is left out, and the focus panel says so */ }
+    }));
+    renderFocus(p);
     const rows = [];
     for (const c of recorded) {
-      let pos;
-      try { pos = await partA(`/position/${encodeURIComponent(p.reportingYear)}?assetClass=${encodeURIComponent(c.assetClass)}`); }
-      catch (_) { continue; }
+      const pos = positions.get(c.assetClass);
+      if (!pos) continue;
       const plan = pos.improvementPlan || {};
       const step = (plan.steps || [])[0];
       const remedy = (plan.byRemedy || [])[0];
@@ -187,6 +211,110 @@ const BankPage = (() => {
         <td>${remedy ? `${esc(remedy.remedy)} <span class="partc-hint">(${remedy.exposures})</span>` : '<span class="partc-hint">No findings</span>'}</td>
       </tr>`).join('')}</tbody></table></div>
       <p class="partc-hint">Target score 2 on every class; every projected score is a scenario run through the weighting the disclosure uses, never the reported score.</p>`);
+  }
+
+  // ── the class in focus ─────────────────────────────────────
+
+  function renderChips(p) {
+    const rec = (p.classes || []).filter(c => c.status === 'recorded');
+    setHtml('bk-chips', rec.length
+      ? rec.map(c => `<button type="button" class="bank-chip${focus === c.assetClass ? ' is-on' : ''}" data-class="${esc(c.assetClass)}"><i style="background:${CLASS_COLOR(c.assetClass)}"></i>${esc(short(c))}</button>`).join('')
+        + `<button type="button" class="bank-chip${focus ? '' : ' is-on'}" data-class="">All classes</button>`
+      : '<span class="partc-hint">No class recorded yet.</span>');
+    for (const el of document.querySelectorAll('#bk-chips .bank-chip')) {
+      el.addEventListener('click', () => setFocus(el.getAttribute('data-class') || null));
+    }
+  }
+
+  function setFocus(assetClass) {
+    focus = focus === assetClass ? null : assetClass;
+    if (!position) return;
+    renderChips(position); renderClasses(position); renderCharts(position); renderFocus(position);
+  }
+
+  /* The class's own figures, every one read off the consolidated row or its
+     own position; the panel opens the book at that class. */
+  function renderFocus(p) {
+    const el = $('bk-focus');
+    if (!el) return;
+    const c = (p.classes || []).find(x => x.assetClass === focus && x.status === 'recorded');
+    if (!c) { el.hidden = true; setHtml('bk-focus', ''); return; }
+    const pos = positions.get(c.assetClass);
+    const plan = pos ? (pos.improvementPlan || {}) : {};
+    const lines = pos && pos.total ? (pos.total.lines || {}) : {};
+    const line = (k, label) => (lines[k] && val(lines[k].value) !== null
+      ? `<div class="bank-tile-row"><span>${esc(label)}</span><b>${fmt(lines[k].value, 2)} tCO₂e</b></div>` : '');
+    const step = (plan.steps || [])[0];
+    const dq = c.dataQuality || {};
+    setHtml('bk-focus', `
+      <div class="bank-focus-head"><i style="background:${CLASS_COLOR(c.assetClass)}"></i>
+        <div><b>${esc(c.label)}</b> <span class="partc-hint">${esc(c.section)}${dq.table ? ` · ${esc(dq.table)}` : ''}</span></div>
+        <button type="button" class="btn btn-primary bank-focus-open">Open in the book</button></div>
+      <div class="bank-focus-grid">
+        <div><span class="bank-figure-label">${esc(c.headline && c.headline.label ? c.headline.label : 'Headline')}</span><span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)} <span class="bank-figure-unit">tCO₂e</span></span></div>
+        <div><span class="bank-figure-label">Data quality</span><span class="bank-tile-value">${dqBadge(dq.score)}</span><span class="partc-hint">weighted by outstanding amount</span></div>
+        <div><span class="bank-figure-label">Exposures</span><span class="bank-tile-value">${fmt(c.exposures, 0)}</span><span class="partc-hint">${esc(c.currency || '')} ${fmt(c.outstanding, 0)} outstanding</span></div>
+        <div><span class="bank-figure-label">Coverage</span><span class="bank-tile-value">${c.coveragePct === null || c.coveragePct === undefined ? '—' : `${Number(c.coveragePct).toFixed(2)}%`}</span><span class="partc-hint">of the stated book</span></div>
+      </div>
+      ${pos ? `<div class="bank-focus-lines">${line('scope1', 'Scope 1')}${line('scope2', 'Scope 2')}${line('scope3', 'Scope 3 — apart')}${line('removals', 'Removals — apart')}</div>` : ''}
+      ${step ? `<p class="partc-hint">Largest step: Option ${esc(step.option)} → score ${esc(step.ifTheseReachedScore)} on ${step.exposures} exposure(s); score ${step.scenarioScore === null ? '—' : Number(step.scenarioScore).toFixed(2)} <span class="partc-hint">scenario</span></p>` : ''}
+    `);
+    el.hidden = false;
+    const open = el.querySelector('.bank-focus-open');
+    if (open) open.addEventListener('click', () => openClass(c.assetClass));
+  }
+
+  // ── the charts ─────────────────────────────────────────────
+
+  /* Every bar is a figure the consolidated route returned for that class;
+     the chart module scales it to a width and nothing else. Scope 3 is drawn
+     as a bar of its own, in grey, beneath the class it belongs to. */
+  function renderCharts(p) {
+    if (typeof Charts === 'undefined') return;
+    const rec = (p.classes || []).filter(c => c.status === 'recorded');
+    const dim = c => Boolean(focus && focus !== c.assetClass);
+    if (!rec.length) {
+      for (const id of ['bk-chart-emissions', 'bk-chart-dq', 'bk-chart-outstanding', 'bk-chart-intensity']) setHtml(id, '<p class="partc-hint">No class recorded yet.</p>');
+      setHtml('bk-ring-coverage', '');
+      return;
+    }
+
+    const emissions = [];
+    for (const c of rec) {
+      const split = c.headline && c.headline.label === 'Financed scope 1 and 2';
+      emissions.push({
+        key: c.assetClass, label: short(c), value: val(c.headline && c.headline.value), color: CLASS_COLOR(c.assetClass), dim: dim(c),
+        segments: split ? [
+          { label: 'Scope 1', value: val(c.scope1 && c.scope1.value), color: CLASS_COLOR(c.assetClass) },
+          { label: 'Scope 2', value: val(c.scope2 && c.scope2.value), color: `color-mix(in srgb, ${CLASS_COLOR(c.assetClass)} 55%, white)` },
+        ] : [],
+      });
+      emissions.push({ key: c.assetClass, label: `${short(c)} — scope 3, apart`, value: val(c.scope3 && c.scope3.value), color: 'var(--cls-scope3, #a3a3a3)', dim: dim(c) });
+    }
+    setHtml('bk-chart-emissions', Charts.hbars(emissions, { label: 'Financed emissions by asset class, tCO2e, scope 3 apart', decimals: 0 })
+      + Charts.legend([{ label: 'Scope 1', color: 'var(--p-label, #1c1c1e)' }, { label: 'Scope 2 (lighter)', color: 'color-mix(in srgb, var(--p-label, #1c1c1e) 45%, white)' }, { label: 'Scope 3 — apart', color: 'var(--cls-scope3, #a3a3a3)' }]));
+
+    const dq = rec.map(c => {
+      const dist = (c.optionDistribution || []).filter(o => val(o.shareOfBook) !== null && val(o.score) !== null)
+        .sort((a, b) => a.score - b.score)
+        .map(o => ({ label: `Option ${o.option} · score ${o.score} · ${o.exposures} exposure(s)`, share: Number(o.shareOfBook), color: DQ_COLOR(o.score) }));
+      const one = c.dataQuality && val(c.dataQuality.score) !== null ? c.dataQuality.score : null;
+      const segments = dist.length ? dist : (one !== null ? [{ label: `Score ${one} — ${c.dataQuality.table || 'one score for the class'}`, share: 1, color: DQ_COLOR(one) }] : []);
+      return { key: c.assetClass, label: short(c), segments, dim: dim(c) };
+    });
+    setHtml('bk-chart-dq', Charts.shares(dq, { label: 'Share of outstanding at each PCAF data-quality score, by asset class' })
+      + Charts.legend([1, 2, 3, 4, 5].map(s => ({ label: `Score ${s}${s === 1 ? ' — highest quality' : s === 5 ? ' — lowest' : ''}`, color: DQ_COLOR(s) }))));
+
+    setHtml('bk-chart-outstanding', Charts.hbars(rec.map(c => ({
+      key: c.assetClass, label: `${short(c)}${c.currency ? ` (${c.currency})` : ''}`, value: val(c.outstanding), color: CLASS_COLOR(c.assetClass), dim: dim(c),
+    })), { label: 'Assessed outstanding by asset class', decimals: 0 }));
+    const cov = p.coverage || {};
+    setHtml('bk-ring-coverage', Charts.ring(val(cov.sharePct), { label: 'Coverage of the book', color: 'var(--p-accent, #0a7a4c)' })
+      + `<div class="bank-ring-caption">${val(cov.sharePct) === null ? esc(cov.remedy || 'book total not stated') : 'of total loans and investments'}</div>`);
+
+    setHtml('bk-chart-intensity', Charts.hbars(rec.map(c => ({
+      key: c.assetClass, label: short(c), value: val(c.intensity && c.intensity.value), color: CLASS_COLOR(c.assetClass), dim: dim(c),
+    })), { label: 'Economic intensity by asset class, tCO2e per million outstanding', decimals: 2 }));
   }
 
   /* The baselines in force for this bank, as the registry answers them. */
@@ -263,6 +391,10 @@ const BankPage = (() => {
     on('bk-year', 'change', load);
     on('bk-pdf', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=pdf`,
       `part-a-financed-emissions-fy${year}.pdf`, 'disclosure (PDF)'));
+    on('bk-docx', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=docx`,
+      `part-a-financed-emissions-fy${year}.docx`, 'disclosure (Word)'));
+    on('bk-csv', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/register.csv`,
+      `part-a-exposure-register-fy${year}.csv`, 'exposure register (CSV)'));
     on('bk-starter', 'click', loadStarter);
     for (const el of document.querySelectorAll('.bank [data-writes]')) el.hidden = preview() || el.hidden;
     await loadYears();

@@ -10,6 +10,63 @@
 /* `hidden` must beat any display this sheet sets. */
 .bank [hidden] { display: none !important; }
 
+/* One hue per asset class, defined once so a class is the same colour on
+   every chart, chip and tile of this screen. Scope 3 is grey wherever it is
+   drawn: it is a separate line and must not read as part of any class's
+   headline. The data-quality ramp is the one every PCAF screen shares. */
+.bank {
+  --cls-business-loans-unlisted-equity: #0a7a4c;
+  --cls-listed-equity-corporate-bonds: #2563eb;
+  --cls-project-finance: #7c3aed;
+  --cls-commercial-real-estate: #d97706;
+  --cls-mortgages: #db2777;
+  --cls-motor-vehicle-loans: #0891b2;
+  --cls-sovereign-debt: #475569;
+  --cls-scope3: #a3a3a3;
+}
+
+/* Charts: a drawing on an inline element renders as nothing, so every one is
+   a block that follows its container. */
+.bank .ch { display: block; width: 100%; height: auto; }
+.bank .ch-track { fill: var(--p-fill, #ececec); }
+.bank .ch-ring .ch-track { fill: none; stroke: var(--p-fill, #ececec); }
+.bank .ch-label { font-size: 12px; fill: var(--p-label-2, #6e6e73); }
+.bank .ch-value { font-size: 12px; fill: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; }
+.bank .ch-ring-value { font-size: 20px; font-weight: 650; fill: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; }
+.bank .ch-row.is-dim { opacity: 0.28; }
+.bank .ch-row { transition: opacity 160ms ease; }
+.bank .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--p-label-2, #6e6e73); margin-top: 8px; }
+.bank .ch-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.bank-charts .partc-panel { min-width: 0; }
+.bank-ring-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.bank-ring-row .ch-ring { width: 120px; flex: 0 0 120px; }
+.bank-ring-row .bank-grow { flex: 1 1 260px; min-width: 0; }
+.bank-ring-caption { font-size: 12px; color: var(--p-label-2, #6e6e73); text-align: center; margin-top: 2px; }
+
+/* The class in focus: chips, and the panel that follows the choice. */
+.bank-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.bank-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  border: 1px solid var(--p-separator, #e5e5ea); border-radius: 999px;
+  padding: 5px 12px; font: inherit; font-size: 12.5px; color: inherit;
+  background: var(--p-bg, #fff); cursor: pointer;
+}
+.bank-chip i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+.bank-chip.is-on { border-color: var(--p-label, #1c1c1e); font-weight: 600; box-shadow: inset 0 0 0 1px var(--p-label, #1c1c1e); }
+.bank-chip:focus-visible { outline: 2px solid var(--p-accent, #0a7a4c); outline-offset: 2px; }
+.bank-focus { margin-top: 14px; border-top: 1px solid var(--p-separator, #e5e5ea); padding-top: 12px; }
+.bank-focus-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.bank-focus-head > i { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; }
+.bank-focus-head > div { flex: 1 1 200px; min-width: 0; }
+.bank-focus-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 10px 16px; margin-top: 12px;
+}
+.bank-focus-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bank-focus-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 4px 16px; margin-top: 10px; }
+.bank-tile { box-shadow: inset 4px 0 0 var(--swatch, transparent); }
+.bank-tile.is-dim { opacity: 0.45; }
+
 .bank select { min-width: 0; max-width: 100%; }
 .bank .partc-actions .partc-year { min-width: 0; max-width: 100%; }
 .bank .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }

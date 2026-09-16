@@ -134,6 +134,47 @@ describe('The screen renders the engines rather than repeating them', () => {
   });
 });
 
+describe('The charts draw figures the engines returned, and nothing of their own', () => {
+  const CH = source('ui/js/charts.js');
+
+  test('the chart module is loaded before the overview, fetches nothing and sums nothing', () => {
+    expect(INDEX.indexOf('<script src="js/charts.js"></script>')).toBeGreaterThan(0);
+    expect(INDEX.indexOf('<script src="js/charts.js"></script>')).toBeLessThan(INDEX.indexOf('<script src="js/bank.js"></script>'));
+    mustNot(CH, /fetch\(|CARBONIQ_fetch/, 'a chart module that fetched would be a second reader of the book');
+    mustNot(CH, /\.reduce\(/, 'a chart that summed would be a second engine');
+    expect((CH.match(/<svg /g) || []).length).toBe((CH.match(/<svg [^>]*role="img"/g) || []).length);
+  });
+
+  test('every drawing is a block that follows its container, and one hue is one class', () => {
+    must(CSS, /\.bank \.ch\s*\{[^}]*display:\s*block/, 'a drawing on an inline element renders as nothing');
+    for (const k of ['business-loans-unlisted-equity', 'listed-equity-corporate-bonds', 'project-finance', 'commercial-real-estate', 'mortgages', 'motor-vehicle-loans', 'sovereign-debt']) {
+      must(CSS, new RegExp(`--cls-${k}:\\s*#[0-9a-f]{6}`), `the class ${k} has a hue of its own`);
+    }
+    must(CSS, /--cls-scope3:/, 'scope 3 has a colour of its own, apart from every class');
+    must(JS, /const CLASS_COLOR = k => `var\(--cls-\$\{k\}/, 'the hue is read from the stylesheet, never chosen in the module');
+    must(JS, /const DQ_COLOR = score => `var\(--dq\$\{Math\.round\(score\)\}/, 'the score ramp is the one every PCAF screen shares');
+  });
+
+  test('scope 3 is a bar of its own and never a segment of the headline', () => {
+    mustNot(JS, /segments:\s*[^\]]*scope3/, 'no segment list carries scope 3');
+    must(JS, /scope 3, apart/, 'the scope 3 bar says so in its label');
+    must(HTML, /never added to it/, 'and the panel says so on its face');
+  });
+
+  test('the data-quality chart shares out what the server returned, and the ring shows the coverage the server computed', () => {
+    must(JS, /o\.shareOfBook/, 'each share is the improvement plan’s own shareOfBook');
+    must(JS, /Charts\.ring\(val\(cov\.sharePct\)/, 'the ring is the consolidated coverage figure');
+    must(JS, /const val = v => \(v === null \|\| v === undefined \|\| v === '' \? null : Number\(v\)\)/, 'absence is checked before the number is — Number(null) is 0');
+  });
+
+  test('a class in focus follows the choice across the chips, the tiles, the charts and its own panel', () => {
+    must(JS, /function setFocus\(assetClass\)[\s\S]{0,300}?renderChips\(position\); renderClasses\(position\); renderCharts\(position\); renderFocus\(position\);/, 'one choice re-renders every panel');
+    must(JS, /positions\.set\(c\.assetClass, await partA\(`\/position\//, 'the focus panel reads the position already fetched for the plan');
+    must(HTML, /id="bk-chips"/, 'the chips are on the page');
+    must(HTML, /id="bk-focus" hidden/, 'the focus panel is hidden until a class is chosen');
+  });
+});
+
 describe('The workspace carries the bank’s own name', () => {
   const STYLES = source('ui/styles.css');
   const LOGIN = source('ui/js/login.js');
