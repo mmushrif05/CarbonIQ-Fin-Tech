@@ -110,6 +110,12 @@ const PartARegisterPage = (() => {
       classes = held || [];
       cls = defaultClass || DEFAULT_CLASS;
       setHtml('pr-class', classes.map(c => `<option value="${esc(c.assetClass)}">${esc(c.label)} · ${esc(c.section)}</option>`).join(''));
+      /* The overview may have chosen a class on the way here; honoured once,
+         before the first request, and only where it is a class held. */
+      try {
+        const wanted = localStorage.getItem('carboniq.parta.class');
+        if (wanted) { localStorage.removeItem('carboniq.parta.class'); if (classes.some(c => c.assetClass === wanted)) cls = wanted; }
+      } catch (_) { /* a courtesy */ }
       if ($('pr-class')) $('pr-class').value = cls;
     } catch (_) { classes = [{ assetClass: DEFAULT_CLASS, label: 'Business loans and unlisted equity', section: '§5.2' }]; }
 

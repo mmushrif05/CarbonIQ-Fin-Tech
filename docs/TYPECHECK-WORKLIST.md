@@ -19,7 +19,7 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **413**. Remaining: **216**.
+Checked across all three: **413**. Remaining: **218**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
@@ -105,7 +105,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **25** (1728 errors, measured by
+Checked: **8**. Remaining: **26** (1750 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -131,6 +131,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/extract.js` | 30 |
 | `ui/js/parta-position.js` | 30 |
 | `ui/js/new-project.js` | 29 |
+| `ui/js/bank.js` | 22 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |
 | `ui/js/partc-portfolio.js` | 15 |
@@ -140,10 +141,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **124** (1467 errors, measured by
+Checked: **45**. Remaining: **125** (1467 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**9 of them raise no errors at all** and can be adopted by adding the
+**10 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -263,6 +264,7 @@ pragma and nothing else.
 | `tests/reports.test.js` | 1 |
 | `tests/score.test.js` | 1 |
 | `tests/v1-info.test.js` | 1 |
+| `tests/bank-ui.test.js` | 0 |
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
 | `tests/parta-position-ui.test.js` | 0 |

@@ -1,0 +1,85 @@
+<!-- The Bank Overview — a bank's own landing over its whole PCAF Part A
+     position for a reporting year. Every figure is one the consolidated
+     route or a class's own position returned; the page computes nothing. -->
+
+<div class="partc bank">
+
+  <section class="bank-hero">
+    <div class="bank-hero-head">
+      <div>
+        <p class="bank-eyebrow">Financed emissions — PCAF Part A</p>
+        <h2 class="bank-entity" id="bk-entity">Reporting entity not stated</h2>
+        <p class="partc-hint" id="bk-subtitle"></p>
+      </div>
+      <div class="partc-actions bank-actions">
+        <label class="partc-year">Reporting year
+          <select id="bk-year"></select>
+        </label>
+        <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
+        <button class="btn btn-primary" id="bk-pdf">Disclosure — PDF</button>
+        <button class="btn btn-secondary" id="bk-starter" data-writes>Load starter book</button>
+      </div>
+    </div>
+    <p class="partc-hint" id="bk-status"></p>
+
+    <div class="bank-figures" id="bk-figures" hidden>
+      <div class="bank-figure bank-figure-primary">
+        <span class="bank-figure-label">Financed scope 1 and 2</span>
+        <span class="bank-figure-value" id="bk-headline">—</span>
+        <span class="bank-figure-unit">tCO₂e · scope 3 category 15 of the bank</span>
+        <span class="partc-hint" id="bk-headline-basis"></span>
+      </div>
+      <div class="bank-figure">
+        <span class="bank-figure-label">Financed scope 3 — separate line</span>
+        <span class="bank-figure-value" id="bk-s3">—</span>
+        <span class="bank-figure-unit">tCO₂e · never summed with scope 1 and 2</span>
+      </div>
+      <div class="bank-figure">
+        <span class="bank-figure-label">Coverage of the book</span>
+        <span class="bank-figure-value" id="bk-coverage">—</span>
+        <span class="bank-figure-unit" id="bk-coverage-unit">of total loans and investments — Disclosure Checklist Part A, p.124</span>
+        <div class="bank-bar" aria-hidden="true"><div class="bank-bar-fill" id="bk-coverage-bar"></div></div>
+      </div>
+      <div class="bank-figure">
+        <span class="bank-figure-label">Economic intensity</span>
+        <span class="bank-figure-value" id="bk-intensity">—</span>
+        <span class="bank-figure-unit" id="bk-intensity-unit">tCO₂e per million lent</span>
+      </div>
+      <div class="bank-figure">
+        <span class="bank-figure-label">Ready to file</span>
+        <span class="bank-figure-value" id="bk-ready">—</span>
+        <span class="bank-figure-unit" id="bk-ready-unit">items Chapter 6 still asks the bank for</span>
+      </div>
+    </div>
+  </section>
+
+  <div id="bk-body" hidden>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>By asset class</h3>
+        <span class="partc-hint">One data-quality score per class, weighted by outstanding amount within it — PCAF Part A, Box 6.1-6 (p.168). 1 is the highest quality, 5 the lowest. Scores are never averaged across classes.</span></div>
+      <div class="bank-tiles" id="bk-classes"></div>
+    </section>
+
+    <div class="partc-panels">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>What to fix first</h3>
+          <span class="partc-hint">Per class, the one step worth the most of the disclosed score. Every projected score is a scenario.</span></div>
+        <div id="bk-plan"></div>
+      </section>
+
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Baselines in force</h3>
+          <span class="partc-hint">The governed figures the engines read for this bank and its country, each with the release behind it.</span></div>
+        <div id="bk-baselines"></div>
+      </section>
+    </div>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Before filing</h3>
+        <span class="partc-hint">What the disclosure still needs from the reporting entity, with the clause that asks for it.</span></div>
+      <div id="bk-readiness"></div>
+    </section>
+
+  </div>
+</div>
