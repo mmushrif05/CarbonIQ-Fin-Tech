@@ -1,354 +1,316 @@
-# The SLFRS S2 disclosure, and the walkthrough a CEO sees first
+# Part A, the dashboard, and the S2 file that downloads in one click
 
-*The end-to-end plan. Written 17 September 2026 from a reading of every screen,
-route, document and note in the repository; nothing here is built yet. Each
-stage is one shippable pull request with its own tests, and they are meant to
-be asked for one at a time.*
+*The end-to-end plan, revised 17 September 2026 to the scope agreed: **Part A
+only**. Part C and the GCF pipeline are untouched. No figure the engines
+compute changes, and no data model is reshaped to suit S2. Each stage is one
+pull request with its own tests, to be asked for one at a time.*
 
 ---
 
-## 0. What was asked
+## 0. The scope, stated plainly
 
-The walkthrough must open on the dashboard and lead with what matters to a
-chief executive: that the bank's **SLFRS S2 climate-related disclosure** (IFRS
-S2 as adopted in Sri Lanka) downloads as a PDF in one click, and that every
-other document the product produces downloads the same way. Project-level
-detail and data entry come at the end, because those facts are collected when a
-loan is awarded. When the walkthrough says *"this is what S2 requires you to
-collect at loan registration"*, the screen must show those fields, the
-dashboard must reflect them, and the S2 file must then download. Whatever S2
-needs that the product does not yet collect — a field, a column, a dropdown — is
-added, wired to the dashboard and to the document.
+1. **Part A financed emissions is the product being shown.** Insurance-associated
+   emissions (Part C) and the GCF pipeline stay exactly as they are and appear
+   nowhere in this work. Attributed embodied carbon on the lending side is not
+   part of it either.
+2. **Our report already goes beyond SLFRS S2 and stays that way.** The
+   consolidated Part A disclosure prints the entity and boundary, per-class
+   positions, the option distribution, the outstanding-weighted score, the
+   factor set with its checksum, the baselines in force, the exposure register
+   annex, the uncertainty statement, the fluctuation analysis and the
+   improvement plan. S2 asks for a fraction of that. Nothing is removed to make
+   the document "S2-shaped".
+3. **S2 adds sections; it never changes a figure.** Where S2 asks for something
+   the document does not yet carry, that section is added and the bank's own
+   fact is collected. Every number stays the one the engine computed, and the
+   §5.2 and §5.9 goldens do not move.
+4. **One document, and it downloads as the S2 file.** There is no second
+   report. The consolidated disclosure becomes the SLFRS S2 climate-related
+   disclosure, downloadable as PDF, Word or JSON from the dashboard in one
+   press.
+5. **The sample book carries what S2 looks for**, so the walkthrough shows
+   populated S2 lines rather than empty ones.
+6. **The dashboard is the centrepiece** — one clear, colourful, interactive
+   screen a chief executive reads first.
 
-## 1. What exists today — read against SLFRS S2
+## 1. What the document already answers, and what S2 still asks for
 
-SLFRS S2 asks for four things: **governance** (§5–7), **strategy** (§8–23),
-**risk management** (§24–26) and **metrics and targets** (§27–37). The
-financed-emissions paragraphs are §29(a)(vi) and B58–B63. The product answers
-some of this in three places that do not know about each other.
+SLFRS S2 is IFRS S2 as adopted in Sri Lanka. It asks for four things:
+governance (§5–7), strategy (§8–23), risk management (§24–26), metrics and
+targets (§27–37). The financed-emissions paragraphs are §29(a)(vi) and B58–B63.
 
-| Where | What it is | What it answers | Why it is not the S2 document |
-|---|---|---|---|
-| `GET /v1/pcaf/part-a/financed-emissions/:year/disclosure` (Financed Emissions, Bank Overview) | The consolidated PCAF Part A disclosure, PDF/Word/JSON | §29(a)(vi) financed emissions per class, B61(a)–(d), B63 data quality, coverage (DCL p.124), the entity and boundary, the checklist | It is one asset-class input to S2, and says so: the entity's own inventory item (INV-1) answers *No* by design. No governance, strategy, risk or targets section. |
-| `POST /v1/reports/generate` type `ifrs-s2` (Reports screen) | A JSON report with a generic PDF, over the **lending** portfolio | The four pillars as declared-or-absent, plus a Category 15 line | The figure it prints is **attributed embodied carbon (A1–A3)** of construction projects, not PCAF Part A financed emissions — the class of claim `tests/lending-pcaf-claim.test.js` exists to stop. With no portfolio it is stamped SAMPLE DATA. It never reads the Part A register. |
-| `GET /v1/gcf/report` (GCF tab) | SLFRS S1/S2 and GRI lines over the GCF pipeline | §6(a)(b), §9, §25, §29(d), §29(e), §33 as entity facts recorded at `PUT /v1/gcf/entity`, else absent | It is the pipeline's disclosure: the pipeline sits under opportunities and capital deployment, and the inventory lines are absent with the clause. It is DFCC's flow, not a bank's Part A workspace. |
+**Already printed, and beyond what S2 requires:**
 
-Four facts follow from that reading.
+| S2 asks | The document already prints |
+|---|---|
+| §29(a)(vi), B58–B63 financed emissions by asset class, with the method | Every recorded class on the boundary its section reports, scope 3 apart, one data-quality score per class, the PCAF method named with its edition |
+| B61(c) coverage | Assessed outstanding over the bank's own stated book total, the classes excluded from the share named |
+| B63 data quality | The outstanding-weighted score with scope 3 apart, plus the option distribution and the improvement plan, which S2 does not ask for |
+| §29(a)(v) measurement approach, inputs, assumptions | The factor set with its version and SHA-256, the baselines in force with scope and version, the uncertainty statement by score |
+| Entity and boundary | Legal name, consolidation approach, boundary note, fiscal year-end, GWP basis, preparer, approver, classes not reported with reasons |
+| — (beyond S2) | Per-exposure register annex, the fluctuation analysis, the recalculation protocol, the document identity and content hash, the assurance position |
 
-1. **There is no bank-level SLFRS S2 document.** Nothing lays the four pillars
-   over the bank's own financed-emissions position. A CEO cannot download it
-   because it does not exist.
-2. **The entity's facts are held in two vocabularies.** `parta_settings` holds
-   the legal name, consolidation approach, boundary, fiscal year-end, GWP
-   basis, preparer, approver, classes not reported, base year and threshold.
-   The GCF entity record holds board oversight, management role, strategy
-   narrative, risk process and targets. The Part A workspace holds **none** of
-   the governance, strategy, risk or targets facts, and two records can
-   disagree about the entity's name.
-3. **The bank's own scope 1 and scope 2 are collected nowhere.** §29(a)(i)–(iii)
-   ask for gross scope 1, scope 2 (location-based) and scope 3 by category.
-   Financed emissions are Category 15; the other fourteen categories and the
-   bank's own operations are never asked for, so the S2 inventory cannot be
-   printed even as *absent with reason*, because the reason is never recorded.
-4. **The loan-level facts S2 needs beyond emissions are not on the register.**
-   §29(b)–(e) ask for the amount and percentage of assets vulnerable to
-   transition risk, vulnerable to physical risk, aligned with opportunities,
-   and capital deployed; the industry-based guidance for commercial banks asks
-   for exposure by sector and lending to carbon-related industries. The
-   register holds the sector (§5.2) and the SLGFT screen exists on the
-   taxonomy side, but no exposure carries a climate-risk classification, so
-   none of those amounts can be summed.
+**What S2 asks for that is collected nowhere:**
 
-Smaller gaps found on the way:
+| S2 paragraph | What it asks | Who can state it |
+|---|---|---|
+| §6(a), §6(b) | Board oversight and management's role | The bank |
+| §10–12 | The climate risks and opportunities identified, with time horizons | The bank, and per exposure |
+| §13, §14 | Effects on the business model; the transition plan | The bank |
+| §15–21 | Financial effects, current and anticipated | The bank |
+| §22 | Climate resilience and scenario analysis | The bank |
+| §25–26 | How climate risk is identified, assessed and monitored, and how it sits inside overall risk management | The bank |
+| §29(a)(i)–(iv) | Gross scope 1, scope 2 location-based, scope 3 by category | The bank (Category 15 is **measured** here) |
+| §29(b), §29(c), §29(d) | Amount and percentage of assets vulnerable to transition risk, vulnerable to physical risk, aligned with opportunities | Classified per exposure by the bank, **summed by the engine** |
+| §29(e), §29(f), §29(g) | Capital deployed, internal carbon price, climate-linked remuneration | The bank |
+| §32, banking guidance | Exposure and financed emissions by industry; lending to carbon-related industries | **Measured here** once every class carries a sector |
+| §33–36 | Each target with its metric, scope, period, base year, milestones and progress | The bank |
 
-- A per-exposure PDF exists for §5.2 and §5.9 only; the other four classes
-  answer `501 REPORT_NOT_BUILT_FOR_CLASS`.
-- The Bank Overview downloads the Part A disclosure (PDF, Word, CSV) and
-  nothing else; there is no one place listing every document the bank can take.
-- The Walkthrough opens on the overview, has no S2 step, no download step, and
-  puts the book before the document.
-- The consolidated disclosure's regulatory mapping cites *§29(b)* for the
-  intensity line. In IFRS S2 as published, §29(b) is the transition-risk
-  amount; intensity is an industry-based metric under §32. The citation is to
-  be verified against the SLFRS S2 text and corrected in Stage 2.
-- SLFRS S1 and S2 were adopted by CA Sri Lanka with phased effective dates for
-  licensed banks. The exact dates are **not** asserted anywhere in this plan or
-  in the document until read from the adoption statement; the cover prints the
-  standard's name and edition only.
+Two of these the engine can compute the moment the input exists: the
+§29(b)–(d) amounts, and the industry table. The rest are the bank's own words
+and are collected, never written for it.
 
-## 2. The rules the build is held to
+**One consequence worth stating.** The consolidated disclosure's checklist item
+INV-1 — the entity's own gross scope 1, 2 and 3 — answers *No* today with the
+reason that this report is one input to an S2 disclosure rather than the
+disclosure itself. That reason is true only while the bank's own inventory is
+uncollected. Once Stage 1 collects it, INV-1 answers Yes and the sentence goes,
+because it has stopped being true. That is how the caveat is removed: by
+collecting the fact, not by suppressing the item.
 
-These are the repository's own rules, restated so the stages below can be
-checked against them.
+## 2. The rules this build is held to
 
-- **The engine does every arithmetic operation; the screen computes nothing.**
-  Every S2 amount is summed by a service and returned; `tests/bank-ui.test.js`
-  and its siblings refuse a sum in a page module.
-- **Three kinds of statement, never a fourth** (`src/shared/report-integrity.js`):
-  measured, declared, absent with the clause. A governance paragraph is
-  declared by the entity or absent; it is never written by the software.
-- **A checklist that cannot fail says nothing.** Every S2 checklist item is
-  answered from the document's own content.
-- **One renderer.** The S2 document is built on
-  `src/platform/reporting/report-standard/` like the Part A, Part C and GCF
-  documents, so it shares their cover, identity, checksum and delivery path
-  (`pdf-response.js`), and Part C's golden stays byte-identical.
-- **Three scopes never merge.** Part A feeds the S2 document; nothing from
-  Part C or the GCF pipeline enters it, and the architecture test holds it.
-- **PCAF-conformant, never PCAF-approved.** `containsForbiddenLanguage()` runs
-  over the S2 document as over every other.
-- **No client name in the repository.** The bank's name is the recorded
-  reporting entity, read from `parta_settings`.
-- **Load before the first request; `[hidden]` beats display; grids and selects
-  may shrink; every id a module reads exists in its fragment.**
+- The engine does every arithmetic operation; the dashboard computes nothing.
+  `tests/bank-ui.test.js` refuses a sum, a division or an average in the page
+  module.
+- Three kinds of statement and no fourth: measured, declared, absent with the
+  clause. A governance paragraph is the bank's own words or it is absent.
+- One renderer. The S2 sections are added to the report standard the
+  consolidated disclosure already uses. Part C's documents stay byte-identical.
+- Part A only. `tests/architecture.test.js` fails on an import that reaches
+  into Part C or the GCF domain.
+- PCAF-conformant, never PCAF-approved.
+- No client name in the repository. The bank's name is the recorded reporting
+  entity.
+- The four mechanical rules: load before the first request, `[hidden]` beats
+  display, grids and selects may shrink, every id a module reads exists in its
+  fragment.
 
-## 3. The requirement register — S2 paragraph → collected → printed
+## 3. The stages
 
-*Held* means the product already collects it. *Add* names the stage that adds
-it. The right-hand column is what the S2 document will print.
+### Stage 1 — The bank's own climate facts
 
-| S2 paragraph | What it asks | Collected today | Stage | Printed as |
-|---|---|---|---|---|
-| S1 §B38, §27 | Reporting entity, consolidation, boundary, period | `parta_settings` (name, approach, boundary, FYE, GWP) | held | Basis of preparation (declared) |
-| §6(a) | Board oversight: body, terms of reference, competence, how informed, how targets are overseen | — | 1 | Governance (declared) |
-| §6(b) | Management's role: positions, delegation, controls | — | 1 | Governance (declared) |
-| §10–12 | Risks and opportunities identified, each physical/transition, with time horizons defined in years | — | 1 (entity list) + 4 (per exposure) | Strategy table; horizons printed as the entity defined them |
-| §13 | Effects on business model and value chain | — | 1 | Strategy (declared) |
-| §14 | Transition plan, and the assumptions behind it | — | 1 | Strategy (declared) |
-| §15–21 | Financial effects, current and anticipated; the qualitative route where quantification is not possible | — | 1 | Financial effects (declared, or the §19–21 reason) |
-| §22 | Climate resilience, scenario analysis, the scenarios used | — | 1 | Resilience (declared or absent) |
-| §25–26 | Risk identification, assessment, prioritisation, monitoring; integration into overall risk management | — | 1 | Risk management (declared) |
-| §29(a)(i) | Gross scope 1 | — | 1 (entity inventory) | Metrics (declared, with basis) or absent with reason |
-| §29(a)(ii)–(iii) | Gross scope 2, location-based; market-based optional | — | 1 | Metrics (declared) |
-| §29(a)(iv) | Scope 3 by category, Category 15 apart | Category 15 = Part A consolidated position | 1 (other categories) | Category 15 **measured** from the register; other categories declared or absent |
-| §29(a)(v) | Measurement approach, inputs, assumptions; GHG Protocol | Part A methodology, factor release, baselines | held | Methodology, factor set with checksum |
-| §29(a)(vi), B58–B63 | Financed emissions by asset class, the PCAF method, data quality, coverage | Part A consolidated disclosure | held | The financed-emissions section, per class, one score per class |
-| §29(b) | Assets vulnerable to transition risk: amount and percentage | — | 4 | Summed by the engine over exposures classified by the entity; *not assessed* excluded and counted |
-| §29(c) | Assets vulnerable to physical risk: amount and percentage | — | 4 | As above |
-| §29(d) | Assets aligned with opportunities: amount and percentage | SLGFT screen exists per project, not per exposure | 4 | As above, with the SLGFT activity code where one is recorded |
-| §29(e) | Capital deployed towards climate risks and opportunities | — | 1 | Declared |
-| §29(f) | Internal carbon price: whether, the price, how applied | — | 1 | Declared |
-| §29(g) | Remuneration linked to climate considerations: whether, and the share | — | 1 | Declared |
-| §32, industry guidance (commercial banks) | Exposure by industry; financed emissions by industry; lending to carbon-related industries | Sector per §5.2 exposure | 4 (sector on every class; carbon-related flag from the vocabulary) | Industry table, measured from the register |
-| §33–35 | Each target: metric, objective, scope, period, base year, milestones, absolute/intensity, source of the target, third-party validation, review, progress | — | 1 | Targets table (declared) |
-| §36 | GHG targets: gases, scopes covered, gross/net, offsets and their nature | — | 1 | Targets (declared) |
-| Chapter 6 (PCAF) | Base year, threshold, triggers | `parta_settings` | held | Recalculation section |
+**Where they live.** On the existing `parta_settings` record, not a new table
+and not a second entity vocabulary, so the bank's name cannot be stated twice
+and disagree with itself. A migration extends the record; `GET/PUT
+/v1/pcaf/part-a/settings` already read and write it, and the Joi schema gains
+the new fields, every one optional and nullable.
 
-Everything in the *Stage 1* rows is a fact only the entity can state, so it is
-a form with closed vocabularies wherever the standard implies one, and it is
-declared or absent — never defaulted.
+**What is collected.** Governance (§6): the body that oversees, how often it is
+informed, management's role. Strategy (§10–14): the risks and opportunities
+identified, each one physical or transition, each with a horizon the bank
+itself defines in years; the effect on the business model; the transition plan.
+Financial effects (§15–21). Resilience and scenario analysis (§22). Risk
+management (§25–26). The bank's own inventory (§29(a)(i)–(iv)): gross scope 1,
+scope 2 location-based (market-based optional), and the scope 3 categories other
+than 15, each figure carrying its basis and period, or an absent reason.
+Capital deployed (§29(e)), internal carbon price (§29(f)), climate-linked
+remuneration (§29(g)). Targets (§33–36), each with metric, scope, base year,
+target year, milestones, whether absolute or intensity, who set it, whether it
+was third-party validated, and progress.
 
-## 4. The stages
+**Dropdowns, not free text, wherever S2 implies a list.** Risk type (physical
+acute, physical chronic, transition policy and legal, transition technology,
+transition market, transition reputation); horizon (short, medium, long, with
+the bank's own year ranges); scope 2 method (location-based, market-based);
+target kind (absolute, intensity); target scope (scope 1, scope 2, scope 3,
+financed emissions, share of portfolio); target source (set by the entity,
+required by regulation, aligned with an international agreement); validation
+(none, third party, with the validator named); carbon price applied to (lending
+decisions, pricing, internal budgeting, not applied). One vocabulary module,
+served on the Part A reference route, read by both the form and the document so
+they cannot drift.
 
-Each stage ends with the repository's verification cadence: lint, typecheck,
-`build:ui`, the sweeps, the affected browser journeys, the memory suite, the
-PostgreSQL suite, the generated documents, a pull request, merge, and a
-production deploy confirmed by `/health`. Stages are ordered so that Monday's
-walkthrough can run after 1, 2, 3 and 6; 4, 5 and 7 complete the ask.
-
-### Stage 1 — The climate facts: one record, one form, closed vocabularies
-
-**Backend.** Migration `0011` adds `climate_settings` — one row per
-organisation, JSONB, the same shape as `parta_settings` — holding the S2 facts
-the entity states: governance (§6), strategy items (§10–14), financial effects
-(§15–21), resilience (§22), risk management (§25–26), the entity's own
-inventory (§29(a)(i)–(iv) other than Category 15, each figure with a *basis*
-and a *period*, or an *absent reason*), capital deployed (§29(e)), internal
-carbon price (§29(f)), remuneration (§29(g)), and targets (§33–36). The legal
-name, consolidation approach, boundary, fiscal year-end and GWP basis are
-**read from `parta_settings`** and never duplicated, so the two records cannot
-name two entities. `GET/PUT /v1/climate/settings` (`read` / `write`), Joi
-schema closed, every field optional and nullable, and a `PUT` that sets one
-fact without restating the rest.
-
-**Vocabularies, so a dropdown is a dropdown.** Risk type (physical acute,
-physical chronic, transition policy and legal, transition technology,
-transition market, transition reputation); time horizon (short, medium, long,
-each with the entity's own year range, because S2 makes the entity define
-them); scope 2 method (location-based required, market-based optional); target
-kind (absolute, intensity); target scope (scope 1, 2, 3, financed emissions,
-portfolio share); target source (entity-set, required by regulation, aligned
-with an international agreement); validation (none, third-party, with the
-validator named); carbon price applied to (lending decisions, pricing,
-internal budgeting, not applied). Each lives in
-`src/domains/pcaf-part-a/domain/climate/vocabulary.js` and is served on the
-reference route, so the form and the document read one list.
-
-**Screen.** A *Climate disclosure* page in the financed-emissions group, one
-card per pillar, each a form that writes to `PUT /v1/climate/settings` and
-shows *stated* or *not stated* per item. The page computes nothing.
+**Screen.** The entity form already on the Financed Emissions screen gains the
+new cards, one per pillar, each showing *stated* or *not stated*. No arithmetic.
 
 **Tests.** Schema refusals (a target with no base year, a scope 2 figure with no
-method, a risk with no horizon), the read-after-write on both stores, the
-seven reachability edits, the four mechanical rules, the no-arithmetic sweep.
+method, a risk with no horizon), read-after-write on both stores, the reference
+route carrying the vocabularies, the sweeps.
 
-### Stage 2 — The SLFRS S2 document, one click
+### Stage 2 — What a loan carries for S2, and the sample book that shows it
 
-**The model.** `src/domains/pcaf-part-a/reporting/climate/` builds one
-content model in S2's own order: cover and identity · basis of preparation ·
-governance · strategy (risks and opportunities, business model, transition
-plan, financial effects, resilience) · risk management · metrics — the GHG
-inventory with Category 15 **measured** from the consolidated position and
-every other line declared or absent · financed emissions (B58–B63, the Part A
-consolidated position laid out per class, one data-quality score each,
-coverage, the factor set with its checksum) · the §29(b)–(g) cross-industry
-metrics · industry-based metrics · targets · the recalculation protocol · the
-completed checklist · annexes (the exposure register, the baselines in force,
-the assurance position). Every figure is one the register returned; the
-document recomputes nothing. The checklist can fail: an S2 item is answered
-from the section that would satisfy it, and the inventory items answer *No*
-until Stage 1's facts are stated.
+**On the exposure.** Every class's input gains an optional `climate` block:
+transition risk and physical risk, each *vulnerable / not vulnerable / not
+assessed* with a horizon and a note; opportunity alignment, *aligned / not
+aligned / not assessed*, carrying the SLGFT activity code where one applies;
+and a sector on every class from the one ISIC vocabulary §5.2 already uses,
+with `carbonRelated` derived from the vocabulary rather than ticked by hand.
+The block travels with the input, survives a recompute unchanged, and freezes
+with the rest when an exposure is approved.
 
-**The route.** `GET /v1/climate/disclosure/:year?format=json|pdf|docx`
-(`read`, stores nothing) through `pdf-response.js`; a year with no Part A
-position is a **409** naming what the year holds, never a document of zeros.
-The reference is a SHA-256 over the canonical facts, so one position rendered
-twice is one reference. The Part A citation for intensity is checked against
-the SLFRS S2 text and corrected.
+**In the engine.** The consolidated position sums outstanding by classification
+— vulnerable, not vulnerable, not assessed — for each risk kind, for
+opportunity alignment, and by sector with the carbon-related subtotal. The
+percentages are over assessed outstanding and the *not assessed* share is
+printed beside them, so a book nobody has classified reads as unclassified
+rather than as safe. Every figure carries its basis: classified per exposure by
+the bank, summed by the engine.
 
-**The lending report that could be mistaken for it.** The Reports screen's
-`ifrs-s2` type is retitled *Attributed embodied carbon (A1–A3) — climate
-disclosure inputs* and carries, on its face, where the SLFRS S2 disclosure
-actually comes from — the correction the PCAF v3 header already had.
+**In the form.** A *Climate risk* block on the Lending Book's record form, the
+dropdowns above, shown on the row and on the detail.
 
-**Tests.** A golden for the document (`tests/climate-disclosure-golden.test.js`,
-`UPDATE_GOLDEN=1`), a book whose entity stated nothing answering *No* on every
-declared item, the 409, PDF well-formedness and the draw-call sweep, the
-forbidden-language guard, the deterministic reference, all three formats over
-the route, and conformance rules `S2-DOC-01…n` in the Part A matrix proved by
-execution.
+**In the sample.** The starter book's seventeen exposures each carry a
+classification and a sector, chosen so the S2 lines are populated and varied —
+some vulnerable, some not, some aligned, a few deliberately not assessed so the
+unassessed share is visible and honest.
 
-### Stage 3 — The dashboard: S2 on the first screen
+**Tests.** Schema and freeze, the sums on both stores with *not assessed* held
+apart, the projection carrying the block, the starter book install proving every
+S2 line populated, the register journey setting a classification from the screen.
 
-**Bank Overview.** A band at the top of the position, above the charts: the
-four pillars as four tiles — *stated / partly / not stated* counts per pillar,
-read from a `readiness` block the disclosure route returns — a **Download
-SLFRS S2 (PDF)** button beside Word and JSON, and *What S2 still needs from
-you*, each item naming its paragraph with a button to the form that answers
-it. The band reads the same JSON the lineage drawer reads, so the screen and
-the document cannot disagree. The starter book gains nothing here: S2 facts
-are the bank's and are never seeded.
+### Stage 3 — The one document becomes the S2 file
 
-**The behind-the-figure drawer** gains *behind the S2 document*: the
-reference, the content hash, who stated each pillar and when.
+**No new report.** The consolidated Part A disclosure gains the sections S2 asks
+for and keeps everything it already prints:
 
-**Tests.** The band's ids in the fragment, no arithmetic, the download wiring,
-`e2e/bank.spec.js` downloading the S2 PDF and checking its header.
+- Governance (§6), Strategy (§10–14), Financial effects (§15–21), Resilience
+  (§22), Risk management (§25–26) and Targets (§33–36) — each the bank's own
+  words from Stage 1, or absent with the paragraph.
+- The GHG inventory (§29(a)): the bank's own scope 1 and scope 2 as stated,
+  Category 15 **measured** from the consolidated position, the other scope 3
+  categories stated or absent.
+- Cross-industry metrics (§29(b)–(g)): the amounts and percentages Stage 2's
+  engine summed, with the unassessed share beside them.
+- Industry-based metrics (§32): exposure and financed emissions by sector,
+  carbon-related subtotalled.
+- An **S2 index**: one row per paragraph naming the section of this document
+  that answers it. That is what makes the file readable as an S2 disclosure
+  without a word of it being rewritten for S2.
 
-### Stage 4 — At the loan: what S2 collects when a facility is awarded
+**The download.** `GET /v1/pcaf/part-a/financed-emissions/:year/disclosure`
+already serves PDF, Word and JSON; the button on the dashboard reads *SLFRS S2
+climate-related disclosure*. The reference, content hash and build stamp are
+unchanged in shape. The checklist gains the S2 items and can fail on every one
+of them; INV-1 answers Yes once the inventory is stated.
 
-**Register.** Every class's exposure input gains an optional `climate` block:
-`physicalRisk` and `transitionRisk` (each *vulnerable / not vulnerable / not
-assessed*, with the horizon and a note), `opportunity` (*aligned / not aligned
-/ not assessed*, with the SLGFT activity code where one applies, from the
-taxonomy's own list), and `sector` on every class where §5.2 alone holds it
-today, from the one ISIC vocabulary, with `carbonRelated` derived from the
-vocabulary rather than ticked. The block is stored with the input, travels
-through recompute unchanged, and an approved exposure's block is frozen with
-the rest.
+**What does not change.** The §5.2 and §5.9 per-class documents and their
+goldens. Every figure. The factor sets. The renderer. Part C, byte for byte.
 
-**Engine.** The consolidated position sums outstanding by classification —
-vulnerable, not vulnerable, not assessed — per risk kind and per class, and by
-sector; the percentages are over the assessed outstanding and the *not
-assessed* share is printed beside them, so a book nobody has classified reads
-as unclassified rather than as safe. Every figure carries the basis *declared
-per exposure by the entity, summed by the engine*.
+**Tests.** The consolidated golden regenerated with the new sections and no
+moved figure; a book whose bank stated nothing answering No on every declared
+item; the S2 index resolving every paragraph to a section that exists; the
+forbidden-language guard; all three formats over the route; conformance rules
+`A-S2-01…n` in the Part A matrix proved by execution.
 
-**Screens.** The Lending Book form gains the block under a *Climate risk*
-heading with the dropdowns; the row and the detail show the classification;
-the Bank Overview's S2 band and the document's §29(b)–(d) and industry tables
-read the sums. The starter book carries a classification on each of its
-exposures so the walkthrough has figures to show.
+### Stage 4 — The dashboard
 
-**Tests.** Schema and freeze, the sums on both stores with *not assessed*
-excluded, the projection carrying the block, the register journey setting a
-classification from the screen, the golden updated.
+The screen a chief executive opens, over one reporting year, reading top to
+bottom and computing nothing.
 
-### Stage 5 — Every document, one click
+**The top band — the answer first.** The bank's name and the year. The headline
+financed emissions with the boundaries it sums named beside it and scope 3 on
+its own line. Coverage. Intensity. Approved of total. And, on the same band,
+**Download SLFRS S2 disclosure** as PDF, Word or JSON, with a one-line S2
+readiness strip: the four pillars as four states, each opening the form that
+answers it.
 
-- Per-exposure PDF/Word for the four classes that answer 501 today (§5.1,
-  §5.3, §5.4/§5.5, §5.6), through the one renderer, each carrying its native
-  trace and findings.
-- A *Documents* card on the Bank Overview listing every document the bank can
-  take for the year — the SLFRS S2 disclosure, the Part A consolidated
-  disclosure, each class's disclosure, the exposure register CSV, and (where
-  recorded) the Part C annual disclosure — each with PDF, Word and JSON, every
-  link a route that already serves the document. The card reads a `documents`
-  list the position route returns, so a document that is not there is not
-  offered.
-- The Lending Book and Sovereign Book rows gain a per-exposure download.
+**Interactive, and colourful with a reason for every colour.**
 
-**Tests.** Goldens for the four new per-exposure documents, the card's links
-resolving to served routes (held to `docs/openapi.json`), the browser journey
-downloading one of each kind.
+- **One hue per asset class** across every chart, chip and tile, defined once
+  in the stylesheet. Scope 3 is grey wherever it is drawn and is never a
+  segment of the headline bar. The data-quality ramp is the one every PCAF
+  screen shares. The climate-risk palette is its own, and *not assessed* is
+  neutral rather than green.
+- **Class in focus**, already built, extended: selecting a class dims the rest
+  across every chart and tile and opens that class's own panel, with a button
+  into its book.
+- **Hover anywhere** gives the figure, its unit and its basis; every chart
+  keeps `role="img"` and an accessible label, and every figure is reachable
+  without a pointer.
+- **Click through**: a bar, a segment or a sector row opens the Lending Book
+  filtered to exactly what was clicked, through the hand-over the book already
+  reads.
+- **Behind every figure**, the lineage drawer already built, extended to the S2
+  document: the reference, the content hash, who stated each pillar and when.
 
-### Stage 6 — The walkthrough, CEO first
+**What it draws.** Financed emissions by class with scope 1 and 2 as segments
+and scope 3 beside them; the share of each class's outstanding at each PCAF
+score; outstanding per class with the coverage ring; economic intensity per
+class; **the S2 climate-risk view** — outstanding vulnerable to transition
+risk, to physical risk, and aligned with opportunity, each with its unassessed
+share; **the sector view** — outstanding and emissions by sector with
+carbon-related marked; and **this year against last**, where the register holds
+a prior year, with the movement stated as fact and the note that a change of
+book is not a change in performance.
 
-The steps are reordered and rewritten so a chief executive sees the answer
-before the method. Every step still opens a real screen through the hand-overs
-the screens already read; the strip's *Open* on step 2 triggers the download.
+**What it will not do.** No projection drawn as though it were measured; a
+scenario is hatched and labelled. No netting of anything against the inventory.
+A dash, never a zero, where a figure is absent. No arithmetic in the browser —
+every number on the screen is one a route returned.
 
-1. **The bank's position** — the Bank Overview: the entity, the headline with
-   its boundaries named, coverage, the S2 band.
-2. **The disclosure, downloaded** — *Download SLFRS S2 (PDF)*; what the
-   document is, what it is not (one input to the entity's full S2 report where
-   the entity's own inventory is unstated), and the reference on its cover.
-3. **What S2 requires, and where it is collected** — the Climate disclosure
-   page: the four pillars, each *stated* or *not*, and the paragraph beside
-   each.
-4. **What is collected when a loan is awarded** — the Lending Book at one
-   class, the record form open, the climate-risk block and the PCAF inputs
-   shown with the sentence that says which S2 line each feeds.
-5. **How it reaches the dashboard** — back to the overview with that class in
-   focus: the class's figures, its score, its share vulnerable and aligned.
-6. **Behind a figure** — the lineage drawer: factor set, baselines, approval,
-   document identity.
-7. **Every document** — the Documents card: each report as PDF, Word or JSON.
-8. **The technical detail, for later** — the Financed Emissions screen and the
-   Part A engine, named as what the analysts use after the loan is awarded.
+**Tests.** The sweep for arithmetic, the ids, the four mechanical rules, the
+colour tokens read from the stylesheet rather than chosen in the module, and a
+browser journey that seeds two classes, focuses a class, clicks through into
+the book, downloads the S2 PDF and checks its header, and asserts the page
+never widens at a phone width.
 
-The readiness table on the Walkthrough page gains the four pillars and the S2
-document's reference; `docs/DEMO-RUNBOOK.md` and `scripts/rehearse-runbook.js`
-follow the new order; `e2e/walkthrough.spec.js` drives all eight steps and
-asserts the PDF downloaded at step 2 opens with a PDF header.
+### Stage 5 — The walkthrough, chief executive first
 
-### Stage 7 — Close-out
+Eight steps, each opening a real screen through the hand-overs those screens
+already read. The strip carries the step, what to do and, behind a toggle, what
+to say.
 
-Both suites, the browser journeys, the conformance evidence run, the generated
-documents (OpenAPI, scopes, README, code tour, typecheck worklist, Part A
-conformance), `CLAUDE.md` and `docs/PCAF-PART-A-RESEARCH.md` §12 logged, the
-rehearsal script run against a production-shaped instance with a screenshot
-per step, and the live-site checklist handed over — sign in, load the starter
-book, state the entity, state the pillars, download the S2 PDF.
+1. **The position** — the dashboard: the bank, the year, the headline, coverage.
+2. **The S2 file, downloaded** — one press, the PDF opens, the cover names the
+   bank and carries the reference.
+3. **What S2 asks, and where it is answered** — the S2 index in the document
+   beside the readiness strip on screen.
+4. **The climate view** — the risk and sector charts, and what the unassessed
+   share means.
+5. **What is collected when a loan is awarded** — the Lending Book at one
+   class, the record form open, the PCAF inputs and the climate block, each
+   named with the S2 line it feeds.
+6. **How it reaches the dashboard** — back with that class in focus.
+7. **Behind a figure** — the lineage drawer.
+8. **The detail, for the analysts** — the Financed Emissions screen and the
+   engine, named as what is used after the loan is awarded.
 
-## 5. Order, and what Monday needs
+The Walkthrough page's readiness table gains the four pillars and the S2
+document's reference; `docs/DEMO-RUNBOOK.md` and the rehearsal script follow the
+new order; the browser journey drives all eight and asserts the file downloaded
+at step 2 opens as a PDF.
 
-| Stage | Depends on | Size | Needed for Monday |
+### Stage 6 — Close-out
+
+Both suites, every browser journey, the conformance evidence run, the generated
+documents regenerated, `CLAUDE.md` and the Part A research log updated, the
+rehearsal driven end to end on a production-shaped instance with a screenshot
+per step, and the live-site checklist: sign in, load the starter book, state the
+bank's facts, download the S2 disclosure.
+
+## 4. Order, and what Monday needs
+
+| Stage | Depends on | Size | Monday |
 |---|---|---|---|
-| 1 Climate facts | — | medium | yes |
-| 2 S2 document | 1 | large | yes |
-| 3 Dashboard band and download | 2 | small | yes |
-| 6 Walkthrough CEO-first | 3 | medium | yes |
-| 4 Loan-level classification | 1 | medium | recommended — it is what makes step 4 true |
-| 5 Every document | 2 | medium | after |
-| 7 Close-out | all | small | after |
+| 1 The bank's climate facts | — | medium | yes |
+| 2 Loan-level classification and the sample book | — | medium | yes |
+| 3 The document becomes the S2 file | 1, 2 | large | yes |
+| 4 The dashboard | 3 | large | yes |
+| 5 The walkthrough | 4 | medium | yes |
+| 6 Close-out | all | small | after |
 
-Stages 1, 2, 3 and 6 give the walkthrough its opening: the overview, the S2
-PDF in one click, the pillars, the book, the lineage. Stage 4 is what lets the
-walkthrough say *"these are collected when the loan is awarded"* and show the
-dashboard moving; without it, step 4 shows the PCAF inputs only and the S2
-band's §29(b)–(d) lines print *not assessed*, which is true and is not the
-demonstration asked for. Stage 5 completes *"set up all our documents like
-that"*.
+Stages 1 and 2 are independent of each other and could be built in either
+order; 2 is what makes the climate view on the dashboard show real figures
+rather than an unassessed book, which is why it is not deferred.
 
-## 6. What this plan does not claim
+## 5. What this plan does not claim
 
-- The S2 document is the disclosure over what this product holds. Where the
-  entity has not stated its own inventory, its governance or its targets, the
-  document prints *not stated* with the paragraph, and its checklist says so.
-  It never becomes complete by being printed.
-- The effective dates of SLFRS S1/S2 for licensed banks in Sri Lanka are read
-  from CA Sri Lanka's adoption statement before they are printed anywhere.
-- No figure in the S2 document is computed by a language model, and no
-  narrative is written by one: the narrative is the entity's own words, typed
-  into the form, or absent.
+- The bank's own words are the bank's. Governance, strategy, risk process and
+  targets are collected through a form and printed as stated, or reported
+  absent with the paragraph. Nothing is written on the bank's behalf, and no
+  narrative in this document is produced by a language model.
+- No figure in the S2 sections is computed by anything but the engine, and none
+  of the existing Part A arithmetic is touched.
+- The effective dates of SLFRS S1 and S2 for licensed banks in Sri Lanka are
+  read from the adoption statement before they are printed anywhere.

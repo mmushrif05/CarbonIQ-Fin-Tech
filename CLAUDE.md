@@ -907,7 +907,7 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/ENVIRONMENTS.md` | Production, staging, preview, local: what each is held to, how a change moves, the deploy gate |
 | `docs/AUTHENTICATION.md` | Signing in: the one door, roles and scopes, the first account, sessions, passwords, what is not built yet |
 | `docs/RELEASE-AND-ROLLBACK.md` | How a release is cut, and the order to reverse code and schema in |
-| `docs/SLFRS-S2-PLAN.md` | The SLFRS S2 disclosure and the CEO-first walkthrough: the gap register against S2's paragraphs, the seven stages, and what Monday needs |
+| `docs/SLFRS-S2-PLAN.md` | Part A, the dashboard and the S2 file: what the consolidated disclosure already answers beyond S2, what S2 still asks for, and the six stages that add it without moving a figure |
 | `docs/DEMO-RUNBOOK.md` | The walkthrough of a bank's own book inside one administrator account: before the day, the five steps, the language rules, what each refusal means |
 | `docs/CODE-TOUR.md` | Request lifecycle, module map, ERD — the first thing a new developer reads |
 | `docs/GLOSSARY.md` | The vocabulary, and §1: the three 1–5 scales and why they are not interchangeable |
