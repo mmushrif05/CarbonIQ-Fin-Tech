@@ -1,0 +1,46 @@
+/* ============================================================
+   CarbonIQ — the Walkthrough, and the strip that follows the presenter
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets. */
+.walkthrough [hidden], .wt-strip[hidden] { display: none !important; }
+
+.walkthrough .wt-head-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 20px; align-items: flex-start; }
+.walkthrough .wt-title { margin: 0 0 4px; font-size: 22px; }
+.walkthrough .wt-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.walkthrough .wt-year { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--p-label-2, #6e6e73); }
+.walkthrough .wt-year select { min-width: 0; }
+
+.walkthrough .wt-table td, .walkthrough .wt-table th { vertical-align: top; }
+.walkthrough .wt-state { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.walkthrough .wt-ready { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
+.walkthrough .wt-needed { background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); }
+
+.walkthrough .wt-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.walkthrough .wt-step { border: 1px solid var(--p-line, #e5e5ea); border-radius: 12px; padding: 14px 16px; min-width: 0; }
+.walkthrough .wt-step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.walkthrough .wt-step-head h4 { margin: 0; font-size: 15px; flex: 1 1 200px; min-width: 0; }
+.walkthrough .wt-step-n { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; align-items: center; justify-content: center;
+  background: var(--p-accent, #0a7a4c); color: #fff; font-size: 13px; font-weight: 600; }
+.walkthrough .wt-step p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; }
+.walkthrough .wt-say { color: var(--p-label-2, #6e6e73); font-style: italic; }
+.walkthrough .wt-say-label, .wt-strip .wt-say-label { display: inline-block; font-style: normal; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  padding: 1px 6px; border-radius: 4px; background: var(--p-fill, #ececec); margin-right: 6px; color: var(--p-label-2, #6e6e73); }
+.walkthrough .wt-language { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
+
+/* The strip: one line under the topbar on every page while a walkthrough is
+   on, in the accent so it reads as the presenter's own rail and not as a
+   warning. Nothing in it is a figure. */
+.wt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px;
+  background: var(--p-accent, #0a7a4c); color: #fff; font-size: 13.5px; min-width: 0;
+  position: sticky; top: 0; z-index: 40; }
+.wt-strip .wt-strip-n { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; white-space: nowrap; }
+.wt-strip .wt-strip-title { font-weight: 600; }
+.wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; opacity: .95; }
+.wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; opacity: .95; }
+.wt-strip .wt-strip-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.wt-strip .wt-strip-buttons button { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 8px;
+  padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
+.wt-strip .wt-strip-buttons button:disabled { opacity: .45; cursor: default; }
+.wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+.wt-strip label { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; white-space: nowrap; }

@@ -111,6 +111,20 @@ const BankPage = (() => {
        one never holds the position back. */
     renderPlan(position).catch(err => setHtml('bk-plan', `<p class="partc-hint">${esc(err.message)}</p>`));
     renderBaselines().catch(err => setHtml('bk-baselines', `<p class="partc-hint">${esc(err.message)}</p>`));
+    applyIntent();
+  }
+
+  /* The Walkthrough hands over what it wants this screen to show — a class
+     in focus, or the lineage behind a figure — the way a tile hands the
+     Lending Book its class: one key, read once the position is on screen,
+     then forgotten. */
+  function applyIntent() {
+    let intent = null;
+    try { intent = localStorage.getItem('carboniq.bank.intent'); if (intent) localStorage.removeItem('carboniq.bank.intent'); } catch (_) { intent = null; }
+    if (!intent) return;
+    const [kind, key] = intent.split(':');
+    if (kind === 'focus' && key && focus !== key) { setFocus(key); const el = $('bk-focus'); if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    if (kind === 'behind' && key) openBehind(key).catch(() => {});
   }
 
   function render(p) {

@@ -36,7 +36,16 @@ deployed"* can be told apart in one request.
    ring and the *Approved by the bank* tile show movement rather than zero.
 5. **Download the disclosure PDF once**, so the first render on the day is not
    the first render on the site.
-6. **Or let the runbook drive itself.** `npm run rehearse` performs steps 2–5
+6. **The same walkthrough is a tab in the product.** *Walkthrough*, at the
+   foot of the bank's group in the sidebar, reads the day's readiness off the
+   reporting year — the book, the bank's name, who prepared and approved,
+   the approvals, what the disclosure still lists, whether the document
+   renders — with a button to the screen that answers each row. *Start the
+   walkthrough* puts a strip under the page title on every screen with the
+   step, what to do and, behind *Notes*, what to say; *Next* opens each
+   screen with the step already applied. It survives a reload; *End* takes
+   it away.
+7. **Or let the runbook drive itself.** `npm run rehearse` performs steps 2–5
    and the whole walkthrough below against the site, in a browser, and leaves
    a full-page screenshot of every step and a report beside them:
 

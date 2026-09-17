@@ -1,0 +1,69 @@
+<!-- The Walkthrough — the bank's book shown in the order a committee reads
+     it, from inside the product. Two parts: what the day still needs, read
+     live off the position; and the five screens, each opened from here with
+     a strip that follows the presenter across them. Every figure on this
+     page is one a route returned; the page computes nothing. -->
+
+<div class="partc walkthrough">
+
+  <section class="partc-card wt-head">
+    <div class="wt-head-row">
+      <div>
+        <h2 class="wt-title" id="wt-entity">Reporting entity not stated</h2>
+        <p class="partc-hint" id="wt-subtitle"></p>
+      </div>
+      <div class="wt-controls">
+        <label class="wt-year">Reporting year <select id="wt-year" class="cap-select"></select></label>
+        <button class="btn btn-secondary" id="wt-refresh">Refresh</button>
+        <button class="btn btn-primary" id="wt-start">Start the walkthrough</button>
+        <button class="btn btn-secondary" id="wt-end" hidden>End the walkthrough</button>
+      </div>
+    </div>
+    <p class="partc-hint" id="wt-status"></p>
+  </section>
+
+  <section class="partc-card">
+    <h3>Before the day</h3>
+    <p class="partc-hint">Read off the reporting year’s position. A row marked <em>needed</em> opens the screen that answers it.</p>
+    <div class="bk-scroll">
+      <table class="partc-table wt-table" id="wt-readiness">
+        <thead><tr><th>What</th><th>Stands at</th><th>Detail</th><th></th></tr></thead>
+        <tbody id="wt-readiness-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="partc-card">
+    <h3>The five screens</h3>
+    <p class="partc-hint">In the order a committee reads them. <em>Open</em> takes you to the screen with the step already applied; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</p>
+    <ol class="wt-steps" id="wt-steps"></ol>
+  </section>
+
+  <section class="partc-card">
+    <h3>Language</h3>
+    <ul class="wt-language">
+      <li>Always <em>PCAF-conformant</em>. Never certified, approved or endorsed: every artefact refuses those words.</li>
+      <li>The shipped factor tables and several baselines are <em>provisional</em>, and say so on screen and in the document. That is a disclosure, not a defect.</li>
+      <li>Assurance mode is <em>self-declared</em> until every governed value resolves to a released baseline and the entity has recorded who assured the figures.</li>
+      <li>State what the figure is, cite the standard that governs it, and stop.</li>
+    </ul>
+  </section>
+
+  <section class="partc-card">
+    <h3>If something refuses</h3>
+    <div class="bk-scroll">
+      <table class="partc-table wt-table">
+        <thead><tr><th>Seen</th><th>Meaning</th><th>Do</th></tr></thead>
+        <tbody>
+          <tr><td>The starter book was not loaded</td><td>The year already holds exposures</td><td>Use the year selector; the book is already loaded</td></tr>
+          <tr><td>No asset class holds exposures</td><td>The selected year is empty</td><td>Choose the year the book was loaded into</td></tr>
+          <tr><td>Approve is refused</td><td>The account’s role holds no lock scope</td><td>Sign in as an administrator, or grant the role on Accounts</td></tr>
+          <tr><td>Cannot be changed while it stands</td><td>The exposure is approved</td><td>Reopen with a reason, then change it</td></tr>
+          <tr><td>Signed out</td><td>Sessions end at 60 minutes idle, 12 hours absolute</td><td>Sign in again</td></tr>
+          <tr><td>A figure reads —</td><td>The server returned no figure</td><td>It is absent, not zero; the caption says what it needs</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>

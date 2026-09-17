@@ -74,6 +74,7 @@ const Auth = (() => {
     'pcaf':           60,   // esg_analyst+
     'pcaf-parta':     60,   // esg_analyst+ — same bar as the other PCAF screens
     'bank': 60,             // esg_analyst+ — the bank's own overview of its Part A position
+    'walkthrough': 60,      // esg_analyst+ — the presenter's rail over the bank's own book; not a preview page
     'parta-position': 60,   // esg_analyst+ — the whole Part A position and the disclosure filed from it
     'parta-register': 60,   // esg_analyst+ — the lending book behind the Part A figures
     'parta-sovereign': 60,  // esg_analyst+ — the §5.9 sovereign book, same bar as the other PCAF screens
