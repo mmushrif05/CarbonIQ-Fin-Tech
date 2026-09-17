@@ -166,9 +166,9 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 16 | 2,959 |
-|       `src/domains/pcaf-part-a/domain/` | 19 | 3,242 |
-|         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,324 |
+|       `src/domains/pcaf-part-a/application/` | 16 | 3,008 |
+|       `src/domains/pcaf-part-a/domain/` | 19 | 3,254 |
+|         `src/domains/pcaf-part-a/domain/business-loans/` | 10 | 1,376 |
 |         `src/domains/pcaf-part-a/domain/climate/` | 5 | 953 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
@@ -176,7 +176,7 @@ flowchart TD
 |         `src/domains/pcaf-part-a/domain/real-estate/` | 6 | 734 |
 |         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 960 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 208 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 4 | 1,035 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 5 | 1,083 |
 |         `src/domains/pcaf-part-a/interface/schemas/` | 8 | 832 |
 |       `src/domains/pcaf-part-a/reporting/` | 8 | 1,533 |
 |         `src/domains/pcaf-part-a/reporting/consolidated/` | 7 | 1,692 |
@@ -196,7 +196,7 @@ flowchart TD
 |         `src/domains/taxonomy/interface/routes/` | 3 | 381 |
 |         `src/domains/taxonomy/interface/schemas/` | 2 | 130 |
 |     `src/platform/ai/` | 5 | 913 |
-|     `src/platform/auth/` | 12 | 2,222 |
+|     `src/platform/auth/` | 12 | 2,223 |
 |     `src/platform/bridge/` | 2 | 367 |
 |     `src/platform/config/` | 3 | 509 |
 |     `src/platform/database/` | 10 | 1,884 |
@@ -209,7 +209,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 775 |
 |   `src/shared/` | 11 | 2,079 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **403** | **69,551** |
+| **total** | **405** | **69,713** |
 
 <!-- END MODULE-MAP -->
 

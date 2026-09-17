@@ -46,6 +46,7 @@ const classes = require('./register-classes');
 const { rollUp } = require('../domain/business-loans/portfolio');
 const { movementSignificance } = require('../domain/recalculation');
 const settingsService = require('./parta-settings');
+const { waysToRaise } = require('../domain/business-loans/raise');
 
 /** @typedef {import('../../../shared/types').AppError} AppError */
 
@@ -164,6 +165,30 @@ async function record(orgId, input) {
 
   await repo.saveExposure(orgId, record_);
   return record_;
+}
+
+/**
+ * The engine's answer for a candidate exposure, before anything is recorded.
+ *
+ * The same path `record()` takes — the class's preparation, its engine, its
+ * adapter — over the same validated body, and then nothing: no id, no row,
+ * no duplicate check, so the same request twice gives the same answer and
+ * moves nothing. It is what the record form shows beneath itself as the
+ * fields change, and what makes a refusal something a bank sees before
+ * pressing Record rather than after. For §5.2 the answer carries what would
+ * raise the score, read off Table 5.2-1.
+ *
+ * @param {string} orgId
+ * @param {Record<string, any>} input
+ */
+async function preview(orgId, input) {
+  const assetClass = input.assetClass || DEFAULT_CLASS;
+  const cls = classes.classFor(assetClass);
+  const { engineInput, result } = await classes.run(assetClass, input, { orgId });
+  const dq = result && result.inventory && result.inventory.dataQuality;
+  const raise = assetClass === DEFAULT_CLASS && dq && dq.scope1And2
+    ? waysToRaise(dq.scope1And2.option) : null;
+  return { assetClass, standard: cls.standard, input: engineInput, result, raise, stored: false };
 }
 
 async function get(orgId, exposureId) {
@@ -450,6 +475,7 @@ async function setStatus(orgId, exposureId, move) {
 }
 
 module.exports = {
+  preview,
   ASSET_CLASSES, DEFAULT_CLASS, STATUS, TRANSITIONS, DEFAULT_SETTINGS,
   record, get, update, remove, recompute, setStatus, listExposures,
   rows: projections.rows, rowsByClass: projections.rowsByClass, climateRows: projections.climateRows,

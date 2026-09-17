@@ -17,7 +17,7 @@ const PAGE_META = {
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
-  'walkthrough':    { title: 'Walkthrough',        subtitle: 'The bank’s book in the order a committee reads it — what the day still needs, the five screens, and a strip that follows you across them' },
+  'walkthrough':    { title: 'Walkthrough',        subtitle: 'The bank’s book in the order a committee reads it — what the day still needs, the seven steps, and a strip that follows you across them' },
   'bank':           { title: 'Bank Overview',      subtitle: 'The bank’s financed emissions for a reporting year — every asset class, what to fix first, the baselines in force, and what the disclosure still needs' },
   'parta-position': { title: 'Financed Emissions', subtitle: 'The whole PCAF Part A position for a reporting year — every asset class, what the disclosure still needs, and the document filed from it' },
   'parta-register': { title: 'Lending Book',      subtitle: 'The exposures behind the Part A figures — position, coverage, and what to fix first' },

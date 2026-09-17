@@ -89,10 +89,19 @@ describe('The strip follows the presenter', () => {
        chief executive, then the loan comes in, is priced, is approved, and is
        on the dashboard. */
     expect(Page.STEPS.map(s => s.page)).toEqual(
-      ['bank', 'bank', 'parta-register', 'parta-register', 'parta-register', 'bank']);
-    expect(Page.STEPS).toHaveLength(6);
+      ['bank', 'bank', 'parta-register', 'parta-register', 'parta-register', 'parta-register', 'bank']);
+    expect(Page.STEPS).toHaveLength(7);
     expect(Page.STEPS[1].title).toMatch(/SLFRS S2 disclosure, in one press/);
     expect(Page.STEPS[2].title).toMatch(/A loan comes in/);
+    /* The borrower that does not know its emissions: the common case, priced
+       on the held sector factor, with the score it earns and what would raise
+       it shown before Record. */
+    expect(Page.STEPS[3].title).toMatch(/does not know its emissions/);
+    must(JS, /REGISTER_INTENT, 'record:example-sector'/, 'the fourth step opens the form on the sector example');
+    must(REGISTER, /key === 'example-sector'\) await recordExample\('sector'\)/, 'the Lending Book reads it');
+    must(REGISTER, /variant=\$\{encodeURIComponent\(variant \|\| 'reported'\)\}/, 'and asks the API for that borrower');
+    must(JS, /Option 3a at score 4/, 'the step names the option and score the sector path earns');
+    must(JS, /a reported figure earns 2, a verified one 1/, 'and what would raise it');
     for (const s of Page.STEPS) must(INDEX, `data-page="${s.page}"`, `step "${s.title}" names a page the shell has`);
     must(JS, /CLASS_KEY = 'carboniq\.parta\.class'/, 'the Lending Book’s class hand-over');
     must(REGISTER, /localStorage\.getItem\('carboniq\.parta\.class'\)/, 'the Lending Book reads it');

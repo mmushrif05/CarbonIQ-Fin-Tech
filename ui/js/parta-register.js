@@ -226,7 +226,8 @@ const PartARegisterPage = (() => {
     try { intent = localStorage.getItem(REGISTER_INTENT); if (intent) localStorage.removeItem(REGISTER_INTENT); } catch (_) { intent = null; }
     if (!intent) return;
     const [kind, key] = intent.split(':');
-    if (kind === 'record' && key === 'example') await recordExample();
+    if (kind === 'record' && key === 'example') await recordExample('reported');
+    if (kind === 'record' && key === 'example-sector') await recordExample('sector');
     if (kind === 'open' && key === 'latest') await openLatest(false);
     if (kind === 'approve' && key === 'latest') await openLatest(true);
   }
@@ -249,10 +250,10 @@ const PartARegisterPage = (() => {
   /* The record form, filled in for one illustrative borrower the API serves,
      so the room sees what is collected without watching it typed. Nothing is
      written until Record is pressed, and every field can be changed first. */
-  async function recordExample() {
+  async function recordExample(variant) {
     if (preview()) return;
     let example;
-    try { ({ example } = await call(`/starter/example?reportingYear=${encodeURIComponent(year)}`)); }
+    try { ({ example } = await call(`/starter/example?reportingYear=${encodeURIComponent(year)}&variant=${encodeURIComponent(variant || 'reported')}`)); }
     catch (err) { say('pr-status', err.message); return; }
     endEdit(); closeDetail();
     cls = example.assetClass || cls;
@@ -262,9 +263,13 @@ const PartARegisterPage = (() => {
     fill(example);
     fillClimate(example.climate);
     applyDenominatorMode();
-    say('pr-record-hint', `${example.counterparty.name} — an illustrative loan with every field filled. Change anything, then press Record: the engine runs before it is written.`);
+    applyKnown();
+    say('pr-record-hint', variant === 'sector'
+      ? `${example.counterparty.name} — a borrower with no emissions figures of its own. Its industry and revenue are set; the preview beneath shows what the held sector factor makes of it. Change anything, then press Record.`
+      : `${example.counterparty.name} — an illustrative loan with every field filled. Change anything, then press Record: the engine runs before it is written.`);
     show('pr-record', true);
     $('pr-record').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    schedulePreview(0);
     cue('pr-form-submit');
   }
 
@@ -283,6 +288,9 @@ const PartARegisterPage = (() => {
       say('pr-status', err.status === 409
         ? `No ${classLabel().split(' — ')[0].toLowerCase()} exposures recorded in FY${year} yet.${preview() ? '' : ' Record an exposure to begin.'}`
         : `Could not read the book: ${err.message}`);
+      /* An empty year is where recording begins, so a hand-over asking for
+         the record form is honoured here too. */
+      if (err.status === 409) await applyIntent();
       return;
     }
     let list = [];
@@ -435,7 +443,7 @@ const PartARegisterPage = (() => {
               <td class="num">${af}</td>
               <td class="num">${fmt(inv.scope1And2 && inv.scope1And2.value, 2)}</td>
               <td class="num">${inv.scope3 && inv.scope3.absent ? '—' : fmt(inv.scope3 && inv.scope3.value, 2)}</td>
-              <td class="num">${dqBadge(dq.scope1And2 && dq.scope1And2.score, dq.scope1And2 && dq.scope1And2.option ? 'Option ' + dq.scope1And2.option : null)}</td>
+              <td class="num">${dqBadge(dq.scope1And2 && dq.scope1And2.score, dq.scope1And2 && dq.scope1And2.option ? 'Option ' + dq.scope1And2.option : null)}<br>${basisChip(dq.scope1And2 && dq.scope1And2.option)}</td>
               <td><span class="pr-verdict ${n === 0 ? 'pr-verdict-clean' : material ? 'pr-verdict-material' : ''}">${n === 0 ? 'clean' : `${n} finding${n === 1 ? '' : 's'}`}</span></td>
               <td>${statePill(r.status)}</td>
             </tr>`;
@@ -535,6 +543,7 @@ const PartARegisterPage = (() => {
           <span class="pr-stat-label">Data quality</span>
           ${charts ? Charts.scale(dq.scope1And2.score, { label: 'Data quality score, scope 1 and 2', colors: DQ_RAMP }) : ''}
           <span class="pr-stat-unit">${badge12} scope 1 and 2 · ${badge3}</span>
+          <span class="pr-stat-unit">${basisChip(dq.scope1And2.option)}</span>
         </div>
         <div class="pr-stat pr-stat-ring">
           <div class="pr-stat-ring-draw">${charts ? Charts.ring(attributionPct, { label: 'Attribution share', color: 'var(--p-accent, #0d9488)' }) : ''}</div>
@@ -927,27 +936,48 @@ const PartARegisterPage = (() => {
           financialInstitution: fi || undefined, customerDeposits: fi ? num('pr-f-deposits') : undefined, asOf: str('pr-f-asof'), currency: str('pr-f-currency') };
     }
 
+    /* How the borrower's emissions are known decides the option family the
+       engine can reach, and the form asks it rather than inferring it from
+       which boxes happen to hold a number. Reported: the borrower's own
+       figures, Option 1. Not known: the held sector factor — per unit of the
+       borrower's revenue where one is keyed (Option 3a), per unit of assets on
+       the outstanding alone where none is (Option 3b). The engine chooses the
+       row; the form only says what it has. */
+    const s3 = num('pr-f-s3');
+    if (knownPath() === 'sector') {
+      const revenue = num('pr-f-revenue');
+      const basis = revenue !== undefined ? 'revenue-sector' : 'assets-sector';
+      const factor = sf => (sf === undefined ? undefined
+        : { value: sf, unit: basis === 'revenue-sector' ? 'tCO2e per unit of revenue' : 'tCO2e per unit of assets', source: str('pr-f-sf-source'), vintage: num('pr-f-sf-vintage') });
+      const line = sf => ({ basis, activity: { revenue: basis === 'revenue-sector' ? revenue : undefined, currency: basis === 'revenue-sector' ? str('pr-f-currency') : undefined, factor: factor(sf) } });
+      body.emissions = { scope1: line(num('pr-f-sf1')), scope2: line(num('pr-f-sf2')) };
+      body.emissions.scope3AbsentReason = str('pr-f-s3-reason');
+      return prune(body);
+    }
     const basis = $('pr-f-basis').value;
     const period = str('pr-f-period');
     const reported = v => v === undefined ? undefined
       : { value: v, basis, period, verifier: basis === 'reported-verified' ? str('pr-f-verifier') : undefined };
-    const s1 = num('pr-f-s1'), s2 = num('pr-f-s2'), s3 = num('pr-f-s3');
-    if (s1 !== undefined || s2 !== undefined || s3 !== undefined || hasValue) {
-      body.emissions = { scope1: reported(s1), scope2: reported(s2), scope3: reported(s3) };
-    } else {
-      /* Nothing reported and no company value: Option 3b from a sector factor —
-         the one typed here, or, left empty, the held factor for the mapped
-         sector. */
-      const factor = sf => (sf === undefined ? undefined
-        : { value: sf, unit: 'tCO2e per unit of assets', source: str('pr-f-sf-source'), vintage: num('pr-f-sf-vintage') });
-      body.emissions = {
-        scope1: { basis: 'assets-sector', activity: { factor: factor(num('pr-f-sf1')) } },
-        scope2: { basis: 'assets-sector', activity: { factor: factor(num('pr-f-sf2')) } },
-      };
-    }
+    const s1 = num('pr-f-s1'), s2 = num('pr-f-s2');
+    body.emissions = { scope1: reported(s1), scope2: reported(s2), scope3: reported(s3) };
     if (s3 === undefined) body.emissions.scope3AbsentReason = str('pr-f-s3-reason');
     return prune(body);
   }
+
+  /** Which path the form is on: 'reported' or 'sector'. */
+  function knownPath() {
+    const el = $('pr-f-known-sector');
+    return el && el.checked ? 'sector' : 'reported';
+  }
+
+  /* Show the path's own fields and nothing of the other's. */
+  function applyKnown() {
+    const sector = knownPath() === 'sector';
+    show('pr-known-reported', !sector);
+    show('pr-known-sector', sector);
+  }
+
+  const SECTOR_BASES = ['revenue-sector', 'assets-sector', 'turnover-sector'];
 
   /* Undefined keys never reach the wire: the schema is closed and a key set
      to undefined is a key the server would refuse by name. */
@@ -977,6 +1007,7 @@ const PartARegisterPage = (() => {
       $('pr-form').reset();
       applyDenominatorMode();
       show('pr-record', false);
+      show('pr-preview', false);
       await load();
       await openDetail(exposure.exposureId);
     } catch (err) {
@@ -1020,7 +1051,7 @@ const PartARegisterPage = (() => {
   const set = (id, v) => {
     const el = $(id);
     if (!el || v === undefined || v === null) return;
-    if (el.type === 'checkbox') el.checked = Boolean(v);
+    if (el.type === 'checkbox' || el.type === 'radio') el.checked = Boolean(v);
     else el.value = String(v);
   };
 
@@ -1070,12 +1101,20 @@ const PartARegisterPage = (() => {
     set('pr-f-mcap', d.marketCapOrdinary); set('pr-f-debt-ib', d.totalDebtInterestBearing); set('pr-f-minorities', d.minorityInterests);
     set('pr-f-deposits', d.customerDeposits); set('pr-f-equity', d.totalEquity); set('pr-f-debt', d.totalDebt);
     const s1 = e.scope1 || {}, s2 = e.scope2 || {}, s3 = e.scope3 || {};
+    const onSector = SECTOR_BASES.includes(s1.basis || s2.basis);
+    set('pr-f-known-sector', onSector); set('pr-f-known-reported', !onSector);
     set('pr-f-s1', s1.value); set('pr-f-s2', s2.value); set('pr-f-s3', s3.value);
-    set('pr-f-basis', s1.basis || s2.basis); set('pr-f-period', s1.period || s2.period); set('pr-f-verifier', s1.verifier || s2.verifier);
+    if (!onSector) set('pr-f-basis', s1.basis || s2.basis);
+    set('pr-f-period', s1.period || s2.period); set('pr-f-verifier', s1.verifier || s2.verifier);
     set('pr-f-s3-reason', e.scope3AbsentReason);
-    const f1 = s1.activity && s1.activity.factor, f2 = s2.activity && s2.activity.factor;
+    /* An Option 3a input carries its revenue on the line; the form holds it
+       once, in the revenue field the band check also reads. */
+    const a1 = s1.activity || {};
+    if (onSector && a1.revenue !== undefined && num('pr-f-revenue') === undefined) set('pr-f-revenue', a1.revenue);
+    const f1 = a1.factor, f2 = s2.activity && s2.activity.factor;
     set('pr-f-sf1', f1 && f1.value); set('pr-f-sf2', f2 && f2.value);
     set('pr-f-sf-source', (f1 && f1.source) || (f2 && f2.source)); set('pr-f-sf-vintage', (f1 && f1.vintage) || (f2 && f2.vintage));
+    applyKnown();
   }
 
   function fillProperty(i) {
@@ -1126,10 +1165,87 @@ const PartARegisterPage = (() => {
     const listed = $('pr-f-listed').checked && $('pr-f-instrument').value !== 'unlisted-equity';
     show('pr-denom-listed', listed);
     show('pr-denom-private', !listed);
-    const factors = num('pr-f-s1') === undefined && num('pr-f-s2') === undefined
-      && num('pr-f-equity') === undefined && num('pr-f-debt') === undefined && num('pr-f-mcap') === undefined;
-    show('pr-sector-factor', factors);
   }
+
+  // ── the preview: the engine's answer before Record ─────────
+
+  /* The record form shows what the standard makes of the fields as they
+     change — the same body Record sends, through a route that writes nothing.
+     Every figure here is the engine's; the card scales a score to a cell and
+     prints the rest. It is marked as a preview and never as a record. */
+  let previewTimer = null;
+  let previewSeq = 0;
+
+  function schedulePreview(delay) {
+    if (previewTimer) clearTimeout(previewTimer);
+    previewTimer = setTimeout(runPreview, delay === undefined ? 450 : delay);
+  }
+
+  async function runPreview() {
+    previewTimer = null;
+    const card = $('pr-preview');
+    if (!card || $('pr-record').hidden || preview()) return;
+    let body;
+    try { body = collect(); } catch (_) { return; }
+    if (!body.counterparty || !body.counterparty.name) { card.hidden = true; return; }
+    const seq = ++previewSeq;
+    let answer = null;
+    try {
+      ({ preview: answer } = await post('/exposures/preview', body));
+    } catch (err) {
+      if (seq !== previewSeq) return;
+      setHtml('pr-preview-body', `<div class="pr-preview-refusal"><b>The standard would refuse this as it stands.</b><p>${esc(err.message)}</p></div>`);
+      card.hidden = false;
+      return;
+    }
+    if (seq !== previewSeq) return;
+    renderPreview(answer);
+    card.hidden = false;
+  }
+
+  function renderPreview(p) {
+    const charts = typeof Charts !== 'undefined';
+    const x = p.result || {};
+    const inv = x.inventory || {};
+    const dq = inv.dataQuality || { scope1And2: {} };
+    const held = l => l && !l.absent && l.value !== null && l.value !== undefined;
+    const fr = x.factorRelease;
+    const findings = (x.validation && x.validation.findings) || [];
+    const material = findings.filter(f => f.severity === 'material');
+    const basisWord = BASIS_WORD[(dq.scope1And2.option || '').slice(0, 1)] || '';
+    const steps = (p.raise && p.raise.steps) || [];
+    setHtml('pr-preview-body', `
+      <div class="pr-stats pr-preview-stats">
+        <div class="pr-stat">
+          <span class="pr-stat-label">Data quality</span>
+          ${charts ? Charts.scale(dq.scope1And2.score, { label: 'Data quality score, scope 1 and 2', colors: DQ_RAMP }) : ''}
+          <span class="pr-stat-unit">${dqBadge(dq.scope1And2.score, dq.scope1And2.option ? `Option ${dq.scope1And2.option}` : null)} ${esc(basisWord)}</span>
+        </div>
+        <div class="pr-stat pr-stat-primary">
+          <span class="pr-stat-label">Financed scope 1 and 2</span>
+          <span class="pr-stat-value">${held(inv.scope1And2) ? fmt(inv.scope1And2.value, 2) : '—'}</span>
+          <span class="pr-stat-unit">tCO₂e · ${x.attribution ? `attribution factor ${esc(String(x.attribution.value))}` : 'no attribution factor — a sector-average option'}</span>
+        </div>
+        <div class="pr-stat">
+          <span class="pr-stat-label">Rests on</span>
+          <span class="pr-stat-value pr-stat-value-sm">${fr ? `${esc(fr.tables[0].table)} v${esc(fr.tables[0].version)}` : 'the borrower’s own figures'}</span>
+          <span class="pr-stat-unit">${fr ? `${esc(fr.tables[0].status)} · ${esc(fr.rows.join(', '))} · <code>${esc(fr.checksum.slice(0, 12))}…</code>` : `${esc(dq.scope1And2.family || '')}`}</span>
+        </div>
+        <div class="pr-stat">
+          <span class="pr-stat-label">Checks</span>
+          <span class="pr-stat-value pr-stat-value-sm">${findings.length === 0 ? 'Clean' : `${findings.length} finding${findings.length === 1 ? '' : 's'}`}</span>
+          <span class="pr-stat-unit">${material.length ? esc(material[0].statement) : esc((x.validation && x.validation.note) || 'every check that could run ran')}</span>
+        </div>
+      </div>
+      ${steps.length ? `<h5 class="partc-subhead">What would raise the score</h5>
+        <ol class="pr-raise">${steps.map(st => `<li><span class="pr-raise-score">${dqBadge(st.score, `Option ${st.option}`)}</span><span>${esc(st.needs)}</span></li>`).join('')}</ol>`
+        : (p.raise && p.raise.from ? '<p class="partc-hint">Score 1 is the highest the table holds; nothing would raise it.</p>' : '')}`);
+  }
+
+  /* The word for an option family — the first character of the option is the
+     family in every Part A table: 1 reported, 2 activity, 3 sector. */
+  const BASIS_WORD = { 1: 'reported by the borrower', 2: 'from the borrower’s activity', 3: 'estimated on the sector library', a: 'alternative method' };
+  const basisChip = option => (option ? `<span class="pr-chip${String(option).startsWith('3') ? '' : ' pr-chip-ok'}">${esc(BASIS_WORD[String(option).slice(0, 1)] || option)}</span>` : '');
 
   async function submitBook(ev) {
     ev.preventDefault();
@@ -1166,10 +1282,17 @@ const PartARegisterPage = (() => {
     wireMoneyHints();
     on('pr-pdf', 'click', () => disclosure('pdf'));
     on('pr-docx', 'click', () => disclosure('docx'));
-    for (const id of ['pr-f-listed', 'pr-f-instrument', 'pr-f-s1', 'pr-f-s2', 'pr-f-equity', 'pr-f-debt', 'pr-f-mcap']) {
+    for (const id of ['pr-f-listed', 'pr-f-instrument']) {
       on(id, 'change', applyDenominatorMode);
       on(id, 'input', applyDenominatorMode);
     }
+    on('pr-f-known-reported', 'change', applyKnown);
+    on('pr-f-known-sector', 'change', applyKnown);
+    /* Every change to the form re-asks the engine, a moment after the typing
+       stops; the answer is the preview and never a record. */
+    on('pr-form', 'input', () => schedulePreview());
+    on('pr-form', 'change', () => schedulePreview());
+    on('pr-form', 'reset', () => { show('pr-preview', false); setTimeout(applyKnown, 0); });
     defaultAsOf();
     /* A preview visitor is offered no write control. For everyone else the
        markup's own state stands — the record form opens on the button, not on

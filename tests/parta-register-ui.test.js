@@ -259,3 +259,37 @@ describe('The exposure detail is figures first, reasons on request (CARDS-3)', (
     must(CH, /function scale\(score, opts = \{\}\)/, 'the scale is a drawing in the chart module');
   });
 });
+
+describe('How the borrower’s emissions are known, and the engine’s answer before Record (KNOWN-2)', () => {
+  test('the form asks which path the data is on rather than inferring it from which boxes hold a number', () => {
+    must(HTML, /<input type="radio" name="pr-known" id="pr-f-known-reported" value="reported" checked>/, 'reported by the borrower is the first path, and the default');
+    must(HTML, /<input type="radio" name="pr-known" id="pr-f-known-sector" value="sector">/, 'not known — estimated from its industry is the second');
+    must(HTML, /Option 3, score 4 or 5/, 'the sector path says what it earns on its face');
+    must(HTML, /id="pr-known-sector" hidden/, 'the sector path’s fields are hidden until it is chosen');
+    must(JS, /function knownPath\(\)/, 'the module reads the path from the control');
+    must(JS, /const basis = revenue !== undefined \? 'revenue-sector' : 'assets-sector';/, 'with a revenue the line is 3a; without, 3b — the engine chooses the row, the form only says what it has');
+    must(JS, /activity: \{ revenue: basis === 'revenue-sector' \? revenue : undefined/, 'the revenue travels on the line for Option 3a');
+    must(JS, /const onSector = SECTOR_BASES\.includes\(s1\.basis \|\| s2\.basis\);/, 'an edit reopens on the path the stored input is on');
+    must(JS, /el\.type === 'checkbox' \|\| el\.type === 'radio'/, 'the setter fills a radio');
+  });
+
+  test('the preview is the engine’s answer through the preview route, marked as one, never a record', () => {
+    must(HTML, /<div class="pr-preview" id="pr-preview" hidden aria-live="polite">/, 'the card is hidden until an answer exists');
+    must(HTML, /Preview — nothing is written until Record/, 'and says so on its face');
+    must(JS, /await post\('\/exposures\/preview', body\)/, 'the answer is the preview route’s, over the same body Record sends');
+    must(JS, /on\('pr-form', 'input', \(\) => schedulePreview\(\)\)/, 'every change re-asks the engine');
+    must(JS, /if \(seq !== previewSeq\) return;/, 'a late answer never overwrites a newer one');
+    must(JS, /The standard would refuse this as it stands\./, 'a refusal reaches the form before Record');
+    must(JS, /What would raise the score/, 'and the better options are listed');
+    must(JS, /st\.needs/, 'each with what it needs, the server’s words');
+    must(JS, /Charts\.scale\(dq\.scope1And2\.score/, 'the score is drawn on the scale');
+    mustNot(JS, /score\s*[-+*/]\s*\d|\d\s*[-+*/]\s*score/, 'no score arithmetic in the browser');
+  });
+
+  test('every row and the detail say which basis the figure rests on', () => {
+    must(JS, /const BASIS_WORD = \{ 1: 'reported by the borrower', 2: 'from the borrower’s activity', 3: 'estimated on the sector library'/, 'one word per option family');
+    must(JS, /\$\{basisChip\(dq\.scope1And2 && dq\.scope1And2\.option\)\}<\/td>/, 'the rows carry it under the score');
+    must(JS, /<span class="pr-stat-unit">\$\{basisChip\(dq\.scope1And2\.option\)\}<\/span>/, 'the detail carries it beside the score');
+  });
+});
+

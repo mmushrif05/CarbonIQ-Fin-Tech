@@ -283,11 +283,34 @@ async function installStarterBook(deps, orgId, opts = {}) {
  *
  * @param {string|number} [reportingYear]
  */
-function exampleExposure(reportingYear) {
+function exampleExposure(reportingYear, variant = 'reported') {
   const y = Number(reportingYear) || YEAR;
   const base = /** @type {any} */ (EXPOSURES[0]);
   const at = `${y}-12-31`;
   const suffix = Math.random().toString(36).slice(2, 6).toUpperCase();
+  /* The borrower that does not know its emissions — the common case on a
+     Sri Lankan book. Nothing reported: its industry is a held sector and its
+     revenue is known, so the engine prices it under Option 3a on the held
+     factor per unit of revenue, at score 4, and names the factor set. With
+     the revenue cleared it falls to Option 3b on the outstanding alone, at
+     score 5. The figures are illustrative and the name says nothing real. */
+  if (variant === 'sector') {
+    return {
+      ...base,
+      reportingYear: y,
+      identifiers: { accountNumber: `WT-RICE-${suffix}` },
+      counterparty: { name: 'Ruhunu Rice Millers (Pvt) Ltd', sector: 'Rice milling', sectorKey: 'agriculture_rice' },
+      outstanding: { amount: 180000000, asOf: at, currency: 'LKR' },
+      denominator: { totalEquity: 420000000, totalDebt: 380000000, asOf: at, currency: 'LKR' },
+      plausibility: { revenue: 1500000000 },
+      emissions: {
+        scope1: { basis: 'revenue-sector', activity: { revenue: 1500000000, currency: 'LKR' } },
+        scope2: { basis: 'revenue-sector', activity: { revenue: 1500000000, currency: 'LKR' } },
+        scope3AbsentReason: 'The borrower holds no emissions figures of its own.',
+      },
+      climate: cl('vulnerable', 'medium', 'vulnerable', 'long', 'not_aligned', null),
+    };
+  }
   return {
     ...base,
     reportingYear: y,

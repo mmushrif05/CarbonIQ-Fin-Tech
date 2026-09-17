@@ -76,7 +76,7 @@ deployed"* can be told apart in one request.
 
 ## The walkthrough
 
-Six steps: the position and the file for the chief executive, then one
+Seven steps: the position and the file for the chief executive, then one
 loan from the door to the file. The product's *Walkthrough* tab drives
 exactly these; every step changes the screen, and the control it asks you
 to press is marked.
@@ -134,19 +134,45 @@ awarded. The engine runs before anything is written; a loan the standard
 would refuse is refused here with its clause. The climate block feeds the
 S2 metrics and changes no figure."*
 
-### 4 · What the standard made of it
+### 4 · The borrower that does not know its emissions
+
+*Lending Book* again. The record form has opened for a second borrower —
+Ruhunu Rice Millers (Pvt) Ltd — with no emissions figures of its own.
+**Not known — estimate from its industry** is selected, the industry is set
+to rice milling, and beneath the form the preview shows what the standard
+makes of it before anything is written: Option 3a at score 4, the held
+sector factor per unit of the borrower's revenue, the factor set named with
+its version and checksum, the checks, and what would raise the score. Clear
+the revenue field and the preview falls to Option 3b at score 5 on the
+outstanding alone; put it back, then press **Record**.
+
+**Say:** *"Most borrowers on this book cannot state their emissions, and
+the loan is priced anyway. The sector factor library and the baselines
+behind it are the regional judgement this instrument holds — provisional,
+and disclosed as such on every figure that rests on them. The score says
+how far the figure is from the borrower's own: a reported figure would earn
+a 2, a verified one a 1. The list beneath the score is what to go back to
+the borrower for."*
+
+The same form records a reported borrower: choose **Reported by the
+borrower** and key its scope 1, 2 and 3. Every change re-asks the engine,
+and a loan the standard would refuse says so beneath the form with its
+clause before Record is pressed.
+
+### 5 · What the standard made of it
 
 The loan just recorded is open: the PCAF option the data it carried earned
-and the data-quality score that follows from it, the attribution equation
-the engine ran, the factor set with its checksum, and any finding with the
-sentence that clears it.
+and the data-quality score that follows from it, *estimated on the sector
+library* beside the score, the attribution equation the engine ran, the
+factor set with its checksum, and any finding with the sentence that
+clears it.
 
 **Say:** *"The score is a category from 1 to 5, set by the option — the
-borrower's reported figures earn a 2, a sector factor a 5 — never an
+borrower's reported figures earn a 2, a sector factor a 4 or a 5 — never an
 average. What would raise it is written beside it: that is the improvement
 plan for this one loan."*
 
-### 5 · Reviewed, approved, frozen
+### 6 · Reviewed, approved, frozen
 
 The same loan, with **Send for review** and **Approve** marked. Press them
 in turn. The state moves recorded → under review → approved, each move
@@ -158,7 +184,7 @@ reason.
 scope, exactly as a Part C lock is. A figure the bank has approved cannot
 move underneath the disclosure."*
 
-### 6 · On the dashboard, and in the file
+### 7 · On the dashboard, and in the file
 
 *Bank Overview* with business loans in focus: the new loan is in the class's
 figures, the approved count has moved, and the next press of **SLFRS S2
