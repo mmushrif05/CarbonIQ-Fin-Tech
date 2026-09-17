@@ -35,6 +35,16 @@ interface Window {
   CARBONIQ_cue?: (id: string) => void;
   /** Re-reads the reporting entity's name into the sidebar workspace label. */
   CARBONIQ_labelWorkspace: () => Promise<void>;
+  /** Money and scale printed one way (`ui/js/format.js`): the ISO code, never a symbol; `bn` / `mn` / `k`. */
+  CARBONIQ_money: {
+    number: (value: unknown, dp?: number) => string;
+    short: (value: unknown) => string;
+    money: (value: unknown, currency?: string, dp?: number) => string;
+    moneyShort: (value: unknown, currency?: string) => string;
+    annotated: (value: unknown, currency?: string) => string;
+    scaleOf: (n: number) => { value: number; unit: string };
+    ABSENT: string;
+  };
   /** The capital adjust drawer, which must initialise before the first fetch. */
   CapitalAdjust?: { init: () => void; overlay: () => object | null; [key: string]: any };
   /**

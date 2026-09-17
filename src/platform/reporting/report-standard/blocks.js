@@ -18,6 +18,9 @@ const b = {
   bullets: items => ({ kind: 'bullets', items }),
   callout: (text, title) => ({ kind: 'callout', text, title }),
   figure:  o => ({ kind: 'figure', ...o }),
+  /* Horizontal bars for a handful of rows — { label, rows: [{ label, value, color? }], unit?, decimals?, caption? }.
+     A drawing of figures the model already holds: it scales them and adds nothing up. */
+  bars:    o => ({ kind: 'bars', ...o }),
   table:   o => ({ kind: 'table', ...o }),
   legend:  () => ({ kind: 'legend' }),
   checklist: () => ({ kind: 'checklist' }),

@@ -266,6 +266,48 @@ function pcafWriter(doc, meta = {}) {
     if (note) caption(note);
   }
 
+  // ── Bars ─────────────────────────────────────────────────────────────────
+  /**
+   * Horizontal bars for a handful of rows, scaled to the largest among them,
+   * the value printed beside each. A drawing of figures the model holds: it
+   * scales them and adds nothing up, exactly as the charts on the screens do.
+   *
+   * @param {{label: string, rows: Array<{label: string, value: number|null, color?: string}>, unit?: string, decimals?: number}} spec
+   */
+  function bars({ label, rows, unit = '', decimals = 0 }) {
+    const LW = 150, VW = 78, RH = 15, GAP = 4, PAD = 8;
+    const list = Array.isArray(rows) ? rows : [];
+    room(26 + list.length * (RH + GAP) + 14);
+    doc.moveDown(0.3);
+    doc.fillColor(PALETTE.grey).font(F.sansBold).fontSize(8)
+       .text(String(label).toUpperCase(), left, doc.y, { width: width(), characterSpacing: 0.9 });
+    doc.moveDown(0.35);
+    let max = 0;
+    for (const r of list) { const v = Number(r.value); if (Number.isFinite(v) && v > max) max = v; }
+    const track = width() - LW - VW - PAD;
+    let y = doc.y;
+    for (const r of list) {
+      if (y + RH > bottom()) { doc.addPage(); y = doc.y; }
+      const v = Number(r.value);
+      doc.fillColor(PALETTE.charcoal).font(F.sans).fontSize(8.2)
+         .text(String(r.label), left, y + 3, { width: LW - 8, lineBreak: false, ellipsis: true });
+      doc.save().rect(left + LW, y, track, RH).fill(PALETTE.band).restore();
+      const w = max > 0 && Number.isFinite(v) ? (Math.max(0, v) / max) * track : 0;
+      if (w > 0) doc.save().rect(left + LW, y, w, RH).fill(r.color || PALETTE.green).restore();
+      const text = Number.isFinite(v) ? v.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : '—';
+      doc.fillColor(PALETTE.charcoal).font(F.sansBold).fontSize(8.2)
+         .text(text, left + LW + track + PAD, y + 3, { width: VW, align: 'right', lineBreak: false });
+      y += RH + GAP;
+    }
+    if (unit) {
+      doc.fillColor(PALETTE.grey).font(F.sans).fontSize(7.8)
+         .text(unit, left + LW, y + 1, { width: track + VW + PAD, align: 'right', lineBreak: false });
+      y += 12;
+    }
+    doc.y = y + 4;
+    doc.x = left;
+  }
+
   // ── Tables ───────────────────────────────────────────────────────────────
   /**
    * Sage header, hairline rules, no heavy grid.
@@ -376,7 +418,7 @@ function pcafWriter(doc, meta = {}) {
 
   return {
     F, embedded, PALETTE,
-    cover, h1, h2, band, body, caption, bullet, callout, figure, table, legend,
+    cover, h1, h2, band, body, caption, bullet, callout, figure, bars, table, legend,
     pageBreak, finalise, room
   };
 }

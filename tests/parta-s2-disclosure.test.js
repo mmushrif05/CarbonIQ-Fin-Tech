@@ -138,7 +138,7 @@ describe('The four pillars, and whose words they are', () => {
     const inventory = sectionOf(m, 's2Inventory');
     const figure = inventory.blocks.find(x => x.kind === 'figure');
     expect(figure).toBeTruthy();
-    expect(figure.value).toBe(Number(m.facts.totals.headline.value).toFixed(3));
+    expect(figure.value).toBe(Number(m.facts.totals.headline.value).toLocaleString('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }));
     const annexFigure = annexOf(m, 'annexFinanced').blocks.find(x => x.kind === 'figure' && /the headline/.test(x.label));
     expect(annexFigure.value).toBe(figure.value);
   });

@@ -1,0 +1,122 @@
+/* ============================================================
+   CarbonIQ — one card language
+   ============================================================
+   Every screen grew its own card: the Part C panels, the capital tiles,
+   the GCF cards, the overview's figures, the login card. Nineteen shapes
+   for one idea, and the difference between them was the month each was
+   drawn. This sheet is the one shape — the grouped card of iOS: a soft
+   surface with a hairline and a low shadow, corners of eighteen, inset
+   grouped lists with separators that stop short of the edge, pill
+   controls, and a group header in small capitals — applied over every
+   card class in the tree so the product reads as one thing.
+
+   It sets the furniture only. Colour tokens, page palettes and the report
+   theme on the Bank Overview stay where they are; a screen that draws its
+   own primary card keeps its fill. The corrections in responsive.css still
+   load last, and this sheet never sets a width.
+   ============================================================ */
+
+:root {
+  --card-radius: 18px;
+  --card-radius-sm: 12px;
+  --card-surface: #ffffff;
+  --card-inset: rgba(120, 120, 128, 0.08);
+  --card-inset-strong: rgba(120, 120, 128, 0.16);
+  --card-hairline: rgba(60, 60, 67, 0.12);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 8px 24px rgba(0, 0, 0, 0.06);
+  --card-shadow-lift: 0 2px 4px rgba(0, 0, 0, 0.06), 0 14px 32px rgba(0, 0, 0, 0.10);
+  --card-ink-2: rgba(60, 60, 67, 0.62);
+  --card-ease: cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --card-surface: #1c1c1e;
+    --card-inset: rgba(120, 120, 128, 0.18);
+    --card-inset-strong: rgba(120, 120, 128, 0.30);
+    --card-hairline: rgba(84, 84, 88, 0.55);
+    --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --card-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.6);
+    --card-ink-2: rgba(235, 235, 245, 0.62);
+  }
+}
+:root[data-theme="dark"] {
+  --card-surface: #1c1c1e;
+  --card-inset: rgba(120, 120, 128, 0.18);
+  --card-inset-strong: rgba(120, 120, 128, 0.30);
+  --card-hairline: rgba(84, 84, 88, 0.55);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --card-shadow-lift: 0 2px 6px rgba(0, 0, 0, 0.6);
+  --card-ink-2: rgba(235, 235, 245, 0.62);
+}
+
+/* ── The card ─────────────────────────────────────────────── */
+.card, .partc-card, .parta-card, .gcf-card, .dk-tile, .kpi-card, .stakeholder-card,
+.pipe-stage-card, .pipe-template-card, .cp-actions-card, .rpt-card, .pd-panel, .pd-dq-card,
+.pd-compare-card, .table-card, .partc-figure, .parta-figure, .cl-figure, .bank-figure, .bank-tile,
+.bank-hero, .bank-empty, .bank-s2-pillar, .login-card, .pr-stat {
+  border-radius: var(--card-radius);
+  border: 1px solid var(--card-hairline);
+  box-shadow: var(--card-shadow);
+}
+.bank-tile, .bank-s2-pillar, .pr-stat, .partc-figure, .parta-figure, .cl-figure, .dk-tile, .kpi-card {
+  border-radius: var(--card-radius-sm);
+}
+button.bank-tile, button.bank-s2-pillar {
+  transition: transform 160ms var(--card-ease), box-shadow 160ms var(--card-ease);
+}
+button.bank-tile:hover, button.bank-s2-pillar:hover { transform: translateY(-1px); box-shadow: var(--card-shadow-lift); }
+@media (prefers-reduced-motion: reduce) {
+  button.bank-tile, button.bank-s2-pillar { transition: none; }
+  button.bank-tile:hover, button.bank-s2-pillar:hover { transform: none; }
+}
+
+/* ── Group headers and pills ──────────────────────────────── */
+.partc-subhead {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--card-ink-2); margin: 16px 0 8px;
+}
+.btn { border-radius: 980px; }
+.btn-sm { border-radius: 980px; }
+
+/* ── Inset grouped lists: a label and a value per row, the separator stopping
+   short of the edge as it does in a settings list. ─────────── */
+.pr-kv, .bk-kv, .fe-kv {
+  background: var(--card-inset);
+  border-radius: var(--card-radius-sm);
+  padding: 2px 14px;
+  margin: 6px 0 10px;
+}
+.pr-kv dt, .pr-kv dd, .bk-kv dt, .bk-kv dd, .fe-kv dt, .fe-kv dd { padding: 7px 0; }
+.pr-kv dt:not(:first-of-type), .pr-kv dd:not(:first-of-type),
+.bk-kv dt:not(:first-of-type), .bk-kv dd:not(:first-of-type),
+.fe-kv dt:not(:first-of-type), .fe-kv dd:not(:first-of-type) { border-top: 1px solid var(--card-hairline); }
+
+/* ── Tables sit in a rounded box; the page never scrolls sideways, the box may. */
+.pr-scroll, .bk-scroll, .fe-scroll {
+  border: 1px solid var(--card-hairline); border-radius: var(--card-radius-sm);
+  overflow-x: auto; max-width: 100%; margin-top: 8px;
+}
+.pr-scroll .partc-table, .bk-scroll .partc-table, .fe-scroll .partc-table { margin-top: 0; }
+
+/* ── Drawings from charts.js, wherever they are placed ───────
+   A bar drawn on an inline element renders as nothing, so every drawing is
+   a block; the track takes the inset tone so a bar reads on either theme. */
+.ch { display: block; width: 100%; height: auto; }
+.ch-track { fill: var(--card-inset-strong); }
+.ch-ring .ch-track { fill: none; stroke: var(--card-inset-strong); }
+.ch-label { font-size: 12px; fill: var(--card-ink-2); }
+.ch-value { font-size: 12px; fill: currentColor; font-variant-numeric: tabular-nums; }
+.ch-ring-value { font-size: 20px; font-weight: 700; fill: currentColor; font-variant-numeric: tabular-nums; }
+.ch-row { transition: opacity 160ms ease; }
+.ch-row.is-dim { opacity: 0.28; }
+.ch-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--card-ink-2); margin-top: 8px; }
+.ch-key i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+
+/* The 1–5 scale: five cells, the one the score sits in filled in its own
+   hue; a category on a scale, never a fraction. */
+.ch-scale { max-width: 320px; }
+.ch-scale .ch-scale-box { fill: var(--card-inset-strong); }
+.ch-scale .ch-scale-box.is-on { stroke: currentColor; stroke-width: 1.5; }
+.ch-scale .ch-scale-n { font-size: 13px; font-weight: 700; fill: var(--card-ink-2); }
+.ch-scale .ch-scale-n.is-on { fill: #fff; }
+.ch-scale .ch-scale-end { font-size: 10.5px; fill: var(--card-ink-2); }

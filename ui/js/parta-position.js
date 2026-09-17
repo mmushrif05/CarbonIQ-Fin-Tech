@@ -30,6 +30,8 @@ const PartAPositionPage = (() => {
   const $ = id => document.getElementById(id);
   const fmt = (n, d = 0) => (n === null || n === undefined || !Number.isFinite(Number(n))) ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  /* An amount with its code and its scale — `LKR 250,000,000 (250 mn)` — from the shared formatter; never a symbol. */
+  const money = (n, ccy) => (window.CARBONIQ_money ? window.CARBONIQ_money.annotated(n, ccy || '') : `${ccy || ''} ${fmt(n, 0)}`.trim());
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
@@ -185,7 +187,7 @@ const PartAPositionPage = (() => {
       say('fe-coverage-unit', c.remedy || 'book total not stated');
     } else {
       say('fe-coverage', `${Number(c.sharePct).toFixed(2)}%`);
-      say('fe-coverage-unit', `of ${esc(c.currency)} ${fmt(c.totalLoansAndInvestments, 0)} total loans and investments`);
+      say('fe-coverage-unit', `of ${money(c.totalLoansAndInvestments, c.currency)} total loans and investments`);
     }
 
     const i = p.intensity || {};
@@ -233,11 +235,11 @@ const PartAPositionPage = (() => {
     } else {
       setHtml('fe-book', `
         <dl class="fe-kv">
-          <dt>Total loans and investments</dt><dd>${esc(p.book.currency || currency)} ${fmt(p.book.totalLoansAndInvestments, 0)}</dd>
-          <dt>Assessed outstanding</dt><dd>${c.assessedOutstanding === null || c.assessedOutstanding === undefined ? '—' : `${esc(c.currency)} ${fmt(c.assessedOutstanding, 0)}`}</dd>
+          <dt>Total loans and investments</dt><dd>${esc(money(p.book.totalLoansAndInvestments, p.book.currency || currency))}</dd>
+          <dt>Assessed outstanding</dt><dd>${c.assessedOutstanding === null || c.assessedOutstanding === undefined ? '—' : esc(money(c.assessedOutstanding, c.currency))}</dd>
           <dt>Coverage</dt><dd>${c.sharePct === null || c.sharePct === undefined ? '—' : `${Number(c.sharePct).toFixed(2)}%`}</dd>
           <dt>Basis</dt><dd>Declared${p.book.statedBy ? ` by ${esc(p.book.statedBy)}` : ''}</dd>
-          ${(c.excluded || []).map(x => `<dt>Excluded from the share</dt><dd>${esc(x.label)} — ${esc(x.currency)} ${fmt(x.outstanding, 0)}, not in the book's currency</dd>`).join('')}
+          ${(c.excluded || []).map(x => `<dt>Excluded from the share</dt><dd>${esc(x.label)} — ${esc(money(x.outstanding, x.currency))}, not in the book's currency</dd>`).join('')}
         </dl>`);
     }
     show('fe-book-form', !preview());

@@ -78,6 +78,7 @@ function outline(model) {
   const blk = (x, indent = '    ') => {
     if (x.kind === 'table') return [`${indent}table: ${x.head.join(' | ')}`, ...x.rows.map(r => `${indent}  row: ${r.map(c => String(c ?? '')).join(' | ')}`)];
     if (x.kind === 'figure') return [`${indent}figure: ${x.label} = ${x.value} ${x.unit || ''}`.trimEnd()];
+    if (x.kind === 'bars') return [`${indent}bars: ${x.label}${x.unit ? ` (${x.unit})` : ''}`, ...(x.rows || []).map(r => `${indent}  bar: ${r.label} = ${r.value ?? '—'}`)];
     if (x.kind === 'bullets') return [`${indent}bullets:`, ...(x.items || []).map(i => `${indent}  - ${i}`)];
     if (x.kind === 'callout') return [`${indent}callout [${x.title || ''}]: ${x.text}`];
     if (x.kind === 'checklist') return [`${indent}checklist`];

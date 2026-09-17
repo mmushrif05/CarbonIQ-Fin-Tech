@@ -62,16 +62,16 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 88 | executed |
 | PCAF Part A §5.2 | `A-DQ-03` | CarbonIQ — a score is a measurement, a plan is a task list | `tests/parta-business-loans.test.js` | 88 | executed |
 | PCAF Part A §5.2 | `A-DQ-04` | Comparability — a position of zero is a different claim | `tests/parta-business-loans.test.js` | 88 | executed |
-| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 48 | executed |
-| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 49 | executed |
+| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 49 | executed |
 | PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 99 | executed |
-| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 49 | executed |
 | PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 58 | executed |
 | PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 62 | executed |
 | PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 47 | executed |
 | PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 22 | executed |
 | PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 99 | executed |
-| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 48 | executed |
+| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 49 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-01` | Part A §5.9 (p.144); Annex 10.3 (pp.201–204) | `tests/parta-sovereign.test.js` | 14 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-02` | Part A §5.9; Table 10.3-2 (p.202) | `tests/parta-sovereign.test.js` | 55 | executed |
 | PCAF Part A §5.2 | `SOV-LULUCF` | Part A §5.9 (p.141) | `tests/parta-sovereign-register.test.js` | 93 | executed |
@@ -94,8 +94,8 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DOC-03` | ISAE 3000 §69; ISO 14064-3 §9 | `tests/parta-report-golden.test.js` | 20 | executed |
 | PCAF Part A §5.2 | `A-DOC-04` | Part A ch.6 (p.161) | `tests/parta-report-golden.test.js` | 103 | executed |
 | PCAF Part A §5.2 | `A-DOC-05` | ISO 14064-3 §6.1.3; ISAE 3000 §48 | `tests/parta-report-golden.test.js` | 168 | executed |
-| PCAF Part A §5.2 | `A-DOC-06` | SLFRS S2 §29(a)(vi); Part A ch.6 (p.163) | `tests/parta-report-golden.test.js` | 149 | executed |
-| PCAF Part A §5.2 | `A-DOC-07` | DCL p.127 | `tests/parta-report-golden.test.js` | 134 | executed |
+| PCAF Part A §5.2 | `A-DOC-06` | SLFRS S2 §29(a)(vi); Part A ch.6 (p.163) | `tests/parta-report-golden.test.js` | 150 | executed |
+| PCAF Part A §5.2 | `A-DOC-07` | DCL p.127 | `tests/parta-report-golden.test.js` | 135 | executed |
 | PCAF Part A §5.2 | `A-DOC-08` | Part A Box 6.1-5 (p.167) | `tests/parta-report-golden.test.js` | 135 | executed |
 | PCAF Part A §5.2 | `A-DOC-09` | Part A ch.6 (p.164) | `tests/parta-report-golden.test.js` | 22 | executed |
 | PCAF Part A §5.2 | `A-DOC-10` | Part A ch.6 (pp.160–169) | `tests/parta-report-golden.test.js` | 62 | executed |
@@ -105,13 +105,13 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DOC-13` | DCL p.128; Part A Box 6.1-6; Table 5.9-6 | `tests/parta-consolidated.test.js` | 152 | executed |
 | PCAF Part A §5.2 | `A-DOC-14` | DCL p.124 | `tests/parta-consolidated.test.js` | 152 | executed |
 | PCAF Part A §5.2 | `A-DOC-15` | Part A ch.6 (p.160) | `tests/parta-consolidated.test.js` | 36 | executed |
-| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 144 | executed |
-| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 154 | executed |
-| PCAF Part A §5.2 | `A-S2-03` | report-integrity — measured, declared, absent | `tests/parta-s2-disclosure.test.js` | 201 | executed |
-| PCAF Part A §5.2 | `A-S2-04` | SLFRS S2 §29(a)(i)–(iv), (vi); B58–B63 | `tests/parta-s2-disclosure.test.js` | 93 | executed |
-| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 140 | executed |
+| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 150 | executed |
+| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-S2-03` | report-integrity — measured, declared, absent | `tests/parta-s2-disclosure.test.js` | 202 | executed |
+| PCAF Part A §5.2 | `A-S2-04` | SLFRS S2 §29(a)(i)–(iv), (vi); B58–B63 | `tests/parta-s2-disclosure.test.js` | 94 | executed |
+| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 142 | executed |
 | PCAF Part A §5.2 | `A-S2-06` | SLFRS S2 §32; IFRS S2 industry-based guidance for commercial banks | `tests/parta-s2-disclosure.test.js` | 82 | executed |
-| PCAF Part A §5.2 | `A-S2-07` | SLFRS S2 — the disclosure read as an S2 file | `tests/parta-s2-disclosure.test.js` | 93 | executed |
+| PCAF Part A §5.2 | `A-S2-07` | SLFRS S2 — the disclosure read as an S2 file | `tests/parta-s2-disclosure.test.js` | 94 | executed |
 | PCAF Part A §5.2 | `A-S2-08` | report-integrity; PCAF conformance language | `tests/parta-s2-disclosure.test.js` | 39 | executed |
 | PCAF Part A §5.2 | `A-S2-09` | SLFRS S2 §5–37; Part A ch.6 (p.160) | `tests/parta-s2-disclosure.test.js` | 96 | executed |
 | PCAF Part A §5.2 | `A-S2-10` | SLFRS S2 §5–37 — one registry, one source | `tests/parta-climate-facts.test.js` | 154 | executed |

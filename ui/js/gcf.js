@@ -33,7 +33,7 @@ const GCFPage = (() => {
   const num = (n, d = 0) => (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)))
     ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const usd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `$${num(n)}`);
+  const usd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `USD ${num(n)}`);
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };

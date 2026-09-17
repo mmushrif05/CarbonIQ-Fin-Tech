@@ -79,3 +79,47 @@
 .parta-register .pr-kv dt { color: var(--p-label-2); min-width: 0; overflow-wrap: anywhere; }
 .parta-register .pr-kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
 .parta-register .pr-eq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--p-label-2); overflow-wrap: anywhere; }
+
+/* A money field prints what was keyed with its separators and its scale
+   beside it — 250,000,000 reads as LKR 250 mn — from the shared formatter. */
+.parta-register .pr-money-hint { font-size: 12px; color: var(--p-label-2); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+.parta-register .pr-money-hint:empty { display: none; }
+
+/* ── The exposure detail: figures first, reasons on request ─────────
+   Four cards at the top — the bank's two lines, the score on its scale and
+   the attribution as a ring — then the lines drawn, the absent ones with the
+   standard's sentence behind a disclosure, and the review as steps. */
+.parta-register .pr-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+  gap: 12px; margin-bottom: 16px;
+}
+.parta-register .pr-stat { min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 14px 16px 12px; background: var(--p-card); }
+.parta-register .pr-stat-primary { background: var(--p-accent-bg); }
+.parta-register .pr-stat-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--p-label-2); font-weight: 700; }
+.parta-register .pr-stat-value { font-size: 30px; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.parta-register .pr-stat-value-sm { font-size: 22px; }
+.parta-register .pr-stat-unit { font-size: 12.5px; color: var(--p-label-2); line-height: 1.4; }
+.parta-register .pr-stat-ring { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 4px 12px; align-items: center; }
+.parta-register .pr-stat-ring-draw .ch-ring { width: 84px; height: 84px; }
+.parta-register .pr-stat-ring-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.parta-register .pr-stat .ch-scale { margin: 6px 0 2px; }
+.parta-register .pr-chip { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; background: var(--p-fill); color: var(--p-label-2); }
+.parta-register .pr-chip-ok { background: rgba(52,199,89,.16); color: #1d7a3a; }
+.parta-register .pr-why { margin-top: 4px; font-size: 12.5px; color: var(--p-label-2); }
+.parta-register .pr-why summary { cursor: pointer; color: var(--p-accent); font-weight: 600; }
+.parta-register .pr-why p { margin: 4px 0 0; line-height: 1.45; }
+.parta-register .pr-lines td:last-child { min-width: 0; }
+.parta-register .pr-steps { list-style: none; display: flex; gap: 0; margin: 4px 0 8px; padding: 0; }
+.parta-register .pr-steps li { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--p-label-2); position: relative; text-align: center; }
+.parta-register .pr-steps li i { display: block; width: 14px; height: 14px; border-radius: 50%; background: var(--p-fill); border: 2px solid var(--p-separator); box-sizing: border-box; }
+.parta-register .pr-steps li::before { content: ''; position: absolute; top: 6px; left: -50%; width: 100%; height: 2px; background: var(--p-separator); z-index: 0; }
+.parta-register .pr-steps li:first-child::before { display: none; }
+.parta-register .pr-steps li i { position: relative; z-index: 1; }
+.parta-register .pr-steps li.is-done i, .parta-register .pr-steps li.is-on i { background: var(--ios-green, #34c759); border-color: var(--ios-green, #34c759); }
+.parta-register .pr-steps li.is-on { color: var(--p-label); font-weight: 700; }
+.parta-register .pr-steps li.is-on i { box-shadow: 0 0 0 4px rgba(52,199,89,.2); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .parta-register .pr-chip-ok { color: #4cd964; }
+}
+:root[data-theme="dark"] .parta-register .pr-chip-ok { color: #4cd964; }

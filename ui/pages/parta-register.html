@@ -68,23 +68,23 @@
 
       <h5 class="partc-subhead">Outstanding at year-end</h5>
       <div class="pr-grid">
-        <label>Amount <input id="pr-f-outstanding" type="number" min="0" step="any"></label>
-        <label>Average over the year <input id="pr-f-average" type="number" min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
-        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" min="0" step="any" placeholder="optional — runs the sector band check"></label>
+        <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Average over the year <input id="pr-f-average" type="number" data-money min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
+        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="optional — runs the sector band check"></label>
         <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-asof" type="date"></label>
       </div>
 
       <h5 class="partc-subhead">Company value</h5>
       <div class="pr-grid" id="pr-denom-private">
-        <label>Total equity <input id="pr-f-equity" type="number" step="any"></label>
-        <label>Total debt <input id="pr-f-debt" type="number" min="0" step="any"></label>
-        <label>Customer deposits <input id="pr-f-deposits" type="number" min="0" step="any" placeholder="financial institutions only"></label>
+        <label>Total equity <input id="pr-f-equity" type="number" data-money step="any"></label>
+        <label>Total debt <input id="pr-f-debt" type="number" data-money min="0" step="any"></label>
+        <label>Customer deposits <input id="pr-f-deposits" type="number" data-money min="0" step="any" placeholder="financial institutions only"></label>
       </div>
       <div class="pr-grid" id="pr-denom-listed" hidden>
-        <label>Market capitalisation, ordinary <input id="pr-f-mcap" type="number" min="0" step="any"></label>
-        <label>Total debt, interest-bearing <input id="pr-f-debt-ib" type="number" min="0" step="any"></label>
-        <label>Minority interests <input id="pr-f-minorities" type="number" min="0" step="any"></label>
+        <label>Market capitalisation, ordinary <input id="pr-f-mcap" type="number" data-money min="0" step="any"></label>
+        <label>Total debt, interest-bearing <input id="pr-f-debt-ib" type="number" data-money min="0" step="any"></label>
+        <label>Minority interests <input id="pr-f-minorities" type="number" data-money min="0" step="any"></label>
       </div>
       <p class="partc-hint">Leave the company value empty to estimate under Option 3b from the outstanding amount and a sector factor — a figure at score 5 with no attribution factor.</p>
 
@@ -128,9 +128,9 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the property value at origination</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-re-outstanding" type="number" min="0" step="any"></label>
-        <label>Property value at origination <input id="pr-f-re-value" type="number" min="0" step="any"></label>
-        <label>Latest valuation <input id="pr-f-re-latest" type="number" min="0" step="any" placeholder="optional — used only where no origination value is held"></label>
+        <label>Outstanding at year-end <input id="pr-f-re-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Property value at origination <input id="pr-f-re-value" type="number" data-money min="0" step="any"></label>
+        <label>Latest valuation <input id="pr-f-re-latest" type="number" data-money min="0" step="any" placeholder="optional — used only where no origination value is held"></label>
         <label>Currency <input id="pr-f-re-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-re-asof" type="date"></label>
       </div>
@@ -193,8 +193,8 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the value at origination</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-mv-outstanding" type="number" min="0" step="any"></label>
-        <label>Total value at origination <input id="pr-f-mv-value" type="number" min="0" step="any" placeholder="unknown — 100% attribution (p.91)"></label>
+        <label>Outstanding at year-end <input id="pr-f-mv-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Total value at origination <input id="pr-f-mv-value" type="number" data-money min="0" step="any" placeholder="unknown — 100% attribution (p.91)"></label>
         <label>Currency <input id="pr-f-mv-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-mv-asof" type="date"></label>
       </div>
@@ -234,8 +234,8 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the project value</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-pf-outstanding" type="number" min="0" step="any"></label>
-        <label>Total project equity plus debt <input id="pr-f-pf-denominator" type="number" min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-pf-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Total project equity plus debt <input id="pr-f-pf-denominator" type="number" data-money min="0" step="any"></label>
         <label>Currency <input id="pr-f-pf-currency" type="text" maxlength="10" value="LKR"></label>
       </div>
       <h5 class="partc-subhead">Project emissions, tCO₂e</h5>
@@ -260,11 +260,11 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the investee’s value (EVIC)</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-le-outstanding" type="number" min="0" step="any"></label>
-        <label>Market capitalisation, ordinary <input id="pr-f-le-mcap" type="number" min="0" step="any"></label>
-        <label>Market capitalisation, preferred <input id="pr-f-le-mcap-pref" type="number" min="0" step="any"></label>
-        <label>Total debt, interest-bearing <input id="pr-f-le-debt" type="number" min="0" step="any"></label>
-        <label>Minority interests <input id="pr-f-le-minorities" type="number" min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-le-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Market capitalisation, ordinary <input id="pr-f-le-mcap" type="number" data-money min="0" step="any"></label>
+        <label>Market capitalisation, preferred <input id="pr-f-le-mcap-pref" type="number" data-money min="0" step="any"></label>
+        <label>Total debt, interest-bearing <input id="pr-f-le-debt" type="number" data-money min="0" step="any"></label>
+        <label>Minority interests <input id="pr-f-le-minorities" type="number" data-money min="0" step="any"></label>
         <label>Currency <input id="pr-f-le-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-le-asof" type="date"></label>
       </div>
@@ -347,7 +347,7 @@
           <span class="partc-hint">Coverage is assessed outstanding over total loans and investments — PCAF Disclosure Checklist Part A, p.124.</span></div>
         <div id="pr-book"></div>
         <form id="pr-book-form" class="pr-inline" data-writes hidden>
-          <label>Total loans and investments <input id="pr-book-total" type="number" min="1" step="any" required></label>
+          <label>Total loans and investments <input id="pr-book-total" type="number" data-money min="1" step="any" required></label>
           <label>Currency <input id="pr-book-currency" type="text" maxlength="10" value="LKR"></label>
           <label>Stated by <input id="pr-book-by" type="text" maxlength="200" placeholder="e.g. Group CFO"></label>
           <button class="btn btn-primary" type="submit">State it</button>

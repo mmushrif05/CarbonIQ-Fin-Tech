@@ -37,8 +37,8 @@ const GCFPipeline = (() => {
   const num = (n, d = 0) => (n === null || n === undefined || n === '' || !Number.isFinite(Number(n)))
     ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const usd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `$${num(n)}`);
-  const musd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `$${num(n / 1e6, 1)}M`);
+  const usd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : `USD ${num(n)}`);
+  const musd = n => (n === null || n === undefined || !Number.isFinite(Number(n)) ? '—' : window.CARBONIQ_money.moneyShort(n, 'USD'));
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
@@ -380,7 +380,7 @@ const GCFPipeline = (() => {
       [mit.isCoBenefit ? 'Mitigation co-benefit — lifetime' : 'Mitigation — lifetime', traced(mit.lifetime_tCO2e)],
       ['Direct beneficiaries (Core Indicator 2)', traced(ben.direct)], ['Indirect beneficiaries (Core Indicator 2)', traced(ben.indirect)],
       ['Women among beneficiaries', ben.womenPct && Number.isFinite(ben.womenPct.value) ? `${num(ben.womenPct.value)}% ${tierPill(ben.womenPct.tier)}` : '—'],
-      ['Assets made resilient (Core Indicator 3)', p.assets && p.assets.valueProtected_usd ? `$${traced(p.assets.valueProtected_usd)}` : '—'],
+      ['Assets made resilient (Core Indicator 3)', p.assets && p.assets.valueProtected_usd ? `USD ${traced(p.assets.valueProtected_usd)}` : '—'],
       ['Hectares under improved management (Core Indicator 4)', traced(p.area && p.area.hectares)],
       ['Embodied carbon A1–A5', p.embodiedCarbon ? `${traced(p.embodiedCarbon.a1a5_tCO2e)} tCO₂e — a payback, never netted` : 'not held'],
     ]));

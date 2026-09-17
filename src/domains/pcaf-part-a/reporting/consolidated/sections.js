@@ -26,9 +26,12 @@ const { b, keep } = require('../../../../platform/reporting/report-standard/bloc
 const { entitySection } = require('../common-sections');
 const { buildS2Sections } = require('./s2-sections');
 
+const { fixed, moneyAnnotated } = require('../../../../shared/money');
+
 const N = n => (n === null || n === undefined) ? '—'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
-const T = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(3);
+/* Tonnes at three decimals with their separators — `12,038.240`. */
+const T = n => fixed(n, 3);
 const score = n => (n === null || n === undefined) ? 'not scored' : String(n);
 const STATUS = { recorded: 'Reported', 'not-recorded': 'Not reported — nothing recorded', 'engine-only': 'Not reported — no register yet', 'not-built': 'Not reported — not built' };
 
@@ -130,11 +133,11 @@ function coverageBlocks(f) {
     b.figure({
       label: 'Share of total loans and investments assessed', value: c.sharePct === null || c.sharePct === undefined ? '—' : `${Number(c.sharePct).toFixed(2)}%`, unit: '',
       note: c.totalLoansAndInvestments
-        ? `${N(c.assessedOutstanding)} of ${N(c.totalLoansAndInvestments)} ${c.currency || ''}${c.statedBy ? `, book total stated by ${c.statedBy}` : ''}`
+        ? `${moneyAnnotated(c.assessedOutstanding, c.currency)} of ${moneyAnnotated(c.totalLoansAndInvestments, c.currency)}${c.statedBy ? `, book total stated by ${c.statedBy}` : ''}`
         : 'Book total not yet stated',
     }),
     b.body(f.coverageStatement),
-    c.excluded && c.excluded.length ? b.caption(`Excluded from the combined share, in their own currency: ${c.excluded.map(x => `${x.label} (${N(x.outstanding)} ${x.currency})`).join('; ')}. `
+    c.excluded && c.excluded.length ? b.caption(`Excluded from the combined share, in their own currency: ${c.excluded.map(x => `${x.label} (${moneyAnnotated(x.outstanding, x.currency)})`).join('; ')}. `
       + 'Nothing here converts a currency at a rate the system does not hold.') : null,
     f.classes.some(x => x.status !== 'recorded') ? b.table({
       head: ['Asset class not reported', 'Section', 'Reason', 'Stated by'],
@@ -170,6 +173,19 @@ function absoluteBlocks(f) {
     b.figure({ label: 'Financed emissions across the classes reported — the headline', value: T(t.headline.value), unit: 'tCO2e',
       note: t.headline.basis }),
     b.figure({ label: 'Financed scope 3 across the classes — a separate line', value: T(t.scope3.value), unit: 'tCO2e', note: t.scope3.note }),
+    /* The same figures drawn: one bar per class on its headline boundary,
+       scope 3 apart beneath — the drawing scales the classes' own values and
+       adds nothing up. */
+    f.recorded.length ? b.bars({
+      label: 'Financed emissions by asset class — the headline of each',
+      rows: f.recorded.map(c => ({ label: `${c.label} (${c.section})`, value: c.headline.value })),
+      unit: 'tCO2e, each class on the boundary its section reports', decimals: 3,
+    }) : null,
+    f.recorded.some(c => c.scope3 && c.scope3.value !== null) ? b.bars({
+      label: 'Financed scope 3 by asset class — apart, never added to the headline',
+      rows: f.recorded.map(c => ({ label: `${c.label} (${c.section})`, value: c.scope3 && c.scope3.value !== null ? c.scope3.value : null, color: '#9A9A9A' })),
+      unit: 'tCO2e', decimals: 3,
+    }) : null,
     b.table({
       head: ['Asset class', 'Headline', 'tCO2e', 'Scope 3 tCO2e', 'Data quality'],
       widths: [2, 2.2, 1.1, 1.1, 0.9], align: ['left', 'left', 'right', 'right', 'right'], zebra: true,

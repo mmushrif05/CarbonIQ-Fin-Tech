@@ -42,15 +42,15 @@ SECTION 4 [gases] Gases and units
     body: Biogenic carbon, where a borrower reports it, is stated separately from the fossil inventory and never netted against it.
 
 SECTION 5 [absolute] Absolute emissions
-    figure: Financed scope 1 and 2 = 1752.000 tCO2e
+    figure: Financed scope 1 and 2 = 1,752.000 tCO2e
       score: Data quality score: 2 (Option 1b). 1 is the highest quality, 5 the lowest.
-    figure: Financed scope 3 — a separate line = 3120.000 tCO2e
+    figure: Financed scope 3 — a separate line = 3,120.000 tCO2e
       note: Reported apart from scope 1 and 2 (§5.2, p.56); never summed with it.
     table [3 cols] head: Line | tCO2e | Note
-      row: Financed scope 1 | 1344.000 | The attributed share of the borrower’s direct emissions.
+      row: Financed scope 1 | 1,344.000 | The attributed share of the borrower’s direct emissions.
       row: Financed scope 2 | 408.000 | The attributed share of the borrower’s purchased energy.
-      row: Financed scope 1 and 2 | 1752.000 | The two lines above, combined — the minimum Chapter 6 asks for.
-      row: Financed scope 3 | 3120.000 | A separate line.
+      row: Financed scope 1 and 2 | 1,752.000 | The two lines above, combined — the minimum Chapter 6 asks for.
+      row: Financed scope 3 | 3,120.000 | A separate line.
       row: Removals | — | Reported apart from the inventory, netted against nothing (Part A, p.126).
       row: Carbon credits generated | — | Apart from the inventory.
       row: Carbon credits retired | — | Apart from the inventory.

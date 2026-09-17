@@ -32,6 +32,7 @@
 const { PILLARS, ITEMS, ROW_SHAPES, listFor } = require('../../domain/climate/items');
 const { labelOf } = require('../../domain/climate/vocabulary');
 const climate = require('../../domain/climate');
+const { moneyAnnotated } = require('../../../../shared/money');
 
 const num = v => typeof v === 'number' && Number.isFinite(v);
 
@@ -85,7 +86,7 @@ function moneyOf(raw) {
   return {
     amount: num(raw.amount) ? raw.amount : null, currency: raw.currency || null,
     note: raw.note || null, absentReason: raw.absentReason || null,
-    display: num(raw.amount) ? `${N(raw.amount)} ${raw.currency || ''}`.trim() : 'Not reported',
+    display: num(raw.amount) ? moneyAnnotated(raw.amount, raw.currency) : 'Not reported',
   };
 }
 

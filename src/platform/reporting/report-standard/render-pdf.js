@@ -41,6 +41,7 @@ function renderStandardPDF(model, theme = defaultTheme) {
         case 'bullets': blk.items.forEach(i => w.bullet(i)); break;
         case 'callout': w.callout(blk.text, { title: blk.title }); break;
         case 'figure': w.figure(blk); break;
+        case 'bars': w.bars(blk); if (blk.caption) w.caption(blk.caption); break;
         case 'legend': w.legend(); break;
         case 'pageBreak': w.pageBreak(); break;
         case 'table': {

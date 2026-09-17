@@ -178,8 +178,8 @@ flowchart TD
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 208 |
 |         `src/domains/pcaf-part-a/interface/routes/` | 4 | 1,035 |
 |         `src/domains/pcaf-part-a/interface/schemas/` | 8 | 832 |
-|       `src/domains/pcaf-part-a/reporting/` | 8 | 1,529 |
-|         `src/domains/pcaf-part-a/reporting/consolidated/` | 7 | 1,658 |
+|       `src/domains/pcaf-part-a/reporting/` | 8 | 1,533 |
+|         `src/domains/pcaf-part-a/reporting/consolidated/` | 7 | 1,692 |
 |         `src/domains/pcaf-part-a/reporting/sovereign/` | 5 | 1,087 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
@@ -205,11 +205,11 @@ flowchart TD
 |     `src/platform/jobs/` | 3 | 413 |
 |     `src/platform/observability/` | 6 | 813 |
 |     `src/platform/reporting/` | 4 | 337 |
-|       `src/platform/reporting/report-standard/` | 4 | 308 |
-|         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
-|   `src/shared/` | 10 | 1,936 |
+|       `src/platform/reporting/report-standard/` | 4 | 323 |
+|         `src/platform/reporting/report-standard/theme/` | 4 | 775 |
+|   `src/shared/` | 11 | 2,079 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **402** | **69,313** |
+| **total** | **403** | **69,551** |
 
 <!-- END MODULE-MAP -->
 
