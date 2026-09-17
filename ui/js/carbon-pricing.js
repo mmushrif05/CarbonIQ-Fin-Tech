@@ -115,7 +115,7 @@ const CarbonPricingPage = (() => {
       <span class="cp-attr-sep">·</span>
       <span class="cp-attr-item">Attribution factor <strong>${inputs.attributionFactor}</strong></span>
       <span class="cp-attr-sep">·</span>
-      <span class="cp-attr-item">$<strong>${_fmt(inputs.loanAmount)}</strong> / $<strong>${_fmt(inputs.projectValue)}</strong> project</span>`;
+      <span class="cp-attr-item">USD <strong>${_fmt(inputs.loanAmount)}</strong> / USD <strong>${_fmt(inputs.projectValue)}</strong> project</span>`;
 
     // Summary
     document.getElementById('cpSummaryBox').innerHTML =
@@ -124,13 +124,13 @@ const CarbonPricingPage = (() => {
     // ── Tax Exposure ──
     document.getElementById('taxRegionLabel').textContent = inputs.region + ' · Annual (current rate)';
     document.getElementById('taxCurrentUSD').textContent =
-      taxExposure.annualExposure_USD > 0 ? `$${_fmt(taxExposure.annualExposure_USD)}` : '—';
+      taxExposure.annualExposure_USD > 0 ? `USD ${_fmt(taxExposure.annualExposure_USD)}` : '—';
     document.getElementById('taxCurrentLocal').textContent =
       taxExposure.annualExposure_USD > 0
         ? `${taxExposure.currency} ${_fmt(taxExposure.annualExposure_local)} / yr`
         : `No current carbon tax in ${inputs.region}`;
     document.getElementById('taxPeakNote').textContent =
-      `Peak by ${taxExposure.peakExposure.year}: $${_fmt(taxExposure.peakExposure.USD)} (${taxExposure.currency} ${_fmt(taxExposure.peakExposure.local)})`;
+      `Peak by ${taxExposure.peakExposure.year}: USD ${_fmt(taxExposure.peakExposure.USD)} (${taxExposure.currency} ${_fmt(taxExposure.peakExposure.local)})`;
 
     // Trajectory mini-chart
     const maxRate = Math.max(...taxExposure.trajectory.map(t => t.usdAmount));
@@ -140,7 +140,7 @@ const CarbonPricingPage = (() => {
         <div class="cp-traj-bar-wrap">
           <div class="cp-traj-bar" style="width:${maxRate > 0 ? Math.round((t.usdAmount / maxRate) * 100) : 0}%"></div>
         </div>
-        <span class="cp-traj-val">$${_fmt(t.usdAmount)}</span>
+        <span class="cp-traj-val">USD ${_fmt(t.usdAmount)}</span>
       </div>`).join('');
 
     // ── Loan Pricing ──
@@ -151,7 +151,7 @@ const CarbonPricingPage = (() => {
       'cp-metric-value ' + (bps < 0 ? 'cp-val-green' : bps > 0 ? 'cp-val-red' : 'cp-val-neutral');
     document.getElementById('pricingSaving').textContent =
       loanPricing.financialImpact.annualInterestSaving_USD > 0
-        ? `$${_fmt(loanPricing.financialImpact.annualInterestSaving_USD)}/yr saving — $${_fmt(loanPricing.financialImpact.npvSaving_USD)} NPV over ${loanPricing.financialImpact.loanTerm_years}yr`
+        ? `USD ${_fmt(loanPricing.financialImpact.annualInterestSaving_USD)}/yr saving — USD ${_fmt(loanPricing.financialImpact.npvSaving_USD)} NPV over ${loanPricing.financialImpact.loanTerm_years}yr`
         : 'No interest saving at current score';
     document.getElementById('pricingUpgrade').textContent = loanPricing.upgradeOpportunity;
 
@@ -162,7 +162,7 @@ const CarbonPricingPage = (() => {
     document.getElementById('strandedLevel').innerHTML =
       `<span class="cp-risk-pill cp-risk-${riskLevel}">${riskLevel.toUpperCase()}</span>`;
     document.getElementById('strandedExposure').textContent =
-      `$${_fmt(strandedRisk.financialImpairment.lenderExposure_USD)}`;
+      `USD ${_fmt(strandedRisk.financialImpairment.lenderExposure_USD)}`;
     document.getElementById('strandedRefi').textContent = strandedRisk.refinancingRisk;
 
     // Mitigation actions (inside stranded card)
@@ -183,9 +183,9 @@ const CarbonPricingPage = (() => {
       const cls   = delta > 0 ? 'cp-delta-up' : delta < 0 ? 'cp-delta-down' : '';
       const isCurrent = row.carbonPrice_USD === taxExposure.currentRate_local;
       return `<tr class="${isCurrent ? 'cp-row-current' : ''}">
-        <td>$${row.carbonPrice_USD}/tCO2e ${isCurrent ? '<span class="cp-now-tag">now</span>' : ''}</td>
-        <td>$${_fmt(row.annualTax_USD)}</td>
-        <td class="${cls}">${sign}$${_fmt(Math.abs(delta))}</td>
+        <td>USD ${row.carbonPrice_USD}/tCO2e ${isCurrent ? '<span class="cp-now-tag">now</span>' : ''}</td>
+        <td>USD ${_fmt(row.annualTax_USD)}</td>
+        <td class="${cls}">${sign}USD ${_fmt(Math.abs(delta))}</td>
       </tr>`;
     }).join('');
   }

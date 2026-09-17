@@ -232,12 +232,8 @@ const PCAFCalculator = (() => {
     if (val) val.textContent = `${_fmt(value)} tCO2e`;
   }
 
-  function _fmtShort(n) {
-    if (n >= 1e9) return `$${_round(n / 1e9, 1)}B`;
-    if (n >= 1e6) return `$${_round(n / 1e6, 1)}M`;
-    if (n >= 1e3) return `$${_round(n / 1e3, 1)}K`;
-    return `$${n}`;
-  }
+  /* The scale alone — `1.5 bn` — the caller prints the currency code beside it. */
+  function _fmtShort(n) { return window.CARBONIQ_money.short(n); }
 
   // ── Reset ────────────────────────────────────────────────────
 

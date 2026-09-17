@@ -179,12 +179,9 @@ const Dashboard = (() => {
   }
 
   // ── Number formatters ─────────────────────────────────────
-  function _fmt(n) {
-    if (n >= 1e9) return `$${(n / 1e9).toFixed(2)}B`;
-    if (n >= 1e6) return `$${(n / 1e6).toFixed(1)}M`;
-    if (n >= 1e3) return `$${(n / 1e3).toFixed(0)}K`;
-    return `$${n}`;
-  }
+  /* The lending book's outstanding is kept in US dollars; the code is
+     printed, never a symbol (`ui/js/format.js`). */
+  function _fmt(n) { return _money(n, 'USD'); }
   function _fmtN(n) { return n.toLocaleString('en-US'); }
 
   // ── Dashboard rendering ───────────────────────────────────
@@ -284,16 +281,9 @@ const Dashboard = (() => {
   const esc = (t) => String(t ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-  /** Money, at the scale a reader actually holds in their head. */
+  /** Money, at the scale a reader actually holds in their head — `USD 72 mn`, the code and never a symbol. */
   function _money(n, currency = 'USD') {
-    const v = Number(n) || 0;
-    const sign = v < 0 ? '−' : '';
-    const a = Math.abs(v);
-    const sym = currency === 'USD' ? '$' : `${currency} `;
-    if (a >= 1e9) return `${sign}${sym}${(a / 1e9).toFixed(2)}B`;
-    if (a >= 1e6) return `${sign}${sym}${(a / 1e6).toFixed(1)}M`;
-    if (a >= 1e3) return `${sign}${sym}${(a / 1e3).toFixed(0)}K`;
-    return `${sign}${sym}${a.toFixed(0)}`;
+    return window.CARBONIQ_money.moneyShort(Number(n) || 0, currency);
   }
   const _t = (n) => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 

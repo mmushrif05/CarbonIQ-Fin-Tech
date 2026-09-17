@@ -18,9 +18,13 @@
 const { b, keep } = require('../../../platform/reporting/report-standard/blocks');
 const { entitySection, uncertaintySection } = require('./common-sections');
 
+const { fixed, moneyAnnotated } = require('../../../shared/money');
+
 const N = n => (n === null || n === undefined) ? 'not stated'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
-const T = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(3);
+/* Tonnes at three decimals with their separators — `12,038.240` — the one
+   formatter every Part A document prints them through. */
+const T = n => fixed(n, 3);
 const pct = n => (n === null || n === undefined) ? 'not stated' : `${(Number(n) * 100).toFixed(2)}%`;
 const score = n => (n === null || n === undefined) ? 'not scored' : String(n);
 
@@ -41,7 +45,7 @@ function coverageSection(f) {
         label: 'Share of total loans and investments assessed',
         value: pct(f.coverage.share), unit: '',
         note: f.coverage.totalLoansAndInvestments
-          ? `${N(f.coverage.assessedOutstanding)} of ${N(f.coverage.totalLoansAndInvestments)} ${f.currency}`
+          ? `${moneyAnnotated(f.coverage.assessedOutstanding, f.currency)} of ${moneyAnnotated(f.coverage.totalLoansAndInvestments, f.currency)}`
             + (f.coverage.statedBy ? `, book total stated by ${f.coverage.statedBy}` : '')
           : 'Book total not yet stated'
       }) : null,

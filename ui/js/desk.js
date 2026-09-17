@@ -54,15 +54,8 @@ const DeskPage = (() => {
   const num = (v, dp = 0) => (absent(v) ? '—'
     : Number(v).toLocaleString('en-US', { minimumFractionDigits: dp, maximumFractionDigits: dp }));
 
-  /** Money at the scale a book is actually read: millions, one decimal. */
-  const money = (v) => {
-    if (absent(v)) return '—';
-    const n = Number(v);
-    if (Math.abs(n) >= 1e9) return `$${(n / 1e9).toLocaleString('en-US', { maximumFractionDigits: 2 })}B`;
-    if (Math.abs(n) >= 1e6) return `$${(n / 1e6).toLocaleString('en-US', { maximumFractionDigits: 1 })}M`;
-    if (Math.abs(n) >= 1e3) return `$${(n / 1e3).toLocaleString('en-US', { maximumFractionDigits: 0 })}k`;
-    return `$${num(n)}`;
-  };
+  /** Money at the scale a book is actually read — `USD 72 mn`; the capital book is kept in US dollars and the code is printed, never a symbol. */
+  const money = (v) => (absent(v) ? '—' : window.CARBONIQ_money.moneyShort(Number(v), 'USD'));
 
   const pct = (v, dp = 1) => (absent(v) ? '—' : `${Number(v).toFixed(dp)}%`);
 

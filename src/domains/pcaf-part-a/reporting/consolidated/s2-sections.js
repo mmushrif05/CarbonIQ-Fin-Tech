@@ -21,9 +21,11 @@
 
 const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
 const { N } = require('./s2-facts');
+const { fixed, moneyAnnotated, moneyShort } = require('../../../../shared/money');
 
 const PCT = n => (n === null || n === undefined) ? '—' : `${Number(n).toFixed(2)}%`;
-const T = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(3);
+/* Tonnes at three decimals with their separators — `12,038.240`. */
+const T = n => fixed(n, 3);
 
 /** One statement of the entity's, with its paragraph and who made it. */
 function statement(item, opts = {}) {
@@ -172,9 +174,9 @@ function inventorySection(f) {
 /** One §29(b)–(d) band as a figure with the unassessed amount beside it. */
 function bandBlocks(band, label, paragraph, currency) {
   const rows = [
-    ['Amount vulnerable or aligned', `${N(band.amount)} ${currency || ''}`.trim()],
-    ['Amount assessed and not vulnerable or not aligned', `${N(band.notAmount)} ${currency || ''}`.trim()],
-    ['Amount not yet assessed', `${N(band.unassessedAmount)} ${currency || ''}`.trim()],
+    ['Amount vulnerable or aligned', moneyAnnotated(band.amount, currency)],
+    ['Amount assessed and not vulnerable or not aligned', moneyAnnotated(band.notAmount, currency)],
+    ['Amount not yet assessed', moneyAnnotated(band.unassessedAmount, currency)],
     ['Percentage of the amount assessed', PCT(band.sharePct)],
   ];
   return [
@@ -242,9 +244,9 @@ function industrySection(f) {
       }) : b.body('No exposure carries a sector, so no industry table can be given.'),
       b.figure({
         label: 'Outstanding to carbon-related industries', value: N(ind.carbonRelated.outstanding), unit: ccy || '',
-        note: ind.carbonRelated.sharePct === null || ind.carbonRelated.sharePct === undefined
-          ? 'A share cannot be stated: no exposure carries an outstanding amount.'
-          : `${PCT(ind.carbonRelated.sharePct)} of the outstanding across every class reported.`,
+        note: `${moneyShort(ind.carbonRelated.outstanding, ccy)}${ind.carbonRelated.sharePct === null || ind.carbonRelated.sharePct === undefined
+          ? ' — a share cannot be stated: no exposure carries an outstanding amount.'
+          : ` — ${PCT(ind.carbonRelated.sharePct)} of the outstanding across every class reported.`}`,
       }),
       b.caption(ind.carbonRelated.basis || ''),
       ind.rows.some(r => !r.sectorKey) ? b.caption(

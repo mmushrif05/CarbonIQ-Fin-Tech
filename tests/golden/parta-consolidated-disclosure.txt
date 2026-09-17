@@ -61,16 +61,16 @@ SECTION 4 [s2RiskManagement] Risk management
     body: Not stated by the reporting entity. S2 §25(c) requires it.
 SECTION 5 [s2Inventory] Metrics and targets — greenhouse gas emissions
     body: SLFRS S2 §29(a) asks for the entity’s absolute gross scope 1, scope 2 and scope 3 emissions. Scope 1 and scope 2 are the entity’s own operations and only the entity can state them. Category 15 of scope 3 — financed emissions — is measured by this system from the exposure register; the figure below is that measurement, and Annex A is its position by asset class and its coverage of the book.
-    figure: Financed emissions — scope 3 category 15, scope 1 and 2 of the borrowers and investees = 2004.520 tCO2e
-    figure: Financed scope 3 of the borrowers and investees — a separate line, never added to the figure above = 3120.000 tCO2e
+    figure: Financed emissions — scope 3 category 15, scope 1 and 2 of the borrowers and investees = 2,004.520 tCO2e
+    figure: Financed scope 3 of the borrowers and investees — a separate line, never added to the figure above = 3,120.000 tCO2e
     table: Line | Figure | Basis | Period | Stated by
       row: Scope 1 — gross, direct | Not reported | — | — | Not stated — S2 §29(a)(i)
       row: Scope 2 — gross, location-based | Not reported | — | — | Not stated — S2 §29(a)(ii)
       row: Scope 2 — gross, market-based (additional) | Not reported | — | — | Not stated — S2 §29(a)(ii)
       row: Scope 3 — categories other than 15 | Not reported | — | — | Not stated — S2 §29(a)(iv)
-      row: Scope 3 category 15 — financed emissions | 2004.520 tCO2e | Measured | FY2024 | Measured by this system from the exposure register
+      row: Scope 3 category 15 — financed emissions | 2,004.520 tCO2e | Measured | FY2024 | Measured by this system from the exposure register
     caption: Measured by this system from the exposure register — the headline of Annex A, moved and not recomputed. Financed emissions are scope 3 category 15 of the inventory (S2 B58–B63).
-    body: No row above sums the others. S2 requires each scope to be disclosed separately, and a total that mixed a figure the entity stated with one this system measured would obscure which is which. The financed scope 3 of the investees themselves — 3120.000 tCO2e — is reported on its own line above and in Annex A, and is not part of the category 15 figure.
+    body: No row above sums the others. S2 requires each scope to be disclosed separately, and a total that mixed a figure the entity stated with one this system measured would obscure which is which. The financed scope 3 of the investees themselves — 3,120.000 tCO2e — is reported on its own line above and in Annex A, and is not part of the category 15 figure.
     h2: How the inventory is measured
     body: Not stated by the reporting entity. S2 §29(a)(iii) requires it.
     callout [Open item]: The entity’s own gross scope 1 and location-based scope 2 have not been stated, so this document remains the category 15 input to an S2 inventory rather than the inventory itself. Recording them completes it.
@@ -79,21 +79,21 @@ SECTION 6 [s2CrossIndustry] Metrics and targets — cross-industry metrics
     body: Classified per exposure by the reporting entity, summed by the engine. Shares are taken over the outstanding actually assessed; the unassessed amount is stated beside them.
     h2: Assets vulnerable to climate-related transition risks — S2 §29(b)
     table: Measure | Reporting year
-      row: Amount vulnerable or aligned | 0 LKR
-      row: Amount assessed and not vulnerable or not aligned | 0 LKR
-      row: Amount not yet assessed | 720,000,000 LKR
+      row: Amount vulnerable or aligned | LKR 0
+      row: Amount assessed and not vulnerable or not aligned | LKR 0
+      row: Amount not yet assessed | LKR 720,000,000 (720 mn)
       row: Percentage of the amount assessed | —
     h2: Assets vulnerable to climate-related physical risks — S2 §29(c)
     table: Measure | Reporting year
-      row: Amount vulnerable or aligned | 0 LKR
-      row: Amount assessed and not vulnerable or not aligned | 0 LKR
-      row: Amount not yet assessed | 720,000,000 LKR
+      row: Amount vulnerable or aligned | LKR 0
+      row: Amount assessed and not vulnerable or not aligned | LKR 0
+      row: Amount not yet assessed | LKR 720,000,000 (720 mn)
       row: Percentage of the amount assessed | —
     h2: Assets aligned with climate-related opportunities — S2 §29(d)
     table: Measure | Reporting year
-      row: Amount vulnerable or aligned | 0 LKR
-      row: Amount assessed and not vulnerable or not aligned | 0 LKR
-      row: Amount not yet assessed | 720,000,000 LKR
+      row: Amount vulnerable or aligned | LKR 0
+      row: Amount assessed and not vulnerable or not aligned | LKR 0
+      row: Amount not yet assessed | LKR 720,000,000 (720 mn)
       row: Percentage of the amount assessed | —
     caption: The percentage is taken over the outstanding actually assessed; the amount not yet assessed is stated above rather than counted as not vulnerable, so a book that has not been classified reads as unclassified and never as safe.
     h2: Capital deployed, carbon price and remuneration
@@ -104,7 +104,7 @@ SECTION 6 [s2CrossIndustry] Metrics and targets — cross-industry metrics
 SECTION 7 [s2Industry] Metrics and targets — industry-based metrics
     body: The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the associated financed emissions disaggregated by industry, and for lending to carbon-related industries to be identified. An industry is the sector recorded against an exposure from this system’s own vocabulary; the emissions column is the scope 1 and 2 each class reports on its headline, never mixed with scope 3.
     table: Industry | Exposures | Outstanding LKR | Financed scope 1 and 2 tCO2e | Carbon-related
-      row: Textiles and apparel | 1 | 480,000,000 | 1752.000 | Yes
+      row: Textiles and apparel | 1 | 480,000,000 | 1,752.000 | Yes
       row: Rubber and plastics | 1 | 40,000,000 | 36.000 | Yes
       row: Industry not recorded | 1 | 200,000,000 | 19.620 | —
     figure: Outstanding to carbon-related industries = 520,000,000 LKR
@@ -149,7 +149,7 @@ ANNEX A [annexFinanced] Financed emissions — scope, coverage and the position 
     h2: Coverage of the book
     figure: Share of total loans and investments assessed = 5.14%
     body: Coverage is the assessed outstanding amount of the classes in the book’s currency over the reporting entity’s total loans and investments for the year, 5.14% (DCL p.124).
-    caption: Excluded from the combined share, in their own currency: Sovereign debt (2,000,000 USD). Nothing here converts a currency at a rate the system does not hold.
+    caption: Excluded from the combined share, in their own currency: Sovereign debt (USD 2,000,000 (2 mn)). Nothing here converts a currency at a rate the system does not hold.
     table: Asset class not reported | Section | Reason | Stated by
       row: Listed equity and corporate bonds | §5.1 | No exposures are recorded for the reporting year. | This system
       row: Project finance | §5.3 | No exposures are recorded for the reporting year. | This system
@@ -159,13 +159,13 @@ ANNEX A [annexFinanced] Financed emissions — scope, coverage and the position 
       row: Securitizations and structured products | §5.8 | No methodology is built for this class in this system yet. | This system
       row: Sub-sovereign debt | §5.10 | No methodology is built for this class in this system yet. | This system
     h2: Absolute financed emissions
-    figure: Financed emissions across the classes reported — the headline = 2004.520 tCO2e
-    figure: Financed scope 3 across the classes — a separate line = 3120.000 tCO2e
+    figure: Financed emissions across the classes reported — the headline = 2,004.520 tCO2e
+    figure: Financed scope 3 across the classes — a separate line = 3,120.000 tCO2e
     table: Asset class | Headline | tCO2e | Scope 3 tCO2e | Data quality
-      row: Business loans and unlisted equity (§5.2) | Financed scope 1 and 2 | 1788.000 | 3120.000 | 2.23
+      row: Business loans and unlisted equity (§5.2) | Financed scope 1 and 2 | 1,788.000 | 3,120.000 | 2.23
       row: Commercial real estate (§5.4) | Financed scope 1 and 2 | 19.620 | — | 4
       row: Sovereign debt (§5.9) | Financed scope 1, excluding LULUCF | 196.900 | — | 2
-      row: Total across 3 class(es) | Sum of the headlines above | 2004.520 | 3120.000 | per class
+      row: Total across 3 class(es) | Sum of the headlines above | 2,004.520 | 3,120.000 | per class
     caption: The headline sums each recorded class on the boundary its section reports: §5.1 to §5.5 contribute financed scope 1 and 2 on their own attribution, §5.9 contributes financed scope 1 excluding LULUCF. Scope 3 is summed apart and never into it; scope 1 including LULUCF is never added to the excluding figure.
     h2: Emission intensity
     figure: Economic emission intensity across the classes in the book’s currency = 2.51 tCO2e per million LKR
@@ -256,7 +256,7 @@ ANNEX D [annexTable] Annex 10.2 — scope 3 Category 15 by asset class
     body: The template PCAF Annex 10.2 gives (pp.199–200): each asset class disaggregated — by sector for business loans, by sovereign for sovereign debt — with outstanding covered, the headline, scope 3 where the class reports it, and the weighted score per row.
     h2: Business loans and unlisted equity (§5.2), by sector
     table: Sector | Exposures | Outstanding | Scope 1+2 tCO2e | Scope 3 tCO2e | DQ
-      row: Textiles | 1 | 480,000,000 | 1752.000 | 3120.000 | 2
+      row: Textiles | 1 | 480,000,000 | 1,752.000 | 3,120.000 | 2
       row: unclassified | 1 | 40,000,000 | 36.000 | — | 5
     h2: Sovereign debt (§5.9), by sovereign
     table: Sovereign | Holdings | Outstanding USD | Scope 1 excl. LULUCF tCO2e
@@ -265,7 +265,7 @@ ANNEX D [annexTable] Annex 10.2 — scope 3 Category 15 by asset class
 ANNEX E [annexRegister] Exposure register across classes — the audit trail
     body: One row per exposure of every class reported, from the same stored projections the totals were rolled up from. A verifier samples from this table; every identifier resolves to the stored record, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
     table: Class | Exposure | Counterparty | Sector / country | Outstanding | Ccy | AF | Opt | DQ | Headline | Scope 3 | Checks
-      row: §5.2 | <id> | Lanka Apparel | Textiles | 480,000,000 | — | 0.1200 | 1b | 2 | 1752.000 | 3120.000 | clean
+      row: §5.2 | <id> | Lanka Apparel | Textiles | 480,000,000 | — | 0.1200 | 1b | 2 | 1,752.000 | 3,120.000 | clean
       row: §5.2 | <id> | Ratnapura Rubber | — | 40,000,000 | — | — | 3b | 5 | 36.000 | — | accepted_with_findings (2)
       row: §5.4 | <id> | Colombo Office Tower | office | 200,000,000 | — | 0.2500 | 2b | 4 | 19.620 | — | clean
       row: §5.9 | <id> | Singapore | SG | 1,000,000 | USD | 0.0000 | 1b | 2 | 105.990 | — | accepted_with_findings (3)

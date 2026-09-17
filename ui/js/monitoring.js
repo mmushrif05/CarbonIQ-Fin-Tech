@@ -30,7 +30,7 @@ const Monitoring = (() => {
 
   // ── Helpers ───────────────────────────────────────────────
   function $$(id) { return document.getElementById(id); }
-  function _fmtM(n) { return n >= 1e9 ? `$${(n/1e9).toFixed(2)}B` : `$${(n/1e6).toFixed(1)}M`; }
+  function _fmtM(n) { return window.CARBONIQ_money.moneyShort(n, 'USD'); }
   function _fmtN(n) { return Number(n).toLocaleString('en-US'); }
 
   // ── Fetch project list ────────────────────────────────────

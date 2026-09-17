@@ -358,7 +358,7 @@ const NewProject = (() => {
           <h4>PCAF Attribution</h4>
           <div class="review-row"><span>Attribution Factor</span><strong>${attribution.toFixed(3)}</strong></div>
           <div class="review-row"><span>Financed Emissions</span><strong>${_fmtN(financed)} tCO2e</strong></div>
-          <div class="review-row"><span>Outstanding</span><strong>$${_fmtN(outstanding/1e6)}M</strong></div>
+          <div class="review-row"><span>Outstanding</span><strong>${window.CARBONIQ_money.moneyShort(outstanding, 'USD')}</strong></div>
         </div>
         <div class="review-section">
           <h4>Taxonomy Quick-Check</h4>

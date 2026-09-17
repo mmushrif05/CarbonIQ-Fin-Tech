@@ -29,7 +29,7 @@ SECTION 3 [coverage] Scope and coverage
     body: Asset class: Business loans and unlisted equity (§5.2). Reporting year: 2024. The position is taken at the fiscal year-end, which is how Part A accounts for financed emissions (Chapter 4).
     h2: Coverage of the book
     figure: Share of total loans and investments assessed = 3.71%
-      note: 520,000,000 of 14,000,000,000 LKR, book total stated by Group CFO
+      note: LKR 520,000,000 (520 mn) of LKR 14,000,000,000 (14 bn), book total stated by Group CFO
     body: Coverage is the assessed outstanding amount over the reporting entity’s total loans and investments for the year, 3.71%. A total drawn from part of the book means something different from one drawn from all of it, so the percentage is stated beside every figure it qualifies (p.124).
     body: 2 exposure(s) are recorded for the year.
 
@@ -46,15 +46,15 @@ SECTION 4 [gases] Gases and units
     body: Biogenic carbon, where a borrower reports it, is stated separately from the fossil inventory and never netted against it.
 
 SECTION 5 [absolute] Absolute emissions
-    figure: Financed scope 1 and 2 across the class = 1788.000 tCO2e
+    figure: Financed scope 1 and 2 across the class = 1,788.000 tCO2e
       score: Weighted data quality score: 2.23 (Box 6.1-6, p.168). 1 is the highest quality, 5 the lowest.
-    figure: Financed scope 3 — a separate line = 3120.000 tCO2e
+    figure: Financed scope 3 — a separate line = 3,120.000 tCO2e
       note: 1 exposure(s) carried a scope 3 figure; 1 did not and said why.
     table [3 cols] head: Line | tCO2e | Note
-      row: Financed scope 1 | 1364.000 | The attributed share of borrower direct emissions; 2 exposure(s) carried it.
+      row: Financed scope 1 | 1,364.000 | The attributed share of borrower direct emissions; 2 exposure(s) carried it.
       row: Financed scope 2 | 424.000 | The attributed share of borrower purchased energy; 2 exposure(s) carried it.
-      row: Financed scope 1 and 2 | 1788.000 | Scope 3 Category 15 in full — the two lines above, combined.
-      row: Financed scope 3 | 3120.000 | A separate line; never summed with scope 1 and 2.
+      row: Financed scope 1 and 2 | 1,788.000 | Scope 3 Category 15 in full — the two lines above, combined.
+      row: Financed scope 3 | 3,120.000 | A separate line; never summed with scope 1 and 2.
       row: Removals | — | Reported apart from the inventory (Part A, p.126).
       row: Carbon credits generated | — | Apart.
       row: Carbon credits retired | — | Apart.
@@ -170,13 +170,13 @@ ANNEX A [annexFactors] Factor set and governed baselines
 ANNEX B [annexTable] Annex 10.2 — scope 3 Category 15 by sector
     body: The template PCAF Annex 10.2 gives (pp.199–200): the asset class disaggregated by sector, with outstanding covered, scope 1 and 2, scope 3, the economic intensity and the weighted score per row. Removals and credits are in a separate table by rule.
     table [7 cols] head: Sector | Exposures | Outstanding LKR | Scope 1+2 tCO2e | Scope 3 tCO2e | tCO2e / M | DQ
-      row: Textiles | 1 | 480,000,000 | 1752.000 | 3120.000 | 3.65 | 2
+      row: Textiles | 1 | 480,000,000 | 1,752.000 | 3,120.000 | 3.65 | 2
       row: unclassified | 1 | 40,000,000 | 36.000 | — | 0.9 | 5
 
 ANNEX C [annexRegister] Exposure register — the audit trail
     body: One row per exposure in the reporting year, from the same stored projection the totals above were rolled up from. A verifier samples from this table; every identifier resolves to the stored exposure, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
     table [10 cols] head: Exposure | Borrower | Sector | Outstanding LKR | AF | Opt | DQ | Scope 1+2 | Scope 3 | Checks
-      row: <exposure-id> | Lanka Apparel | Textiles | 480,000,000 | 0.1200 | 1b | 2 | 1752.000 | 3120.000 | clean
+      row: <exposure-id> | Lanka Apparel | Textiles | 480,000,000 | 0.1200 | 1b | 2 | 1,752.000 | 3,120.000 | clean
       row: <exposure-id> | Ratnapura Rubber | — | 40,000,000 | — | 3b | 5 | 36.000 | — | accepted_with_findings (2)
     caption: 2 row(s). Each identifier resolves to the stored exposure, which holds the input the entity keyed, the result the engine computed and the provenance trace behind every figure.
 

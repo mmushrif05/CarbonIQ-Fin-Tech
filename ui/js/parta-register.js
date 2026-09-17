@@ -30,6 +30,8 @@ const PartARegisterPage = (() => {
   const $ = id => document.getElementById(id);
   const fmt = (n, d = 0) => (n === null || n === undefined || !Number.isFinite(Number(n))) ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  /* An amount with its code and its scale — `LKR 250,000,000 (250 mn)` — from the shared formatter. */
+  const money = (n, ccy) => (window.CARBONIQ_money ? window.CARBONIQ_money.annotated(n, ccy || '') : `${ccy || ''} ${fmt(n, 0)}`.trim());
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
@@ -337,8 +339,8 @@ const PartARegisterPage = (() => {
     } else {
       setHtml('pr-book', `
         <dl class="pr-kv">
-          <dt>Total loans and investments</dt><dd>${esc(c.currency || currency)} ${fmt(c.totalLoansAndInvestments, 0)}</dd>
-          <dt>Assessed outstanding</dt><dd>${esc(currency)} ${fmt(p.total.outstanding, 0)}</dd>
+          <dt>Total loans and investments</dt><dd>${esc(money(c.totalLoansAndInvestments, c.currency || currency))}</dd>
+          <dt>Assessed outstanding</dt><dd>${esc(money(p.total.outstanding, currency))}</dd>
           <dt>Coverage</dt><dd>${(c.share * 100).toFixed(2)}%</dd>
           <dt>Basis</dt><dd>Declared${c.statedBy ? ` by ${esc(c.statedBy)}` : ''}</dd>
         </dl>`);
@@ -508,8 +510,8 @@ const PartARegisterPage = (() => {
           <h5 class="partc-subhead">Attribution</h5>
           ${x.attribution ? `<p class="pr-eq">${esc(x.attribution.equation)}</p>
             <dl class="pr-kv"><dt>Factor</dt><dd>${x.attribution.value}</dd>
-            <dt>Outstanding</dt><dd>${fmt(x.exposure.outstanding.value, 0)}</dd>
-            ${x.denominator ? `<dt>Company value</dt><dd>${fmt(x.denominator.value, 0)} <span class="partc-hint">${esc(x.denominator.equation)}</span></dd>` : ''}</dl>
+            <dt>Outstanding</dt><dd>${esc(money(x.exposure.outstanding.value, x.exposure.outstanding.currency))}</dd>
+            ${x.denominator ? `<dt>Company value</dt><dd>${esc(money(x.denominator.value, x.exposure.outstanding.currency))} <span class="partc-hint">${esc(x.denominator.equation)}</span></dd>` : ''}</dl>
             ${x.denominator && x.denominator.assumptions && x.denominator.assumptions.length ? `<ul class="partc-hint">${x.denominator.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}`
             : '<p class="partc-hint">No attribution factor: the figure rests on a sector-average option and is a rough estimate of this institution\'s share.</p>'}
           ${x.factorRelease ? `<h5 class="partc-subhead">Factor set</h5>
@@ -970,11 +972,39 @@ const PartARegisterPage = (() => {
 
   function fill(i) {
     set('pr-f-ref', i.identifiers && i.identifiers.accountNumber);
-    if (isProperty()) return fillProperty(i);
-    if (cls === 'motor-vehicle-loans') return fillVehicle(i);
-    if (cls === 'project-finance') return fillProject(i);
-    if (cls === 'listed-equity-corporate-bonds') return fillListed(i);
-    return fillBusinessLoan(i);
+    if (isProperty()) fillProperty(i);
+    else if (cls === 'motor-vehicle-loans') fillVehicle(i);
+    else if (cls === 'project-finance') fillProject(i);
+    else if (cls === 'listed-equity-corporate-bonds') fillListed(i);
+    else fillBusinessLoan(i);
+    refreshMoneyHints();
+  }
+
+  /* A money field prints what was keyed with its separators and its scale
+     beside it — 250,000,000 reads as LKR 250 mn — through the shared
+     formatter (`ui/js/format.js`), so no scale and no symbol lives here.
+     The currency is the one the same form block names; the book total's is
+     its own. */
+  const CURRENCY_OF = [['pr-f-re-', 'pr-f-re-currency'], ['pr-f-mv-', 'pr-f-mv-currency'], ['pr-f-pf-', 'pr-f-pf-currency'], ['pr-f-le-', 'pr-f-le-currency'], ['pr-book-', 'pr-book-currency']];
+  function currencyFor(input) {
+    const hit = CURRENCY_OF.find(([prefix]) => input.id.startsWith(prefix));
+    return str(hit ? hit[1] : 'pr-f-currency') || '';
+  }
+  function moneyHint(input) {
+    let hint = input.nextElementSibling;
+    if (!hint || !hint.classList.contains('pr-money-hint')) {
+      hint = document.createElement('span'); hint.className = 'pr-money-hint';
+      input.insertAdjacentElement('afterend', hint);
+    }
+    const M = window.CARBONIQ_money;
+    hint.textContent = input.value === '' || !M ? '' : M.annotated(input.value, currencyFor(input));
+  }
+  function refreshMoneyHints() { document.querySelectorAll('.parta-register [data-money]').forEach(moneyHint); }
+  function wireMoneyHints() {
+    document.querySelectorAll('.parta-register [data-money]').forEach(i => i.addEventListener('input', () => moneyHint(i)));
+    for (const [, id] of CURRENCY_OF) on(id, 'input', refreshMoneyHints);
+    on('pr-f-currency', 'input', refreshMoneyHints);
+    for (const id of ['pr-form', 'pr-book-form']) on(id, 'reset', () => setTimeout(refreshMoneyHints, 0));
   }
 
   function fillBusinessLoan(i) {
@@ -1079,6 +1109,7 @@ const PartARegisterPage = (() => {
     on('pr-detail-recompute', 'click', recompute);
     on('pr-detail-remove', 'click', remove);
     on('pr-detail-report', 'click', exposureReport);
+    wireMoneyHints();
     on('pr-pdf', 'click', () => disclosure('pdf'));
     on('pr-docx', 'click', () => disclosure('docx'));
     for (const id of ['pr-f-listed', 'pr-f-instrument', 'pr-f-s1', 'pr-f-s2', 'pr-f-equity', 'pr-f-debt', 'pr-f-mcap']) {

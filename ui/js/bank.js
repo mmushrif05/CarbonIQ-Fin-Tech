@@ -18,6 +18,10 @@ const BankPage = (() => {
   const $ = id => document.getElementById(id);
   const fmt = (n, d = 0) => (n === null || n === undefined || !Number.isFinite(Number(n))) ? '—'
     : Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  /* An amount with its code and its scale — `LKR 250,000,000 (250 mn)`, or `LKR 250 mn` where a tile
+     cannot carry the full figure — from the shared formatter; never a symbol. */
+  const money = (n, ccy) => (window.CARBONIQ_money ? window.CARBONIQ_money.annotated(n, ccy || '') : `${ccy || ''} ${fmt(n, 0)}`.trim());
+  const moneyShort = (n, ccy) => (window.CARBONIQ_money ? window.CARBONIQ_money.moneyShort(n, ccy || '') : `${ccy || ''} ${fmt(n, 0)}`.trim());
   const esc = s => String(s ?? '').replace(/[&<>"]/g, c =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const say = (id, t) => { const el = $(id); if (el) el.textContent = t; };
@@ -194,7 +198,7 @@ const BankPage = (() => {
       if ($('bk-coverage-bar')) $('bk-coverage-bar').style.width = '0%';
     } else {
       say('bk-coverage', `${Number(c.sharePct).toFixed(2)}%`);
-      say('bk-coverage-unit', `of ${esc(c.currency)} ${fmt(c.totalLoansAndInvestments, 0)} total loans and investments — Disclosure Checklist Part A, p.124`);
+      say('bk-coverage-unit', `of ${money(c.totalLoansAndInvestments, c.currency)} total loans and investments — Disclosure Checklist Part A, p.124`);
       if ($('bk-coverage-bar')) $('bk-coverage-bar').style.width = `${Math.min(100, Math.max(0, Number(c.sharePct)))}%`;
     }
 
@@ -342,7 +346,7 @@ const BankPage = (() => {
         <span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)} <span class="bank-figure-unit">tCO₂e</span></span>
         <div class="bank-tile-row"><span>Data quality</span><b>${dqBadge(dq.score)}</b></div>
         <div class="bank-tile-row"><span>Exposures</span><b>${fmt(c.exposures, 0)}</b></div>
-        <div class="bank-tile-row"><span>Outstanding</span><b>${esc(c.currency || '')} ${fmt(c.outstanding, 0)}</b></div>
+        <div class="bank-tile-row"><span>Outstanding</span><b title="${esc(money(c.outstanding, c.currency))}">${esc(moneyShort(c.outstanding, c.currency))}</b></div>
         <div class="bank-tile-row"><span>Scope 3, apart</span><b>${c.scope3 && c.scope3.value !== null && c.scope3.value !== undefined ? fmt(c.scope3.value, 2) : '—'}</b></div>
         <div class="bank-tile-row"><span>Coverage</span><b>${c.coveragePct === null || c.coveragePct === undefined ? '—' : `${Number(c.coveragePct).toFixed(2)}%`}</b></div>
         <div class="bank-tile-row"><span>Approved</span><b>${c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : '—'}</b></div>
@@ -558,8 +562,8 @@ const BankPage = (() => {
     if (kind === 'coverage') {
       const cov = p.coverage || {};
       parts.push(`<h5>What the figure is</h5>${kv([
-        ['Assessed outstanding', cov.assessedOutstanding !== undefined && cov.assessedOutstanding !== null ? `${esc(cov.currency || '')} ${fmt(cov.assessedOutstanding, 0)}` : null],
-        ['Total loans and investments', cov.totalLoansAndInvestments !== undefined && cov.totalLoansAndInvestments !== null ? `${esc(cov.currency || '')} ${fmt(cov.totalLoansAndInvestments, 0)}${cov.statedBy ? ` — stated by ${esc(cov.statedBy)}` : ''}` : null],
+        ['Assessed outstanding', cov.assessedOutstanding !== undefined && cov.assessedOutstanding !== null ? esc(money(cov.assessedOutstanding, cov.currency)) : null],
+        ['Total loans and investments', cov.totalLoansAndInvestments !== undefined && cov.totalLoansAndInvestments !== null ? `${esc(money(cov.totalLoansAndInvestments, cov.currency))}${cov.statedBy ? ` — stated by ${esc(cov.statedBy)}` : ''}` : null],
         ['Share', cov.sharePct !== undefined && cov.sharePct !== null ? `${Number(cov.sharePct).toFixed(2)}%` : esc(cov.remedy || 'not stated')],
         ['Clause', 'Disclosure Checklist Part A, p.124'], ['Note', esc(cov.note || '')],
         ['Excluded from the share', recorded.filter(c => !c.combinable).map(c => `${esc(short(c))} (${esc(c.currency || '')})`).join(', ') || null],
@@ -604,7 +608,7 @@ const BankPage = (() => {
           ['Headline', `${fmt(c.headline && c.headline.value, 2)} tCO₂e — ${esc(c.headline && c.headline.label || '')}`], ['Boundary', esc(c.headline && c.headline.basis || '')],
           ['Data quality', `${dqBadge(dq.score)} on ${esc(dq.table || 'its own table')}, weighted by ${esc(dq.weighting || 'outstanding amount')}`],
           ['Options used', (c.optionDistribution || []).map(o => `Option ${esc(o.option)} → score ${esc(o.score)} on ${o.exposures} exposure(s)`).join('<br>') || null],
-          ['Exposures', `${fmt(c.exposures, 0)} · ${esc(c.currency || '')} ${fmt(c.outstanding, 0)} outstanding`],
+          ['Exposures', `${fmt(c.exposures, 0)} · ${esc(money(c.outstanding, c.currency))} outstanding`],
           ['Approved', c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : 'no review lifecycle on this register yet'],
         ])}${release ? `<h5>The factor set this class rests on</h5>${releaseRow(release)}` : ''}`);
       }

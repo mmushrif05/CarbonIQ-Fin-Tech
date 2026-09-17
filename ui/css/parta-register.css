@@ -79,3 +79,8 @@
 .parta-register .pr-kv dt { color: var(--p-label-2); min-width: 0; overflow-wrap: anywhere; }
 .parta-register .pr-kv dd { margin: 0; font-variant-numeric: tabular-nums; min-width: 0; overflow-wrap: anywhere; }
 .parta-register .pr-eq { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--p-label-2); overflow-wrap: anywhere; }
+
+/* A money field prints what was keyed with its separators and its scale
+   beside it — 250,000,000 reads as LKR 250 mn — from the shared formatter. */
+.parta-register .pr-money-hint { font-size: 12px; color: var(--p-label-2); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+.parta-register .pr-money-hint:empty { display: none; }

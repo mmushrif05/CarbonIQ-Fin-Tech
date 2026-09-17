@@ -26,9 +26,12 @@ const { b, keep } = require('../../../../platform/reporting/report-standard/bloc
 const { entitySection } = require('../common-sections');
 const { buildS2Sections } = require('./s2-sections');
 
+const { fixed, moneyAnnotated } = require('../../../../shared/money');
+
 const N = n => (n === null || n === undefined) ? '—'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
-const T = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(3);
+/* Tonnes at three decimals with their separators — `12,038.240`. */
+const T = n => fixed(n, 3);
 const score = n => (n === null || n === undefined) ? 'not scored' : String(n);
 const STATUS = { recorded: 'Reported', 'not-recorded': 'Not reported — nothing recorded', 'engine-only': 'Not reported — no register yet', 'not-built': 'Not reported — not built' };
 
@@ -130,11 +133,11 @@ function coverageBlocks(f) {
     b.figure({
       label: 'Share of total loans and investments assessed', value: c.sharePct === null || c.sharePct === undefined ? '—' : `${Number(c.sharePct).toFixed(2)}%`, unit: '',
       note: c.totalLoansAndInvestments
-        ? `${N(c.assessedOutstanding)} of ${N(c.totalLoansAndInvestments)} ${c.currency || ''}${c.statedBy ? `, book total stated by ${c.statedBy}` : ''}`
+        ? `${moneyAnnotated(c.assessedOutstanding, c.currency)} of ${moneyAnnotated(c.totalLoansAndInvestments, c.currency)}${c.statedBy ? `, book total stated by ${c.statedBy}` : ''}`
         : 'Book total not yet stated',
     }),
     b.body(f.coverageStatement),
-    c.excluded && c.excluded.length ? b.caption(`Excluded from the combined share, in their own currency: ${c.excluded.map(x => `${x.label} (${N(x.outstanding)} ${x.currency})`).join('; ')}. `
+    c.excluded && c.excluded.length ? b.caption(`Excluded from the combined share, in their own currency: ${c.excluded.map(x => `${x.label} (${moneyAnnotated(x.outstanding, x.currency)})`).join('; ')}. `
       + 'Nothing here converts a currency at a rate the system does not hold.') : null,
     f.classes.some(x => x.status !== 'recorded') ? b.table({
       head: ['Asset class not reported', 'Section', 'Reason', 'Stated by'],
