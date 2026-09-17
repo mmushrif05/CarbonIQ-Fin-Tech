@@ -46,6 +46,7 @@
     "typecheck": "tsc -p jsconfig.json && tsc -p ui/jsconfig.json && tsc -p tests/jsconfig.json",
     "build:ui": "node scripts/build-ui.js",
     "test:e2e": "npm run build:ui && playwright test",
+    "rehearse": "node scripts/rehearse-runbook.js",
     "pretypecheck": "node scripts/build-info.js",
     "user:create": "node scripts/manage-users.js create",
     "user:list": "node scripts/manage-users.js list",

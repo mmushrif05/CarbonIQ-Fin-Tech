@@ -452,16 +452,23 @@ const BankPage = (() => {
     setHtml('bk-baselines', `<dl class="bk-kv">${rows.map(([key, r]) => `
       <dt>${esc(r.label || key)}</dt>
       <dd>${esc(summary(r))}<span class="bk-pill${r.scope && r.scope !== 'seed' ? ' bk-pill-released' : ''}">${esc(r.scope === 'seed' ? 'shipped, provisional' : `${r.scope || ''} baseline${r.version ? ` v${r.version}` : ''}`)}</span></dd>`).join('')}</dl>
-      ${absent.length ? `<p class="partc-hint">Absent, with what each needs: ${absent.map(([key, r]) => `${esc(r.label || key)}${r.needs ? ` — ${esc(r.needs)}` : ''}`).join('; ')}.</p>` : ''}
+      ${absent.length ? `<p class="partc-hint">Not in force, and nothing assumed in their place: ${absent.map(([key, r]) => esc(r.label || key)).join(' · ')}. Each needs a released baseline for this country.</p>` : ''}
       <p class="partc-hint">Each figure resolves from the master baseline table — global, country, then this bank's own — and a released baseline replaces the shipped set entirely.</p>`);
   }
 
+  /* One line per baseline. A single figure prints as itself; a banded pair
+     prints both bands; a table — sector bands, fuel factors, building types,
+     vehicle classes — prints how many rows it holds, because seventy sector
+     bands in a half-width column is a page of scrolling and not a figure. */
   function summary(r) {
     const v = r.values || {};
     if (v.value !== undefined) return `${v.value} ${r.unit || ''}`.trim();
     const keys = Object.keys(v).filter(k => Number.isFinite(v[k]));
     if (!keys.length) return r.unit || '';
-    return `${keys.slice(0, 4).map(k => `${k.replace(/_/g, ' ')} ${v[k]}`).join(' · ')}${keys.length > 4 ? ` · +${keys.length - 4} more` : ''} ${r.unit ? `(${r.unit})` : ''}`.trim();
+    if (r.shape === 'bands' || r.shape === 'margins' || keys.length <= 3) {
+      return `${keys.map(k => `${k.replace(/_/g, ' ')} ${v[k]}`).join(' · ')} ${r.unit ? `(${r.unit})` : ''}`.trim();
+    }
+    return `${keys.length} rows ${r.unit ? `(${r.unit})` : ''}`.trim();
   }
 
   function renderReadiness(p) {

@@ -18,18 +18,36 @@ deployed"* can be told apart in one request.
    Your password lives in the database, not in that variable, so deleting it
    does not affect your sign-in.
 2. **Load the bank's book once.** Bank Overview → type the bank's legal name
-   beside *Load starter book* → press it. Fifteen illustrative exposures across
-   §5.1–§5.6 and two sovereign holdings are recorded for FY2025, computed by
-   their own engines on the way in; the sidebar group takes the bank's name.
+   beside *Load starter book* → press it → confirm the browser's question.
+   Fifteen illustrative exposures across §5.1–§5.6 and two sovereign holdings
+   are recorded for FY2025, computed by their own engines on the way in; the
+   year selector moves to 2025 and the sidebar group takes the bank's name.
    A second press is refused (`409 STARTER_NOT_EMPTY`) — it never overwrites a
    book somebody has begun.
-3. **Record the entity's own facts.** Financed Emissions → the entity form:
-   consolidation approach, fiscal year-end, GWP basis, who prepared and who
-   approved. Each one you record leaves the *Before filing* list.
+3. **Record the entity's own facts.** Financed Emissions → the entity form.
+   The starter book has already stated the consolidation approach, the fiscal
+   year-end (`MM-DD`), the GWP basis and a boundary note to confirm; what
+   *Before filing* still asks for is who prepared and who approved. Record
+   them and the item leaves the list. Two items stay by design: *Approve N
+   exposures* until every row is approved, and the sovereign holdings being
+   in USD against an LKR book total — their outstanding is excluded from the
+   coverage share rather than converted at a rate the system does not hold.
 4. **Approve a few exposures** from the Lending Book (below), so the approval
    ring and the *Approved by the bank* tile show movement rather than zero.
 5. **Download the disclosure PDF once**, so the first render on the day is not
    the first render on the site.
+6. **Or let the runbook drive itself.** `npm run rehearse` performs steps 2–5
+   and the whole walkthrough below against the site, in a browser, and leaves
+   a full-page screenshot of every step and a report beside them:
+
+   ```bash
+   BASE=https://carboniqfintech.netlify.app EMAIL=you@bank.lk PASSWORD=… \
+   BANK="Legal Name PLC" npm run rehearse
+   ```
+
+   It writes what the runbook writes — the starter book, two approvals, one
+   reopen, one recorded property — so run it against the organisation you
+   will demonstrate, once, before the day.
 
 ## The walkthrough
 
@@ -50,6 +68,10 @@ class on every panel.
 
 **Say:** *"Every number here is one the engine returned. The screen draws;
 it does not compute."*
+
+The sign-in screen also offers the sample book to any visitor by address.
+That is the public preview; set `PREVIEW_ACCESS=off` on Netlify if the room
+should not see it.
 
 ### 2 · A class in focus
 
@@ -77,7 +99,9 @@ the option beside it, its checks and where it stands in review.
   exposure's own trail. The trail prints on the detail.
 - **Record an exposure.** The form for the class. For a property, key the
   floor area in the unit the valuation states — square feet or square metres —
-  and the trace shows the conversion the engine ran.
+  and the trace shows the conversion the engine ran. The as-of date defaults
+  to the selected reporting year's 31 December; a new exposure lands in the
+  year on screen.
 
 **Say:** *"A figure the bank has approved cannot move underneath the
 disclosure. Reopening it is a recorded decision, not a click."*

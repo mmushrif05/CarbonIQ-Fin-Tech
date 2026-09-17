@@ -36,6 +36,7 @@ const PartARegisterPage = (() => {
   const setHtml = (id, h) => { const el = $(id); if (el) el.innerHTML = h; };
   const on = (id, ev, fn) => { const el = $(id); if (el) el.addEventListener(ev, fn); };
   const show = (id, yes) => { const el = $(id); if (el) el.hidden = !yes; };
+  const when = iso => (iso ? new Date(iso).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '');
 
   const DEFAULT_CLASS = 'business-loans-unlisted-equity';
   let currency = 'LKR';
@@ -182,10 +183,26 @@ const PartARegisterPage = (() => {
     year = $('pr-year').value;
   }
 
+  /* The year-end balance is the reporting year's (§5.2 fn 71), so the as-of
+     fields default to that year's 31 December and follow the year selector —
+     the calendar year's would put a FY2025 exposure on a 2026 date. A date
+     somebody typed is left alone. */
+  const ASOF_FIELDS = ['pr-f-asof', 'pr-f-re-asof', 'pr-f-le-asof', 'pr-f-mv-asof'];
+  let asOfDefault = '';
+  function defaultAsOf() {
+    const next = year ? `${year}-12-31` : '';
+    for (const id of ASOF_FIELDS) {
+      const el = $(id);
+      if (el && (!el.value || el.value === asOfDefault)) el.value = next;
+    }
+    asOfDefault = next;
+  }
+
   // ── the position ───────────────────────────────────────────
 
   async function load() {
     year = $('pr-year').value;
+    defaultAsOf();
     say('pr-status', 'Loading…');
     let position = null;
     try {
@@ -419,9 +436,9 @@ const PartARegisterPage = (() => {
               <span class="partc-hint">${esc(f.reference)}</span>
             </div>
           </div>`).join('')}
-      ${e.approval && e.approval.approvedAt ? `<p class="partc-hint">Approved by ${esc(e.approval.approvedBy || 'the reporting entity')} at ${esc(e.approval.approvedAt)} — frozen until reopened with a reason.</p>` : ''}
+      ${e.approval && e.approval.approvedAt ? `<p class="partc-hint">Approved by ${esc(e.approval.approvedBy || 'the reporting entity')} on ${esc(when(e.approval.approvedAt))} — frozen until reopened with a reason.</p>` : ''}
       ${e.approval && e.approval.history && e.approval.history.length ? `<p class="partc-hint">Review trail: ${e.approval.history.map(m => `${esc(STATE_LABEL[m.from] || m.from)} → ${esc(STATE_LABEL[m.to] || m.to)} (${esc(m.by || 'system')}${m.reason ? `: ${esc(m.reason)}` : ''})`).join('; ')}.</p>` : ''}
-      <p class="partc-hint">Computed ${esc(e.computedAt)} · ${esc(e.standard)}</p>`);
+      <p class="partc-hint">Computed ${esc(when(e.computedAt))} · ${esc(e.standard)}</p>`);
     for (const el of document.querySelectorAll('#pr-detail [data-writes]')) el.hidden = preview();
     applyState(e);
   }
@@ -923,9 +940,7 @@ const PartARegisterPage = (() => {
       on(id, 'change', applyDenominatorMode);
       on(id, 'input', applyDenominatorMode);
     }
-    for (const id of ['pr-f-asof', 'pr-f-re-asof', 'pr-f-le-asof', 'pr-f-mv-asof']) {
-      if ($(id) && !$(id).value) $(id).value = `${new Date().getFullYear()}-12-31`;
-    }
+    defaultAsOf();
     /* A preview visitor is offered no write control. For everyone else the
        markup's own state stands — the record form opens on the button, not on
        load; `el.hidden = preview()` alone had been opening it for every
