@@ -196,10 +196,10 @@ const BankPage = (() => {
     const charts = typeof Charts !== 'undefined';
     setHtml('bk-headline-chart', charts && rec.length ? Charts.hbars(rec.map(c => ({
       key: c.assetClass, label: short(c), value: val(c.headline && c.headline.value), color: CLASS_COLOR(c.assetClass),
-    })), { label: 'Financed scope 1 and 2 by asset class, tCO2e', decimals: 0, compact: true }) : '');
+    })), { label: 'Financed scope 1 and 2 by asset class, tCO2e', decimals: 0, compact: true, unit: 'tCO₂e' }) : '');
     setHtml('bk-s3-chart', charts && rec.length ? Charts.hbars(rec.map(c => ({
       key: c.assetClass, label: short(c), value: val(c.scope3 && c.scope3.value), color: 'var(--cls-scope3, #a3a3a3)',
-    })), { label: 'Financed scope 3 by asset class, tCO2e, apart', decimals: 0, compact: true }) : '');
+    })), { label: 'Financed scope 3 by asset class, tCO2e, apart', decimals: 0, compact: true, unit: 'tCO₂e' }) : '');
 
     const c = p.coverage || {};
     if (c.sharePct === null || c.sharePct === undefined) {
@@ -288,14 +288,15 @@ const BankPage = (() => {
         ],
       };
     });
-    setHtml('bk-chart-climate', Charts.hbars(rows, { label: 'Outstanding vulnerable to transition risk, to physical risk, and aligned with opportunities', decimals: 0 })
-      + Charts.legend([
+    setHtml('bk-chart-climate', Charts.figure(
+      Charts.hbars(rows, { label: 'Outstanding vulnerable to transition risk, to physical risk, and aligned with opportunities', decimals: 0, unit: ccy, valueLabel: 'Outstanding assessed' }),
+      rows, { title: `Outstanding, ${ccy}`.trim(), unit: ccy || 'Amount', legend: [
         { label: 'Vulnerable to transition risk', color: S2_COLOR.transitionRisk },
         { label: 'Vulnerable to physical risk', color: S2_COLOR.physicalRisk },
         { label: 'Aligned with opportunities', color: S2_COLOR.opportunities },
         { label: 'Assessed, neither', color: 'var(--s2-assessed, #94a3b8)' },
         { label: 'Not yet assessed', color: 'var(--s2-unassessed, #d4d4d8)' },
-      ]));
+      ] }));
     setHtml('bk-climate', `<div class="bk-scroll"><table class="partc-table">
       <thead><tr><th>Measure</th><th>Clause</th><th>Amount</th><th>Assessed, neither</th><th>Not yet assessed</th><th>Share of the amount assessed</th></tr></thead>
       <tbody>${S2_BANDS.map(b => {
@@ -319,14 +320,16 @@ const BankPage = (() => {
       setHtml('bk-industry', '<p class="partc-hint">No exposure carries a sector yet.</p>');
       return;
     }
-    setHtml('bk-chart-industry', Charts.hbars(ind.rows.map(r => ({
+    const industryRows = ind.rows.map(r => ({
       key: r.sectorKey || '', label: r.sector || 'Not recorded', value: val(r.outstanding),
       color: r.carbonRelated ? 'var(--s2-carbon, #b45309)' : 'var(--s2-other, #64748b)',
-    })), { label: 'Gross exposure by industry', decimals: 0 })
-      + Charts.legend([
+    }));
+    setHtml('bk-chart-industry', Charts.figure(
+      Charts.hbars(industryRows, { label: 'Gross exposure by industry', decimals: 0, unit: ccy, valueLabel: 'Gross exposure' }),
+      industryRows, { title: `Gross exposure, ${ccy}`.trim(), unit: ccy || 'Amount', head: 'Industry', legend: [
         { label: 'Carbon-related industry', color: 'var(--s2-carbon, #b45309)' },
         { label: 'Every other industry', color: 'var(--s2-other, #64748b)' },
-      ]));
+      ] }));
     const cr = ind.carbonRelated || {};
     setHtml('bk-industry', `<div class="bk-scroll"><table class="partc-table">
       <thead><tr><th>Industry</th><th>Exposures</th><th>Outstanding</th><th>Financed scope 1 and 2</th><th>Carbon-related</th></tr></thead>
@@ -346,25 +349,26 @@ const BankPage = (() => {
 
   function renderClasses(p) {
     const rows = p.classes || [];
+    const cell = (key, body, num) => `<span class="bank-tile-cell${num ? ' num' : ''}"><span class="bank-tile-key">${esc(key)}</span>${body}</span>`;
     setHtml('bk-classes', rows.map(c => {
       if (c.status !== 'recorded') {
         return `<div class="bank-tile bank-tile-absent">
-          <div class="bank-tile-head"><span class="bank-tile-title">${esc(c.label)}</span><span class="bank-tile-section">${esc(c.section)}</span></div>
-          <span class="partc-hint">${esc(STATE[c.status] || c.status)}${c.reasonStatedBy === 'entity' ? ' — stated by the bank' : ''}</span>
-          <span class="partc-hint">${esc(c.reason || '')}</span>
+          <span class="bank-tile-name"><i></i><span><span class="bank-tile-title">${esc(c.label)}</span><span class="bank-tile-section">${esc(c.section)}</span></span></span>
+          <span class="bank-tile-cell"><span class="partc-hint">${esc(STATE[c.status] || c.status)}${c.reasonStatedBy === 'entity' ? ' — stated by the bank' : ''}${c.reason ? ` · ${esc(c.reason)}` : ''}</span></span>
+          <span></span>
         </div>`;
       }
       const dq = c.dataQuality || {};
-      return `<button type="button" class="bank-tile${focus && focus !== c.assetClass ? ' is-dim' : ''}" data-class="${esc(c.assetClass)}" style="--swatch:${CLASS_COLOR(c.assetClass)}">
-        <div class="bank-tile-head"><span class="bank-tile-title">${esc(c.label)}</span><span class="bank-tile-section">${esc(c.section)}</span></div>
-        <span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)} <span class="bank-figure-unit">tCO₂e</span></span>
-        <div class="bank-tile-row"><span>Data quality</span><b>${dqBadge(dq.score)}</b></div>
-        <div class="bank-tile-row"><span>Exposures</span><b>${fmt(c.exposures, 0)}</b></div>
-        <div class="bank-tile-row"><span>Outstanding</span><b title="${esc(money(c.outstanding, c.currency))}">${esc(moneyShort(c.outstanding, c.currency))}</b></div>
-        <div class="bank-tile-row"><span>Scope 3, apart</span><b>${c.scope3 && c.scope3.value !== null && c.scope3.value !== undefined ? fmt(c.scope3.value, 2) : '—'}</b></div>
-        <div class="bank-tile-row"><span>Coverage</span><b>${c.coveragePct === null || c.coveragePct === undefined ? '—' : `${Number(c.coveragePct).toFixed(2)}%`}</b></div>
-        <div class="bank-tile-row"><span>Approved</span><b>${c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : '—'}</b></div>
-        <span class="partc-hint">${esc(dq.table || '')}</span>
+      return `<button type="button" class="bank-tile${focus && focus !== c.assetClass ? ' is-dim' : ''}" data-class="${esc(c.assetClass)}" style="--swatch:${CLASS_COLOR(c.assetClass)}" title="Open the book at ${esc(c.label)}">
+        <span class="bank-tile-name"><i></i><span><span class="bank-tile-title">${esc(c.label)}</span><span class="bank-tile-section">${esc(c.section)}${dq.table ? ` · ${esc(dq.table)}` : ''}</span></span></span>
+        ${cell('Financed scope 1 and 2', `<span class="bank-tile-value">${fmt(c.headline && c.headline.value, 2)}</span><span class="bank-tile-section">tCO₂e</span>`, true)}
+        ${cell('Scope 3, apart', c.scope3 && c.scope3.value !== null && c.scope3.value !== undefined ? fmt(c.scope3.value, 2) : '—', true)}
+        ${cell('Data quality', dqBadge(dq.score))}
+        ${cell('Exposures', fmt(c.exposures, 0), true)}
+        ${cell('Outstanding', `<span title="${esc(money(c.outstanding, c.currency))}">${esc(moneyShort(c.outstanding, c.currency))}</span>`, true)}
+        ${cell('Coverage', c.coveragePct === null || c.coveragePct === undefined ? '—' : `${Number(c.coveragePct).toFixed(2)}%`, true)}
+        ${cell('Approved', c.approval && val(c.approval.total) ? `${fmt(c.approval.approved, 0)} of ${fmt(c.approval.total, 0)}` : '—', true)}
+        <span class="bank-tile-chevron" aria-hidden="true">›</span>
       </button>`;
     }).join(''));
     for (const el of document.querySelectorAll('#bk-classes .bank-tile[data-class]')) {
@@ -446,6 +450,7 @@ const BankPage = (() => {
       ? `<div class="bank-tile-row"><span>${esc(label)}</span><b>${fmt(lines[k].value, 2)} tCO₂e</b></div>` : '');
     const step = (plan.steps || [])[0];
     const dq = c.dataQuality || {};
+    el.style.setProperty('--swatch', CLASS_COLOR(c.assetClass));
     setHtml('bk-focus', `
       <div class="bank-focus-head"><i style="background:${CLASS_COLOR(c.assetClass)}"></i>
         <div><b>${esc(c.label)}</b> <span class="partc-hint">${esc(c.section)}${dq.table ? ` · ${esc(dq.table)}` : ''}</span></div>
@@ -495,8 +500,10 @@ const BankPage = (() => {
       });
       emissions.push({ key: c.assetClass, label: `${short(c)} — scope 3, apart`, value: val(c.scope3 && c.scope3.value), color: 'var(--cls-scope3, #a3a3a3)', dim: dim(c) });
     }
-    setHtml('bk-chart-emissions', Charts.hbars(emissions, { label: 'Financed emissions by asset class, tCO2e, scope 3 apart', decimals: 0 })
-      + Charts.legend([{ label: 'Scope 1', color: 'var(--p-label, #1c1c1e)' }, { label: 'Scope 2 (lighter)', color: 'color-mix(in srgb, var(--p-label, #1c1c1e) 45%, white)' }, { label: 'Scope 3 — apart', color: 'var(--cls-scope3, #a3a3a3)' }]));
+    setHtml('bk-chart-emissions', Charts.figure(
+      Charts.hbars(emissions, { label: 'Financed emissions by asset class, tCO2e, scope 3 apart', decimals: 0, unit: 'tCO₂e' }),
+      emissions, { title: 'tCO₂e, scope 3 apart', unit: 'tCO₂e', head: 'Asset class',
+        legend: [{ label: 'Scope 1', color: 'var(--p-label, #1c1c1e)' }, { label: 'Scope 2 (lighter)', color: 'color-mix(in srgb, var(--p-label, #1c1c1e) 45%, white)' }, { label: 'Scope 3 — apart', color: 'var(--cls-scope3, #a3a3a3)' }] }));
 
     const dq = rec.map(c => {
       const dist = (c.optionDistribution || []).filter(o => val(o.shareOfBook) !== null && val(o.score) !== null)
@@ -506,22 +513,30 @@ const BankPage = (() => {
       const segments = dist.length ? dist : (one !== null ? [{ label: `Score ${one} — ${c.dataQuality.table || 'one score for the class'}`, share: 1, color: DQ_COLOR(one) }] : []);
       return { key: c.assetClass, label: short(c), segments, dim: dim(c) };
     });
-    setHtml('bk-chart-dq', Charts.shares(dq, { label: 'Share of outstanding at each PCAF data-quality score, by asset class' })
-      + Charts.legend([1, 2, 3, 4, 5].map(s => ({ label: `Score ${s}${s === 1 ? ' — highest quality' : s === 5 ? ' — lowest' : ''}`, color: DQ_COLOR(s) }))));
+    setHtml('bk-chart-dq', Charts.figure(
+      Charts.shares(dq, { label: 'Share of outstanding at each PCAF data-quality score, by asset class' }),
+      dq, { title: 'Share of outstanding, by score', head: 'Asset class',
+        legend: [1, 2, 3, 4, 5].map(s => ({ label: `Score ${s}${s === 1 ? ' — highest quality' : s === 5 ? ' — lowest' : ''}`, color: DQ_COLOR(s) })) }));
 
-    setHtml('bk-chart-outstanding', Charts.hbars(rec.map(c => ({
+    const outstanding = rec.map(c => ({
       key: c.assetClass, label: `${short(c)}${c.currency ? ` (${c.currency})` : ''}`, value: val(c.outstanding), color: CLASS_COLOR(c.assetClass), dim: dim(c),
-    })), { label: 'Assessed outstanding by asset class', decimals: 0 }));
+    }));
+    setHtml('bk-chart-outstanding', Charts.figure(
+      Charts.hbars(outstanding, { label: 'Assessed outstanding by asset class', decimals: 0, valueLabel: 'Outstanding' }),
+      outstanding, { title: 'Assessed outstanding', head: 'Asset class', unit: 'Outstanding' }));
     const cov = p.coverage || {};
-    setHtml('bk-ring-coverage', Charts.ring(val(cov.sharePct), { label: 'Coverage of the book', color: 'var(--p-accent, #0a7a4c)' })
+    setHtml('bk-ring-coverage', Charts.ring(val(cov.sharePct), { label: 'Coverage of the book', color: 'var(--p-accent, #0a7a4c)', sublabel: 'covered' })
       + `<div class="bank-ring-caption">${val(cov.sharePct) === null ? esc(cov.remedy || 'book total not stated') : 'of total loans and investments'}</div>`);
     const ap = p.approval || {};
-    setHtml('bk-ring-approval', Charts.ring(val(ap.approvedPct), { label: 'Exposures approved', color: 'var(--approved, #1d7a3a)' })
+    setHtml('bk-ring-approval', Charts.ring(val(ap.approvedPct), { label: 'Exposures approved', color: 'var(--approved, #1d7a3a)', sublabel: 'approved' })
       + `<div class="bank-ring-caption">${val(ap.total) ? 'of exposures approved' : 'no exposure to approve'}</div>`);
 
-    setHtml('bk-chart-intensity', Charts.hbars(rec.map(c => ({
+    const intensity = rec.map(c => ({
       key: c.assetClass, label: short(c), value: val(c.intensity && c.intensity.value), color: CLASS_COLOR(c.assetClass), dim: dim(c),
-    })), { label: 'Economic intensity by asset class, tCO2e per million outstanding', decimals: 2 }));
+    }));
+    setHtml('bk-chart-intensity', Charts.figure(
+      Charts.hbars(intensity, { label: 'Economic intensity by asset class, tCO2e per million outstanding', decimals: 2, valueLabel: 'Intensity' }),
+      intensity, { title: 'tCO₂e per million outstanding', head: 'Asset class', unit: 'tCO₂e per million', decimals: 2 }));
   }
 
   // ── what stands behind a figure ─────────────────────────────

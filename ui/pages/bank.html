@@ -19,7 +19,7 @@
         <button class="btn btn-primary" id="bk-pdf">SLFRS S2 disclosure — PDF</button>
         <button class="btn btn-secondary" id="bk-docx">Word</button>
         <button class="btn btn-secondary" id="bk-csv">Register — CSV</button>
-        <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
+        <button class="btn btn-secondary bank-btn-quiet" id="bk-refresh">Refresh</button>
       </div>
     </div>
     <p class="partc-hint bank-status" id="bk-status"></p>
@@ -33,16 +33,24 @@
       </div>
     </div>
 
+    <!-- The figures: the two emission lines as the lead, each with its
+         make-up by class beneath; then four stat tiles. -->
     <div class="bank-figures" id="bk-figures" hidden>
       <div class="bank-figure bank-figure-primary">
-        <span class="bank-figure-label">Financed scope 1 and 2</span>
-        <span class="bank-figure-value" id="bk-headline">—</span>
-        <span class="bank-figure-unit">tCO₂e · scope 3 category 15 of the bank</span>
+        <div class="bank-figure-top">
+          <span class="bank-figure-label">Financed scope 1 and 2</span>
+          <span class="bank-figure-tag">Scope 3 category 15 of the bank</span>
+        </div>
+        <span class="bank-figure-value bank-figure-hero" id="bk-headline">—</span>
+        <span class="bank-figure-unit">tCO₂e for the reporting year</span>
         <div class="bank-figure-chart" id="bk-headline-chart"></div>
         <button type="button" class="bank-behind-btn" data-behind="headline">Behind this figure</button>
       </div>
       <div class="bank-figure bank-figure-wide">
-        <span class="bank-figure-label">Financed scope 3 — separate line</span>
+        <div class="bank-figure-top">
+          <span class="bank-figure-label">Financed scope 3</span>
+          <span class="bank-figure-tag">Separate line</span>
+        </div>
         <span class="bank-figure-value" id="bk-s3">—</span>
         <span class="bank-figure-unit">tCO₂e · never summed with scope 1 and 2</span>
         <div class="bank-figure-chart" id="bk-s3-chart"></div>
@@ -87,6 +95,7 @@
         <button type="button" class="bank-behind-btn" data-behind="s2">Behind the S2 file</button>
       </div>
       <div class="bank-s2-pillars" id="bk-s2-pillars"></div>
+      <div class="bank-s2-key" aria-hidden="true"><span><i class="is-stated"></i>Stated by the bank</span><span><i class="is-illustrative"></i>Illustrative</span><span><i class="is-absent"></i>Not stated</span></div>
     </div>
   </section>
 
@@ -99,12 +108,12 @@
 
   <div id="bk-body" hidden>
 
-    <section class="partc-card">
-      <div class="partc-card-head"><h3>Class in focus</h3>
-        <span class="partc-hint">Select a class to follow it across every panel; select it again to release it. One hue is one class on every chart.</span></div>
+    <!-- The one filter row, above every chart it scopes. -->
+    <section class="bank-filter">
+      <span class="bank-filter-label">Class in focus</span>
       <div class="bank-chips" id="bk-chips"></div>
-      <div class="bank-focus" id="bk-focus" hidden></div>
     </section>
+    <section class="partc-card bank-focus" id="bk-focus" hidden></section>
 
     <div class="partc-panels bank-charts">
       <section class="partc-card partc-panel">
@@ -149,7 +158,10 @@
 
     <section class="partc-card">
       <div class="partc-card-head"><h3>By asset class</h3>
-        <span class="partc-hint">One data-quality score per class, weighted by outstanding amount within it — PCAF Part A, Box 6.1-6 (p.168). 1 is the highest quality, 5 the lowest. Scores are never averaged across classes.</span></div>
+        <span class="partc-hint">One data-quality score per class, weighted by outstanding amount within it — PCAF Part A, Box 6.1-6 (p.168). 1 is the highest quality, 5 the lowest. Scores are never averaged across classes. A row opens the book at that class.</span></div>
+      <div class="bank-tiles-head" aria-hidden="true">
+        <span>Asset class</span><span class="num">Financed scope 1 and 2</span><span class="num">Scope 3, apart</span><span>Data quality</span><span class="num">Exposures</span><span class="num">Outstanding</span><span class="num">Coverage</span><span class="num">Approved</span><span></span>
+      </div>
       <div class="bank-tiles" id="bk-classes"></div>
     </section>
 

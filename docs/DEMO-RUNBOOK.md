@@ -90,7 +90,9 @@ the headline; coverage of the stated book (Disclosure Checklist Part A,
 p.124); economic intensity; what the disclosure still asks for; and how
 many exposures the bank has approved. Beneath, the four SLFRS S2 pillars,
 each with a bar of what the bank has stated, what is still illustrative and
-what is not stated.
+what is not stated. Every bar on the screen answers a hover or a keyboard
+focus with its readout, and every chart has a *Table* toggle beside it, so a
+figure can be read without a pointer and without colour.
 
 **Say:** *"Every number here is one the engine returned. The screen draws;
 it does not compute."*

@@ -3,11 +3,17 @@
    ============================================================
    The bank's own landing over its SLFRS S2 position, drawn to read like
    the first page of the file it produces: the same two faces the document
-   is set in (Lora for titles and figures, Work Sans for everything else),
-   the same forest green and sage, paper-warm neutrals, and one warm accent
-   spent on the headline figure and nowhere else. Every colour is a token
-   defined for both themes, because a hero band that stayed cream while the
-   tiles went black is what this sheet replaced.
+   is set in (Lora for the entity's name and the section titles, Work Sans
+   for everything else, the figures included), the same forest green and
+   sage, paper-warm neutrals, and one warm accent spent on the cue and
+   nowhere else. Every colour is a token defined for both themes.
+
+   The class hues are a categorical palette validated for colour-vision
+   deficiency and contrast in both themes — lightness alternates down the
+   class order so neighbouring bars stay apart under protan and deutan
+   simulation — and every bar carries its value at the tip and a table
+   twin, so no figure rests on colour alone. Scope 3 is grey wherever it is
+   drawn: a separate line, never part of any class's headline.
 
    The page still computes nothing; what is here is only how it looks.
    ============================================================ */
@@ -29,22 +35,22 @@
    this page inherits (.partc) is remapped here so cards, tables, hints and
    buttons follow the document rather than the teal shell. */
 .partc.bank {
-  --bk-paper: #f7f6f2;
+  --bk-paper: #f6f5f1;
   --bk-card: #ffffff;
-  --bk-ink: #2b2b2b;
-  --bk-ink-2: #6e6e6e;
-  --bk-ink-3: #9a9a9a;
-  --bk-rule: #dcdcd7;
-  --bk-band: #f0f0ec;
-  --bk-zebra: #fafaf8;
-  --bk-green: #4a5f42;
-  --bk-green-dk: #3d5238;
+  --bk-ink: #1f231f;
+  --bk-ink-2: #5f665d;
+  --bk-ink-3: #979d95;
+  --bk-rule: #e3e3dd;
+  --bk-band: #f0f0ea;
+  --bk-zebra: #fafaf7;
+  --bk-green: #2f6b45;
+  --bk-green-dk: #29553a;
   --bk-on-green: #ffffff;
   --bk-sage: #c5ccc0;
-  --bk-sage-soft: #e8ece4;
-  --bk-slate: #3e6180;
-  --bk-coral: #e8935f;
-  --bk-ochre: #b8863b;
+  --bk-sage-soft: #e9efe7;
+  --bk-slate: #3468a8;
+  --bk-coral: #d9782f;
+  --bk-ochre: #b27f02;
 
   --p-bg: var(--bk-card);
   --p-card: var(--bk-card);
@@ -62,31 +68,33 @@
   --p-shadow: none;
   --p-radius: 10px;
   --p-radius-sm: 8px;
+  --ch-surface: var(--bk-card);
 
-  /* One hue per asset class, defined once so a class is the same colour on
-     every chart, chip and tile of this screen — muted to sit beside the
-     document's green rather than shout over it. Scope 3 is grey wherever it
-     is drawn: a separate line, never part of any class's headline. */
-  --cls-business-loans-unlisted-equity: #4a5f42;
-  --cls-listed-equity-corporate-bonds: #3e6180;
-  --cls-project-finance: #6f5b86;
-  --cls-commercial-real-estate: #b7803f;
-  --cls-mortgages: #a0574f;
-  --cls-motor-vehicle-loans: #4f7f82;
-  --cls-sovereign-debt: #737373;
-  --cls-scope3: #b8b8b8;
-  --approved: #4a5f42;
+  /* One hue per asset class, in the order the position lists them, so a
+     class is the same colour on every chart, chip and row of this screen.
+     Validated as a set: lightness band, chroma floor, protan and deutan
+     separation and contrast, in both themes. */
+  --cls-business-loans-unlisted-equity: #2c6b1c;
+  --cls-listed-equity-corporate-bonds: #3890d2;
+  --cls-project-finance: #7e3d82;
+  --cls-commercial-real-estate: #b27f02;
+  --cls-mortgages: #953543;
+  --cls-motor-vehicle-loans: #009cba;
+  --cls-sovereign-debt: #847200;
+  --cls-scope3: #a9ada6;
+  --approved: #2f6b45;
 
   /* SLFRS S2. Vulnerable and aligned are different claims and never share a
      hue; what nobody has assessed is neutral rather than green, because a
-     book that has not been classified is not thereby a safe one. */
-  --s2-transition: #b85c38;
-  --s2-physical: #3e6180;
-  --s2-aligned: #4a5f42;
-  --s2-assessed: #a7ada4;
-  --s2-unassessed: #d9d9d9;
-  --s2-carbon: #a8763a;
-  --s2-other: #8a8f88;
+     book that has not been classified is not thereby a safe one. The three
+     claim hues are validated as a set in both themes. */
+  --s2-transition: #c2542a;
+  --s2-physical: #3468a8;
+  --s2-aligned: #2f8a4e;
+  --s2-assessed: #a9ada6;
+  --s2-unassessed: #dedfd9;
+  --s2-carbon: #b27f02;
+  --s2-other: #8c918a;
 
   font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   color: var(--bk-ink);
@@ -94,45 +102,73 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .partc.bank {
-    --bk-paper: #16191a;
+    --bk-paper: #141716;
     --bk-card: #1f2325;
     --bk-ink: #ece9e2;
     --bk-ink-2: #a8ada6;
     --bk-ink-3: #767b74;
     --bk-rule: #343a38;
-    --bk-band: #262b2b;
+    --bk-band: #272c2c;
     --bk-zebra: #1b1f20;
-    --bk-green: #9db995;
-    --bk-green-dk: #b9cfb2;
-    --bk-on-green: #16191a;
+    --bk-green: #7fbf95;
+    --bk-green-dk: #a5d3b4;
+    --bk-on-green: #141716;
     --bk-sage: #4f5d52;
-    --bk-sage-soft: #2a3430;
-    --bk-slate: #93b3d1;
+    --bk-sage-soft: #263129;
+    --bk-slate: #6fa0d8;
+    --bk-coral: #e69a5c;
     --bk-ochre: #d3a35a;
+    --cls-business-loans-unlisted-equity: #3b7a2c;
+    --cls-listed-equity-corporate-bonds: #4299dc;
+    --cls-project-finance: #8d4b92;
+    --cls-commercial-real-estate: #bb881a;
+    --cls-mortgages: #a64450;
+    --cls-motor-vehicle-loans: #00aba4;
+    --cls-sovereign-debt: #7b6900;
     --cls-scope3: #5c6360;
+    --approved: #7fbf95;
+    --s2-transition: #d9683a;
+    --s2-physical: #4f86c8;
+    --s2-aligned: #3d9b5c;
     --s2-assessed: #6a726e;
     --s2-unassessed: #3f4644;
+    --s2-carbon: #bb881a;
+    --s2-other: #6f7772;
   }
 }
 :root[data-theme="dark"] .partc.bank {
-  --bk-paper: #16191a;
+  --bk-paper: #141716;
   --bk-card: #1f2325;
   --bk-ink: #ece9e2;
   --bk-ink-2: #a8ada6;
   --bk-ink-3: #767b74;
   --bk-rule: #343a38;
-  --bk-band: #262b2b;
+  --bk-band: #272c2c;
   --bk-zebra: #1b1f20;
-  --bk-green: #9db995;
-  --bk-green-dk: #b9cfb2;
-  --bk-on-green: #16191a;
+  --bk-green: #7fbf95;
+  --bk-green-dk: #a5d3b4;
+  --bk-on-green: #141716;
   --bk-sage: #4f5d52;
-  --bk-sage-soft: #2a3430;
-  --bk-slate: #93b3d1;
+  --bk-sage-soft: #263129;
+  --bk-slate: #6fa0d8;
+  --bk-coral: #e69a5c;
   --bk-ochre: #d3a35a;
+  --cls-business-loans-unlisted-equity: #3b7a2c;
+  --cls-listed-equity-corporate-bonds: #4299dc;
+  --cls-project-finance: #8d4b92;
+  --cls-commercial-real-estate: #bb881a;
+  --cls-mortgages: #a64450;
+  --cls-motor-vehicle-loans: #00aba4;
+  --cls-sovereign-debt: #7b6900;
   --cls-scope3: #5c6360;
+  --approved: #7fbf95;
+  --s2-transition: #d9683a;
+  --s2-physical: #4f86c8;
+  --s2-aligned: #3d9b5c;
   --s2-assessed: #6a726e;
   --s2-unassessed: #3f4644;
+  --s2-carbon: #bb881a;
+  --s2-other: #6f7772;
 }
 
 /* ── The document's furniture on this page ─────────────── */
@@ -143,22 +179,24 @@
   box-shadow: none;
 }
 .partc.bank .partc-card-head h3,
-.bank-entity, .bank-empty h3, .bank-s2-title, .bank-s2-pillar b {
+.bank-entity, .bank-empty h3, .bank-s2-title {
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
 }
-.partc.bank .partc-card-head h3 { color: var(--bk-green-dk); font-weight: 700; font-size: 17px; letter-spacing: 0; }
+.partc.bank .partc-card-head { margin-bottom: 14px; }
+.partc.bank .partc-card-head h3 { color: var(--bk-ink); font-weight: 700; font-size: 17px; letter-spacing: 0; margin-bottom: 4px; }
 .partc.bank .partc-hint { color: var(--bk-ink-2); }
-.partc.bank .btn { border-radius: 8px; font-family: inherit; font-weight: 600; }
+.partc.bank .partc-card-head .partc-hint { display: block; max-width: 72ch; }
+.partc.bank .btn { border-radius: 980px; font-family: inherit; font-weight: 600; font-size: 13.5px; padding: 9px 16px; min-height: 38px; }
 .partc.bank .btn-primary { background: var(--bk-green); color: var(--bk-on-green); border: 1px solid var(--bk-green); }
-.partc.bank .btn-secondary { background: transparent; color: var(--bk-ink); border: 1px solid var(--bk-rule); }
-.partc.bank .btn-secondary:hover { border-color: var(--bk-ink-2); }
+.partc.bank .btn-secondary { background: var(--bk-band); color: var(--bk-ink); border: 1px solid transparent; }
+.partc.bank .btn-secondary:hover { background: var(--bk-sage-soft); }
+.partc.bank .bank-btn-quiet { background: transparent; color: var(--bk-ink-2); }
 .partc.bank .btn:focus-visible { box-shadow: 0 0 0 3px var(--bk-sage-soft); }
 .partc.bank .partc-table th {
-  background: var(--bk-sage-soft); color: var(--bk-ink);
-  font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  background: transparent; color: var(--bk-ink-2);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
 }
 .partc.bank .partc-table td { border-bottom: 1px solid var(--bk-rule); }
-.partc.bank .partc-table tbody tr:nth-child(even) td { background: var(--bk-zebra); }
 .partc.bank select, .partc.bank input[type="text"] {
   font-family: inherit; color: var(--bk-ink); background: var(--bk-card);
   border: 1px solid var(--bk-rule); border-radius: 8px; padding: 7px 10px;
@@ -167,24 +205,23 @@
 .bank .partc-actions .partc-year { min-width: 0; max-width: 100%; color: var(--bk-ink-2); font-size: 12.5px; }
 .bank .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }
 
-/* ── The hero: the cover of the file ───────────────────── */
+/* ── The masthead: the cover of the file ─────────────────── */
 .bank-hero {
   background: var(--bk-card);
   border: 1px solid var(--bk-rule);
-  border-left: 6px solid var(--bk-green);
   border-radius: 10px;
-  padding: 22px 26px 20px;
+  padding: 24px 28px 22px;
   margin-bottom: 16px;
 }
 .bank-hero-head { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start; justify-content: space-between; }
 .bank-hero-head > div { min-width: 0; }
 .bank-hero-title { flex: 1 1 320px; }
 .bank-eyebrow {
-  margin: 0 0 6px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  margin: 0 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--bk-green); font-weight: 700;
 }
 .bank-entity {
-  margin: 0; font-size: 32px; line-height: 1.12; font-weight: 700;
+  margin: 0; font-size: 34px; line-height: 1.1; font-weight: 700;
   color: var(--bk-ink); text-wrap: balance; letter-spacing: -0.005em;
 }
 .bank-coverline { margin: 8px 0 0; font-size: 13px; color: var(--bk-ink-2); }
@@ -194,20 +231,22 @@
 /* The starter's moment: a year holding no lending book. */
 .bank-empty {
   margin-top: 18px; padding: 18px 20px;
-  border: 1px dashed var(--bk-rule); border-radius: 8px; background: var(--bk-zebra);
+  border: 1px dashed var(--bk-rule); border-radius: 12px; background: var(--bk-zebra);
 }
 .bank-empty h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--bk-green-dk); }
 .bank-empty p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--bk-ink-2); max-width: 64ch; }
 .bank-empty-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .bank-starter-name { flex: 1 1 16rem; min-width: 0; max-width: 100%; }
 
-/* The figures band: one card per figure, the primary one tinted in the
-   sage of the document, each carrying a drawing of what makes it up rather
-   than a sentence about it. */
+/* ── The figures: two lead cards, then four stat tiles ───────
+   The hero figure is the one number the screen leads with, set in the
+   sans at 48px with proportional figures; the tiles beneath it are the
+   stat-tile contract — label, value, a line beneath — and the two shares
+   are meters. */
 .bank-figures {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
   margin-top: 20px;
   padding-top: 18px;
   border-top: 1px solid var(--bk-rule);
@@ -216,23 +255,36 @@
   min-width: 0;
   display: flex; flex-direction: column; gap: 4px;
   padding: 16px 18px 14px;
-  background: var(--bk-card);
+  background: var(--bk-zebra);
+  border-radius: 12px;
 }
 .bank-figure-primary { background: var(--bk-sage-soft); }
+.bank-figure-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; }
 .bank-figure-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700; }
+.bank-figure-tag { font-size: 11.5px; color: var(--bk-ink-2); }
 .bank-figure-value {
-  font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--bk-ink); letter-spacing: -0.02em;
-  font-variant-numeric: lining-nums tabular-nums; overflow-wrap: anywhere;
+  font-size: 30px; font-weight: 700; line-height: 1.05; color: var(--bk-ink); letter-spacing: -0.02em;
+  font-variant-numeric: lining-nums; overflow-wrap: anywhere; margin-top: 4px;
 }
-.bank-figure-primary .bank-figure-value { font-size: 44px; color: var(--bk-green-dk); }
+.bank-figure-hero { font-size: 48px; letter-spacing: -0.03em; color: var(--bk-green-dk); }
 .bank-figure-unit { font-size: 12.5px; color: var(--bk-ink-2); line-height: 1.4; }
-@media (min-width: 720px) {
+/* Twelve tracks from tablet width up: the two lead cards take six each,
+   the four tiles three each, so the band is two full rows and never a
+   card beside a hole. Below that the cards flow one or two to a row. */
+@media (min-width: 720px) and (max-width: 1099px) {
+  .bank-figures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bank-figure-primary, .bank-figure-wide { grid-column: span 2; }
 }
-.bank-figure-chart { margin-top: 8px; }
+@media (min-width: 1100px) {
+  .bank-figures { grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .bank-figure { grid-column: span 3; }
+  .bank-figure-primary, .bank-figure-wide { grid-column: span 6; }
+}
+.bank-figure-chart { margin-top: 10px; }
 .bank-figure-chart:empty { display: none; }
-.bank-figure-ring { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
-.bank-figure-ring-draw .ch-ring { width: 92px; height: 92px; }
+.bank-figure-ring { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.bank-figure-ring-draw .ch-ring { width: 76px; height: 76px; }
+.bank-figure-ring-draw .ch-ring-value { font-size: 20px; }
 .bank-figure-ring-draw:empty { display: none; }
 .bank-figure-ring-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
 .bank-figure-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -243,73 +295,89 @@
 .bank-bar { height: 6px; border-radius: 3px; background: var(--bk-band); margin-top: 6px; overflow: hidden; }
 .bank-bar-fill { display: block; height: 100%; width: 0; background: var(--bk-green); border-radius: 3px; transition: width 400ms ease; }
 
-/* The S2 band: the four pillars, each a column with a bar of what the bank
-   has stated, what is still the illustrative content, and what is not
-   stated — and each opening the form that answers it. */
-.bank-s2 { margin-top: 20px; border-top: 1px solid var(--bk-rule); padding-top: 14px; }
+/* ── The S2 band: the four pillars ───────────────────────────
+   Each pillar a bar of what the bank has stated, what is still the
+   illustrative content, and what is not stated — the three parted by a
+   surface gap — with a key beneath, and each opening the form that
+   answers it. */
+.bank-s2 { margin-top: 20px; border-top: 1px solid var(--bk-rule); padding-top: 16px; }
 .bank-s2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
-.bank-s2-title { font-size: 16px; font-weight: 700; color: var(--bk-green-dk); }
-.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 14px 20px; margin-top: 12px; }
+.bank-s2-title { font-size: 17px; font-weight: 700; color: var(--bk-ink); }
+.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px; margin-top: 12px; }
 .bank-s2-pillar {
   min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left;
-  padding: 10px 0 8px; border: 0; border-top: 2px solid var(--bk-rule); border-radius: 0;
-  background: transparent; font: inherit; color: inherit; cursor: pointer;
+  padding: 12px 14px; border: 1px solid var(--bk-rule); border-radius: 12px;
+  background: var(--bk-zebra); font: inherit; color: inherit; cursor: pointer;
 }
-.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-top-color: var(--bk-green); outline: none; }
-.bank-s2-pillar b { font-size: 16px; font-weight: 700; color: var(--bk-ink); }
+.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-color: var(--bk-green); outline: none; }
+.bank-s2-pillar b { font-size: 14px; font-weight: 700; color: var(--bk-ink); }
 .bank-s2-pillar > span { font-size: 11.5px; color: var(--bk-ink-2); }
 .bank-s2-pillar em { font-style: normal; font-size: 12.5px; font-weight: 700; }
 .bank-s2-pillar.is-stated em { color: var(--bk-green); }
 .bank-s2-pillar.is-illustrative em, .bank-s2-pillar.is-partial em { color: var(--bk-ochre); }
 .bank-s2-pillar.is-absent em { color: var(--bk-ink-2); }
-.bank-s2-bar { display: flex; gap: 2px; height: 6px; margin: 8px 0 6px; border-radius: 3px; overflow: hidden; }
+.bank-s2-bar { display: flex; gap: 2px; height: 8px; margin: 8px 0 6px; border-radius: 4px; overflow: hidden; background: var(--bk-band); }
 .bank-s2-bar i { display: block; min-width: 0; }
-.bank-s2-bar .is-stated { background: var(--bk-green); }
-.bank-s2-bar .is-illustrative { background: var(--bk-ochre); }
-.bank-s2-bar .is-absent { background: var(--bk-rule); }
+.bank-s2-bar .is-stated, .bank-s2-key .is-stated { background: var(--bk-green); }
+.bank-s2-bar .is-illustrative, .bank-s2-key .is-illustrative { background: var(--bk-ochre); }
+.bank-s2-bar .is-absent, .bank-s2-key .is-absent { background: var(--bk-rule); }
+.bank-s2-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--bk-ink-2); }
+.bank-s2-key i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 
 /* ── Charts: a drawing on an inline element renders as nothing, so every
-   one is a block that follows its container. ───────────── */
+   one is a block that follows its container. The chart text takes the
+   document's faces and inks. ─────────────────────────────── */
 .bank .ch { display: block; width: 100%; height: auto; }
 .bank .ch-track { fill: var(--bk-band); }
 .bank .ch-ring .ch-track { fill: none; stroke: var(--bk-band); }
+.bank .ch-gap { fill: var(--bk-card); }
+.bank .bank-figure .ch-gap { fill: var(--bk-zebra); }
+.bank .bank-figure-primary .ch-gap { fill: var(--bk-sage-soft); }
+.bank .ch-axis { stroke: var(--bk-rule); }
 .bank .ch-label { font-size: 12px; fill: var(--bk-ink-2); font-family: 'Work Sans', system-ui, sans-serif; }
 .bank .ch-value { font-size: 12px; fill: var(--bk-ink); font-variant-numeric: tabular-nums; font-family: 'Work Sans', system-ui, sans-serif; }
-.bank .ch-ring-value { font-size: 20px; font-weight: 700; fill: var(--bk-ink); font-variant-numeric: tabular-nums; font-family: 'Lora', Georgia, serif; }
-.bank .ch-row.is-dim { opacity: 0.28; }
-.bank .ch-row { transition: opacity 160ms ease; }
-.bank .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--bk-ink-2); margin-top: 8px; }
-.bank .ch-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.bank .ch-ring-value { font-size: 22px; font-weight: 700; fill: var(--bk-ink); font-family: 'Work Sans', system-ui, sans-serif; }
+.bank .ch-row.is-hover .ch-hit, .bank .ch-row:focus-visible .ch-hit { fill: var(--bk-band); }
+.bank .ch-legend { font-size: 12px; color: var(--bk-ink-2); margin-top: 8px; }
+.bank .ch-view { background: var(--bk-band); }
+.bank .ch-view-btn.is-on { background: var(--bk-card); color: var(--bk-ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.bank .ch-fig-table, .bank .ch-table th, .bank .ch-table td { border-color: var(--bk-rule); }
 .bank-charts .partc-panel { min-width: 0; }
-.bank-ring-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
-.bank-ring-row .ch-ring { width: 120px; flex: 0 0 120px; }
+.bank-ring-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.bank-ring-row .ch-ring { width: 112px; flex: 0 0 112px; }
 .bank-ring-row .bank-grow { flex: 1 1 260px; min-width: 0; }
-.bank-ring-caption { font-size: 12px; color: var(--bk-ink-2); text-align: center; margin-top: 2px; }
+.bank-ring-caption { font-size: 12px; color: var(--bk-ink-2); text-align: center; margin-top: 2px; max-width: 112px; }
 
-/* ── The class in focus: chips, and the panel that follows the choice ─── */
-.bank-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+/* ── The one filter row, above the charts it scopes ───────── */
+.bank-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 4px 0 14px; min-width: 0; }
+.bank-filter-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700; white-space: nowrap; }
+.bank-chips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
 .bank-chip {
   display: inline-flex; align-items: center; gap: 7px;
   border: 1px solid var(--bk-rule); border-radius: 999px;
-  padding: 5px 12px; font: inherit; font-size: 12.5px; color: var(--bk-ink);
+  padding: 6px 13px; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--bk-ink);
   background: var(--bk-card); cursor: pointer;
 }
 .bank-chip i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-.bank-chip.is-on { border-color: var(--bk-green); background: var(--bk-sage-soft); font-weight: 700; }
+.bank-chip:hover { border-color: var(--bk-ink-3); }
+.bank-chip.is-on { border-color: var(--bk-green); background: var(--bk-sage-soft); }
 .bank-chip:focus-visible { outline: 2px solid var(--bk-green); outline-offset: 2px; }
-.bank-focus { margin-top: 14px; border-top: 1px solid var(--bk-rule); padding-top: 12px; }
+
+/* The class in focus: its own card, before the charts it colours. */
+.bank-focus { margin-bottom: 16px; border-left: 4px solid var(--swatch, var(--bk-green)); }
 .bank-focus-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .bank-focus-head > i { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; }
 .bank-focus-head > div { flex: 1 1 200px; min-width: 0; }
+.bank-focus-head b { font-family: 'Lora', Georgia, serif; font-size: 17px; }
 .bank-focus-grid {
   display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
-  gap: 10px 16px; margin-top: 12px;
+  gap: 10px 16px; margin-top: 14px;
 }
-.bank-focus-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.bank-focus-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 10px 12px; background: var(--bk-zebra); border-radius: 10px; }
 .bank-focus-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 4px 16px; margin-top: 10px; }
 
-/* ── The lineage behind a figure: a line of text under the figure it belongs
-   to; the drawer is a card that opens beneath the hero. ─── */
+/* ── The lineage behind a figure: a pill under the figure it belongs
+   to; the drawer is a card that opens beneath the masthead. ─── */
 .bank-behind-btn {
   font: inherit; font-size: 12px; font-weight: 600; color: var(--bk-ink-2); background: transparent;
   border: 1px solid var(--bk-rule); border-radius: 999px; padding: 3px 10px 3px 11px;
@@ -317,40 +385,53 @@
 }
 .bank-behind-btn::after { content: ' ›'; font-weight: 700; }
 .bank-behind-btn:hover, .bank-behind-btn:focus-visible { color: var(--bk-green); border-color: var(--bk-green); outline: none; }
-.bank-behind { margin-bottom: 16px; border-left: 6px solid var(--bk-green); }
+.bank-behind { margin-bottom: 16px; border-left: 4px solid var(--bk-green); }
 .bank-behind .partc-card-head { align-items: flex-start; }
 .bank-behind .partc-card-head .btn { margin-left: auto; }
 .bank-behind h5 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bk-ink-2); }
 .bank-behind code { font-size: 12px; overflow-wrap: anywhere; }
 
-/* ── Class tiles ────────────────────────────────────────── */
-.bank-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
-  gap: 12px;
+/* ── By asset class: one row per class, a list a committee reads ───
+   Seven classes with seven figures each is a table, and a table with the
+   headline drawn in it is a table and a chart at once. On a phone each
+   row folds into a card of label and value pairs. */
+.bank-tiles-head {
+  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .7fr) minmax(0, 1.1fr) minmax(0, .8fr) minmax(0, .9fr) 28px;
+  gap: 12px; padding: 0 14px 8px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700;
 }
+.bank-tiles-head .num { text-align: right; }
+.bank-tiles { display: grid; gap: 6px; }
 .bank-tile {
-  min-width: 0;
-  border: 1px solid var(--bk-rule);
-  border-top: 3px solid var(--swatch, var(--bk-rule));
-  border-radius: 8px;
-  padding: 12px 14px 14px;
-  background: var(--bk-card);
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-  display: flex; flex-direction: column; gap: 6px;
+  min-width: 0; width: 100%;
+  display: grid; grid-template-columns: minmax(0, 2.2fr) minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, .7fr) minmax(0, 1.1fr) minmax(0, .8fr) minmax(0, .9fr) 28px;
+  gap: 12px; align-items: center;
+  border: 1px solid var(--bk-rule); border-radius: 12px;
+  padding: 12px 14px; background: var(--bk-card);
+  text-align: left; font: inherit; color: inherit; cursor: pointer;
 }
-.bank-tile:hover, .bank-tile:focus-visible { border-color: var(--bk-green); border-top-color: var(--swatch, var(--bk-green)); outline: none; }
-.bank-tile-absent { cursor: default; opacity: 0.7; }
+.bank-tile:hover, .bank-tile:focus-visible { border-color: var(--bk-green); background: var(--bk-zebra); outline: none; }
+.bank-tile-absent { cursor: default; grid-template-columns: minmax(0, 2.2fr) minmax(0, 6.8fr) 28px; }
+.bank-tile-absent .bank-tile-title { color: var(--bk-ink-2); }
 .bank-tile.is-dim { opacity: 0.45; }
-.bank-tile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.bank-tile-title { font-weight: 700; font-size: 14px; }
-.bank-tile-section { font-size: 12px; color: var(--bk-ink-2); white-space: nowrap; }
-.bank-tile-value { font-size: 22px; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; color: var(--bk-ink); }
-.bank-tile-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--bk-ink-2); }
-.bank-tile-row b { color: var(--bk-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bank-tile-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.bank-tile-name i { display: inline-block; width: 12px; height: 12px; border-radius: 4px; flex: 0 0 auto; background: var(--swatch, var(--bk-rule)); }
+.bank-tile-title { font-weight: 700; font-size: 13.5px; display: block; min-width: 0; overflow-wrap: anywhere; }
+.bank-tile-section { font-size: 11.5px; color: var(--bk-ink-2); display: block; }
+.bank-tile-cell { min-width: 0; font-size: 13px; color: var(--bk-ink); }
+.bank-tile-cell.num { text-align: right; font-variant-numeric: tabular-nums; }
+.bank-tile-cell .bank-tile-key { display: none; }
+.bank-tile-value { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--bk-ink); display: block; }
+.bank-tile-bar { display: block; height: 6px; border-radius: 3px; background: var(--bk-band); margin-top: 5px; overflow: hidden; }
+.bank-tile-bar i { display: block; height: 100%; width: 0; background: var(--swatch, var(--bk-green)); border-radius: 3px; }
+.bank-tile-chevron { color: var(--bk-ink-3); font-size: 18px; text-align: right; }
+@media (max-width: 900px) {
+  .bank-tiles-head { display: none; }
+  .bank-tile, .bank-tile-absent { grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 10px 14px; }
+  .bank-tile-name { grid-column: 1 / -1; }
+  .bank-tile-cell.num { text-align: left; }
+  .bank-tile-cell .bank-tile-key { display: block; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700; }
+  .bank-tile-chevron { display: none; }
+}
 
 .bank .bk-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .bank .bk-kv { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 13px; }

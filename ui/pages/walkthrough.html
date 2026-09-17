@@ -8,66 +8,70 @@
 
   <section class="partc-card wt-head">
     <div class="wt-head-row">
-      <div>
+      <div class="wt-head-title">
+        <p class="wt-eyebrow">The walkthrough</p>
         <h2 class="wt-title" id="wt-entity">Reporting entity not stated</h2>
         <p class="partc-hint" id="wt-subtitle"></p>
       </div>
       <div class="wt-controls">
         <label class="wt-year">Reporting year <select id="wt-year" class="cap-select"></select></label>
         <button class="btn btn-secondary" id="wt-refresh">Refresh</button>
-        <button class="btn btn-primary" id="wt-start">Start the walkthrough</button>
+        <button class="btn btn-primary wt-start" id="wt-start">Start the walkthrough</button>
         <button class="btn btn-secondary" id="wt-end" hidden>End the walkthrough</button>
       </div>
     </div>
-    <p class="partc-hint" id="wt-status"></p>
+    <p class="partc-hint wt-status" id="wt-status"></p>
+    <div class="wt-summary" id="wt-summary"></div>
   </section>
 
   <section class="partc-card">
-    <h3>Before the day</h3>
-    <p class="partc-hint">Read off the reporting year’s position. A row marked <em>needed</em> opens the screen that answers it.</p>
-    <div class="bk-scroll">
-      <table class="partc-table wt-table" id="wt-readiness">
-        <thead><tr><th>What</th><th>Stands at</th><th>Detail</th><th></th></tr></thead>
-        <tbody id="wt-readiness-rows"></tbody>
-      </table>
-    </div>
+      <div class="partc-card-head"><h3>Before the day</h3>
+        <span class="partc-hint">Read off the reporting year’s position. A row marked <em>needed</em> opens the screen that answers it.</span></div>
+      <div class="bk-scroll">
+        <table class="partc-table wt-table" id="wt-readiness">
+          <thead><tr><th>What</th><th>Stands at</th><th>Detail</th><th></th></tr></thead>
+          <tbody id="wt-readiness-rows"></tbody>
+        </table>
+      </div>
   </section>
 
   <section class="partc-card">
-    <h3>The six steps — one loan, from the door to the file</h3>
-    <p class="partc-hint">The position and the SLFRS S2 file first; then one loan comes in with every field already filled, the engine prices it, it is reviewed and approved, and it is on the dashboard and in the file. <em>Open</em> takes you to the screen with the step already applied and the control to press marked; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</p>
-    <ol class="wt-steps" id="wt-steps"></ol>
+      <div class="partc-card-head"><h3>The six steps — one loan, from the door to the file</h3>
+        <span class="partc-hint">The position and the SLFRS S2 file first; then one loan comes in with every field already filled, the engine prices it, it is reviewed and approved, and it is on the dashboard and in the file. <em>Open</em> takes you to the screen with the step already applied and the control to press marked; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</span></div>
+      <ol class="wt-steps" id="wt-steps"></ol>
   </section>
 
-  <section class="partc-card">
-    <h3>Language</h3>
-    <ul class="wt-language">
-      <li>Always <em>PCAF-conformant</em>. Never certified, approved or endorsed: every artefact refuses those words.</li>
-      <li>The shipped factor tables and several baselines are <em>provisional</em>, and say so on screen and in the document. That is a disclosure, not a defect.</li>
-      <li>Assurance mode is <em>self-declared</em> until every governed value resolves to a released baseline and the entity has recorded who assured the figures.</li>
-      <li>SLFRS S2 is IFRS S2 as adopted in Sri Lanka. The document names every paragraph it answers and every one the bank has not yet stated.</li>
-      <li>An SLFRS S2 statement still equal to the illustrative content is marked as such wherever it is printed, on screen and in the document.</li>
-      <li>State what the figure is, cite the standard that governs it, and stop.</li>
-    </ul>
-  </section>
+  <div class="partc-panels wt-panels">
+    <section class="partc-card partc-panel">
+      <div class="partc-card-head"><h3>Language</h3></div>
+      <ul class="wt-language">
+        <li>Always <em>PCAF-conformant</em>. Never certified, approved or endorsed: every artefact refuses those words.</li>
+        <li>The shipped factor tables and several baselines are <em>provisional</em>, and say so on screen and in the document. That is a disclosure, not a defect.</li>
+        <li>Assurance mode is <em>self-declared</em> until every governed value resolves to a released baseline and the entity has recorded who assured the figures.</li>
+        <li>SLFRS S2 is IFRS S2 as adopted in Sri Lanka. The document names every paragraph it answers and every one the bank has not yet stated.</li>
+        <li>An SLFRS S2 statement still equal to the illustrative content is marked as such wherever it is printed, on screen and in the document.</li>
+        <li>State what the figure is, cite the standard that governs it, and stop.</li>
+      </ul>
+    </section>
 
-  <section class="partc-card">
-    <h3>If something refuses</h3>
-    <div class="bk-scroll">
-      <table class="partc-table wt-table">
-        <thead><tr><th>Seen</th><th>Meaning</th><th>Do</th></tr></thead>
-        <tbody>
-          <tr><td>The starter book was not loaded</td><td>The year already holds exposures</td><td>Use the year selector; the book is already loaded</td></tr>
-          <tr><td>No asset class holds exposures</td><td>The selected year is empty</td><td>Choose the year the book was loaded into</td></tr>
-          <tr><td>Approve is refused</td><td>The account’s role holds no lock scope</td><td>Sign in as an administrator, or grant the role on Accounts</td></tr>
-          <tr><td>Cannot be changed while it stands</td><td>The exposure is approved</td><td>Reopen with a reason, then change it</td></tr>
-          <tr><td>Signed out</td><td>Sessions end at 60 minutes idle, 12 hours absolute</td><td>Sign in again</td></tr>
-          <tr><td>A figure reads —</td><td>The server returned no figure</td><td>It is absent, not zero; the caption says what it needs</td></tr>
-          <tr><td>An S2 share reads —</td><td>No exposure in the book is classified yet</td><td>Record a verdict on the Lending Book; a share over an unclassified book would be a number about nothing</td></tr>
-          <tr><td>A pillar reads <em>Illustrative</em></td><td>The statement still equals the content shipped with the tool</td><td>Edit it on Financed Emissions; one changed word makes it the bank’s</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
+    <section class="partc-card partc-panel">
+      <div class="partc-card-head"><h3>If something refuses</h3></div>
+      <div class="bk-scroll">
+        <table class="partc-table wt-table">
+          <thead><tr><th>Seen</th><th>Meaning</th><th>Do</th></tr></thead>
+          <tbody>
+            <tr><td>The starter book was not loaded</td><td>The year already holds exposures</td><td>Use the year selector; the book is already loaded</td></tr>
+            <tr><td>No asset class holds exposures</td><td>The selected year is empty</td><td>Choose the year the book was loaded into</td></tr>
+            <tr><td>Approve is refused</td><td>The account’s role holds no lock scope</td><td>Sign in as an administrator, or grant the role on Accounts</td></tr>
+            <tr><td>Cannot be changed while it stands</td><td>The exposure is approved</td><td>Reopen with a reason, then change it</td></tr>
+            <tr><td>Signed out</td><td>Sessions end at 60 minutes idle, 12 hours absolute</td><td>Sign in again</td></tr>
+            <tr><td>A figure reads —</td><td>The server returned no figure</td><td>It is absent, not zero; the caption says what it needs</td></tr>
+            <tr><td>An S2 share reads —</td><td>No exposure in the book is classified yet</td><td>Record a verdict on the Lending Book; a share over an unclassified book would be a number about nothing</td></tr>
+            <tr><td>A pillar reads <em>Illustrative</em></td><td>The statement still equals the content shipped with the tool</td><td>Edit it on Financed Emissions; one changed word makes it the bank’s</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 
 </div>
