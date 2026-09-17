@@ -142,7 +142,7 @@ flowchart TD
 |---|---:|---:|
 | `src/` | 2 | 421 |
 |       `src/domains/baseline/application/` | 2 | 322 |
-|       `src/domains/baseline/domain/` | 5 | 1,042 |
+|       `src/domains/baseline/domain/` | 5 | 1,048 |
 |       `src/domains/baseline/infrastructure/` | 1 | 56 |
 |         `src/domains/baseline/interface/routes/` | 1 | 195 |
 |         `src/domains/baseline/interface/schemas/` | 1 | 70 |
@@ -208,7 +208,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **391** | **66,846** |
+| **total** | **391** | **66,852** |
 
 <!-- END MODULE-MAP -->
 

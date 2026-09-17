@@ -31,6 +31,8 @@ const { metric } = require('./metrics');
 /**
  * @typedef {Object} Resolution
  * @property {string} metric
+ * @property {string|null} label the metric's name in words, from the vocabulary — a screen prints this, never the key
+ * @property {string|null} shape the value shape the vocabulary declares, so a screen can summarise a table rather than print it
  * @property {Record<string, number>|null} values
  * @property {string|null} unit
  * @property {boolean} resolved
@@ -63,7 +65,7 @@ function resolve(metricKey, ctx = {}, released = [], seed = []) {
   const unit = def ? def.unit : null;
 
   if (!def) {
-    return absent(metricKey, unit, `"${metricKey}" is not a metric this registry governs.`,
+    return absent(metricKey, unit, null, null, `"${metricKey}" is not a metric this registry governs.`,
       'Add it to src/domains/baseline/domain/metrics.js, where the value shape and what reads it are declared.');
   }
 
@@ -84,6 +86,8 @@ function resolve(metricKey, ctx = {}, released = [], seed = []) {
   if (hit) {
     return {
       metric: metricKey,
+      label: def.label,
+      shape: def.shape,
       values: { ...hit.values },
       unit,
       resolved: true,
@@ -103,6 +107,8 @@ function resolve(metricKey, ctx = {}, released = [], seed = []) {
   if (s) {
     return {
       metric: metricKey,
+      label: def.label,
+      shape: def.shape,
       values: { ...s.values },
       unit,
       resolved: true,
@@ -119,7 +125,7 @@ function resolve(metricKey, ctx = {}, released = [], seed = []) {
     };
   }
 
-  return absent(metricKey, unit,
+  return absent(metricKey, unit, def.label, def.shape,
     `No baseline is in force for ${def.label}${country ? ` in ${country}` : ''}.`,
     `Release a ${country ? 'country' : 'global'} baseline for "${metricKey}". `
     + 'Nothing is assumed in its place: a figure invented here would be quoted as regional judgement.');
@@ -132,9 +138,9 @@ function scopeWords(b) {
 }
 
 /** @returns {Resolution} */
-function absent(metricKey, unit, basis, needs) {
+function absent(metricKey, unit, label, shape, basis, needs) {
   return {
-    metric: metricKey, values: null, unit, resolved: false,
+    metric: metricKey, label, shape, values: null, unit, resolved: false,
     scope: null, baselineId: null, version: null, source: null, authority: null,
     provisional: false, basis, needs,
   };

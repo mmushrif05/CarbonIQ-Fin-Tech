@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **414**. Remaining: **220**.
+Checked across all three: **414**. Remaining: **221**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **361**. Remaining: **67** (387 errors, measured by
+Checked: **361**. Remaining: **68** (406 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -35,6 +35,7 @@ pragma and nothing else.
 |---|---|
 | `src/domains/pcaf-part-c/application/partc-assessments.js` | 37 |
 | `src/domains/pcaf-part-c/agents/form.js` | 21 |
+| `scripts/rehearse-runbook.js` | 19 |
 | `src/domains/pcaf-part-a/domain/index.js` | 19 |
 | `src/domains/capital/interface/routes/capital.js` | 17 |
 | `src/domains/pcaf-part-a/domain/corporate/denominator.js` | 16 |
@@ -105,7 +106,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **27** (1762 errors, measured by
+Checked: **8**. Remaining: **27** (1761 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **1 of them raise no errors at all** and can be adopted by adding the
@@ -119,7 +120,7 @@ pragma and nothing else.
 | `ui/js/dashboard.js` | 118 |
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/gcf-pipeline.js` | 90 |
-| `ui/js/parta-register.js` | 80 |
+| `ui/js/parta-register.js` | 79 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
 | `ui/js/gcf.js` | 58 |
