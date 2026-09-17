@@ -316,7 +316,7 @@ async function recompute(orgId, exposureId) {
 const { stateBook, getBook } = require('./parta-book');
 
 // The entity's settings live in ./parta-settings, re-exported below.
-const { DEFAULT_SETTINGS, getSettings, saveSettings } = settingsService;
+const { DEFAULT_SETTINGS, getSettings, saveSettings, installIllustrativeClimate } = settingsService;
 
 // ---------------------------------------------------------------------------
 // The reporting-year position
@@ -490,7 +490,7 @@ async function setStatus(orgId, exposureId, move) {
 module.exports = {
   ASSET_CLASSES, DEFAULT_CLASS, STATUS, TRANSITIONS, DEFAULT_SETTINGS,
   record, get, update, remove, recompute, setStatus, listExposures, rows, rowsByClass,
-  stateBook, getBook, getSettings, saveSettings,
+  stateBook, getBook, getSettings, saveSettings, installIllustrativeClimate,
   position, positions, years,
   classes: classes.list,
   _inflate: inflate,

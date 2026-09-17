@@ -8,7 +8,9 @@
  *   GET    /v1/pcaf/part-a/book/:year               the entity's stated book total
  *   PUT    /v1/pcaf/part-a/book                     state it — coverage's denominator
  *   GET    /v1/pcaf/part-a/settings                 the entity's recalculation protocol
- *   PUT    /v1/pcaf/part-a/settings                 set it — base year, threshold, triggers
+ *   PUT    /v1/pcaf/part-a/settings                 set it — base year, threshold, triggers, the S2 facts
+ *   GET    /v1/pcaf/part-a/climate/reference         the vocabularies and the S2 items a form answers
+ *   POST   /v1/pcaf/part-a/settings/climate/illustrative   load the illustrative pack for a trial
  *   GET    /v1/pcaf/part-a/exposures                a year's book, a page at a time
  *   POST   /v1/pcaf/part-a/exposures                record one
  *   GET    /v1/pcaf/part-a/exposures/:id            one, with its whole trace
@@ -44,6 +46,11 @@ const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, d
 const { sovereignExposureSchema } = require('../schemas/sovereign');
 
 const router = Router();
+
+/* The SLFRS S2 climate facts are their own seam: the entity's words about
+   itself rather than its book, with their own registry and their own
+   reference route. Mounted here so the prefix and the middleware stay one. */
+router.use(require('./climate'));
 
 // ---------------------------------------------------------------------------
 // What this deployment can hold, and what it already holds
@@ -150,6 +157,7 @@ router.put('/settings', authenticate, defaultLimiter,
   handle(async (req, res) => {
     res.json({ settings: await register.saveSettings(req.orgId, req.body) });
   }));
+
 
 // ---------------------------------------------------------------------------
 // The exposures

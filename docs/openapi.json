@@ -26621,6 +26621,141 @@
         ]
       }
     },
+    "/v1/pcaf/part-a/climate/reference": {
+      "get": {
+        "operationId": "getPcafPartAClimateReference",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "The vocabularies and the SLFRS S2 items the entity answers",
+        "description": "One list per closed question the standard asks, and one row per fact, each naming the paragraph that requires it. The form, the record and the disclosure read this same registry, so a screen cannot offer an answer the record would refuse. Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "304": {
+            "$ref": "#/components/responses/NotModified"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "pillars": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "vocabulary": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "pillars",
+                    "items",
+                    "vocabulary"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "pillars": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "vocabulary": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "pillars",
+                        "items",
+                        "vocabulary"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/pcaf/part-a/conformance": {
       "get": {
         "operationId": "getPcafPartAConformance",
@@ -33496,6 +33631,676 @@
                     },
                     "maxItems": 12,
                     "description": "Part A asset classes the entity does not report, each with its reason (Chapter 6, p.162)"
+                  },
+                  "climate": {
+                    "type": "object",
+                    "properties": {
+                      "governance": {
+                        "type": "object",
+                        "properties": {
+                          "body": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 300
+                          },
+                          "oversight": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "frequency": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "enum": [
+                              "monthly",
+                              "quarterly",
+                              "half_yearly",
+                              "annually",
+                              "as_required",
+                              ""
+                            ]
+                          },
+                          "managementRole": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          }
+                        }
+                      },
+                      "strategy": {
+                        "type": "object",
+                        "properties": {
+                          "horizonDefinitions": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 1000
+                          },
+                          "exposures": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "title": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 200
+                                },
+                                "nature": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "risk",
+                                    "opportunity",
+                                    ""
+                                  ]
+                                },
+                                "riskKind": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "physical_acute",
+                                    "physical_chronic",
+                                    "transition_policy",
+                                    "transition_technology",
+                                    "transition_market",
+                                    "transition_reputation",
+                                    ""
+                                  ]
+                                },
+                                "horizon": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "short",
+                                    "medium",
+                                    "long",
+                                    ""
+                                  ]
+                                },
+                                "description": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 2000
+                                }
+                              }
+                            },
+                            "maxItems": 60
+                          },
+                          "businessModel": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "transitionPlan": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "financialEffectsCurrent": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "financialEffectsAnticipated": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "resilience": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "scenarios": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          }
+                        }
+                      },
+                      "riskManagement": {
+                        "type": "object",
+                        "properties": {
+                          "identification": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
+                          },
+                          "prioritisation": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          },
+                          "monitoring": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          },
+                          "opportunities": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          },
+                          "integration": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          }
+                        }
+                      },
+                      "inventory": {
+                        "type": "object",
+                        "properties": {
+                          "scope1": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "basis": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "measured",
+                                  "calculated",
+                                  "estimated",
+                                  "third_party_verified",
+                                  ""
+                                ]
+                              },
+                              "period": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              },
+                              "absentReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "scope2Location": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "basis": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "measured",
+                                  "calculated",
+                                  "estimated",
+                                  "third_party_verified",
+                                  ""
+                                ]
+                              },
+                              "period": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              },
+                              "absentReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "scope2Market": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "basis": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "measured",
+                                  "calculated",
+                                  "estimated",
+                                  "third_party_verified",
+                                  ""
+                                ]
+                              },
+                              "period": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              },
+                              "absentReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "scope3Other": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "value": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "unit": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "basis": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "measured",
+                                  "calculated",
+                                  "estimated",
+                                  "third_party_verified",
+                                  ""
+                                ]
+                              },
+                              "period": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 40
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              },
+                              "absentReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "crossIndustry": {
+                        "type": "object",
+                        "properties": {
+                          "capitalDeployed": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "amount": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "currency": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 10
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              },
+                              "absentReason": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "carbonPrice": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "appliedTo": {
+                                "type": "array",
+                                "items": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "not_applied",
+                                    "lending_decisions",
+                                    "pricing",
+                                    "internal_budgeting",
+                                    "scenario_testing",
+                                    ""
+                                  ]
+                                },
+                                "maxItems": 8
+                              },
+                              "price": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ]
+                              },
+                              "currency": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 10
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "remuneration": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "linked": {
+                                "type": [
+                                  "boolean",
+                                  "null"
+                                ]
+                              },
+                              "sharePct": {
+                                "type": [
+                                  "number",
+                                  "null"
+                                ],
+                                "minimum": 0,
+                                "maximum": 100
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "targets": {
+                        "type": "object",
+                        "properties": {
+                          "entries": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 200
+                                },
+                                "metric": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 200
+                                },
+                                "targetKind": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "absolute",
+                                    "intensity",
+                                    ""
+                                  ]
+                                },
+                                "scopeCovered": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "scope1",
+                                    "scope2",
+                                    "scope1_2",
+                                    "scope3",
+                                    "financed_emissions",
+                                    "portfolio_share",
+                                    ""
+                                  ]
+                                },
+                                "baseYear": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "baseValue": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "targetYear": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "targetValue": {
+                                  "type": [
+                                    "number",
+                                    "null"
+                                  ]
+                                },
+                                "source": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "entity_set",
+                                    "required_by_regulation",
+                                    "international_agreement",
+                                    ""
+                                  ]
+                                },
+                                "validation": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "enum": [
+                                    "none",
+                                    "third_party",
+                                    ""
+                                  ]
+                                },
+                                "validator": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 200
+                                },
+                                "milestones": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 2000
+                                },
+                                "progress": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ],
+                                  "maxLength": 2000
+                                }
+                              }
+                            },
+                            "maxItems": 60
+                          },
+                          "ghgBasis": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 2000
+                          }
+                        }
+                      }
+                    },
+                    "description": "The entity's own SLFRS S2 governance, strategy, risk-management, inventory and target facts"
                   }
                 }
               }
@@ -33563,6 +34368,127 @@
                       },
                       "additionalProperties": true,
                       "required": [
+                        "settings"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/settings/climate/illustrative": {
+      "post": {
+        "operationId": "postPcafPartASettingsClimateIllustrative",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "Load the illustrative SLFRS S2 climate facts for a trial",
+        "description": "Records a complete set of illustrative governance, strategy, risk-management, inventory and target facts so a trial opens on a whole disclosure. Every field is then editable, and until a field is edited the disclosure marks it as illustrative rather than as a statement the entity made. Refused with 409 over facts already recorded. Requires the `write` scope.",
+        "x-scope": "write",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "installed": {
+                      "type": "number"
+                    },
+                    "settings": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "installed",
+                    "settings"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "installed": {
+                          "type": "number"
+                        },
+                        "settings": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "installed",
                         "settings"
                       ]
                     },

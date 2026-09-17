@@ -1,0 +1,145 @@
+{
+  "_about": "Illustrative SLFRS S2 climate facts for a trial. Every sentence here is written by the tool provider, not by any reporting entity. It is recorded only when an operator presses Load illustrative content, every field is editable, and until a field is edited the disclosure prints it as illustrative trial content rather than as a statement the entity made. Keys prefixed with an underscore are stripped before the pack is recorded.",
+  "_scope": "Written for a Sri Lankan licensed commercial bank. Replace every paragraph before filing.",
+  "governance": {
+    "body": "Board Integrated Risk Management Committee",
+    "oversight": "The Board Integrated Risk Management Committee holds delegated responsibility for climate-related risks and opportunities under its terms of reference. The committee reviews the financed-emissions position, the data-quality profile of the lending book and progress against stated targets, and refers matters requiring a decision to the full Board. Climate competence is assessed annually as part of the Board skills matrix, and the committee has access to external technical advice where a matter falls outside that competence. Targets and the progress made against them are tabled at the committee at least annually and form part of its report to the Board.",
+    "frequency": "quarterly",
+    "managementRole": "The Chief Risk Officer holds executive responsibility for climate-related risk and reports to the Board Integrated Risk Management Committee. A sustainable finance function within the risk division prepares the financed-emissions inventory, maintains the exposure register and applies the data-quality methodology. Credit policy sets the climate-related information collected at origination and at annual review, and internal audit covers the process within its risk-based plan."
+  },
+  "strategy": {
+    "horizonDefinitions": "Short term is up to one year, matching the annual budget and the credit review cycle. Medium term is one to five years, matching the strategic plan. Long term is five to fifteen years, matching the tenor of the longest facilities on the book and the period over which physical risk is expected to become material to collateral values.",
+    "exposures": [
+      {
+        "title": "Flood and landslide exposure in mortgage and commercial property collateral",
+        "nature": "risk",
+        "riskKind": "physical_acute",
+        "horizon": "medium",
+        "description": "Property collateral in low-lying districts and on unstable slopes is exposed to flood and landslide events, which could reduce recoverable value and raise loss given default in the mortgage and commercial real estate portfolios."
+      },
+      {
+        "title": "Drought and rainfall variability in the agriculture portfolio",
+        "nature": "risk",
+        "riskKind": "physical_chronic",
+        "horizon": "long",
+        "description": "Sustained changes in rainfall distribution affect yields and cash flows for borrowers in paddy, plantation and smallholder agriculture, with a consequent effect on repayment capacity."
+      },
+      {
+        "title": "Carbon pricing and disclosure requirements affecting borrowers",
+        "nature": "risk",
+        "riskKind": "transition_policy",
+        "horizon": "medium",
+        "description": "Regulatory measures on emissions and on disclosure could raise operating costs for carbon-intensive borrowers, particularly those exporting to markets applying a border carbon adjustment."
+      },
+      {
+        "title": "Reduced demand for carbon-intensive production",
+        "nature": "risk",
+        "riskKind": "transition_market",
+        "horizon": "long",
+        "description": "Buyers in export markets are increasingly setting supply chain emissions requirements, which could reduce order volumes for borrowers who cannot evidence their own position."
+      },
+      {
+        "title": "Green and sustainability-linked lending",
+        "nature": "opportunity",
+        "riskKind": null,
+        "horizon": "short",
+        "description": "Demand for financing aligned with the Sri Lanka Green Finance Taxonomy is growing across renewable generation, energy efficiency retrofits and climate-resilient agriculture, offering portfolio growth at a favourable risk profile."
+      },
+      {
+        "title": "Concessional and climate fund capital",
+        "nature": "opportunity",
+        "riskKind": null,
+        "horizon": "medium",
+        "description": "Access to concessional lines and climate funds could lower the cost of funds for qualifying portfolios and extend tenor where the commercial market cannot."
+      }
+    ],
+    "businessModel": "Climate-related risks reach the business model through the lending book rather than through own operations, which are small by comparison. The most exposed concentrations are property collateral in flood-prone districts, agriculture, and export manufacturing with energy-intensive processes. Origination policy, collateral valuation and pricing are the points in the value chain where a climate-related effect is first recognised.",
+    "transitionPlan": "The transition plan is in preparation. Its stated sequence is to complete the financed-emissions inventory across every material asset class, establish a base year once two comparable years are held, and set sector pathways for the most carbon-intensive parts of the book before setting a portfolio-level reduction target. The plan assumes national grid decarbonisation in line with published generation planning and assumes no change to the bank's own asset mix beyond ordinary business growth.",
+    "financialEffectsCurrent": "No material effect on the financial position, financial performance or cash flows for the period has been identified and separately quantified. The financed-emissions position is a measurement of the portfolio rather than a charge against it, and no climate-related impairment overlay has been raised in the period. Quantification of the effect on expected credit loss is not yet possible because the loss relationship for physical risk in this market has not been established with sufficient reliability, as permitted by SLFRS S2 paragraph 19.",
+    "financialEffectsAnticipated": "Over the medium term, physical risk to property collateral is the effect most likely to become quantifiable, through collateral revaluation and loss given default. Over the long term, transition risk in export manufacturing and in carbon-intensive production could affect borrower cash flows and therefore probability of default. Neither is yet reflected in financial planning assumptions.",
+    "resilience": "The strategy has been assessed as resilient over the short term, where the exposure is concentrated in facilities that reprice or mature within the planning horizon. Over the medium and long term the assessment identifies collateral concentration in flood-prone districts as the point of greatest sensitivity, and the capacity to adjust rests on the bank's ability to reprice, require additional security, or reduce concentration at annual review.",
+    "scenarios": "A qualitative resilience assessment was carried out during the reporting period using two publicly available reference scenarios: a current-policies pathway and an orderly transition pathway consistent with the country's nationally determined contribution. The horizon used was fifteen years. Quantitative scenario analysis of the loan book has not yet been performed."
+  },
+  "riskManagement": {
+    "identification": "Climate-related risks are identified at two points: at origination, where each facility is screened for physical and transition exposure against the sector and the location of the financed asset, and at portfolio level, where concentrations are reviewed against published hazard mapping and sector intensity data. The inputs are the borrower's sector, the location and type of the financed asset, and the emissions and energy data collected at origination. Likelihood and effect are assessed qualitatively against the bank's standard risk grading.",
+    "prioritisation": "Climate-related risk is treated as a driver of existing risk types rather than as a separate category. It is prioritised through its effect on credit risk, and is escalated where a concentration exceeds the thresholds set in credit policy.",
+    "monitoring": "The financed-emissions position, the coverage of the assessed book and the distribution of data-quality scores are monitored quarterly by the sustainable finance function and reported to the Board Integrated Risk Management Committee. Classification of exposures for physical and transition risk is reviewed at annual credit review.",
+    "opportunities": "Climate-related opportunities are identified through the same origination screen, which records alignment with the Sri Lanka Green Finance Taxonomy where an activity qualifies, and through the product development process.",
+    "integration": "The climate-related risk process is part of the integrated risk management framework and reports through the same governance line as credit, market and operational risk. It is not maintained as a separate register."
+  },
+  "inventory": {
+    "scope1": {
+      "value": 412,
+      "unit": "tCO2e",
+      "basis": "calculated",
+      "period": "The reporting year",
+      "note": "Standby generation and the owned vehicle fleet, from fuel purchase records and published factors."
+    },
+    "scope2Location": {
+      "value": 1860,
+      "unit": "tCO2e",
+      "basis": "calculated",
+      "period": "The reporting year",
+      "note": "Purchased electricity across head office and the branch network, metered consumption on the national grid average factor."
+    },
+    "scope2Market": null,
+    "scope3Other": {
+      "value": null,
+      "unit": "tCO2e",
+      "absentReason": "Scope 3 categories other than category 15 have not been measured. Business travel, purchased goods and services and employee commuting are the categories expected to be material and are planned for the following reporting year."
+    }
+  },
+  "crossIndustry": {
+    "capitalDeployed": {
+      "amount": null,
+      "currency": "LKR",
+      "absentReason": "Capital deployed towards climate-related risks and opportunities has not been separately measured. The green and sustainability-linked lending balance is reported in the opportunity alignment metric instead."
+    },
+    "carbonPrice": {
+      "appliedTo": ["not_applied"],
+      "price": null,
+      "currency": null,
+      "note": "No internal carbon price is applied in decision-making."
+    },
+    "remuneration": {
+      "linked": false,
+      "sharePct": null,
+      "note": "Climate-related considerations are not factored into executive remuneration for the period."
+    }
+  },
+  "targets": {
+    "entries": [
+      {
+        "name": "Data quality of the financed-emissions inventory",
+        "metric": "Outstanding-weighted PCAF data-quality score across the assessed book",
+        "targetKind": "intensity",
+        "scopeCovered": "financed_emissions",
+        "baseYear": null,
+        "baseValue": null,
+        "targetYear": 2030,
+        "targetValue": 3,
+        "source": "entity_set",
+        "validation": "none",
+        "validator": null,
+        "milestones": "Move every exposure above one per cent of the book off a sector-average estimate by the end of the second reporting year.",
+        "progress": "The score for the current position is reported in the metrics section of this disclosure."
+      },
+      {
+        "name": "Green and sustainability-linked lending",
+        "metric": "Share of the outstanding lending book aligned with the Sri Lanka Green Finance Taxonomy",
+        "targetKind": "intensity",
+        "scopeCovered": "portfolio_share",
+        "baseYear": null,
+        "baseValue": null,
+        "targetYear": 2030,
+        "targetValue": 15,
+        "source": "entity_set",
+        "validation": "none",
+        "validator": null,
+        "milestones": null,
+        "progress": "The aligned share is reported in the cross-industry metrics section of this disclosure."
+      }
+    ],
+    "ghgBasis": "No absolute greenhouse gas reduction target has been set. A base year has not been established, because a base year requires two comparable years of measured position and the inventory is in its first year. No offsets are used and none are planned; a reduction target, when set, will be a gross target."
+  }
+}

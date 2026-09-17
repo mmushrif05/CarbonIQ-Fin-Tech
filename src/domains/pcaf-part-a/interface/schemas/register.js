@@ -26,6 +26,7 @@ const { realEstateRequestSchema } = require('./real-estate');
 const { assessRequestSchema } = require('./pcaf-parta');
 const { listedEquitySchema } = require('./listed-equity');
 const { motorVehiclesRequestSchema } = require('./motor-vehicles');
+const { climateSchema } = require('./climate');
 
 const reportingYear = Joi.number().integer().min(2000).max(2100).required();
 
@@ -140,6 +141,11 @@ const settingsSchema = Joi.object({
     assetClass: Joi.string().max(60).required(),
     reason: Joi.string().trim().max(500).required(),
   })).max(12).description('Part A asset classes the entity does not report, each with its reason (Chapter 6, p.162)'),
+
+  /* The SLFRS S2 facts about the entity itself. Built from the item registry
+     rather than restated here, so the route accepts exactly what the record
+     holds. Merged path by path: sending one pillar leaves the rest standing. */
+  climate: climateSchema.description('The entity\'s own SLFRS S2 governance, strategy, risk-management, inventory and target facts'),
 }).unknown(false);
 
 /**
