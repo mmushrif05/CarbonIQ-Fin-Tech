@@ -23,8 +23,8 @@ numerals are not interchangeable between them.
 
 | Status | Rules |
 |---|---|
-| Implemented | 95 |
-| **Total** | **95** |
+| Implemented | 96 |
+| **Total** | **96** |
 
 ## How to verify any row
 
@@ -372,6 +372,16 @@ actually ran.
 **Implementation.** src/domains/pcaf-part-a/application/register-lifecycle.js — assertNotApproved(), approvalOf(); src/domains/pcaf-part-a/application/register.js — update(), recompute() and remove() refuse an approved exposure; src/domains/pcaf-part-a/application/parta-consolidated.js — approval per class and in total; src/domains/pcaf-part-a/reporting/consolidated/checklist.js — APR-1
 
 **Evidence.** `tests/parta-approval.test.js › an approved exposure is frozen until reopened, and the consolidated position and checklist say how many stand approved`
+
+### A-REG-14 — Implemented
+
+**Clause:** Table 5.2-1 (p.60) — the option earned decides the score; Options 1 and 2 are preferred over Option 3
+
+**Rule.** Before an exposure is recorded the engine’s answer is available over the same body, through the same preparation, engine and adapter, with nothing written and no id issued — the option and score the data earns, the factor set an estimated figure rests on, the findings — and, for a business loan, what would raise the score: every better option of Table 5.2-1, nearest first, with what it needs. A refusal answers with its clause exactly as recording would.
+
+**Implementation.** src/domains/pcaf-part-a/application/register.js — preview(); src/domains/pcaf-part-a/domain/business-loans/raise.js — waysToRaise()
+
+**Evidence.** `tests/parta-preview.test.js › is a read: the engine answers, nothing is written, and the same body twice gives the same answer`
 
 ## The disclosed score and the improvement plan
 

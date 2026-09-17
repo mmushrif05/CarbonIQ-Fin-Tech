@@ -46,7 +46,7 @@
       <div data-class-form="business-loans-unlisted-equity">
       <div class="pr-grid">
         <label>Sector <input id="pr-f-sector" type="text" maxlength="120" placeholder="e.g. Textiles"></label>
-        <label>Held sector
+        <label>Industry — held sector
           <select id="pr-f-sector-key"><option value="">Not mapped</option></select></label>
         <label>Instrument
           <select id="pr-f-instrument">
@@ -70,7 +70,7 @@
       <div class="pr-grid">
         <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any"></label>
         <label>Average over the year <input id="pr-f-average" type="number" data-money min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
-        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="optional — runs the sector band check"></label>
+        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="runs the sector band check; prices Option 3a"></label>
         <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-asof" type="date"></label>
       </div>
@@ -88,26 +88,45 @@
       </div>
       <p class="partc-hint">Leave the company value empty to estimate under Option 3b from the outstanding amount and a sector factor — a figure at score 5 with no attribution factor.</p>
 
-      <h5 class="partc-subhead">Borrower emissions, tCO₂e</h5>
-      <div class="pr-grid">
-        <label>Scope 1 <input id="pr-f-s1" type="number" min="0" step="any"></label>
-        <label>Scope 2 <input id="pr-f-s2" type="number" min="0" step="any"></label>
-        <label>Scope 3 <input id="pr-f-s3" type="number" min="0" step="any"></label>
-        <label>Basis
-          <select id="pr-f-basis">
-            <option value="reported-unverified">Reported by the borrower, unverified</option>
-            <option value="reported-verified">Reported and verified by a named third party</option>
-          </select></label>
-        <label>Verifier <input id="pr-f-verifier" type="text" maxlength="200" placeholder="required for a verified figure"></label>
-        <label>Emissions year <input id="pr-f-period" type="number" min="2000" max="2100"></label>
-        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given"></label>
+      <h5 class="partc-subhead">How the borrower’s emissions are known</h5>
+      <div class="pr-known" role="radiogroup" aria-label="How the borrower’s emissions are known">
+        <label class="pr-known-opt"><input type="radio" name="pr-known" id="pr-f-known-reported" value="reported" checked>
+          <span><b>Reported by the borrower</b><small>Its own scope 1, 2 and 3 figures — Option 1, score 1 or 2</small></span></label>
+        <label class="pr-known-opt"><input type="radio" name="pr-known" id="pr-f-known-sector" value="sector">
+          <span><b>Not known — estimate from its industry</b><small>The held sector factor, per unit of its revenue or of the outstanding — Option 3, score 4 or 5</small></span></label>
       </div>
-      <p class="partc-hint" id="pr-sector-factor-note">Leave the sector factors empty to use the held factor for the mapped sector. The run names the table, version and checksum it used.</p>
-      <div class="pr-grid" id="pr-sector-factor">
-        <label>Sector factor, scope 1 (tCO₂e per unit of assets) <input id="pr-f-sf1" type="number" min="0" step="any"></label>
-        <label>Sector factor, scope 2 <input id="pr-f-sf2" type="number" min="0" step="any"></label>
-        <label>Factor source <input id="pr-f-sf-source" type="text" maxlength="200" placeholder="e.g. EXIOBASE v3.8"></label>
-        <label>Factor vintage <input id="pr-f-sf-vintage" type="number" min="2000" max="2100"></label>
+
+      <div id="pr-known-reported">
+        <div class="pr-grid">
+          <label>Scope 1, tCO₂e <input id="pr-f-s1" type="number" min="0" step="any"></label>
+          <label>Scope 2, tCO₂e <input id="pr-f-s2" type="number" min="0" step="any"></label>
+          <label>Scope 3, tCO₂e <input id="pr-f-s3" type="number" min="0" step="any"></label>
+          <label>Basis
+            <select id="pr-f-basis">
+              <option value="reported-unverified">Reported by the borrower, unverified</option>
+              <option value="reported-verified">Reported and verified by a named third party</option>
+            </select></label>
+          <label>Verifier <input id="pr-f-verifier" type="text" maxlength="200" placeholder="required for a verified figure"></label>
+          <label>Emissions year <input id="pr-f-period" type="number" min="2000" max="2100"></label>
+        </div>
+      </div>
+
+      <div id="pr-known-sector" hidden>
+        <p class="partc-hint" id="pr-sector-path">The industry is the held sector chosen above. With the borrower’s revenue keyed above the figure is revenue × the sector intensity per unit of revenue (Option 3a, score 4); with no revenue it is the outstanding amount × the sector intensity per unit of assets (Option 3b, score 5, no attribution factor). The run names the table, version and checksum it used.</p>
+        <details class="pr-own-factor">
+          <summary>Use the bank’s own sector factor instead of the held one</summary>
+          <p class="partc-hint" id="pr-sector-factor-note">Leave the sector factors empty to use the held factor for the mapped sector. A factor typed here needs its source and vintage.</p>
+          <div class="pr-grid" id="pr-sector-factor">
+            <label>Sector factor, scope 1 <input id="pr-f-sf1" type="number" min="0" step="any"></label>
+            <label>Sector factor, scope 2 <input id="pr-f-sf2" type="number" min="0" step="any"></label>
+            <label>Factor source <input id="pr-f-sf-source" type="text" maxlength="200" placeholder="e.g. EXIOBASE v3.8"></label>
+            <label>Factor vintage <input id="pr-f-sf-vintage" type="number" min="2000" max="2100"></label>
+          </div>
+        </details>
+      </div>
+
+      <div class="pr-grid">
+        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given"></label>
       </div>
       </div>
 
@@ -311,6 +330,10 @@
         <span class="partc-hint" id="pr-form-status"></span>
       </div>
     </form>
+    <div class="pr-preview" id="pr-preview" hidden aria-live="polite">
+      <div class="pr-preview-head"><span class="partc-subhead">What the standard makes of it</span><span class="pr-preview-tag">Preview — nothing is written until Record</span></div>
+      <div id="pr-preview-body"></div>
+    </div>
   </section>
 
   <div id="pr-body" hidden>

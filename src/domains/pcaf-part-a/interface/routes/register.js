@@ -3,7 +3,7 @@
  * The PCAF Part A exposure register over HTTP.
  *
  *   GET    /v1/pcaf/part-a/classes                  the asset classes this one register holds
- *   POST   /v1/pcaf/part-a/starter                  load the illustrative starter book, once
+ *   POST   /v1/pcaf/part-a/starter                  load the illustrative starter book, once (./register-starter.js)
  *   GET    /v1/pcaf/part-a/years                    which years this book holds, and how many of each class
  *   GET    /v1/pcaf/part-a/book/:year               the entity's stated book total
  *   PUT    /v1/pcaf/part-a/book                     state it — coverage's denominator
@@ -36,11 +36,8 @@ const { defaultLimiter } = require('../../../../platform/http/rate-limit');
 const handle = require('../../../../platform/http/async-handler');
 const store = require('../../../../platform/database/store');
 
-const Joi = require('joi');
 const register = require('../../application/register');
 const sovereign = require('../../application/sovereign-register');
-const { installStarterBook, exampleExposure } = require('../../application/starter-book');
-const partaSettings = require('../../application/parta-settings');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema, statusChangeSchema } = require('../schemas/register');
@@ -52,6 +49,10 @@ const router = Router();
    itself rather than its book, with their own registry and their own
    reference route. Mounted here so the prefix and the middleware stay one. */
 router.use(require('./climate'));
+/* The starter book and the walkthrough's example borrowers: the same prefix
+   and middleware, in a file of their own so this one stays under the line
+   limit that keeps a route file readable. */
+router.use(require('./register-starter'));
 
 // ---------------------------------------------------------------------------
 // What this deployment can hold, and what it already holds
@@ -75,26 +76,6 @@ router.get('/classes', authenticate, defaultLimiter,
     res.json({ classes: register.classes(), defaultClass: register.DEFAULT_CLASS });
   });
 
-/**
- * The starter book: one press on a deployment with no shell. Recorded, not the
- * sample — every row goes through the services and their engines — and
- * refused over a year that already holds exposures.
- */
-router.post('/starter', authenticate, defaultLimiter,
-  doc({ summary: 'Load the illustrative starter book into this organisation, across every built Part A class',
-    description: 'Fifteen exposures across §5.1–§5.6 and two sovereign holdings for FY2025, each computed by its '
-      + 'own engine on the way in, the book total stated, the entity’s boundary, base year, preparer and approver '
-      + 'stated illustratively, and the illustrative SLFRS S2 statements recorded unless the entity has already '
-      + 'recorded its own. Refused with 409 STARTER_NOT_EMPTY where the year already holds exposures, and for the '
-      + 'preview organisation. Every figure and every statement is illustrative and is yours to edit.',
-    response: body({ reportingYear: num, installed: obj, book: obj, settings: obj }, ['reportingYear', 'installed']) }),
-  validate({ body: Joi.object({ by: Joi.string().max(200).optional(), reportingEntity: Joi.string().max(200).optional() }).unknown(false) }),
-  handle(async (req, res) => {
-    const actor = req.actor && req.actor.name ? req.actor.name : (req.body.by || null);
-    res.status(201).json(await installStarterBook({ register, sovereign, store, settings: partaSettings }, req.orgId,
-      { by: actor, reportingEntity: req.body.reportingEntity || null }));
-  }));
-
 router.get('/years', authenticate, defaultLimiter,
   doc({ summary: 'The reporting years this book holds exposures for',
     description: 'Each says whether the entity has stated its total loans and investments for '
@@ -103,21 +84,6 @@ router.get('/years', authenticate, defaultLimiter,
     response: body({ years: arr() }, ['years']) }),
   handle(async (req, res) => {
     res.json({ years: await register.years(req.orgId) });
-  }));
-
-/**
- * One illustrative loan, filled in, for the walkthrough's "a loan comes in"
- * step: the Lending Book opens its record form on it and the presenter
- * presses Record. A read; stores nothing.
- */
-router.get('/starter/example', authenticate, defaultLimiter,
-  doc({ summary: 'One illustrative business loan, every field filled, for the walkthrough to record live',
-    description: 'The shape the record form takes, filled for one borrower, so a presenter shows what is '
-      + 'collected without typing it. Nothing is stored until the form is submitted; the facility reference '
-      + 'carries a short random suffix so the loan can be recorded more than once in rehearsal.',
-    response: body({ example: obj }, ['example']) }),
-  handle(async (req, res) => {
-    res.json({ example: exampleExposure(req.query.reportingYear ? String(req.query.reportingYear) : undefined) });
   }));
 
 // ---------------------------------------------------------------------------
@@ -202,6 +168,19 @@ router.get('/exposures', authenticate, defaultLimiter, paged(),
     });
     return sendList(req, res, 'exposures', page.items, { reportingYear: String(year), nextCursor: page.nextCursor,
       ...(req.query.assetClass ? { assetClass: String(req.query.assetClass) } : {}) });
+  }));
+
+router.post('/exposures/preview', authenticate, defaultLimiter,
+  doc({ summary: 'What the engine makes of an exposure before it is recorded — a read, stores nothing',
+    description: 'The same preparation, engine and adapter a recorded exposure goes through, over the same '
+      + 'body, with nothing written and no id issued: the option and score the data earns, the financed '
+      + 'lines, the attribution, the factor set an estimated figure rests on, the findings, and — for a '
+      + 'business loan — what would raise the score, read off Table 5.2-1. A refusal answers with its clause '
+      + 'exactly as Record would.',
+    response: body({ preview: obj }, ['preview']) }),
+  validate({ body: registerExposureSchema }),
+  handle(async (req, res) => {
+    res.json({ preview: await register.preview(req.orgId, req.body) });
   }));
 
 router.post('/exposures', authenticate, defaultLimiter,

@@ -9,10 +9,11 @@
      the approvals, what the disclosure still lists, and whether the
      document renders. Every row is a field a route returned.
 
-     The six steps: one loan, from the door to the file. The position and
+     The seven steps: one loan, from the door to the file. The position and
      the file first, for the chief executive; then one loan — it comes in
-     with every field already filled, the engine prices it, it is reviewed
-     and approved, and it is on the dashboard. Opening a step navigates to
+     with every field already filled, a second that does not know its
+     emissions is priced on the sector library, the engine's answer is read,
+     it is reviewed and approved, and it is on the dashboard. Opening a step navigates to
      the real screen with the step already applied, through the doors the
      screens already read: the class hand-over and a one-shot intent each
      screen reads once its own load is done. Every step changes the screen
@@ -44,7 +45,7 @@ const WalkthroughPage = (() => {
   const CLASS_KEY = 'carboniq.parta.class';
   const LOAN_CLASS = 'business-loans-unlisted-equity';
 
-  /* Six steps, one loan from the door to the file. `apply` sets the
+  /* Seven steps, one loan from the door to the file. `apply` sets the
      hand-over the target screen reads before it acts, so a step opens the
      real screen already showing what it is about rather than a slide of it;
      each also marks the one control the presenter presses next. */
@@ -69,6 +70,13 @@ const WalkthroughPage = (() => {
       apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'record:example'); },
       action: 'Lending Book. The record form has opened for one borrower with every field already filled: the facility and its outstanding, the borrower’s equity and debt, its reported scope 1 and 2, and the climate block — the bank’s own judgement of transition risk, physical risk and opportunity. Change any figure, then press Record.',
       note: 'These are the fields a relationship manager fills at origination. The engine runs before anything is written, and a loan the standard would refuse is refused here with its clause. The climate block feeds S2 §29(b)–(d) and changes no figure; what has not been assessed is reported apart and is not counted as not vulnerable.',
+    },
+    {
+      title: 'The borrower that does not know its emissions',
+      page: 'parta-register',
+      apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'record:example-sector'); },
+      action: 'Lending Book. The record form has opened for a second borrower — a rice miller with no emissions figures of its own. Not known — estimate from its industry is selected, the industry is set to rice milling, and the preview beneath the form shows what the standard makes of it before anything is written: Option 3a at score 4, the held sector factor per unit of the borrower’s revenue, the factor set named with its version and checksum, and beneath it what would raise the score. Clear the revenue and the preview falls to Option 3b at score 5 on the outstanding alone. Press Record.',
+      note: 'Most borrowers on a Sri Lankan book cannot state their emissions, and a lending book is priced anyway: the sector factor library and the baselines behind it are the regional judgement this instrument holds, provisional and disclosed as such. The score says how far the figure is from the borrower’s own — a reported figure earns 2, a verified one 1 — and the list beneath the score is what to go back to the borrower for.',
     },
     {
       title: 'What the standard made of it',
