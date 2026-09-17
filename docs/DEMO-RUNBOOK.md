@@ -140,7 +140,14 @@ unclassified here, never as safe."*
 
 The carbon-related boundary is the four non-financial groups of the TCFD 2021
 implementing guidance, and the figure says so: the standard leaves that
-boundary to the reporting entity.
+boundary to the reporting entity. On the starter book most of the table sits
+under *Industry not recorded* — property, mortgages, vehicles and the listed
+holdings carry a building type, a dwelling type, a vehicle class or a NACE
+code rather than an industry, and none of those is one.
+
+**Say:** *"That row is the next thing to collect. The tool is telling you
+which part of the book has no industry against it, rather than printing a
+building type under an industry heading."*
 
 ### 5 · What is collected when a loan is awarded
 

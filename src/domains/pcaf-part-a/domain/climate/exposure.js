@@ -32,6 +32,25 @@
 'use strict';
 
 const { CLIMATE_VERDICTS, ALIGNMENT_VERDICTS, HORIZONS, idsOf } = require('./vocabulary');
+const { vocabulary: sectorVocabulary } = require('../sector-factors');
+
+/** The sector vocabulary's own label for a key, so an industry row is named
+    the way the sector library names it rather than however it was keyed. */
+const SECTOR_LABEL = new Map(sectorVocabulary().sectors.map(s => [s.key, s.label]));
+
+/**
+ * What an exposure with no sector from the vocabulary is grouped as.
+ *
+ * Every asset class but business loans puts its own descriptor where a
+ * borrower's sector stands — a building type for property, a dwelling type for
+ * a mortgage, a vehicle class for a vehicle facility, a NACE code for a listed
+ * holding — because that is what each book is grouped by on its own screen.
+ * None of them is an industry, and printing "office" or "70" under an S2 §32
+ * industry heading states something the bank never recorded. So the industry
+ * table is keyed on the sector vocabulary alone and everything else is one
+ * row that says what it is.
+ */
+const INDUSTRY_NOT_RECORDED = 'Industry not recorded';
 
 /** The basis every §29(b)–(d) figure carries, so no reader takes it for measured. */
 const CLASSIFICATION_BASIS =
@@ -190,26 +209,31 @@ function position(exposures) {
      "we do not know" is not a sector. */
   const bySector = new Map();
   for (const row of rows) {
-    /* Grouped on the vocabulary key where the class holds one, so two spellings
-       of one sector are one row; labelled with what the bank actually keyed. */
-    const key = row.sectorKey || row.sector || null;
+    /* Grouped on the vocabulary key alone, and labelled from the vocabulary:
+       an industry row names an industry the bank recorded, never a descriptor
+       another class happens to keep in the same field. An exposure with no key
+       joins one row that says the industry was not recorded — which is a fact
+       about the book a reader can act on, where "office" is not. */
+    const key = row.sectorKey && SECTOR_LABEL.has(row.sectorKey) ? row.sectorKey : null;
     const held = bySector.get(key) || {
-      sector: row.sector || key, sectorKey: row.sectorKey || null,
+      sector: key ? SECTOR_LABEL.get(key) : INDUSTRY_NOT_RECORDED, sectorKey: key,
       outstanding: 0, emissions: 0, exposures: 0,
-      /* From the key alone: a free-text label matches no vocabulary, so a
-         sector recorded only as text is not claimed to be carbon-related and
-         not claimed not to be — it is simply outside the subtotal, and the
-         subtotal says the boundary is the entity's to set. */
-      carbonRelated: isCarbonRelated(row.sectorKey),
+      /* From the key alone, so a sector the vocabulary does not hold is neither
+         claimed to be carbon-related nor claimed not to be: it is outside the
+         subtotal, and the subtotal says the boundary is the entity's to set. */
+      carbonRelated: isCarbonRelated(key),
     };
     held.outstanding += money(row.outstanding) || 0;
     held.emissions += money(row.emissions) || 0;
     held.exposures += 1;
     bySector.set(key, held);
   }
+  /* Named industries first, largest outstanding first; the unrecorded row
+     last whatever its size, because it is not an industry and must not head a
+     table of them. */
   const industries = [...bySector.values()]
     .map(x => ({ ...x, outstanding: r2(x.outstanding), emissions: r2(x.emissions) }))
-    .sort((a, b) => b.outstanding - a.outstanding);
+    .sort((a, b) => (a.sectorKey ? 0 : 1) - (b.sectorKey ? 0 : 1) || b.outstanding - a.outstanding);
 
   const carbonRelated = industries.filter(x => x.carbonRelated);
   const total = industries.reduce((sum, x) => sum + x.outstanding, 0);

@@ -176,14 +176,14 @@ SECTION 13 [s2CrossIndustry] Cross-industry metrics
       row: Internal carbon price | Not stated | S2 §29(f) | —
       row: Remuneration linked to climate-related considerations | Not stated | S2 §29(g) | —
 SECTION 14 [s2Industry] Industry-based metrics — exposure and financed emissions by industry
-    body: The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the associated financed emissions disaggregated by industry, and for lending to carbon-related industries to be identified. Both are read from the sector recorded against each exposure; the emissions column is the scope 1 and 2 each class reports on its headline, never mixed with scope 3.
+    body: The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the associated financed emissions disaggregated by industry, and for lending to carbon-related industries to be identified. An industry is the sector recorded against an exposure from this system’s own vocabulary; the emissions column is the scope 1 and 2 each class reports on its headline, never mixed with scope 3.
     table: Industry | Exposures | Outstanding LKR | Financed scope 1 and 2 tCO2e | Carbon-related
-      row: Textiles | 1 | 480,000,000 | 1752.000 | Yes
-      row: office | 1 | 200,000,000 | 19.620 | —
-      row: manufacturing_rubber_plastics | 1 | 40,000,000 | 36.000 | Yes
+      row: Textiles and apparel | 1 | 480,000,000 | 1752.000 | Yes
+      row: Rubber and plastics | 1 | 40,000,000 | 36.000 | Yes
+      row: Industry not recorded | 1 | 200,000,000 | 19.620 | —
     figure: Outstanding to carbon-related industries = 520,000,000 LKR
     caption: Carbon-related industries follow the four non-financial groups of the TCFD 2021 implementing guidance — energy, transportation, materials and buildings, and agriculture, food and forest products — mapped onto this system's sector vocabulary. The boundary is the reporting entity's to set and this is the set applied here.
-    caption: An exposure whose sector was recorded as free text is its own row and sits outside the carbon-related subtotal: it is neither claimed to be carbon-related nor claimed not to be.
+    caption: An industry row names a sector from this system’s own vocabulary. An exposure recorded without one is counted under "Industry not recorded" and sits outside the carbon-related subtotal: it is neither claimed to be carbon-related nor claimed not to be. Every asset class but business loans and unlisted equity keeps its own descriptor where a borrower’s sector stands — a building type, a dwelling type, a vehicle class — and none of those is an industry.
 SECTION 15 [s2Targets] Climate-related targets
     body: SLFRS S2 §33–36 ask for each climate-related target the entity has set or is required to meet, the metric and the part of the entity it covers, its base year and target year, whether it was validated by a third party, and performance against it.
     body: No climate-related target is stated by the reporting entity. S2 §33–36 requires each target to be disclosed.
