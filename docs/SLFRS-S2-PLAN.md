@@ -98,6 +98,10 @@ collecting the fact, not by suppressing the item.
 
 ## 3. The stages
 
+> **Stages 1 and 2 are built.** What follows is the plan they were built to,
+> kept as written; `CLAUDE.md` records what shipped. Stage 3 onward is still
+> the plan.
+
 ### Stage 1 — The bank's own climate facts
 
 **Where they live.** On the existing `parta_settings` record, not a new table
@@ -293,8 +297,8 @@ bank's facts, download the S2 disclosure.
 
 | Stage | Depends on | Size | Monday |
 |---|---|---|---|
-| 1 The bank's climate facts | — | medium | yes |
-| 2 Loan-level classification and the sample book | — | medium | yes |
+| 1 The bank's climate facts | — | medium | **built** |
+| 2 Loan-level classification and the sample book | — | medium | **built** |
 | 3 The document becomes the S2 file | 1, 2 | large | yes |
 | 4 The dashboard | 3 | large | yes |
 | 5 The walkthrough | 4 | medium | yes |

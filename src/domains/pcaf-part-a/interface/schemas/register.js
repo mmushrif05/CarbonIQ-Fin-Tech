@@ -26,12 +26,16 @@ const { realEstateRequestSchema } = require('./real-estate');
 const { assessRequestSchema } = require('./pcaf-parta');
 const { listedEquitySchema } = require('./listed-equity');
 const { motorVehiclesRequestSchema } = require('./motor-vehicles');
-const { climateSchema } = require('./climate');
+const { climateSchema, exposureClimateSchema } = require('./climate');
 
 const reportingYear = Joi.number().integer().min(2000).max(2100).required();
 
 /* The register's own fields on an engine schema that does not carry them. */
 const registerFields = {
+  /* The bank's own climate classification, on every class: S2 asks for the
+     share of the *book* vulnerable or aligned, so a block that only some
+     classes could carry would answer for only some of the book. */
+  climate: exposureClimateSchema,
   identifiers: Joi.object({
     id: Joi.string().max(120).optional(),
     accountNumber: Joi.string().max(80).optional(),
@@ -48,6 +52,7 @@ const registerFields = {
 const businessLoansRegisterSchema = exposureSchema.append({
   assetClass: Joi.string().valid('business-loans-unlisted-equity').optional(),
   reportingYear,
+  climate: registerFields.climate,
 });
 
 /* §5.4 / §5.5 — the class is the register's `assetClass`; the engine's own
@@ -66,7 +71,7 @@ const realEstateRegisterSchema = realEstateRequestSchema
 const projectFinanceRegisterSchema = assessRequestSchema
   .fork('reportingYear', () => reportingYear)
   .fork('assetClass', s => s.valid('project-finance').required())
-  .append({ identifiers: registerFields.identifiers })
+  .append({ identifiers: registerFields.identifiers, climate: registerFields.climate })
   .unknown(false);
 
 /* §5.6 */
@@ -80,6 +85,7 @@ const motorVehiclesRegisterSchema = motorVehiclesRequestSchema.append({
 const listedEquityRegisterSchema = listedEquitySchema.append({
   assetClass: Joi.string().valid('listed-equity-corporate-bonds').required(),
   reportingYear,
+  climate: registerFields.climate,
 });
 
 const registerExposureSchema = Joi.alternatives().conditional('.assetClass', {

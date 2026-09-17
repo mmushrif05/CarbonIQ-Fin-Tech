@@ -168,6 +168,7 @@ function position(exposures) {
   const rows = (exposures || []).map(e => ({
     outstanding: e.outstanding,
     sector: e.sector || null,
+    sectorKey: e.sectorKey || null,
     emissions: e.emissions,
     climate: e.climate || null,
   }));
@@ -184,8 +185,18 @@ function position(exposures) {
      "we do not know" is not a sector. */
   const bySector = new Map();
   for (const row of rows) {
-    const key = row.sector || null;
-    const held = bySector.get(key) || { sector: key, outstanding: 0, emissions: 0, exposures: 0, carbonRelated: isCarbonRelated(key) };
+    /* Grouped on the vocabulary key where the class holds one, so two spellings
+       of one sector are one row; labelled with what the bank actually keyed. */
+    const key = row.sectorKey || row.sector || null;
+    const held = bySector.get(key) || {
+      sector: row.sector || key, sectorKey: row.sectorKey || null,
+      outstanding: 0, emissions: 0, exposures: 0,
+      /* From the key alone: a free-text label matches no vocabulary, so a
+         sector recorded only as text is not claimed to be carbon-related and
+         not claimed not to be — it is simply outside the subtotal, and the
+         subtotal says the boundary is the entity's to set. */
+      carbonRelated: isCarbonRelated(row.sectorKey),
+    };
     held.outstanding += money(row.outstanding) || 0;
     held.emissions += money(row.emissions) || 0;
     held.exposures += 1;

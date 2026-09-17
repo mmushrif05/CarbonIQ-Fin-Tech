@@ -40,6 +40,7 @@
 'use strict';
 
 const register = require('./register');
+const exposureClimate = require('../domain/climate/exposure');
 const sovereign = require('./sovereign-register');
 const settingsService = require('./parta-settings');
 const { shared } = require('./parta-report');
@@ -158,11 +159,12 @@ function sovereignRow(pos) {
  */
 async function position(orgId, reportingYear) {
   const year = String(reportingYear);
-  const [book, settings, reg, sv] = await Promise.all([
+  const [book, settings, reg, sv, climateRows] = await Promise.all([
     register.getBook(orgId, year),
     settingsService.getSettings(orgId).catch(fallback('parta.consolidated.settings', settingsService.DEFAULT_SETTINGS)),
     register.positions(orgId, year),
     tryPosition(() => sovereign.position(orgId, year)),
+    register.climateRows(orgId, year).catch(fallback('parta.consolidated.climateRows', [])),
   ]);
   const bookCurrency = book ? book.currency : null;
   const statedReason = new Map((settings.assetClassesNotReported || []).map(x => [x.assetClass, x.reason]));
@@ -261,6 +263,20 @@ async function position(orgId, reportingYear) {
       why: 'A figure the reporting entity has not approved is one it has not yet stood behind.', clause: 'ISAE 3000 §12(a)' });
   }
 
+  /* S2 asks for the share of the book vulnerable or aligned, and a book with
+     no classification cannot answer. Named among the outstanding items rather
+     than printed as zero per cent, which would read as "none of it is". */
+  const climateExposure = exposureClimate.position(climateRows);
+  const unclassified = climateExposure.transitionRisk.unassessedAmount;
+  if (climateRows.length && unclassified > 0) {
+    outstandingItems.push({
+      what: 'Classify the exposures still unassessed for transition risk, physical risk and opportunity alignment',
+      why: 'The amount and percentage of assets vulnerable or aligned are reported over the outstanding actually '
+        + 'assessed; what is unassessed is stated beside them rather than counted as not vulnerable.',
+      clause: 'SLFRS S2 §29(b)–(d)',
+    });
+  }
+
   return {
     reportingYear: year,
     currency: bookCurrency,
@@ -276,6 +292,11 @@ async function position(orgId, reportingYear) {
       note: 'One score per class, weighted by outstanding amount within it (DCL p.128). Scores are never averaged '
         + 'across classes: each class scores on its own table, and a mean of two categories from two scales means nothing.',
     },
+    /* SLFRS S2 §29(b)–(d) and the §32 industry table, summed by the engine
+       from a classification the bank recorded against each exposure. The
+       unassessed share travels with every figure: a book nobody has classified
+       reads as unclassified here, never as safe. */
+    climateExposure,
     outstandingItems,
     exposures: recorded.reduce((s, c) => s + (c.exposures || 0), 0),
     source: 'Each class’s own reporting-year roll-up, read from its stored projection and laid side by side; nothing recomputed.',

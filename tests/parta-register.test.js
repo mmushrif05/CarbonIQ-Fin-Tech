@@ -288,11 +288,23 @@ describe('the projection is declared once', () => {
   test('the SQL function and the registry name the same fields', () => {
     const fs = require('fs');
     const path = require('path');
-    const sql = fs.readFileSync(path.join(__dirname, '..', 'migrations', '0008_parta_exposures.sql'), 'utf8');
-    const fn = sql.slice(sql.indexOf('CREATE FUNCTION parta_exposure_rollup'), sql.indexOf('ALTER TABLE parta_exposures ADD COLUMN rollup'));
+    /* The function is redefined whenever the projection gains a field, so the
+       claim is about the LAST migration that defines it, not the first. Read
+       from 0008 alone, this test would pass on a stale shape and the roll-up
+       would silently read a column missing the field it was widened for. */
+    const dir = path.join(__dirname, '..', 'migrations');
+    const latest = fs.readdirSync(dir).filter(f => f.endsWith('.sql')).sort()
+      .filter(f => fs.readFileSync(path.join(dir, f), 'utf8').includes('CREATE FUNCTION parta_exposure_rollup'))
+      .pop();
+    expect(latest).toBeTruthy();
+    const sql = fs.readFileSync(path.join(dir, latest), 'utf8');
+    /* The first definition in the file is the `up` half; a migration that also
+       rebuilds the old shape in its `down` half must not be read from there. */
+    const fn = sql.slice(sql.indexOf('CREATE FUNCTION parta_exposure_rollup'),
+      sql.indexOf('ALTER TABLE parta_exposures ADD COLUMN rollup'));
     for (const field of definition(repo.EXPOSURES).projections.rollup.fields) {
       const leaf = field.replace(/\[\]/g, '').split('.').pop();
-      expect(fn).toContain(`'${leaf}'`);
+      expect({ field, inFunction: fn.includes(`'${leaf}'`) }).toEqual({ field, inFunction: true });
     }
   });
 });

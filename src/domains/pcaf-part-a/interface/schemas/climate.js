@@ -94,4 +94,32 @@ function build() {
 
 const climateSchema = build();
 
-module.exports = { climateSchema };
+/**
+ * The classification a loan carries for SLFRS S2 §29(b)–(d).
+ *
+ * Every field optional: a bank recording its book on day one has not yet
+ * judged any of it, and an exposure with no classification is a legitimate
+ * row that the roll-up reports as unassessed rather than as safe.
+ */
+const verdict = Joi.string().valid(...idsOf(listFor('climateVerdicts'))).allow(null, '');
+const alignment = Joi.string().valid(...idsOf(listFor('alignmentVerdicts'))).allow(null, '');
+const horizon = Joi.string().valid(...idsOf(listFor('horizons'))).allow(null, '');
+
+const exposureClimateSchema = Joi.object({
+  transitionRisk: Joi.object({
+    verdict, horizon, note: Joi.string().max(1000).allow(null, ''),
+  }).unknown(false).allow(null),
+  physicalRisk: Joi.object({
+    verdict, horizon, note: Joi.string().max(1000).allow(null, ''),
+  }).unknown(false).allow(null),
+  opportunity: Joi.object({
+    verdict: alignment,
+    /* The Sri Lanka Green Finance Taxonomy activity code, in the shape the
+       taxonomy itself uses — objective letter, macro-sector, activity. */
+    taxonomyCode: Joi.string().max(20).allow(null, ''),
+    note: Joi.string().max(1000).allow(null, ''),
+  }).unknown(false).allow(null),
+}).unknown(false).allow(null)
+  .description('The bank\'s own climate classification of this exposure — SLFRS S2 §29(b)–(d)');
+
+module.exports = { climateSchema, exposureClimateSchema };

@@ -27381,6 +27381,127 @@
                         "minimum": 2000,
                         "maximum": 2100
                       },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
+                      },
                       "identifiers": {
                         "type": "object",
                         "properties": {
@@ -27583,6 +27704,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       },
                       "identifiers": {
                         "type": "object",
@@ -27840,6 +28082,127 @@
                             "maxLength": 80
                           }
                         }
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [
@@ -28377,6 +28740,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [
@@ -28568,6 +29052,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       },
                       "identifiers": {
                         "type": "object",
@@ -29172,6 +29777,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [
@@ -29689,6 +30415,127 @@
                         "minimum": 2000,
                         "maximum": 2100
                       },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
+                      },
                       "identifiers": {
                         "type": "object",
                         "properties": {
@@ -29891,6 +30738,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       },
                       "identifiers": {
                         "type": "object",
@@ -30148,6 +31116,127 @@
                             "maxLength": 80
                           }
                         }
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [
@@ -30685,6 +31774,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [
@@ -30876,6 +32086,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       },
                       "identifiers": {
                         "type": "object",
@@ -31480,6 +32811,127 @@
                         "type": "integer",
                         "minimum": 2000,
                         "maximum": 2100
+                      },
+                      "climate": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "transitionRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "physicalRisk": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "vulnerable",
+                                  "not_vulnerable",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "horizon": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "short",
+                                  "medium",
+                                  "long",
+                                  ""
+                                ]
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          },
+                          "opportunity": {
+                            "type": [
+                              "object",
+                              "null"
+                            ],
+                            "properties": {
+                              "verdict": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "enum": [
+                                  "aligned",
+                                  "not_aligned",
+                                  "not_assessed",
+                                  ""
+                                ]
+                              },
+                              "taxonomyCode": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 20
+                              },
+                              "note": {
+                                "type": [
+                                  "string",
+                                  "null"
+                                ],
+                                "maxLength": 1000
+                              }
+                            }
+                          }
+                        },
+                        "description": "The bank's own climate classification of this exposure — SLFRS S2 §29(b)–(d)"
                       }
                     },
                     "required": [

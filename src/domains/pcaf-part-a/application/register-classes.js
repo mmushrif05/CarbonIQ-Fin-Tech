@@ -396,6 +396,11 @@ function classFor(assetClass) {
 function engineInputOf(input, assetClass) {
   const out = { ...input };
   delete out.assetClass;
+  /* The climate classification is a fact about the loan the bank recorded, not
+     an input to the arithmetic — the engine schemas are closed, so a field the
+     caller was right to send would otherwise be a named 400. It is kept on the
+     record beside the engine's input, and the roll-up reads it there. */
+  delete out.climate;
   if ((assetClass === 'commercial-real-estate' || assetClass === 'mortgages') && out.class && out.class !== assetClass) {
     const err = /** @type {import('../../../shared/types').AppError} */ (new Error(
       `The register names asset class "${assetClass}" and the body names class "${out.class}"; they must agree.`));

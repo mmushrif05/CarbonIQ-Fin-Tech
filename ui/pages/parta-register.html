@@ -284,6 +284,27 @@
       </div>
       </div>
 
+      <!-- The bank's own climate judgement about this loan. It feeds no
+           arithmetic in the engine: it is what SLFRS S2 §29(b)-(d) are summed
+           from, and an exposure left unassessed is reported as unassessed
+           rather than counted as not vulnerable. -->
+      <h5 class="partc-subhead">Climate risk and opportunity</h5>
+      <p class="partc-hint">SLFRS S2 §29(b)–(d). Collected when the facility is awarded and reviewed at each annual review. Leave as not assessed until the judgement has been made.</p>
+      <div class="pr-grid" id="pr-climate">
+        <label>Transition risk
+          <select id="pr-f-cl-transition"><option value="">Not assessed</option></select></label>
+        <label>Over which horizon
+          <select id="pr-f-cl-transition-horizon"><option value="">Not stated</option></select></label>
+        <label>Physical risk
+          <select id="pr-f-cl-physical"><option value="">Not assessed</option></select></label>
+        <label>Over which horizon
+          <select id="pr-f-cl-physical-horizon"><option value="">Not stated</option></select></label>
+        <label>Opportunity alignment
+          <select id="pr-f-cl-opportunity"><option value="">Not assessed</option></select></label>
+        <label>Taxonomy activity code <input id="pr-f-cl-code" type="text" maxlength="20" placeholder="e.g. M6.3"></label>
+        <label class="pr-wide">Note <input id="pr-f-cl-note" type="text" maxlength="1000" placeholder="what the judgement rests on"></label>
+      </div>
+
       <div class="partc-actions">
         <button class="btn btn-primary" type="submit" id="pr-form-submit">Record</button>
         <button class="btn btn-secondary" type="button" id="pr-form-cancel">Cancel</button>
