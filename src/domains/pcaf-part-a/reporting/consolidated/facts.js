@@ -218,6 +218,8 @@ function disclosureFacts(input) {
     optionDistribution: distributionOf(classes),
     outstandingItems: pos.outstandingItems || [],
     approval: pos.approval || null,
+    undrawnCommitments: pos.undrawnCommitments || null,
+    numeratorBasis: pos.numeratorBasis || null,
     exposureRegister: input.rows || [],
     bySector: bl ? Object.entries(bl.bySector || {}).map(([sector, g]) => ({
       sector, exposures: g.exposures, outstanding: g.outstanding,

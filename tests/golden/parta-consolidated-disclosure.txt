@@ -332,10 +332,11 @@ ANNEX G [annexRegulatory] Where the regulatory lines come from
       row: Sustainable-finance classification of the lending book under the SLGFT | CBSL Direction No. 05 of 2022 | Elsewhere | The taxonomy screen and the Green Loan Certificate, not a financed-emissions document
 ANNEX H [annexChecklist] PCAF disclosure checklist — completed
     checklist
-CHECKLIST: 27 items
+CHECKLIST: 28 items
   GOV-1: Yes
   GOV-2: Yes
   APR-1: No
+  NUM-1: Yes
   PER-1: Yes
   COV-1: Yes
   COV-2: Yes

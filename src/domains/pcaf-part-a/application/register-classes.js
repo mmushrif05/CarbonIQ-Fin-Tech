@@ -43,6 +43,7 @@ const { traced, absent } = require('../domain/provenance');
 const { withSectorBand } = require('./plausibility');
 const { withPropertyFactors } = require('./property-factors');
 const { withVehicleFactors } = require('./vehicle-factors');
+const facility = require('../domain/facility');
 
 const r2 = n => +Number(n).toFixed(2);
 const num = v => typeof v === 'number' && Number.isFinite(v);
@@ -92,8 +93,11 @@ function adaptRealEstate(native, input, assetClass) {
       country: native.property.country,
       buildingType: native.property.buildingType,
     },
-    denominator: native.denominator.valueAtOrigination
-      ? { value: native.denominator.valueAtOrigination.value, equation: native.denominator.valueAtOrigination.equation || 'property value at origination', assumptions: native.denominator.valueAtOrigination.assumptions || [], state: native.denominator.state }
+    /* The engine states the origination value as a figure; a traced object is
+       read for its value so the register's shape holds one number either way. */
+    denominator: native.denominator.valueAtOrigination !== null && native.denominator.valueAtOrigination !== undefined
+      ? { value: num(native.denominator.valueAtOrigination) ? native.denominator.valueAtOrigination : (native.denominator.valueAtOrigination.value ?? null),
+        equation: native.denominator.valueAtOrigination.equation || 'property value at origination', assumptions: native.denominator.valueAtOrigination.assumptions || [], state: native.denominator.state }
       : null,
     attribution: native.attribution,
     inventory: {
@@ -401,6 +405,11 @@ function engineInputOf(input, assetClass) {
      caller was right to send would otherwise be a named 400. It is kept on the
      record beside the engine's input, and the roll-up reads it there. */
   delete out.climate;
+  /* The facility likewise: the commitment, the drawn amount and the repayment
+     profile decide what the year-end balance should be and what is undrawn,
+     and the register reads them after the adapter over every class's one
+     shape; no engine takes them. */
+  delete out[facility.FIELD];
   if ((assetClass === 'commercial-real-estate' || assetClass === 'mortgages') && out.class && out.class !== assetClass) {
     const err = /** @type {import('../../../shared/types').AppError} */ (new Error(
       `The register names asset class "${assetClass}" and the body names class "${out.class}"; they must agree.`));
@@ -417,7 +426,25 @@ async function run(assetClass, input, ctx) {
   const engineInput = engineInputOf(input, assetClass);
   const prepared = await c.prepare(engineInput, ctx);
   const native = c.engine(prepared);
-  return { engineInput, result: c.adapt(native, engineInput) };
+  const result = c.adapt(native, engineInput);
+  return { engineInput, result: withFacility(result, input[facility.FIELD]) };
+}
+
+/**
+ * The facility read against the class's adapted result: the scheduled
+ * balance and its checks, the §6.2 undrawn line apart, the life-of-loan
+ * projection. Nothing the engine computed moves; the findings join the
+ * class's own. A listed holding carries no facility, and the schema never
+ * offers it one.
+ */
+function withFacility(result, block) {
+  if (!block) return result;
+  const analysed = facility.analyse(block, result);
+  return {
+    ...result,
+    facility: analysed,
+    validation: facility.mergeValidation(result.validation, analysed.validation),
+  };
 }
 
 /** The classes as a list a route or a screen can offer. */

@@ -83,6 +83,59 @@ case by case. An engine that only refuses is a gate, and a gate on five
 thousand SME loans is a product nobody finishes onboarding. An engine that never
 refuses will print a score of 2 on evidence worth a 5.
 
+### The numerator, and the facility behind it
+
+The question a relationship manager asks first is the one the standard answers
+most plainly: a client asks for 250 million over five years — is *that* the
+outstanding amount? No. The outstanding amount is **the value of the debt the
+borrower owes at the fiscal year-end — disbursed debt minus any repayments**
+(§5.2, p.56), taken at one fixed point in time (p.33), adjusted annually so the
+attribution declines to zero when the loan is repaid. The sanctioned amount is
+the numerator only on the day it is fully drawn and nothing has been repaid.
+Each reporting year is a fresh measurement of that year's balance; nothing is
+spread over the tenor.
+
+So the register records the **facility** beside the year-end balance:
+
+```jsonc
+"facility": {
+  "committed": 250000000,            // the sanctioned amount — the total loan commitment
+  "disbursed": 250000000,            // drawn to date, gross
+  "originationDate": "2025-03-15",
+  "maturityDate": "2030-03-15",
+  "repayment": { "profile": "equal-principal", "frequency": "quarterly" },   // or bullet · annuity (needs annualRatePct) · schedule
+  "utilisationFactor": 0.6,          // optional — the §6.2 weighted figure, beside the unweighted one
+  "outstandingBasis": "ledger"       // or "scheduled": the balance was taken from the schedule, not the ledger
+}
+```
+
+From it the engine (`domain/facility/`) schedules the balance at every
+year-end, and three things follow, each kept apart from the others:
+
+- **The scheduled balance is a convenience, and a recorded one.** The form can
+  fill *Outstanding at year-end* from the schedule at origination, and the
+  record then carries `outstandingBasis: "scheduled"` and the material finding
+  `OUTSTANDING_SCHEDULED_NOT_ACTUAL` until the ledger's balance replaces it.
+  A keyed balance that differs from the schedule by more than a tenth is
+  `OUTSTANDING_OFF_SCHEDULE` (advisory — a prepayment, an arrear or a
+  restructure, and the reader is told). A balance above the commitment is
+  refused (`OUTSTANDING_EXCEEDS_COMMITMENT`), as is a drawn amount above it.
+- **The undrawn commitment is §6.2, reported apart.** Committed minus drawn, on
+  the same denominator as the drawn part, times the borrower's emissions: the
+  unweighted figure that *shall* be reported by anyone reporting undrawn, and
+  the weighted one that *may* sit beside it and never instead (pp.171–173).
+  It is a condition of a loan and not an asset class; no row anywhere sums it
+  with the financed figure, and an Option 3b exposure — priced on the
+  outstanding directly with no attribution factor — reports it absent with
+  the reason rather than inventing a company figure to attribute.
+- **The life-of-loan attribution is a projection.** One row per year-end from
+  origination to maturity: the scheduled balance, the attribution factor it
+  gives against the denominator held constant, and the financed emissions at
+  the borrower's figure held constant. It answers *what will this loan carry
+  as it is repaid*, it is hatched wherever it is drawn, and it never enters
+  the position — the position is the reporting year's actual balance and
+  nothing else.
+
 ### What is refused
 
 | Code | Why |
@@ -101,6 +154,7 @@ refuses will print a score of 2 on evidence worth a 5.
 | `VERIFIER_REQUIRED` | Score 1 is a claim about a third-party auditor and needs the auditor's name |
 | `DQ_OPTION_NOT_EARNED` | A better option than the evidence supports needs a justification, recorded beside the score |
 | `FACTOR_SOURCE_REQUIRED` | A factor without a publisher cannot be cited |
+| `OUTSTANDING_EXCEEDS_COMMITMENT` · `DISBURSED_EXCEEDS_COMMITMENT` · `FACILITY_DATES_INVALID` · `ANNUITY_RATE_REQUIRED` | A balance or a drawdown larger than the facility, a maturity before origination, an annuity with no rate: the schedule cannot be computed |
 
 ### What is recorded
 
@@ -108,6 +162,9 @@ refuses will print a score of 2 on evidence worth a 5.
 |---|---|---|
 | `FN71_YEAR_END_FLUCTUATION` | material | The year-end balance is far from the year's average on a revolving facility |
 | `FN71_AVERAGE_NOT_HELD` | advisory | A revolving facility with no average: the check did not run, and says so |
+| `OUTSTANDING_SCHEDULED_NOT_ACTUAL` | material | The year-end balance was taken from the repayment schedule, not the ledger; the ledger's balance must replace it before disclosure |
+| `OUTSTANDING_OFF_SCHEDULE` | advisory | The keyed balance differs from the scheduled one by more than a tenth — a prepayment, an arrear or a restructure |
+| `FACILITY_MATURED` | advisory | The facility matured before the year-end and still carries a balance |
 | `EMISSIONS_DATA_LAG` | material | The borrower's figure is years behind the reporting year |
 | `DENOMINATOR_EXCEEDS_ASSETS` | material | Equity plus debt above total assets cannot be one balance sheet at one date |
 | `INTENSITY_OUTSIDE_SECTOR_BAND` | material / advisory | Outside the band supplied; a factor of ten or more is more often a unit error than a real one |

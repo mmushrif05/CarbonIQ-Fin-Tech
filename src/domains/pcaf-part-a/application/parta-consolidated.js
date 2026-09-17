@@ -40,6 +40,7 @@
 'use strict';
 
 const register = require('./register');
+const { undrawnAcross, numeratorBasisAcross } = require('./register-facility');
 const exposureClimate = require('../domain/climate/exposure');
 const sovereign = require('./sovereign-register');
 const settingsService = require('./parta-settings');
@@ -126,6 +127,8 @@ function registerRow(pos, bookCurrency, assetClass) {
     financialSector: pos.financialSector || null,
     optionDistribution: plan.byOption || [],
     approval: pos.approval || null,
+    undrawnCommitments: pos.undrawnCommitments || null,
+    numeratorBasis: pos.numeratorBasis || null,
   };
 }
 
@@ -263,6 +266,18 @@ async function position(orgId, reportingYear) {
       why: 'A figure the reporting entity has not approved is one it has not yet stood behind.', clause: 'ISAE 3000 §12(a)' });
   }
 
+  /* §6.2 across the classes in the book's currency, apart from every headline;
+     and every numerator taken from a schedule, named before filing. */
+  const undrawnCommitments = undrawnAcross(recorded);
+  const numeratorBasis = numeratorBasisAcross(recorded);
+  if (numeratorBasis.scheduled > 0) {
+    outstandingItems.push({
+      what: `Replace the scheduled year-end balance with the loan account’s on ${numeratorBasis.scheduled} exposure(s)`,
+      why: 'The outstanding amount is the debt owed at the fiscal year-end; a balance taken from the repayment schedule is what the ledger is expected to show, not what it shows.',
+      clause: 'Part A §5.2 (p.56); p.33',
+    });
+  }
+
   /* S2 asks for the share of the book vulnerable or aligned, and a book with
      no classification cannot answer. Named among the outstanding items rather
      than printed as zero per cent, which would read as "none of it is". */
@@ -297,6 +312,8 @@ async function position(orgId, reportingYear) {
        unassessed share travels with every figure: a book nobody has classified
        reads as unclassified here, never as safe. */
     climateExposure,
+    undrawnCommitments,
+    numeratorBasis,
     outstandingItems,
     exposures: recorded.reduce((s, c) => s + (c.exposures || 0), 0),
     source: 'Each class’s own reporting-year roll-up, read from its stored projection and laid side by side; nothing recomputed.',
