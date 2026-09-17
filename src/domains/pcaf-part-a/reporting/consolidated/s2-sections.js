@@ -226,8 +226,9 @@ function industrySection(f) {
     blocks: keep([
       b.body('The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the '
         + 'associated financed emissions disaggregated by industry, and for lending to carbon-related industries '
-        + 'to be identified. Both are read from the sector recorded against each exposure; the emissions column '
-        + 'is the scope 1 and 2 each class reports on its headline, never mixed with scope 3.'),
+        + 'to be identified. An industry is the sector recorded against an exposure from this system’s own '
+        + 'vocabulary; the emissions column is the scope 1 and 2 each class reports on its headline, never mixed '
+        + 'with scope 3.'),
       ind.rows.length ? b.table({
         head: ['Industry', 'Exposures', `Outstanding ${ccy || ''}`.trim(), 'Financed scope 1 and 2 tCO2e', 'Carbon-related'],
         widths: [2.1, 0.8, 1.4, 1.5, 1], align: ['left', 'right', 'right', 'right', 'left'], zebra: true,
@@ -241,8 +242,11 @@ function industrySection(f) {
       }),
       b.caption(ind.carbonRelated.basis || ''),
       ind.rows.some(r => !r.sectorKey) ? b.caption(
-        'An exposure whose sector was recorded as free text is its own row and sits outside the carbon-related '
-        + 'subtotal: it is neither claimed to be carbon-related nor claimed not to be.') : null,
+        'An industry row names a sector from this system’s own vocabulary. An exposure recorded without one is '
+        + 'counted under "Industry not recorded" and sits outside the carbon-related subtotal: it is neither '
+        + 'claimed to be carbon-related nor claimed not to be. Every asset class but business loans and unlisted '
+        + 'equity keeps its own descriptor where a borrower’s sector stands — a building type, a dwelling type, a '
+        + 'vehicle class — and none of those is an industry.') : null,
     ]),
   };
 }

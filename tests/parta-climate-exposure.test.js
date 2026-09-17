@@ -94,12 +94,26 @@ describe('the sums, in the domain', () => {
     expect(exposureClimate.CARBON_RELATED_BASIS).toMatch(/reporting entity's to set/);
   });
 
-  test('an exposure with no sector is its own row rather than folded into another', () => {
+  test('an industry row is a sector the vocabulary holds; everything else says the industry was not recorded', () => {
+    /* Every class but business loans keeps its own descriptor where a
+       borrower's sector stands — a building type, a dwelling type, a vehicle
+       class, a NACE code. None of them is an industry, and the rehearsal found
+       "office", "retail" and "70" heading rows of an S2 §32 table. The table is
+       keyed on the sector vocabulary alone now, and labelled from it. */
     const p = exposureClimate.position([
       { outstanding: 100, sector: null, sectorKey: null, emissions: 1, climate: null },
+      { outstanding: 50, sector: 'office', sectorKey: null, emissions: 3, climate: null },
       { outstanding: 200, sector: 'Banking', sectorKey: 'finance', emissions: 2, climate: null },
     ]);
-    expect(p.industries.rows.map(r => r.sector)).toEqual(expect.arrayContaining([null, 'Banking']));
+    const rows = p.industries.rows;
+    expect(rows.map(r => r.sector)).toEqual(['Financial and insurance activities', 'Industry not recorded']);
+    /* The two without a key are one row, counted and totalled, and it sorts
+       last however large it is: it is not an industry and must not head a
+       table of them. */
+    const unrecorded = rows[rows.length - 1];
+    expect({ exposures: unrecorded.exposures, outstanding: unrecorded.outstanding, key: unrecorded.sectorKey })
+      .toEqual({ exposures: 2, outstanding: 150, key: null });
+    expect(unrecorded.carbonRelated).toBe(false);
   });
 
   test('a verdict outside the vocabulary is cleared, and an empty block is null', () => {

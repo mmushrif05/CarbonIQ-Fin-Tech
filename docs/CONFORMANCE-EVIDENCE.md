@@ -66,7 +66,7 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 48 | executed |
 | PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 99 | executed |
 | PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 48 | executed |
-| PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 56 | executed |
+| PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 58 | executed |
 | PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 62 | executed |
 | PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 47 | executed |
 | PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 22 | executed |
@@ -109,8 +109,8 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 154 | executed |
 | PCAF Part A §5.2 | `A-S2-03` | report-integrity — measured, declared, absent | `tests/parta-s2-disclosure.test.js` | 202 | executed |
 | PCAF Part A §5.2 | `A-S2-04` | SLFRS S2 §29(a)(i)–(iv), (vi); B58–B63 | `tests/parta-s2-disclosure.test.js` | 93 | executed |
-| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 136 | executed |
-| PCAF Part A §5.2 | `A-S2-06` | SLFRS S2 §32; IFRS S2 industry-based guidance for commercial banks | `tests/parta-s2-disclosure.test.js` | 78 | executed |
+| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 140 | executed |
+| PCAF Part A §5.2 | `A-S2-06` | SLFRS S2 §32; IFRS S2 industry-based guidance for commercial banks | `tests/parta-s2-disclosure.test.js` | 82 | executed |
 | PCAF Part A §5.2 | `A-S2-07` | SLFRS S2 — the disclosure read as an S2 file | `tests/parta-s2-disclosure.test.js` | 93 | executed |
 | PCAF Part A §5.2 | `A-S2-08` | report-integrity; PCAF conformance language | `tests/parta-s2-disclosure.test.js` | 39 | executed |
 | PCAF Part A §5.2 | `A-S2-09` | SLFRS S2 §5–37; Part A ch.6 (p.160) | `tests/parta-s2-disclosure.test.js` | 96 | executed |

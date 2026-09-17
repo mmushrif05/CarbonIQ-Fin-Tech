@@ -9,7 +9,7 @@
      the approvals, what the disclosure still lists, and whether the
      document renders. Every row is a field a route returned.
 
-     The five screens as steps. Opening a step navigates to the real
+     The eight steps, chief executive first. Opening a step navigates to the real
      screen with the step already applied, through the same doors the
      screens already use: the class hand-over the Lending Book reads, and
      an intent the Bank Overview reads on load. Starting the walkthrough
@@ -38,41 +38,63 @@ const WalkthroughPage = (() => {
   const BANK_INTENT = 'carboniq.bank.intent';
   const CLASS_KEY = 'carboniq.parta.class';
 
-  /* The five screens, in the order the runbook reads them. `apply` sets the
-     hand-over the target screen reads before its first request. */
+  /* The eight steps, in the order a chief executive reads them: the position
+     first, the file they will file second, and the technical screens after.
+     `apply` sets the hand-over the target screen reads before its first
+     request, so a step opens the real screen already showing what it is about
+     rather than a slide of it. */
   const STEPS = [
     {
-      title: 'The overview — one screen, the whole position',
+      title: 'The position — the whole book on one screen',
       page: 'bank',
-      action: 'Bank Overview. Financed scope 1 and 2 with the boundaries it sums; scope 3 on its own line; coverage of the stated book; economic intensity; what the disclosure still needs; how many exposures the bank has approved. Then the drawings: emissions by class with scope 3 apart, the share at each data-quality score, outstanding beside the coverage and approval rings, intensity per class.',
+      action: 'Bank Overview. The bank’s name and the reporting year; financed scope 1 and 2 with the boundaries it sums; scope 3 on its own line; coverage of the stated book; economic intensity; how many exposures the bank has approved.',
       note: 'Every figure on this screen is one the engine returned. The screen draws it and adds nothing to it.',
     },
     {
-      title: 'A class in focus',
+      title: 'The SLFRS S2 file, downloaded',
       page: 'bank',
-      apply: () => remember(BANK_INTENT, 'focus:business-loans-unlisted-equity'),
-      action: 'Press a chip. Every other class dims across the charts and the tiles, and the class’s own panel opens: its lines, its score, its coverage, its largest improvement step marked scenario. Open in the book goes to that class.',
-      note: 'A projected score is marked scenario and is never the reported score. One hue is one class on every panel.',
+      action: 'Press SLFRS S2 disclosure — PDF. The document opens: the cover names the reporting entity, who prepared it and who approved it, and carries a reference derived from the content itself.',
+      note: 'One document, downloaded in one press. The same position rendered twice carries the same reference, so a filed copy can be matched to what was on screen.',
     },
     {
-      title: 'The lending book — open, edit, review, approve',
+      title: 'What S2 asks, and where it is answered',
+      page: 'bank',
+      apply: () => remember(BANK_INTENT, 'behind:s2'),
+      action: 'The strip above the charts shows the four S2 pillars — governance, strategy, risk management, metrics and targets — with what the bank has stated and what it has not. Behind the S2 file opens the index: every paragraph, and whether the document answers it.',
+      note: 'A paragraph the bank has not answered is printed as not stated with the clause that asks for it. Nothing is written on the bank’s behalf.',
+    },
+    {
+      title: 'The climate view',
+      page: 'bank',
+      action: 'Climate risk and opportunity: the outstanding vulnerable to transition risk, vulnerable to physical risk, and aligned with opportunities — S2 §29(b)–(d) — each bar split into what was assessed and what has not been. Then the same book by industry, with carbon-related lending marked.',
+      note: 'The share is taken over the outstanding actually assessed. What has not been assessed is drawn beside it and is not counted as not vulnerable.',
+    },
+    {
+      title: 'What is collected when a loan is awarded',
       page: 'parta-register',
       apply: () => remember(CLASS_KEY, 'business-loans-unlisted-equity'),
-      action: 'Lending Book. Open a row: the equation the engine ran, the factor set with its checksum, the findings with what clears each. Edit an outstanding and save; the engine reruns. Send for review, approve; an approved exposure offers no edit. Reopen; it asks for the reason and prints it on the trail.',
-      note: 'A figure the bank has approved cannot move underneath the disclosure. Reopening it is a recorded decision with a reason, not a click.',
+      action: 'Lending Book, at business loans. Open the record form: the PCAF inputs the engine prices a loan from, and beneath them the climate block — transition risk, physical risk, opportunity alignment, each with the horizon the bank judged it over. Open a recorded row for the equation the engine ran, the factor set with its checksum, and the findings with what clears each.',
+      note: 'These are the fields a relationship manager fills at origination. The climate block feeds S2 §29(b)–(d) and nothing else; it changes no figure the engine computes.',
+    },
+    {
+      title: 'How it reaches the dashboard',
+      page: 'bank',
+      apply: () => remember(BANK_INTENT, 'focus:business-loans-unlisted-equity'),
+      action: 'Back on the overview with that class in focus: every other class dims across the charts and the tiles, and the class’s own panel opens — its lines, its score, its coverage, its largest improvement step marked scenario.',
+      note: 'A projected score is marked scenario and is never the reported score. One hue is one class on every panel.',
     },
     {
       title: 'What stands behind a figure',
       page: 'bank',
       apply: () => remember(BANK_INTENT, 'behind:headline'),
-      action: 'Bank Overview, Behind this figure under the headline: the document reference and its content hash, the build, the standard edition, every factor set with its version and checksum, the baselines in force with scope and version, the assurance mode, and how many exposures stand approved.',
-      note: 'This is the lineage the document itself carries. One position rendered twice carries one reference.',
+      action: 'Behind this figure under the headline: the document reference and its content hash, the build, the standard edition, every factor set with its version and checksum, the baselines in force with scope and version, the assurance mode, and how many exposures stand approved.',
+      note: 'This is the lineage the document itself carries. A reader can take any figure back to the exposure it came from.',
     },
     {
-      title: 'The disclosure',
+      title: 'The detail, for the analysts',
       page: 'parta-position',
-      action: 'Financed Emissions. Disclosure as PDF, Word or JSON, the exposure register as CSV. The document follows PCAF Chapter 6 and its checklist is answered from the document’s own facts, so an item can answer No: approvals until every exposure is approved, and the entity’s own inventory by design.',
-      note: 'The checklist cannot reach a hundred per cent, and that is correct. It says why on its face — this disclosure is one input to the entity’s inventory, not the inventory.',
+      action: 'Financed Emissions — what the team uses after a loan is awarded: every asset class side by side, the entity’s own facts as a form, the SLFRS S2 statements pillar by pillar, and the disclosure as PDF, Word or JSON with the exposure register as CSV.',
+      note: 'The checklist is answered from the document’s own facts, so an item can answer No — approvals until every exposure is approved, and the entity’s own inventory until the bank states it.',
     },
   ];
 
@@ -146,8 +168,22 @@ const WalkthroughPage = (() => {
     const items = p.outstandingItems || [];
     rows.push(['What the disclosure still lists', ready(items.length === 0, items.length === 0 ? 'Nothing' : `${items.length} item(s)`),
       items.length ? items.map(x => esc(x.what)).join(' · ') : 'Every Chapter 6 item the bank must state is on the record', opener('parta-position', 'Open Financed Emissions')]);
+    /* The two S2 rows: what the bank has said about itself, and how much of
+       the book it has classified. Both are fields the position returned. */
+    const r = e.climateReadiness || null;
+    rows.push(['The bank’s SLFRS S2 statements', ready(Boolean(r) && r.absent === 0 && r.illustrative === 0,
+      !r ? 'None' : r.absent === 0 && r.illustrative === 0 ? 'Stated' : r.stated > 0 || r.illustrative > 0 ? 'Part stated' : 'None'),
+      r ? `${esc(r.stated)} stated by the bank · ${esc(r.illustrative)} illustrative · ${esc(r.absent)} not stated, of ${esc(r.total)}`
+        : 'Governance, strategy, risk management and the entity’s own metrics are the bank’s to state',
+      opener('parta-position', 'Open Financed Emissions')]);
+    const band = (p.climateExposure && p.climateExposure.transitionRisk) || null;
+    rows.push(['The climate classification on the book', ready(Boolean(band) && band.exposuresAssessed > 0 && !band.unassessedAmount,
+      !band || !band.exposuresAssessed ? 'None' : band.unassessedAmount ? 'Part classified' : 'Classified'),
+      band ? `${esc(band.exposuresAssessed)} exposure(s) assessed for transition risk${band.unassessedAmount ? '; some outstanding is not yet assessed and is reported beside the share' : ''}`
+        : 'Each exposure carries the bank’s own verdict; the engine sums them for S2 §29(b)–(d)',
+      opener('parta-register', 'Open Lending Book', 'class:business-loans-unlisted-equity')]);
     const cover = (doc && doc.cover) || null;
-    rows.push(['The disclosure renders', ready(Boolean(cover)),
+    rows.push(['The SLFRS S2 disclosure renders', ready(Boolean(cover)),
       cover ? `Reference ${esc(cover.reportId || '')}; download it once from Bank Overview so the first render on the day is not the first render on the site` : 'The document did not render for this year', opener('bank', 'Open Bank Overview')]);
     setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
   }

@@ -228,12 +228,20 @@ const PartARegisterPage = (() => {
       return;
     }
     let list = [];
+    let unread = null;
     try { ({ exposures: list } = await call(`/exposures?reportingYear=${encodeURIComponent(year)}&assetClass=${encodeURIComponent(cls)}&limit=200`)); }
-    catch (err) { say('pr-status', err.message); }
+    catch (err) { unread = err; }
     rows = list;
     render(position);
     show('pr-body', true);
-    say('pr-status', `${position.exposures} exposure(s) in FY${position.reportingYear}.`);
+    /* A list that could not be read is not an empty book. The failure used to
+       be written to the status and then overwritten two lines later by the
+       count the position returned, so a refused read drew the position's own
+       "7 exposure(s)" above a table with nothing in it — the reader is told
+       the book is there and shown that it is not. */
+    say('pr-status', unread
+      ? `The position is FY${position.reportingYear}; the exposures could not be read: ${unread.message}`
+      : `${position.exposures} exposure(s) in FY${position.reportingYear}.`);
   }
 
   function render(p) {

@@ -2,10 +2,12 @@
  * The Walkthrough, driven.
  *
  * Seed a book, sign in, open the Walkthrough: the readiness rows are the
- * position's own facts; starting it puts the strip on the overview at step
- * one, Next follows the steps across the real screens with each one applied
- * — a class in focus, the lending book at that class, the lineage drawer —
- * and End takes the strip away. A reload keeps a walkthrough that is on.
+ * position's own facts, including what the bank has stated under SLFRS S2 and
+ * how much of its book it has classified. Starting it puts the strip on the
+ * overview at step one, Next follows all eight steps across the real screens
+ * with each one applied — the S2 index, the climate view, the lending book at
+ * a class, that class in focus, the lineage drawer — and Finish takes the
+ * strip away. A reload keeps a walkthrough that is on.
  */
 
 'use strict';
@@ -30,6 +32,8 @@ async function seed(request) {
     outstanding: { amount: 100000, asOf, currency: 'LKR' },
     denominator: { totalEquity: 600000, totalDebt: 400000, asOf, currency: 'LKR' },
     emissions: { scope1: { value: 1000, basis: 'reported-unverified', period: String(YEAR) }, scope2: { value: 100, basis: 'reported-unverified', period: String(YEAR) }, scope3AbsentReason: 'not measured' },
+    climate: { transitionRisk: { verdict: 'vulnerable', horizon: 'medium' }, physicalRisk: { verdict: 'not_vulnerable', horizon: 'long' },
+      opportunity: { verdict: 'not_aligned' } },
   } });
   expect(loan.status()).toBe(201);
   await request.put('/v1/pcaf/part-a/book', { headers: h, data: { reportingYear: YEAR, totalLoansAndInvestments: 50000000, currency: 'LKR', statedBy: 'Ana' } });
@@ -54,38 +58,58 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#page-walkthrough')).toBeVisible();
   await expect(page.locator('#wt-year')).toBeVisible();
   await page.selectOption('#wt-year', String(YEAR));
-  await expect(page.locator('#wt-readiness-rows tr')).toHaveCount(6);
+  await expect(page.locator('#wt-readiness-rows tr')).toHaveCount(8);
   await expect(page.locator('#wt-readiness-rows')).toContainText('exposure(s) across');
   await expect(page.locator('#wt-readiness-rows')).toContainText('Reference PA-');
-  await expect(page.locator('#wt-steps .wt-step')).toHaveCount(5);
+  /* The two SLFRS S2 rows, read off the position like every other row. */
+  await expect(page.locator('#wt-readiness-rows')).toContainText('stated by the bank');
+  await expect(page.locator('#wt-readiness-rows')).toContainText('assessed for transition risk');
+  await expect(page.locator('#wt-steps .wt-step')).toHaveCount(8);
   await expect(page.locator('#wt-strip')).toBeHidden();
 
-  /* Start: the overview, step one. */
+  /* Start: the overview, step one — the position. */
   await page.locator('#wt-start').click();
   await expect(page.locator('#page-bank')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 1 of 5');
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 1 of 8');
   await expect(page.locator('#wt-strip-say-row')).toBeHidden();
   await page.locator('#wt-strip-notes').check();
   await expect(page.locator('#wt-strip-say-row')).toBeVisible();
-
-  /* Next: a class in focus, applied on the overview. */
   await page.selectOption('#bk-year', String(YEAR));
-  await page.locator('#wt-strip-next').click();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 2 of 5');
-  await expect(page.locator('#bk-focus')).toBeVisible();
-  await expect(page.locator('#bk-focus')).toContainText('Business loans');
 
-  /* Next: the lending book at that class. */
+  /* Step 2: the S2 file is the button on the hero. */
   await page.locator('#wt-strip-next').click();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 3 of 5');
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 2 of 8');
+  await expect(page.locator('#bk-pdf')).toContainText('SLFRS S2 disclosure');
+
+  /* Step 3: what S2 asks — the pillars, and the index behind the file. */
+  await page.locator('#wt-strip-next').click();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 3 of 8');
+  await expect(page.locator('#bk-s2-pillars')).toBeVisible();
+  await expect(page.locator('#bk-behind-title')).toContainText('SLFRS S2');
+  await expect(page.locator('#bk-behind-body')).toContainText('S2 §29(a)(vi)');
+
+  /* Step 4: the climate view, with what is not yet assessed drawn beside it. */
+  await page.locator('#wt-strip-next').click();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 4 of 8');
+  await expect(page.locator('#bk-chart-climate svg')).toBeVisible();
+  await expect(page.locator('#bk-climate')).toContainText('Not yet assessed');
+
+  /* Step 5: what a loan carries, on the lending book at that class. */
+  await page.locator('#wt-strip-next').click();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 5 of 8');
   await expect(page.locator('#page-parta-register')).toBeVisible();
   await expect(page.locator('#pr-subtitle')).toContainText('Business loans');
 
-  /* Next: the lineage behind the headline, opened on the overview. */
+  /* Step 6: back on the overview with that class in focus. */
   await page.locator('#wt-strip-next').click();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 4 of 5');
-  await expect(page.locator('#page-bank')).toBeVisible();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 6 of 8');
+  await expect(page.locator('#bk-focus')).toBeVisible();
+  await expect(page.locator('#bk-focus')).toContainText('Business loans');
+
+  /* Step 7: the lineage behind the headline. */
+  await page.locator('#wt-strip-next').click();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 7 of 8');
   await expect(page.locator('#bk-behind')).toBeVisible();
   await expect(page.locator('#bk-behind-body')).toContainText('SHA-256');
 
@@ -93,11 +117,11 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await page.reload();
   await expect(page.locator('#sidebar')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 4 of 5');
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 7 of 8');
 
-  /* Next: the disclosure; Finish ends it. */
+  /* Step 8: the detail screen; Finish ends it. */
   await page.locator('#wt-strip-next').click();
-  await expect(page.locator('#wt-strip-n')).toHaveText('Step 5 of 5');
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 8 of 8');
   await expect(page.locator('#page-parta-position')).toBeVisible();
   await expect(page.locator('#wt-strip-next')).toHaveText('Finish');
   await page.locator('#wt-strip-next').click();

@@ -98,9 +98,8 @@ collecting the fact, not by suppressing the item.
 
 ## 3. The stages
 
-> **Stages 1 to 4 are built.** What follows is the plan they were built to,
-> kept as written; `CLAUDE.md` records what shipped. Stage 5 onward is still
-> the plan.
+> **All six stages are built.** What follows is the plan they were built to,
+> kept as written; `CLAUDE.md` records what shipped.
 >
 > Three things went differently from the plan and are recorded here rather
 > than quietly absorbed. The S2 index is an **annex** rather than a section,
@@ -111,6 +110,12 @@ collecting the fact, not by suppressing the item.
 > every paragraph. And `band()` gained a `totalAmount`, because the dashboard
 > draws each §29 band as one bar split three ways and a browser that added the
 > three parts together to find the bar's length would be a second engine.
+>
+> Stage 6 found one defect and it was on a screen rather than in the
+> arithmetic, which is what the rehearsal exists for: the §32 industry table
+> grouped on `counterparty.sector`, a field every class but §5.2 keeps its own
+> descriptor in, so *office*, *retail* and *70* headed rows of an industry
+> table. It groups on the sector vocabulary key alone now.
 
 ### Stage 1 — The bank's own climate facts
 
@@ -311,8 +316,8 @@ bank's facts, download the S2 disclosure.
 | 2 Loan-level classification and the sample book | — | medium | **built** |
 | 3 The document becomes the S2 file | 1, 2 | large | **built** |
 | 4 The dashboard | 3 | large | **built** |
-| 5 The walkthrough | 4 | medium | yes |
-| 6 Close-out | all | small | after |
+| 5 The walkthrough | 4 | medium | **built** |
+| 6 Close-out | all | small | **built** |
 
 Stages 1 and 2 are independent of each other and could be built in either
 order; 2 is what makes the climate view on the dashboard show real figures
