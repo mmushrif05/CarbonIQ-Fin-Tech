@@ -24,7 +24,35 @@
   --cls-sovereign-debt: #475569;
   --cls-scope3: #a3a3a3;
   --approved: #1d7a3a;
+
+  /* SLFRS S2. Vulnerable and aligned are different claims and never share a
+     hue; what nobody has assessed is neutral rather than green, because a
+     book that has not been classified is not thereby a safe one. */
+  --s2-transition: #c2410c;
+  --s2-physical: #0369a1;
+  --s2-aligned: #15803d;
+  --s2-assessed: #94a3b8;
+  --s2-unassessed: #d4d4d8;
+  --s2-carbon: #b45309;
+  --s2-other: #64748b;
 }
+
+/* The S2 strip: the four pillars, each opening the form that answers it. */
+.bank-s2 { margin-top: 16px; border-top: 1px solid var(--p-separator, #e5e5ea); padding-top: 14px; }
+.bank-s2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.bank-s2-title { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
+.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; margin-top: 10px; }
+.bank-s2-pillar {
+  min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 10px 12px; border: 1px solid var(--p-separator, #e5e5ea); border-radius: 12px;
+  background: var(--p-bg, #fff); font: inherit; color: inherit; cursor: pointer;
+}
+.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-color: var(--p-accent, #0a7a4c); outline: none; }
+.bank-s2-pillar > span { font-size: 11.5px; color: var(--p-label-2, #6e6e73); }
+.bank-s2-pillar em { font-style: normal; font-size: 12.5px; font-weight: 600; }
+.bank-s2-pillar.is-stated em { color: var(--p-accent, #0a7a4c); }
+.bank-s2-pillar.is-illustrative em, .bank-s2-pillar.is-partial em { color: #8a5a12; }
+.bank-s2-pillar.is-absent em { color: var(--p-label-2, #6e6e73); }
 
 /* Charts: a drawing on an inline element renders as nothing, so every one is
    a block that follows its container. */

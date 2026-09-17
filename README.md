@@ -218,7 +218,7 @@ _223 operations across 185 paths. Generated from `docs/openapi.json`, which is i
 | `POST` | `/v1/pcaf/part-a/exposures/{exposureId}/status` | Move an exposure through review: recorded → under review → approved, and back with a reason |
 | `GET` | `/v1/pcaf/part-a/factors` | PCAF Part A sector factor library — every row with its tier, source, vintage and gap, and the release checksum |
 | `GET` | `/v1/pcaf/part-a/financed-emissions/{year}` | The whole Part A position for a reporting year — every asset class side by side |
-| `GET` | `/v1/pcaf/part-a/financed-emissions/{year}/disclosure` | The consolidated PCAF Part A financed-emissions disclosure — JSON, PDF or Word |
+| `GET` | `/v1/pcaf/part-a/financed-emissions/{year}/disclosure` | The SLFRS S2 climate-related disclosure, with the PCAF Part A financed emissions — JSON, PDF or Word |
 | `GET` | `/v1/pcaf/part-a/financed-emissions/{year}/register.csv` | The exposure register across classes, as CSV — the data annex |
 | `POST` | `/v1/pcaf/part-a/motor-vehicles/assess` | PCAF Part A §5.6 financed emissions for one motor vehicle facility |
 | `GET` | `/v1/pcaf/part-a/position/{year}` | The reporting-year position of one asset class, rolled up from the recorded exposures |

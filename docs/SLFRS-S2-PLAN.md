@@ -98,9 +98,19 @@ collecting the fact, not by suppressing the item.
 
 ## 3. The stages
 
-> **Stages 1 and 2 are built.** What follows is the plan they were built to,
-> kept as written; `CLAUDE.md` records what shipped. Stage 3 onward is still
+> **Stages 1 to 4 are built.** What follows is the plan they were built to,
+> kept as written; `CLAUDE.md` records what shipped. Stage 5 onward is still
 > the plan.
+>
+> Three things went differently from the plan and are recorded here rather
+> than quietly absorbed. The S2 index is an **annex** rather than a section,
+> beside the regulatory mapping, which is where a reader of a filed document
+> looks for a content index. What is outstanding is named **one row per
+> pillar** rather than one per paragraph: twenty rows would have buried the
+> handful of Chapter 6 items beside them, and the index annex already names
+> every paragraph. And `band()` gained a `totalAmount`, because the dashboard
+> draws each §29 band as one bar split three ways and a browser that added the
+> three parts together to find the bar's length would be a second engine.
 
 ### Stage 1 — The bank's own climate facts
 
@@ -299,8 +309,8 @@ bank's facts, download the S2 disclosure.
 |---|---|---|---|
 | 1 The bank's climate facts | — | medium | **built** |
 | 2 Loan-level classification and the sample book | — | medium | **built** |
-| 3 The document becomes the S2 file | 1, 2 | large | yes |
-| 4 The dashboard | 3 | large | yes |
+| 3 The document becomes the S2 file | 1, 2 | large | **built** |
+| 4 The dashboard | 3 | large | **built** |
 | 5 The walkthrough | 4 | medium | yes |
 | 6 Close-out | all | small | after |
 

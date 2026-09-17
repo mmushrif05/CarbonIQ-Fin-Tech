@@ -16,7 +16,7 @@
           <select id="bk-year"></select>
         </label>
         <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
-        <button class="btn btn-primary" id="bk-pdf">Disclosure — PDF</button>
+        <button class="btn btn-primary" id="bk-pdf">SLFRS S2 disclosure — PDF</button>
         <button class="btn btn-secondary" id="bk-docx">Word</button>
         <button class="btn btn-secondary" id="bk-csv">Register — CSV</button>
         <input type="text" id="bk-starter-name" class="bank-starter-name" placeholder="Bank’s legal name" maxlength="200" data-writes>
@@ -64,6 +64,15 @@
         <button type="button" class="bank-behind-btn" data-behind="approved">Behind this figure</button>
       </div>
     </div>
+
+    <div class="bank-s2" id="bk-s2" hidden>
+      <div class="bank-s2-head">
+        <span class="bank-s2-title">SLFRS S2 — what the file answers</span>
+        <span class="partc-hint" id="bk-s2-summary"></span>
+        <button type="button" class="bank-behind-btn" data-behind="s2">Behind the S2 file</button>
+      </div>
+      <div class="bank-s2-pillars" id="bk-s2-pillars"></div>
+    </div>
   </section>
 
   <section class="partc-card bank-behind" id="bk-behind" hidden>
@@ -105,6 +114,21 @@
         <div class="partc-card-head"><h3>Economic intensity by asset class</h3>
           <span class="partc-hint">tCO₂e per million of outstanding, as each class's own roll-up computed it.</span></div>
         <div id="bk-chart-intensity"></div>
+      </section>
+    </div>
+
+    <div class="partc-panels bank-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Climate risk and opportunity</h3>
+          <span class="partc-hint">SLFRS S2 §29(b)–(d). The bank classifies each exposure and the engine sums them. Each share is over the outstanding actually assessed; the amount not yet assessed is stated beside it.</span></div>
+        <div id="bk-chart-climate"></div>
+        <div id="bk-climate"></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>By industry</h3>
+          <span class="partc-hint">SLFRS S2 §32. Gross exposure and financed scope 1 and 2 by industry, with lending to carbon-related industries marked on a boundary the reporting entity states.</span></div>
+        <div id="bk-chart-industry"></div>
+        <div id="bk-industry"></div>
       </section>
     </div>
 

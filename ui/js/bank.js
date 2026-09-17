@@ -55,6 +55,24 @@ const BankPage = (() => {
   };
   const short = c => SHORT[c.assetClass] || c.label;
   const CLASS_COLOR = k => `var(--cls-${k}, var(--p-accent, #0a7a4c))`;
+  /* One hue per S2 claim, defined once in the stylesheet like every other
+     palette on this screen. Vulnerable and aligned are different claims and
+     never share a colour; not assessed is neutral rather than green, because
+     a book nobody has classified is not thereby a safe one. */
+  const S2_COLOR = {
+    transitionRisk: 'var(--s2-transition, #c2410c)',
+    physicalRisk: 'var(--s2-physical, #0369a1)',
+    opportunities: 'var(--s2-aligned, #15803d)',
+  };
+  const S2_STATE = {
+    stated: 'Stated by the bank', illustrative: 'Illustrative', partial: 'Part stated', absent: 'Not stated',
+  };
+  /* The three §29 bands, each with the verdict that counts towards it. */
+  const S2_BANDS = [
+    { key: 'transitionRisk', label: 'Vulnerable to transition risk', clause: 'S2 §29(b)', counts: 'Vulnerable', other: 'Assessed, not vulnerable' },
+    { key: 'physicalRisk', label: 'Vulnerable to physical risk', clause: 'S2 §29(c)', counts: 'Vulnerable', other: 'Assessed, not vulnerable' },
+    { key: 'opportunities', label: 'Aligned with climate-related opportunities', clause: 'S2 §29(d)', counts: 'Aligned', other: 'Assessed, not aligned' },
+  ];
   const DQ_COLOR = score => `var(--dq${Math.round(score)}, #999)`;
   /* Absence is checked before the number is: Number(null) is 0. */
   const val = v => (v === null || v === undefined || v === '' ? null : Number(v));
@@ -162,11 +180,110 @@ const BankPage = (() => {
       ? `exposures approved${val(ap.underReview) ? ` · ${fmt(ap.underReview, 0)} under review` : ''} — frozen until reopened with a reason`
       : 'no exposure in a register class yet');
 
+    renderS2(p);
     renderClasses(p);
     renderChips(p);
     renderCharts(p);
     renderFocus(p);
     renderReadiness(p);
+  }
+
+  // ── SLFRS S2 ───────────────────────────────────────────────
+
+  /* The four pillars as the entity's own readiness, and the two S2 metric
+     views. Every figure is one the consolidated route returned: the readiness
+     is derived on the settings the server holds, and the amounts are the sums
+     the engine took over the register's projection. */
+  function renderS2(p) {
+    const r = (p.entity && p.entity.climateReadiness) || null;
+    show('bk-s2', Boolean(r && r.total));
+    if (r && r.total) {
+      say('bk-s2-summary', `${r.stated} stated by the bank · ${r.illustrative} illustrative · ${r.absent} not stated, of ${r.total} statements the standard asks of the entity`);
+      setHtml('bk-s2-pillars', (r.pillars || []).map(x => `<button type="button" class="bank-s2-pillar is-${esc(x.state)}" data-pillar="${esc(x.id)}">
+        <b>${esc(x.label)}</b><span>${esc(x.paragraphs)}</span><em>${esc(S2_STATE[x.state] || x.state)}</em>
+        <span class="partc-hint">${esc(x.stated)} stated · ${esc(x.illustrative)} illustrative · ${esc(x.absent)} not stated</span></button>`).join(''));
+      for (const el of document.querySelectorAll('#bk-s2-pillars [data-pillar]')) {
+        el.addEventListener('click', () => openPillar(el.getAttribute('data-pillar')));
+      }
+    }
+    renderClimate(p);
+    renderIndustry(p);
+  }
+
+  /* Opens the form that answers a pillar. The climate panel reads the choice
+     while its registry loads, before its first request — the rule this
+     codebase has shipped four defects by breaking. */
+  function openPillar(pillar) {
+    try { localStorage.setItem('carboniq.parta.climatePillar', pillar); } catch (_) { /* a courtesy */ }
+    const go = typeof window !== 'undefined' && typeof window.CARBONIQ_navigateTo === 'function' ? window.CARBONIQ_navigateTo : null;
+    if (go) go('parta-position');
+  }
+
+  function renderClimate(p) {
+    const e = p.climateExposure || null;
+    if (!e || typeof Charts === 'undefined') { setHtml('bk-chart-climate', ''); setHtml('bk-climate', ''); return; }
+    const ccy = p.currency || '';
+    const rows = S2_BANDS.map(b => {
+      const band = e[b.key] || {};
+      return {
+        key: b.key, label: b.label, value: val(band.totalAmount), color: 'var(--s2-unassessed, #d4d4d8)',
+        segments: [
+          { label: `${b.counts} — ${b.clause}`, value: val(band.amount), color: S2_COLOR[b.key] },
+          { label: b.other, value: val(band.notAmount), color: 'var(--s2-assessed, #94a3b8)' },
+          { label: 'Not yet assessed', value: val(band.unassessedAmount), color: 'var(--s2-unassessed, #d4d4d8)' },
+        ],
+      };
+    });
+    setHtml('bk-chart-climate', Charts.hbars(rows, { label: 'Outstanding vulnerable to transition risk, to physical risk, and aligned with opportunities', decimals: 0 })
+      + Charts.legend([
+        { label: 'Vulnerable to transition risk', color: S2_COLOR.transitionRisk },
+        { label: 'Vulnerable to physical risk', color: S2_COLOR.physicalRisk },
+        { label: 'Aligned with opportunities', color: S2_COLOR.opportunities },
+        { label: 'Assessed, neither', color: 'var(--s2-assessed, #94a3b8)' },
+        { label: 'Not yet assessed', color: 'var(--s2-unassessed, #d4d4d8)' },
+      ]));
+    setHtml('bk-climate', `<div class="bk-scroll"><table class="partc-table">
+      <thead><tr><th>Measure</th><th>Clause</th><th>Amount</th><th>Assessed, neither</th><th>Not yet assessed</th><th>Share of the amount assessed</th></tr></thead>
+      <tbody>${S2_BANDS.map(b => {
+        const band = e[b.key] || {};
+        return `<tr><td>${esc(b.counts)} — ${esc(b.label.toLowerCase())}</td><td>${esc(b.clause)}</td>
+          <td class="num">${esc(ccy)} ${fmt(band.amount, 0)}</td>
+          <td class="num">${esc(ccy)} ${fmt(band.notAmount, 0)}</td>
+          <td class="num">${esc(ccy)} ${fmt(band.unassessedAmount, 0)}</td>
+          <td class="num">${band.sharePct === null || band.sharePct === undefined ? '—' : `${Number(band.sharePct).toFixed(2)}%`}</td></tr>`;
+      }).join('')}</tbody></table></div>
+      <p class="partc-hint">${esc((e.transitionRisk && e.transitionRisk.basis) || '')}</p>`);
+  }
+
+  function renderIndustry(p) {
+    const e = p.climateExposure || null;
+    if (!e || typeof Charts === 'undefined') { setHtml('bk-chart-industry', ''); setHtml('bk-industry', ''); return; }
+    const ind = e.industries || { rows: [], carbonRelated: {} };
+    const ccy = p.currency || '';
+    if (!ind.rows.length) {
+      setHtml('bk-chart-industry', '');
+      setHtml('bk-industry', '<p class="partc-hint">No exposure carries a sector yet.</p>');
+      return;
+    }
+    setHtml('bk-chart-industry', Charts.hbars(ind.rows.map(r => ({
+      key: r.sectorKey || '', label: r.sector || 'Not recorded', value: val(r.outstanding),
+      color: r.carbonRelated ? 'var(--s2-carbon, #b45309)' : 'var(--s2-other, #64748b)',
+    })), { label: 'Gross exposure by industry', decimals: 0 })
+      + Charts.legend([
+        { label: 'Carbon-related industry', color: 'var(--s2-carbon, #b45309)' },
+        { label: 'Every other industry', color: 'var(--s2-other, #64748b)' },
+      ]));
+    const cr = ind.carbonRelated || {};
+    setHtml('bk-industry', `<div class="bk-scroll"><table class="partc-table">
+      <thead><tr><th>Industry</th><th>Exposures</th><th>Outstanding</th><th>Financed scope 1 and 2</th><th>Carbon-related</th></tr></thead>
+      <tbody>${ind.rows.map(r => `<tr>
+        <td>${esc(r.sector || 'Not recorded')}</td>
+        <td class="num">${fmt(r.exposures, 0)}</td>
+        <td class="num">${esc(ccy)} ${fmt(r.outstanding, 0)}</td>
+        <td class="num">${fmt(r.emissions, 2)} tCO₂e</td>
+        <td>${r.carbonRelated ? 'Yes' : '—'}</td></tr>`).join('')}</tbody></table></div>
+      <p class="partc-hint">Carbon-related lending: ${esc(ccy)} ${fmt(cr.outstanding, 0)}${cr.sharePct === null || cr.sharePct === undefined ? '' : ` · ${Number(cr.sharePct).toFixed(2)}% of the outstanding across every class reported`}.</p>
+      <p class="partc-hint">${esc(cr.basis || '')}</p>`);
   }
 
   const STATE = {
@@ -392,6 +509,7 @@ const BankPage = (() => {
     const TITLE = {
       headline: 'Behind the headline — financed scope 1 and 2', s3: 'Behind the scope 3 line', coverage: 'Behind the coverage figure',
       intensity: 'Behind the economic intensity', approved: 'Behind the approval count', class: 'Behind this class',
+      s2: 'Behind the SLFRS S2 file',
     };
     say('bk-behind-title', TITLE[kind] || 'What stands behind this figure');
 
@@ -421,6 +539,24 @@ const BankPage = (() => {
         ['Under review', val(ap.underReview) ? fmt(ap.underReview, 0) : null], ['Recorded, not yet reviewed', val(ap.recorded) ? fmt(ap.recorded, 0) : null],
         ['Rule', esc(ap.note || '')], ['Authority', 'Approving needs the lock scope — a different authority from recording, as a Part C lock is'],
       ])}`);
+    }
+    if (kind === 's2') {
+      const s2 = facts && facts.s2;
+      parts.push(`<h5>What the file answers</h5>${kv([
+        ['Paragraphs answered', s2 ? `${s2.answeredParagraphs} of ${s2.index.length}` : null],
+        ['Stated by the reporting entity', s2 ? String(s2.readiness.stated) : null],
+        ['Illustrative, supplied with the tool', s2 ? String(s2.readiness.illustrative) : null],
+        ['Not stated', s2 ? String(s2.readiness.absent) : null],
+        ['The entity’s own inventory', s2 ? (s2.inventoryStated
+          ? 'Gross scope 1 and location-based scope 2 are stated beside the financed emissions this system measures'
+          : 'Not stated — this file is the scope 3 category 15 input to it') : null],
+      ])}`);
+      if (s2) {
+        parts.push(`<h5>Every paragraph, and where it is answered</h5><div class="bk-scroll"><table class="partc-table">
+          <thead><tr><th>Paragraph</th><th>What it asks</th><th>Answered</th></tr></thead>
+          <tbody>${s2.index.map(r => `<tr><td>${esc(r.paragraph)}</td><td>${esc(r.requirement)}</td><td>${r.answered ? 'Yes' : 'No'}</td></tr>`).join('')}</tbody>
+        </table></div>`);
+      }
     }
     if (kind === 'class' && key) {
       const c = recorded.find(x => x.assetClass === key);
@@ -538,9 +674,9 @@ const BankPage = (() => {
     on('bk-refresh', 'click', load);
     on('bk-year', 'change', load);
     on('bk-pdf', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=pdf`,
-      `part-a-financed-emissions-fy${year}.pdf`, 'disclosure (PDF)'));
+      `slfrs-s2-disclosure-fy${year}.pdf`, 'SLFRS S2 disclosure (PDF)'));
     on('bk-docx', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=docx`,
-      `part-a-financed-emissions-fy${year}.docx`, 'disclosure (Word)'));
+      `slfrs-s2-disclosure-fy${year}.docx`, 'SLFRS S2 disclosure (Word)'));
     on('bk-csv', 'click', () => download(`/financed-emissions/${encodeURIComponent(year)}/register.csv`,
       `part-a-exposure-register-fy${year}.csv`, 'exposure register (CSV)'));
     on('bk-starter', 'click', loadStarter);

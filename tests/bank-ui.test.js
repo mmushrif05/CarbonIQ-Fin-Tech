@@ -192,6 +192,50 @@ describe('The charts draw figures the engines returned, and nothing of their own
   });
 });
 
+describe('The SLFRS S2 view: what the file answers, and on whose word', () => {
+  test('the download is the S2 file, and the strip says what it answers', () => {
+    must(HTML, /id="bk-pdf">SLFRS S2 disclosure — PDF/, 'the primary button is the S2 file');
+    must(JS, /slfrs-s2-disclosure-fy\$\{year\}\.pdf/, 'and the file it saves is named as one');
+    must(HTML, /id="bk-s2" hidden/, 'the strip is hidden until the position says what is stated');
+    must(HTML, /data-behind="s2"/, 'the S2 file carries its own lineage button');
+    must(JS, /p\.entity && p\.entity\.climateReadiness/, 'the readiness is the server’s, derived on the settings it holds');
+  });
+
+  test('a pillar opens the form that answers it, honoured before the panel’s first request', () => {
+    must(JS, /localStorage\.setItem\('carboniq\.parta\.climatePillar', pillar\)/, 'the choice is handed over');
+    const CL = source('ui/js/parta-climate.js');
+    must(CL, /localStorage\.getItem\('carboniq\.parta\.climatePillar'\)/, 'the climate panel reads it');
+    const load = CL.slice(CL.indexOf('async function load(given)'));
+    expect(load.indexOf('carboniq.parta.climatePillar')).toBeLessThan(load.indexOf("call('/climate/reference')"));
+  });
+
+  test('the three §29 bands are the engine’s amounts, and what is unassessed is drawn rather than dropped', () => {
+    must(JS, /val\(band\.totalAmount\)/, 'the bar is the outstanding the engine took the band over, never a sum made here');
+    must(JS, /val\(band\.unassessedAmount\)/, 'the unassessed amount is a segment of its own');
+    must(JS, /label: 'Not yet assessed'/, 'and is labelled as what it is');
+    must(JS, /Number\(band\.sharePct\)\.toFixed\(2\)/, 'the share is the engine’s sharePct');
+    must(HTML, /S2 §29\(b\)–\(d\)/, 'the panel cites the paragraphs');
+    must(HTML, /the amount not yet assessed is stated beside it/, 'and says what the share is taken over');
+  });
+
+  test('not assessed is neutral, and vulnerable and aligned never share a hue', () => {
+    for (const t of ['--s2-transition', '--s2-physical', '--s2-aligned', '--s2-assessed', '--s2-unassessed', '--s2-carbon', '--s2-other']) {
+      must(CSS, new RegExp(`${t}:\\s*#[0-9a-f]{6}`), `${t} is defined once in the stylesheet`);
+    }
+    must(JS, /transitionRisk: 'var\(--s2-transition/, 'the hue is read from the stylesheet, never chosen in the module');
+    const aligned = (CSS.match(/--s2-aligned:\s*(#[0-9a-f]{6})/) || [])[1];
+    const unassessed = (CSS.match(/--s2-unassessed:\s*(#[0-9a-f]{6})/) || [])[1];
+    expect(aligned).not.toBe(unassessed);
+  });
+
+  test('the industry table is the §32 view, with carbon-related marked on a stated boundary', () => {
+    must(HTML, /SLFRS S2 §32/, 'the panel cites the paragraph');
+    must(JS, /r\.carbonRelated \? 'var\(--s2-carbon/, 'a carbon-related industry is marked by hue');
+    must(JS, /esc\(cr\.basis \|\| ''\)/, 'and the boundary the subtotal was taken on travels with it');
+    must(JS, /Carbon-related lending:/, 'the subtotal is printed');
+  });
+});
+
 describe('The workspace carries the bank’s own name', () => {
   const STYLES = source('ui/styles.css');
   const LOGIN = source('ui/js/login.js');

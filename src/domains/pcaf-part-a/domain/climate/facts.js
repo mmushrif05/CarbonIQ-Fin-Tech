@@ -23,6 +23,15 @@
  * there is no flag to go stale, and the moment a word changes the item becomes
  * theirs — which is the truth of it. The alternative, a flag set at install
  * and cleared on save, marks a whole form stated when one field was touched.
+ *
+ * The cost is written down rather than left to be found: an **enum** the
+ * entity chooses from five options is marked illustrative one time in five by
+ * coincidence, because comparison cannot tell a bank that picked *quarterly*
+ * from a pack that already said it. For free text that is vanishingly
+ * unlikely; for an enum it happens, and it falls the safe way — the entity's
+ * own answer reads as ours, never ours as the entity's. Understating what a
+ * bank has stated costs it a line on a worklist; overstating it would put a
+ * sentence we wrote on a filed document under the bank's name.
  */
 
 'use strict';

@@ -147,6 +147,11 @@ function band(rows, positive) {
     notAmount: r2(negative),
     unassessedAmount: r2(unassessed),
     assessedAmount: r2(assessed),
+    /* Assessed and unassessed together: the outstanding this band was taken
+       over. Returned rather than left to a reader to add, because a screen
+       that summed it would be a second engine — and the three parts of the
+       bar it draws have to add up to the bar. */
+    totalAmount: r2(assessed + unassessed),
     exposuresAssessed: assessedCount,
     /* Over the assessed outstanding, never over the whole book: a share of a
        book nobody classified is a number about nothing. Null rather than zero

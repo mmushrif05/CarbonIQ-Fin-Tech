@@ -12,6 +12,7 @@
 
 const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
 const { entitySection, uncertaintySection } = require('../common-sections');
+const { buildS2Sections } = require('./s2-sections');
 
 const N = n => (n === null || n === undefined) ? '—'
   : Number(n).toLocaleString('en-US', { maximumFractionDigits: 2 });
@@ -226,6 +227,16 @@ function conformanceSection(f) {
   };
 }
 
+/**
+ * The document in the order it is read: PCAF Chapter 6 through to emission
+ * intensity, then the SLFRS S2 pillars the financed-emissions sections cannot
+ * answer, then what is outstanding and the conformance statement.
+ *
+ * The S2 sections sit after the PCAF ones rather than in front of them because
+ * this is a financed-emissions disclosure that also answers S2, not an S2
+ * disclosure that happens to carry financed emissions; the S2 index annex is
+ * what lets a reader enter it from either direction.
+ */
 function buildSections(f) {
   return [
     entitySection(f),
@@ -236,6 +247,7 @@ function buildSections(f) {
     dataQualitySection(f),
     recalculationSection(f),
     intensitySection(f),
+    ...buildS2Sections(f),
     limitationsSection(f),
     uncertaintySection(f),
     conformanceSection(f),

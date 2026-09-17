@@ -44,13 +44,14 @@ router.get('/financed-emissions/:year', authenticate, defaultLimiter,
 
 router.get('/financed-emissions/:year/disclosure', authenticate, defaultLimiter,
   validate({ query: disclosureQuerySchema }),
-  doc({ summary: 'The consolidated PCAF Part A financed-emissions disclosure — JSON, PDF or Word',
+  doc({ summary: 'The SLFRS S2 climate-related disclosure, with the PCAF Part A financed emissions — JSON, PDF or Word',
     produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     description: 'The document a bank files: one entity, one book, every asset class reported or named '
       + 'with its reason, an exposure register across classes as the audit trail, the regulatory '
-      + 'mapping, and a checklist answered from the facts. A year with no exposures in any class is a '
-      + '409. The entity-inventory item is No by design: financed emissions are Category 15 of the '
-      + 'entity’s inventory, not the inventory.',
+      + 'mapping, and a checklist answered from the facts. The SLFRS S2 pillars — governance, strategy, '
+      + 'risk management, and metrics and targets — are the reporting entity’s own statements, printed '
+      + 'as stated or as not stated with the paragraph that asks for them, and an index names where '
+      + 'each S2 paragraph is answered. A year with no exposures in any class is a 409.',
     response: body({ report: obj }, ['report']) }),
   handle(async (req, res) => {
     const built = await consolidated.annualDisclosure(req.orgId, req.params.year, {

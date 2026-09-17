@@ -366,6 +366,14 @@ const PartAClimatePanel = (() => {
    * codebase has shipped four defects by breaking.
    */
   async function load(given) {
+    /* A pillar handed over from the Bank Overview, read before anything is
+       drawn and taken once: the overview's strip says which pillar is still
+       outstanding, and pressing it has to open that pillar rather than
+       whichever was open last. */
+    try {
+      const wanted = localStorage.getItem('carboniq.parta.climatePillar');
+      if (wanted) { localStorage.removeItem('carboniq.parta.climatePillar'); openPillar = wanted; }
+    } catch (_) { /* a courtesy */ }
     if (!registry) {
       try { registry = await call('/climate/reference'); }
       catch (err) { say('fe-cl-status', err.message); return; }

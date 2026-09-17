@@ -44,6 +44,8 @@ async function seed(request) {
     outstanding: { amount: 100000, asOf, currency: 'LKR' },
     denominator: { totalEquity: 600000, totalDebt: 400000, asOf, currency: 'LKR' },
     emissions: { scope1: { value: 1000, basis: 'reported-unverified', period: String(YEAR) }, scope2: { value: 100, basis: 'reported-unverified', period: String(YEAR) }, scope3AbsentReason: 'not measured' },
+    climate: { transitionRisk: { verdict: 'vulnerable', horizon: 'medium' }, physicalRisk: { verdict: 'not_vulnerable', horizon: 'long' },
+      opportunity: { verdict: 'not_aligned' } },
   } });
   expect(loan.status()).toBe(201);
   const office = await request.post('/v1/pcaf/part-a/exposures', { headers: h, data: {
@@ -53,7 +55,17 @@ async function seed(request) {
   } });
   expect(office.status()).toBe(201);
   await request.put('/v1/pcaf/part-a/book', { headers: h, data: { reportingYear: YEAR, totalLoansAndInvestments: 50000000, currency: 'LKR', statedBy: 'Ana' } });
-  const entity = await request.put('/v1/pcaf/part-a/settings', { headers: h, data: { reportingEntity: 'Overview Bank PLC' } });
+  const entity = await request.put('/v1/pcaf/part-a/settings', { headers: h, data: {
+    reportingEntity: 'Overview Bank PLC',
+    /* One pillar stated and the other three not, so the S2 strip on the hero
+       shows both states rather than one. */
+    /* Wording chosen not to coincide with the illustrative pack, including
+       the enum: an answer equal to the pack reads as illustrative, which is
+       the mechanism working and would make this assertion about the wrong
+       thing. */
+    climate: { governance: { body: 'The Board Sustainability Committee of Overview Bank PLC.', frequency: 'half_yearly',
+      oversight: 'Set out in that committee’s own terms of reference.', managementRole: 'The Chief Risk Officer, reporting to the committee.' } },
+  } });
   expect(entity.status()).toBe(200);
 }
 
@@ -96,6 +108,31 @@ test('the overview is on screen, a class tile opens the lending book at that cla
   await page.locator('#bk-behind-close').click();
   await expect(page.locator('#bk-behind')).toBeHidden();
 
+  /* The SLFRS S2 strip: the four pillars, the two S2 metric views, and the
+     index behind the file. The property is deliberately unclassified, so the
+     bands show a real unassessed share rather than a book that classifies
+     itself. */
+  await expect(page.locator('#bk-s2')).toBeVisible();
+  await expect(page.locator('#bk-s2-summary')).toContainText('stated by the bank');
+  await expect(page.locator('#bk-s2-pillars .bank-s2-pillar[data-pillar="governance"]')).toContainText('Stated by the bank');
+  await expect(page.locator('#bk-s2-pillars .bank-s2-pillar[data-pillar="strategy"]')).toContainText('Not stated');
+  await expect(page.locator('#bk-chart-climate svg')).toBeVisible();
+  await expect(page.locator('#bk-climate')).toContainText('S2 §29(b)');
+  await expect(page.locator('#bk-climate')).toContainText('Not yet assessed');
+  await expect(page.locator('#bk-chart-industry svg')).toBeVisible();
+  await expect(page.locator('#bk-industry')).toContainText('Carbon-related lending');
+
+  await page.locator('.bank [data-behind="s2"]').click();
+  await expect(page.locator('#bk-behind-title')).toContainText('SLFRS S2');
+  await expect(page.locator('#bk-behind-body')).toContainText('S2 §29(a)(vi)');
+  await page.locator('#bk-behind-close').click();
+
+  /* A pillar opens the form that answers it, at that pillar. */
+  await page.locator('#bk-s2-pillars .bank-s2-pillar[data-pillar="riskManagement"]').click();
+  await expect(page.locator('#page-parta-position')).toBeVisible();
+  await expect(page.locator('#fe-cl-tabs .cl-tab.is-on')).toContainText('Risk management');
+
+  await page.locator('.nav-item[data-page="bank"]').click();
   await page.locator('#bk-classes .bank-tile[data-class="commercial-real-estate"]').click();
   await expect(page.locator('#page-parta-register')).toBeVisible();
   await expect(page.locator('#pr-subtitle')).toContainText('Commercial real estate');
