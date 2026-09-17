@@ -192,16 +192,8 @@ ANNEX A [annexFinanced] Financed emissions — scope, coverage and the position 
       row: Sovereign debt (§5.9) | 98.45 | tCO2e per million USD
     body: Financed emissions per million of the currency outstanding (DCL p.127). A physical intensity is not reported at this level: each class holds a different physical denominator, and a sovereign’s production intensity is a country-level figure the §5.9 document carries.
     h2: Undrawn loan commitments (§6.2, optional)
-    body: Definition applied: Committed on-balance-sheet facilities recorded on the register with a total loan commitment above the drawn amount at the position date; undrawn = total loan commitment − drawn amount (§6.2, p.173). Facilities recorded without their commitment are not included.
-    table: §6.2 line | Duty | Exposures | Undrawn, LKR | Scope 1 and 2, tCO2e | Scope 3, tCO2e
-      row: Unweighted — the whole undrawn commitment | shall | 0 | 0 | — | —
-      row: Weighted | may | — | — | — | —
-    caption: Not every attributable exposure carries a utilisation factor; the weighted figure is optional and is stated only whole.
-    table: Asset class | Section | Exposures | Undrawn, LKR | Unweighted scope 1 and 2, tCO2e
-      row: Business loans and unlisted equity | §5.2 | 0 | 0 | —
-      row: Commercial real estate | §5.4 | 0 | 0 | —
-    body: Optional under §6.2 and reported apart from the financed figure; never aggregated with it (p.170).
-    body: Numerator basis: 3 of 3 outstanding amount(s) read from the loan account; 0 taken from a repayment schedule. The outstanding amount is the debt owed at the fiscal year-end, read from the loan account (§5.2, p.56).
+    body: No facility commitment is recorded on the register, so no undrawn loan commitment is reported. Reporting on undrawn commitments is optional under §6.2 (pp.169–173) and needs the total loan commitment recorded beside the drawn amount.
+    body: 3 of 3 outstanding amount(s) read from the loan account; 0 taken from a repayment schedule.
 ANNEX B [annexBasis] Financed emissions — basis of preparation
     body: The basis on which the financed-emissions figures in Annex A were prepared, as PCAF Part A Chapter 6 asks it to be stated: the gases and units, the attribution and estimation method of each asset class, the data-quality score per class, the recalculation protocol, and the uncertainty the figures carry.
     h2: Gases and units

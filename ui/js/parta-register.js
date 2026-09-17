@@ -901,7 +901,7 @@ const PartARegisterPage = (() => {
       { key: 'drawn', label: 'Drawn to date', value: t.disbursed, color: 'color-mix(in srgb, var(--p-accent, #0d9488) 55%, white)' },
       { key: 'outstanding', label: 'Outstanding at year-end', value: r.outstanding, color: 'var(--p-accent, #0d9488)' },
     ];
-    const life = (p.rows || []).map(row => ({ key: String(row.year), label: `${row.asOf}${row.isReportingYear ? ' · reporting year' : ''}`,
+    const life = (p.rows || []).map(row => ({ key: String(row.year), label: `${row.year}${row.isReportingYear ? ' · this year' : ''}`,
       value: row.scheduledOutstanding, color: 'var(--p-accent, #0d9488)', projected: true }));
     const undrawnHtml = !u.applicable
       ? '<p class="partc-hint">The facility is fully drawn: there is no undrawn commitment to report.</p>'

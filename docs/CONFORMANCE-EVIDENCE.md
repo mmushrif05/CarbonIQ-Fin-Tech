@@ -40,20 +40,24 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-FIND-02` | Part A footnote 71 (year-end balance) | `tests/parta-business-loans.test.js` | 53 | executed |
 | PCAF Part A §5.2 | `A-FIND-03` | CarbonIQ — a check that had nothing to check does not pass | `tests/parta-business-loans.test.js` | 53 | executed |
 | PCAF Part A §5.2 | `A-FIND-04` | CarbonIQ thresholds (stated on the finding, settable per request) | `tests/parta-business-loans.test.js` | 53 | executed |
-| PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 125 | executed |
-| PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 125 | executed |
-| PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 125 | executed |
-| PCAF Part A §5.2 | `A-REG-04` | DCL Part A (p.124) — coverage over the whole book | `tests/parta-register.test.js` | 125 | executed |
-| PCAF Part A §5.2 | `A-REG-05` | Register — the roll-up reads a projection | `tests/parta-register.test.js` | 130 | executed |
+| PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-04` | DCL Part A (p.124) — coverage over the whole book | `tests/parta-register.test.js` | 128 | executed |
+| PCAF Part A §5.2 | `A-REG-05` | Register — the roll-up reads a projection | `tests/parta-register.test.js` | 133 | executed |
 | PCAF Part A §5.2 | `A-REG-06` | Register — the band is resolved at call time | `tests/parta-register.test.js` | 19 | executed |
-| PCAF Part A §5.2 | `A-REG-07` | Register — one version of an approved row, never two | `tests/parta-approval.test.js` | 110 | executed |
-| PCAF Part A §5.2 | `A-REG-08` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 135 | executed |
-| PCAF Part A §5.2 | `A-REG-09` | Chapter 6 — one position per asset class (DCL p.128; §5.1–§5.5 tables) | `tests/parta-register-classes.test.js` | 283 | executed |
+| PCAF Part A §5.2 | `A-REG-07` | Register — one version of an approved row, never two | `tests/parta-approval.test.js` | 113 | executed |
+| PCAF Part A §5.2 | `A-REG-08` | Chapter 6 — recalculation and significance | `tests/parta-register.test.js` | 138 | executed |
+| PCAF Part A §5.2 | `A-REG-09` | Chapter 6 — one position per asset class (DCL p.128; §5.1–§5.5 tables) | `tests/parta-register-classes.test.js` | 290 | executed |
 | PCAF Part A §5.2 | `A-REG-10` | §5.4 (p.79) / §5.5 — energy statistics per square metre of floor area | `tests/parta-register-classes.test.js` | 111 | executed |
-| PCAF Part A §5.2 | `A-REG-11` | Chapter 6 — a document states the class it reports | `tests/parta-register-classes.test.js` | 152 | executed |
-| PCAF Part A §5.2 | `A-REG-12` | ISAE 3000 §12(a); ISO 14064-3 §5.2 — the responsible party stands behind the figures | `tests/parta-approval.test.js` | 153 | executed |
-| PCAF Part A §5.2 | `A-REG-13` | ISAE 3000 §12(a) — a figure the entity has stood behind does not move underneath the disclosure | `tests/parta-approval.test.js` | 337 | executed |
-| PCAF Part A §5.2 | `A-REG-14` | Table 5.2-1 (p.60) — the option earned decides the score; Options 1 and 2 are preferred over Option 3 | `tests/parta-preview.test.js` | 37 | executed |
+| PCAF Part A §5.2 | `A-REG-11` | Chapter 6 — a document states the class it reports | `tests/parta-register-classes.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-REG-12` | ISAE 3000 §12(a); ISO 14064-3 §5.2 — the responsible party stands behind the figures | `tests/parta-approval.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-REG-13` | ISAE 3000 §12(a) — a figure the entity has stood behind does not move underneath the disclosure | `tests/parta-approval.test.js` | 345 | executed |
+| PCAF Part A §5.2 | `A-REG-14` | Table 5.2-1 (p.60) — the option earned decides the score; Options 1 and 2 are preferred over Option 3 | `tests/parta-preview.test.js` | 38 | executed |
+| PCAF Part A §5.2 | `A-FAC-01` | §5.2 p.56 (outstanding amount: disbursed debt minus repayments, adjusted annually to 0 at maturity); p.33 (a fixed point in time) | `tests/parta-facility.test.js` | 143 | executed |
+| PCAF Part A §5.2 | `A-FAC-02` | §6.2 pp.169–173 (undrawn loan commitments: total loan commitment − drawn amount, the same denominator; unweighted shall, weighted may; never aggregated with drawn, p.170) | `tests/parta-facility.test.js` | 76 | executed |
+| PCAF Part A §5.2 | `A-FAC-03` | §5.2 p.56 (the attribution declines to 0 when the loan is fully repaid); ch.6 — a disclosed figure is the reporting year’s | `tests/parta-facility.test.js` | 23 | executed |
+| PCAF Part A §5.2 | `A-FAC-04` | §5.3 pp.68–69; §5.4 fn 124; §5.5; §5.6 p.91 — the same outstanding-amount rule in every loan class | `tests/parta-facility.test.js` | 83 | executed |
 | PCAF Part A §5.2 | `A-MV-01` | §5.6 Table 5.6-1 (p.94); Annex Table 10.1-6 | `tests/parta-motor-vehicles.test.js` | 166 | executed |
 | PCAF Part A §5.2 | `A-MV-02` | §5.6 fn 146 (p.94) | `tests/parta-motor-vehicles.test.js` | 160 | executed |
 | PCAF Part A §5.2 | `A-MV-03` | §5.6 (p.93) — combination of options | `tests/parta-motor-vehicles.test.js` | 135 | executed |
@@ -63,16 +67,16 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DQ-02` | Part A (p.56) | `tests/parta-business-loans.test.js` | 88 | executed |
 | PCAF Part A §5.2 | `A-DQ-03` | CarbonIQ — a score is a measurement, a plan is a task list | `tests/parta-business-loans.test.js` | 88 | executed |
 | PCAF Part A §5.2 | `A-DQ-04` | Comparability — a position of zero is a different claim | `tests/parta-business-loans.test.js` | 88 | executed |
-| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 49 | executed |
-| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 49 | executed |
+| PCAF Part A §5.2 | `A-REPORT-01` | Part A Chapter 6 (pp.160–174) | `tests/parta-report.test.js` | 50 | executed |
+| PCAF Part A §5.2 | `A-REPORT-02` | Part A §5.2 (p.56); p.126 | `tests/parta-report.test.js` | 50 | executed |
 | PCAF Part A §5.2 | `A-REPORT-03` | DCL Part A (p.124) | `tests/parta-report.test.js` | 99 | executed |
-| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 49 | executed |
+| PCAF Part A §5.2 | `A-REPORT-04` | Part A Box 6.1-6 (pp.167–168) | `tests/parta-report.test.js` | 50 | executed |
 | PCAF Part A §5.2 | `A-REPORT-05` | Part A §5.2 (p.57); factor manifest | `tests/parta-report.test.js` | 58 | executed |
 | PCAF Part A §5.2 | `A-REPORT-06` | Part A Chapter 6 (p.160); SLFRS S2 §29(a) | `tests/parta-report.test.js` | 62 | executed |
 | PCAF Part A §5.2 | `A-REPORT-07` | report-integrity; PCAF conformance language | `tests/parta-report.test.js` | 47 | executed |
 | PCAF Part A §5.2 | `A-REPORT-08` | The engine does every arithmetic operation | `tests/parta-report.test.js` | 22 | executed |
-| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 96 | executed |
-| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 49 | executed |
+| PCAF Part A §5.2 | `A-REPORT-09` | pdf-response; delivery | `tests/parta-report-api.test.js` | 97 | executed |
+| PCAF Part A §5.2 | `A-REPORT-10` | Chapter 6 — recalculation and significance | `tests/parta-report.test.js` | 50 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-01` | Part A §5.9 (p.144); Annex 10.3 (pp.201–204) | `tests/parta-sovereign.test.js` | 14 | executed |
 | PCAF Part A §5.2 | `SOV-ATTR-02` | Part A §5.9; Table 10.3-2 (p.202) | `tests/parta-sovereign.test.js` | 55 | executed |
 | PCAF Part A §5.2 | `SOV-LULUCF` | Part A §5.9 (p.141) | `tests/parta-sovereign-register.test.js` | 93 | executed |
@@ -94,29 +98,29 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DOC-02` | ISAE 3000 §12(a); ISO 14064-3 §5.2 | `tests/parta-report-golden.test.js` | 98 | executed |
 | PCAF Part A §5.2 | `A-DOC-03` | ISAE 3000 §69; ISO 14064-3 §9 | `tests/parta-report-golden.test.js` | 20 | executed |
 | PCAF Part A §5.2 | `A-DOC-04` | Part A ch.6 (p.161) | `tests/parta-report-golden.test.js` | 103 | executed |
-| PCAF Part A §5.2 | `A-DOC-05` | ISO 14064-3 §6.1.3; ISAE 3000 §48 | `tests/parta-report-golden.test.js` | 169 | executed |
-| PCAF Part A §5.2 | `A-DOC-06` | SLFRS S2 §29(a)(vi); Part A ch.6 (p.163) | `tests/parta-report-golden.test.js` | 150 | executed |
-| PCAF Part A §5.2 | `A-DOC-07` | DCL p.127 | `tests/parta-report-golden.test.js` | 135 | executed |
+| PCAF Part A §5.2 | `A-DOC-05` | ISO 14064-3 §6.1.3; ISAE 3000 §48 | `tests/parta-report-golden.test.js` | 171 | executed |
+| PCAF Part A §5.2 | `A-DOC-06` | SLFRS S2 §29(a)(vi); Part A ch.6 (p.163) | `tests/parta-report-golden.test.js` | 151 | executed |
+| PCAF Part A §5.2 | `A-DOC-07` | DCL p.127 | `tests/parta-report-golden.test.js` | 136 | executed |
 | PCAF Part A §5.2 | `A-DOC-08` | Part A Box 6.1-5 (p.167) | `tests/parta-report-golden.test.js` | 135 | executed |
 | PCAF Part A §5.2 | `A-DOC-09` | Part A ch.6 (p.164) | `tests/parta-report-golden.test.js` | 22 | executed |
 | PCAF Part A §5.2 | `A-DOC-10` | Part A ch.6 (pp.160–169) | `tests/parta-report-golden.test.js` | 62 | executed |
 | PCAF Part A §5.2 | `A-DOC-16` | Part A ch.6 (pp.160–169); §5.9 | `tests/parta-sovereign-report-golden.test.js` | 58 | executed |
-| PCAF Part A §5.2 | `A-DOC-11` | Part A ch.6 (p.162) | `tests/parta-consolidated.test.js` | 152 | executed |
-| PCAF Part A §5.2 | `A-DOC-12` | Part A §5.2 (p.56); §5.9 (p.141); p.126 | `tests/parta-consolidated.test.js` | 152 | executed |
-| PCAF Part A §5.2 | `A-DOC-13` | DCL p.128; Part A Box 6.1-6; Table 5.9-6 | `tests/parta-consolidated.test.js` | 152 | executed |
-| PCAF Part A §5.2 | `A-DOC-14` | DCL p.124 | `tests/parta-consolidated.test.js` | 152 | executed |
+| PCAF Part A §5.2 | `A-DOC-11` | Part A ch.6 (p.162) | `tests/parta-consolidated.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-DOC-12` | Part A §5.2 (p.56); §5.9 (p.141); p.126 | `tests/parta-consolidated.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-DOC-13` | DCL p.128; Part A Box 6.1-6; Table 5.9-6 | `tests/parta-consolidated.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-DOC-14` | DCL p.124 | `tests/parta-consolidated.test.js` | 156 | executed |
 | PCAF Part A §5.2 | `A-DOC-15` | Part A ch.6 (p.160) | `tests/parta-consolidated.test.js` | 36 | executed |
-| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 150 | executed |
-| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 156 | executed |
+| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 151 | executed |
+| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 157 | executed |
 | PCAF Part A §5.2 | `A-S2-03` | report-integrity — measured, declared, absent | `tests/parta-s2-disclosure.test.js` | 202 | executed |
 | PCAF Part A §5.2 | `A-S2-04` | SLFRS S2 §29(a)(i)–(iv), (vi); B58–B63 | `tests/parta-s2-disclosure.test.js` | 94 | executed |
 | PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 142 | executed |
 | PCAF Part A §5.2 | `A-S2-06` | SLFRS S2 §32; IFRS S2 industry-based guidance for commercial banks | `tests/parta-s2-disclosure.test.js` | 82 | executed |
 | PCAF Part A §5.2 | `A-S2-07` | SLFRS S2 — the disclosure read as an S2 file | `tests/parta-s2-disclosure.test.js` | 94 | executed |
-| PCAF Part A §5.2 | `A-S2-08` | report-integrity; PCAF conformance language | `tests/parta-s2-disclosure.test.js` | 39 | executed |
-| PCAF Part A §5.2 | `A-S2-09` | SLFRS S2 §5–37; Part A ch.6 (p.160) | `tests/parta-s2-disclosure.test.js` | 96 | executed |
+| PCAF Part A §5.2 | `A-S2-08` | report-integrity; PCAF conformance language | `tests/parta-s2-disclosure.test.js` | 40 | executed |
+| PCAF Part A §5.2 | `A-S2-09` | SLFRS S2 §5–37; Part A ch.6 (p.160) | `tests/parta-s2-disclosure.test.js` | 97 | executed |
 | PCAF Part A §5.2 | `A-S2-10` | SLFRS S2 §5–37 — one registry, one source | `tests/parta-climate-facts.test.js` | 154 | executed |
-| PCAF Part A §5.2 | `A-S2-11` | SLFRS S2 §29(b)–(d) — the classification is the bank’s judgement | `tests/parta-climate-exposure.test.js` | 87 | executed |
+| PCAF Part A §5.2 | `A-S2-11` | SLFRS S2 §29(b)–(d) — the classification is the bank’s judgement | `tests/parta-climate-exposure.test.js` | 91 | executed |
 | PCAF Part C | `C-SCOPE-01` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-02` | Part C v2 §5.3 | `tests/pcaf-partc-engine.test.js` | 16 | executed |
 | PCAF Part C | `C-SCOPE-03` | Part C v2 §5.3 | `tests/pcaf-partc-registers.test.js` | — | out of scope |
@@ -205,8 +209,8 @@ proved or it is not.
 
 ## Summary
 
-- 181 rules across the conformance matrices
-- **174 proved by execution**
+- 185 rules across the conformance matrices
+- **178 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path
