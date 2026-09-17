@@ -109,6 +109,8 @@ button.bank-tile:hover, button.bank-s2-pillar:hover { transform: translateY(-1px
 .ch-track { fill: var(--card-inset-strong); }
 .ch-ring .ch-track { fill: none; stroke: var(--card-inset-strong); }
 .ch-gap { fill: var(--ch-surface, var(--card-surface)); }
+/* The hatch's ground: the surface the projected bar sits on, so the stripes read as a texture over it. */
+.ch-hatch-ground { fill: var(--ch-surface, var(--card-surface)); }
 .ch-hit { fill: transparent; }
 .ch-axis { stroke: var(--card-hairline); stroke-width: 1; }
 .ch-label { font-size: 12px; fill: var(--card-ink-2); }

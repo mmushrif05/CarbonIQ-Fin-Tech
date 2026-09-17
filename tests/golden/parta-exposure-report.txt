@@ -87,11 +87,46 @@ SECTION 9 [intensity] Emission intensity
     figure: Economic emission intensity = 3.65 tCO2e per million LKR
       note: Financed scope 1 and 2 per million of the outstanding amount (PCAF Disclosure Checklist Part A, p.127).
 
-SECTION 10 [limitations] Limitations, and what the data says about itself
+SECTION 10 [facility] Facility, undrawn commitment and the life of the loan
+    body: The outstanding amount is the debt the borrower owes at the fiscal year-end — disbursed debt minus any repayments, adjusted annually so the attribution declines to nought when the loan is repaid (§5.2, p.56; the position taken at one fixed point in time, p.33). The sanctioned amount is the numerator only where it is fully drawn and nothing has been repaid. The facility below is what the year-end balance follows from.
+    table [2 cols] head: Facility | 
+      row: Total loan commitment (sanctioned) | LKR 700,000,000 (700 mn)
+      row: Drawn to date | LKR 600,000,000 (600 mn)
+      row: Undrawn commitment | LKR 100,000,000 (100 mn)
+      row: Originated · matures | <date> · <date> (60 months)
+      row: Repayment | Equal principal instalments, annual, 5 instalment(s)
+    h2: The numerator, and where it was read from
+    table [3 cols] head: Balance at the position date | LKR | Basis
+      row: Recorded outstanding — the numerator | 480,000,000 | Read from the loan account
+      row: Scheduled balance at the same date | 480,000,000 | 1 instalment(s) repaid; Scheduled from the facility terms, not read from the ledger
+    body: The loan account’s balance at the position date — the numerator the standard asks for (§5.2, p.56).
+    h2: Undrawn loan commitment (§6.2, optional)
+    table [5 cols] head: §6.2 line | Duty | Scope 1 and 2, tCO2e | Scope 3, tCO2e | Basis
+      row: Unweighted — the whole undrawn commitment | shall | 365.000 | 650.000 | The theoretical maximum: the whole undrawn commitment assumed drawn (§6.2, p.172).
+      row: Weighted | may | — | — | No utilisation factor is recorded; a weighted figure is optional and is reported only beside the unweighted one (§6.2, p.172).
+    body: Undrawn commitment LKR 100,000,000 (100 mn), attribution factor 0.0250 on the same denominator as the drawn part. Reported apart from the drawn figure and never aggregated with it (§6.2, p.170); a condition of a loan, not an asset class.
+    h2: The life of the loan — a projection
+    body: Each row scales the recorded year’s financed line by the scheduled balance over the recorded balance. The balance is scheduled, not read from the ledger; the denominator and the borrower’s emissions are held at the recorded year’s figures.
+    table [5 cols] head: Year-end | Scheduled balance, LKR | Attribution factor | Financed scope 1 and 2, tCO2e | Undrawn, LKR
+      row: <date> | 600,000,000 | 0.1500 | 2,190.000 | 100,000,000
+      row: <date> (reporting year) | 480,000,000 | 0.1200 | 1,752.000 | 100,000,000
+      row: <date> | 360,000,000 | 0.0900 | 1,314.000 | 100,000,000
+      row: <date> | 240,000,000 | 0.0600 | 876.000 | 100,000,000
+      row: <date> | 120,000,000 | 0.0300 | 438.000 | 100,000,000
+      row: <date> | 0 | 0.0000 | 0.000 | 100,000,000
+    caption: Projection — every row. The attribution declines to nought at maturity, as the standard requires of the numerator. Nothing in this table is a disclosed figure.
+    bullets:
+      - Balances follow the recorded repayment profile; a prepayment, an arrear or a restructure moves them.
+      - The denominator is held at the recorded year’s value; a company grows or shrinks and the factor with it.
+      - The borrower’s emissions are held at the recorded year’s figure; each reporting year re-measures them.
+      - The undrawn commitment is held at the recorded drawn amount; later drawdowns move it into the drawn figure.
+      - Nothing here is a disclosed figure: the position is the reporting year’s actual balance and nothing else.
+
+SECTION 11 [limitations] Limitations, and what the data says about itself
     body: The checks below follow the rule that where an independent path to a figure exists it is recomputed and the divergence reported, and where none exists the gap is stated rather than passed over. None of them refuses a figure or changes one; each records something a reader of the figure should know.
     body: Every input this class checks was present and internally consistent.
 
-SECTION 11 [uncertainty] Uncertainty, and what this document does not contain
+SECTION 12 [uncertainty] Uncertainty, and what this document does not contain
     body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
     table [3 cols] head: Score | Share of assessed outstanding | What the figure’s uncertainty rests on
       row: 2 | 100.0% | Reported by the counterparty, unverified. The uncertainty is that of the counterparty’s own measurement and boundary choices, which this document does not see.
@@ -103,7 +138,7 @@ SECTION 11 [uncertainty] Uncertainty, and what this document does not contain
       row: The reporting entity’s own gross scope 1, 2 and 3 inventory | This document is one asset class of a wider disclosure and never claims to be the inventory. | SLFRS S2 §29(a); Part A ch.6 (p.160)
     caption: An absent item is reported absent rather than filled: a figure invented to close a gap reads as a measurement to anyone who did not watch it being invented.
 
-SECTION 12 [conformance] Conformance statement
+SECTION 13 [conformance] Conformance statement
     body: The method in this report conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025), §5.2 and Chapter 6. PCAF sets the method; it does not approve, endorse or certify this report or the figures in it. The sector additions of the Third Edition have not been reviewed by the GHG Protocol, and this asset class — business loans and unlisted equity — carries the GHG Protocol’s "Built on" mark.
     body: This report states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the report or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
 

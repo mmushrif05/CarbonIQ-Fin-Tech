@@ -151,3 +151,14 @@
 .parta-register .pr-raise { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .parta-register .pr-raise li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: baseline; font-size: 13px; }
 .parta-register .pr-raise-score { white-space: nowrap; }
+
+/* ── The facility: the scheduled balance offered, the basis said, the life of the loan hatched ── */
+.parta-register .pr-fac-scheduled { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-top: 10px; padding: 10px 14px; border-radius: 12px; background: var(--p-fill, rgba(120,120,128,.12)); font-size: 13px; min-width: 0; }
+.parta-register .pr-fac-scheduled span { min-width: 0; overflow-wrap: anywhere; }
+.parta-register .pr-fac-scheduled .btn { flex: 0 0 auto; }
+.parta-register .pr-facility { margin-top: 12px; }
+.parta-register .pr-facility .ch-hbars { margin: 4px 0 8px; }
+.parta-register .pr-life tr.is-on td { font-weight: 700; }
+.parta-register .pr-assumptions { margin: 6px 0 0 18px; padding: 0; }
+.parta-register .pr-assumptions li { margin: 2px 0; }
+.parta-register .pr-facility select:disabled, .parta-register #pr-facility input:disabled { opacity: .5; }

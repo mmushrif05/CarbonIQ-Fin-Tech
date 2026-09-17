@@ -53,6 +53,7 @@ router.use(require('./climate'));
    and middleware, in a file of their own so this one stays under the line
    limit that keeps a route file readable. */
 router.use(require('./register-starter'));
+router.use(require('./register-facility'));
 
 // ---------------------------------------------------------------------------
 // What this deployment can hold, and what it already holds

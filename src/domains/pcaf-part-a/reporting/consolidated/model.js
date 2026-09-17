@@ -12,6 +12,7 @@
 'use strict';
 
 const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
+const { undrawnBlocks } = require('../facility-sections');
 const {
   buildSections, N, T, score,
   coverageBlocks, gasesBlocks, absoluteBlocks, methodologyBlocks, dataQualityBlocks, recalculationBlocks, intensityBlocks,
@@ -46,6 +47,8 @@ function financedAnnex(f, letter) {
       ...absoluteBlocks(f),
       b.h2('Emission intensity'),
       ...intensityBlocks(f),
+      b.h2('Undrawn loan commitments (§6.2, optional)'),
+      ...undrawnBlocks(f),
     ]),
   };
 }

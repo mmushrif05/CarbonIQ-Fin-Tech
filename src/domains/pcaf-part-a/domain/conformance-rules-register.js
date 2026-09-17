@@ -163,6 +163,48 @@ const REGISTER_RULES = [
     test: 'tests/parta-preview.test.js › is a read: the engine answers, nothing is written, and the same body twice gives the same answer',
     status: 'implemented',
   },
+  {
+    id: 'A-FAC-01',
+    clause: '§5.2 p.56 (outstanding amount: disbursed debt minus repayments, adjusted annually to 0 at maturity); p.33 (a fixed point in time)',
+    rule: 'The numerator is the debt owed at the fiscal year-end, never the amount sanctioned: the facility’s commitment, drawn '
+      + 'amount, dates and repayment profile are recorded beside it and the engine schedules the balance at the position date; '
+      + 'a balance above the commitment or the drawn amount is refused, a balance taken from the schedule rather than the ledger '
+      + 'carries a material finding until the ledger’s replaces it, and a keyed balance far from the schedule is told to the reader. '
+      + 'The facility changes no figure and no score.',
+    implementation: 'src/domains/pcaf-part-a/domain/facility/schedule.js — outstandingAt(); src/domains/pcaf-part-a/domain/facility/checks.js — refusals(), findings()',
+    test: 'tests/parta-facility.test.js › a scheduled year-end balance is accepted and carries a material finding; the ledger’s balance carries none; the figures are the same',
+    status: 'implemented',
+  },
+  {
+    id: 'A-FAC-02',
+    clause: '§6.2 pp.169–173 (undrawn loan commitments: total loan commitment − drawn amount, the same denominator; unweighted shall, weighted may; never aggregated with drawn, p.170)',
+    rule: 'The undrawn commitment is attributed on the same denominator as the drawn part and reported apart: an unweighted figure that shall '
+      + 'be reported, a weighted one only beside it where the institution records a utilisation factor, and absent with the reason where '
+      + 'the drawn part earned no attribution factor. No key holds the drawn and undrawn figures together, and the position sums the '
+      + 'line on its own, never into a headline.',
+    implementation: 'src/domains/pcaf-part-a/domain/facility/undrawn.js — undrawnLine(); src/domains/pcaf-part-a/application/register-facility.js — undrawnOf()',
+    test: 'tests/parta-facility.test.js › the position sums the undrawn commitment apart and counts the numerators by basis',
+    status: 'implemented',
+  },
+  {
+    id: 'A-FAC-03',
+    clause: '§5.2 p.56 (the attribution declines to 0 when the loan is fully repaid); ch.6 — a disclosed figure is the reporting year’s',
+    rule: 'The life of the loan is a projection: one row per year-end from origination to maturity, the balance scheduled and the '
+      + 'denominator and borrower emissions held, every row marked as a projection with the assumptions beside it, declining to nought '
+      + 'at maturity — and it never enters the reporting-year position.',
+    implementation: 'src/domains/pcaf-part-a/domain/facility/lifetime.js — projection()',
+    test: 'tests/parta-facility.test.js › the life of the loan is a projection on every row, declines to nought at maturity, and is not in the position',
+    status: 'implemented',
+  },
+  {
+    id: 'A-FAC-04',
+    clause: '§5.3 pp.68–69; §5.4 fn 124; §5.5; §5.6 p.91 — the same outstanding-amount rule in every loan class',
+    rule: 'The facility applies to every loan class through the register’s one shape — the property, vehicle and project engines are '
+      + 'read the same way as §5.2 — and to no holding: a listed share or bond is held, not drawn down, and the schema never offers it a facility.',
+    implementation: 'src/domains/pcaf-part-a/application/register-classes.js — withFacility(); src/domains/pcaf-part-a/interface/schemas/register.js',
+    test: 'tests/parta-facility.test.js › the same principle on a property loan: the numerator is the year-end balance, the facility schedules it and the undrawn line rests on the origination value',
+    status: 'implemented',
+  },
 
 ];
 

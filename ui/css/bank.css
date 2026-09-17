@@ -331,6 +331,7 @@
 .bank .ch-track { fill: var(--bk-band); }
 .bank .ch-ring .ch-track { fill: none; stroke: var(--bk-band); }
 .bank .ch-gap { fill: var(--bk-card); }
+.bank .ch-hatch-ground { fill: var(--bk-card); }
 .bank .bank-figure .ch-gap { fill: var(--bk-zebra); }
 .bank .bank-figure-primary .ch-gap { fill: var(--bk-sage-soft); }
 .bank .ch-axis { stroke: var(--bk-rule); }

@@ -30,4 +30,10 @@ const facilitySchema = Joi.object({
   currency: Joi.string().max(10).optional(),
 }).unknown(false);
 
-module.exports = { facilitySchema };
+/** What the form asks before a balance is keyed: the schedule's own answer at a date. */
+const scheduleRequestSchema = Joi.object({
+  facility: facilitySchema.required(),
+  asOf: date.required().description('The position date the balance is scheduled at'),
+}).unknown(false);
+
+module.exports = { facilitySchema, scheduleRequestSchema };

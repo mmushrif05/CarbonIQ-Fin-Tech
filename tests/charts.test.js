@@ -44,6 +44,18 @@ describe('the module is geometry', () => {
     must(CH, /<line class="ch-axis"/, 'the baseline is a hairline');
   });
 
+  test('a projected row is hatched in its own colour — the one texture, meaning not measured — and its readout says so', () => {
+    const svg = Charts.hbars([{ key: 'a', label: 'A', value: 100, color: '#2c6b1c' }, { key: 'b', label: 'B', value: 80, color: '#2c6b1c', projected: true }], { label: 'Test' });
+    expect(svg).toMatch(/<defs><pattern id="chh-[a-z0-9]+-1" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate\(45\)">/);
+    expect(svg).toMatch(/class="ch-hatch-ground"/);
+    expect(svg).toMatch(/style="fill:url\(#chh-[a-z0-9]+-1\)"/);
+    expect(svg).toMatch(/class="ch-row is-projected"/);
+    expect(svg).toMatch(/Projection — not measured/);
+    /* The measured row is filled flat. */
+    expect(svg).toMatch(/style="fill:#2c6b1c"/);
+    expect(Charts.hbars([{ key: 'a', label: 'A', value: 1, color: '#2c6b1c' }], { label: 'T' })).not.toMatch(/<defs>/);
+  });
+
   test('touching fills are parted by a gap in the surface colour, never a stroke', () => {
     const svg = Charts.hbars(rows, { label: 'Test' });
     expect(svg).toMatch(/<rect class="ch-gap" x="[\d.]+" y="[\d.]+" width="2"/);

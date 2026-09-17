@@ -101,7 +101,14 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#pr-subtitle')).toContainText('Business loans');
   await expect(page.locator('#pr-record')).toBeVisible();
   await expect(page.locator('#pr-f-name')).toHaveValue('Lanka Textiles (Pvt) Ltd');
-  await expect(page.locator('#pr-f-outstanding')).toHaveValue('250000000');
+  /* The client asked for 250 million; the numerator is what is owed at the
+     year-end after three quarterly instalments. The facility is the
+     commitment, and the preview shows the life of the loan as a projection. */
+  await expect(page.locator('#pr-f-fac-committed')).toHaveValue('250000000');
+  await expect(page.locator('#pr-f-outstanding')).toHaveValue('212500000');
+  await expect(page.locator('#pr-fac-scheduled')).toContainText('212,500,000');
+  await expect(page.locator('#pr-preview-body')).toContainText('The life of the loan');
+  await expect(page.locator('#pr-preview-body')).toContainText('fully drawn');
   await expect(page.locator('#pr-f-cl-transition')).toHaveValue('vulnerable');
   await expect(page.locator('#pr-form-submit')).toHaveClass(/wt-cue/);
   await page.locator('#pr-form-submit').click();

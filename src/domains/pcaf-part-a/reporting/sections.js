@@ -16,6 +16,7 @@
 'use strict';
 
 const { b, keep } = require('../../../platform/reporting/report-standard/blocks');
+const { facilitySection, undrawnSection } = require('./facility-sections');
 const { entitySection, uncertaintySection } = require('./common-sections');
 
 const { fixed, moneyAnnotated } = require('../../../shared/money');
@@ -371,6 +372,7 @@ function buildSections(f) {
     recalculationSection(f),
     intensitySection(f),
     f.kind === 'disclosure' ? fluctuationSection(f) : null,
+    f.kind === 'exposure' ? facilitySection(f) : undrawnSection(f),
     limitationsSection(f),
     uncertaintySection(f),
     conformanceSection(f),

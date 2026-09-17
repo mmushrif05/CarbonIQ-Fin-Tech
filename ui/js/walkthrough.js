@@ -68,8 +68,8 @@ const WalkthroughPage = (() => {
       title: 'A loan comes in',
       page: 'parta-register',
       apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'record:example'); },
-      action: 'Lending Book. The record form has opened for one borrower with every field already filled: the facility and its outstanding, the borrower’s equity and debt, its reported scope 1 and 2, and the climate block — the bank’s own judgement of transition risk, physical risk and opportunity. Change any figure, then press Record.',
-      note: 'These are the fields a relationship manager fills at origination. The engine runs before anything is written, and a loan the standard would refuse is refused here with its clause. The climate block feeds S2 §29(b)–(d) and changes no figure; what has not been assessed is reported apart and is not counted as not vulnerable.',
+      action: 'Lending Book. The record form has opened for one borrower with every field already filled. The client asked for 250 million over five years: the facility is recorded as sanctioned, drawn in March and repaid quarterly, and the balance the standard attributes on is what is owed at the year-end — 212.5 million after three instalments — not the amount asked for. The preview beneath shows the attribution falling to nought as the loan is repaid, the borrower’s reported scope 1 and 2, and the climate block. Change any figure, then press Record.',
+      note: 'These are the fields a relationship manager fills at origination. The outstanding amount is disbursed debt minus repayments at the fiscal year-end (PCAF Part A §5.2, p.56), so each reporting year is a fresh measurement of that year’s balance; the undrawn part of a facility is reported apart under §6.2 and never summed with it. The engine runs before anything is written, and a loan the standard would refuse is refused here with its clause. The climate block feeds S2 §29(b)–(d) and changes no figure; what has not been assessed is reported apart and is not counted as not vulnerable.',
     },
     {
       title: 'The borrower that does not know its emissions',

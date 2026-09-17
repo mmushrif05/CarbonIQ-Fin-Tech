@@ -71,7 +71,7 @@ function undrawnAcross(classRows) {
   const total = (k, sub) => (u.some(x => x[sub] && num(x[sub][k])) ? r3(u.reduce((t, x) => t + (x[sub] && num(x[sub][k]) ? x[sub][k] : 0), 0)) : null);
   const allWeighted = u.length > 0 && u.every(x => x.exposures === 0 || (x.weighted && !x.weighted.absent));
   return {
-    classes: held.map(c => ({ assetClass: c.assetClass, section: c.section, label: c.label,
+    classes: held.filter(c => c.undrawnCommitments.exposuresWithFacility > 0).map(c => ({ assetClass: c.assetClass, section: c.section, label: c.label,
       exposures: c.undrawnCommitments.exposures, undrawnAmount: c.undrawnCommitments.undrawnAmount,
       unweightedScope1And2: c.undrawnCommitments.unweighted.scope1And2, unweightedScope3: c.undrawnCommitments.unweighted.scope3 })),
     exposures: u.reduce((t, x) => t + x.exposures, 0),
