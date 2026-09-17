@@ -66,7 +66,7 @@ npm run lint · npm run typecheck · npm run test:e2e
 foreign key does not, and the first PostgreSQL run this project ever did failed
 27 tests for exactly that reason. Run both.
 
-At the time of writing: 165 suites, 3,107 tests on PostgreSQL.
+At the time of writing: 166 suites, 3,140 tests on PostgreSQL.
 
 ## Architecture, in one paragraph
 
