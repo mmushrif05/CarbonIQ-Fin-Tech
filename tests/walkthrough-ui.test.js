@@ -85,7 +85,13 @@ describe('The strip follows the presenter', () => {
   });
 
   test('the steps open the real screens through the hand-overs those screens already read', () => {
-    expect(Page.STEPS.map(s => s.page)).toEqual(['bank', 'bank', 'parta-register', 'bank', 'parta-position']);
+    /* Chief executive first: the position, the file downloaded, what S2 asks,
+       the climate view, then what a loan carries, back to the dashboard, the
+       lineage, and the detail screen last. */
+    expect(Page.STEPS.map(s => s.page)).toEqual(
+      ['bank', 'bank', 'bank', 'bank', 'parta-register', 'bank', 'bank', 'parta-position']);
+    expect(Page.STEPS).toHaveLength(8);
+    expect(Page.STEPS[1].title).toMatch(/SLFRS S2 file, downloaded/);
     for (const s of Page.STEPS) must(INDEX, `data-page="${s.page}"`, `step "${s.title}" names a page the shell has`);
     must(JS, /CLASS_KEY = 'carboniq\.parta\.class'/, 'the Lending Book’s class hand-over');
     must(REGISTER, /localStorage\.getItem\('carboniq\.parta\.class'\)/, 'the Lending Book reads it');
@@ -112,8 +118,9 @@ describe('The page computes nothing and says what a presenter needs', () => {
 
   test('the notes keep the claims that matter and never the forbidden ones', () => {
     must(JS, /marked scenario/, 'a projected score is a scenario');
-    must(JS, /cannot move underneath the disclosure/, 'an approved figure is frozen');
-    must(JS, /one input to the entity’s inventory, not the inventory/, 'the checklist cannot reach a hundred per cent');
+    must(JS, /is not counted as not vulnerable/, 'what has not been assessed is reported, never absorbed into the safe side');
+    must(JS, /Nothing is written on the bank’s behalf/, 'an unanswered paragraph is printed as not stated with its clause');
+    must(JS, /an item can answer No/, 'the checklist is answered from the document and can fail');
     must(HTML, /PCAF-conformant/, 'the language rule');
     for (const src of [JS, HTML]) mustNot(src, /certified by PCAF|PCAF (approved|endorsed|certified)/i, 'no endorsement language', 'always PCAF-conformant');
   });

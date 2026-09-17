@@ -132,7 +132,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`${tiles} class tiles`);
   }, page);
 
-  await step('Walkthrough 1 · the overview', async e => {
+  await step('Walkthrough 1 · the position', async e => {
     for (const id of ['bk-headline', 'bk-s3', 'bk-coverage', 'bk-intensity', 'bk-ready', 'bk-approved']) {
       const v = await text(page, '#' + id);
       if (v === '—' || v === '') e.notes.push(`${id} is blank`);
@@ -145,9 +145,40 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Plan: ${(await text(page, '#bk-plan')).replace(/\s+/g, ' ').slice(0, 200)}`);
     e.notes.push(`Baselines: ${(await text(page, '#bk-baselines')).replace(/\s+/g, ' ').slice(0, 200)}`);
     e.notes.push(`Readiness: ${(await text(page, '#bk-readiness')).replace(/\s+/g, ' ').slice(0, 300)}`);
+    e.notes.push(`S2 strip: ${(await text(page, '#bk-s2-summary')).replace(/\s+/g, ' ')}`);
+    if (!(await page.locator('#bk-pdf').textContent()).includes('SLFRS S2')) e.notes.push('the primary download is not named as the S2 file');
   }, page);
 
-  await step('Walkthrough 2 · a class in focus', async e => {
+  /* Steps 3 and 4 are the SLFRS S2 half of the overview: what the bank has
+     stated, where each paragraph is answered, and the climate view. */
+  await step('Walkthrough 3 · what S2 asks, and where it is answered', async e => {
+    const pillars = await page.locator('#bk-s2-pillars .bank-s2-pillar').allTextContents();
+    e.notes.push(`Pillars: ${pillars.map(t => t.replace(/\s+/g, ' ').trim()).join(' | ')}`);
+    if (pillars.length !== 4) e.notes.push(`expected four pillars, found ${pillars.length}`);
+    await page.locator('.bank [data-behind="s2"]').click();
+    await wait(page, '#bk-behind');
+    await page.waitForFunction(() => !/Reading the document lineage/.test(document.getElementById('bk-behind-body').textContent), null, { timeout: 30000 });
+    const body = (await text(page, '#bk-behind-body')).replace(/\s+/g, ' ');
+    for (const needle of ['S2 §29(a)(vi)', 'S2 §29(b)', 'S2 §32', 'S2 §33']) {
+      if (!body.includes(needle)) e.notes.push(`the index lacks ${needle}`);
+    }
+    e.notes.push(`Index: ${body.slice(0, 600)}`);
+    await page.locator('#bk-behind-close').click();
+  }, page);
+
+  await step('Walkthrough 4 · the climate view and the industry table', async e => {
+    for (const id of ['bk-chart-climate', 'bk-chart-industry']) {
+      if (!(await page.locator(`#${id} svg`).count())) e.notes.push(`${id} has no drawing`);
+    }
+    const climate = (await text(page, '#bk-climate')).replace(/\s+/g, ' ');
+    for (const needle of ['S2 §29(b)', 'S2 §29(c)', 'S2 §29(d)', 'Not yet assessed']) {
+      if (!climate.includes(needle)) e.notes.push(`the climate table lacks "${needle}"`);
+    }
+    e.notes.push(`Climate: ${climate.slice(0, 500)}`);
+    e.notes.push(`Industry: ${(await text(page, '#bk-industry')).replace(/\s+/g, ' ').slice(0, 500)}`);
+  }, page);
+
+  await step('Walkthrough 6 · how it reaches the dashboard', async e => {
     const chips = await page.locator('#bk-chips .bank-chip').allTextContents();
     e.notes.push(`Chips: ${chips.map(c => c.trim()).join(' | ')}`);
     await page.locator('#bk-chips .bank-chip[data-class="business-loans-unlisted-equity"]').click();
@@ -156,7 +187,7 @@ if (!EMAIL || !PASSWORD) {
     if (!(await page.locator('#bk-focus .bank-focus-open').count())) throw new Error('no "Open in the book" control on the focus panel');
   }, page);
 
-  await step('Walkthrough 4 · behind the headline', async e => {
+  await step('Walkthrough 7 · behind the headline', async e => {
     await page.locator('.bank [data-behind="headline"]').click();
     await wait(page, '#bk-behind');
     await page.waitForFunction(() => !/Reading the document lineage/.test(document.getElementById('bk-behind-body').textContent), null, { timeout: 30000 });
@@ -168,7 +199,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Drawer: ${body.slice(0, 600)}`);
   }, page);
 
-  await step('Walkthrough 4 · behind coverage and approval', async e => {
+  await step('Walkthrough 7 · behind coverage and approval', async e => {
     await page.locator('.bank [data-behind="coverage"]').click();
     await page.waitForTimeout(600);
     e.notes.push(`Coverage: ${(await text(page, '#bk-behind-body')).replace(/\s+/g, ' ').slice(0, 300)}`);
@@ -205,7 +236,32 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Entity view: ${(await text(page, '#fe-entity-view')).replace(/\s+/g, ' ').slice(0, 300)}`);
   }, page);
 
-  await step('Walkthrough 3 · the lending book, a row opens', async e => {
+  await step('Before the day 4 · the bank\'s SLFRS S2 statements', async e => {
+    await wait(page, '#fe-climate');
+    e.notes.push(`Before: ${(await text(page, '#fe-cl-summary')).replace(/\s+/g, ' ')}`);
+    /* The illustrative set loads once, and only where nothing is recorded;
+       the button is hidden otherwise, so this is not an error either way. */
+    if (await page.locator('#fe-cl-illustrative').isVisible().catch(() => false)) {
+      await page.locator('#fe-cl-illustrative').click();
+      await page.waitForTimeout(1500);
+      e.notes.push(`Loaded: ${(await text(page, '#fe-cl-status')).replace(/\s+/g, ' ')}`);
+    } else {
+      e.notes.push('Illustrative content was already loaded or facts are recorded; the button is withheld.');
+    }
+    e.notes.push(`Pillars: ${(await text(page, '#fe-cl-view')).replace(/\s+/g, ' ').slice(0, 400)}`);
+    /* One statement replaced in the bank's own words, so at least one item
+       reads as the bank's rather than as ours. */
+    const body = page.locator('#fe-cl-fields textarea, #fe-cl-fields input[type="text"]').first();
+    if (await body.count()) {
+      await body.fill(`${BANK} — Board Integrated Risk Management Committee, as recorded for the rehearsal.`);
+      await page.locator('#fe-cl-save').click();
+      await page.waitForTimeout(1500);
+      e.notes.push(`After: ${(await text(page, '#fe-cl-summary')).replace(/\s+/g, ' ')}`);
+      e.notes.push(`Status: ${(await text(page, '#fe-cl-status')).replace(/\s+/g, ' ')}`);
+    }
+  }, page);
+
+  await step('Walkthrough 5 · the lending book, a row opens', async e => {
     await page.locator('.nav-item[data-page="parta-register"]').click();
     await wait(page, '#page-parta-register');
     await wait(page, '#pr-class');
@@ -223,7 +279,7 @@ if (!EMAIL || !PASSWORD) {
   }, page);
 
   let editedName = '';
-  await step('Walkthrough 3 · edit, the engine reruns', async e => {
+  await step('Walkthrough 5 · edit, the engine reruns', async e => {
     await page.locator('#pr-detail-edit').click();
     await wait(page, '#pr-record');
     editedName = await page.locator('#pr-f-name').inputValue();
@@ -238,7 +294,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`State after edit: ${await text(page, '#pr-detail-state')}`);
   }, page);
 
-  await step('Walkthrough 3 · send for review, approve, frozen', async e => {
+  await step('Walkthrough 5 · send for review, approve, frozen', async e => {
     await page.locator('#pr-detail-review').click();
     await expectText(page, '#pr-detail-state', 'Under review');
     await page.locator('#pr-detail-approve').click();
@@ -260,7 +316,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Row states: ${states.join(', ')}`);
   }, page);
 
-  await step('Walkthrough 3 · reopen with a reason', async e => {
+  await step('Walkthrough 5 · reopen with a reason', async e => {
     page.once('dialog', d => d.accept('Facility repriced after the year-end audit'));
     await page.locator('#pr-detail-reopen').click();
     await expectText(page, '#pr-detail-state', 'Under review');
@@ -276,7 +332,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Cancelled reopen leaves state: ${await text(page, '#pr-detail-state')}`);
   }, page);
 
-  await step('Walkthrough 3 · record a property in square feet', async e => {
+  await step('Walkthrough 5 · record a property in square feet', async e => {
     await page.selectOption('#pr-class', 'commercial-real-estate');
     await wait(page, '#pr-record-toggle');
     if (await page.locator('#pr-record').isHidden()) await page.locator('#pr-record-toggle').click();
@@ -307,7 +363,7 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Readiness: ${(await text(page, '#bk-readiness')).replace(/\s+/g, ' ').slice(0, 300)}`);
   }, page);
 
-  await step('Walkthrough 5 · the disclosure downloads', async e => {
+  await step('Walkthrough 2 · the SLFRS S2 file downloads', async e => {
     for (const [id, ext, magic] of [['bk-pdf', 'pdf', '%PDF-1.4'], ['bk-docx', 'docx', 'PK'], ['bk-csv', 'csv', '']]) {
       const [dl] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), page.locator('#' + id).click()]);
       const file = path.join(OUT, `disclosure.${ext}`);
@@ -322,14 +378,15 @@ if (!EMAIL || !PASSWORD) {
     }
   }, page);
 
-  await step('Walkthrough 5 · the checklist can fail, and says why', async e => {
+  await step('Walkthrough 8 · the checklist can fail, and says why', async e => {
     const r = await api(page, `/v1/pcaf/part-a/financed-emissions/${YEAR}/disclosure?format=json`);
     if (r.status !== 200) throw new Error(`disclosure JSON ${r.status}: ${JSON.stringify(r.body).slice(0, 200)}`);
     const rep = r.body.report || r.body;
     const items = (rep.checklist && rep.checklist.items) || [];
     const answered = items.filter(i => i.answer === 'Yes').length;
     e.notes.push(`Checklist: ${answered} of ${items.length} answered Yes`);
-    for (const id of ['APR-1', 'INV-1', 'GOV-1', 'COV-2', 'MET-1', 'ASR-2']) {
+    for (const id of ['APR-1', 'INV-1', 'GOV-1', 'COV-2', 'MET-1', 'ASR-2',
+      'S2-GOV-1', 'S2-STR-1', 'S2-RSK-1', 'S2-MET-1', 'S2-IND-1', 'S2-TGT-1', 'S2-PRV-1']) {
       const it = items.find(i => i.id === id);
       if (it) e.notes.push(`${id} ${it.answer}: ${(it.justification || '').slice(0, 160)}`);
     }
@@ -337,6 +394,14 @@ if (!EMAIL || !PASSWORD) {
     const p = await api(page, `/v1/pcaf/part-a/financed-emissions/${YEAR}`);
     e.notes.push(`Position approval: ${JSON.stringify(p.body.approval)}`);
     e.notes.push(`Outstanding items: ${(p.body.outstandingItems || []).map(x => x.what).join(' · ')}`);
+    const s2 = (rep.facts && rep.facts.s2) || null;
+    if (s2) {
+      e.notes.push(`S2 index: ${s2.answeredParagraphs} of ${s2.index.length} paragraphs answered`);
+      e.notes.push(`S2 statements: ${s2.readiness.stated} stated · ${s2.readiness.illustrative} illustrative · ${s2.readiness.absent} not stated`);
+      e.notes.push(`S2 unanswered: ${s2.index.filter(r => !r.answered).map(r => r.paragraph).join(', ') || 'none'}`);
+    } else {
+      e.notes.push('the disclosure carries no S2 block');
+    }
   }, page);
 
   await step('Phone width · nothing widens', async e => {
