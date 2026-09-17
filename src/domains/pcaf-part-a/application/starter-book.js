@@ -43,10 +43,24 @@ const reported = (s1, s2, s3, period = String(YEAR)) => ({
 });
 
 /** In the shape POST /v1/pcaf/part-a/exposures takes, class by class. */
+/**
+ * The bank's own SLFRS S2 classification of a starter exposure.
+ *
+ * Written out per row rather than defaulted, and two rows are left with none
+ * at all — the overdraft and the three-wheeler — so the screen shows a real
+ * unassessed share rather than a book that classifies itself.
+ */
+const cl = (transition, tHorizon, physical, pHorizon, opportunity, taxonomyCode) => ({
+  transitionRisk: { verdict: transition, horizon: tHorizon },
+  physicalRisk: { verdict: physical, horizon: pHorizon },
+  opportunity: { verdict: opportunity, taxonomyCode },
+});
+
 const EXPOSURES = [
   /* §5.2 — business loans and unlisted equity */
   { assetClass: 'business-loans-unlisted-equity', reportingYear: YEAR, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'ST-BL-25-001' },
+    climate: cl('vulnerable', 'medium', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Kelani Garments (Pvt) Ltd', sector: 'Textiles', sectorKey: 'manufacturing_textiles' },
     outstanding: { amount: 650_000_000, asOf, currency },
     denominator: { totalEquity: 2_400_000_000, totalDebt: 1_900_000_000, asOf, currency },
@@ -54,6 +68,7 @@ const EXPOSURES = [
     plausibility: { revenue: 6_100_000_000 } },
   { assetClass: 'business-loans-unlisted-equity', reportingYear: YEAR, instrument: 'business-loan', borrowerListed: true,
     identifiers: { accountNumber: 'ST-BL-25-002' },
+    climate: cl('vulnerable', 'short', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Lanka Ceramics PLC', sector: 'Ceramics', sectorKey: 'manufacturing_cement' },
     outstanding: { amount: 900_000_000, asOf, currency },
     denominator: { marketCapOrdinary: 14_000_000_000, totalDebtInterestBearing: 6_500_000_000, minorityInterests: 200_000_000, asOf, currency },
@@ -68,12 +83,14 @@ const EXPOSURES = [
   /* §5.1 — listed equity and corporate bonds */
   { assetClass: 'listed-equity-corporate-bonds', reportingYear: YEAR, instrument: 'listed-equity', onBalanceSheetAtYearEnd: true,
     identifiers: { accountNumber: 'ST-EQ-25-001' },
+    climate: cl('vulnerable', 'long', 'not_assessed', null, 'not_aligned', null),
     counterparty: { name: 'Ceylon Conglomerate Holdings PLC', naceL2: '70' },
     outstanding: { amount: 420_000_000, basis: 'market-value', asOf, currency },
     denominator: { marketCapOrdinary: 96_000_000_000, totalDebtInterestBearing: 41_000_000_000, minorityInterests: 3_000_000_000, asOf, currency },
     emissions: reported(58_000, 31_000, 210_000) },
   { assetClass: 'listed-equity-corporate-bonds', reportingYear: YEAR, instrument: 'corporate-bond', issuerListed: true, onBalanceSheetAtYearEnd: true,
     identifiers: { accountNumber: 'ST-CB-25-001' },
+    climate: cl('not_vulnerable', 'long', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Lanka Telecom Infrastructure PLC', naceL2: '61' },
     outstanding: { amount: 250_000_000, basis: 'book-value', asOf, currency },
     denominator: { marketCapOrdinary: 38_000_000_000, totalDebtInterestBearing: 22_000_000_000, asOf, currency },
@@ -81,40 +98,48 @@ const EXPOSURES = [
 
   /* §5.3 — project finance */
   { assetClass: 'project-finance', reportingYear: YEAR, identifiers: { accountNumber: 'ST-PF-25-001' },
+    climate: cl('not_vulnerable', 'long', 'not_vulnerable', null, 'aligned', null),
     projectName: 'Hambantota 10 MW solar park', counterparty: 'Southern Solar (Pvt) Ltd', sector: 'Power', archetype: 'general',
     outstandingAmount: 1_200_000_000, totalProjectEquityPlusDebt: 2_800_000_000, currency,
     projectScope1_tCO2e: 12, projectScope2_tCO2e: 48, dataQualityOption: '2a' },
   { assetClass: 'project-finance', reportingYear: YEAR, identifiers: { accountNumber: 'ST-PF-25-002' },
+    climate: cl('not_vulnerable', 'long', 'vulnerable', 'long', 'aligned', 'M4.5'),
     projectName: 'Kalu Ganga mini-hydro', counterparty: 'Ratnapura Hydro (Pvt) Ltd', sector: 'Power', archetype: 'general',
     outstandingAmount: 480_000_000, totalProjectEquityPlusDebt: 1_100_000_000, currency,
     projectScope1_tCO2e: 90, projectScope2_tCO2e: 15, dataQualityOption: '1b' },
 
   /* §5.4 — commercial real estate */
   { assetClass: 'commercial-real-estate', reportingYear: YEAR, identifiers: { accountNumber: 'ST-CRE-25-001' },
+    climate: cl('vulnerable', 'medium', 'vulnerable', 'medium', 'not_aligned', null),
     counterparty: { name: 'Colombo 03 office tower' }, buildingType: 'office', productType: 'purchase',
     exposure: { outstanding: 760_000_000, currency, asOf }, value: { atOrigination: 2_400_000_000 },
     floorArea: { value: 48_000, unit: 'ft2' } },
   { assetClass: 'commercial-real-estate', reportingYear: YEAR, identifiers: { accountNumber: 'ST-CRE-25-002' },
+    climate: cl('not_vulnerable', 'medium', 'vulnerable', 'long', 'not_aligned', null),
     counterparty: { name: 'Nugegoda retail arcade' }, buildingType: 'retail', productType: 'refinance',
     exposure: { outstanding: 310_000_000, currency, asOf }, value: { atOrigination: 900_000_000 },
     energy: { electricity_kWh: 412_000, fuel_kWh: 18_000, fuelSource: 'diesel', emissionFactorBasis: 'average' } },
 
   /* §5.5 — mortgages */
   { assetClass: 'mortgages', reportingYear: YEAR, identifiers: { accountNumber: 'ST-HL-25-001' },
+    climate: cl('not_vulnerable', 'long', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Home purchase — Rajagiriya apartment' }, buildingType: 'residential_apartment', productType: 'purchase',
     exposure: { outstanding: 28_000_000, currency, asOf }, value: { atOrigination: 42_000_000 },
     energy: { electricity_kWh: 4_800, fuel_kWh: 900, fuelSource: 'lpg', emissionFactorBasis: 'average' } },
   { assetClass: 'mortgages', reportingYear: YEAR, identifiers: { accountNumber: 'ST-HL-25-002' },
+    climate: cl('not_vulnerable', 'long', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Home purchase — Kandy house' }, buildingType: 'residential_house', productType: 'purchase',
     exposure: { outstanding: 19_500_000, currency, asOf }, value: { atOrigination: 31_000_000 },
     floorArea: { value: 2_400, unit: 'ft2' } },
   { assetClass: 'mortgages', reportingYear: YEAR, identifiers: { accountNumber: 'ST-HL-25-003' },
+    climate: cl('not_vulnerable', 'long', 'vulnerable', 'medium', 'not_aligned', null),
     counterparty: { name: 'Home purchase — Negombo house' }, buildingType: 'residential_house', productType: 'refinance',
     exposure: { outstanding: 12_000_000, currency, asOf }, value: { atOrigination: 25_000_000 },
     buildingCount: 1 },
 
   /* §5.6 — motor vehicle loans */
   { assetClass: 'motor-vehicle-loans', reportingYear: YEAR, identifiers: { accountNumber: 'ST-VL-25-001' },
+    climate: cl('vulnerable', 'long', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Lease — Toyota Aqua (private)' }, productType: 'lease',
     exposure: { outstanding: 5_400_000, currency, asOf }, value: { atOrigination: 9_800_000 },
     vehicles: [{ vehicleClass: 'car_hybrid', makeModel: 'Toyota Aqua 2021', efficiency: { value: 33.6, unit: 'km/L', cycle: 'WLTC' } }] },
@@ -123,6 +148,7 @@ const EXPOSURES = [
     exposure: { outstanding: 900_000, currency, asOf }, value: { atOrigination: 1_450_000 },
     vehicles: [{ vehicleClass: 'three_wheeler' }] },
   { assetClass: 'motor-vehicle-loans', reportingYear: YEAR, identifiers: { accountNumber: 'ST-VL-25-003' },
+    climate: cl('vulnerable', 'medium', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Fleet facility — Lanka Logistics (Pvt) Ltd' }, productType: 'vehicle-loan',
     exposure: { outstanding: 64_000_000, currency, asOf }, value: { atOrigination: 110_000_000 },
     vehicles: [

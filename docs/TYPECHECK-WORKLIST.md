@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **414**. Remaining: **223**.
+Checked across all three: **425**. Remaining: **229**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **361**. Remaining: **68** (406 errors, measured by
+Checked: **372**. Remaining: **68** (406 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -106,7 +106,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **28** (1778 errors, measured by
+Checked: **8**. Remaining: **29** (1792 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **1 of them raise no errors at all** and can be adopted by adding the
@@ -120,7 +120,7 @@ pragma and nothing else.
 | `ui/js/dashboard.js` | 118 |
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/gcf-pipeline.js` | 90 |
-| `ui/js/parta-register.js` | 79 |
+| `ui/js/parta-register.js` | 82 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
 | `ui/js/gcf.js` | 58 |
@@ -141,16 +141,17 @@ pragma and nothing else.
 | `ui/js/walkthrough.js` | 17 |
 | `ui/js/partc-portfolio.js` | 15 |
 | `ui/js/monitoring.js` | 11 |
+| `ui/js/parta-climate.js` | 11 |
 | `ui/js/charts.js` | 0 |
 
 ## The suite — `tests/`
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **127** (1474 errors, measured by
+Checked: **45**. Remaining: **132** (1494 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**11 of them raise no errors at all** and can be adopted by adding the
+**13 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -201,6 +202,7 @@ pragma and nothing else.
 | `tests/partc-disclosure.test.js` | 12 |
 | `tests/pcaf-partc-registers.test.js` | 12 |
 | `tests/gcf-return-loop.test.js` | 11 |
+| `tests/parta-climate-facts.test.js` | 11 |
 | `tests/partc-ui.test.js` | 11 |
 | `tests/projects.test.js` | 11 |
 | `tests/ndc-sdg.test.js` | 10 |
@@ -224,6 +226,7 @@ pragma and nothing else.
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-assessment-journey.test.js` | 7 |
+| `tests/parta-climate-exposure.test.js` | 7 |
 | `tests/pg-scale.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
 | `tests/api.test.js` | 6 |
@@ -259,6 +262,7 @@ pragma and nothing else.
 | `tests/deploy-freshness.test.js` | 2 |
 | `tests/health.test.js` | 2 |
 | `tests/parta-report.test.js` | 2 |
+| `tests/parta-s2-disclosure.test.js` | 2 |
 | `tests/parta-sovereign-register.test.js` | 2 |
 | `tests/partc-report-golden.test.js` | 2 |
 | `tests/partc-report-standard.test.js` | 2 |
@@ -274,8 +278,10 @@ pragma and nothing else.
 | `tests/bank-ui.test.js` | 0 |
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |
+| `tests/parta-climate-ui.test.js` | 0 |
 | `tests/parta-position-ui.test.js` | 0 |
 | `tests/parta-real-estate.test.js` | 0 |
+| `tests/parta-register-climate-ui.test.js` | 0 |
 | `tests/parta-register-ui.test.js` | 0 |
 | `tests/parta-report-golden.test.js` | 0 |
 | `tests/parta-sovereign-report-golden.test.js` | 0 |

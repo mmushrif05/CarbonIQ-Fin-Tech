@@ -44,6 +44,8 @@ const PartARegisterPage = (() => {
   let cls = DEFAULT_CLASS;
   let classes = [];
   let reference = null;
+  /* The climate vocabularies the detail prints in words, from the server. */
+  let climateVocabulary = {};
   let rows = [];
   let openId = null;
   /* The exposure open in the detail, whole, and the one the form is editing. */
@@ -142,6 +144,14 @@ const PartARegisterPage = (() => {
       const pfOptions = at('project-finance').dataQualityOptions || [];
       setHtml('pr-f-pf-option', pfOptions.map(o => `<option value="${esc(o.option)}">Option ${esc(o.option)} — score ${esc(o.score)}</option>`).join(''));
     } catch (_) { /* the engine refuses a type or an option it does not hold, by name */ }
+
+    /* The climate vocabularies, from the same registry the S2 facts panel
+       reads, so the two screens cannot offer different words for one answer. */
+    try {
+      const { vocabulary } = await call('/climate/reference');
+      climateVocabulary = vocabulary || {};
+      fillClimateLists(climateVocabulary);
+    } catch (_) { /* the register refuses a verdict outside the list, by name */ }
 
     const sel = $('pr-f-sector-key');
     if (!sel) return;
@@ -384,6 +394,27 @@ const PartARegisterPage = (() => {
 
   function closeDetail() { openId = null; current = null; show('pr-detail', false); renderRows(); }
 
+  /* The bank's own SLFRS S2 judgement about this loan, in the words the
+     vocabulary uses. An exposure with none says so: unassessed is an answer
+     the disclosure reports, not a blank. */
+  function climatePanel(c) {
+    const word = (list, id) => {
+      const row = (climateVocabulary[list] || []).find(o => o.id === id);
+      return row ? esc(row.label) : null;
+    };
+    const t = (c && c.transitionRisk) || {}; const ph = (c && c.physicalRisk) || {}; const op = (c && c.opportunity) || {};
+    const horizon = h => (h ? ` <span class="partc-hint">over the ${esc((word('horizons', h) || h).toLowerCase())}</span>` : '');
+    const verdict = (list, v) => (word(list, v) || 'Not assessed');
+    return `<h5 class="partc-subhead">Climate risk and opportunity</h5>
+      <dl class="pr-kv">
+        <dt>Transition risk</dt><dd>${verdict('climateVerdicts', t.verdict)}${horizon(t.horizon)}</dd>
+        <dt>Physical risk</dt><dd>${verdict('climateVerdicts', ph.verdict)}${horizon(ph.horizon)}</dd>
+        <dt>Opportunity alignment</dt><dd>${verdict('alignmentVerdicts', op.verdict)}${op.taxonomyCode ? ` <span class="partc-hint">${esc(op.taxonomyCode)}</span>` : ''}</dd>
+      </dl>
+      ${t.note ? `<p class="partc-hint">${esc(t.note)}</p>` : ''}
+      <p class="partc-hint">SLFRS S2 §29(b)–(d). Recorded by the bank; the position sums what is assessed and states what is not.</p>`;
+  }
+
   function renderDetail(e) {
     const x = e.result;
     const inv = x.inventory;
@@ -423,6 +454,7 @@ const PartARegisterPage = (() => {
           ${x.exposure.counterparty.sectorKey ? `<p class="partc-hint">Held sector: ${esc(x.exposure.counterparty.sectorKey)}</p>` : ''}
         </div>
       </div>
+      ${climatePanel(e.climate)}
       ${nativePanel(x)}
       <h5 class="partc-subhead">What the data says about itself</h5>
       ${findings.length === 0
@@ -591,11 +623,58 @@ const PartARegisterPage = (() => {
 
   /** The request the engine takes, read from the form and nothing else — per class. */
   function collect() {
-    if (isProperty()) return collectProperty();
-    if (cls === 'motor-vehicle-loans') return collectVehicle();
-    if (cls === 'project-finance') return collectProject();
-    if (cls === 'listed-equity-corporate-bonds') return collectListed();
-    return collectBusinessLoan();
+    const body = isProperty() ? collectProperty()
+      : cls === 'motor-vehicle-loans' ? collectVehicle()
+        : cls === 'project-finance' ? collectProject()
+          : cls === 'listed-equity-corporate-bonds' ? collectListed()
+            : collectBusinessLoan();
+    /* Sent on every class, because S2 asks for the share of the whole book and
+       a block only some classes carried would answer for only some of it. */
+    body.climate = collectClimate();
+    return body;
+  }
+
+  /* The bank's own SLFRS S2 judgement. Every control is optional: an exposure
+     with nothing chosen sends nothing, which the register records as
+     unassessed rather than as not vulnerable. */
+  function collectClimate() {
+    const verdict = id => { const v = $(id) && $(id).value; return v || null; };
+    const note = str('pr-f-cl-note') || null;
+    const code = str('pr-f-cl-code') || null;
+    return {
+      transitionRisk: { verdict: verdict('pr-f-cl-transition'), horizon: verdict('pr-f-cl-transition-horizon'), note },
+      physicalRisk: { verdict: verdict('pr-f-cl-physical'), horizon: verdict('pr-f-cl-physical-horizon'), note: null },
+      opportunity: { verdict: verdict('pr-f-cl-opportunity'), taxonomyCode: code, note: null },
+    };
+  }
+
+  /* The three closed lists come from the server's own vocabulary, so the form
+     cannot offer an answer the register would refuse. Loaded with the class
+     vocabulary, before the first request — the rule this codebase has shipped
+     four defects by breaking. */
+  function fillClimateLists(vocabulary) {
+    const put_ = (id, list, blank) => {
+      const el = $(id);
+      if (!el || !list) return;
+      el.innerHTML = `<option value="">${blank}</option>`
+        + list.map(o => `<option value="${esc(o.id)}">${esc(o.label)}</option>`).join('');
+    };
+    put_('pr-f-cl-transition', vocabulary.climateVerdicts, 'Not assessed');
+    put_('pr-f-cl-physical', vocabulary.climateVerdicts, 'Not assessed');
+    put_('pr-f-cl-opportunity', vocabulary.alignmentVerdicts, 'Not assessed');
+    put_('pr-f-cl-transition-horizon', vocabulary.horizons, 'Not stated');
+    put_('pr-f-cl-physical-horizon', vocabulary.horizons, 'Not stated');
+  }
+
+  /** Prefill the block from what the register holds, for an edit. */
+  function fillClimate(held) {
+    const set = (id, v) => { const el = $(id); if (el) el.value = v || ''; };
+    const c = held || {};
+    const t = c.transitionRisk || {}; const ph = c.physicalRisk || {}; const op = c.opportunity || {};
+    set('pr-f-cl-transition', t.verdict); set('pr-f-cl-transition-horizon', t.horizon);
+    set('pr-f-cl-physical', ph.verdict); set('pr-f-cl-physical-horizon', ph.horizon);
+    set('pr-f-cl-opportunity', op.verdict); set('pr-f-cl-code', op.taxonomyCode);
+    set('pr-f-cl-note', t.note);
   }
 
   /* §5.4 / §5.5. The floor area travels with its unit; nothing here converts. */
@@ -802,6 +881,9 @@ const PartARegisterPage = (() => {
     applyClass();
     $('pr-form').reset();
     fill(current.input || {});
+    /* The classification is kept beside the engine's input rather than inside
+       it, so it is prefilled from the record itself. */
+    fillClimate(current.climate);
     applyDenominatorMode();
     say('pr-record-hint', `Editing ${(current.counterparty && current.counterparty.name) || 'the exposure'} — the engine reruns over the saved input and the figures move.`);
     if ($('pr-form-submit')) $('pr-form-submit').textContent = 'Save changes';

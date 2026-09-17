@@ -148,6 +148,11 @@ async function record(orgId, input) {
       financialInstitution: Boolean(cp.financialInstitution),
     },
     financialSector: Boolean(result.financialSector),
+    /* The bank's own SLFRS S2 classification of this loan. Top-level rather
+       than inside the engine's result because the engine did not decide it,
+       and the projection carries it so the roll-up can sum §29(b)–(d) without
+       reading every record whole. */
+    climate: projections.normaliseExposureClimate(input.climate),
     /* Both halves, and the provenance of the computation itself. */
     input: engineInput,
     result,
@@ -202,6 +207,12 @@ async function update(orgId, exposureId, input) {
       financialInstitution: Boolean(cp.financialInstitution),
     },
     financialSector: Boolean(result.financialSector),
+    /* A change that carries no climate block leaves the one already recorded
+       standing: the classification is a separate judgement from the figures,
+       and an edit to an outstanding amount must not silently unclassify a loan. */
+    climate: 'climate' in input
+      ? projections.normaliseExposureClimate(input.climate)
+      : (existing.climate || null),
     input: engineInput,
     result,
     computedAt: now,
@@ -314,9 +325,10 @@ async function recompute(orgId, exposureId) {
 // ---------------------------------------------------------------------------
 
 const { stateBook, getBook } = require('./parta-book');
+const projections = require('./register-projections');
 
 // The entity's settings live in ./parta-settings, re-exported below.
-const { DEFAULT_SETTINGS, getSettings, saveSettings } = settingsService;
+const { DEFAULT_SETTINGS, getSettings, saveSettings, installIllustrativeClimate } = settingsService;
 
 // ---------------------------------------------------------------------------
 // The reporting-year position
@@ -375,7 +387,7 @@ async function positions(orgId, reportingYear, opts = {}) {
 
 /** One class's rows rolled up on the class's own binding. */
 function rollClass(cls, rows, book, reportingYear, improvementTarget) {
-  const rolled = rollUp(rows.map(inflate), {
+  const rolled = rollUp(rows.map(projections.inflate), {
     ...cls.rollUp,
     totalLoansAndInvestments: book ? book.totalLoansAndInvestments : undefined,
     improvementTarget,
@@ -398,31 +410,6 @@ function rollClass(cls, rows, book, reportingYear, improvementTarget) {
 }
 
 
-/**
- * A projected row, in the shape the roll-up reads. Every projected field is a
- * path into the stored record, so nothing here restates the roll-up's inputs.
- * Two normalisations, both because `jsonb_strip_nulls` removes a null field
- * and leaves the object that held it: an exposure with no attribution factor
- * projects as `attribution: {}`, which is truthy; one with no findings
- * projects with no `findings` key at all.
- */
-function inflate(row) {
-  const r = row.result || {};
-  const attribution = (r.attribution && r.attribution.value !== null && r.attribution.value !== undefined)
-    ? r.attribution : null;
-  const validation = r.validation || {};
-  return {
-    ...r,
-    exposure: {
-      ...(r.exposure || {}),
-      identifiers: { id: row.exposureId },
-      reportingYear: row.reportingYear || null,
-    },
-    attribution,
-    validation: { verdict: validation.verdict || 'clean', findings: validation.findings || [] },
-    financialSector: Boolean(row.financialSector),
-  };
-}
 
 /**
  * A page of a year's book, for a list a person reads.
@@ -437,31 +424,6 @@ async function listExposures(orgId, reportingYear, opts = {}) {
   const { limit, cursor, assetClass } = /** @type {{limit?: number, cursor?: string, assetClass?: string}} */ (opts);
   if (assetClass) classes.classFor(assetClass);
   return repo.pageForYear(orgId, reportingYear, { limit, cursor, assetClass });
-}
-
-/**
- * Every exposure of a year, as the roll-up sees it — the projected row, one
- * per exposure, in the shape the disclosure's audit-trail annex prints. The
- * same projection `position()` reads, so a figure in the annex is the figure
- * in the total; an empty year is an empty list here rather than a 409, because
- * an annex reads beside a position that has already refused.
- */
-async function rows(orgId, reportingYear, opts = {}) {
-  const { assetClass = DEFAULT_CLASS } = /** @type {{assetClass?: string}} */ (opts);
-  const found = await repo.rollupsForYear(orgId, reportingYear);
-  return found.filter(r => (r.assetClass || DEFAULT_CLASS) === assetClass).map(inflate);
-}
-
-/** Every class's rows for a year from one read, keyed by class — the consolidated annex. */
-async function rowsByClass(orgId, reportingYear) {
-  const found = await repo.rollupsForYear(orgId, reportingYear);
-  const out = {};
-  for (const cls of Object.keys(classes.CLASSES)) out[cls] = [];
-  for (const r of found) {
-    const k = r.assetClass || DEFAULT_CLASS;
-    (out[k] = out[k] || []).push(inflate(r));
-  }
-  return out;
 }
 
 /** Which reporting years this book holds anything for, and how many of each class. */
@@ -489,9 +451,10 @@ async function setStatus(orgId, exposureId, move) {
 
 module.exports = {
   ASSET_CLASSES, DEFAULT_CLASS, STATUS, TRANSITIONS, DEFAULT_SETTINGS,
-  record, get, update, remove, recompute, setStatus, listExposures, rows, rowsByClass,
-  stateBook, getBook, getSettings, saveSettings,
+  record, get, update, remove, recompute, setStatus, listExposures,
+  rows: projections.rows, rowsByClass: projections.rowsByClass, climateRows: projections.climateRows,
+  stateBook, getBook, getSettings, saveSettings, installIllustrativeClimate,
   position, positions, years,
   classes: classes.list,
-  _inflate: inflate,
+  _inflate: projections.inflate,
 };

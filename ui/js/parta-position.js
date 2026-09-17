@@ -129,6 +129,10 @@ const PartAPositionPage = (() => {
     renderBook(p);
     renderDq(p);
     renderEntity(p.entity, p.classes);
+    /* The S2 facts panel is its own module over the same settings record.
+       Handed what this load already fetched, so the screen makes one request
+       for the entity rather than two that could disagree. */
+    if (typeof PartAClimatePanel !== 'undefined') PartAClimatePanel.load(p.entity);
   }
 
   function renderReadiness(p) {

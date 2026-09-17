@@ -6,11 +6,14 @@
  * the document was built from. Every test reads a fact the document prints;
  * no item is a constant.
  *
- * One item can never be answered Yes, and here that is the most important
- * one: the entity's own gross scope 1, 2 and 3 inventory. This document is
- * the whole of Part A for the entity, and it is still Category 15 of that
- * inventory rather than the inventory. A checklist that could reach a
- * hundred per cent would be claiming otherwise.
+ * The item that used to be the most important was the one that could never be
+ * answered Yes: the entity's own gross scope 1, 2 and 3 inventory. That was
+ * true while the inventory was collected nowhere. It is collected now, so the
+ * item is answered from the facts like every other — which is how a caveat is
+ * removed, by collecting the fact rather than by suppressing the item.
+ *
+ * The SLFRS S2 items beside it read the entity's own statements. Each can
+ * fail, and on a book whose entity has stated nothing every one of them does.
  */
 
 'use strict';
@@ -21,6 +24,12 @@ const YES = 'Yes', NO = 'No', NA = 'Not applicable';
 
 const num = v => typeof v === 'number' && Number.isFinite(v);
 const entity = f => f.entity || {};
+
+/** One S2 item's provenance, read from the facts the document printed. */
+const itemAt = (f, path) => (f.s2 ? f.s2.items.find(i => i.path === path) : null);
+const stated = (f, path) => { const i = itemAt(f, path); return Boolean(i && i.state !== 'absent'); };
+const missing = (f, paths) => paths.filter(p => !stated(f, p))
+  .map(p => { const i = itemAt(f, p); return i ? `${i.label.toLowerCase()} (${i.paragraph})` : p; }).join('; ') || 'none';
 const recorded = f => (f.classes || []).filter(c => c.status === 'recorded');
 const unrecorded = f => (f.classes || []).filter(c => c.status !== 'recorded');
 
@@ -111,11 +120,59 @@ const ITEMS = [
     justify: () => 'The reporting entity’s settings carry no significance threshold or no recalculation triggers.',
   },
   {
-    id: 'INV-1', group: 'Entity inventory', clause: 'Part A ch.6 (p.160); SLFRS S2 §29(a)', duty: SHALL, section: 'conformance',
-    item: 'The reporting entity’s own gross scope 1, 2 and 3 inventory is disclosed.',
-    test: () => false,
-    justify: () => 'This document is the entity’s Part A financed-emissions disclosure — scope 3 Category 15 of its '
-      + 'inventory — and not the inventory. The entity’s gross scope 1, 2 and 3 is a separate, larger claim, made where the entity states it.',
+    id: 'INV-1', group: 'Entity inventory', clause: 'Part A ch.6 (p.160); SLFRS S2 §29(a)', duty: SHALL, section: 's2Inventory',
+    item: 'The reporting entity’s own gross scope 1 and location-based scope 2 are disclosed beside the financed emissions this system measures.',
+    test: f => Boolean(f.s2 && f.s2.inventoryStated),
+    justify: () => 'The entity has not stated its own gross scope 1 or its location-based scope 2, so this document '
+      + 'remains the Category 15 input to an S2 inventory rather than the inventory itself.',
+  },
+  {
+    id: 'S2-GOV-1', group: 'SLFRS S2 governance', clause: 'SLFRS S2 §6(a)–(b)', duty: SHALL, section: 's2Governance',
+    item: 'The body responsible for oversight is named, with how it exercises oversight and management’s role.',
+    test: f => ['governance.body', 'governance.oversight', 'governance.managementRole'].every(p => stated(f, p)),
+    justify: f => `Not stated: ${missing(f, ['governance.body', 'governance.oversight', 'governance.managementRole'])}.`,
+  },
+  {
+    id: 'S2-STR-1', group: 'SLFRS S2 strategy', clause: 'SLFRS S2 §10(a)–(c), §13, §14(a)', duty: SHALL, section: 's2Strategy',
+    item: 'The climate-related risks and opportunities are identified with the horizons the entity defines, and the effects on the business model and the transition plan are described.',
+    test: f => ['strategy.exposures', 'strategy.horizonDefinitions', 'strategy.businessModel'].every(p => stated(f, p)),
+    justify: f => `Not stated: ${missing(f, ['strategy.exposures', 'strategy.horizonDefinitions', 'strategy.businessModel'])}.`,
+  },
+  {
+    id: 'S2-RSK-1', group: 'SLFRS S2 risk management', clause: 'SLFRS S2 §25(a)–(c)', duty: SHALL, section: 's2RiskManagement',
+    item: 'How climate-related risks are identified, assessed and monitored is described, and how those processes sit inside overall risk management.',
+    test: f => ['riskManagement.identification', 'riskManagement.monitoring', 'riskManagement.integration'].every(p => stated(f, p)),
+    justify: f => `Not stated: ${missing(f, ['riskManagement.identification', 'riskManagement.monitoring', 'riskManagement.integration'])}.`,
+  },
+  {
+    id: 'S2-MET-1', group: 'SLFRS S2 metrics', clause: 'SLFRS S2 §29(b)–(d)', duty: SHALL, section: 's2CrossIndustry',
+    item: 'The amount and percentage of assets vulnerable to transition risk, vulnerable to physical risk and aligned with climate-related opportunities are reported, with the unassessed amount stated beside them.',
+    test: f => Boolean(f.s2) && num(f.s2.exposure.transitionRisk.sharePct) && num(f.s2.exposure.physicalRisk.sharePct) && num(f.s2.exposure.opportunities.sharePct),
+    justify: () => 'No exposure carries a climate classification, so no share can be taken: a percentage over a book '
+      + 'nobody has classified would read as a finding rather than as the absence it is.',
+  },
+  {
+    id: 'S2-IND-1', group: 'SLFRS S2 metrics', clause: 'SLFRS S2 §32; banking guidance', duty: SHALL, section: 's2Industry',
+    item: 'Gross exposure and financed emissions are disaggregated by industry, with lending to carbon-related industries identified on a stated boundary.',
+    test: f => Boolean(f.s2 && f.s2.exposure.industries.rows.length && f.s2.exposure.industries.carbonRelated.basis),
+    justify: () => 'No exposure carries a sector, so no industry table can be given.',
+  },
+  {
+    id: 'S2-TGT-1', group: 'SLFRS S2 targets', clause: 'SLFRS S2 §33–36', duty: SHALL, section: 's2Targets',
+    item: 'Each climate-related target is disclosed with its metric, what it covers, its base year and its target year.',
+    test: f => {
+      const t = f.s2 && f.s2.targets.entries;
+      const rows = (t && t.state !== 'absent' && Array.isArray(t.value)) ? t.value : [];
+      return rows.length > 0 && rows.every(r => r.targetKind && r.scopeCovered);
+    },
+    justify: () => 'No climate-related target is stated by the reporting entity, or a stated target names neither what it covers nor whether it is absolute or an intensity.',
+  },
+  {
+    id: 'S2-PRV-1', group: 'SLFRS S2 provenance', clause: 'SLFRS S2 §5–37', duty: SHOULD, section: 's2Governance',
+    item: 'Every climate-related statement in the document is the reporting entity’s own: no illustrative trial content remains.',
+    test: f => Boolean(f.s2) && f.s2.readiness.illustrative === 0,
+    justify: f => `${f.s2.readiness.illustrative} statement(s) are still the illustrative content supplied with the tool. `
+      + 'Each is marked where it is printed, so nothing reads as the entity’s own; replacing the words makes them the entity’s.',
   },
   {
     id: 'TRC-1', group: 'Traceability', clause: 'ISO 14064-3 §6.1.3; ISAE 3000 §48', duty: SHALL, section: 'annexRegister',
@@ -176,8 +233,8 @@ function completeChecklist(f, meta = {}) {
       + 'governing clause is printed beside it. Every answer is read from the document’s own facts; '
       + 'no item is answered by assertion. This annex is not a reproduction of any form published by '
       + 'PCAF, and inclusion of a completed checklist is not an endorsement, approval or certification '
-      + 'by PCAF. The entity-inventory item is No by design: this document is Category 15 of the '
-      + 'entity’s inventory, not the inventory, so the checklist cannot and does not reach a hundred per cent.',
+      + 'by PCAF. The SLFRS S2 items beside the PCAF ones are answered from the reporting entity’s own '
+      + 'statements, so a document whose entity has stated nothing fails every one of them.',
     header: {
       entityLabel: meta.entityLabel || 'Reporting entity',
       entity: meta.insurer || 'Not stated',

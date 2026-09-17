@@ -110,6 +110,7 @@ const OVERRIDES = Object.freeze([
   { method: 'PUT', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures/, scope: 'write', why: 'changes a recorded sovereign exposure' },
   { method: 'DELETE', pattern: /^\/v1\/pcaf\/part-a\/sovereign\/exposures/, scope: 'write', why: 'removes a sovereign exposure from the register' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/starter$/, scope: 'write', why: 'records the starter book into the register' },
+  { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\/settings\/climate\/illustrative$/, scope: 'write', why: 'records the illustrative climate facts onto the entity settings' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-a\//, scope: 'read', why: 'Part A engine, stateless' },
   { method: 'POST', pattern: /^\/v1\/partc\/projects\/:[A-Za-z]+\/boq\/compare$/, scope: 'read', why: 'BOQ comparison, stores nothing' },
   { method: 'POST', pattern: /^\/v1\/desk\/scenario$/, scope: 'read', why: 'scenario, stores nothing' },

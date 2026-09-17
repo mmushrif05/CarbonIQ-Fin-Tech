@@ -1,4 +1,4 @@
-COVER: PCAF Part A — Financed emissions disclosure
+COVER: SLFRS S2 climate-related disclosure, with PCAF Part A financed emissions
   Reporting entity: Demo Bank PLC
   responsible: Prepared by A. Perera, Head of Sustainability
   responsible: Approved by S. Fernando, Chief Financial Officer on <date>
@@ -18,7 +18,7 @@ SECTION 1 [entity] Reporting entity and boundary
     table: Asset class not reported | Section | Reason stated by the entity
       row: Motor vehicle loans | §5.6 | Immaterial: below one per cent of total loans and investments.
 SECTION 2 [coverage] Scope and coverage
-    callout [What this disclosure covers]: This is the reporting entity’s PCAF Part A financed-emissions disclosure for the reporting year: every asset class the entity reports, side by side, against one book total. Financed emissions are scope 3 Category 15 of the entity’s own inventory; the entity’s gross scope 1, 2 and 3 (SLFRS S2 §29(a)) is a separate and larger claim, made where the entity states it, and this document is the Category 15 input to it.
+    callout [What this disclosure covers]: This is the reporting entity’s climate-related disclosure for the reporting year: the four SLFRS S2 pillars — governance, strategy, risk management, and metrics and targets — over a PCAF Part A financed-emissions position that reports every asset class side by side against one book total. Financed emissions are scope 3 Category 15 of the entity’s own inventory (S2 §29(a)(vi), B58–B63). The entity’s gross scope 1, 2 and 3 (S2 §29(a)(i)–(iv)) has not been stated, so this document remains the Category 15 input to that inventory rather than the inventory itself; the SLFRS S2 index names every paragraph and whether it is answered.
     body: Reporting year 2024. The position is taken at the fiscal year-end, which is how Part A accounts for financed emissions (Chapter 4). Every Part A asset class is listed: the ones reported with their outstanding and coverage, the ones not reported with the reason Chapter 6 asks for (p.162).
     table: Asset class | Section | Status | Exposures | Outstanding | Currency | Coverage
       row: Listed equity and corporate bonds | §5.1 | Not reported — nothing recorded | — | — | — | —
@@ -98,7 +98,98 @@ SECTION 8 [intensity] Emission intensity
       row: Commercial real estate (§5.4) | 0.1 | tCO2e per million LKR
       row: Sovereign debt (§5.9) | 98.45 | tCO2e per million USD
     body: Financed emissions per million of the currency outstanding (DCL p.127). A physical intensity is not reported at this level: each class holds a different physical denominator, and a sovereign’s production intensity is a country-level figure the §5.9 document carries.
-SECTION 9 [limitations] Limitations, and what is still outstanding
+SECTION 9 [s2Governance] Governance of climate-related risks and opportunities
+    body: SLFRS S2 §5–7 ask for the governance processes, controls and procedures the reporting entity uses to monitor, manage and oversee climate-related risks and opportunities. What follows is the entity’s own statement; nothing in this section is derived from the register.
+    h2: The body or individual responsible for oversight
+    body: Not stated by the reporting entity. S2 §6(a) requires it.
+    body: How often the oversight body is informed: not stated. S2 §6(a)(ii) requires it.
+    h2: How that body exercises oversight
+    body: Not stated by the reporting entity. S2 §6(a)(i)–(iv) requires it.
+    h2: Management's role
+    body: Not stated by the reporting entity. S2 §6(b) requires it.
+SECTION 10 [s2Strategy] Strategy — climate-related risks and opportunities
+    body: SLFRS S2 §9–23 ask which climate-related risks and opportunities could reasonably be expected to affect the entity’s prospects, over what horizons, what effect they have on the business model and the financial statements, and how resilient the strategy is.
+    h2: How short, medium and long term are defined
+    body: Not stated by the reporting entity. S2 §10(b) requires it.
+    h2: The climate-related risks and opportunities identified
+    body: Not stated by the reporting entity. S2 §10(a)–(c) requires it.
+    h2: Effects on the business model and value chain
+    body: Not stated by the reporting entity. S2 §13 requires it.
+    h2: The climate-related transition plan
+    body: Not stated by the reporting entity. S2 §14(a) requires it.
+    h2: Effects on financial position, performance and cash flows for the period
+    body: Not stated by the reporting entity. S2 §16(a) requires it.
+    h2: Anticipated effects over the short, medium and long term
+    body: Not stated by the reporting entity. S2 §16(b) requires it.
+    h2: The assessment of climate resilience
+    body: Not stated by the reporting entity. S2 §22(a) requires it.
+    h2: The scenarios used in the resilience analysis
+    body: Not stated by the reporting entity. S2 §22(b) requires it.
+SECTION 11 [s2RiskManagement] Risk management
+    body: SLFRS S2 §24–26 ask for the processes by which climate-related risks and opportunities are identified, assessed, prioritised and monitored, and how those processes sit inside the entity’s overall risk management.
+    h2: How climate-related risks are identified and assessed
+    body: Not stated by the reporting entity. S2 §25(a)(i)–(iii) requires it.
+    h2: How climate-related risks are prioritised against other risks
+    body: Not stated by the reporting entity. S2 §25(a)(iv) requires it.
+    h2: How climate-related risks are monitored
+    body: Not stated by the reporting entity. S2 §25(a)(v) requires it.
+    h2: How climate-related opportunities are identified and assessed
+    body: Not stated by the reporting entity. S2 §25(b) requires it.
+    h2: How the processes are integrated into overall risk management
+    body: Not stated by the reporting entity. S2 §25(c) requires it.
+SECTION 12 [s2Inventory] The reporting entity’s own greenhouse gas inventory
+    body: SLFRS S2 §29(a) asks for the entity’s absolute gross scope 1, scope 2 and scope 3 emissions. Scope 1 and scope 2 are the entity’s own operations and only the entity can state them. Category 15 of scope 3 — financed emissions — is measured by this system from the exposure register and is the headline of this document; it is carried into the table below unchanged.
+    table: Line | Figure | Basis | Period | Stated by
+      row: Scope 1 — gross, direct | Not reported | — | — | Not stated — S2 §29(a)(i)
+      row: Scope 2 — gross, location-based | Not reported | — | — | Not stated — S2 §29(a)(ii)
+      row: Scope 2 — gross, market-based (additional) | Not reported | — | — | Not stated — S2 §29(a)(ii)
+      row: Scope 3 — categories other than 15 | Not reported | — | — | Not stated — S2 §29(a)(iv)
+      row: Scope 3 category 15 — financed emissions | 2004.520 tCO2e | Measured | FY2024 | Measured by this system from the exposure register
+    caption: Measured by this system from the exposure register — the headline in section 4 of this document, moved and not recomputed. Financed emissions are scope 3 category 15 of the inventory (S2 B58–B63).
+    body: No row above sums the others. S2 requires each scope to be disclosed separately, and a total that mixed a figure the entity stated with one this system measured would obscure which is which. The financed scope 3 of the investees themselves — 3120.000 tCO2e — is reported on its own line in section 4 and is not part of the headline.
+    callout [Open item]: The entity’s own gross scope 1 and location-based scope 2 have not been stated, so this document remains the category 15 input to an S2 inventory rather than the inventory itself. Recording them completes it.
+SECTION 13 [s2CrossIndustry] Cross-industry metrics
+    body: SLFRS S2 §29(b)–(g) ask for the amount and percentage of assets vulnerable to transition risks, vulnerable to physical risks and aligned with climate-related opportunities, the capital deployed, any internal carbon price and any remuneration linked to climate. The three amounts are classified exposure by exposure by the reporting entity and summed here by the engine.
+    body: Classified per exposure by the reporting entity, summed by the engine. Shares are taken over the outstanding actually assessed; the unassessed amount is stated beside them.
+    h2: Assets vulnerable to climate-related transition risks — S2 §29(b)
+    table: Measure | Reporting year
+      row: Amount vulnerable or aligned | 0 LKR
+      row: Amount assessed and not vulnerable or not aligned | 0 LKR
+      row: Amount not yet assessed | 720,000,000 LKR
+      row: Percentage of the amount assessed | —
+    h2: Assets vulnerable to climate-related physical risks — S2 §29(c)
+    table: Measure | Reporting year
+      row: Amount vulnerable or aligned | 0 LKR
+      row: Amount assessed and not vulnerable or not aligned | 0 LKR
+      row: Amount not yet assessed | 720,000,000 LKR
+      row: Percentage of the amount assessed | —
+    h2: Assets aligned with climate-related opportunities — S2 §29(d)
+    table: Measure | Reporting year
+      row: Amount vulnerable or aligned | 0 LKR
+      row: Amount assessed and not vulnerable or not aligned | 0 LKR
+      row: Amount not yet assessed | 720,000,000 LKR
+      row: Percentage of the amount assessed | —
+    caption: The percentage is taken over the outstanding actually assessed; the amount not yet assessed is stated above rather than counted as not vulnerable, so a book that has not been classified reads as unclassified and never as safe.
+    h2: Capital deployed, carbon price and remuneration
+    table: Metric | Reporting year | Paragraph | Stated by
+      row: Capital deployed towards climate-related risks and opportunities | Not stated | S2 §29(e) | —
+      row: Internal carbon price | Not stated | S2 §29(f) | —
+      row: Remuneration linked to climate-related considerations | Not stated | S2 §29(g) | —
+SECTION 14 [s2Industry] Industry-based metrics — exposure and financed emissions by industry
+    body: The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the associated financed emissions disaggregated by industry, and for lending to carbon-related industries to be identified. Both are read from the sector recorded against each exposure; the emissions column is the scope 1 and 2 each class reports on its headline, never mixed with scope 3.
+    table: Industry | Exposures | Outstanding LKR | Financed scope 1 and 2 tCO2e | Carbon-related
+      row: Textiles | 1 | 480,000,000 | 1752.000 | Yes
+      row: office | 1 | 200,000,000 | 19.620 | —
+      row: manufacturing_rubber_plastics | 1 | 40,000,000 | 36.000 | Yes
+    figure: Outstanding to carbon-related industries = 520,000,000 LKR
+    caption: Carbon-related industries follow the four non-financial groups of the TCFD 2021 implementing guidance — energy, transportation, materials and buildings, and agriculture, food and forest products — mapped onto this system's sector vocabulary. The boundary is the reporting entity's to set and this is the set applied here.
+    caption: An exposure whose sector was recorded as free text is its own row and sits outside the carbon-related subtotal: it is neither claimed to be carbon-related nor claimed not to be.
+SECTION 15 [s2Targets] Climate-related targets
+    body: SLFRS S2 §33–36 ask for each climate-related target the entity has set or is required to meet, the metric and the part of the entity it covers, its base year and target year, whether it was validated by a third party, and performance against it.
+    body: No climate-related target is stated by the reporting entity. S2 §33–36 requires each target to be disclosed.
+    h2: The basis of any greenhouse gas target
+    body: Not stated by the reporting entity. S2 §36 requires it.
+SECTION 16 [limitations] Limitations, and what is still outstanding
     body: The per-class documents carry the data checks and the improvement plan for each class — 2 finding(s) across business loans and unlisted equity; 0 finding(s) across commercial real estate; 6 finding(s) across sovereign debt. What is listed here is what the disclosure itself still needs from the reporting entity before it can be filed as complete.
     table: Outstanding | Why | Clause
       row: State why Listed equity and corporate bonds (§5.1) is not reported, or record it | No exposures are recorded for the reporting year. | Part A ch.6 (p.162)
@@ -109,7 +200,8 @@ SECTION 9 [limitations] Limitations, and what is still outstanding
       row: State why Sub-sovereign debt (§5.10) is not reported, or record it | No methodology is built for this class in this system yet. | Part A ch.6 (p.162)
       row: Sovereign debt is denominated in USD; the book total is in LKR | Its outstanding is excluded from the combined coverage share rather than converted at a rate this system does not hold. | DCL p.124
       row: Approve 3 exposure(s) still recorded or under review | A figure the reporting entity has not approved is one it has not yet stood behind. | ISAE 3000 §12(a)
-SECTION 10 [uncertainty] Uncertainty, and what this document does not contain
+      row: Classify the exposures still unassessed for transition risk, physical risk and opportunity alignment | The amount and percentage of assets vulnerable or aligned are reported over the outstanding actually assessed; what is unassessed is stated beside them rather than counted as not vulnerable. | SLFRS S2 §29(b)–(d)
+SECTION 17 [uncertainty] Uncertainty, and what this document does not contain
     body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
     table: Score | Share of assessed outstanding | What the figure’s uncertainty rests on
       row: 2 | 66.7% | Reported by the counterparty, unverified. The uncertainty is that of the counterparty’s own measurement and boundary choices, which this document does not see.
@@ -130,9 +222,13 @@ SECTION 10 [uncertainty] Uncertainty, and what this document does not contain
       row: A released regional sector factor set | The set in use is provisional (sector-factors); every provisional row carries the gap it stands in for. | Part A Box 6.1-5 (p.167)
       row: A released real-estate energy statistics | The set in use is provisional (real-estate-energy-statistics); every provisional row carries the gap it stands in for. | Part A Box 6.1-5 (p.167)
       row: A released sovereign dataset | The set in use is provisional (sovereign-dataset); every provisional row carries the gap it stands in for. | Part A Box 6.1-5 (p.167)
-      row: The reporting entity’s own gross scope 1, 2 and 3 inventory | Financed emissions are Category 15 of it; the whole is stated where the entity states it. | SLFRS S2 §29(a); Part A ch.6 (p.160)
+      row: The reporting entity’s own gross scope 1 and scope 2 emissions | Financed emissions are Category 15 of the inventory; scope 1 and scope 2 are the entity’s own operations and only the entity can state them. | SLFRS S2 §29(a)(i)–(ii); Part A ch.6 (p.160)
+      row: State the 4 SLFRS S2 governance fact(s) not yet recorded | Governance, strategy, risk management and the entity’s own metrics are statements only the reporting entity can make; the SLFRS S2 index names each paragraph and whether it is answered. | S2 §5–7
+      row: State the 8 SLFRS S2 strategy fact(s) not yet recorded | Governance, strategy, risk management and the entity’s own metrics are statements only the reporting entity can make; the SLFRS S2 index names each paragraph and whether it is answered. | S2 §8–23
+      row: State the 5 SLFRS S2 risk management fact(s) not yet recorded | Governance, strategy, risk management and the entity’s own metrics are statements only the reporting entity can make; the SLFRS S2 index names each paragraph and whether it is answered. | S2 §24–26
+      row: State the 9 SLFRS S2 metrics and targets fact(s) not yet recorded | Governance, strategy, risk management and the entity’s own metrics are statements only the reporting entity can make; the SLFRS S2 index names each paragraph and whether it is answered. | S2 §27–37
     caption: An absent item is reported absent rather than filled: a figure invented to close a gap reads as a measurement to anyone who did not watch it being invented.
-SECTION 11 [conformance] Conformance statement
+SECTION 18 [conformance] Conformance statement
     body: The method in this disclosure conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025) for each asset class reported, and to Chapter 6 for the disclosure itself. PCAF sets the method; it does not approve, endorse or certify this disclosure or the figures in it. Of the classes reported: business loans and unlisted equity (§5.2) carries the GHG Protocol’s "Built on" mark; commercial real estate (§5.4) is a Third Edition addition not reviewed by the GHG Protocol; sovereign debt (§5.9) is a Third Edition addition not reviewed by the GHG Protocol.
     body: This disclosure states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the disclosure or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
 ANNEX A [annexFactors] Factor sets, datasets and governed baselines
@@ -171,14 +267,43 @@ ANNEX D [annexRegulatory] Where the regulatory lines come from
       row: Gross exposure (outstanding) by asset class and industry | SLFRS S2 B61(b) | Yes | Section 2; Annex B
       row: Percentage of gross exposure included in the financed-emissions calculation | SLFRS S2 B61(c); DCL p.124 | Yes | Section 2 — coverage of the book
       row: Methodology, inputs and assumptions per asset class, including the standard applied | SLFRS S2 B61(d); §29(a)(iv) | Yes | Section 5; Annex A
-      row: Economic emission intensity | SLFRS S2 §29(b); DCL p.127 | Yes | Section 8
+      row: Economic emission intensity | PCAF DCL p.127; SLFRS S2 §37 | Yes | Section 8
+      row: Amount and percentage of assets vulnerable to transition risk, to physical risk, and aligned with opportunities | SLFRS S2 §29(b)–(d) | No | Cross-industry metrics
+      row: Exposure and financed emissions by industry, carbon-related lending identified | SLFRS S2 §32; banking guidance | Yes | Industry-based metrics
+      row: Governance, strategy and risk management for climate-related risks and opportunities | SLFRS S2 §5–7, §9–23, §24–26 | No | The three pillar sections; the SLFRS S2 index
+      row: Climate-related targets, their basis and performance against them | SLFRS S2 §33–36 | No | Climate-related targets
       row: Data-quality approach and score per asset class | PCAF DCL p.128; SLFRS S2 B63 | Yes | Section 6
       row: Asset classes not reported, with the reason | PCAF Part A ch.6 (p.162) | Yes | Section 1; Section 2
-      row: The reporting entity’s own gross scope 1, 2 and 3 inventory | SLFRS S2 §29(a)(i)–(iii) | No | Not this document: financed emissions are Category 15 of that inventory, stated where the entity states the whole
+      row: The reporting entity’s own gross scope 1, 2 and 3 inventory | SLFRS S2 §29(a)(i)–(iv) | No | Not stated by the reporting entity: financed emissions are Category 15 of that inventory, and the rest is the entity’s to state
       row: Sustainable-finance classification of the lending book under the SLGFT | CBSL Direction No. 05 of 2022 | Elsewhere | The taxonomy screen and the Green Loan Certificate, not a financed-emissions document
-ANNEX E [annexChecklist] PCAF disclosure checklist — completed
+ANNEX E [annexS2Index] SLFRS S2 index — where each paragraph is answered
+    body: SLFRS S2 is IFRS S2 as adopted in Sri Lanka. Each paragraph below names the section of this document that answers it, and whether it is answered. A paragraph answered No is one the reporting entity has not yet stated; the section still prints it as not stated with the paragraph beside it, so a reader can see what is missing rather than assume it is absent by choice.
+    table: Paragraph | What it asks | Where in this document | Answered
+      row: S2 §6(a) | The body or individual responsible for oversight, and how it exercises it | Section 9. Governance of climate-related risks and opportunities | No
+      row: S2 §6(b) | Management’s role in governance processes, controls and procedures | Section 9. Governance of climate-related risks and opportunities | No
+      row: S2 §10(a)–(c) | The climate-related risks and opportunities identified, and the horizons over which each could affect the entity | Section 10. Strategy — climate-related risks and opportunities | No
+      row: S2 §13 | Current and anticipated effects on the business model and value chain | Section 10. Strategy — climate-related risks and opportunities | No
+      row: S2 §14(a) | The climate-related transition plan, its assumptions and dependencies | Section 10. Strategy — climate-related risks and opportunities | No
+      row: S2 §16(a)–(b) | Effects on financial position, performance and cash flows, for the period and anticipated | Section 10. Strategy — climate-related risks and opportunities | No
+      row: S2 §22 | Climate resilience, and the scenario analysis it rests on | Section 10. Strategy — climate-related risks and opportunities | No
+      row: S2 §25(a)–(c) | How climate-related risks and opportunities are identified, assessed, prioritised and monitored, and how that sits inside overall risk management | Section 11. Risk management | No
+      row: S2 §29(a)(i) | Absolute gross scope 1 emissions | Section 12. The reporting entity’s own greenhouse gas inventory | No
+      row: S2 §29(a)(ii) | Absolute gross scope 2 emissions, location-based | Section 12. The reporting entity’s own greenhouse gas inventory | No
+      row: S2 §29(a)(iv) | Scope 3 emissions by category, other than category 15 | Section 12. The reporting entity’s own greenhouse gas inventory | No
+      row: S2 §29(a)(vi); B58–B63 | Financed emissions — scope 3 category 15 — by asset class, with the method, the gross exposure and the coverage | Section 4. Absolute emissions | Yes
+      row: S2 §29(b) | Amount and percentage of assets vulnerable to climate-related transition risks | Section 13. Cross-industry metrics | No
+      row: S2 §29(c) | Amount and percentage of assets vulnerable to climate-related physical risks | Section 13. Cross-industry metrics | No
+      row: S2 §29(d) | Amount and percentage of assets aligned with climate-related opportunities | Section 13. Cross-industry metrics | No
+      row: S2 §29(e) | Capital deployed towards climate-related risks and opportunities | Section 13. Cross-industry metrics | No
+      row: S2 §29(f) | Internal carbon price, and how it is applied in decision-making | Section 13. Cross-industry metrics | No
+      row: S2 §29(g) | Remuneration linked to climate-related considerations | Section 13. Cross-industry metrics | No
+      row: S2 §32; banking guidance | Exposure and financed emissions by industry, with lending to carbon-related industries identified | Section 14. Industry-based metrics — exposure and financed emissions by industry | Yes
+      row: S2 §33–36 | Each climate-related target, its basis, and performance against it | Section 15. Climate-related targets | No
+      row: S2 §37; DCL p.127 | Emission intensity of the financed book | Section 8. Emission intensity | Yes
+    caption: 3 of 21 paragraphs are answered in this document. Governance, strategy, risk management and the entity’s own inventory are statements only the reporting entity can make; the financed-emissions paragraphs are measured from the exposure register.
+ANNEX F [annexChecklist] PCAF disclosure checklist — completed
     checklist
-CHECKLIST: 20 items
+CHECKLIST: 27 items
   GOV-1: Yes
   GOV-2: Yes
   APR-1: No
@@ -193,6 +318,13 @@ CHECKLIST: 20 items
   DQ-1: Yes
   REC-1: Yes
   INV-1: No
+  S2-GOV-1: No
+  S2-STR-1: No
+  S2-RSK-1: No
+  S2-MET-1: No
+  S2-IND-1: Yes
+  S2-TGT-1: No
+  S2-PRV-1: Yes
   TRC-1: Yes
   UNC-1: Yes
   INT-1: Yes

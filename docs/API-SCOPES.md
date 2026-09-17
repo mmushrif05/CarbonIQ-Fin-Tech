@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-221 routes.
+223 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -171,6 +171,7 @@ relationship manager read, write, assess; auditor and borrower read.
 | POST | `/v1/pcaf/part-a/business-loans/assess` | `read` | Part A engine, stateless |
 | POST | `/v1/pcaf/part-a/business-loans/portfolio` | `read` | Part A engine, stateless |
 | GET | `/v1/pcaf/part-a/classes` | `read` | read |
+| GET | `/v1/pcaf/part-a/climate/reference` | `read` | read |
 | GET | `/v1/pcaf/part-a/conformance` | `read` | read |
 | GET | `/v1/pcaf/part-a/disclosure/:year` | `read` | read |
 | GET | `/v1/pcaf/part-a/exposures` | `read` | read |
@@ -191,6 +192,7 @@ relationship manager read, write, assess; auditor and borrower read.
 | GET | `/v1/pcaf/part-a/reference` | `read` | read |
 | GET | `/v1/pcaf/part-a/settings` | `read` | read |
 | PUT | `/v1/pcaf/part-a/settings` | `write` | changes a record |
+| POST | `/v1/pcaf/part-a/settings/climate/illustrative` | `write` | records the illustrative climate facts onto the entity settings |
 | POST | `/v1/pcaf/part-a/sovereign/assess` | `read` | Part A engine, stateless |
 | GET | `/v1/pcaf/part-a/sovereign/disclosure/:year` | `read` | read |
 | GET | `/v1/pcaf/part-a/sovereign/exposures` | `read` | read |

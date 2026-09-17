@@ -142,5 +142,24 @@
       </form>
     </section>
 
+    <!-- The SLFRS S2 facts about the bank itself. Every control is drawn from
+         the registry the server serves, so the form cannot offer an answer the
+         record would refuse, and each fact names the paragraph asking for it. -->
+    <section class="partc-card" id="fe-climate">
+      <div class="partc-card-head"><h3>Climate disclosure</h3>
+        <span class="partc-hint">Governance, strategy, risk management and targets — SLFRS S2 §5–37. Financed emissions are measured from the register; these are the facts only the bank can state.</span></div>
+      <div id="fe-cl-summary"></div>
+      <div id="fe-cl-view"></div>
+      <form id="fe-cl-form" class="fe-form" data-writes hidden autocomplete="off">
+        <div class="cl-tabs" id="fe-cl-tabs"></div>
+        <div id="fe-cl-fields"></div>
+        <div class="partc-actions">
+          <button class="btn btn-primary" type="submit" id="fe-cl-save">Record</button>
+          <button class="btn btn-secondary" type="button" id="fe-cl-illustrative" hidden>Load illustrative content</button>
+          <span class="partc-hint" id="fe-cl-status"></span>
+        </div>
+      </form>
+    </section>
+
   </div>
 </div>

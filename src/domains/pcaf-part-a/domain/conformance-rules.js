@@ -2,8 +2,9 @@
 /**
  * PCAF Part A — the conformance matrix rules (§5.2 and §5.9), composed with
  * the register's (`conformance-rules-register.js`), the other classes'
- * (`conformance-rules-classes.js`), the sovereign (`-sovereign.js`) and the
- * disclosure (`-disclosure.js`) rule lists into one matrix.
+ * (`conformance-rules-classes.js`), the sovereign (`-sovereign.js`), the
+ * disclosure (`-disclosure.js`) and the SLFRS S2 half of that document
+ * (`-s2.js`) rule lists into one matrix.
  *
  * The rule list is a large, flat data structure, so it lives in its own file
  * rather than swelling the module that computes over it: `conformance.js`
@@ -20,6 +21,7 @@ const { REGISTER_RULES } = require('./conformance-rules-register');
 const { CLASS_RULES } = require('./conformance-rules-classes');
 const { SOVEREIGN_RULES } = require('./conformance-rules-sovereign');
 const { DISCLOSURE_RULES } = require('./conformance-rules-disclosure');
+const { S2_RULES } = require('./conformance-rules-s2');
 
 const RULES = [
   // ---- Scope ------------------------------------------------------------
@@ -375,6 +377,7 @@ const RULES = [
 
   ...SOVEREIGN_RULES,
   ...DISCLOSURE_RULES,
+  ...S2_RULES,
 ];
 
 module.exports = { RULES };

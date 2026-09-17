@@ -34,6 +34,7 @@
 const repo = require('../infrastructure/store');
 const store = require('../../../platform/database/store');
 const { RECALCULATION_TRIGGERS, DEFAULT_SIGNIFICANCE_THRESHOLD_PCT } = require('../domain/recalculation');
+const climate = require('../domain/climate');
 
 const _now = () => new Date().toISOString();
 
@@ -77,6 +78,12 @@ const DEFAULT_SETTINGS = Object.freeze({
   preparedBy: null,
   approvedBy: null,
   assetClassesNotReported: Object.freeze([]),
+
+  /* The SLFRS S2 facts about the entity itself — governance, strategy, risk
+     management, its own inventory and its targets. Empty by default for the
+     same reason the boundary is: a governance paragraph invented by software
+     is not a statement the entity made. */
+  climate: Object.freeze({}),
 });
 
 /**
@@ -85,7 +92,12 @@ const DEFAULT_SETTINGS = Object.freeze({
  */
 async function getSettings(orgId) {
   const stored = await repo.getSettings(orgId);
-  return { ...DEFAULT_SETTINGS, ...(stored || {}) };
+  const settings = /** @type {any} */ ({ ...DEFAULT_SETTINGS, ...(stored || {}) });
+  /* Derived on read rather than stored: provenance is a comparison against
+     the shipped pack, so it cannot go stale and there is no second copy of
+     the answer to keep in step. */
+  settings.climateReadiness = climate.readiness(settings.climate);
+  return settings;
 }
 
 const str = (v, max) => (v === null || v === undefined) ? null : String(v).trim().slice(0, max) || null;
@@ -132,9 +144,45 @@ async function saveSettings(orgId, patch = {}) {
       .map(x => ({ assetClass: x.assetClass, reason: str(x.reason, 500) }));
   }
 
+  /* Merged path by path rather than replaced, so a form showing one pillar
+     can save it without clearing the other three. */
+  if ('climate' in patch) merged.climate = climate.normalise(merged.climate || {}, patch.climate);
+
+  /* Never stored: it is derived from what is, and a stored copy would be a
+     second answer able to disagree with the first. */
+  delete merged.climateReadiness;
+
   const record_ = { ...merged, id: 'default', orgId: String(orgId), updatedAt: _now() };
   await repo.saveSettings(orgId, record_);
   return getSettings(orgId);
 }
 
-module.exports = { DEFAULT_SETTINGS, CONSOLIDATION_APPROACHES, ASSET_CLASSES, getSettings, saveSettings };
+/**
+ * Record the shipped illustrative pack so a trial opens on a complete
+ * disclosure rather than on a page of absences.
+ *
+ * It refuses over anything already recorded — `409 CLIMATE_NOT_EMPTY`, the
+ * same shape as the starter book's refusal — because overwriting a paragraph
+ * a bank wrote with one we wrote is the one thing this must never do. The
+ * facts are recorded as themselves: nothing marks them, and nothing needs to,
+ * because every document works out their provenance by comparing them with
+ * the pack they came from.
+ */
+async function installIllustrativeClimate(orgId) {
+  store.assertWritable();
+  const current = await getSettings(orgId);
+  if (!climate.isEmpty(current.climate)) {
+    const err = /** @type {any} */ (new Error(
+      'This organisation has already recorded climate facts, so the illustrative content was not loaded.'));
+    err.statusCode = 409; err.code = 'CLIMATE_NOT_EMPTY';
+    err.remedy = 'Edit the facts already held, or clear them first.';
+    throw err;
+  }
+  const settings = await saveSettings(orgId, { climate: climate.ILLUSTRATIVE });
+  return { installed: climate.ILLUSTRATIVE_ITEMS, settings };
+}
+
+module.exports = {
+  DEFAULT_SETTINGS, CONSOLIDATION_APPROACHES, ASSET_CLASSES,
+  getSettings, saveSettings, installIllustrativeClimate,
+};

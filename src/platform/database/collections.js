@@ -125,8 +125,16 @@ const COLLECTIONS = Object.freeze({
     projections: {
       rollup: { column: 'rollup', fields: [
         'exposureId', 'status', 'reportingYear', 'assetClass', 'financialSector', 'createdAt',
+        /* The bank's own climate classification of the exposure — what S2
+           §29(b)–(d) are summed from. Whole rather than per field, because it
+           is one small object the roll-up reads as a unit. */
+        'climate',
         'result.exposure.kind', 'result.exposure.instrument',
         'result.exposure.counterparty.name', 'result.exposure.counterparty.sector',
+        /* The vocabulary key beside the readable label: the industry table
+           reads the label, and whether a sector is carbon-related is decided
+           from the key, because a free-text label matches no vocabulary. */
+        'result.exposure.counterparty.sectorKey',
         'result.exposure.counterparty.naceL2', 'result.exposure.counterparty.borrowerType',
         'result.exposure.counterparty.financialInstitution',
         'result.exposure.outstanding.value',

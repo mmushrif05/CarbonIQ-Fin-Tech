@@ -13,6 +13,8 @@ const { b, keep } = require('../../../../platform/reporting/report-standard/bloc
 const { buildSections, N, T, score } = require('./sections');
 const { completeChecklist } = require('./checklist');
 const { registerAnnex, regulatoryAnnex } = require('../common-sections');
+const { s2IndexAnnex } = require('./s2-sections');
+const { proseOf } = require('./s2-facts');
 const { containsForbiddenLanguage } = require('../../../../shared/report-integrity');
 
 const F4 = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(4);
@@ -75,13 +77,25 @@ function buildAnnexes(f) {
   }));
 
   annexes.push(regulatoryAnnex(f, next()));
+  annexes.push(s2IndexAnnex(f, next()));
 
   annexes.push({ id: 'annexChecklist', annex: next(), title: 'PCAF disclosure checklist — completed', blocks: [b.checklist()] });
   return annexes;
 }
 
+/**
+ * The endorsement-language guard, over this document's own prose and over the
+ * reporting entity's statements alike.
+ *
+ * The entity's words are included deliberately. A governance paragraph typed
+ * into a form reaches the same page as a sentence written here, and "PCAF
+ * approved" is as false in one as in the other; a guard that only read our own
+ * prose would leave the form as the route by which the claim returns. The
+ * refusal names the offending phrases, so whoever recorded one can find it.
+ */
 function scanLanguage(f) {
   const prose = [f.conformanceStatement, f.coverageStatement, f.scopeStatement, f.assuranceDetail,
+    f.s2 ? proseOf(f.s2) : null,
     ...(f.KYOTO_GASES || []).map(g => g.arises)].filter(Boolean).join('\n');
   return containsForbiddenLanguage(prose);
 }
@@ -92,6 +106,11 @@ function buildStandardModel(f) {
     throw new Error(`Report blocked: PCAF endorsement language detected (${offending.join(', ')}). Only conformance language is permitted.`);
   }
   const sections = buildSections(f);
+  /* Sections are numbered as they are written, so the S2 index can name the
+     number a reader will actually see. Computed here rather than in the index
+     itself: one list, built once, and a cross-reference that cannot point at a
+     section the model did not build. */
+  f.sectionTitles = sections.map((s, i) => ({ id: s.id, number: i + 1, title: s.title }));
   const annexes = buildAnnexes(f);
   const checklist = completeChecklist(f, {
     insurer: f.insurer, entityLabel: f.entityLabel, title: f.title, reportingYear: f.reportingYear,

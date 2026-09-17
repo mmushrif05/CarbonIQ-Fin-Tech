@@ -24,7 +24,35 @@
   --cls-sovereign-debt: #475569;
   --cls-scope3: #a3a3a3;
   --approved: #1d7a3a;
+
+  /* SLFRS S2. Vulnerable and aligned are different claims and never share a
+     hue; what nobody has assessed is neutral rather than green, because a
+     book that has not been classified is not thereby a safe one. */
+  --s2-transition: #c2410c;
+  --s2-physical: #0369a1;
+  --s2-aligned: #15803d;
+  --s2-assessed: #94a3b8;
+  --s2-unassessed: #d4d4d8;
+  --s2-carbon: #b45309;
+  --s2-other: #64748b;
 }
+
+/* The S2 strip: the four pillars, each opening the form that answers it. */
+.bank-s2 { margin-top: 16px; border-top: 1px solid var(--p-separator, #e5e5ea); padding-top: 14px; }
+.bank-s2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.bank-s2-title { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
+.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; margin-top: 10px; }
+.bank-s2-pillar {
+  min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left;
+  padding: 10px 12px; border: 1px solid var(--p-separator, #e5e5ea); border-radius: 12px;
+  background: var(--p-bg, #fff); font: inherit; color: inherit; cursor: pointer;
+}
+.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-color: var(--p-accent, #0a7a4c); outline: none; }
+.bank-s2-pillar > span { font-size: 11.5px; color: var(--p-label-2, #6e6e73); }
+.bank-s2-pillar em { font-style: normal; font-size: 12.5px; font-weight: 600; }
+.bank-s2-pillar.is-stated em { color: var(--p-accent, #0a7a4c); }
+.bank-s2-pillar.is-illustrative em, .bank-s2-pillar.is-partial em { color: #8a5a12; }
+.bank-s2-pillar.is-absent em { color: var(--p-label-2, #6e6e73); }
 
 /* Charts: a drawing on an inline element renders as nothing, so every one is
    a block that follows its container. */
@@ -152,3 +180,45 @@
 .bank .bk-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .bank .bk-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); margin-left: 6px; }
 .bank .bk-pill-released { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
+
+/* ============================================================
+   The SLFRS S2 climate facts panel
+   ============================================================
+   `hidden` must beat any display this sheet sets, and every grid item is
+   allowed to shrink — the two mechanical faults this codebase has shipped. */
+.partc-card [hidden], .cl-tabs [hidden] { display: none !important; }
+
+.cl-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.cl-state { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
+.cl-stated { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
+.cl-illustrative { background: #fdf3e3; color: #8a5a12; }
+.cl-absent { background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); }
+.cl-trial { margin: 6px 0 0; font-size: 13px; color: var(--p-label-2, #6e6e73); }
+
+.cl-view { display: grid; gap: 6px; margin-top: 10px; }
+.cl-view-pillar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0;
+  padding: 8px 10px; border: 1px solid var(--p-line, #e5e5ea); border-radius: 10px; }
+
+.cl-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.cl-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0;
+  padding: 8px 12px; border: 1px solid var(--p-line, #e5e5ea); border-radius: 10px;
+  background: transparent; color: inherit; cursor: pointer; font: inherit; text-align: left; }
+.cl-tab span, .cl-tab em { font-size: 11.5px; color: var(--p-label-2, #6e6e73); font-style: normal; }
+.cl-tab.is-on { border-color: var(--p-accent, #0a7a4c); background: var(--p-accent-bg, #e6f2ec); }
+.cl-tab:focus-visible { outline: 2px solid var(--p-accent, #0a7a4c); outline-offset: 1px; }
+
+.cl-item { padding: 12px 0; border-top: 1px solid var(--p-line, #e5e5ea); min-width: 0; }
+.cl-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.cl-item-head h5 { margin: 0; font-size: 14px; flex: 1 1 220px; min-width: 0; }
+.cl-para { font-size: 11.5px; color: var(--p-label-2, #6e6e73); white-space: nowrap; }
+.cl-control { margin-top: 8px; min-width: 0; }
+.cl-control input, .cl-control textarea, .cl-control select { width: 100%; min-width: 0; box-sizing: border-box; }
+.cl-figure { display: grid; gap: 8px 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); min-width: 0; }
+.cl-figure label, .cl-rows label { display: flex; flex-direction: column; gap: 3px; font-size: 12.5px; min-width: 0; }
+.cl-wide { grid-column: 1 / -1; }
+.cl-checks { border: 1px solid var(--p-line, #e5e5ea); border-radius: 8px; padding: 8px 10px; min-width: 0; }
+.cl-check { display: inline-flex !important; flex-direction: row !important; align-items: center; gap: 6px; margin-right: 12px; }
+.cl-check input { width: auto; }
+.cl-rows { display: grid; gap: 10px; min-width: 0; }
+.cl-row { display: grid; gap: 8px 12px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  padding: 10px; border: 1px solid var(--p-line, #e5e5ea); border-radius: 10px; min-width: 0; }
