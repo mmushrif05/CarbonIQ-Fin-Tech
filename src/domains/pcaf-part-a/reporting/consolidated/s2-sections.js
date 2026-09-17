@@ -3,12 +3,13 @@
  * The SLFRS S2 sections of the consolidated disclosure, and the index that
  * makes the file readable as an S2 climate-related disclosure.
  *
- * Nothing was rewritten for S2. The financed-emissions sections this document
+ * Nothing was rewritten for S2. The financed-emissions blocks this document
  * has always printed answer S2 §29(a)(vi) and B58–B63 as they stand, and go
- * further than the standard asks; what these sections add is what S2 asks for
- * that an emissions engine cannot compute — the four pillars, the entity's own
- * inventory, and the cross-industry and industry-based metrics — plus the
- * index naming where each paragraph is answered.
+ * further than the standard asks; they are the basis of preparation for the
+ * category 15 line and are printed in the annexes. What these sections add is
+ * what S2 asks for that an emissions engine cannot compute — the four pillars,
+ * the entity's own inventory, and the cross-industry and industry-based
+ * metrics — plus the index naming where each paragraph is answered.
  *
  * Every block reads facts and computes nothing. An item the entity has not
  * stated prints as not stated with the paragraph that asks for it; an item
@@ -60,7 +61,7 @@ function provenanceCallout(s2) {
 function governanceSection(f) {
   const s2 = f.s2, g = s2.governance;
   return {
-    id: 's2Governance', title: 'Governance of climate-related risks and opportunities',
+    id: 's2Governance', title: 'Governance',
     blocks: keep([
       b.body('SLFRS S2 §5–7 ask for the governance processes, controls and procedures the reporting entity '
         + 'uses to monitor, manage and oversee climate-related risks and opportunities. What follows is the '
@@ -80,7 +81,7 @@ function strategySection(f) {
   const s = f.s2.strategy;
   const rows = (s.exposures && s.exposures.state !== 'absent' && Array.isArray(s.exposures.value)) ? s.exposures.value : [];
   return {
-    id: 's2Strategy', title: 'Strategy — climate-related risks and opportunities',
+    id: 's2Strategy', title: 'Strategy',
     blocks: keep([
       b.body('SLFRS S2 §9–23 ask which climate-related risks and opportunities could reasonably be expected to '
         + 'affect the entity’s prospects, over what horizons, what effect they have on the business model and '
@@ -132,12 +133,16 @@ function inventoryRow(item, label) {
 function inventorySection(f) {
   const inv = f.s2.inventory;
   return {
-    id: 's2Inventory', title: 'The reporting entity’s own greenhouse gas inventory',
+    id: 's2Inventory', title: 'Metrics and targets — greenhouse gas emissions',
     blocks: keep([
       b.body('SLFRS S2 §29(a) asks for the entity’s absolute gross scope 1, scope 2 and scope 3 emissions. '
         + 'Scope 1 and scope 2 are the entity’s own operations and only the entity can state them. Category 15 '
-        + 'of scope 3 — financed emissions — is measured by this system from the exposure register and is the '
-        + 'headline of this document; it is carried into the table below unchanged.'),
+        + 'of scope 3 — financed emissions — is measured by this system from the exposure register; the figure '
+        + 'below is that measurement, and Annex A is its position by asset class and its coverage of the book.'),
+      b.figure({ label: 'Financed emissions — scope 3 category 15, scope 1 and 2 of the borrowers and investees', value: T(inv.category15.value), unit: 'tCO2e',
+        note: `Measured from the exposure register for FY${f.reportingYear}; the position by asset class, the coverage and the data quality are in Annex A.` }),
+      b.figure({ label: 'Financed scope 3 of the borrowers and investees — a separate line, never added to the figure above', value: T(inv.category15.scope3), unit: 'tCO2e',
+        note: 'Reported apart, as PCAF Part A requires (p.126).' }),
       b.table({
         head: ['Line', 'Figure', 'Basis', 'Period', 'Stated by'],
         widths: [2.1, 1.3, 0.9, 0.8, 1.9], align: ['left', 'right', 'left', 'left', 'left'], zebra: true,
@@ -154,7 +159,8 @@ function inventorySection(f) {
       b.body('No row above sums the others. S2 requires each scope to be disclosed separately, and a total that '
         + 'mixed a figure the entity stated with one this system measured would obscure which is which. The '
         + 'financed scope 3 of the investees themselves — '
-        + `${T(inv.category15.scope3)} tCO2e — is reported on its own line in section 4 and is not part of the headline.`),
+        + `${T(inv.category15.scope3)} tCO2e — is reported on its own line above and in Annex A, and is not part of the category 15 figure.`),
+      ...statement(inv.measurementApproach),
       f.s2.inventoryStated ? null : b.callout(
         'The entity’s own gross scope 1 and location-based scope 2 have not been stated, so this document remains '
         + 'the category 15 input to an S2 inventory rather than the inventory itself. Recording them completes it.',
@@ -182,7 +188,7 @@ function crossIndustrySection(f) {
   const ccy = f.currency;
   const price = c.carbonPrice, rem = c.remuneration, cap = c.capitalDeployed;
   return {
-    id: 's2CrossIndustry', title: 'Cross-industry metrics',
+    id: 's2CrossIndustry', title: 'Metrics and targets — cross-industry metrics',
     blocks: keep([
       b.body('SLFRS S2 §29(b)–(g) ask for the amount and percentage of assets vulnerable to transition risks, '
         + 'vulnerable to physical risks and aligned with climate-related opportunities, the capital deployed, '
@@ -222,7 +228,7 @@ function industrySection(f) {
   const ind = f.s2.exposure.industries;
   const ccy = f.currency;
   return {
-    id: 's2Industry', title: 'Industry-based metrics — exposure and financed emissions by industry',
+    id: 's2Industry', title: 'Metrics and targets — industry-based metrics',
     blocks: keep([
       b.body('The SLFRS S2 industry-based guidance for commercial banks asks for gross exposure and the '
         + 'associated financed emissions disaggregated by industry, and for lending to carbon-related industries '
@@ -255,7 +261,7 @@ function targetsSection(f) {
   const t = f.s2.targets;
   const rows = (t.entries && t.entries.state !== 'absent' && Array.isArray(t.entries.value)) ? t.entries.value : [];
   return {
-    id: 's2Targets', title: 'Climate-related targets',
+    id: 's2Targets', title: 'Metrics and targets — climate-related targets',
     blocks: keep([
       b.body('SLFRS S2 §33–36 ask for each climate-related target the entity has set or is required to meet, '
         + 'the metric and the part of the entity it covers, its base year and target year, whether it was '
@@ -286,7 +292,10 @@ function targetsSection(f) {
  * disclosure without a figure having been rewritten for S2.
  */
 function s2IndexAnnex(f, letter) {
-  const titleOf = new Map((f.sectionTitles || []).map(s => [s.id, s]));
+  const where = new Map([
+    ...(f.sectionTitles || []).map(s => [s.id, `Section ${s.number}. ${s.title}`]),
+    ...(f.annexTitles || []).map(a => [a.id, `Annex ${a.letter}. ${a.title}`]),
+  ]);
   return {
     id: 'annexS2Index', annex: letter, title: 'SLFRS S2 index — where each paragraph is answered',
     blocks: keep([
@@ -297,14 +306,12 @@ function s2IndexAnnex(f, letter) {
       b.table({
         head: ['Paragraph', 'What it asks', 'Where in this document', 'Answered'],
         widths: [1, 2.5, 1.7, 0.7], align: ['left', 'left', 'left', 'left'], zebra: true,
-        rows: f.s2.index.map(r => {
-          const s = titleOf.get(r.section);
-          return [r.paragraph, r.requirement, s ? `Section ${s.number}. ${s.title}` : r.section, r.answered ? 'Yes' : 'No'];
-        }),
+        rows: f.s2.index.map(r => [r.paragraph, r.requirement, where.get(r.section) || r.section, r.answered ? 'Yes' : 'No']),
       }),
       b.caption(`${f.s2.answeredParagraphs} of ${f.s2.index.length} paragraphs are answered in this document. `
         + 'Governance, strategy, risk management and the entity’s own inventory are statements only the reporting '
-        + 'entity can make; the financed-emissions paragraphs are measured from the exposure register.'),
+        + 'entity can make; the financed-emissions paragraphs are measured from the exposure register and set out '
+        + 'in the annexes.'),
     ]),
   };
 }

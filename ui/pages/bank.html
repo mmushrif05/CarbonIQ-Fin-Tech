@@ -1,29 +1,37 @@
-<!-- The Bank Overview — a bank's own landing over its whole PCAF Part A
-     position for a reporting year. Every figure is one the consolidated
-     route or a class's own position returned; the page computes nothing. -->
+<!-- The Bank Overview — a bank's own landing over its whole SLFRS S2
+     position for a reporting year, drawn to read like the first page of
+     the file it produces. Every figure is one the consolidated route or a
+     class's own position returned; the page computes nothing. -->
 
 <div class="partc bank">
 
   <section class="bank-hero">
     <div class="bank-hero-head">
-      <div>
-        <p class="bank-eyebrow">Financed emissions — PCAF Part A</p>
+      <div class="bank-hero-title">
+        <p class="bank-eyebrow">SLFRS S2 climate-related disclosure</p>
         <h2 class="bank-entity" id="bk-entity">Reporting entity not stated</h2>
-        <p class="partc-hint" id="bk-subtitle"></p>
+        <p class="bank-coverline" id="bk-subtitle"></p>
       </div>
       <div class="partc-actions bank-actions">
         <label class="partc-year">Reporting year
           <select id="bk-year"></select>
         </label>
-        <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
         <button class="btn btn-primary" id="bk-pdf">SLFRS S2 disclosure — PDF</button>
         <button class="btn btn-secondary" id="bk-docx">Word</button>
         <button class="btn btn-secondary" id="bk-csv">Register — CSV</button>
-        <input type="text" id="bk-starter-name" class="bank-starter-name" placeholder="Bank’s legal name" maxlength="200" data-writes>
-        <button class="btn btn-secondary" id="bk-starter" data-writes>Load starter book</button>
+        <button class="btn btn-secondary" id="bk-refresh">Refresh</button>
       </div>
     </div>
-    <p class="partc-hint" id="bk-status"></p>
+    <p class="partc-hint bank-status" id="bk-status"></p>
+
+    <div class="bank-empty" id="bk-empty" hidden>
+      <h3>Begin with the starter book</h3>
+      <p>Fifteen illustrative exposures across every asset class, two sovereign holdings, the entity’s boundary and the SLFRS S2 statements — each recorded through the same engines a keyed exposure goes through, and every one of them yours to edit.</p>
+      <div class="bank-empty-row">
+        <input type="text" id="bk-starter-name" class="bank-starter-name" placeholder="Bank’s legal name" maxlength="200" data-writes>
+        <button class="btn btn-primary" id="bk-starter" data-writes>Load starter book</button>
+      </div>
+    </div>
 
     <div class="bank-figures" id="bk-figures" hidden>
       <div class="bank-figure bank-figure-primary">
@@ -53,9 +61,9 @@
         <button type="button" class="bank-behind-btn" data-behind="intensity">Behind this figure</button>
       </div>
       <div class="bank-figure">
-        <span class="bank-figure-label">Ready to file</span>
+        <span class="bank-figure-label">Before filing</span>
         <span class="bank-figure-value" id="bk-ready">—</span>
-        <span class="bank-figure-unit" id="bk-ready-unit">items Chapter 6 still asks the bank for</span>
+        <span class="bank-figure-unit" id="bk-ready-unit">items the disclosure still asks the bank for</span>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Approved by the bank</span>
@@ -67,7 +75,7 @@
 
     <div class="bank-s2" id="bk-s2" hidden>
       <div class="bank-s2-head">
-        <span class="bank-s2-title">SLFRS S2 — what the file answers</span>
+        <span class="bank-s2-title">What the file answers</span>
         <span class="partc-hint" id="bk-s2-summary"></span>
         <button type="button" class="bank-behind-btn" data-behind="s2">Behind the S2 file</button>
       </div>

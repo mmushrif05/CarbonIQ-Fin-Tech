@@ -275,6 +275,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // Landing is therefore the same code path as clicking, so a page cannot be
   // visible without having been navigated to.
   window.CARBONIQ_navigateTo = navigateTo;
+  /* The page already on screen, re-read: what the walkthrough's Next needs
+     when two consecutive steps sit on one screen, so the step's intent is
+     applied now rather than on the next visit. */
+  window.CARBONIQ_refreshPage = async pageId => {
+    const page = DYNAMIC_PAGES[pageId];
+    if (page && page.refresh) { try { await page.refresh(); } catch (_) { /* page reports its own errors */ } }
+  };
 
   // ── The client workspace ───────────────────────────────────
   // The financed-emissions group is headed by the reporting entity's own

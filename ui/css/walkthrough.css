@@ -21,7 +21,7 @@
 .walkthrough .wt-step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .walkthrough .wt-step-head h4 { margin: 0; font-size: 15px; flex: 1 1 200px; min-width: 0; }
 .walkthrough .wt-step-n { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; align-items: center; justify-content: center;
-  background: var(--p-accent, #0a7a4c); color: #fff; font-size: 13px; font-weight: 600; }
+  background: #4a5f42; color: #fff; font-size: 13px; font-weight: 600; }
 .walkthrough .wt-step p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; }
 .walkthrough .wt-say { color: var(--p-label-2, #6e6e73); font-style: italic; }
 .walkthrough .wt-say-label, .wt-strip .wt-say-label { display: inline-block; font-style: normal; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
@@ -32,10 +32,10 @@
    on, in the accent so it reads as the presenter's own rail and not as a
    warning. Nothing in it is a figure. */
 .wt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px;
-  background: var(--p-accent, #0a7a4c); color: #fff; font-size: 13.5px; min-width: 0;
+  background: #4a5f42; color: #fff; font-size: 13.5px; min-width: 0;
   position: sticky; top: 0; z-index: 40; }
 .wt-strip .wt-strip-n { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; white-space: nowrap; }
-.wt-strip .wt-strip-title { font-weight: 600; }
+.wt-strip .wt-strip-title { font-weight: 700; font-size: 15px; }
 .wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; opacity: .95; }
 .wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; opacity: .95; }
 .wt-strip .wt-strip-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
@@ -44,3 +44,9 @@
 .wt-strip .wt-strip-buttons button:disabled { opacity: .45; cursor: default; }
 .wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .wt-strip label { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; white-space: nowrap; }
+
+/* The control a step asks for, marked for a few seconds: the document's
+   one warm accent, on whichever screen the step opened. */
+.wt-cue { box-shadow: 0 0 0 4px #e8935f !important; animation: wt-pulse 1.1s ease-in-out 4; position: relative; z-index: 1; }
+@keyframes wt-pulse { 0%, 100% { box-shadow: 0 0 0 4px #e8935f; } 50% { box-shadow: 0 0 0 9px rgba(232, 147, 95, 0.35); } }
+@media (prefers-reduced-motion: reduce) { .wt-cue { animation: none; } }

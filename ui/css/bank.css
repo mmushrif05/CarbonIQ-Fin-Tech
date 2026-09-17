@@ -1,89 +1,291 @@
 /* ============================================================
    CarbonIQ — the Bank Overview
    ============================================================
-   The bank's own landing over its PCAF Part A position. It borrows the
-   Part C vocabulary (cards, tables, the data-quality badge) so a score
-   means the same thing on every PCAF screen; what is here is only what
-   this page adds — the hero band, the figure tiles and the class tiles.
+   The bank's own landing over its SLFRS S2 position, drawn to read like
+   the first page of the file it produces: the same two faces the document
+   is set in (Lora for titles and figures, Work Sans for everything else),
+   the same forest green and sage, paper-warm neutrals, and one warm accent
+   spent on the headline figure and nowhere else. Every colour is a token
+   defined for both themes, because a hero band that stayed cream while the
+   tiles went black is what this sheet replaced.
+
+   The page still computes nothing; what is here is only how it looks.
    ============================================================ */
+
+/* The document's faces, vendored beside the page so a network that refuses
+   a font host does not silently swap them for a system sans. */
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 400; font-display: swap; src: url('../assets/fonts/Lora-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Lora'; font-style: normal; font-weight: 700; font-display: swap; src: url('../assets/fonts/Lora-Bold.ttf') format('truetype'); }
+@font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 400; font-display: swap; src: url('../assets/fonts/WorkSans-Regular.ttf') format('truetype'); }
+@font-face { font-family: 'Work Sans'; font-style: normal; font-weight: 700; font-display: swap; src: url('../assets/fonts/WorkSans-Bold.ttf') format('truetype'); }
 
 /* `hidden` must beat any display this sheet sets. */
 .bank [hidden] { display: none !important; }
 
-/* One hue per asset class, defined once so a class is the same colour on
-   every chart, chip and tile of this screen. Scope 3 is grey wherever it is
-   drawn: it is a separate line and must not read as part of any class's
-   headline. The data-quality ramp is the one every PCAF screen shares. */
-.bank {
-  --cls-business-loans-unlisted-equity: #0a7a4c;
-  --cls-listed-equity-corporate-bonds: #2563eb;
-  --cls-project-finance: #7c3aed;
-  --cls-commercial-real-estate: #d97706;
-  --cls-mortgages: #db2777;
-  --cls-motor-vehicle-loans: #0891b2;
-  --cls-sovereign-debt: #475569;
-  --cls-scope3: #a3a3a3;
-  --approved: #1d7a3a;
+/* ── Tokens ──────────────────────────────────────────────────
+   The report theme's palette (src/platform/reporting/report-standard/theme/
+   palette.js), as screen tokens. The light set is the document's own; the
+   dark set keeps the same relationships on a deep ground. Every shell token
+   this page inherits (.partc) is remapped here so cards, tables, hints and
+   buttons follow the document rather than the teal shell. */
+.partc.bank {
+  --bk-paper: #f7f6f2;
+  --bk-card: #ffffff;
+  --bk-ink: #2b2b2b;
+  --bk-ink-2: #6e6e6e;
+  --bk-ink-3: #9a9a9a;
+  --bk-rule: #dcdcd7;
+  --bk-band: #f0f0ec;
+  --bk-zebra: #fafaf8;
+  --bk-green: #4a5f42;
+  --bk-green-dk: #3d5238;
+  --bk-on-green: #ffffff;
+  --bk-sage: #c5ccc0;
+  --bk-sage-soft: #e8ece4;
+  --bk-slate: #3e6180;
+  --bk-coral: #e8935f;
+  --bk-ochre: #b8863b;
+
+  --p-bg: var(--bk-card);
+  --p-card: var(--bk-card);
+  --p-card-2: var(--bk-band);
+  --p-bg-2: var(--bk-band);
+  --p-fill: var(--bk-band);
+  --p-fill-soft: var(--bk-zebra);
+  --p-label: var(--bk-ink);
+  --p-label-2: var(--bk-ink-2);
+  --p-label-3: var(--bk-ink-3);
+  --p-separator: var(--bk-rule);
+  --p-line: var(--bk-rule);
+  --p-accent: var(--bk-green);
+  --p-accent-bg: var(--bk-sage-soft);
+  --p-shadow: none;
+  --p-radius: 10px;
+  --p-radius-sm: 8px;
+
+  /* One hue per asset class, defined once so a class is the same colour on
+     every chart, chip and tile of this screen — muted to sit beside the
+     document's green rather than shout over it. Scope 3 is grey wherever it
+     is drawn: a separate line, never part of any class's headline. */
+  --cls-business-loans-unlisted-equity: #4a5f42;
+  --cls-listed-equity-corporate-bonds: #3e6180;
+  --cls-project-finance: #6f5b86;
+  --cls-commercial-real-estate: #b7803f;
+  --cls-mortgages: #a0574f;
+  --cls-motor-vehicle-loans: #4f7f82;
+  --cls-sovereign-debt: #737373;
+  --cls-scope3: #b8b8b8;
+  --approved: #4a5f42;
 
   /* SLFRS S2. Vulnerable and aligned are different claims and never share a
      hue; what nobody has assessed is neutral rather than green, because a
      book that has not been classified is not thereby a safe one. */
-  --s2-transition: #c2410c;
-  --s2-physical: #0369a1;
-  --s2-aligned: #15803d;
-  --s2-assessed: #94a3b8;
-  --s2-unassessed: #d4d4d8;
-  --s2-carbon: #b45309;
-  --s2-other: #64748b;
+  --s2-transition: #b85c38;
+  --s2-physical: #3e6180;
+  --s2-aligned: #4a5f42;
+  --s2-assessed: #a7ada4;
+  --s2-unassessed: #d9d9d9;
+  --s2-carbon: #a8763a;
+  --s2-other: #8a8f88;
+
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: var(--bk-ink);
 }
 
-/* The S2 strip: the four pillars, each opening the form that answers it. */
-.bank-s2 { margin-top: 16px; border-top: 1px solid var(--p-separator, #e5e5ea); padding-top: 14px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .partc.bank {
+    --bk-paper: #16191a;
+    --bk-card: #1f2325;
+    --bk-ink: #ece9e2;
+    --bk-ink-2: #a8ada6;
+    --bk-ink-3: #767b74;
+    --bk-rule: #343a38;
+    --bk-band: #262b2b;
+    --bk-zebra: #1b1f20;
+    --bk-green: #9db995;
+    --bk-green-dk: #b9cfb2;
+    --bk-on-green: #16191a;
+    --bk-sage: #4f5d52;
+    --bk-sage-soft: #2a3430;
+    --bk-slate: #93b3d1;
+    --bk-ochre: #d3a35a;
+    --cls-scope3: #5c6360;
+    --s2-assessed: #6a726e;
+    --s2-unassessed: #3f4644;
+  }
+}
+:root[data-theme="dark"] .partc.bank {
+  --bk-paper: #16191a;
+  --bk-card: #1f2325;
+  --bk-ink: #ece9e2;
+  --bk-ink-2: #a8ada6;
+  --bk-ink-3: #767b74;
+  --bk-rule: #343a38;
+  --bk-band: #262b2b;
+  --bk-zebra: #1b1f20;
+  --bk-green: #9db995;
+  --bk-green-dk: #b9cfb2;
+  --bk-on-green: #16191a;
+  --bk-sage: #4f5d52;
+  --bk-sage-soft: #2a3430;
+  --bk-slate: #93b3d1;
+  --bk-ochre: #d3a35a;
+  --cls-scope3: #5c6360;
+  --s2-assessed: #6a726e;
+  --s2-unassessed: #3f4644;
+}
+
+/* ── The document's furniture on this page ─────────────── */
+.partc.bank .partc-card {
+  background: var(--bk-card);
+  border: 1px solid var(--bk-rule);
+  border-radius: 10px;
+  box-shadow: none;
+}
+.partc.bank .partc-card-head h3,
+.bank-entity, .bank-figure-value, .bank-tile-value, .bank-empty h3, .bank-s2-title, .bank-s2-pillar b {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+}
+.partc.bank .partc-card-head h3 { color: var(--bk-green-dk); font-weight: 700; font-size: 17px; letter-spacing: 0; }
+.partc.bank .partc-hint { color: var(--bk-ink-2); }
+.partc.bank .btn { border-radius: 8px; font-family: inherit; font-weight: 600; }
+.partc.bank .btn-primary { background: var(--bk-green); color: var(--bk-on-green); border: 1px solid var(--bk-green); }
+.partc.bank .btn-secondary { background: transparent; color: var(--bk-ink); border: 1px solid var(--bk-rule); }
+.partc.bank .btn-secondary:hover { border-color: var(--bk-ink-2); }
+.partc.bank .btn:focus-visible { box-shadow: 0 0 0 3px var(--bk-sage-soft); }
+.partc.bank .partc-table th {
+  background: var(--bk-sage-soft); color: var(--bk-ink);
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+}
+.partc.bank .partc-table td { border-bottom: 1px solid var(--bk-rule); }
+.partc.bank .partc-table tbody tr:nth-child(even) td { background: var(--bk-zebra); }
+.partc.bank select, .partc.bank input[type="text"] {
+  font-family: inherit; color: var(--bk-ink); background: var(--bk-card);
+  border: 1px solid var(--bk-rule); border-radius: 8px; padding: 7px 10px;
+}
+.bank select { min-width: 0; max-width: 100%; }
+.bank .partc-actions .partc-year { min-width: 0; max-width: 100%; color: var(--bk-ink-2); font-size: 12.5px; }
+.bank .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }
+
+/* ── The hero: the cover of the file ───────────────────── */
+.bank-hero {
+  background: var(--bk-card);
+  border: 1px solid var(--bk-rule);
+  border-left: 6px solid var(--bk-green);
+  border-radius: 10px;
+  padding: 22px 26px 20px;
+  margin-bottom: 16px;
+}
+.bank-hero-head { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start; justify-content: space-between; }
+.bank-hero-head > div { min-width: 0; }
+.bank-hero-title { flex: 1 1 320px; }
+.bank-eyebrow {
+  margin: 0 0 6px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--bk-green); font-weight: 700;
+}
+.bank-entity {
+  margin: 0; font-size: 32px; line-height: 1.12; font-weight: 700;
+  color: var(--bk-ink); text-wrap: balance; letter-spacing: -0.005em;
+}
+.bank-coverline { margin: 8px 0 0; font-size: 13px; color: var(--bk-ink-2); }
+.bank-actions { margin-top: 2px; align-items: center; }
+.bank-status { margin: 12px 0 0; }
+
+/* The starter's moment: a year holding no lending book. */
+.bank-empty {
+  margin-top: 18px; padding: 18px 20px;
+  border: 1px dashed var(--bk-rule); border-radius: 8px; background: var(--bk-zebra);
+}
+.bank-empty h3 { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--bk-green-dk); }
+.bank-empty p { margin: 0 0 12px; font-size: 13.5px; line-height: 1.5; color: var(--bk-ink-2); max-width: 64ch; }
+.bank-empty-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bank-starter-name { flex: 1 1 16rem; min-width: 0; max-width: 100%; }
+
+/* Figure tiles: a band of figures on one rule, the primary one set larger
+   and marked with the document's one warm accent. */
+.bank-figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 16px 22px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--bk-rule);
+}
+.bank-figure {
+  min-width: 0;
+  display: flex; flex-direction: column; gap: 4px;
+  padding-top: 10px;
+  border-top: 2px solid var(--bk-rule);
+}
+.bank-figure-primary { border-top-color: var(--bk-coral); }
+.bank-figure-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700; }
+.bank-figure-value {
+  font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--bk-ink);
+  font-variant-numeric: lining-nums tabular-nums; overflow-wrap: anywhere;
+}
+.bank-figure-primary .bank-figure-value { font-size: 44px; color: var(--bk-green-dk); }
+.bank-figure-unit { font-size: 12.5px; color: var(--bk-ink-2); line-height: 1.4; }
+@media (min-width: 720px) {
+  .bank-figure-primary { grid-column: span 2; }
+}
+.bank-bar { height: 6px; border-radius: 3px; background: var(--bk-band); margin-top: 6px; overflow: hidden; }
+.bank-bar-fill { display: block; height: 100%; width: 0; background: var(--bk-green); border-radius: 3px; transition: width 400ms ease; }
+
+/* The S2 band: the four pillars, each a column with a bar of what the bank
+   has stated, what is still the illustrative content, and what is not
+   stated — and each opening the form that answers it. */
+.bank-s2 { margin-top: 20px; border-top: 1px solid var(--bk-rule); padding-top: 14px; }
 .bank-s2-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
-.bank-s2-title { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
-.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 10px; margin-top: 10px; }
+.bank-s2-title { font-size: 16px; font-weight: 700; color: var(--bk-green-dk); }
+.bank-s2-pillars { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 14px 20px; margin-top: 12px; }
 .bank-s2-pillar {
-  min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left;
-  padding: 10px 12px; border: 1px solid var(--p-separator, #e5e5ea); border-radius: 12px;
-  background: var(--p-bg, #fff); font: inherit; color: inherit; cursor: pointer;
+  min-width: 0; display: flex; flex-direction: column; gap: 3px; text-align: left;
+  padding: 10px 0 8px; border: 0; border-top: 2px solid var(--bk-rule); border-radius: 0;
+  background: transparent; font: inherit; color: inherit; cursor: pointer;
 }
-.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-color: var(--p-accent, #0a7a4c); outline: none; }
-.bank-s2-pillar > span { font-size: 11.5px; color: var(--p-label-2, #6e6e73); }
-.bank-s2-pillar em { font-style: normal; font-size: 12.5px; font-weight: 600; }
-.bank-s2-pillar.is-stated em { color: var(--p-accent, #0a7a4c); }
-.bank-s2-pillar.is-illustrative em, .bank-s2-pillar.is-partial em { color: #8a5a12; }
-.bank-s2-pillar.is-absent em { color: var(--p-label-2, #6e6e73); }
+.bank-s2-pillar:hover, .bank-s2-pillar:focus-visible { border-top-color: var(--bk-green); outline: none; }
+.bank-s2-pillar b { font-size: 16px; font-weight: 700; color: var(--bk-ink); }
+.bank-s2-pillar > span { font-size: 11.5px; color: var(--bk-ink-2); }
+.bank-s2-pillar em { font-style: normal; font-size: 12.5px; font-weight: 700; }
+.bank-s2-pillar.is-stated em { color: var(--bk-green); }
+.bank-s2-pillar.is-illustrative em, .bank-s2-pillar.is-partial em { color: var(--bk-ochre); }
+.bank-s2-pillar.is-absent em { color: var(--bk-ink-2); }
+.bank-s2-bar { display: flex; gap: 2px; height: 6px; margin: 8px 0 6px; border-radius: 3px; overflow: hidden; }
+.bank-s2-bar i { display: block; min-width: 0; }
+.bank-s2-bar .is-stated { background: var(--bk-green); }
+.bank-s2-bar .is-illustrative { background: var(--bk-ochre); }
+.bank-s2-bar .is-absent { background: var(--bk-rule); }
 
-/* Charts: a drawing on an inline element renders as nothing, so every one is
-   a block that follows its container. */
+/* ── Charts: a drawing on an inline element renders as nothing, so every
+   one is a block that follows its container. ───────────── */
 .bank .ch { display: block; width: 100%; height: auto; }
-.bank .ch-track { fill: var(--p-fill, #ececec); }
-.bank .ch-ring .ch-track { fill: none; stroke: var(--p-fill, #ececec); }
-.bank .ch-label { font-size: 12px; fill: var(--p-label-2, #6e6e73); }
-.bank .ch-value { font-size: 12px; fill: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; }
-.bank .ch-ring-value { font-size: 20px; font-weight: 650; fill: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; }
+.bank .ch-track { fill: var(--bk-band); }
+.bank .ch-ring .ch-track { fill: none; stroke: var(--bk-band); }
+.bank .ch-label { font-size: 12px; fill: var(--bk-ink-2); font-family: 'Work Sans', system-ui, sans-serif; }
+.bank .ch-value { font-size: 12px; fill: var(--bk-ink); font-variant-numeric: tabular-nums; font-family: 'Work Sans', system-ui, sans-serif; }
+.bank .ch-ring-value { font-size: 20px; font-weight: 700; fill: var(--bk-ink); font-variant-numeric: tabular-nums; font-family: 'Lora', Georgia, serif; }
 .bank .ch-row.is-dim { opacity: 0.28; }
 .bank .ch-row { transition: opacity 160ms ease; }
-.bank .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--p-label-2, #6e6e73); margin-top: 8px; }
+.bank .ch-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--bk-ink-2); margin-top: 8px; }
 .bank .ch-key i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
 .bank-charts .partc-panel { min-width: 0; }
 .bank-ring-row { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .bank-ring-row .ch-ring { width: 120px; flex: 0 0 120px; }
 .bank-ring-row .bank-grow { flex: 1 1 260px; min-width: 0; }
-.bank-ring-caption { font-size: 12px; color: var(--p-label-2, #6e6e73); text-align: center; margin-top: 2px; }
+.bank-ring-caption { font-size: 12px; color: var(--bk-ink-2); text-align: center; margin-top: 2px; }
 
-/* The class in focus: chips, and the panel that follows the choice. */
+/* ── The class in focus: chips, and the panel that follows the choice ─── */
 .bank-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .bank-chip {
   display: inline-flex; align-items: center; gap: 7px;
-  border: 1px solid var(--p-separator, #e5e5ea); border-radius: 999px;
-  padding: 5px 12px; font: inherit; font-size: 12.5px; color: inherit;
-  background: var(--p-bg, #fff); cursor: pointer;
+  border: 1px solid var(--bk-rule); border-radius: 999px;
+  padding: 5px 12px; font: inherit; font-size: 12.5px; color: var(--bk-ink);
+  background: var(--bk-card); cursor: pointer;
 }
 .bank-chip i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-.bank-chip.is-on { border-color: var(--p-label, #1c1c1e); font-weight: 600; box-shadow: inset 0 0 0 1px var(--p-label, #1c1c1e); }
-.bank-chip:focus-visible { outline: 2px solid var(--p-accent, #0a7a4c); outline-offset: 2px; }
-.bank-focus { margin-top: 14px; border-top: 1px solid var(--p-separator, #e5e5ea); padding-top: 12px; }
+.bank-chip.is-on { border-color: var(--bk-green); background: var(--bk-sage-soft); font-weight: 700; }
+.bank-chip:focus-visible { outline: 2px solid var(--bk-green); outline-offset: 2px; }
+.bank-focus { margin-top: 14px; border-top: 1px solid var(--bk-rule); padding-top: 12px; }
 .bank-focus-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
 .bank-focus-head > i { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; }
 .bank-focus-head > div { flex: 1 1 200px; min-width: 0; }
@@ -93,61 +295,21 @@
 }
 .bank-focus-grid > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .bank-focus-lines { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 4px 16px; margin-top: 10px; }
-.bank-tile { box-shadow: inset 4px 0 0 var(--swatch, transparent); }
 
-/* The lineage behind a figure. The button is a line of text under the figure
-   it belongs to; the drawer is a card that opens beneath the hero. */
-.bank-behind-btn { font: inherit; font-size: 12px; color: var(--p-accent, #0a7a4c); background: none; border: 0; padding: 0; margin-top: 4px; cursor: pointer; text-align: left; text-decoration: underline dotted; align-self: flex-start; }
-.bank-behind-btn:hover, .bank-behind-btn:focus-visible { text-decoration: underline; outline: none; }
-.bank-behind { margin-bottom: 16px; border-color: var(--p-accent, #0a7a4c); }
+/* ── The lineage behind a figure: a line of text under the figure it belongs
+   to; the drawer is a card that opens beneath the hero. ─── */
+.bank-behind-btn {
+  font: inherit; font-size: 12px; color: var(--bk-ink-2); background: none; border: 0; padding: 0;
+  margin-top: 4px; cursor: pointer; text-align: left; text-decoration: underline dotted; align-self: flex-start;
+}
+.bank-behind-btn:hover, .bank-behind-btn:focus-visible { color: var(--bk-green); text-decoration: underline; outline: none; }
+.bank-behind { margin-bottom: 16px; border-left: 6px solid var(--bk-green); }
 .bank-behind .partc-card-head { align-items: flex-start; }
 .bank-behind .partc-card-head .btn { margin-left: auto; }
-.bank-behind h5 { margin: 12px 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--p-label-2, #6e6e73); }
+.bank-behind h5 { margin: 12px 0 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--bk-ink-2); }
 .bank-behind code { font-size: 12px; overflow-wrap: anywhere; }
-.bank-tile.is-dim { opacity: 0.45; }
 
-.bank select { min-width: 0; max-width: 100%; }
-.bank .partc-actions .partc-year { min-width: 0; max-width: 100%; }
-.bank .partc-actions .partc-year select { flex: 1 1 0; min-width: 0; width: auto; }
-
-/* The hero: a deeper ground than the cards, the entity's name set large. */
-.bank-hero {
-  background: linear-gradient(135deg, var(--p-accent-bg, #e6f2ec) 0%, var(--p-bg-2, #f6f7f5) 100%);
-  border: 1px solid var(--p-separator, #e5e5ea);
-  border-radius: 16px;
-  padding: 20px 22px 18px;
-  margin-bottom: 16px;
-}
-.bank-hero-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-start; justify-content: space-between; }
-.bank-hero-head > div { min-width: 0; }
-.bank-eyebrow { margin: 0 0 4px; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--p-accent, #0a7a4c); font-weight: 600; }
-.bank-entity { margin: 0; font-size: 26px; line-height: 1.15; font-weight: 650; color: var(--p-label, #1c1c1e); text-wrap: balance; }
-.bank-actions { margin-top: 0; }
-.bank-starter-name { flex: 0 1 14rem; min-width: 0; max-width: 100%; }
-
-/* Figure tiles: collapse to one column at a phone width. */
-.bank-figures {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-.bank-figure {
-  min-width: 0;
-  background: var(--p-bg, #fff);
-  border: 1px solid var(--p-separator, #e5e5ea);
-  border-radius: 12px;
-  padding: 12px 14px;
-  display: flex; flex-direction: column; gap: 3px;
-}
-.bank-figure-primary { border-color: var(--p-accent, #0a7a4c); box-shadow: inset 4px 0 0 var(--p-accent, #0a7a4c); }
-.bank-figure-label { font-size: 12.5px; color: var(--p-label-2, #6e6e73); }
-.bank-figure-value { font-size: 26px; font-weight: 650; line-height: 1.1; color: var(--p-label, #1c1c1e); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.bank-figure-unit { font-size: 12px; color: var(--p-label-2, #6e6e73); }
-.bank-bar { height: 6px; border-radius: 3px; background: var(--p-fill, #ececec); margin-top: 6px; overflow: hidden; }
-.bank-bar-fill { display: block; height: 100%; width: 0; background: var(--p-accent, #0a7a4c); border-radius: 3px; }
-
-/* Class tiles. */
+/* ── Class tiles ────────────────────────────────────────── */
 .bank-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
@@ -155,34 +317,36 @@
 }
 .bank-tile {
   min-width: 0;
-  border: 1px solid var(--p-separator, #e5e5ea);
-  border-radius: 12px;
-  padding: 12px 14px;
-  background: var(--p-bg, #fff);
+  border: 1px solid var(--bk-rule);
+  border-top: 3px solid var(--swatch, var(--bk-rule));
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  background: var(--bk-card);
   text-align: left;
   font: inherit;
   color: inherit;
   cursor: pointer;
   display: flex; flex-direction: column; gap: 6px;
 }
-.bank-tile:hover, .bank-tile:focus-visible { border-color: var(--p-accent, #0a7a4c); outline: none; }
-.bank-tile-absent { cursor: default; opacity: 0.75; }
+.bank-tile:hover, .bank-tile:focus-visible { border-color: var(--bk-green); border-top-color: var(--swatch, var(--bk-green)); outline: none; }
+.bank-tile-absent { cursor: default; opacity: 0.7; }
+.bank-tile.is-dim { opacity: 0.45; }
 .bank-tile-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.bank-tile-title { font-weight: 600; font-size: 14px; }
-.bank-tile-section { font-size: 12px; color: var(--p-label-2, #6e6e73); white-space: nowrap; }
-.bank-tile-value { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.bank-tile-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--p-label-2, #6e6e73); }
-.bank-tile-row b { color: var(--p-label, #1c1c1e); font-weight: 600; font-variant-numeric: tabular-nums; }
+.bank-tile-title { font-weight: 700; font-size: 14px; }
+.bank-tile-section { font-size: 12px; color: var(--bk-ink-2); white-space: nowrap; }
+.bank-tile-value { font-size: 22px; font-weight: 700; font-variant-numeric: lining-nums tabular-nums; color: var(--bk-ink); }
+.bank-tile-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--bk-ink-2); }
+.bank-tile-row b { color: var(--bk-ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 .bank .bk-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .bank .bk-kv { display: grid; grid-template-columns: minmax(0, 42%) minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: 13px; }
-.bank .bk-kv dt { color: var(--p-label-2, #6e6e73); min-width: 0; overflow-wrap: anywhere; }
+.bank .bk-kv dt { color: var(--bk-ink-2); min-width: 0; overflow-wrap: anywhere; }
 .bank .bk-kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
-.bank .bk-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); margin-left: 6px; }
-.bank .bk-pill-released { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
+.bank .bk-pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; background: var(--bk-band); color: var(--bk-ink-2); margin-left: 6px; }
+.bank .bk-pill-released { background: var(--bk-sage-soft); color: var(--bk-green-dk); }
 
 /* ============================================================
-   The SLFRS S2 climate facts panel
+   The SLFRS S2 climate facts panel (on the Financed Emissions screen)
    ============================================================
    `hidden` must beat any display this sheet sets, and every grid item is
    allowed to shrink — the two mechanical faults this codebase has shipped. */
@@ -190,8 +354,8 @@
 
 .cl-counts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
 .cl-state { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
-.cl-stated { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
-.cl-illustrative { background: #fdf3e3; color: #8a5a12; }
+.cl-stated { background: var(--p-accent-bg, #e8ece4); color: var(--p-accent, #4a5f42); }
+.cl-illustrative { background: #f6ecd9; color: #8a5a12; }
 .cl-absent { background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); }
 .cl-trial { margin: 6px 0 0; font-size: 13px; color: var(--p-label-2, #6e6e73); }
 
@@ -204,8 +368,8 @@
   padding: 8px 12px; border: 1px solid var(--p-line, #e5e5ea); border-radius: 10px;
   background: transparent; color: inherit; cursor: pointer; font: inherit; text-align: left; }
 .cl-tab span, .cl-tab em { font-size: 11.5px; color: var(--p-label-2, #6e6e73); font-style: normal; }
-.cl-tab.is-on { border-color: var(--p-accent, #0a7a4c); background: var(--p-accent-bg, #e6f2ec); }
-.cl-tab:focus-visible { outline: 2px solid var(--p-accent, #0a7a4c); outline-offset: 1px; }
+.cl-tab.is-on { border-color: var(--p-accent, #4a5f42); background: var(--p-accent-bg, #e8ece4); }
+.cl-tab:focus-visible { outline: 2px solid var(--p-accent, #4a5f42); outline-offset: 1px; }
 
 .cl-item { padding: 12px 0; border-top: 1px solid var(--p-line, #e5e5ea); min-width: 0; }
 .cl-item-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }

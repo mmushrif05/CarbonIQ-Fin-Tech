@@ -108,17 +108,39 @@ beforeAll(async () => {
 afterAll(() => store._resetMemory());
 
 describe('The four pillars, and whose words they are', () => {
-  test('the disclosure carries the four SLFRS S2 pillars as sections, in the standard’s order', async () => {
+  test('the disclosure reads in the standard’s order: the entity, then the four pillars, then what is outstanding', async () => {
     const m = await model();
     const ids = m.sections.map(s => s.id);
-    for (const id of ['s2Governance', 's2Strategy', 's2RiskManagement', 's2Inventory', 's2CrossIndustry', 's2Industry', 's2Targets']) {
-      expect([id, ids.includes(id)]).toEqual([id, true]);
+    expect(ids).toEqual(['entity', 's2Governance', 's2Strategy', 's2RiskManagement',
+      's2Inventory', 's2CrossIndustry', 's2Industry', 's2Targets', 'limitations', 'conformance']);
+    /* The PCAF Chapter 6 material — coverage, gases, the position by class,
+       method, data quality, recalculation, intensity, uncertainty — is the
+       basis of preparation for the category 15 metric and is printed as such:
+       in the first two annexes, whole, and never in front of the first pillar.
+       It used to be eight sections before governance, which made the file a
+       PCAF document with S2 in the middle. */
+    for (const id of ['coverage', 'gases', 'absolute', 'methodology', 'dataquality', 'recalculation', 'intensity', 'uncertainty']) {
+      expect([id, ids.includes(id)]).toEqual([id, false]);
     }
-    /* The S2 sections sit after the PCAF ones: this is a financed-emissions
-       disclosure that also answers S2, and the index is what lets a reader
-       enter it from the other direction. */
-    expect(ids.indexOf('s2Governance')).toBeGreaterThan(ids.indexOf('absolute'));
-    expect(ids.indexOf('s2Targets')).toBeLessThan(ids.indexOf('conformance'));
+    expect(m.annexes.slice(0, 2).map(a => a.id)).toEqual(['annexFinanced', 'annexBasis']);
+    const financed = JSON.stringify(annexOf(m, 'annexFinanced').blocks);
+    expect(financed).toMatch(/Share of total loans and investments assessed/);
+    expect(financed).toMatch(/Financed emissions across the classes reported — the headline/);
+    expect(financed).toMatch(/Economic emission intensity/);
+    const basis = JSON.stringify(annexOf(m, 'annexBasis').blocks);
+    for (const head of ['Gases and units', 'Methodology', 'Data quality', 'Recalculation and significance', 'Uncertainty']) {
+      expect(basis).toContain(head);
+    }
+  });
+
+  test('the category 15 figure in the metrics section is Annex A’s headline, moved and not recomputed', async () => {
+    const m = await model();
+    const inventory = sectionOf(m, 's2Inventory');
+    const figure = inventory.blocks.find(x => x.kind === 'figure');
+    expect(figure).toBeTruthy();
+    expect(figure.value).toBe(Number(m.facts.totals.headline.value).toFixed(3));
+    const annexFigure = annexOf(m, 'annexFinanced').blocks.find(x => x.kind === 'figure' && /the headline/.test(x.label));
+    expect(annexFigure.value).toBe(figure.value);
   });
 
   test('a statement the entity has not made prints as not stated with the paragraph that asks for it', async () => {
@@ -222,20 +244,30 @@ describe('The index, and the guard over what a form can put on a page', () => {
     const m = await model();
     const annex = annexOf(m, 'annexS2Index');
     expect(annex).toBeTruthy();
-    const built = new Set([...m.sections.map(s => s.id)]);
-    const numbered = new Map(m.sections.map((s, i) => [s.id, `Section ${i + 1}. ${s.title}`]));
+    /* A row may point at a section, by number, or at an annex, by letter —
+       and at nothing else, because a cross-reference to a part the model did
+       not build is a broken filed document. */
+    const built = new Set([...m.sections.map(s => s.id), ...m.annexes.map(a => a.id)]);
+    const named = new Map([
+      ...m.sections.map((s, i) => [s.id, `Section ${i + 1}. ${s.title}`]),
+      ...m.annexes.map(a => [a.id, `Annex ${a.annex}. ${a.title}`]),
+    ]);
     for (const row of m.facts.s2.index) {
       expect([row.paragraph, built.has(row.section)]).toEqual([row.paragraph, true]);
     }
     const table = annex.blocks.find(x => x.kind === 'table');
     expect(table.rows.length).toBe(m.facts.s2.index.length);
-    for (const row of table.rows) expect([...numbered.values()]).toContain(row[2]);
-    /* The financed-emissions paragraphs are answered by the sections this
-       document always printed, which is the point: the file reads as S2
-       without a figure having been rewritten for S2. */
+    for (const row of table.rows) expect([...named.values()]).toContain(row[2]);
+    /* The financed-emissions paragraphs are answered by the blocks this
+       document always printed — now the first annex — which is the point: the
+       file reads as S2 without a figure having been rewritten for S2. */
     const fe = m.facts.s2.index.find(r => r.paragraph.startsWith('S2 §29(a)(vi)'));
-    expect(fe.section).toBe('absolute');
+    expect(fe.section).toBe('annexFinanced');
     expect(fe.answered).toBe(true);
+    /* And the measurement approach, which S2 §29(a)(iii) asks for and the
+       registry now holds, is indexed to the inventory section. */
+    const approach = m.facts.s2.index.find(r => r.paragraph === 'S2 §29(a)(iii)');
+    expect(approach.section).toBe('s2Inventory');
   });
 
   test('endorsement language in a statement the entity recorded is refused at build', async () => {

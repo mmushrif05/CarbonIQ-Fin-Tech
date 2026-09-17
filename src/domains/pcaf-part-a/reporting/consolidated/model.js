@@ -1,31 +1,85 @@
 // @ts-check
 /**
- * The whole consolidated Part A document model: cover, the Chapter 6
- * sections, the annexes (every release the classes rest on, Annex 10.2 by
- * class, the register across classes that is the audit trail, the regulatory
- * mapping, the completed checklist). The platform renderer draws it to PDF
- * and to Word — the same renderer every other document uses.
+ * The whole SLFRS S2 disclosure model: cover, the body in the standard's
+ * order (sections.js), and the annexes — the financed-emissions basis of
+ * preparation in two annexes, every release the classes rest on, Annex 10.2
+ * by class, the register across classes that is the audit trail, the S2
+ * index, the regulatory mapping, and the completed PCAF checklist. The
+ * platform renderer draws it to PDF and to Word — the same renderer every
+ * other document uses.
  */
 
 'use strict';
 
 const { b, keep } = require('../../../../platform/reporting/report-standard/blocks');
-const { buildSections, N, T, score } = require('./sections');
+const {
+  buildSections, N, T, score,
+  coverageBlocks, gasesBlocks, absoluteBlocks, methodologyBlocks, dataQualityBlocks, recalculationBlocks, intensityBlocks,
+} = require('./sections');
 const { completeChecklist } = require('./checklist');
-const { registerAnnex, regulatoryAnnex } = require('../common-sections');
+const { registerAnnex, regulatoryAnnex, uncertaintySection } = require('../common-sections');
 const { s2IndexAnnex } = require('./s2-sections');
 const { proseOf } = require('./s2-facts');
 const { containsForbiddenLanguage } = require('../../../../shared/report-integrity');
 
 const F4 = n => (n === null || n === undefined) ? '—' : Number(n).toFixed(4);
 
-function buildAnnexes(f) {
-  const annexes = [];
-  let letter = 'A';
-  const next = () => { const l = letter; letter = String.fromCharCode(letter.charCodeAt(0) + 1); return l; };
+/**
+ * Annex A: the financed-emissions position — the coverage of the book, the
+ * absolute figures by asset class, and the intensity. These are the blocks
+ * that used to be the document's sections 2, 4 and 8, unchanged; they answer
+ * S2 §29(a)(vi) and B58–B63 and are the basis of the Category 15 line in
+ * the metrics section.
+ */
+function financedAnnex(f, letter) {
+  return {
+    id: 'annexFinanced', annex: letter, title: 'Financed emissions — scope, coverage and the position by asset class',
+    blocks: keep([
+      b.body('The financed-emissions metric in the metrics section is measured from the exposure register under '
+        + 'PCAF Part A, Third Edition. This annex is its scope and its position: which asset classes are '
+        + 'reported and which are not, the coverage of the reporting entity’s book, the absolute figures by '
+        + 'class with scope 3 on its own line, and the economic intensity. Nothing here is recomputed from the '
+        + 'body; the body’s Category 15 line is this annex’s headline, moved.'),
+      b.h2('Scope and coverage'),
+      ...coverageBlocks(f),
+      b.h2('Absolute financed emissions'),
+      ...absoluteBlocks(f),
+      b.h2('Emission intensity'),
+      ...intensityBlocks(f),
+    ]),
+  };
+}
 
-  annexes.push({
-    id: 'annexFactors', annex: next(), title: 'Factor sets, datasets and governed baselines',
+/**
+ * Annex B: how the financed-emissions figures were prepared — gases and
+ * units, the method per class, data quality, recalculation, uncertainty.
+ * The blocks that used to be sections 3, 5, 6, 7 and 17, unchanged.
+ */
+function basisAnnex(f, letter) {
+  return {
+    id: 'annexBasis', annex: letter, title: 'Financed emissions — basis of preparation',
+    blocks: keep([
+      b.body('The basis on which the financed-emissions figures in Annex A were prepared, as PCAF Part A '
+        + 'Chapter 6 asks it to be stated: the gases and units, the attribution and estimation method of each '
+        + 'asset class, the data-quality score per class, the recalculation protocol, and the uncertainty the '
+        + 'figures carry.'),
+      b.h2('Gases and units'),
+      ...gasesBlocks(f),
+      b.h2('Methodology'),
+      ...methodologyBlocks(f),
+      b.h2('Data quality'),
+      ...dataQualityBlocks(f),
+      b.h2('Recalculation and significance'),
+      ...recalculationBlocks(f),
+      b.h2('Uncertainty, and what this document does not contain'),
+      ...uncertaintySection(f).blocks,
+    ]),
+  };
+}
+
+function factorsAnnex(f, letter) {
+  return {
+    id: 'annexFactors', annex: letter, title: 'Factor sets, datasets and governed baselines',
     blocks: keep([
       b.body('Every factor set or dataset a class’s figures rest on, with its version, effective date and '
         + 'the whole SHA-256 checksum, so a copy can be verified against it. The per-class documents print '
@@ -38,10 +92,12 @@ function buildAnnexes(f) {
       })),
       f.band ? b.body(`Sector intensity bands: ${f.band.basis}`) : null,
     ]),
-  });
+  };
+}
 
-  annexes.push({
-    id: 'annexTable', annex: next(), title: 'Annex 10.2 — scope 3 Category 15 by asset class',
+function tableAnnex(f, letter) {
+  return {
+    id: 'annexTable', annex: letter, title: 'Annex 10.2 — scope 3 Category 15 by asset class',
     blocks: keep([
       b.body('The template PCAF Annex 10.2 gives (pp.199–200): each asset class disaggregated — by sector '
         + 'for business loans, by sovereign for sovereign debt — with outstanding covered, the headline, '
@@ -60,9 +116,11 @@ function buildAnnexes(f) {
       }) : null,
       !f.bySector.length && !f.bySovereign.length ? b.body('No asset class holds exposures for the year.') : null,
     ]),
-  });
+  };
+}
 
-  annexes.push(registerAnnex(f, next(), {
+function exposureRegisterAnnex(f, letter) {
+  return registerAnnex(f, letter, {
     title: 'Exposure register across classes — the audit trail',
     intro: 'One row per exposure of every class reported, from the same stored projections the totals '
       + 'were rolled up from. A verifier samples from this table; every identifier resolves to the stored '
@@ -74,13 +132,33 @@ function buildAnnexes(f) {
     rows: (f.exposureRegister || []).map(r => [r.section, r.exposureId || '—', r.counterparty || '—', r.sector || '—', N(r.outstanding), r.currency || '—',
       F4(r.attributionFactor), r.option || '—', score(r.score), T(r.headline), r.scope3 === null ? '—' : T(r.scope3),
       r.findings ? `${r.verdict} (${r.findings})` : r.verdict]),
-  }));
+  });
+}
 
-  annexes.push(regulatoryAnnex(f, next()));
-  annexes.push(s2IndexAnnex(f, next()));
+/**
+ * The annexes, lettered in the order they are read. The letters are assigned
+ * before any annex is built so that the S2 index — itself an annex — can name
+ * the annexes that follow it as well as the sections before it.
+ */
+const ANNEXES = [
+  { id: 'annexFinanced', title: 'Financed emissions — scope, coverage and the position by asset class', build: financedAnnex },
+  { id: 'annexBasis', title: 'Financed emissions — basis of preparation', build: basisAnnex },
+  { id: 'annexFactors', title: 'Factor sets, datasets and governed baselines', build: factorsAnnex },
+  { id: 'annexTable', title: 'Annex 10.2 — scope 3 Category 15 by asset class', build: tableAnnex },
+  { id: 'annexRegister', title: 'Exposure register across classes — the audit trail', build: exposureRegisterAnnex },
+  { id: 'annexS2Index', title: 'SLFRS S2 index — where each paragraph is answered', build: s2IndexAnnex },
+  { id: 'annexRegulatory', title: 'Where the regulatory lines come from', build: regulatoryAnnex },
+  { id: 'annexChecklist', title: 'PCAF disclosure checklist — completed',
+    build: (f, letter) => ({ id: 'annexChecklist', annex: letter, title: 'PCAF disclosure checklist — completed', blocks: [b.checklist()] }) },
+];
 
-  annexes.push({ id: 'annexChecklist', annex: next(), title: 'PCAF disclosure checklist — completed', blocks: [b.checklist()] });
-  return annexes;
+function buildAnnexes(f) {
+  const lettered = ANNEXES.map((a, i) => ({ ...a, letter: String.fromCharCode('A'.charCodeAt(0) + i) }));
+  /* Every place a cross-reference can point — sections by number, annexes by
+     letter — in one list, so the index and the mapping name what a reader
+     will actually see and cannot name a part the model did not build. */
+  f.annexTitles = lettered.map(a => ({ id: a.id, letter: a.letter, title: a.title }));
+  return lettered.map(a => a.build(f, a.letter));
 }
 
 /**
@@ -132,4 +210,4 @@ function buildStandardModel(f) {
   };
 }
 
-module.exports = { buildStandardModel, buildAnnexes };
+module.exports = { buildStandardModel, buildAnnexes, ANNEXES };

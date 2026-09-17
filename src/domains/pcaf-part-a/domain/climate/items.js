@@ -107,6 +107,9 @@ const ITEMS = Object.freeze([
   { path: 'inventory.scope3Other', pillar: 'metricsTargets', paragraph: 'S2 §29(a)(iv)', kind: 'figure',
     label: 'Scope 3 emissions other than category 15',
     help: 'Every scope 3 category apart from financed emissions, which this system measures from the register.' },
+  { path: 'inventory.measurementApproach', pillar: 'metricsTargets', paragraph: 'S2 §29(a)(iii)', kind: 'text', max: 4000,
+    label: 'How the inventory is measured',
+    help: 'The measurement approach, inputs and assumptions for scope 1 and scope 2, the reason for choosing them, and any change from the prior period. Financed emissions are measured by this system and described in the annexes.' },
 
   // ── Metrics: the cross-industry metrics (§29(e)–(g)) ─────────
   { path: 'crossIndustry.capitalDeployed', pillar: 'metricsTargets', paragraph: 'S2 §29(e)', kind: 'figure',

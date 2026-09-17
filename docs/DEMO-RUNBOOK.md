@@ -19,44 +19,41 @@ deployed"* can be told apart in one request.
    once you are in: while `RESET` stands, every build sets the password back.
    Your password lives in the database, not in that variable, so deleting it
    does not affect your sign-in.
-2. **Load the bank's book once.** Bank Overview → type the bank's legal name
-   beside *Load starter book* → press it → confirm the browser's question.
-   Fifteen illustrative exposures across §5.1–§5.6 and two sovereign holdings
-   are recorded for FY2025, computed by their own engines on the way in; the
-   year selector moves to 2025 and the sidebar group takes the bank's name.
-   A second press is refused (`409 STARTER_NOT_EMPTY`) — it never overwrites a
-   book somebody has begun.
-3. **Record the entity's own facts.** Financed Emissions → the entity form.
-   The starter book has already stated the consolidation approach, the fiscal
-   year-end (`MM-DD`), the GWP basis and a boundary note to confirm; what
-   *Before filing* still asks for is who prepared and who approved. Record
-   them and the item leaves the list. Two items stay by design: *Approve N
-   exposures* until every row is approved, and the sovereign holdings being
-   in USD against an LKR book total — their outstanding is excluded from the
-   coverage share rather than converted at a rate the system does not hold.
-4. **State the bank's SLFRS S2 facts, or load the illustrative set.**
-   Financed Emissions → *Climate-related disclosure*. Four pillars —
-   governance, strategy, risk management, metrics and targets — 26 statements
-   in all, each naming the paragraph that asks for it. On a book that holds
-   none, *Load illustrative content* fills all but one, and every one of them
-   is then **marked illustrative wherever it is printed**, on screen and in
-   the document, until the bank's own words replace it. Edit at least the
-   governance paragraph before the day so the strip on the overview shows a
-   pillar the bank has stated.
-5. **Approve a few exposures** from the Lending Book (below), so the approval
-   ring and the *Approved by the bank* tile show movement rather than zero.
-6. **Download the SLFRS S2 disclosure PDF once**, so the first render on the
+2. **Load the bank's book once.** Bank Overview opens on the starter's own
+   card when the organisation holds no lending book: type the bank's legal
+   name, press *Load starter book*, confirm the browser's question. One press
+   records fifteen illustrative exposures across §5.1–§5.6 and two sovereign
+   holdings for FY2025, each computed by its own engine on the way in; states
+   the book total, the boundary, the base year, and an illustrative preparer
+   and approver; and records the illustrative SLFRS S2 statements — all 27 of
+   them — so the file reads whole from the first day. The year selector moves
+   to 2025 and the sidebar group takes the bank's name. A second press is
+   refused (`409 STARTER_NOT_EMPTY`); it never overwrites a book somebody has
+   begun. If the organisation already holds a book, the overview opens on the
+   year holding the most of it, never on an emptier later year.
+3. **Replace what is illustrative with the bank's own words**, as far as the
+   day needs. Financed Emissions → the entity form names who prepared and who
+   approved; *Climate-related disclosure* holds the four pillars, each
+   statement marked *illustrative* wherever it is printed until one word of
+   it is the bank's. Edit at least the governance paragraph, so the pillar
+   band on the overview shows one pillar the bank has stated beside three
+   still illustrative. Items that stay on *Before filing* by design: *Approve
+   N exposures* until every row is approved, the two exposures the starter
+   leaves unclassified, and the sovereign holdings being in USD against an
+   LKR book total — their outstanding is excluded from the coverage share
+   rather than converted at a rate the system does not hold.
+4. **Download the SLFRS S2 disclosure PDF once**, so the first render on the
    day is not the first render on the site.
-7. **The same walkthrough is a tab in the product.** *Walkthrough*, at the
-   foot of the bank's group in the sidebar, reads the day's readiness off the
+5. **The walkthrough is a tab in the product.** *Walkthrough*, at the foot
+   of the bank's group in the sidebar, reads the day's readiness off the
    reporting year — the book, the bank's name, who prepared and approved,
    the approvals, what the disclosure still lists, whether the document
    renders — with a button to the screen that answers each row. *Start the
    walkthrough* puts a strip under the page title on every screen with the
-   step, what to do and, behind *Notes*, what to say; *Next* opens each
-   screen with the step already applied. It survives a reload; *End* takes
-   it away.
-8. **Or let the runbook drive itself.** `npm run rehearse` performs steps 2–6
+   step, what to do and, behind *Notes*, what to say; *Next* opens the next
+   screen with the step already applied and the one control it asks for
+   marked. It survives a reload; *End* takes it away.
+6. **Or let the runbook drive itself.** `npm run rehearse` performs steps 2–4
    and the whole walkthrough below against the site, in a browser, and leaves
    a full-page screenshot of every step and a report beside them:
 
@@ -65,10 +62,10 @@ deployed"* can be told apart in one request.
    BANK="Legal Name PLC" npm run rehearse
    ```
 
-   It writes what the runbook writes — the starter book, the illustrative S2
-   statements with one replaced, two approvals, one reopen, one recorded
-   property — so run it against the organisation you will demonstrate, once,
-   before the day.
+   It writes what the runbook writes — the starter book, one governance
+   statement replaced, the example loan recorded and approved, one edit, one
+   reopen, one recorded property — so run it against the organisation you
+   will demonstrate, once, before the day.
 
    Driving it against a **local** production-shaped instance rather than the
    site needs that instance's own origin on `ALLOWED_ORIGINS`. Without it the
@@ -79,16 +76,21 @@ deployed"* can be told apart in one request.
 
 ## The walkthrough
 
-Eight steps. The product's *Walkthrough* tab drives exactly these, opening
-each screen with the step already applied.
+Six steps: the position and the file for the chief executive, then one
+loan from the door to the file. The product's *Walkthrough* tab drives
+exactly these; every step changes the screen, and the control it asks you
+to press is marked.
 
 ### 1 · The position — the whole book on one screen
 
-*Bank Overview.* The bank's name over the reporting year. Six figures:
-financed scope 1 and 2 (the headline, named with the boundaries it sums);
-scope 3 on its own line, never summed into the headline; coverage of the
-stated book (Disclosure Checklist Part A, p.124); economic intensity; what
-the disclosure still needs; and how many exposures the bank has approved.
+*Bank Overview.* The bank's name over the reporting year, set as the cover
+of the file is. Six figures: financed scope 1 and 2 (the headline, named
+with the boundaries it sums); scope 3 on its own line, never summed into
+the headline; coverage of the stated book (Disclosure Checklist Part A,
+p.124); economic intensity; what the disclosure still asks for; and how
+many exposures the bank has approved. Beneath, the four SLFRS S2 pillars,
+each with a bar of what the bank has stated, what is still illustrative and
+what is not stated.
 
 **Say:** *"Every number here is one the engine returned. The screen draws;
 it does not compute."*
@@ -97,117 +99,87 @@ The sign-in screen also offers the sample book to any visitor by address.
 That is the public preview; set `PREVIEW_ACCESS=off` on Netlify if the room
 should not see it.
 
-### 2 · The SLFRS S2 file, downloaded
+### 2 · The file — the SLFRS S2 disclosure, in one press
 
-Press **SLFRS S2 disclosure — PDF**. One press, one document. The cover names
-the reporting entity, who prepared it and who approved it, and carries a
-reference derived from the content itself.
+Press **SLFRS S2 disclosure — PDF**, the marked button. The document opens
+on its cover: the reporting entity, who prepared and approved it, and a
+reference derived from the content itself. It reads in the standard's own
+order — governance, strategy, risk management, metrics and targets — with
+financed emissions inside the fourth pillar as the scope 3 category 15
+metric, and everything PCAF asks around that figure in the annexes.
+*Behind the S2 file* has opened the index beneath the figures: every
+paragraph of the standard and where in the document it is answered.
 
 **Say:** *"That is the file. One document, one press. The same position
-rendered twice carries the same reference, so a filed copy can be matched to
-what was on the screen."*
+rendered twice carries the same reference, so a filed copy can be matched
+to what was on the screen. A paragraph the bank has not answered is printed
+as not stated with its clause; nothing is written on the bank's behalf."*
 
 The same button offers Word, and *Register — CSV* is the exposure-level data
 annex a verifier samples from.
 
-### 3 · What S2 asks, and where it is answered
+### 3 · A loan comes in
 
-The strip beneath the figures carries the four S2 pillars with what the bank
-has stated, what is still illustrative and what is not stated. Pressing a
-pillar opens the form that answers it.
+*Lending Book*, at business loans. The record form has opened for one
+borrower — Lanka Textiles (Pvt) Ltd — with every field already filled: the
+facility and its outstanding, the borrower's equity and debt, its reported
+scope 1 and 2, and the climate block, which is the bank's own judgement of
+transition risk, physical risk and opportunity alignment with the horizon
+it judged each over. Change any figure you like, then press **Record**.
 
-*Behind the S2 file* opens the index: every S2 paragraph, what it asks, the
-section of the document that answers it, and whether it is answered. The
-financed-emissions paragraphs point at sections the document has always
-printed.
+**Say:** *"These are the fields a relationship manager fills when a loan is
+awarded. The engine runs before anything is written; a loan the standard
+would refuse is refused here with its clause. The climate block feeds the
+S2 metrics and changes no figure."*
 
-**Say:** *"Nothing was rewritten to make this an S2 file. The financed
-emissions answer §29(a)(vi) as they stand; what we added is what S2 asks that
-an emissions engine cannot compute — and a paragraph the bank has not
-answered is printed as not stated with its clause, never filled in."*
+### 4 · What the standard made of it
 
-### 4 · The climate view
+The loan just recorded is open: the PCAF option the data it carried earned
+and the data-quality score that follows from it, the attribution equation
+the engine ran, the factor set with its checksum, and any finding with the
+sentence that clears it.
 
-*Climate risk and opportunity.* Three bars — outstanding vulnerable to
-transition risk (§29(b)), vulnerable to physical risk (§29(c)), aligned with
-climate-related opportunities (§29(d)) — each split into what was assessed
-and what has not been. Beneath, the same book *by industry*, with lending to
-carbon-related industries marked.
+**Say:** *"The score is a category from 1 to 5, set by the option — the
+borrower's reported figures earn a 2, a sector factor a 5 — never an
+average. What would raise it is written beside it: that is the improvement
+plan for this one loan."*
 
-**Say:** *"The share is taken over the outstanding actually assessed, and
-what is unassessed is drawn beside it. A book nobody has classified reads as
-unclassified here, never as safe."*
+### 5 · Reviewed, approved, frozen
 
-The carbon-related boundary is the four non-financial groups of the TCFD 2021
-implementing guidance, and the figure says so: the standard leaves that
-boundary to the reporting entity. On the starter book most of the table sits
-under *Industry not recorded* — property, mortgages, vehicles and the listed
-holdings carry a building type, a dwelling type, a vehicle class or a NACE
-code rather than an industry, and none of those is one.
+The same loan, with **Send for review** and **Approve** marked. Press them
+in turn. The state moves recorded → under review → approved, each move
+dated and attributed on the exposure's own trail; an approved loan offers
+no edit, recomputation or removal until it is reopened with a recorded
+reason.
 
-**Say:** *"That row is the next thing to collect. The tool is telling you
-which part of the book has no industry against it, rather than printing a
-building type under an industry heading."*
+**Say:** *"Approving is a separate authority from recording — the lock
+scope, exactly as a Part C lock is. A figure the bank has approved cannot
+move underneath the disclosure."*
 
-### 5 · What is collected when a loan is awarded
+### 6 · On the dashboard, and in the file
 
-*Lending Book*, at business loans. This is the origination screen, and the
-point of the step is what a relationship manager fills in.
+*Bank Overview* with business loans in focus: the new loan is in the class's
+figures, the approved count has moved, and the next press of **SLFRS S2
+disclosure — PDF** carries it in Annex A and in the register annex a
+verifier samples from. Every other class dims across the charts and the
+tiles; the class's own panel shows its lines, its score, its coverage and
+its largest improvement step, marked *scenario*.
 
-- **The record form.** The PCAF inputs the engine prices a loan from, and
-  beneath them the **climate block** — transition risk, physical risk,
-  opportunity alignment, each *vulnerable / not vulnerable / not assessed*
-  with the horizon the bank judged it over, and the Sri Lanka taxonomy
-  activity code where one applies. For a property, key the floor area in the
-  unit the valuation states and the trace shows the conversion the engine ran.
-- **Open a row.** The equation the engine ran, the factor set with its
-  checksum, the findings inline with what clears each one.
-- **Edit.** The form opens prefilled from the input the register holds.
-  Change the outstanding, *Save changes*: the engine reruns.
-- **Send for review → Approve.** Approving is a separate authority (the
-  `lock` scope), exactly as a Part C lock is. An approved exposure offers no
-  edit, recomputation or removal until it is reopened.
-- **Reopen.** Asks for the reason, which the server records on the exposure's
-  own trail.
+**Say:** *"That is the process behind the number: recorded through the
+engine, reviewed, approved, and only then in the file."*
 
-**Say:** *"The climate block is the bank's judgement about the loan, not a
-figure. It feeds the S2 §29(b)–(d) lines and changes nothing the engine
-computes. A figure the bank has approved cannot move underneath the
-disclosure; reopening it is a recorded decision, not a click."*
+### After the walkthrough, for the analysts
 
-### 6 · How it reaches the dashboard
-
-Back on the overview with that class in focus. Every other class dims across
-the charts and the tiles, and the class's own panel opens: its lines, its
-score, its coverage, and the largest single improvement step — marked
-*scenario*, because a projected score is never the reported one.
-
-### 7 · What stands behind a figure
-
-*Behind this figure* under the headline opens the lineage the disclosure
-prints: the document reference and its SHA-256 content hash, the build it was
-produced by, the standard edition, every factor set with its version and
-checksum, the baselines in force with their scope and version (and
-*provisional* where the shipped set still stands), the assurance mode, and
-how many exposures stand approved.
-
-**Say:** *"This is the same lineage the PDF carries. Two renderings of one
-position carry one reference."*
-
-### 8 · The detail, for the analysts
-
-*Financed Emissions* — what the team uses after a loan is awarded. Every
+*Financed Emissions* is what the team uses after a loan is awarded: every
 asset class side by side, the entity's own facts as a form, the SLFRS S2
-statements pillar by pillar, and the disclosure as PDF, Word or JSON with the
-exposure register as CSV.
-
-The document's checklist is answered from its own facts, so an item can
-answer No: *APR-1* until every exposure is approved, the S2 items until the
-bank has stated each pillar, and *INV-1* until the bank states its own gross
-scope 1 and location-based scope 2.
-
-**Say:** *"The checklist can fail, and today it does. That is the document
-telling you what is still outstanding rather than claiming it is complete."*
+statements pillar by pillar, and the disclosure as PDF, Word or JSON with
+the exposure register as CSV. *Behind this figure* under the headline on
+the overview opens the lineage the document prints: the reference and its
+SHA-256 content hash, the build, the standard edition, every factor set
+with its checksum, the baselines in force, the assurance mode. The
+document's checklist is answered from its own facts, so an item can answer
+No — *APR-1* until every exposure is approved, and the S2 provenance item
+until every illustrative statement is the bank's.
 
 ## Language
 

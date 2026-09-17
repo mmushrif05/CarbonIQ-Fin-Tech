@@ -210,6 +210,60 @@ const PartARegisterPage = (() => {
 
   // ── the position ───────────────────────────────────────────
 
+  /* The Walkthrough hands over what it wants this screen to show — the record
+     form filled in for one example loan, the loan just recorded, or that loan
+     with its approval controls marked — the way the overview hands it a class:
+     one key, read once the book is on screen, then forgotten. */
+  const REGISTER_INTENT = 'carboniq.register.intent';
+  const cue = id => { if (typeof window !== 'undefined' && typeof window.CARBONIQ_cue === 'function') window.CARBONIQ_cue(id); };
+
+  async function applyIntent() {
+    let intent = null;
+    try { intent = localStorage.getItem(REGISTER_INTENT); if (intent) localStorage.removeItem(REGISTER_INTENT); } catch (_) { intent = null; }
+    if (!intent) return;
+    const [kind, key] = intent.split(':');
+    if (kind === 'record' && key === 'example') await recordExample();
+    if (kind === 'open' && key === 'latest') await openLatest(false);
+    if (kind === 'approve' && key === 'latest') await openLatest(true);
+  }
+
+  /* The most recently recorded row of the class on screen: the one the
+     presenter just pressed Record on. A pick, not a computation. */
+  function latestRow() {
+    let best = null;
+    for (const r of rows) if (!best || String(r.createdAt || '') > String(best.createdAt || '')) best = r;
+    return best;
+  }
+
+  async function openLatest(approving) {
+    const r = latestRow();
+    if (!r) return;
+    await openDetail(r.exposureId);
+    if (approving) { cue('pr-detail-review'); cue('pr-detail-approve'); }
+  }
+
+  /* The record form, filled in for one illustrative borrower the API serves,
+     so the room sees what is collected without watching it typed. Nothing is
+     written until Record is pressed, and every field can be changed first. */
+  async function recordExample() {
+    if (preview()) return;
+    let example;
+    try { ({ example } = await call(`/starter/example?reportingYear=${encodeURIComponent(year)}`)); }
+    catch (err) { say('pr-status', err.message); return; }
+    endEdit(); closeDetail();
+    cls = example.assetClass || cls;
+    if ($('pr-class')) $('pr-class').value = cls;
+    applyClass();
+    $('pr-form').reset();
+    fill(example);
+    fillClimate(example.climate);
+    applyDenominatorMode();
+    say('pr-record-hint', `${example.counterparty.name} — an illustrative loan with every field filled. Change anything, then press Record: the engine runs before it is written.`);
+    show('pr-record', true);
+    $('pr-record').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    cue('pr-form-submit');
+  }
+
   async function load() {
     year = $('pr-year').value;
     defaultAsOf();
@@ -242,6 +296,7 @@ const PartARegisterPage = (() => {
     say('pr-status', unread
       ? `The position is FY${position.reportingYear}; the exposures could not be read: ${unread.message}`
       : `${position.exposures} exposure(s) in FY${position.reportingYear}.`);
+    await applyIntent();
   }
 
   function render(p) {

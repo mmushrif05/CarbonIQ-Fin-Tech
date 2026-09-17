@@ -93,25 +93,25 @@ function regulatoryMappingOf(f) {
   const yes = 'Yes', no = 'No', elsewhere = 'Elsewhere';
   const anyDisagg = f.classes.some(c => c.status === 'recorded');
   return [
-    { requirement: 'Absolute gross financed emissions — scope 1, 2 and 3 — by asset class and by industry', clause: 'SLFRS S2 §29(a)(vi); B61(a)', status: anyDisagg ? yes : no, where: 'Section 4; Annex B' },
-    { requirement: 'Gross exposure (outstanding) by asset class and industry', clause: 'SLFRS S2 B61(b)', status: anyDisagg ? yes : no, where: 'Section 2; Annex B' },
-    { requirement: 'Percentage of gross exposure included in the financed-emissions calculation', clause: 'SLFRS S2 B61(c); DCL p.124', status: num(f.coverage.sharePct) ? yes : no, where: 'Section 2 — coverage of the book' },
-    { requirement: 'Methodology, inputs and assumptions per asset class, including the standard applied', clause: 'SLFRS S2 B61(d); §29(a)(iv)', status: yes, where: 'Section 5; Annex A' },
+    { requirement: 'Absolute gross financed emissions — scope 1, 2 and 3 — by asset class and by industry', clause: 'SLFRS S2 §29(a)(vi); B61(a)', status: anyDisagg ? yes : no, where: 'Metrics and targets — greenhouse gas emissions; Annex A; Annex D' },
+    { requirement: 'Gross exposure (outstanding) by asset class and industry', clause: 'SLFRS S2 B61(b)', status: anyDisagg ? yes : no, where: 'Annex A; Annex D' },
+    { requirement: 'Percentage of gross exposure included in the financed-emissions calculation', clause: 'SLFRS S2 B61(c); DCL p.124', status: num(f.coverage.sharePct) ? yes : no, where: 'Annex A — coverage of the book' },
+    { requirement: 'Methodology, inputs and assumptions per asset class, including the standard applied', clause: 'SLFRS S2 B61(d); §29(a)(iv)', status: yes, where: 'Annex B; Annex C' },
     /* Economic intensity is PCAF's disclosure requirement, not S2 §29(b): the
        S2 cross-industry metric at (b) is the amount and percentage of assets
        vulnerable to transition risk, which is the row beneath. The clause was
        wrong here and a reviewer following it would have found the wrong
        metric. */
-    { requirement: 'Economic emission intensity', clause: 'PCAF DCL p.127; SLFRS S2 §37', status: num(f.intensity && f.intensity.value) ? yes : no, where: 'Section 8' },
-    { requirement: 'Amount and percentage of assets vulnerable to transition risk, to physical risk, and aligned with opportunities', clause: 'SLFRS S2 §29(b)–(d)', status: num(f.s2.exposure.transitionRisk.sharePct) ? yes : no, where: 'Cross-industry metrics' },
-    { requirement: 'Exposure and financed emissions by industry, carbon-related lending identified', clause: 'SLFRS S2 §32; banking guidance', status: f.s2.exposure.industries.rows.length ? yes : no, where: 'Industry-based metrics' },
-    { requirement: 'Governance, strategy and risk management for climate-related risks and opportunities', clause: 'SLFRS S2 §5–7, §9–23, §24–26', status: f.s2.pillars.slice(0, 3).every(p => p.absent < p.total) ? yes : no, where: 'The three pillar sections; the SLFRS S2 index' },
-    { requirement: 'Climate-related targets, their basis and performance against them', clause: 'SLFRS S2 §33–36', status: (f.s2.targets.entries && f.s2.targets.entries.state !== 'absent') ? yes : no, where: 'Climate-related targets' },
-    { requirement: 'Data-quality approach and score per asset class', clause: 'PCAF DCL p.128; SLFRS S2 B63', status: f.dataQuality.byClass.every(c => num(c.score)) && f.dataQuality.byClass.length ? yes : no, where: 'Section 6' },
-    { requirement: 'Asset classes not reported, with the reason', clause: 'PCAF Part A ch.6 (p.162)', status: f.classes.filter(c => c.status !== 'recorded').every(c => Boolean(c.reason)) ? yes : no, where: 'Section 1; Section 2' },
+    { requirement: 'Economic emission intensity', clause: 'PCAF DCL p.127; SLFRS S2 §37', status: num(f.intensity && f.intensity.value) ? yes : no, where: 'Annex A — emission intensity' },
+    { requirement: 'Amount and percentage of assets vulnerable to transition risk, to physical risk, and aligned with opportunities', clause: 'SLFRS S2 §29(b)–(d)', status: num(f.s2.exposure.transitionRisk.sharePct) ? yes : no, where: 'Metrics and targets — cross-industry metrics' },
+    { requirement: 'Exposure and financed emissions by industry, carbon-related lending identified', clause: 'SLFRS S2 §32; banking guidance', status: f.s2.exposure.industries.rows.length ? yes : no, where: 'Metrics and targets — industry-based metrics' },
+    { requirement: 'Governance, strategy and risk management for climate-related risks and opportunities', clause: 'SLFRS S2 §5–7, §9–23, §24–26', status: f.s2.pillars.slice(0, 3).every(p => p.absent < p.total) ? yes : no, where: 'Sections 2 to 4; the SLFRS S2 index' },
+    { requirement: 'Climate-related targets, their basis and performance against them', clause: 'SLFRS S2 §33–36', status: (f.s2.targets.entries && f.s2.targets.entries.state !== 'absent') ? yes : no, where: 'Metrics and targets — climate-related targets' },
+    { requirement: 'Data-quality approach and score per asset class', clause: 'PCAF DCL p.128; SLFRS S2 B63', status: f.dataQuality.byClass.every(c => num(c.score)) && f.dataQuality.byClass.length ? yes : no, where: 'Annex B — data quality' },
+    { requirement: 'Asset classes not reported, with the reason', clause: 'PCAF Part A ch.6 (p.162)', status: f.classes.filter(c => c.status !== 'recorded').every(c => Boolean(c.reason)) ? yes : no, where: 'Section 1; Annex A' },
     { requirement: 'The reporting entity’s own gross scope 1, 2 and 3 inventory', clause: 'SLFRS S2 §29(a)(i)–(iv)',
       status: f.s2.inventoryStated ? yes : no,
-      where: f.s2.inventoryStated ? 'The entity’s own greenhouse gas inventory' : 'Not stated by the reporting entity: financed emissions are Category 15 of that inventory, and the rest is the entity’s to state' },
+      where: f.s2.inventoryStated ? 'Metrics and targets — greenhouse gas emissions' : 'Not stated by the reporting entity: financed emissions are Category 15 of that inventory, and the rest is the entity’s to state' },
     { requirement: 'Sustainable-finance classification of the lending book under the SLGFT', clause: 'CBSL Direction No. 05 of 2022', status: elsewhere, where: 'The taxonomy screen and the Green Loan Certificate, not a financed-emissions document' },
   ];
 }
@@ -195,8 +195,8 @@ function disclosureFacts(input) {
     standard: STANDARD,
     assetClassLabel: recorded.map(c => `${c.label} (${c.section})`).join('; ') || 'No asset class recorded',
     entityLabel: ENTITY_LABEL,
-    title: 'SLFRS S2 climate-related disclosure, with PCAF Part A financed emissions',
-    subtitle: `Reporting year ${input.reportingYear} — every asset class reported, and the SLFRS S2 index`,
+    title: 'SLFRS S2 climate-related disclosure',
+    subtitle: `Reporting year ${input.reportingYear} — governance, strategy, risk management, metrics and targets; financed emissions measured under PCAF Part A`,
     insurer: entity.name || 'Reporting entity not stated',
     entity,
     responsibleParty: entity.responsibleParty,

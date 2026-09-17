@@ -93,10 +93,15 @@ test('both classes are on screen, the entity facts record from the screen, the d
   await expect(page.locator('#fe-headline')).not.toHaveText('—');
   await expect(page.locator('#fe-s3')).not.toHaveText('—');
 
-  /* The outstanding list names the entity facts Chapter 6 still needs. */
-  await expect(page.locator('#fe-outstanding')).toContainText('legal name');
+  /* The outstanding list is the route's own, item for item. Asserted against
+     the route rather than against one named item, because the entity facts
+     are organisation-wide and another journey in another worker may record
+     the bank's name between this seed and this read; what this screen claims
+     is only that it prints what the position said. */
+  const pos = await (await request.get(`/v1/pcaf/part-a/financed-emissions/${YEAR}`, { headers: { 'x-api-key': KEY } })).json();
+  await expect(page.locator('#fe-outstanding .fe-item')).toHaveCount(pos.outstandingItems.length);
   const before = await page.locator('#fe-outstanding .fe-item').count();
-  expect(before).toBeGreaterThan(3);
+  expect(before).toBeGreaterThan(0);
 
   /* Record the entity from the screen: the list shrinks. */
   await page.fill('#fe-e-name', 'Browser Bank PLC');

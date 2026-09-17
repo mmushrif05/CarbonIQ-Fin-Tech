@@ -166,20 +166,20 @@ flowchart TD
 |           `src/domains/lending/interface/routes/agent/` | 5 | 1,047 |
 |         `src/domains/lending/interface/schemas/` | 11 | 679 |
 |           `src/domains/lending/interface/schemas/agent/` | 4 | 593 |
-|       `src/domains/pcaf-part-a/application/` | 16 | 2,899 |
-|       `src/domains/pcaf-part-a/domain/` | 19 | 3,241 |
+|       `src/domains/pcaf-part-a/application/` | 16 | 2,959 |
+|       `src/domains/pcaf-part-a/domain/` | 19 | 3,242 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 9 | 1,324 |
-|         `src/domains/pcaf-part-a/domain/climate/` | 5 | 950 |
+|         `src/domains/pcaf-part-a/domain/climate/` | 5 | 953 |
 |         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
 |         `src/domains/pcaf-part-a/domain/motor-vehicles/` | 2 | 419 |
 |         `src/domains/pcaf-part-a/domain/real-estate/` | 6 | 734 |
 |         `src/domains/pcaf-part-a/domain/sovereign/` | 6 | 960 |
 |       `src/domains/pcaf-part-a/infrastructure/` | 2 | 208 |
-|         `src/domains/pcaf-part-a/interface/routes/` | 4 | 1,018 |
+|         `src/domains/pcaf-part-a/interface/routes/` | 4 | 1,035 |
 |         `src/domains/pcaf-part-a/interface/schemas/` | 8 | 832 |
 |       `src/domains/pcaf-part-a/reporting/` | 8 | 1,529 |
-|         `src/domains/pcaf-part-a/reporting/consolidated/` | 7 | 1,555 |
+|         `src/domains/pcaf-part-a/reporting/consolidated/` | 7 | 1,658 |
 |         `src/domains/pcaf-part-a/reporting/sovereign/` | 5 | 1,087 |
 |       `src/domains/pcaf-part-c/agents/` | 6 | 924 |
 |       `src/domains/pcaf-part-c/application/` | 13 | 3,208 |
@@ -209,7 +209,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 733 |
 |   `src/shared/` | 10 | 1,936 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **402** | **69,129** |
+| **total** | **402** | **69,313** |
 
 <!-- END MODULE-MAP -->
 
