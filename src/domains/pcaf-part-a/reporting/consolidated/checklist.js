@@ -59,6 +59,14 @@ const ITEMS = [
       : `${f.approval.total - f.approval.approved} of ${f.approval.total} exposure(s) are not yet approved — recorded or under review.`,
   },
   {
+    id: 'NUM-1', group: 'Governance', clause: 'Part A §5.2 (p.56); p.33', duty: SHALL, section: 'annexFinanced',
+    item: 'Every outstanding amount is the debt owed at the fiscal year-end, read from the loan account; none is a balance taken from a repayment schedule.',
+    test: f => Boolean(f.numeratorBasis && f.numeratorBasis.exposures > 0 && f.numeratorBasis.scheduled === 0),
+    justify: f => !f.numeratorBasis || !f.numeratorBasis.exposures
+      ? 'No exposure in a register class is recorded.'
+      : `${f.numeratorBasis.scheduled} of ${f.numeratorBasis.exposures} exposure(s) carry a year-end balance taken from the repayment schedule rather than the ledger.`,
+  },
+  {
     id: 'PER-1', group: 'Governance', clause: 'Part A ch.4; ch.6 (p.161)', duty: SHALL, section: 'entity',
     item: 'The reporting period is stated, with the fiscal year-end the position is taken at.',
     test: f => Boolean(entity(f).period),

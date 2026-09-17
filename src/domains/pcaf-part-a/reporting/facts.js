@@ -326,6 +326,9 @@ function disclosureFacts(input) {
     } : null,
     improvementPlan: plan,
     fluctuation: fluctuationOf(input.rows, plan),
+    /* §6.2, summed apart by the position; and how the numerators were read. */
+    undrawnCommitments: pos.undrawnCommitments || null,
+    numeratorBasis: pos.numeratorBasis || null,
     exposureRegister: registerRows(input.rows),
     separation: total.separation || pos.separation || null,
     withoutAttributionFactor: total.withoutAttributionFactor || 0,
@@ -405,6 +408,8 @@ function exposureFacts(input) {
     economicIntensity: inv.economicIntensity_tCO2e_per_M,
     findings: (r.validation && r.validation.findings) || [],
     validationNote: (r.validation && r.validation.note) || '',
+    /* The facility as the engine read it: terms, scheduled balance, §6.2, projection. */
+    facility: r.facility || null,
     factorRelease: r.factorRelease || null,
     factorSet: factorRelease(),
     factorRows: factorRows(),

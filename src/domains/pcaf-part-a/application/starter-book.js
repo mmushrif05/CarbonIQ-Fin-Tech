@@ -71,6 +71,9 @@ const EXPOSURES = [
     climate: cl('vulnerable', 'medium', 'not_vulnerable', null, 'not_aligned', null),
     counterparty: { name: 'Kelani Garments (Pvt) Ltd', sector: 'Textiles', sectorKey: 'manufacturing_textiles' },
     outstanding: { amount: 650_000_000, asOf, currency },
+    /* A term facility of 800 million, 650 drawn, a bullet: 150 million undrawn reaches the §6.2 line. */
+    facility: { committed: 800_000_000, disbursed: 650_000_000, originationDate: `${YEAR - 1}-06-30`, maturityDate: `${YEAR + 4}-06-30`,
+      repayment: { profile: 'bullet' } },
     denominator: { totalEquity: 2_400_000_000, totalDebt: 1_900_000_000, asOf, currency },
     emissions: reported(9_800, 2_900, 21_000),
     plausibility: { revenue: 6_100_000_000 } },
@@ -120,6 +123,8 @@ const EXPOSURES = [
   { assetClass: 'commercial-real-estate', reportingYear: YEAR, identifiers: { accountNumber: 'ST-CRE-25-001' },
     climate: cl('vulnerable', 'medium', 'vulnerable', 'medium', 'not_aligned', null),
     counterparty: { name: 'Colombo 03 office tower' }, buildingType: 'office', productType: 'purchase',
+    facility: { committed: 900_000_000, disbursed: 760_000_000, originationDate: `${YEAR - 1}-03-31`, maturityDate: `${YEAR + 9}-03-31`,
+      repayment: { profile: 'bullet' } },
     exposure: { outstanding: 760_000_000, currency, asOf }, value: { atOrigination: 2_400_000_000 },
     floorArea: { value: 48_000, unit: 'ft2' } },
   { assetClass: 'commercial-real-estate', reportingYear: YEAR, identifiers: { accountNumber: 'ST-CRE-25-002' },
@@ -316,7 +321,13 @@ function exampleExposure(reportingYear, variant = 'reported') {
     reportingYear: y,
     identifiers: { accountNumber: `WT-TEX-${suffix}` },
     counterparty: { ...base.counterparty, name: 'Lanka Textiles (Pvt) Ltd', sector: 'Textiles and apparel', financialInstitution: undefined },
-    outstanding: { ...base.outstanding, amount: 250000000, asOf: at },
+    /* The client asked for 250 million over five years. The facility is the
+       commitment; the numerator is what is owed at the year-end — drawn in
+       March, three quarterly instalments of 12.5 million repaid, 212.5
+       million outstanding (§5.2, p.56). */
+    facility: { committed: 250000000, disbursed: 250000000, originationDate: `${y}-03-15`, maturityDate: `${y + 5}-03-15`,
+      repayment: { profile: 'equal-principal', frequency: 'quarterly' } },
+    outstanding: { ...base.outstanding, amount: 212500000, asOf: at },
     denominator: { ...base.denominator, totalEquity: 900000000, totalDebt: 600000000, asOf: at },
     emissions: reported(1840, 1260, null, String(y)),
     climate: cl('vulnerable', 'medium', 'not_vulnerable', null, 'not_aligned', null),

@@ -303,6 +303,44 @@
       </div>
       </div>
 
+      <!-- The facility behind the loan — every loan class, never a holding.
+           What the client asked for is the commitment; the numerator is the
+           balance owed at the year-end (Part A §5.2, p.56). The schedule says
+           what the ledger is expected to show, and the engine says so on the
+           exposure that takes it. The browser computes none of it: the
+           scheduled balance comes from the engine's own read. -->
+      <div data-class-form="business-loans-unlisted-equity commercial-real-estate mortgages motor-vehicle-loans project-finance">
+      <h5 class="partc-subhead">The facility</h5>
+      <p class="partc-hint">The amount the client asked for is the commitment. The standard attributes on what is owed at the year-end — disbursed less repayments, to nought at maturity (PCAF Part A §5.2, p.56). Record the facility once; the undrawn part is reported apart under §6.2.</p>
+      <div class="pr-grid" id="pr-facility">
+        <label>Sanctioned amount <input id="pr-f-fac-committed" type="number" data-money min="0" step="any" placeholder="the total loan commitment"></label>
+        <label>Drawn to date <input id="pr-f-fac-disbursed" type="number" data-money min="0" step="any"></label>
+        <label>Originated <input id="pr-f-fac-orig" type="date"></label>
+        <label>Matures <input id="pr-f-fac-maturity" type="date"></label>
+        <label>Repayment
+          <select id="pr-f-fac-profile">
+            <option value="equal-principal">Equal principal instalments</option>
+            <option value="annuity">Annuity — level payments</option>
+            <option value="bullet">Bullet — repaid at maturity</option>
+          </select></label>
+        <label>Frequency
+          <select id="pr-f-fac-freq">
+            <option value="monthly">Monthly</option>
+            <option value="quarterly">Quarterly</option>
+            <option value="semi-annual">Semi-annual</option>
+            <option value="annual">Annual</option>
+          </select></label>
+        <label>Grace, months <input id="pr-f-fac-grace" type="number" min="0" max="240" step="1" placeholder="0"></label>
+        <label>Rate, % p.a. <input id="pr-f-fac-rate" type="number" min="0" max="100" step="any" placeholder="annuity only"></label>
+        <label>Utilisation factor <input id="pr-f-fac-util" type="number" min="0" max="1" step="any" placeholder="optional — the §6.2 weighted figure, 0 to 1"></label>
+      </div>
+      <div class="pr-fac-scheduled" id="pr-fac-scheduled" hidden>
+        <span id="pr-fac-scheduled-text"></span>
+        <button type="button" class="btn btn-secondary" id="pr-fac-use">Use the scheduled balance</button>
+      </div>
+      <p class="partc-hint" id="pr-fac-basis" hidden></p>
+      </div>
+
       <!-- The bank's own climate judgement about this loan. It feeds no
            arithmetic in the engine: it is what SLFRS S2 §29(b)-(d) are summed
            from, and an exposure left unassessed is reported as unassessed

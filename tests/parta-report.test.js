@@ -58,6 +58,7 @@ describe('The annual §5.2 disclosure', () => {
       'Scope and coverage', 'Gases and units', 'Absolute emissions', 'Methodology',
       'Data quality', 'Recalculation and significance', 'Emission intensity',
       'Year-end fluctuation of revolving facilities',
+      'Undrawn loan commitments (§6.2, optional)',
       'Limitations and the improvement plan',
       'Uncertainty, and what this document does not contain',
       'Conformance statement',

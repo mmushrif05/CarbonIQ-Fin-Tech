@@ -580,6 +580,7 @@ const PartARegisterPage = (() => {
           ${x.exposure.counterparty.sectorKey ? `<p class="partc-hint">Held sector: ${esc(x.exposure.counterparty.sectorKey)}</p>` : ''}
         </div>
       </div>
+      ${facilityPanel(x, ccy)}
       ${climatePanel(e.climate)}
       ${nativePanel(x)}
       <h5 class="partc-subhead">What the data says about itself</h5>
@@ -759,7 +760,179 @@ const PartARegisterPage = (() => {
     /* Sent on every class, because S2 asks for the share of the whole book and
        a block only some classes carried would answer for only some of it. */
     body.climate = collectClimate();
+    /* The facility on every loan class and never on a holding; absent when
+       no commitment is keyed, so a loan recorded without one is unchanged. */
+    const facility = collectFacility();
+    if (facility) body.facility = facility;
     return body;
+  }
+
+  // ── the facility behind the loan ───────────────────────────
+  /* The commitment is not the numerator; the balance owed at the year-end
+     is (Part A §5.2, p.56). The form records the facility once and asks the
+     engine what the schedule expects at the position date; taking that
+     figure as the year-end balance records the basis as scheduled, and the
+     exposure carries the material finding until the ledger's replaces it.
+     Nothing here schedules, sums or converts. */
+  const FACILITY_CLASSES = ['business-loans-unlisted-equity', 'commercial-real-estate', 'mortgages', 'motor-vehicle-loans', 'project-finance'];
+  let facilityBasis = 'ledger';
+  let lastScheduled = null;
+  let facilityTimer = null;
+  let facilitySeq = 0;
+
+  function outstandingFieldId() {
+    return isProperty() ? 'pr-f-re-outstanding' : cls === 'motor-vehicle-loans' ? 'pr-f-mv-outstanding'
+      : cls === 'project-finance' ? 'pr-f-pf-outstanding' : 'pr-f-outstanding';
+  }
+  function positionDate() {
+    const id = isProperty() ? 'pr-f-re-asof' : cls === 'motor-vehicle-loans' ? 'pr-f-mv-asof' : cls === 'project-finance' ? null : 'pr-f-asof';
+    return (id && str(id)) || `${year}-12-31`;
+  }
+  function classCurrency() {
+    return str(isProperty() ? 'pr-f-re-currency' : cls === 'motor-vehicle-loans' ? 'pr-f-mv-currency'
+      : cls === 'project-finance' ? 'pr-f-pf-currency' : 'pr-f-currency') || '';
+  }
+
+  function collectFacility() {
+    if (!FACILITY_CLASSES.includes(cls)) return undefined;
+    const committed = num('pr-f-fac-committed');
+    if (committed === undefined) return undefined;
+    const profile = str('pr-f-fac-profile') || 'equal-principal';
+    const repayment = { profile };
+    if (profile !== 'bullet') repayment.frequency = str('pr-f-fac-freq') || undefined;
+    if (num('pr-f-fac-grace') !== undefined) repayment.graceMonths = num('pr-f-fac-grace');
+    if (profile === 'annuity') repayment.annualRatePct = num('pr-f-fac-rate');
+    return prune({
+      committed, disbursed: num('pr-f-fac-disbursed'),
+      originationDate: str('pr-f-fac-orig') || undefined, maturityDate: str('pr-f-fac-maturity') || undefined,
+      repayment: prune(repayment),
+      utilisationFactor: num('pr-f-fac-util'),
+      outstandingBasis: facilityBasis,
+      currency: classCurrency() || undefined,
+    });
+  }
+
+  function fillFacility(f) {
+    const r = (f && f.repayment) || {};
+    set('pr-f-fac-committed', f && f.committed); set('pr-f-fac-disbursed', f && f.disbursed);
+    set('pr-f-fac-orig', f && f.originationDate); set('pr-f-fac-maturity', f && f.maturityDate);
+    set('pr-f-fac-profile', r.profile || 'equal-principal'); set('pr-f-fac-freq', r.frequency || 'monthly');
+    set('pr-f-fac-grace', r.graceMonths); set('pr-f-fac-rate', r.annualRatePct); set('pr-f-fac-util', f && f.utilisationFactor);
+    facilityBasis = (f && f.outstandingBasis) || 'ledger';
+    applyFacilityBasis();
+    applyFacilityProfile();
+    lastScheduled = null;
+    show('pr-fac-scheduled', false);
+    scheduleFacility();
+  }
+
+  function applyFacilityProfile() {
+    const profile = str('pr-f-fac-profile');
+    const rate = $('pr-f-fac-rate'), freq = $('pr-f-fac-freq');
+    if (rate) rate.disabled = profile !== 'annuity';
+    if (freq) freq.disabled = profile === 'bullet';
+  }
+
+  function applyFacilityBasis() {
+    const el = $('pr-fac-basis');
+    if (!el) return;
+    const scheduled = facilityBasis === 'scheduled';
+    el.hidden = !scheduled;
+    el.textContent = scheduled
+      ? 'Year-end balance taken from the repayment schedule — the loan account’s balance replaces it before the disclosure is filed.'
+      : '';
+  }
+
+  function scheduleFacility() {
+    clearTimeout(facilityTimer);
+    facilityTimer = setTimeout(runFacilitySchedule, 400);
+  }
+
+  async function runFacilitySchedule() {
+    facilityTimer = null;
+    const row = $('pr-fac-scheduled');
+    if (!row || $('pr-record').hidden || preview()) return;
+    const f = collectFacility();
+    if (!f || f.disbursed === undefined || !f.originationDate || !f.maturityDate) { row.hidden = true; return; }
+    const seq = ++facilitySeq;
+    const facility = { ...f };
+    delete facility.outstandingBasis; delete facility.currency;
+    try {
+      const { scheduled } = await post('/facility/schedule', { facility, asOf: positionDate() });
+      if (seq !== facilitySeq) return;
+      lastScheduled = scheduled;
+      say('pr-fac-scheduled-text', `Scheduled balance at ${scheduled.asOf}: ${money(scheduled.value, classCurrency())}`
+        + (scheduled.instalmentsPaid !== null && scheduled.instalmentsPaid !== undefined ? ` — ${scheduled.instalmentsPaid} instalment(s) repaid` : '')
+        + (scheduled.beforeOrigination ? ' — before origination' : scheduled.matured ? ' — matured' : ''));
+      show('pr-fac-use', true);
+    } catch (err) {
+      if (seq !== facilitySeq) return;
+      lastScheduled = null;
+      say('pr-fac-scheduled-text', err.message);
+      show('pr-fac-use', false);
+    }
+    row.hidden = false;
+  }
+
+  function useScheduledBalance() {
+    if (!lastScheduled) return;
+    const el = $(outstandingFieldId());
+    if (!el) return;
+    el.value = lastScheduled.value;
+    moneyHint(el);
+    facilityBasis = 'scheduled';
+    applyFacilityBasis();
+    schedulePreview(0);
+  }
+
+  /* The facility as the engine read it: sanctioned, drawn and outstanding on
+     one scale, never stacked; the §6.2 line apart; the life of the loan
+     hatched, because a table of future balances without the mark reads as
+     a forecast. Every figure is the engine's. */
+  function facilityPanel(x, ccy) {
+    const f = x && x.facility;
+    if (!f) return '';
+    const charts = typeof Charts !== 'undefined';
+    const t = f.terms || {}, s = f.scheduled || {}, r = f.recorded || {}, u = f.undrawn || {}, p = f.projection || { rows: [], assumptions: [] };
+    const rep = t.repayment || {};
+    const PROFILE = { bullet: 'Bullet — repaid at maturity', 'equal-principal': 'Equal principal instalments', annuity: 'Annuity — level payments', schedule: 'Custom schedule' };
+    const scaleRows = [
+      { key: 'committed', label: 'Sanctioned', value: t.committed, color: 'var(--p-fill-2, #c7c7cc)' },
+      { key: 'drawn', label: 'Drawn to date', value: t.disbursed, color: 'color-mix(in srgb, var(--p-accent, #0d9488) 55%, white)' },
+      { key: 'outstanding', label: 'Outstanding at year-end', value: r.outstanding, color: 'var(--p-accent, #0d9488)' },
+    ];
+    const life = (p.rows || []).map(row => ({ key: String(row.year), label: `${row.year}${row.isReportingYear ? ' · this year' : ''}`,
+      value: row.scheduledOutstanding, color: 'var(--p-accent, #0d9488)', projected: true }));
+    const undrawnHtml = !u.applicable
+      ? '<p class="partc-hint">The facility is fully drawn: there is no undrawn commitment to report.</p>'
+      : u.absent
+        ? `<p class="partc-hint">Undrawn commitment ${esc(money(u.undrawnAmount, ccy))}. ${esc(u.reason || '')}</p>`
+        : `<dl class="pr-kv">
+            <dt>Undrawn commitment</dt><dd>${esc(money(u.undrawnAmount, ccy))} · attribution factor ${esc(String(u.attributionFactor))}</dd>
+            <dt>Unweighted — shall</dt><dd>${fmt(u.unweighted.scope1And2, 2)} tCO₂e scope 1 and 2${u.unweighted.scope3 !== null && u.unweighted.scope3 !== undefined ? ` · ${fmt(u.unweighted.scope3, 2)} scope 3` : ''}</dd>
+            <dt>Weighted — may</dt><dd>${u.weighted && !u.weighted.absent ? `${fmt(u.weighted.scope1And2, 2)} tCO₂e at utilisation ${esc(String(u.weighted.utilisationFactor))}` : esc((u.weighted && u.weighted.reason) || 'No utilisation factor recorded.')}</dd>
+          </dl>
+          <p class="partc-hint">${esc(u.note || '')}</p>`;
+    return `<div class="partc-panel pr-facility">
+      <h5 class="partc-subhead">The facility, and the balance it produces</h5>
+      ${charts ? Charts.hbars(scaleRows, { label: 'Sanctioned, drawn and outstanding, on one scale', compact: true, unit: ccy }) : ''}
+      <dl class="pr-kv">
+        <dt>Repayment</dt><dd>${esc(PROFILE[rep.profile] || rep.profile || '—')}${rep.frequency ? `, ${esc(rep.frequency)}` : ''}${rep.instalments ? `, ${esc(String(rep.instalments))} instalment(s)` : ''}${rep.annualRatePct !== null && rep.annualRatePct !== undefined ? `, ${esc(String(rep.annualRatePct))}% p.a.` : ''}</dd>
+        <dt>Originated · matures</dt><dd>${esc(t.originationDate || '—')} · ${esc(t.maturityDate || '—')}${t.tenorMonths ? ` (${esc(String(t.tenorMonths))} months)` : ''}</dd>
+        <dt>Scheduled balance at ${esc(s.asOf || '')}</dt><dd>${esc(money(s.value, ccy))}${s.instalmentsPaid !== null && s.instalmentsPaid !== undefined ? ` — ${esc(String(s.instalmentsPaid))} instalment(s) repaid` : ''}</dd>
+        <dt>Year-end balance</dt><dd>${r.basis === 'scheduled' ? '<span class="pr-chip">Taken from the schedule</span>' : '<span class="pr-chip pr-chip-ok">Read from the loan account</span>'}${r.varianceFromSchedulePct ? ` <span class="partc-hint">differs from the schedule by ${esc(String(r.varianceFromSchedulePct))}%</span>` : ''}</dd>
+      </dl>
+      <h5 class="partc-subhead">Undrawn commitment — §6.2, reported apart</h5>
+      ${undrawnHtml}
+      <h5 class="partc-subhead">The life of the loan — a projection</h5>
+      ${charts && life.length ? Charts.hbars(life, { label: 'Scheduled balance at each year-end — a projection', compact: true, unit: ccy }) : ''}
+      <div class="pr-scroll"><table class="partc-table pr-life">
+        <thead><tr><th>Year-end</th><th>Scheduled balance</th><th>Attribution factor</th><th>Financed scope 1 and 2, tCO₂e</th></tr></thead>
+        <tbody>${(p.rows || []).map(row => `<tr class="${row.isReportingYear ? 'is-on' : ''}"><td>${esc(row.asOf)}</td><td class="num">${fmt(row.scheduledOutstanding, 0)}</td><td class="num">${row.attributionFactor === null || row.attributionFactor === undefined ? '—' : esc(String(row.attributionFactor))}</td><td class="num">${row.financedScope1And2 === null || row.financedScope1And2 === undefined ? '—' : fmt(row.financedScope1And2, 2)}</td></tr>`).join('')}</tbody>
+      </table></div>
+      <p class="partc-hint">Hatched: a projection. ${esc(p.basis || '')}</p>
+      <ul class="partc-hint pr-assumptions">${(p.assumptions || []).map(a => `<li>${esc(a)}</li>`).join('')}</ul>
+    </div>`;
   }
 
   /* The bank's own SLFRS S2 judgement. Every control is optional: an exposure
@@ -1030,7 +1203,7 @@ const PartARegisterPage = (() => {
     if ($('pr-class')) $('pr-class').value = cls;
     applyClass();
     $('pr-form').reset();
-    fill(current.input || {});
+    fill({ ...(current.input || {}), facility: current.facility || null });
     /* The classification is kept beside the engine's input rather than inside
        it, so it is prefilled from the record itself. */
     fillClimate(current.climate);
@@ -1062,6 +1235,7 @@ const PartARegisterPage = (() => {
     else if (cls === 'project-finance') fillProject(i);
     else if (cls === 'listed-equity-corporate-bonds') fillListed(i);
     else fillBusinessLoan(i);
+    fillFacility(i.facility || null);
     refreshMoneyHints();
   }
 
@@ -1072,6 +1246,7 @@ const PartARegisterPage = (() => {
      its own. */
   const CURRENCY_OF = [['pr-f-re-', 'pr-f-re-currency'], ['pr-f-mv-', 'pr-f-mv-currency'], ['pr-f-pf-', 'pr-f-pf-currency'], ['pr-f-le-', 'pr-f-le-currency'], ['pr-book-', 'pr-book-currency']];
   function currencyFor(input) {
+    if (input.id.startsWith('pr-f-fac-')) return classCurrency();
     const hit = CURRENCY_OF.find(([prefix]) => input.id.startsWith(prefix));
     return str(hit ? hit[1] : 'pr-f-currency') || '';
   }
@@ -1239,7 +1414,8 @@ const PartARegisterPage = (() => {
       </div>
       ${steps.length ? `<h5 class="partc-subhead">What would raise the score</h5>
         <ol class="pr-raise">${steps.map(st => `<li><span class="pr-raise-score">${dqBadge(st.score, `Option ${st.option}`)}</span><span>${esc(st.needs)}</span></li>`).join('')}</ol>`
-        : (p.raise && p.raise.from ? '<p class="partc-hint">Score 1 is the highest the table holds; nothing would raise it.</p>' : '')}`);
+        : (p.raise && p.raise.from ? '<p class="partc-hint">Score 1 is the highest the table holds; nothing would raise it.</p>' : '')}
+      ${facilityPanel(x, (x.exposure && x.exposure.outstanding && (x.exposure.outstanding.unit || x.exposure.outstanding.currency)) || '')}`);
   }
 
   /* The word for an option family — the first character of the option is the
@@ -1292,7 +1468,19 @@ const PartARegisterPage = (() => {
        stops; the answer is the preview and never a record. */
     on('pr-form', 'input', () => schedulePreview());
     on('pr-form', 'change', () => schedulePreview());
-    on('pr-form', 'reset', () => { show('pr-preview', false); setTimeout(applyKnown, 0); });
+    on('pr-form', 'reset', () => { show('pr-preview', false); setTimeout(applyKnown, 0); facilityBasis = 'ledger'; lastScheduled = null; show('pr-fac-scheduled', false); setTimeout(() => { applyFacilityBasis(); applyFacilityProfile(); }, 0); });
+    /* The facility: every change asks the engine what the schedule expects;
+       the profile decides which of its fields apply; taking the scheduled
+       figure records the basis, and typing a balance restores the ledger's. */
+    for (const id of ['pr-f-fac-committed', 'pr-f-fac-disbursed', 'pr-f-fac-orig', 'pr-f-fac-maturity', 'pr-f-fac-profile', 'pr-f-fac-freq', 'pr-f-fac-grace', 'pr-f-fac-rate']) {
+      on(id, 'input', scheduleFacility); on(id, 'change', scheduleFacility);
+    }
+    on('pr-f-fac-profile', 'change', applyFacilityProfile);
+    on('pr-fac-use', 'click', useScheduledBalance);
+    for (const id of ['pr-f-outstanding', 'pr-f-re-outstanding', 'pr-f-mv-outstanding', 'pr-f-pf-outstanding']) {
+      on(id, 'input', () => { facilityBasis = 'ledger'; applyFacilityBasis(); });
+    }
+    for (const id of ['pr-f-asof', 'pr-f-re-asof', 'pr-f-mv-asof']) on(id, 'change', scheduleFacility);
     defaultAsOf();
     /* A preview visitor is offered no write control. For everyone else the
        markup's own state stands — the record form opens on the button, not on

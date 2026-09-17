@@ -129,6 +129,11 @@ const COLLECTIONS = Object.freeze({
            §29(b)–(d) are summed from. Whole rather than per field, because it
            is one small object the roll-up reads as a unit. */
         'climate',
+        /* The facility's summary — the undrawn commitment and the §6.2 line,
+           and whether the numerator was scheduled or read from the ledger —
+           so a position sums the undrawn apart and counts scheduled
+           numerators from the projection (migration 0013). */
+        'result.facility.summary',
         'result.exposure.kind', 'result.exposure.instrument',
         'result.exposure.counterparty.name', 'result.exposure.counterparty.sector',
         /* The vocabulary key beside the readable label: the industry table

@@ -36,8 +36,12 @@ function inflate(row) {
   const attribution = (r.attribution && r.attribution.value !== null && r.attribution.value !== undefined)
     ? r.attribution : null;
   const validation = r.validation || {};
+  /* Same normalisation: an exposure with no facility projects as
+     `facility: {}` or as `{ summary: null }`, both truthy. */
+  const facility = r.facility && r.facility.summary && typeof r.facility.summary === 'object' ? r.facility : null;
   return {
     ...r,
+    facility,
     exposure: {
       ...(r.exposure || {}),
       identifiers: { id: row.exposureId },

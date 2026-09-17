@@ -106,7 +106,16 @@ SECTION 10 [fluctuation] Year-end fluctuation of revolving facilities
       row: Flagged: year-end balance below the annual average, or no average held | 0
     body: No revolving facility is in the book, so no fluctuation applies.
 
-SECTION 11 [limitations] Limitations and the improvement plan
+SECTION 11 [undrawn] Undrawn loan commitments (§6.2, optional)
+    body: Definition applied: Committed on-balance-sheet facilities recorded on the register with a total loan commitment above the drawn amount at the position date; undrawn = total loan commitment − drawn amount (§6.2, p.173).
+    table [6 cols] head: §6.2 line | Duty | Exposures | Undrawn, LKR | Scope 1 and 2, tCO2e | Scope 3, tCO2e
+      row: Unweighted — the whole undrawn commitment | shall | 1 | 100,000,000 | 365.000 | 650.000
+      row: Weighted | may | — | — | — | —
+    caption: 1 of 1 exposure(s) carry no utilisation factor, so no weighted total is stated.
+    body: Reported apart from the financed figure and never aggregated with it (§6.2, p.170). Where the drawn part earned no attribution factor the undrawn commitment is not attributable and is counted as such rather than as nought.
+    body: Numerator basis: 2 of 2 outstanding amount(s) read from the loan account; 0 taken from a repayment schedule. The outstanding amount is the debt owed at the fiscal year-end, read from the loan account (§5.2, p.56). A balance taken from the repayment schedule carries a material finding until the ledger’s replaces it.
+
+SECTION 12 [limitations] Limitations and the improvement plan
     body: A disclosed score is a measurement, not a task list. The plan below is every option band above the target, ordered by outstanding amount times the score points above it — because ordering by count sends a bank to many small borrowers before the one exposure carrying a fifth of the book — and then every finding grouped by what would clear it. Every score under "if these reached" is a scenario run through the same weighting the disclosure uses, never presented as the reported score.
     table [7 cols] head: Option | Score | Exposures | Outstanding LKR | Share | If these reached | Score would be
       row: 3b | 5 | 1 | 40,000,000 | 7.7% | 2 | 2 (scenario)
@@ -115,7 +124,7 @@ SECTION 11 [limitations] Limitations and the improvement plan
       row: SCOPE_3_NOT_REPORTED | material | 1 | The stated reason travels into the report. An institution unable to report scope 3 shall explain why.
       row: NO_ATTRIBUTION_FACTOR | material | 1 | Obtain the borrower's total equity and debt — or its EVIC where it is listed — and any Option 1, 2 or 3a figure then attributes properly.
 
-SECTION 12 [uncertainty] Uncertainty, and what this document does not contain
+SECTION 13 [uncertainty] Uncertainty, and what this document does not contain
     body: The uncertainty of a financed-emissions figure follows the option that produced it, which the data-quality score records. The statement below is qualitative on purpose: PCAF publishes no numeric uncertainty range per score, and a percentage invented here would be quoted as one.
     table [3 cols] head: Score | Share of assessed outstanding | What the figure’s uncertainty rests on
       row: 2 | 92.3% | Reported by the counterparty, unverified. The uncertainty is that of the counterparty’s own measurement and boundary choices, which this document does not see.
@@ -130,7 +139,7 @@ SECTION 12 [uncertainty] Uncertainty, and what this document does not contain
       row: The reporting entity’s own gross scope 1, 2 and 3 inventory | This document is one asset class of a wider disclosure and never claims to be the inventory. | SLFRS S2 §29(a); Part A ch.6 (p.160)
     caption: An absent item is reported absent rather than filled: a figure invented to close a gap reads as a measurement to anyone who did not watch it being invented.
 
-SECTION 13 [conformance] Conformance statement
+SECTION 14 [conformance] Conformance statement
     body: The method in this report conforms to PCAF’s Global GHG Accounting and Reporting Standard Part A (Third Edition, December 2025), §5.2 and Chapter 6. PCAF sets the method; it does not approve, endorse or certify this report or the figures in it. The sector additions of the Third Edition have not been reviewed by the GHG Protocol, and this asset class — business loans and unlisted equity — carries the GHG Protocol’s "Built on" mark.
     body: This report states PCAF conformance. It does not claim that PCAF, or any other body, has approved, endorsed or certified the report or the figures in it. Independent assurance of the figures, where obtained, is a separate exercise recorded on the cover.
 

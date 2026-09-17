@@ -204,7 +204,7 @@ describe('The request the form builds', () => {
     must(HTML, /id="pr-detail-edit"[^>]*data-writes/, 'the edit control is on the detail and is a write control');
     must(JS, /on\('pr-detail-edit', 'click', startEdit\)/, 'and it starts an edit');
     must(JS, /await put\(`\/exposures\/\$\{encodeURIComponent\(editing\)\}`, collect\(\)\)/, 'a save is a PUT of what the collectors build — never a hand-made body');
-    must(JS, /fill\(current\.input \|\| \{\}\)/, 'the form is prefilled from the input the register holds');
+    must(JS, /fill\(\{ \.\.\.\(current\.input \|\| \{\}\), facility: current\.facility \|\| null \}\)/, 'the form is prefilled from the input the register holds');
     for (const fn of ['fillBusinessLoan', 'fillProperty', 'fillVehicle', 'fillProject', 'fillListed']) {
       must(JS, new RegExp(`function ${fn}\\(i\\)`), `${fn} fills its class's block`);
     }
@@ -293,3 +293,40 @@ describe('How the borrower’s emissions are known, and the engine’s answer be
   });
 });
 
+
+describe('The facility behind the loan — the numerator is the year-end balance, never the commitment (FAC-5)', () => {
+  test('the form records the facility on every loan class and never on a holding, and asks the engine for the scheduled balance', () => {
+    must(HTML, /data-class-form="business-loans-unlisted-equity commercial-real-estate mortgages motor-vehicle-loans project-finance"/, 'one facility block for the five loan classes');
+    mustNot(HTML, /data-class-form="[^"]*listed-equity-corporate-bonds[^"]*facility|id="pr-f-fac-committed"[^]*data-class-form="listed-equity/, 'a listed holding is never offered a facility');
+    must(HTML, /id="pr-f-fac-committed"/, 'the sanctioned amount');
+    must(HTML, /id="pr-f-fac-disbursed"/, 'drawn to date');
+    must(HTML, /id="pr-f-fac-profile"[^]*?value="bullet"/, 'the repayment profile');
+    must(HTML, /PCAF Part A §5\.2, p\.56/, 'the block cites the clause');
+    must(HTML, /id="pr-fac-use">Use the scheduled balance</, 'the scheduled balance is offered as a control');
+    must(JS, /post\('\/facility\/schedule', \{ facility, asOf: positionDate\(\) \}\)/, 'the scheduled balance comes from the engine’s own read');
+    must(JS, /const FACILITY_CLASSES = \['business-loans-unlisted-equity', 'commercial-real-estate', 'mortgages', 'motor-vehicle-loans', 'project-finance'\]/, 'the classes that carry one');
+    must(JS, /if \(facility\) body\.facility = facility;/, 'sent only when a commitment is keyed');
+    must(JS, /fillFacility\(i\.facility \|\| null\)/, 'an edit prefills it from the record');
+    must(JS, /fill\(\{ \.\.\.\(current\.input \|\| \{\}\), facility: current\.facility \|\| null \}\)/, 'from the record, where the engine’s input has it stripped');
+  });
+  test('taking the scheduled figure records the basis; typing a balance restores the ledger’s; the chip says which', () => {
+    must(JS, /facilityBasis = 'scheduled';\s*applyFacilityBasis\(\);\s*schedulePreview\(0\);/, 'Use the scheduled balance records the basis and previews');
+    must(JS, /on\(id, 'input', \(\) => \{ facilityBasis = 'ledger'; applyFacilityBasis\(\); \}\)/, 'a typed balance is the ledger’s');
+    must(JS, /outstandingBasis: facilityBasis,/, 'the basis travels on the record');
+    must(JS, /taken from the repayment schedule — the loan account’s balance replaces it before the disclosure is filed/, 'the chip says what a scheduled basis means');
+  });
+  test('the panel draws sanctioned, drawn and outstanding on one scale, the §6.2 line apart, and the life of the loan hatched with its assumptions', () => {
+    must(JS, /function facilityPanel\(x, ccy\)/, 'one panel for the preview and the detail');
+    must(JS, /\$\{facilityPanel\(x, ccy\)\}\s*\$\{climatePanel\(e\.climate\)\}/, 'on the detail');
+    must(JS, /\$\{facilityPanel\(x, \(x\.exposure && x\.exposure\.outstanding/, 'and on the preview');
+    must(JS, /label: 'Sanctioned', value: t\.committed/, 'the commitment is a bar of its own');
+    must(JS, /label: 'Outstanding at year-end', value: r\.outstanding/, 'the outstanding is a bar of its own, never stacked inside it');
+    must(JS, /Undrawn commitment — §6\.2, reported apart/, 'the §6.2 line has its own heading');
+    must(JS, /Unweighted — shall/, 'with its duty');
+    must(JS, /value: row\.scheduledOutstanding, color: 'var\(--p-accent, #0d9488\)', projected: true/, 'every life-of-loan row is a projection');
+    must(JS, /Hatched: a projection\./, 'and the caption says what the texture means');
+    must(JS, /\(p\.assumptions \|\| \[\]\)\.map/, 'the assumptions print beneath');
+    mustNot(JS, /scheduledOutstanding\s*[-+*/]\s*|committed\s*-\s*disbursed|\.reduce\(\(s, r\) => s \+ \(r\.scheduled/, 'no balance is scheduled or summed in the browser');
+    must(CSS, /\.pr-fac-scheduled \{ display: flex; flex-wrap: wrap;/, 'the offer wraps at a phone width');
+  });
+});

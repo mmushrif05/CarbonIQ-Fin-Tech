@@ -27,6 +27,7 @@ const { assessRequestSchema } = require('./pcaf-parta');
 const { listedEquitySchema } = require('./listed-equity');
 const { motorVehiclesRequestSchema } = require('./motor-vehicles');
 const { climateSchema, exposureClimateSchema } = require('./climate');
+const { facilitySchema } = require('./facility');
 
 const reportingYear = Joi.number().integer().min(2000).max(2100).required();
 
@@ -36,6 +37,11 @@ const registerFields = {
      share of the *book* vulnerable or aligned, so a block that only some
      classes could carry would answer for only some of the book. */
   climate: exposureClimateSchema,
+  /* The facility behind a loan — the commitment, the drawn amount, the dates
+     and the repayment profile. On every loan class and not on §5.1: a share
+     or a bond is held, not drawn down. Stripped before the engine like the
+     climate block; the register reads it after the adapter. */
+  facility: facilitySchema.optional(),
   identifiers: Joi.object({
     id: Joi.string().max(120).optional(),
     accountNumber: Joi.string().max(80).optional(),
@@ -53,6 +59,7 @@ const businessLoansRegisterSchema = exposureSchema.append({
   assetClass: Joi.string().valid('business-loans-unlisted-equity').optional(),
   reportingYear,
   climate: registerFields.climate,
+  facility: registerFields.facility,
 });
 
 /* §5.4 / §5.5 — the class is the register's `assetClass`; the engine's own
@@ -71,7 +78,7 @@ const realEstateRegisterSchema = realEstateRequestSchema
 const projectFinanceRegisterSchema = assessRequestSchema
   .fork('reportingYear', () => reportingYear)
   .fork('assetClass', s => s.valid('project-finance').required())
-  .append({ identifiers: registerFields.identifiers, climate: registerFields.climate })
+  .append({ identifiers: registerFields.identifiers, climate: registerFields.climate, facility: registerFields.facility })
   .unknown(false);
 
 /* §5.6 */

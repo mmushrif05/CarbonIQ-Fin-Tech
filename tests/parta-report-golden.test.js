@@ -46,7 +46,12 @@ const BOOK = [
       scope2: { value: 3400, basis: 'reported-unverified', period: 2024 },
       scope3: { value: 26000, basis: 'reported-unverified', period: 2024 },
     },
-    plausibility: { revenue: 5.2e9 } },
+    plausibility: { revenue: 5.2e9 },
+    /* A term facility of 700 million, 600 drawn, repaid annually from the end
+       of 2024: one instalment of 120 paid, so the ledger's 480 is the
+       scheduled balance; 100 million undrawn reaches the §6.2 line. */
+    facility: { committed: 700e6, disbursed: 600e6, originationDate: '2023-12-31', maturityDate: '2028-12-31',
+      repayment: { profile: 'equal-principal', frequency: 'annual' } } },
   { reportingYear: 2024, instrument: 'business-loan', borrowerListed: false,
     identifiers: { accountNumber: 'TL-2' },
     counterparty: { name: 'Ratnapura Rubber', sectorKey: 'manufacturing_rubber_plastics' },

@@ -154,6 +154,9 @@ async function record(orgId, input) {
        and the projection carries it so the roll-up can sum §29(b)–(d) without
        reading every record whole. */
     climate: projections.normaliseExposureClimate(input.climate),
+    /* The facility as recorded — a fact about the loan, like the climate
+       block; what the engine read off it is under result.facility. */
+    facility: input.facility || null,
     /* Both halves, and the provenance of the computation itself. */
     input: engineInput,
     result,
@@ -211,7 +214,10 @@ async function update(orgId, exposureId, input) {
 
   const assetClass = input.assetClass || existing.assetClass;
   const cls = classes.classFor(assetClass);
-  const { engineInput, result } = await classes.run(assetClass, input, { orgId });
+  /* Like the climate block: an edit that does not mention the facility leaves
+     the recorded one standing, and one that sends null clears it. */
+  const facility = 'facility' in input ? (input.facility || null) : (existing.facility || null);
+  const { engineInput, result } = await classes.run(assetClass, { ...input, facility: facility || undefined }, { orgId });
 
   await refuseDuplicateLoan(orgId, String(input.reportingYear || existing.reportingYear), engineInput, exposureId);
 
@@ -238,6 +244,7 @@ async function update(orgId, exposureId, input) {
     climate: 'climate' in input
       ? projections.normaliseExposureClimate(input.climate)
       : (existing.climate || null),
+    facility,
     input: engineInput,
     result,
     computedAt: now,
@@ -277,7 +284,7 @@ async function recompute(orgId, exposureId) {
   /* The band and the baselines in force now, not the ones that applied when
      it was recorded: a newly released figure is exactly what a recomputation
      is for. */
-  const { result } = await classes.run(existing.assetClass, existing.input, { orgId });
+  const { result } = await classes.run(existing.assetClass, { ...existing.input, facility: existing.facility || undefined }, { orgId });
 
   /* Every line and both scores, not the headline alone: a factor that reaches
      only scope 3, or a table that re-scores one option, would otherwise be
@@ -351,6 +358,7 @@ async function recompute(orgId, exposureId) {
 
 const { stateBook, getBook } = require('./parta-book');
 const projections = require('./register-projections');
+const { undrawnOf, numeratorBasisOf } = require('./register-facility');
 
 // The entity's settings live in ./parta-settings, re-exported below.
 const { DEFAULT_SETTINGS, getSettings, saveSettings, installIllustrativeClimate } = settingsService;
@@ -412,7 +420,8 @@ async function positions(orgId, reportingYear, opts = {}) {
 
 /** One class's rows rolled up on the class's own binding. */
 function rollClass(cls, rows, book, reportingYear, improvementTarget) {
-  const rolled = rollUp(rows.map(projections.inflate), {
+  const inflated = rows.map(projections.inflate);
+  const rolled = rollUp(inflated, {
     ...cls.rollUp,
     totalLoansAndInvestments: book ? book.totalLoansAndInvestments : undefined,
     improvementTarget,
@@ -430,6 +439,10 @@ function rollClass(cls, rows, book, reportingYear, improvementTarget) {
     },
     exposures: rows.length,
     approval: approvalOf(rows),
+    /* §6.2, summed on its own and never into the lines above; and how many
+       numerators were taken from a schedule rather than a ledger. */
+    undrawnCommitments: undrawnOf(inflated),
+    numeratorBasis: numeratorBasisOf(inflated),
     source: 'Recorded exposures, read from the stored roll-up projection.',
   };
 }

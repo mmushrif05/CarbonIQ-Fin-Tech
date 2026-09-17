@@ -123,16 +123,30 @@ annex a verifier samples from.
 ### 3 · A loan comes in
 
 *Lending Book*, at business loans. The record form has opened for one
-borrower — Lanka Textiles (Pvt) Ltd — with every field already filled: the
-facility and its outstanding, the borrower's equity and debt, its reported
-scope 1 and 2, and the climate block, which is the bank's own judgement of
-transition risk, physical risk and opportunity alignment with the horizon
-it judged each over. Change any figure you like, then press **Record**.
+borrower — Lanka Textiles (Pvt) Ltd — with every field already filled. The
+client asked for 250 million over five years: the **facility** is recorded as
+sanctioned, drawn on 15 March and repaid in equal quarterly instalments, and
+*Outstanding at year-end* holds what is owed on 31 December — 212.5 million
+after three instalments — because that, and not the amount asked for, is the
+numerator the standard attributes on (Part A §5.2, p.56). The preview beneath
+the form draws the sanctioned, drawn and outstanding amounts on one scale,
+states that no undrawn commitment applies to a fully drawn facility, and shows
+the life of the loan — the scheduled balance and the attribution falling to
+nought at maturity — hatched, as a projection. Change any figure you like,
+then press **Record**.
 
-**Say:** *"These are the fields a relationship manager fills when a loan is
-awarded. The engine runs before anything is written; a loan the standard
-would refuse is refused here with its clause. The climate block feeds the
-S2 metrics and changes no figure."*
+At origination, before a ledger balance exists, the form offers **Use the
+scheduled balance**: the year-end figure the repayment schedule expects. An
+exposure recorded on it carries a material finding until the loan account's
+balance replaces it, and the disclosure lists it under *Before filing*.
+
+**Say:** *"What the client asks for is the commitment. What the standard
+measures is what is owed at the year-end, disbursed less repayments, so the
+attribution declines to nothing as the loan is repaid, and each year is a
+fresh measurement. The undrawn part of a facility is reported apart under
+§6.2 and never added to the financed figure. The engine runs before anything
+is written; a loan the standard would refuse is refused here with its
+clause."*
 
 ### 4 · The borrower that does not know its emissions
 

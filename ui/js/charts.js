@@ -64,7 +64,10 @@ const Charts = (() => {
    * theirs, and where they fall short of the bar the remainder is the row's
    * own colour. Segments are parted by a gap in the surface colour.
    *
-   * rows: [{ key, label, value, color, dim, segments?: [{ label, value, color }] }]
+   * A row marked `projected` is hatched: the one texture in the system, and
+   * it means not measured. The pattern is drawn in the row's own colour.
+   *
+   * rows: [{ key, label, value, color, dim, projected?, segments?: [{ label, value, color }] }]
    * opts: { label, decimals, compact, unit }
    */
   function hbars(rows, opts = {}) {
@@ -83,6 +86,11 @@ const Charts = (() => {
     const H = TOP + rows.length * RH + 4;
     const d = opts.decimals === undefined ? 0 : opts.decimals;
     const unit = opts.unit ? ` ${opts.unit}` : '';
+    const pid = `chh-${Math.random().toString(36).slice(2, 8)}`;
+    const hatches = rows.map((r, i) => (r.projected
+      ? `<pattern id="${pid}-${i}" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="6" height="6" class="ch-hatch-ground"/><rect width="3" height="6" style="fill:${esc(r.color || 'currentColor')}"/></pattern>` : '')).join('');
+    const fillOf = (r, i) => (r.projected ? `url(#${pid}-${i})` : (r.color || 'currentColor'));
     const bars = rows.map((r, i) => {
       const y = TOP + i * RH;
       const by = y + (RH - BH) / 2;
@@ -99,9 +107,9 @@ const Charts = (() => {
       }).join('');
       const rest = whole - (x - LW);
       const remainder = segs.length && rest > 0.5 ? `<path d="${bar(x, by, rest, BH, true)}" style="fill:${esc(r.color || 'currentColor')}"/>` : '';
-      const body = segs.length ? parts + remainder : `<path d="${bar(LW, by, whole, BH, true)}" style="fill:${esc(r.color || 'currentColor')}"/>`;
-      const readout = tip(r.label, [[opts.valueLabel || 'Value', `${fmt(r.value, d)}${unit}`], ...(r.segments || []).map(s => [s.label, `${fmt(s.value, d)}${unit}`])]);
-      return `<g class="ch-row${r.dim ? ' is-dim' : ''}" data-key="${esc(r.key || '')}" tabindex="0" data-tip="${readout}">
+      const body = segs.length ? parts + remainder : `<path d="${bar(LW, by, whole, BH, true)}" style="fill:${esc(fillOf(r, i))}"/>`;
+      const readout = tip(r.label, [[opts.valueLabel || 'Value', `${fmt(r.value, d)}${unit}`], ...(r.projected ? [['Basis', 'Projection — not measured']] : []), ...(r.segments || []).map(s => [s.label, `${fmt(s.value, d)}${unit}`])]);
+      return `<g class="ch-row${r.dim ? ' is-dim' : ''}${r.projected ? ' is-projected' : ''}" data-key="${esc(r.key || '')}" tabindex="0" data-tip="${readout}">
         <rect class="ch-hit" x="0" y="${y}" width="${W}" height="${RH}"/>
         <text class="ch-label" x="${LW - 10}" y="${y + RH / 2 + 4}" text-anchor="end">${esc(r.label)}</text>
         ${body}
@@ -109,7 +117,7 @@ const Charts = (() => {
       </g>`;
     }).join('');
     return `<svg class="ch ch-hbars" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(opts.label || 'Bars')}">
-      <line class="ch-axis" x1="${LW}" y1="${TOP}" x2="${LW}" y2="${H - 4}"/>${bars}</svg>`;
+      ${hatches ? `<defs>${hatches}</defs>` : ''}<line class="ch-axis" x1="${LW}" y1="${TOP}" x2="${LW}" y2="${H - 4}"/>${bars}</svg>`;
   }
 
   /**
