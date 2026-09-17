@@ -39,7 +39,8 @@ const store = require('../../../../platform/database/store');
 const Joi = require('joi');
 const register = require('../../application/register');
 const sovereign = require('../../application/sovereign-register');
-const { installStarterBook } = require('../../application/starter-book');
+const { installStarterBook, exampleExposure } = require('../../application/starter-book');
+const partaSettings = require('../../application/parta-settings');
 const partaReport = require('../../application/parta-report');
 const { sendPdf, sendDocx } = require('../../../../platform/reporting/pdf-response');
 const { registerExposureSchema, bookSchema, noBodySchema, reportRequestSchema, disclosureQuerySchema, settingsSchema, positionQuerySchema, statusChangeSchema } = require('../schemas/register');
@@ -82,14 +83,15 @@ router.get('/classes', authenticate, defaultLimiter,
 router.post('/starter', authenticate, defaultLimiter,
   doc({ summary: 'Load the illustrative starter book into this organisation, across every built Part A class',
     description: 'Fifteen exposures across §5.1–§5.6 and two sovereign holdings for FY2025, each computed by its '
-      + 'own engine on the way in, the book total stated and the entity’s boundary started; who prepared and '
-      + 'approved are left for the entity to state. Refused with 409 STARTER_NOT_EMPTY where the year already '
-      + 'holds exposures, and for the preview organisation. Every figure is illustrative and is yours to edit.',
+      + 'own engine on the way in, the book total stated, the entity’s boundary, base year, preparer and approver '
+      + 'stated illustratively, and the illustrative SLFRS S2 statements recorded unless the entity has already '
+      + 'recorded its own. Refused with 409 STARTER_NOT_EMPTY where the year already holds exposures, and for the '
+      + 'preview organisation. Every figure and every statement is illustrative and is yours to edit.',
     response: body({ reportingYear: num, installed: obj, book: obj, settings: obj }, ['reportingYear', 'installed']) }),
   validate({ body: Joi.object({ by: Joi.string().max(200).optional(), reportingEntity: Joi.string().max(200).optional() }).unknown(false) }),
   handle(async (req, res) => {
     const actor = req.actor && req.actor.name ? req.actor.name : (req.body.by || null);
-    res.status(201).json(await installStarterBook({ register, sovereign, store }, req.orgId,
+    res.status(201).json(await installStarterBook({ register, sovereign, store, settings: partaSettings }, req.orgId,
       { by: actor, reportingEntity: req.body.reportingEntity || null }));
   }));
 
@@ -101,6 +103,21 @@ router.get('/years', authenticate, defaultLimiter,
     response: body({ years: arr() }, ['years']) }),
   handle(async (req, res) => {
     res.json({ years: await register.years(req.orgId) });
+  }));
+
+/**
+ * One illustrative loan, filled in, for the walkthrough's "a loan comes in"
+ * step: the Lending Book opens its record form on it and the presenter
+ * presses Record. A read; stores nothing.
+ */
+router.get('/starter/example', authenticate, defaultLimiter,
+  doc({ summary: 'One illustrative business loan, every field filled, for the walkthrough to record live',
+    description: 'The shape the record form takes, filled for one borrower, so a presenter shows what is '
+      + 'collected without typing it. Nothing is stored until the form is submitted; the facility reference '
+      + 'carries a short random suffix so the loan can be recorded more than once in rehearsal.',
+    response: body({ example: obj }, ['example']) }),
+  handle(async (req, res) => {
+    res.json({ example: exampleExposure(req.query.reportingYear ? String(req.query.reportingYear) : undefined) });
   }));
 
 // ---------------------------------------------------------------------------

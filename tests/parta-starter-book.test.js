@@ -23,7 +23,9 @@ const { issueKey } = require('./helpers/key');
 
 let ORG = 'org-starter-book';
 let KEY;
-const deps = { register, sovereign, store };
+const climate = require('../src/domains/pcaf-part-a/domain/climate');
+const settings = require('../src/domains/pcaf-part-a/application/parta-settings');
+const deps = { register, sovereign, store, settings };
 
 async function clear(org) {
   for (const e of await store.list(repo.EXPOSURES, org)) await store.remove(repo.EXPOSURES, org, e.exposureId || e.id);
@@ -48,15 +50,19 @@ describe('the starter book', () => {
     expect(starter.HOLDINGS).toHaveLength(2);
     expect(starter.EXPOSURES.every(e => e.reportingYear === starter.YEAR)).toBe(true);
     expect(starter.EXPOSURES.every(e => /^ST-/.test(e.identifiers.accountNumber))).toBe(true);
-    /* Who prepared and who approved are the entity's to state. */
-    expect(starter.SETTINGS.preparedBy).toBeUndefined();
-    expect(starter.SETTINGS.approvedBy).toBeUndefined();
+    /* Who prepared and who approved are stated illustratively and say so in
+       the name itself, so a cover never reads "Not stated" on the first day
+       and never passes an invented person off as the bank's; the bank's own
+       name is never guessed. */
+    expect(starter.SETTINGS.preparedBy.name).toMatch(/illustrative/);
+    expect(starter.SETTINGS.approvedBy.name).toMatch(/illustrative/);
+    expect(starter.SETTINGS.baseYear).toBe(starter.YEAR);
     expect(starter.SETTINGS.reportingEntity).toBeUndefined();
   });
 
-  test('it installs through the services, every class is recorded with its own score, and the disclosure asks for what only the entity can state', async () => {
+  test('it installs through the services, every class is recorded with its own score, and the first file reads whole — illustrative wherever the entity has not yet spoken', async () => {
     const r = await starter.installStarterBook(deps, ORG, { by: 'Ana', reportingEntity: 'Starter Bank PLC' });
-    expect(r.installed).toEqual({ exposures: 15, sovereign: 2, classes: 7 });
+    expect(r.installed).toEqual({ exposures: 15, sovereign: 2, classes: 7, illustrative: climate.ILLUSTRATIVE_ITEMS });
     expect(r.book.statedBy).toBe('Ana (starter book)');
     expect(r.settings.reportingEntity).toBe('Starter Bank PLC');
     const pos = await consolidated.position(ORG, starter.YEAR);
@@ -68,7 +74,20 @@ describe('the starter book', () => {
     expect(pos.dataQuality.byClass.find(c => c.section === '§5.6').score).toBeLessThan(2);
     expect(pos.dataQuality.byClass.find(c => c.section === '§5.9').score).toBe(5);
     expect(pos.coverage.sharePct).toBeGreaterThan(0);
-    expect(pos.outstandingItems.map(x => x.what)).toEqual(expect.arrayContaining([expect.stringMatching(/prepared and who approved/)]));
+    /* Who prepared and who approved are stated illustratively, so the first
+       file does not open on a cover reading "Not stated"; and the S2 pack
+       rode on the same press, so every pillar reads as illustrative rather
+       than absent. What is still outstanding is what only the bank's own
+       review can settle: approval, and the two exposures left unassessed. */
+    const outstanding = pos.outstandingItems.map(x => x.what);
+    expect(outstanding).not.toEqual(expect.arrayContaining([expect.stringMatching(/prepared and who approved/)]));
+    expect(outstanding).not.toEqual(expect.arrayContaining([expect.stringMatching(/not yet recorded/)]));
+    expect(outstanding).toEqual(expect.arrayContaining([expect.stringMatching(/^Approve /)]));
+    const readiness = pos.entity.climateReadiness;
+    expect(readiness.illustrative).toBe(climate.ILLUSTRATIVE_ITEMS);
+    expect(readiness.absent).toBe(0);
+    expect(readiness.pillars.map(x => x.state)).toEqual(['illustrative', 'illustrative', 'illustrative', 'illustrative']);
+    expect(pos.entity.preparedBy.name).toMatch(/illustrative/);
     /* The classes the entity does not hold are stated with the entity's reason. */
     expect(pos.classes.find(c => c.assetClass === 'use-of-proceeds')).toMatchObject({ status: 'not-built', reasonStatedBy: 'entity' });
   });

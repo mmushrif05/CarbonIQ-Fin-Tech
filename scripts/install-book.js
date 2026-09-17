@@ -17,6 +17,7 @@ const store = require('../src/platform/database/store');
 const register = require('../src/domains/pcaf-part-a/application/register');
 const sovereign = require('../src/domains/pcaf-part-a/application/sovereign-register');
 const { installStarterBook } = require('../src/domains/pcaf-part-a/application/starter-book');
+const settings = require('../src/domains/pcaf-part-a/application/parta-settings');
 
 function parseArgs(argv) {
   const args = /** @type {{org?: string, by?: string, entity?: string}} */ ({});
@@ -37,7 +38,7 @@ async function main() {
   }
   const cap = store.capability();
   process.stderr.write(`Store: ${cap.chosen} (${cap.reason})\n`);
-  const r = await installStarterBook({ register, sovereign, store }, args.org, { by: args.by || null, reportingEntity: args.entity || null });
+  const r = await installStarterBook({ register, sovereign, store, settings }, args.org, { by: args.by || null, reportingEntity: args.entity || null });
   process.stderr.write(`Installed FY${r.reportingYear}: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes into "${args.org}".\n${r.note}\n`);
   if (typeof store.close === 'function') await store.close();
 }

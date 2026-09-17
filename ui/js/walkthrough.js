@@ -9,12 +9,16 @@
      the approvals, what the disclosure still lists, and whether the
      document renders. Every row is a field a route returned.
 
-     The eight steps, chief executive first. Opening a step navigates to the real
-     screen with the step already applied, through the same doors the
-     screens already use: the class hand-over the Lending Book reads, and
-     an intent the Bank Overview reads on load. Starting the walkthrough
-     keeps a strip on every screen — the step, what to do, what to say —
-     held in the browser so it survives navigation and a reload.
+     The six steps: one loan, from the door to the file. The position and
+     the file first, for the chief executive; then one loan — it comes in
+     with every field already filled, the engine prices it, it is reviewed
+     and approved, and it is on the dashboard. Opening a step navigates to
+     the real screen with the step already applied, through the doors the
+     screens already read: the class hand-over and a one-shot intent each
+     screen reads once its own load is done. Every step changes the screen
+     and marks the one control it asks the presenter to press. Starting the
+     walkthrough keeps a strip on every screen — the step, what to do, what
+     to say — held in the browser so it survives navigation and a reload.
 
    Nothing here fetches a figure to show as its own: the strip and the
    readiness table print what the position said.
@@ -36,65 +40,56 @@ const WalkthroughPage = (() => {
 
   const STATE_KEY = 'carboniq.walkthrough';
   const BANK_INTENT = 'carboniq.bank.intent';
+  const REGISTER_INTENT = 'carboniq.register.intent';
   const CLASS_KEY = 'carboniq.parta.class';
+  const LOAN_CLASS = 'business-loans-unlisted-equity';
 
-  /* The eight steps, in the order a chief executive reads them: the position
-     first, the file they will file second, and the technical screens after.
-     `apply` sets the hand-over the target screen reads before its first
-     request, so a step opens the real screen already showing what it is about
-     rather than a slide of it. */
+  /* Six steps, one loan from the door to the file. `apply` sets the
+     hand-over the target screen reads before it acts, so a step opens the
+     real screen already showing what it is about rather than a slide of it;
+     each also marks the one control the presenter presses next. */
   const STEPS = [
     {
       title: 'The position — the whole book on one screen',
       page: 'bank',
-      action: 'Bank Overview. The bank’s name and the reporting year; financed scope 1 and 2 with the boundaries it sums; scope 3 on its own line; coverage of the stated book; economic intensity; how many exposures the bank has approved.',
-      note: 'Every figure on this screen is one the engine returned. The screen draws it and adds nothing to it.',
+      apply: () => { forget(BANK_INTENT); forget(REGISTER_INTENT); },
+      action: 'Bank Overview. The bank’s name over the reporting year; financed scope 1 and 2 as the headline, with scope 3 on its own line; coverage of the stated book; economic intensity; what the disclosure still asks for; how many exposures the bank has approved. Beneath, the four SLFRS S2 pillars and what the bank has stated under each.',
+      note: 'Every figure on this screen is one the engine returned; the screen draws it and adds nothing. A projected score anywhere on it is marked scenario and is never the reported one.',
     },
     {
-      title: 'The SLFRS S2 file, downloaded',
+      title: 'The file — the SLFRS S2 disclosure, in one press',
       page: 'bank',
-      action: 'Press SLFRS S2 disclosure — PDF. The document opens: the cover names the reporting entity, who prepared it and who approved it, and carries a reference derived from the content itself.',
-      note: 'One document, downloaded in one press. The same position rendered twice carries the same reference, so a filed copy can be matched to what was on screen.',
+      apply: () => remember(BANK_INTENT, 'file:s2'),
+      action: 'Press SLFRS S2 disclosure — PDF, the marked button. The document opens on the cover: the reporting entity, who prepared and approved it, and a reference derived from the content. Beneath the figures, Behind the S2 file has opened the index — every paragraph of the standard and where in the document it is answered.',
+      note: 'One document, one press; the same position rendered twice carries the same reference. Nothing is written on the bank’s behalf: a paragraph the bank has not answered prints as not stated with its clause, and the checklist is answered from the document itself, so an item can answer No.',
     },
     {
-      title: 'What S2 asks, and where it is answered',
-      page: 'bank',
-      apply: () => remember(BANK_INTENT, 'behind:s2'),
-      action: 'The strip above the charts shows the four S2 pillars — governance, strategy, risk management, metrics and targets — with what the bank has stated and what it has not. Behind the S2 file opens the index: every paragraph, and whether the document answers it.',
-      note: 'A paragraph the bank has not answered is printed as not stated with the clause that asks for it. Nothing is written on the bank’s behalf.',
-    },
-    {
-      title: 'The climate view',
-      page: 'bank',
-      action: 'Climate risk and opportunity: the outstanding vulnerable to transition risk, vulnerable to physical risk, and aligned with opportunities — S2 §29(b)–(d) — each bar split into what was assessed and what has not been. Then the same book by industry, with carbon-related lending marked.',
-      note: 'The share is taken over the outstanding actually assessed. What has not been assessed is drawn beside it and is not counted as not vulnerable.',
-    },
-    {
-      title: 'What is collected when a loan is awarded',
+      title: 'A loan comes in',
       page: 'parta-register',
-      apply: () => remember(CLASS_KEY, 'business-loans-unlisted-equity'),
-      action: 'Lending Book, at business loans. Open the record form: the PCAF inputs the engine prices a loan from, and beneath them the climate block — transition risk, physical risk, opportunity alignment, each with the horizon the bank judged it over. Open a recorded row for the equation the engine ran, the factor set with its checksum, and the findings with what clears each.',
-      note: 'These are the fields a relationship manager fills at origination. The climate block feeds S2 §29(b)–(d) and nothing else; it changes no figure the engine computes.',
+      apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'record:example'); },
+      action: 'Lending Book. The record form has opened for one borrower with every field already filled: the facility and its outstanding, the borrower’s equity and debt, its reported scope 1 and 2, and the climate block — the bank’s own judgement of transition risk, physical risk and opportunity. Change any figure, then press Record.',
+      note: 'These are the fields a relationship manager fills at origination. The engine runs before anything is written, and a loan the standard would refuse is refused here with its clause. The climate block feeds S2 §29(b)–(d) and changes no figure; what has not been assessed is reported apart and is not counted as not vulnerable.',
     },
     {
-      title: 'How it reaches the dashboard',
+      title: 'What the standard made of it',
+      page: 'parta-register',
+      apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'open:latest'); },
+      action: 'The loan just recorded is open: the PCAF option the data it carried earned and the data-quality score that follows from it, the attribution equation the engine ran, the factor set with its checksum, and any finding with the sentence that clears it.',
+      note: 'The score is a category from 1 to 5 set by the option — reported figures earn a 2, a sector factor a 5 — and never an average. What would raise it is written beside it, which is the improvement plan for this one loan.',
+    },
+    {
+      title: 'Reviewed, approved, frozen',
+      page: 'parta-register',
+      apply: () => { remember(CLASS_KEY, LOAN_CLASS); remember(REGISTER_INTENT, 'approve:latest'); },
+      action: 'The same loan, with its controls marked. Press Send for review, then Approve. The state moves recorded → under review → approved, each move dated and attributed on the exposure’s own trail, and an approved loan offers no edit, recomputation or removal until it is reopened with a recorded reason.',
+      note: 'Approving is a separate authority from recording — the lock scope, exactly as a Part C lock is. A figure the bank has approved cannot move underneath the disclosure.',
+    },
+    {
+      title: 'On the dashboard, and in the file',
       page: 'bank',
-      apply: () => remember(BANK_INTENT, 'focus:business-loans-unlisted-equity'),
-      action: 'Back on the overview with that class in focus: every other class dims across the charts and the tiles, and the class’s own panel opens — its lines, its score, its coverage, its largest improvement step marked scenario.',
-      note: 'A projected score is marked scenario and is never the reported score. One hue is one class on every panel.',
-    },
-    {
-      title: 'What stands behind a figure',
-      page: 'bank',
-      apply: () => remember(BANK_INTENT, 'behind:headline'),
-      action: 'Behind this figure under the headline: the document reference and its content hash, the build, the standard edition, every factor set with its version and checksum, the baselines in force with scope and version, the assurance mode, and how many exposures stand approved.',
-      note: 'This is the lineage the document itself carries. A reader can take any figure back to the exposure it came from.',
-    },
-    {
-      title: 'The detail, for the analysts',
-      page: 'parta-position',
-      action: 'Financed Emissions — what the team uses after a loan is awarded: every asset class side by side, the entity’s own facts as a form, the SLFRS S2 statements pillar by pillar, and the disclosure as PDF, Word or JSON with the exposure register as CSV.',
-      note: 'The checklist is answered from the document’s own facts, so an item can answer No — approvals until every exposure is approved, and the entity’s own inventory until the bank states it.',
+      apply: () => remember(BANK_INTENT, `focus:${LOAN_CLASS}`),
+      action: 'Back on the overview with business loans in focus: the new loan is in the class’s figures, the approved count has moved, and the next press of SLFRS S2 disclosure — PDF carries it in Annex A and in the register annex a verifier samples from.',
+      note: 'That is the process behind the number: recorded through the engine, reviewed, approved, and only then in the file. One hue is one class on every panel.',
     },
   ];
 
@@ -204,17 +199,25 @@ const WalkthroughPage = (() => {
     try { const s = JSON.parse(recall(STATE_KEY) || 'null'); return s && Number.isInteger(s.step) ? s : null; } catch (_) { return null; }
   }
 
+  /* Whether the page a step names is the one on screen now. */
+  const onPage = page => { const el = document.getElementById(`page-${page}`); return Boolean(el && el.offsetParent !== null); };
+
   function go(i, navigate) {
     const step = STEPS[i];
     if (!step) return;
     remember(STATE_KEY, JSON.stringify({ step: i }));
     if (step.apply) step.apply();
     renderStrip();
-    if (navigate) nav(step.page);
+    if (!navigate) return;
+    /* Two consecutive steps on one screen used to leave Next changing only
+       the strip's words, which reads as nothing happening. The screen is
+       re-read either way, so the intent just set is applied now. */
+    if (onPage(step.page) && typeof window.CARBONIQ_refreshPage === 'function') window.CARBONIQ_refreshPage(step.page);
+    else nav(step.page);
   }
 
   function end() {
-    forget(STATE_KEY); forget(BANK_INTENT);
+    forget(STATE_KEY); forget(BANK_INTENT); forget(REGISTER_INTENT);
     renderStrip();
     show('wt-start', true); show('wt-end', false);
   }
@@ -250,9 +253,22 @@ const WalkthroughPage = (() => {
 
   /* The strip lives in the shell and is wired once, before any page loads,
      so a walkthrough begun before a reload is on screen again after it. */
+  /* Marks one control for a few seconds — the button a step asks the
+     presenter to press — so a step is visible as well as read. Any screen
+     may call it; it is defined here because the strip is. */
+  function cueControl(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('wt-cue');
+    void el.offsetWidth;
+    el.classList.add('wt-cue');
+    setTimeout(() => el.classList.remove('wt-cue'), 7000);
+  }
+
   function mount() {
     if (stripWired) return;
     stripWired = true;
+    window.CARBONIQ_cue = cueControl;
     wireStrip();
     placeStrip();
     window.addEventListener('resize', placeStrip);

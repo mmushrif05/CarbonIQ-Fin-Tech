@@ -323,7 +323,34 @@ Stages 1 and 2 are independent of each other and could be built in either
 order; 2 is what makes the climate view on the dashboard show real figures
 rather than an unassessed book, which is why it is not deferred.
 
-## 5. What this plan does not claim
+## 5. After the first showing
+
+Shown to the bank, three things were wrong with the six stages as built, and
+each is corrected in the same tree:
+
+- **The file was a PCAF document with S2 in the middle.** Eight Chapter 6
+  sections opened it before the first pillar. The body is now the standard's
+  own order — entity and basis of preparation, governance, strategy, risk
+  management, metrics and targets, what is outstanding, statement of
+  compliance — and everything PCAF asks around the category 15 figure is the
+  basis of preparation, printed whole in Annexes A and B. No figure moved.
+- **The first screen was empty.** The overview opened on the latest year
+  holding anything, which one sovereign holding made the calendar year, and
+  the S2 pack was a separate press nobody had made. It opens on the year
+  holding the fullest lending book; one press loads the book, the entity's
+  illustrative facts and the S2 pack together; the registry holds every item
+  S2 asks for, including the measurement approach of §29(a)(iii); and the
+  pack answers all of them.
+- **The colours were the template's, and the hero was in one theme.** The
+  overview is drawn from the report theme's own palette and faces, tokens
+  defined for both themes.
+- **The walkthrough's Next did nothing.** Four of its steps sat on one screen.
+  It is six steps around one loan — the position, the file, the loan comes in
+  with every field filled, what the standard made of it, reviewed and
+  approved, on the dashboard — every step changing the screen and marking
+  the control it asks for.
+
+## 6. What this plan does not claim
 
 - The bank's own words are the bank's. Governance, strategy, risk process and
   targets are collected through a form and printed as stated, or reported

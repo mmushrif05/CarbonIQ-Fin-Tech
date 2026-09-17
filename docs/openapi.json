@@ -35504,6 +35504,13 @@
                                 "maxLength": 1000
                               }
                             }
+                          },
+                          "measurementApproach": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 4000
                           }
                         }
                       },
@@ -37851,7 +37858,7 @@
           "pcaf"
         ],
         "summary": "Load the illustrative starter book into this organisation, across every built Part A class",
-        "description": "Fifteen exposures across §5.1–§5.6 and two sovereign holdings for FY2025, each computed by its own engine on the way in, the book total stated and the entity’s boundary started; who prepared and approved are left for the entity to state. Refused with 409 STARTER_NOT_EMPTY where the year already holds exposures, and for the preview organisation. Every figure is illustrative and is yours to edit. Requires the `write` scope.",
+        "description": "Fifteen exposures across §5.1–§5.6 and two sovereign holdings for FY2025, each computed by its own engine on the way in, the book total stated, the entity’s boundary, base year, preparer and approver stated illustratively, and the illustrative SLFRS S2 statements recorded unless the entity has already recorded its own. Refused with 409 STARTER_NOT_EMPTY where the year already holds exposures, and for the preview organisation. Every figure and every statement is illustrative and is yours to edit. Requires the `write` scope.",
         "x-scope": "write",
         "parameters": [
           {
@@ -37964,6 +37971,106 @@
                       "required": [
                         "reportingYear",
                         "installed"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/pcaf/part-a/starter/example": {
+      "get": {
+        "operationId": "getPcafPartAStarterExample",
+        "tags": [
+          "pcaf"
+        ],
+        "summary": "One illustrative business loan, every field filled, for the walkthrough to record live",
+        "description": "The shape the record form takes, filled for one borrower, so a presenter shows what is collected without typing it. Nothing is stored until the form is submitted; the facility reference carries a short random suffix so the loan can be recorded more than once in rehearsal. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "example": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "example"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "example": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "example"
                       ]
                     },
                     "meta": {

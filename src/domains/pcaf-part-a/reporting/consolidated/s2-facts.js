@@ -168,9 +168,10 @@ const byPath = (items, path) => items.find(i => i.path === path) || null;
 
 /**
  * Where each S2 paragraph is answered. The financed-emissions rows point at
- * the sections this document has always printed, which is the whole point:
- * the file is read as an S2 disclosure without a figure being rewritten for
- * S2. `answered` is read from the facts, so a row can say No.
+ * the annex that carries the blocks this document has always printed, which
+ * is the whole point: the file is read as an S2 disclosure without a figure
+ * being rewritten for S2. `answered` is read from the facts, so a row can say
+ * No.
  */
 function indexOf(f, s2) {
   const item = path => byPath(s2.items, path);
@@ -187,8 +188,9 @@ function indexOf(f, s2) {
     { paragraph: 'S2 §25(a)–(c)', requirement: 'How climate-related risks and opportunities are identified, assessed, prioritised and monitored, and how that sits inside overall risk management', section: 's2RiskManagement', answered: anyOf(['riskManagement.identification', 'riskManagement.prioritisation', 'riskManagement.monitoring', 'riskManagement.opportunities', 'riskManagement.integration']) },
     { paragraph: 'S2 §29(a)(i)', requirement: 'Absolute gross scope 1 emissions', section: 's2Inventory', answered: stated('inventory.scope1') },
     { paragraph: 'S2 §29(a)(ii)', requirement: 'Absolute gross scope 2 emissions, location-based', section: 's2Inventory', answered: stated('inventory.scope2Location') },
+    { paragraph: 'S2 §29(a)(iii)', requirement: 'The measurement approach, inputs and assumptions used for the inventory, and any change from the prior period', section: 's2Inventory', answered: stated('inventory.measurementApproach') },
     { paragraph: 'S2 §29(a)(iv)', requirement: 'Scope 3 emissions by category, other than category 15', section: 's2Inventory', answered: stated('inventory.scope3Other') },
-    { paragraph: 'S2 §29(a)(vi); B58–B63', requirement: 'Financed emissions — scope 3 category 15 — by asset class, with the method, the gross exposure and the coverage', section: 'absolute', answered: f.recorded.length > 0 },
+    { paragraph: 'S2 §29(a)(vi); B58–B63', requirement: 'Financed emissions — scope 3 category 15 — by asset class, with the method, the gross exposure and the coverage', section: 'annexFinanced', answered: f.recorded.length > 0 },
     { paragraph: 'S2 §29(b)', requirement: 'Amount and percentage of assets vulnerable to climate-related transition risks', section: 's2CrossIndustry', answered: num(s2.exposure.transitionRisk.sharePct) },
     { paragraph: 'S2 §29(c)', requirement: 'Amount and percentage of assets vulnerable to climate-related physical risks', section: 's2CrossIndustry', answered: num(s2.exposure.physicalRisk.sharePct) },
     { paragraph: 'S2 §29(d)', requirement: 'Amount and percentage of assets aligned with climate-related opportunities', section: 's2CrossIndustry', answered: num(s2.exposure.opportunities.sharePct) },
@@ -197,7 +199,7 @@ function indexOf(f, s2) {
     { paragraph: 'S2 §29(g)', requirement: 'Remuneration linked to climate-related considerations', section: 's2CrossIndustry', answered: stated('crossIndustry.remuneration') },
     { paragraph: 'S2 §32; banking guidance', requirement: 'Exposure and financed emissions by industry, with lending to carbon-related industries identified', section: 's2Industry', answered: s2.exposure.industries.rows.length > 0 },
     { paragraph: 'S2 §33–36', requirement: 'Each climate-related target, its basis, and performance against it', section: 's2Targets', answered: anyOf(['targets.entries', 'targets.ghgBasis']) },
-    { paragraph: 'S2 §37; DCL p.127', requirement: 'Emission intensity of the financed book', section: 'intensity', answered: num(f.intensity && f.intensity.value) },
+    { paragraph: 'S2 §37; DCL p.127', requirement: 'Emission intensity of the financed book', section: 'annexFinanced', answered: num(f.intensity && f.intensity.value) },
   ];
   return rows.map(r => ({ ...r, answered: Boolean(r.answered) }));
 }
@@ -256,13 +258,14 @@ function s2Facts(f, settings, climateExposure) {
       scope2Location: byPath(items, 'inventory.scope2Location'),
       scope2Market: byPath(items, 'inventory.scope2Market'),
       scope3Other: byPath(items, 'inventory.scope3Other'),
+      measurementApproach: byPath(items, 'inventory.measurementApproach'),
       /* Category 15 is not collected: it is the headline this document already
          computed, moved into the inventory table rather than recomputed, so
          one book cannot produce two financed-emissions figures. */
       category15: {
         value: f.totals.headline.value, unit: 'tCO2e',
-        note: 'Measured by this system from the exposure register — the headline in section 4 of this document, '
-          + 'moved and not recomputed. Financed emissions are scope 3 category 15 of the inventory (S2 B58–B63).',
+        note: 'Measured by this system from the exposure register — the headline of Annex A, moved and not '
+          + 'recomputed. Financed emissions are scope 3 category 15 of the inventory (S2 B58–B63).',
         scope3: f.totals.scope3.value,
       },
     },

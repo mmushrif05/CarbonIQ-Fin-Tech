@@ -85,20 +85,37 @@ describe('The strip follows the presenter', () => {
   });
 
   test('the steps open the real screens through the hand-overs those screens already read', () => {
-    /* Chief executive first: the position, the file downloaded, what S2 asks,
-       the climate view, then what a loan carries, back to the dashboard, the
-       lineage, and the detail screen last. */
+    /* One loan from the door to the file: the position and the file for the
+       chief executive, then the loan comes in, is priced, is approved, and is
+       on the dashboard. */
     expect(Page.STEPS.map(s => s.page)).toEqual(
-      ['bank', 'bank', 'bank', 'bank', 'parta-register', 'bank', 'bank', 'parta-position']);
-    expect(Page.STEPS).toHaveLength(8);
-    expect(Page.STEPS[1].title).toMatch(/SLFRS S2 file, downloaded/);
+      ['bank', 'bank', 'parta-register', 'parta-register', 'parta-register', 'bank']);
+    expect(Page.STEPS).toHaveLength(6);
+    expect(Page.STEPS[1].title).toMatch(/SLFRS S2 disclosure, in one press/);
+    expect(Page.STEPS[2].title).toMatch(/A loan comes in/);
     for (const s of Page.STEPS) must(INDEX, `data-page="${s.page}"`, `step "${s.title}" names a page the shell has`);
     must(JS, /CLASS_KEY = 'carboniq\.parta\.class'/, 'the Lending Book’s class hand-over');
     must(REGISTER, /localStorage\.getItem\('carboniq\.parta\.class'\)/, 'the Lending Book reads it');
     must(JS, /BANK_INTENT = 'carboniq\.bank\.intent'/, 'the overview’s intent');
     must(BANK, /localStorage\.getItem\('carboniq\.bank\.intent'\)/, 'the overview reads it');
     must(BANK, /applyIntent\(\);\s*\n\s*\}/, 'the overview applies it once the position is on screen');
+    must(JS, /REGISTER_INTENT = 'carboniq\.register\.intent'/, 'the Lending Book’s intent');
+    must(REGISTER, /localStorage\.getItem\(REGISTER_INTENT\)/, 'the Lending Book reads it');
+    must(REGISTER, /await applyIntent\(\);\s*\n\s*\}/, 'and applies it once the book is on screen');
     must(JS, /window\.CARBONIQ_navigateTo/, 'navigation goes through the shell’s one door');
+    /* Every step changes the screen: a step on the page already shown is
+       re-read so its intent is applied now, and the one control it asks for
+       is marked. Two consecutive steps that changed only the strip's words
+       read as Next doing nothing. */
+    must(JS, /window\.CARBONIQ_refreshPage\(step\.page\)/, 'a step on the page already shown re-reads it');
+    must(APP, /window\.CARBONIQ_refreshPage = /, 'the shell exposes the same-page refresh beside navigation');
+    must(JS, /window\.CARBONIQ_cue = cueControl/, 'the cue is one shell-wide function');
+    must(REGISTER, /cue\('pr-form-submit'\)/, 'the record press is marked when the example loan is opened');
+    must(BANK, /cue\('bk-pdf'\)/, 'the download is marked on the file step');
+    must(CSS, /\.wt-cue \{/, 'the cue is drawn');
+    /* The example loan the form opens on is the API’s, not the browser’s. */
+    must(REGISTER, /call\(`\/starter\/example\?reportingYear=/, 'the example is fetched');
+    mustNot(REGISTER, /Lanka Textiles/, 'no example figure lives in the browser');
   });
 });
 

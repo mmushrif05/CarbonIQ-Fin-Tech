@@ -92,15 +92,27 @@ const BankPage = (() => {
 
   // ── years ──────────────────────────────────────────────────
 
+  /* The year the screen opens on is the one holding the fullest lending book.
+     It used to be the latest year holding anything, and one sovereign holding
+     recorded in the calendar year put a chief executive on a screen of dashes
+     with the whole starter book one year back in the selector. The count is
+     the register's own, read off /years; the screen only picks the largest. */
+  function fullestYear(list, counts) {
+    let best = list[list.length - 1];
+    for (const y of list) if ((counts.get(y) || 0) > (counts.get(best) || 0)) best = y;
+    return best;
+  }
+
   async function loadYears() {
     let a = [], b = [];
     try { ({ years: a } = await partA('/years')); } catch (_) { a = []; }
     try { ({ years: b } = await partA('/sovereign/years')); } catch (_) { b = []; }
     const list = [...new Set([...a, ...b].map(y => String(y.reportingYear)))].sort();
+    const counts = new Map(a.map(y => [String(y.reportingYear), val(y.exposures) || 0]));
     const chosen = $('bk-year') ? $('bk-year').value : '';
     if (!list.length) list.push(String(new Date().getFullYear()));
     setHtml('bk-year', list.map(y => `<option value="${esc(y)}">${esc(y)}</option>`).join(''));
-    $('bk-year').value = list.includes(chosen) ? chosen : list[list.length - 1];
+    $('bk-year').value = list.includes(chosen) ? chosen : fullestYear(list, counts);
     year = $('bk-year').value;
   }
 
@@ -114,14 +126,22 @@ const BankPage = (() => {
     try {
       position = await partA(`/financed-emissions/${encodeURIComponent(year)}`);
     } catch (err) {
-      show('bk-body', false); show('bk-figures', false);
-      say('bk-status', err.message);
+      show('bk-body', false); show('bk-figures', false); show('bk-s2', false);
+      /* An empty year is a 409 by design and is the starter book's moment; a
+         fault is anything else, and it is said as one. */
+      show('bk-empty', err.status === 409 && !preview());
+      say('bk-status', err.status === 409 ? `Nothing is recorded for FY${year} yet.` : err.message);
       return;
     }
     render(position);
     show('bk-figures', true);
     show('bk-body', true);
     const recorded = position.classes.filter(c => c.status === 'recorded');
+    const lending = recorded.filter(c => c.assetClass !== 'sovereign-debt');
+    /* Offered while no lending class is recorded for the year — a year holding
+       only sovereign paper is still a book with nothing a starter would refuse
+       over — and never to a preview visitor. */
+    show('bk-empty', lending.length === 0 && !preview());
     say('bk-status', recorded.length
       ? `${position.exposures} exposure(s) across ${recorded.length} asset class(es) in FY${position.reportingYear}.`
       : `No asset class holds exposures for FY${position.reportingYear} yet.${preview() ? '' : ' Load the starter book, or record exposures in the lending book.'}`);
@@ -141,14 +161,26 @@ const BankPage = (() => {
     try { intent = localStorage.getItem('carboniq.bank.intent'); if (intent) localStorage.removeItem('carboniq.bank.intent'); } catch (_) { intent = null; }
     if (!intent) return;
     const [kind, key] = intent.split(':');
-    if (kind === 'focus' && key && focus !== key) { setFocus(key); const el = $('bk-focus'); if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+    const cue = id => { if (typeof window !== 'undefined' && typeof window.CARBONIQ_cue === 'function') window.CARBONIQ_cue(id); };
+    if (kind === 'focus' && key) {
+      if (focus !== key) setFocus(key);
+      cue('bk-approved');
+      const el = $('bk-focus'); if (el && !el.hidden) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
     if (kind === 'behind' && key) openBehind(key).catch(() => {});
+    /* The file: the index behind it opens, and the one press that produces
+       it is marked. */
+    if (kind === 'file' && key === 's2') {
+      openBehind('s2').catch(() => {});
+      cue('bk-pdf');
+      const hero = document.querySelector('.bank-hero'); if (hero) hero.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   function render(p) {
     const e = p.entity || {};
     say('bk-entity', e.reportingEntity || 'Reporting entity not stated');
-    say('bk-subtitle', `FY${p.reportingYear}${p.currency ? ` · ${p.currency}` : ''} · ${p.exposures} exposure(s) · consolidation: ${e.consolidationApproach ? String(e.consolidationApproach).replace(/_/g, ' ') : 'not stated'} · fiscal year-end ${e.fiscalYearEnd || 'not stated'}`);
+    say('bk-subtitle', `Reporting year ${p.reportingYear}${p.currency ? ` · book in ${p.currency}` : ''} · ${p.exposures} exposure(s) · ${e.consolidationApproach ? String(e.consolidationApproach).replace(/_/g, ' ') : 'consolidation not stated'} · fiscal year-end ${e.fiscalYearEnd || 'not stated'}`);
 
     const t = p.totals || {};
     say('bk-headline', t.headline && t.headline.value !== null ? fmt(t.headline.value, 2) : '—');
@@ -171,8 +203,8 @@ const BankPage = (() => {
     say('bk-intensity-unit', i.unit ? i.unit.replace('tCO2e', 'tCO₂e') : (i.basis || 'tCO₂e per million'));
 
     const items = p.outstandingItems || [];
-    say('bk-ready', items.length === 0 ? 'Yes' : String(items.length));
-    say('bk-ready-unit', items.length === 0 ? 'every Chapter 6 item the bank must state is on the record' : 'items Chapter 6 still asks the bank for');
+    say('bk-ready', items.length === 0 ? 'Ready' : String(items.length));
+    say('bk-ready-unit', items.length === 0 ? 'every item the disclosure asks of the bank is on the record' : 'items the disclosure still asks the bank for');
 
     const ap = p.approval || {};
     say('bk-approved', val(ap.total) ? `${fmt(ap.approved, 0)} of ${fmt(ap.total, 0)}` : '—');
@@ -199,8 +231,12 @@ const BankPage = (() => {
     show('bk-s2', Boolean(r && r.total));
     if (r && r.total) {
       say('bk-s2-summary', `${r.stated} stated by the bank · ${r.illustrative} illustrative · ${r.absent} not stated, of ${r.total} statements the standard asks of the entity`);
+      /* The bar is three segments sized by the server's own counts through
+         flex-grow — a layout proportion, no share taken here. */
       setHtml('bk-s2-pillars', (r.pillars || []).map(x => `<button type="button" class="bank-s2-pillar is-${esc(x.state)}" data-pillar="${esc(x.id)}">
-        <b>${esc(x.label)}</b><span>${esc(x.paragraphs)}</span><em>${esc(S2_STATE[x.state] || x.state)}</em>
+        <b>${esc(x.label)}</b><span>${esc(x.paragraphs)}</span>
+        <div class="bank-s2-bar" aria-hidden="true"><i class="is-stated" style="flex:${esc(val(x.stated) || 0)}"></i><i class="is-illustrative" style="flex:${esc(val(x.illustrative) || 0)}"></i><i class="is-absent" style="flex:${esc(val(x.absent) || 0)}"></i></div>
+        <em>${esc(S2_STATE[x.state] || x.state)}</em>
         <span class="partc-hint">${esc(x.stated)} stated · ${esc(x.illustrative)} illustrative · ${esc(x.absent)} not stated</span></button>`).join(''));
       for (const el of document.querySelectorAll('#bk-s2-pillars [data-pillar]')) {
         el.addEventListener('click', () => openPillar(el.getAttribute('data-pillar')));
@@ -659,7 +695,8 @@ const BankPage = (() => {
     try {
       const r = await partA('/starter', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       document.dispatchEvent(new CustomEvent('carboniq:entity'));
-      say('bk-status', `Starter book loaded: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes for FY${r.reportingYear}.`);
+      say('bk-status', `Starter book loaded: ${r.installed.exposures} exposures and ${r.installed.sovereign} sovereign holdings across ${r.installed.classes} classes for FY${r.reportingYear}`
+        + `${val(r.installed.illustrative) ? `, with ${r.installed.illustrative} illustrative SLFRS S2 statements` : ''}.`);
       await loadYears();
       if ($('bk-year')) $('bk-year').value = String(r.reportingYear);
       await load();

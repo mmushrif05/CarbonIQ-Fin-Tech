@@ -182,7 +182,12 @@ describe('The consolidated disclosure', () => {
     const produced = outline(model);
     expect(produced).toBe(goldenFile('parta-consolidated-disclosure.txt', produced));
     expect(produced).toMatch(/SECTION 1 \[entity\]/);
-    expect(produced).toMatch(/ANNEX C \[annexRegister\]/);
+    /* The body is the standard's order and the PCAF basis of preparation is
+       the first two annexes; the register that is the audit trail follows. */
+    expect(produced).toMatch(/SECTION 2 \[s2Governance\]/);
+    expect(produced).toMatch(/ANNEX A \[annexFinanced\]/);
+    expect(produced).toMatch(/ANNEX B \[annexBasis\]/);
+    expect(produced).toMatch(/ANNEX E \[annexRegister\]/);
     expect(produced).toMatch(/INV-1: No/);
   });
 

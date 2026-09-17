@@ -82,21 +82,32 @@
       "period": "The reporting year",
       "note": "Purchased electricity across head office and the branch network, metered consumption on the national grid average factor."
     },
-    "scope2Market": null,
-    "scope3Other": {
-      "value": null,
+    "scope2Market": {
+      "value": 1860,
       "unit": "tCO2e",
-      "absentReason": "Scope 3 categories other than category 15 have not been measured. Business travel, purchased goods and services and employee commuting are the categories expected to be material and are planned for the following reporting year."
-    }
+      "basis": "calculated",
+      "period": "The reporting year",
+      "note": "No contractual instruments (renewable energy certificates or power purchase agreements) are held, so the market-based figure equals the location-based figure. Additional information under S2 §29(a)(v)."
+    },
+    "scope3Other": {
+      "value": 3150,
+      "unit": "tCO2e",
+      "basis": "estimated",
+      "period": "The reporting year",
+      "note": "Purchased goods and services (category 1), business travel (category 6) and employee commuting (category 7), estimated from spend and headcount with published factors. Categories 2–5 and 8–14 are below the materiality threshold; category 15 is measured by this system from the exposure register."
+    },
+    "measurementApproach": "Scope 1 and scope 2 are measured under the GHG Protocol Corporate Standard on the operational-control approach. Scope 1 is calculated from fuel purchase records for standby generation and the owned vehicle fleet using the fuel factors in force for Sri Lanka; scope 2 is calculated from metered electricity across head office and the branch network on the national grid-average factor, with the market-based figure equal to it because no contractual instruments are held. Scope 3 categories other than category 15 are estimated from spend and headcount. There is no change of approach from the prior period. Category 15 is measured exposure by exposure under PCAF Part A, Third Edition, as the annexes to this disclosure describe."
   },
   "crossIndustry": {
     "capitalDeployed": {
-      "amount": null,
+      "amount": 2400000000,
       "currency": "LKR",
-      "absentReason": "Capital deployed towards climate-related risks and opportunities has not been separately measured. The green and sustainability-linked lending balance is reported in the opportunity alignment metric instead."
+      "note": "New lending and refinancing in the reporting year to activities aligned with the Sri Lanka Green Finance Taxonomy: rooftop and utility-scale solar, energy-efficient buildings and electric vehicles, measured at the amounts disbursed. Illustrative."
     },
     "carbonPrice": {
-      "appliedTo": ["not_applied"],
+      "appliedTo": [
+        "not_applied"
+      ],
       "price": null,
       "currency": null,
       "note": "No internal carbon price is applied in decision-making."

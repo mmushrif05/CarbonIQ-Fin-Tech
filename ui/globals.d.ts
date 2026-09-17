@@ -29,6 +29,10 @@ interface Window {
   CARBONIQ_fetch: (path: string, init?: RequestInit) => Promise<any>;
   /** Navigate the shell to a page id, as the sidebar does. */
   CARBONIQ_navigateTo: (pageId: string) => void;
+  /** Re-run a loaded page's `refresh()` in place — the walkthrough's next step on the screen already open. */
+  CARBONIQ_refreshPage: (pageId: string) => Promise<void>;
+  /** Draw the presenter's cue on a control by id; present only while the walkthrough is mounted. */
+  CARBONIQ_cue?: (id: string) => void;
   /** Re-reads the reporting entity's name into the sidebar workspace label. */
   CARBONIQ_labelWorkspace: () => Promise<void>;
   /** The capital adjust drawer, which must initialise before the first fetch. */

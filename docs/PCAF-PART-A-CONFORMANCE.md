@@ -903,11 +903,11 @@ actually ran.
 
 **Clause:** SLFRS S2 §5–7, §9–23, §24–26, §27–37
 
-**Rule.** The four SLFRS S2 pillars — governance, strategy, risk management, and metrics and targets — are sections of the one disclosure a bank files, not a second document. They sit after the financed-emissions sections, which answer §29(a)(vi) and B58–B63 unchanged.
+**Rule.** The four SLFRS S2 pillars — governance, strategy, risk management, and metrics and targets — are the body of the one disclosure a bank files, in the standard’s own order, with financed emissions inside the fourth pillar as the scope 3 category 15 metric. The PCAF Chapter 6 material that answers §29(a)(vi) and B58–B63 is printed unchanged as the basis of preparation, in the annexes.
 
-**Implementation.** src/domains/pcaf-part-a/reporting/consolidated/s2-sections.js — buildS2Sections() composes the seven S2 sections; src/domains/pcaf-part-a/reporting/consolidated/sections.js places them after the Chapter 6 sections and before the limitations
+**Implementation.** src/domains/pcaf-part-a/reporting/consolidated/s2-sections.js — buildS2Sections() composes the seven S2 sections; src/domains/pcaf-part-a/reporting/consolidated/sections.js places them directly after the reporting entity and before what is outstanding; src/domains/pcaf-part-a/reporting/consolidated/model.js prints the Chapter 6 blocks as Annexes A and B
 
-**Evidence.** `tests/parta-s2-disclosure.test.js › the disclosure carries the four SLFRS S2 pillars as sections, in the standard’s order`
+**Evidence.** `tests/parta-s2-disclosure.test.js › the disclosure reads in the standard’s order: the entity, then the four pillars, then what is outstanding`
 
 ### A-S2-02 — Implemented
 
