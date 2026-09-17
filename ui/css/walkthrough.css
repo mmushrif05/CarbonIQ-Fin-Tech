@@ -1,52 +1,146 @@
 /* ============================================================
    CarbonIQ — the Walkthrough, and the strip that follows the presenter
+   ============================================================
+   The presenter's console, set in the same tokens as the Bank Overview
+   it opens onto: the document's forest green for the one primary act
+   (Start), a numbered rail for the six steps because their order is the
+   story, and a readiness list where each row's state is a dot and a word,
+   never colour alone. The strip is a floating bar in the forest green with
+   the six steps as dots, so a presenter sees where they are without
+   reading. Every colour is a token defined for both themes.
    ============================================================ */
 
 /* `hidden` must beat any display this sheet sets. */
 .walkthrough [hidden], .wt-strip[hidden] { display: none !important; }
 
+.partc.walkthrough {
+  --wt-ink: #1f231f;
+  --wt-ink-2: #5f665d;
+  --wt-rule: #e3e3dd;
+  --wt-card: #ffffff;
+  --wt-zebra: #fafaf7;
+  --wt-band: #f0f0ea;
+  --wt-green: #2f6b45;
+  --wt-green-dk: #29553a;
+  --wt-on-green: #ffffff;
+  --wt-sage-soft: #e9efe7;
+  --wt-ochre: #b27f02;
+  --p-accent: var(--wt-green);
+  --p-accent-bg: var(--wt-sage-soft);
+  --p-label: var(--wt-ink);
+  --p-label-2: var(--wt-ink-2);
+  --p-line: var(--wt-rule);
+  --p-separator: var(--wt-rule);
+  --p-fill: var(--wt-band);
+  --p-card: var(--wt-card);
+  --p-shadow: none;
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: var(--wt-ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .partc.walkthrough {
+    --wt-ink: #ece9e2; --wt-ink-2: #a8ada6; --wt-rule: #343a38; --wt-card: #1f2325; --wt-zebra: #1b1f20; --wt-band: #272c2c;
+    --wt-green: #7fbf95; --wt-green-dk: #a5d3b4; --wt-on-green: #141716; --wt-sage-soft: #263129; --wt-ochre: #d3a35a;
+  }
+}
+:root[data-theme="dark"] .partc.walkthrough {
+  --wt-ink: #ece9e2; --wt-ink-2: #a8ada6; --wt-rule: #343a38; --wt-card: #1f2325; --wt-zebra: #1b1f20; --wt-band: #272c2c;
+  --wt-green: #7fbf95; --wt-green-dk: #a5d3b4; --wt-on-green: #141716; --wt-sage-soft: #263129; --wt-ochre: #d3a35a;
+}
+
+/* ── The document's furniture on this page ─────────────── */
+.partc.walkthrough .partc-card { background: var(--wt-card); border: 1px solid var(--wt-rule); border-radius: 10px; box-shadow: none; }
+.partc.walkthrough .partc-card-head h3, .walkthrough .wt-title { font-family: 'Lora', Georgia, 'Times New Roman', serif; }
+.partc.walkthrough .partc-card-head h3 { color: var(--wt-ink); font-weight: 700; font-size: 17px; letter-spacing: 0; margin-bottom: 4px; }
+.partc.walkthrough .partc-card-head .partc-hint { display: block; max-width: 72ch; }
+.partc.walkthrough .btn { border-radius: 980px; font-family: inherit; font-weight: 600; font-size: 13.5px; padding: 9px 16px; min-height: 38px; }
+.partc.walkthrough .btn-primary { background: var(--wt-green); color: var(--wt-on-green); }
+.partc.walkthrough .btn-secondary { background: var(--wt-band); color: var(--wt-ink); }
+.partc.walkthrough .btn-secondary:hover { background: var(--wt-sage-soft); }
+.partc.walkthrough .partc-table th { background: transparent; color: var(--wt-ink-2); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.partc.walkthrough .partc-table td { border-bottom: 1px solid var(--wt-rule); font-size: 13.5px; }
+.partc.walkthrough select { font-family: inherit; color: var(--wt-ink); background: var(--wt-card); border: 1px solid var(--wt-rule); border-radius: 8px; padding: 7px 10px; }
+.walkthrough .wt-panels .partc-panel { min-width: 0; }
+
+/* ── The head ───────────────────────────────────────────── */
+.walkthrough .wt-head { padding: 24px 28px 22px; }
 .walkthrough .wt-head-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 20px; align-items: flex-start; }
-.walkthrough .wt-title { margin: 0 0 4px; font-size: 22px; }
-.walkthrough .wt-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.walkthrough .wt-year { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; color: var(--p-label-2, #6e6e73); }
+.walkthrough .wt-head-title { flex: 1 1 320px; min-width: 0; }
+.walkthrough .wt-eyebrow { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wt-green); font-weight: 700; }
+.walkthrough .wt-title { margin: 0 0 6px; font-size: 30px; line-height: 1.1; font-weight: 700; text-wrap: balance; }
+.walkthrough .wt-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.walkthrough .wt-year { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--wt-ink-2); min-width: 0; }
 .walkthrough .wt-year select { min-width: 0; }
+.walkthrough .wt-start { padding-inline: 22px; }
+.walkthrough .wt-status { margin: 12px 0 0; }
 
+/* The day's readiness as a row of chips: ready, needed, moving. */
+.walkthrough .wt-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--wt-rule); }
+.walkthrough .wt-summary:empty { display: none; }
+.walkthrough .wt-sum { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--wt-band); font-size: 12.5px; color: var(--wt-ink-2); }
+.walkthrough .wt-sum b { font-size: 15px; color: var(--wt-ink); font-variant-numeric: tabular-nums; }
+
+/* ── Readiness rows: a dot and a word, never colour alone ── */
 .walkthrough .wt-table td, .walkthrough .wt-table th { vertical-align: top; }
-.walkthrough .wt-state { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; white-space: nowrap; }
-.walkthrough .wt-ready { background: var(--p-accent-bg, #e6f2ec); color: var(--p-accent, #0a7a4c); }
-.walkthrough .wt-needed { background: var(--p-fill, #ececec); color: var(--p-label-2, #6e6e73); }
+.walkthrough .wt-state { display: inline-flex; align-items: center; gap: 7px; padding: 3px 10px 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.walkthrough .wt-state::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.walkthrough .wt-ready { background: var(--wt-sage-soft); color: var(--wt-green-dk); }
+.walkthrough .wt-needed { background: var(--wt-band); color: var(--wt-ink-2); }
+.walkthrough .wt-open { min-height: 32px; padding: 5px 12px; font-size: 12.5px; }
 
-.walkthrough .wt-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
-.walkthrough .wt-step { border: 1px solid var(--p-line, #e5e5ea); border-radius: 12px; padding: 14px 16px; min-width: 0; }
-.walkthrough .wt-step-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.walkthrough .wt-step-head h4 { margin: 0; font-size: 15px; flex: 1 1 200px; min-width: 0; }
-.walkthrough .wt-step-n { display: inline-flex; width: 26px; height: 26px; border-radius: 50%; align-items: center; justify-content: center;
-  background: #4a5f42; color: #fff; font-size: 13px; font-weight: 600; }
-.walkthrough .wt-step p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; }
-.walkthrough .wt-say { color: var(--p-label-2, #6e6e73); font-style: italic; }
+/* ── The six steps, as a rail ───────────────────────────── */
+.walkthrough .wt-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; max-width: 78ch; }
+.walkthrough .partc-card + .partc-card, .walkthrough .partc-card + .partc-panels { margin-top: 16px; }
+.walkthrough .wt-step { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 0 14px; min-width: 0; position: relative; padding-bottom: 18px; }
+.walkthrough .wt-step::before { content: ''; position: absolute; left: 16px; top: 34px; bottom: 0; width: 2px; background: var(--wt-rule); }
+.walkthrough .wt-step:last-child::before { display: none; }
+.walkthrough .wt-step:last-child { padding-bottom: 0; }
+.walkthrough .wt-step-n { display: inline-flex; width: 34px; height: 34px; border-radius: 50%; align-items: center; justify-content: center;
+  background: var(--wt-green); color: var(--wt-on-green); font-size: 14px; font-weight: 700; position: relative; z-index: 1; }
+.walkthrough .wt-step-body { min-width: 0; padding-top: 5px; }
+.walkthrough .wt-step-head { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.walkthrough .wt-step-head h4 { margin: 0; font-size: 15px; font-weight: 700; flex: 1 1 200px; min-width: 0; }
+.walkthrough .wt-step-screen { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; background: var(--wt-band); color: var(--wt-ink-2); white-space: nowrap; }
+.walkthrough .wt-go { min-height: 32px; padding: 5px 12px; font-size: 12.5px; }
+.walkthrough .wt-step p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--wt-ink); }
+.walkthrough .wt-say { margin-top: 8px; }
+.walkthrough .wt-say summary { cursor: pointer; font-size: 12px; color: var(--wt-ink-2); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.walkthrough .wt-say summary::-webkit-details-marker { display: none; }
+.walkthrough .wt-say[open] summary { color: var(--wt-ink); }
+.walkthrough .wt-say p { color: var(--wt-ink-2); font-style: italic; margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--wt-rule); }
 .walkthrough .wt-say-label, .wt-strip .wt-say-label { display: inline-block; font-style: normal; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
-  padding: 1px 6px; border-radius: 4px; background: var(--p-fill, #ececec); margin-right: 6px; color: var(--p-label-2, #6e6e73); }
-.walkthrough .wt-language { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; }
+  padding: 1px 6px; border-radius: 4px; background: var(--wt-band, #ececec); color: var(--wt-ink-2, #6e6e73); }
+.walkthrough .wt-language { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; display: grid; gap: 6px; }
+.walkthrough .wt-language em { font-style: normal; font-weight: 700; color: var(--wt-green-dk); }
 
-/* The strip: one line under the topbar on every page while a walkthrough is
-   on, in the accent so it reads as the presenter's own rail and not as a
-   warning. Nothing in it is a figure. */
-.wt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 10px 16px;
-  background: #4a5f42; color: #fff; font-size: 13.5px; min-width: 0;
+/* ── The strip: a floating bar under the topbar on every page while a
+   walkthrough is on, in the forest green so it reads as the presenter's
+   own rail and not as a warning. Nothing in it is a figure. ─── */
+.wt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 18px;
+  margin: 10px 16px 0; border-radius: 14px;
+  background: #2f6b45; color: #fff; font-size: 13.5px; min-width: 0;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
   position: sticky; top: 0; z-index: 40; }
-.wt-strip .wt-strip-n { font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; opacity: .85; white-space: nowrap; }
+.wt-strip .wt-strip-n { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; white-space: nowrap; font-weight: 700; }
+.wt-strip .wt-strip-dots { display: inline-flex; gap: 5px; align-items: center; }
+.wt-strip .wt-strip-dots i { display: block; width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .35); }
+.wt-strip .wt-strip-dots i.is-done { background: rgba(255, 255, 255, .75); }
+.wt-strip .wt-strip-dots i.is-on { background: #fff; width: 18px; border-radius: 4px; }
 .wt-strip .wt-strip-title { font-weight: 700; font-size: 15px; }
-.wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; opacity: .95; }
-.wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; opacity: .95; }
+.wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; opacity: .95; font-size: 13px; line-height: 1.45; }
+.wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; opacity: .95; font-size: 13px; line-height: 1.45; }
+.wt-strip .wt-strip-say-row .wt-say-label { background: rgba(255,255,255,.16); color: #fff; margin-right: 6px; }
 .wt-strip .wt-strip-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
-.wt-strip .wt-strip-buttons button { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.35); border-radius: 8px;
-  padding: 5px 10px; font-size: 12.5px; cursor: pointer; }
+.wt-strip .wt-strip-buttons button { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 999px;
+  padding: 6px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
+.wt-strip .wt-strip-buttons button:hover:not(:disabled) { background: rgba(255,255,255,.24); }
+.wt-strip .wt-strip-buttons #wt-strip-next { background: #fff; color: #2f6b45; border-color: #fff; }
 .wt-strip .wt-strip-buttons button:disabled { opacity: .45; cursor: default; }
 .wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
 .wt-strip label { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; white-space: nowrap; }
 
 /* The control a step asks for, marked for a few seconds: the document's
    one warm accent, on whichever screen the step opened. */
-.wt-cue { box-shadow: 0 0 0 4px #e8935f !important; animation: wt-pulse 1.1s ease-in-out 4; position: relative; z-index: 1; }
-@keyframes wt-pulse { 0%, 100% { box-shadow: 0 0 0 4px #e8935f; } 50% { box-shadow: 0 0 0 9px rgba(232, 147, 95, 0.35); } }
+.wt-cue { box-shadow: 0 0 0 4px #d9782f !important; animation: wt-pulse 1.1s ease-in-out 4; position: relative; z-index: 1; }
+@keyframes wt-pulse { 0%, 100% { box-shadow: 0 0 0 4px #d9782f; } 50% { box-shadow: 0 0 0 9px rgba(217, 120, 47, 0.35); } }
 @media (prefers-reduced-motion: reduce) { .wt-cue { animation: none; } }

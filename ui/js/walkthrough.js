@@ -130,6 +130,7 @@ const WalkthroughPage = (() => {
       try { ({ report: document_ } = await partA(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=json`)); } catch (_) { document_ = null; }
     }
     renderReadiness(position, refusal, document_);
+    renderSummary();
     renderSteps();
     const e = (position && position.entity) || {};
     say('wt-entity', e.reportingEntity || 'Reporting entity not stated');
@@ -183,14 +184,30 @@ const WalkthroughPage = (() => {
     setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
   }
 
+  const SCREEN = { bank: 'Bank Overview', 'parta-register': 'Lending Book', 'parta-position': 'Financed Emissions' };
+
   function renderSteps() {
     setHtml('wt-steps', STEPS.map((s, i) => `
       <li class="wt-step">
-        <div class="wt-step-head"><span class="wt-step-n">${i + 1}</span><h4>${esc(s.title)}</h4>
-          <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
-        <p>${esc(s.action)}</p>
-        <p class="wt-say"><span class="wt-say-label">Say</span> ${esc(s.note)}</p>
+        <span class="wt-step-n">${i + 1}</span>
+        <div class="wt-step-body">
+          <div class="wt-step-head"><h4>${esc(s.title)}</h4><span class="wt-step-screen">${esc(SCREEN[s.page] || s.page)}</span>
+            <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
+          <p>${esc(s.action)}</p>
+          <details class="wt-say"><summary><span class="wt-say-label">Say</span> What to say</summary><p>${esc(s.note)}</p></details>
+        </div>
       </li>`).join(''));
+  }
+
+  /* The day at a glance: how many rows stand ready, read off the rows
+     already rendered — a count of states, not a figure. */
+  function renderSummary() {
+    const rows = document.querySelectorAll('#wt-readiness-rows .wt-state');
+    let ready = 0, needed = 0;
+    for (const el of rows) { if (el.classList.contains('wt-ready')) ready += 1; else needed += 1; }
+    setHtml('wt-summary', rows.length
+      ? `<span class="wt-sum"><b>${ready}</b> ready</span><span class="wt-sum"><b>${needed}</b> needed</span><span class="wt-sum"><b>${STEPS.length}</b> steps</span>`
+      : '');
   }
 
   // ── the strip that follows the presenter ───────────────────
@@ -230,6 +247,7 @@ const WalkthroughPage = (() => {
     const step = STEPS[s.step];
     strip.hidden = false;
     say('wt-strip-n', `Step ${s.step + 1} of ${STEPS.length}`);
+    setHtml('wt-strip-dots', STEPS.map((_, i) => `<i class="${i < s.step ? 'is-done' : i === s.step ? 'is-on' : ''}"></i>`).join(''));
     say('wt-strip-title', step.title);
     say('wt-strip-action', step.action);
     say('wt-strip-say', step.note);

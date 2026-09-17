@@ -298,3 +298,38 @@ describe('The figures band is cards with drawings, not sentences (CARDS-2)', () 
     must(source('ui/css/bank.css'), /\.bank-behind-btn::after \{ content: ' ›'/, 'the behind control reads as a control');
   });
 });
+
+describe('The overview is drawn to the data-visualisation method (DESIGN-3)', () => {
+  test('the class palette is one validated set, stepped for both themes, and the hero figure is the sans', () => {
+    /* Light and dark values differ: the dark set is the same hues stepped for
+       the dark surface, never an automatic flip. */
+    for (const k of ['business-loans-unlisted-equity', 'listed-equity-corporate-bonds', 'project-finance', 'commercial-real-estate', 'mortgages', 'motor-vehicle-loans', 'sovereign-debt']) {
+      const all = [...CSS.matchAll(new RegExp(`--cls-${k}:\\s*(#[0-9a-f]{6})`, 'g'))].map(m => m[1]);
+      expect(all).toHaveLength(3);
+      expect(all[0]).not.toBe(all[1]);
+      expect(all[1]).toBe(all[2]);
+    }
+    must(CSS, /\.bank-figure-hero \{ font-size: 48px;/, 'the hero figure is at least 48px');
+    mustNot(CSS, /\.bank-figure-value[^{]*\{[^}]*Lora/, 'the hero figure is the sans, never the display face', 'a serif on the hero figure reads as decoration');
+    must(CSS, /\.bank-figures \{ grid-template-columns: repeat\(12, minmax\(0, 1fr\)\); \}/, 'twelve tracks at desktop width');
+    must(CSS, /\.bank-figure-primary, \.bank-figure-wide \{ grid-column: span 6; \}/, 'the two lead cards take a row between them');
+  });
+
+  test('every chart is a figure with a table twin and a hover readout; the filter row sits above the charts', () => {
+    for (const id of ['bk-chart-emissions', 'bk-chart-dq', 'bk-chart-outstanding', 'bk-chart-intensity', 'bk-chart-climate', 'bk-chart-industry']) {
+      must(JS, new RegExp(`setHtml\\('${id}', Charts\\.figure\\(`), `${id} is a figure with a table twin`);
+    }
+    expect(HTML.indexOf('id="bk-chips"')).toBeLessThan(HTML.indexOf('id="bk-chart-emissions"'));
+    must(HTML, /<section class="bank-filter">/, 'one filter row, above every chart it scopes');
+    must(HTML, /<section class="partc-card bank-focus" id="bk-focus" hidden>/, 'the class in focus is a card of its own');
+    must(JS, /el\.style\.setProperty\('--swatch', CLASS_COLOR\(c\.assetClass\)\)/, 'the focus card carries the class hue on its edge');
+  });
+
+  test('by asset class is a list of rows a committee reads, each opening the book', () => {
+    must(HTML, /<div class="bank-tiles-head" aria-hidden="true">/, 'the rows have column heads');
+    must(JS, /class="bank-tile-cell\$\{num \? ' num' : ''\}"><span class="bank-tile-key">/, 'each cell carries its key for the phone layout');
+    must(CSS, /@media \(max-width: 900px\) \{\s*\.bank-tiles-head \{ display: none; \}/, 'the heads give way to per-cell keys on a phone');
+    must(HTML, /A row opens the book at that class\./, 'the panel says what a row does');
+  });
+});
+
