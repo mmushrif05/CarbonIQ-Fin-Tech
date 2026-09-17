@@ -17,6 +17,7 @@ const PAGE_META = {
   'partc-book':  { title: 'Insurance Book',      subtitle: 'Clients, projects and the policies written against them' },
   'partc-portfolio': { title: 'Reporting Year',  subtitle: 'The insurer position for a reporting year — locked assessments, summed per policy' },
   'pcaf-parta':  { title: 'PCAF Part A',         subtitle: 'Financed emissions for lending — attribution, scope 1 and 2, data quality by option. Manual entry.' },
+  'walkthrough':    { title: 'Walkthrough',        subtitle: 'The bank’s book in the order a committee reads it — what the day still needs, the five screens, and a strip that follows you across them' },
   'bank':           { title: 'Bank Overview',      subtitle: 'The bank’s financed emissions for a reporting year — every asset class, what to fix first, the baselines in force, and what the disclosure still needs' },
   'parta-position': { title: 'Financed Emissions', subtitle: 'The whole PCAF Part A position for a reporting year — every asset class, what the disclosure still needs, and the document filed from it' },
   'parta-register': { title: 'Lending Book',      subtitle: 'The exposures behind the Part A figures — position, coverage, and what to fix first' },
@@ -63,6 +64,12 @@ const DYNAMIC_PAGES = {
   'pcaf-parta': {
     src:  'pages/pcaf-parta.html',
     init: () => typeof PCAFPartAPage !== 'undefined' && PCAFPartAPage.init(),
+  },
+  'walkthrough': {
+    src:  'pages/walkthrough.html',
+    init: () => typeof WalkthroughPage !== 'undefined' && WalkthroughPage.init(),
+    // The readiness rows are the position, so a return visit re-reads.
+    refresh: () => typeof WalkthroughPage !== 'undefined' && WalkthroughPage.refresh(),
   },
   'bank': {
     src:  'pages/bank.html',
@@ -226,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Update topbar
     const meta = PAGE_META[pageId] || { title: pageId, subtitle: '' };
     if (pageTitle)    pageTitle.textContent    = meta.title;
+    if (typeof MobileNav !== 'undefined' && MobileNav.setTitle) MobileNav.setTitle(meta.title);
     if (pageSubtitle) pageSubtitle.textContent = meta.subtitle;
   }
 
