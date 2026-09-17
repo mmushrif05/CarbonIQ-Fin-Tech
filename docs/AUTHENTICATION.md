@@ -177,6 +177,20 @@ preview account is the authority the request carried — and it cannot mislead
 anyone about a book, because the only book a preview session can reach is the
 sample one.
 
+### The allowance is the session's, not the account's
+
+A rate limit counts a caller. For an integration key the caller is the
+organisation and for a signed-in person it is the account, because an account
+is a person — and this is the one account that is not. Keyed on the account,
+every preview visitor in the world shared a single allowance of 100 requests a
+minute: a visitor who had made fifty requests was refused because a stranger
+had made the other fifty, and what they saw was not a refusal but a screen that
+looked empty. `keyFor()` in `src/platform/http/rate-limit.js` therefore keys a
+preview request on `req.session.id`, which is the thing a visitor actually
+holds and is already the token's digest rather than the token. Every other
+caller is keyed exactly as before, and a single preview visitor is still held
+to the same allowance.
+
 ### Why the isolation holds
 
 Not a check that refuses; a partition that is empty. Every read at the storage

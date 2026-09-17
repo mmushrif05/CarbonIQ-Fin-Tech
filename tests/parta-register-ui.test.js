@@ -221,6 +221,17 @@ describe('The request the form builds', () => {
     must(HTML, /id="pr-detail-state"/, 'the state is on the detail');
   });
 
+  /* A read that was refused and a book that is empty are different claims,
+     and the screen made them look the same: the failure was written to the
+     status line and then overwritten by the count the position returned, so
+     a refused list drew "7 exposure(s)" over an empty table. */
+  test('a list that could not be read is never reported as a book with nothing in it', () => {
+    must(JS, /catch \(err\) \{ unread = err; \}/, 'the failure is held, not written where the next line overwrites it');
+    must(JS, /say\('pr-status', unread[\s\S]{0,240}?exposures could not be read/, 'the status says the read failed');
+    mustNot(JS, /catch \(err\) \{ say\('pr-status', err\.message\); \}\s*\n\s*rows = list;/,
+      'the exposure count never lands on top of the failure it replaced');
+  });
+
   test('the write controls are marked, so a preview visitor is not offered a button the server refuses', () => {
     for (const id of ['pr-record-toggle', 'pr-record', 'pr-book-form', 'pr-detail-edit', 'pr-detail-recompute', 'pr-detail-remove', 'pr-detail-review', 'pr-detail-approve', 'pr-detail-draft', 'pr-detail-reopen']) {
       must(HTML, new RegExp(`id="${id}"[^>]*data-writes|data-writes[^>]*id="${id}"`), `${id} carries data-writes`);

@@ -25,7 +25,7 @@ Checked across all three: **425**. Remaining: **229**.
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **372**. Remaining: **68** (406 errors, measured by
+Checked: **372**. Remaining: **68** (408 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -34,8 +34,8 @@ pragma and nothing else.
 | File | Errors to fix before it joins |
 |---|---|
 | `src/domains/pcaf-part-c/application/partc-assessments.js` | 37 |
+| `scripts/rehearse-runbook.js` | 21 |
 | `src/domains/pcaf-part-c/agents/form.js` | 21 |
-| `scripts/rehearse-runbook.js` | 19 |
 | `src/domains/pcaf-part-a/domain/index.js` | 19 |
 | `src/domains/capital/interface/routes/capital.js` | 17 |
 | `src/domains/pcaf-part-a/domain/corporate/denominator.js` | 16 |

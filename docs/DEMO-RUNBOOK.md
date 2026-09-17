@@ -235,3 +235,4 @@ telling you what is still outstanding rather than claiming it is complete."*
 | An S2 share reads `—` | No exposure in the book is classified yet | Record a verdict on the Lending Book; a share over an unclassified book would be a number about nothing |
 | A pillar reads *Illustrative* | The statement still equals the content shipped with the tool | Edit it on Financed Emissions; one changed word makes it the bank's |
 | `409 CLIMATE_NOT_EMPTY` | Climate facts are already recorded | The illustrative set loads once; edit what is there |
+| A screen says a list could not be read | 100 requests a minute per caller; a very fast walkthrough can reach it | Wait a minute and reload; the figure is not lost |

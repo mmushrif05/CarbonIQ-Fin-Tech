@@ -325,3 +325,46 @@ describe('The screen', () => {
       'the mark is not amber', 'Amber in this product means act on this.');
   });
 });
+
+describe('One allowance per visitor, not per account', () => {
+  const { keyFor } = require('../src/platform/http/rate-limit');
+
+  /* Every visitor is admitted on one shared account, so the account cannot be
+     what a rate limit counts: keyed on it, a visitor who had made fifty
+     requests was refused because a stranger had made the other fifty. Proved
+     on the key rather than by driving a hundred requests, because the
+     allowance is a number somebody may raise and the property is not. */
+  test('two preview visitors do not share a bucket, though they share an account', async () => {
+    const one = await admitted();
+    const two = await admitted();
+    const reqOf = async token => {
+      const resolved = await require('../src/platform/auth/sessions').resolve(token);
+      return { user: resolved.user, session: resolved.session };
+    };
+    const a = keyFor(await reqOf(one.token));
+    const b = keyFor(await reqOf(two.token));
+
+    expect((await reqOf(one.token)).user.uid).toBe((await reqOf(two.token)).user.uid);
+    expect(a).not.toBe(b);
+    expect(a).toMatch(/^preview-session:/);
+  });
+
+  test('an ordinary account is still one bucket, whichever browser it signed in from', () => {
+    const user = { uid: 'u_1', organizationId: 'a-bank' };
+    expect(keyFor({ user, session: { id: 'one' } })).toBe('user:u_1');
+    expect(keyFor({ user, session: { id: 'two' } })).toBe('user:u_1');
+  });
+
+  test('an integration key is its organisation, and an anonymous caller its address', () => {
+    expect(keyFor({ apiKey: { orgId: 'a-bank' } })).toBe('apikey:a-bank');
+    expect(keyFor({ ip: '203.0.113.7' })).toBe('203.0.113.7');
+  });
+
+  /* The bucket names the session by the digest the store already holds, never
+     the token the visitor carries. */
+  test('the key is not the visitor’s token', async () => {
+    const { token } = await admitted();
+    const resolved = await require('../src/platform/auth/sessions').resolve(token);
+    expect(keyFor({ user: resolved.user, session: resolved.session })).not.toContain(token);
+  });
+});
