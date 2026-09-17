@@ -105,11 +105,11 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-DOC-13` | DCL p.128; Part A Box 6.1-6; Table 5.9-6 | `tests/parta-consolidated.test.js` | 152 | executed |
 | PCAF Part A §5.2 | `A-DOC-14` | DCL p.124 | `tests/parta-consolidated.test.js` | 152 | executed |
 | PCAF Part A §5.2 | `A-DOC-15` | Part A ch.6 (p.160) | `tests/parta-consolidated.test.js` | 36 | executed |
-| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 146 | executed |
-| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 155 | executed |
+| PCAF Part A §5.2 | `A-S2-01` | SLFRS S2 §5–7, §9–23, §24–26, §27–37 | `tests/parta-s2-disclosure.test.js` | 150 | executed |
+| PCAF Part A §5.2 | `A-S2-02` | SLFRS S2 §5–37; report-integrity | `tests/parta-s2-disclosure.test.js` | 156 | executed |
 | PCAF Part A §5.2 | `A-S2-03` | report-integrity — measured, declared, absent | `tests/parta-s2-disclosure.test.js` | 202 | executed |
 | PCAF Part A §5.2 | `A-S2-04` | SLFRS S2 §29(a)(i)–(iv), (vi); B58–B63 | `tests/parta-s2-disclosure.test.js` | 94 | executed |
-| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 141 | executed |
+| PCAF Part A §5.2 | `A-S2-05` | SLFRS S2 §29(b)–(d) | `tests/parta-s2-disclosure.test.js` | 142 | executed |
 | PCAF Part A §5.2 | `A-S2-06` | SLFRS S2 §32; IFRS S2 industry-based guidance for commercial banks | `tests/parta-s2-disclosure.test.js` | 82 | executed |
 | PCAF Part A §5.2 | `A-S2-07` | SLFRS S2 — the disclosure read as an S2 file | `tests/parta-s2-disclosure.test.js` | 94 | executed |
 | PCAF Part A §5.2 | `A-S2-08` | report-integrity; PCAF conformance language | `tests/parta-s2-disclosure.test.js` | 39 | executed |

@@ -272,3 +272,29 @@ describe('Every id the module reads exists in the fragment', () => {
     expect(typeof Page.refresh).toBe('function');
   });
 });
+
+describe('The figures band is cards with drawings, not sentences (CARDS-2)', () => {
+  test('every figure is a card, the primary and the scope 3 carry a per-class drawing, the two shares are rings, the outstanding items are chips', () => {
+    for (const id of ['bk-headline-chart', 'bk-s3-chart', 'bk-coverage-ring', 'bk-approved-ring', 'bk-ready-items']) {
+      must(HTML, new RegExp(`id="${id}"`), `${id} is in the band`);
+    }
+    must(JS, /setHtml\('bk-headline-chart', charts && rec\.length \? Charts\.hbars\(/, 'the headline card draws one bar per class from the class’s own headline');
+    must(JS, /setHtml\('bk-s3-chart', charts && rec\.length \? Charts\.hbars\(/, 'the scope 3 card draws one bar per class, apart');
+    must(JS, /setHtml\('bk-coverage-ring', charts \? Charts\.ring\(val\(c\.sharePct\)/, 'coverage is the server’s share as a ring');
+    must(JS, /setHtml\('bk-approved-ring', charts \? Charts\.ring\(val\(ap\.approvedPct\)/, 'approval is the server’s share as a ring');
+    must(JS, /items\.slice\(0, 3\)\.map\(it => `<span class="bank-chip-soft">/, 'the first outstanding items are chips');
+    mustNot(HTML, /bk-headline-basis/, 'the class-by-class basis is behind the figure, not in the band', 'the Behind drawer prints it');
+    mustNot(JS, /say\('bk-headline-basis'/, 'no sentence is printed under the headline');
+  });
+  test('one card language, loaded once and before the corrections', () => {
+    must(INDEX, /<link rel="stylesheet" href="css\/cards\.css">/, 'the card sheet is loaded');
+    expect(INDEX.indexOf('css/cards.css')).toBeLessThan(INDEX.indexOf('css/responsive.css'));
+    const CARDS = source('ui/css/cards.css');
+    must(CARDS, /\.bank-figure,[\s\S]*?border-radius: var\(--card-radius\)/, 'the figure card takes the shared radius');
+    must(CARDS, /:root\[data-theme="dark"\]/, 'the dark stamp is honoured');
+    must(CARDS, /:root:not\(\[data-theme="light"\]\)/, 'the system dark scheme is honoured unless light is stamped');
+    must(CARDS, /\.ch \{ display: block;/, 'every drawing is a block');
+    mustNot(CARDS, /min-width:\s*\d+px/, 'the card sheet sets no floor a phone cannot meet', 'a floor belongs to the screen, in minmax(min(100%, …))');
+    must(source('ui/css/bank.css'), /\.bank-behind-btn::after \{ content: ' ›'/, 'the behind control reads as a control');
+  });
+});

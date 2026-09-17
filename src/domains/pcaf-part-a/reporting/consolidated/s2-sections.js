@@ -200,6 +200,16 @@ function crossIndustrySection(f) {
       ...bandBlocks(e.transitionRisk, 'Assets vulnerable to climate-related transition risks', 'S2 §29(b)', ccy),
       ...bandBlocks(e.physicalRisk, 'Assets vulnerable to climate-related physical risks', 'S2 §29(c)', ccy),
       ...bandBlocks(e.opportunities, 'Assets aligned with climate-related opportunities', 'S2 §29(d)', ccy),
+      b.bars({
+        label: 'The three amounts, drawn',
+        rows: [
+          { label: 'Vulnerable to transition risk — S2 §29(b)', value: e.transitionRisk.amount, color: '#B8863B' },
+          { label: 'Vulnerable to physical risk — S2 §29(c)', value: e.physicalRisk.amount, color: '#3E6180' },
+          { label: 'Aligned with opportunities — S2 §29(d)', value: e.opportunities.amount, color: '#4A5F42' },
+          { label: 'Not yet assessed', value: e.transitionRisk.unassessedAmount, color: '#C9C9C9' },
+        ],
+        unit: ccy ? `outstanding, ${ccy}` : 'outstanding', decimals: 0,
+      }),
       e.transitionRisk.unassessedAmount > 0 ? b.caption(
         'The percentage is taken over the outstanding actually assessed; the amount not yet assessed is stated '
         + 'above rather than counted as not vulnerable, so a book that has not been classified reads as '
@@ -242,6 +252,11 @@ function industrySection(f) {
         widths: [2.1, 0.8, 1.4, 1.5, 1], align: ['left', 'right', 'right', 'right', 'left'], zebra: true,
         rows: ind.rows.map(r => [r.sector || 'Not recorded', String(r.exposures), N(r.outstanding), T(r.emissions), r.carbonRelated ? 'Yes' : '—']),
       }) : b.body('No exposure carries a sector, so no industry table can be given.'),
+      ind.rows.length ? b.bars({
+        label: 'Gross exposure by industry, carbon-related industries in the darker bar',
+        rows: ind.rows.map(r => ({ label: r.sector || 'Not recorded', value: r.outstanding, color: r.carbonRelated ? '#B45309' : '#8C9A86' })),
+        unit: ccy ? `outstanding, ${ccy}` : 'outstanding', decimals: 0,
+      }) : null,
       b.figure({
         label: 'Outstanding to carbon-related industries', value: N(ind.carbonRelated.outstanding), unit: ccy || '',
         note: `${moneyShort(ind.carbonRelated.outstanding, ccy)}${ind.carbonRelated.sharePct === null || ind.carbonRelated.sharePct === undefined

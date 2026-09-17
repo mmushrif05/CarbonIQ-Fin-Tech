@@ -32,8 +32,8 @@ const Charts = (() => {
     return max;
   }
 
-  const W = 640;
-  const RH = 30;
+  const WIDE = 640;
+  const ROW = 30;
   const TOP = 4;
 
   /**
@@ -47,9 +47,14 @@ const Charts = (() => {
    * opts: { label, decimals }
    */
   function hbars(rows, opts = {}) {
-    const LW = 200;
-    const VW = 96;
+    /* Compact: a drawing that sits inside a card rather than across a panel —
+       a narrower label column and shorter rows, the same geometry. */
+    const compact = Boolean(opts.compact);
+    const LW = compact ? 160 : 200;
+    const VW = compact ? 84 : 96;
     const PAD = 6;
+    const W = compact ? 460 : WIDE;
+    const RH = compact ? 22 : ROW;
     const max = ceiling(rows);
     const usable = W - LW - VW - PAD;
     const px = v => (max > 0 && finite(v) ? (Math.max(0, v) / max) * usable : 0);
@@ -86,6 +91,8 @@ const Charts = (() => {
   function shares(rows, opts = {}) {
     const LW = 200;
     const PAD = 8;
+    const W = WIDE;
+    const RH = ROW;
     const usable = W - LW - PAD;
     const H = TOP + rows.length * RH + 4;
     const bars = rows.map((r, i) => {
@@ -121,10 +128,37 @@ const Charts = (() => {
     </svg>`;
   }
 
+
+  /**
+   * A score on a scale of five cells, 1 at the left and 5 at the right, the
+   * cell the score sits in filled in the hue the caller hands for it. It is
+   * a category on a scale — never a fraction of five — so the ends carry
+   * the words "highest" and "lowest" rather than a denominator.
+   *
+   * colors: five CSS values, one per score, in the order of the scale.
+   */
+  function scale(score, opts = {}) {
+    const S = finite(score) ? Math.round(score) : null;
+    const BW = 56, BH = 26, GAP = 6, X0 = 2, Y0 = 2;
+    const colors = opts.colors || [];
+    const cells = [1, 2, 3, 4, 5].map((n, i) => {
+      const x = X0 + i * (BW + GAP);
+      const on = S === n;
+      return `<rect class="ch-scale-box${on ? ' is-on' : ''}" x="${x}" y="${Y0}" width="${BW}" height="${BH}" rx="7"${on ? ` style="fill:${esc(colors[i] || 'currentColor')}"` : ''}/>
+        <text class="ch-scale-n${on ? ' is-on' : ''}" x="${x + BW / 2}" y="${Y0 + BH / 2 + 5}" text-anchor="middle">${n}</text>`;
+    }).join('');
+    const W = X0 * 2 + 5 * BW + 4 * GAP;
+    return `<svg class="ch ch-scale" viewBox="0 0 ${W} ${BH + 22}" role="img" aria-label="${esc(opts.label || 'Score')}: ${S === null ? 'not scored' : `${S} on the scale from 1, the highest quality, to 5, the lowest`}">
+      ${cells}
+      <text class="ch-scale-end" x="${X0}" y="${BH + 17}">1 · highest quality</text>
+      <text class="ch-scale-end" x="${W - X0}" y="${BH + 17}" text-anchor="end">5 · lowest</text>
+    </svg>`;
+  }
+
   /** A key beneath a drawing: a swatch and a word per item. */
   function legend(items) {
     return `<div class="ch-legend">${items.map(i => `<span class="ch-key"><i style="background:${esc(i.color)}"></i>${esc(i.label)}</span>`).join('')}</div>`;
   }
 
-  return { hbars, shares, ring, legend };
+  return { hbars, shares, ring, scale, legend };
 })();

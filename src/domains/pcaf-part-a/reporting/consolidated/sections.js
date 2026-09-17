@@ -173,6 +173,19 @@ function absoluteBlocks(f) {
     b.figure({ label: 'Financed emissions across the classes reported — the headline', value: T(t.headline.value), unit: 'tCO2e',
       note: t.headline.basis }),
     b.figure({ label: 'Financed scope 3 across the classes — a separate line', value: T(t.scope3.value), unit: 'tCO2e', note: t.scope3.note }),
+    /* The same figures drawn: one bar per class on its headline boundary,
+       scope 3 apart beneath — the drawing scales the classes' own values and
+       adds nothing up. */
+    f.recorded.length ? b.bars({
+      label: 'Financed emissions by asset class — the headline of each',
+      rows: f.recorded.map(c => ({ label: `${c.label} (${c.section})`, value: c.headline.value })),
+      unit: 'tCO2e, each class on the boundary its section reports', decimals: 3,
+    }) : null,
+    f.recorded.some(c => c.scope3 && c.scope3.value !== null) ? b.bars({
+      label: 'Financed scope 3 by asset class — apart, never added to the headline',
+      rows: f.recorded.map(c => ({ label: `${c.label} (${c.section})`, value: c.scope3 && c.scope3.value !== null ? c.scope3.value : null, color: '#9A9A9A' })),
+      unit: 'tCO2e', decimals: 3,
+    }) : null,
     b.table({
       head: ['Asset class', 'Headline', 'tCO2e', 'Scope 3 tCO2e', 'Data quality'],
       widths: [2, 2.2, 1.1, 1.1, 0.9], align: ['left', 'left', 'right', 'right', 'right'], zebra: true,

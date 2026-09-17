@@ -238,3 +238,24 @@ describe('The request the form builds', () => {
     }
   });
 });
+
+describe('The exposure detail is figures first, reasons on request (CARDS-3)', () => {
+  test('four cards, the lines drawn and tabled, the score on its scale, the attribution as a ring, the review as steps', () => {
+    must(JS, /<div class="pr-stats">/, 'the stat cards open the detail');
+    must(JS, /Charts\.hbars\(bars, \{ label: 'Financed scope 1, scope 2 and scope 3 apart, tCO2e', decimals: 2, compact: true \}\)/, 'the lines are drawn, scope 3 apart');
+    must(JS, /Charts\.scale\(dq\.scope1And2\.score, \{ label: 'Data quality score, scope 1 and 2', colors: DQ_RAMP \}\)/, 'the score sits on the five-cell scale');
+    must(JS, /const DQ_RAMP = \[1, 2, 3, 4, 5\]\.map\(n => `var\(--dq\$\{n\}\)`\)/, 'the scale takes the shared ramp');
+    must(JS, /Charts\.ring\(attributionPct, \{ label: 'Attribution share'/, 'the attribution factor is drawn as the share it is');
+    must(JS, /<table class="partc-table pr-lines">/, 'the seven lines are a table');
+    must(JS, /<details class="pr-why"><summary>Why<\/summary>/, 'an absent line keeps the standard’s sentence behind a disclosure');
+    must(JS, /<ol class="pr-steps" aria-label="Review">/, 'the review is steps');
+    must(JS, /What clears it\./, 'a finding still says what clears it');
+    must(source('ui/css/parta-register.css'), /\.parta-register \.pr-stats \{[\s\S]*?minmax\(min\(100%, 210px\), 1fr\)/, 'the cards collapse rather than push the page');
+  });
+  test('the scale is a category, never a fraction of five', () => {
+    const CH = source('ui/js/charts.js');
+    must(CH, /1 · highest quality/, 'the scale names its ends');
+    mustNot(CH, /\/\s*5\b/, 'never "2 / 5"');
+    must(CH, /function scale\(score, opts = \{\}\)/, 'the scale is a drawing in the chart module');
+  });
+});

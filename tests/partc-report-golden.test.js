@@ -72,6 +72,10 @@ function blockLines(blk, indent = '    ') {
     case 'figure':
       L.push(`${indent}figure: ${blk.label ?? ''} = ${blk.value ?? ''} ${blk.unit ?? ''}`.trimEnd());
       break;
+    case 'bars':
+      L.push(`${indent}bars: ${blk.label ?? ''}${blk.unit ? ` (${blk.unit})` : ''}`);
+      for (const r of blk.rows || []) L.push(`${indent}  bar: ${r.label} = ${r.value ?? '—'}`);
+      break;
     case 'callout':
       L.push(`${indent}callout${blk.title ? ` [${blk.title}]` : ''}: ${blk.text}`);
       break;

@@ -92,6 +92,10 @@ function blockLines(blk, indent = '    ') {
       if (blk.score) L.push(`${indent}  score: ${blk.score}`);
       if (blk.note) L.push(`${indent}  note: ${blk.note}`);
       break;
+    case 'bars':
+      L.push(`${indent}bars: ${blk.label ?? ''}${blk.unit ? ` (${blk.unit})` : ''}`);
+      for (const r of blk.rows || []) L.push(`${indent}  bar: ${r.label} = ${r.value ?? '—'}`);
+      break;
     case 'callout':
       L.push(`${indent}callout${blk.title ? ` [${blk.title}]` : ''}: ${blk.text}`);
       break;

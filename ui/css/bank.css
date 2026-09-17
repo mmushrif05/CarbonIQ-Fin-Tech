@@ -143,7 +143,7 @@
   box-shadow: none;
 }
 .partc.bank .partc-card-head h3,
-.bank-entity, .bank-figure-value, .bank-tile-value, .bank-empty h3, .bank-s2-title, .bank-s2-pillar b {
+.bank-entity, .bank-empty h3, .bank-s2-title, .bank-s2-pillar b {
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
 }
 .partc.bank .partc-card-head h3 { color: var(--bk-green-dk); font-weight: 700; font-size: 17px; letter-spacing: 0; }
@@ -201,12 +201,13 @@
 .bank-empty-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .bank-starter-name { flex: 1 1 16rem; min-width: 0; max-width: 100%; }
 
-/* Figure tiles: a band of figures on one rule, the primary one set larger
-   and marked with the document's one warm accent. */
+/* The figures band: one card per figure, the primary one tinted in the
+   sage of the document, each carrying a drawing of what makes it up rather
+   than a sentence about it. */
 .bank-figures {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
-  gap: 16px 22px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));
+  gap: 14px;
   margin-top: 20px;
   padding-top: 18px;
   border-top: 1px solid var(--bk-rule);
@@ -214,19 +215,30 @@
 .bank-figure {
   min-width: 0;
   display: flex; flex-direction: column; gap: 4px;
-  padding-top: 10px;
-  border-top: 2px solid var(--bk-rule);
+  padding: 16px 18px 14px;
+  background: var(--bk-card);
 }
-.bank-figure-primary { border-top-color: var(--bk-coral); }
+.bank-figure-primary { background: var(--bk-sage-soft); }
 .bank-figure-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--bk-ink-2); font-weight: 700; }
 .bank-figure-value {
-  font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--bk-ink);
+  font-size: 34px; font-weight: 700; line-height: 1.05; color: var(--bk-ink); letter-spacing: -0.02em;
   font-variant-numeric: lining-nums tabular-nums; overflow-wrap: anywhere;
 }
 .bank-figure-primary .bank-figure-value { font-size: 44px; color: var(--bk-green-dk); }
 .bank-figure-unit { font-size: 12.5px; color: var(--bk-ink-2); line-height: 1.4; }
 @media (min-width: 720px) {
-  .bank-figure-primary { grid-column: span 2; }
+  .bank-figure-primary, .bank-figure-wide { grid-column: span 2; }
+}
+.bank-figure-chart { margin-top: 8px; }
+.bank-figure-chart:empty { display: none; }
+.bank-figure-ring { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 4px 14px; align-items: center; }
+.bank-figure-ring-draw .ch-ring { width: 92px; height: 92px; }
+.bank-figure-ring-draw:empty { display: none; }
+.bank-figure-ring-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.bank-figure-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.bank-chip-soft {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; line-height: 1.4;
+  background: var(--bk-band); color: var(--bk-ink); max-width: 100%; overflow-wrap: anywhere;
 }
 .bank-bar { height: 6px; border-radius: 3px; background: var(--bk-band); margin-top: 6px; overflow: hidden; }
 .bank-bar-fill { display: block; height: 100%; width: 0; background: var(--bk-green); border-radius: 3px; transition: width 400ms ease; }
@@ -299,10 +311,12 @@
 /* ── The lineage behind a figure: a line of text under the figure it belongs
    to; the drawer is a card that opens beneath the hero. ─── */
 .bank-behind-btn {
-  font: inherit; font-size: 12px; color: var(--bk-ink-2); background: none; border: 0; padding: 0;
-  margin-top: 4px; cursor: pointer; text-align: left; text-decoration: underline dotted; align-self: flex-start;
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--bk-ink-2); background: transparent;
+  border: 1px solid var(--bk-rule); border-radius: 999px; padding: 3px 10px 3px 11px;
+  margin-top: 8px; cursor: pointer; text-align: left; align-self: flex-start;
 }
-.bank-behind-btn:hover, .bank-behind-btn:focus-visible { color: var(--bk-green); text-decoration: underline; outline: none; }
+.bank-behind-btn::after { content: ' ›'; font-weight: 700; }
+.bank-behind-btn:hover, .bank-behind-btn:focus-visible { color: var(--bk-green); border-color: var(--bk-green); outline: none; }
 .bank-behind { margin-bottom: 16px; border-left: 6px solid var(--bk-green); }
 .bank-behind .partc-card-head { align-items: flex-start; }
 .bank-behind .partc-card-head .btn { margin-left: auto; }

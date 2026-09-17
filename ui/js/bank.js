@@ -188,19 +188,28 @@ const BankPage = (() => {
 
     const t = p.totals || {};
     say('bk-headline', t.headline && t.headline.value !== null ? fmt(t.headline.value, 2) : '—');
-    say('bk-headline-basis', t.headline ? t.headline.basis : '');
     say('bk-s3', t.scope3 && t.scope3.value !== null ? fmt(t.scope3.value, 2) : '—');
+    /* The class-by-class basis the headline sums is printed behind the
+       figure; the card carries the split as a drawing instead — one bar per
+       class, each value the class's own. */
+    const rec = (p.classes || []).filter(c => c.status === 'recorded');
+    const charts = typeof Charts !== 'undefined';
+    setHtml('bk-headline-chart', charts && rec.length ? Charts.hbars(rec.map(c => ({
+      key: c.assetClass, label: short(c), value: val(c.headline && c.headline.value), color: CLASS_COLOR(c.assetClass),
+    })), { label: 'Financed scope 1 and 2 by asset class, tCO2e', decimals: 0, compact: true }) : '');
+    setHtml('bk-s3-chart', charts && rec.length ? Charts.hbars(rec.map(c => ({
+      key: c.assetClass, label: short(c), value: val(c.scope3 && c.scope3.value), color: 'var(--cls-scope3, #a3a3a3)',
+    })), { label: 'Financed scope 3 by asset class, tCO2e, apart', decimals: 0, compact: true }) : '');
 
     const c = p.coverage || {};
     if (c.sharePct === null || c.sharePct === undefined) {
       say('bk-coverage', '—');
       say('bk-coverage-unit', c.remedy || 'book total not stated');
-      if ($('bk-coverage-bar')) $('bk-coverage-bar').style.width = '0%';
     } else {
       say('bk-coverage', `${Number(c.sharePct).toFixed(2)}%`);
-      say('bk-coverage-unit', `of ${money(c.totalLoansAndInvestments, c.currency)} total loans and investments — Disclosure Checklist Part A, p.124`);
-      if ($('bk-coverage-bar')) $('bk-coverage-bar').style.width = `${Math.min(100, Math.max(0, Number(c.sharePct)))}%`;
+      say('bk-coverage-unit', `of ${moneyShort(c.totalLoansAndInvestments, c.currency)} total loans and investments — Disclosure Checklist Part A, p.124`);
     }
+    setHtml('bk-coverage-ring', charts ? Charts.ring(val(c.sharePct), { label: 'Coverage of the book', color: 'var(--bk-green, #4a5f42)' }) : '');
 
     const i = p.intensity || {};
     say('bk-intensity', i.value === null || i.value === undefined ? '—' : fmt(i.value, 2));
@@ -209,12 +218,17 @@ const BankPage = (() => {
     const items = p.outstandingItems || [];
     say('bk-ready', items.length === 0 ? 'Ready' : String(items.length));
     say('bk-ready-unit', items.length === 0 ? 'every item the disclosure asks of the bank is on the record' : 'items the disclosure still asks the bank for');
+    /* The first three items as chips, so the card says what rather than only
+       how many; the readiness panel below carries every one with its clause. */
+    setHtml('bk-ready-items', items.slice(0, 3).map(it => `<span class="bank-chip-soft">${esc(it.what || it.item || '')}</span>`).join('')
+      + (items.length > 3 ? `<span class="bank-chip-soft">+${items.length - 3} more</span>` : ''));
 
     const ap = p.approval || {};
     say('bk-approved', val(ap.total) ? `${fmt(ap.approved, 0)} of ${fmt(ap.total, 0)}` : '—');
     say('bk-approved-unit', val(ap.total)
       ? `exposures approved${val(ap.underReview) ? ` · ${fmt(ap.underReview, 0)} under review` : ''} — frozen until reopened with a reason`
       : 'no exposure in a register class yet');
+    setHtml('bk-approved-ring', charts ? Charts.ring(val(ap.approvedPct), { label: 'Exposures approved', color: 'var(--approved, #1d7a3a)' }) : '');
 
     renderS2(p);
     renderClasses(p);

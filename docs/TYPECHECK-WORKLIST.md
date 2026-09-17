@@ -106,7 +106,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **30** (1805 errors, measured by
+Checked: **8**. Remaining: **30** (1804 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **1 of them raise no errors at all** and can be adopted by adding the
@@ -120,7 +120,7 @@ pragma and nothing else.
 | `ui/js/dashboard.js` | 118 |
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/gcf-pipeline.js` | 90 |
-| `ui/js/parta-register.js` | 88 |
+| `ui/js/parta-register.js` | 89 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
 | `ui/js/gcf.js` | 58 |
@@ -135,9 +135,9 @@ pragma and nothing else.
 | `ui/js/parta-position.js` | 31 |
 | `ui/js/extract.js` | 30 |
 | `ui/js/new-project.js` | 29 |
-| `ui/js/bank.js` | 22 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |
+| `ui/js/bank.js` | 20 |
 | `ui/js/walkthrough.js` | 17 |
 | `ui/js/partc-portfolio.js` | 15 |
 | `ui/js/monitoring.js` | 11 |

@@ -38,21 +38,33 @@
         <span class="bank-figure-label">Financed scope 1 and 2</span>
         <span class="bank-figure-value" id="bk-headline">—</span>
         <span class="bank-figure-unit">tCO₂e · scope 3 category 15 of the bank</span>
-        <span class="partc-hint" id="bk-headline-basis"></span>
+        <div class="bank-figure-chart" id="bk-headline-chart"></div>
         <button type="button" class="bank-behind-btn" data-behind="headline">Behind this figure</button>
       </div>
-      <div class="bank-figure">
+      <div class="bank-figure bank-figure-wide">
         <span class="bank-figure-label">Financed scope 3 — separate line</span>
         <span class="bank-figure-value" id="bk-s3">—</span>
         <span class="bank-figure-unit">tCO₂e · never summed with scope 1 and 2</span>
+        <div class="bank-figure-chart" id="bk-s3-chart"></div>
         <button type="button" class="bank-behind-btn" data-behind="s3">Behind this figure</button>
       </div>
-      <div class="bank-figure">
-        <span class="bank-figure-label">Coverage of the book</span>
-        <span class="bank-figure-value" id="bk-coverage">—</span>
-        <span class="bank-figure-unit" id="bk-coverage-unit">of total loans and investments — Disclosure Checklist Part A, p.124</span>
-        <div class="bank-bar" aria-hidden="true"><div class="bank-bar-fill" id="bk-coverage-bar"></div></div>
-        <button type="button" class="bank-behind-btn" data-behind="coverage">Behind this figure</button>
+      <div class="bank-figure bank-figure-ring">
+        <div class="bank-figure-ring-draw" id="bk-coverage-ring"></div>
+        <div class="bank-figure-ring-text">
+          <span class="bank-figure-label">Coverage of the book</span>
+          <span class="bank-figure-value" id="bk-coverage">—</span>
+          <span class="bank-figure-unit" id="bk-coverage-unit">of total loans and investments — Disclosure Checklist Part A, p.124</span>
+          <button type="button" class="bank-behind-btn" data-behind="coverage">Behind this figure</button>
+        </div>
+      </div>
+      <div class="bank-figure bank-figure-ring">
+        <div class="bank-figure-ring-draw" id="bk-approved-ring"></div>
+        <div class="bank-figure-ring-text">
+          <span class="bank-figure-label">Approved by the bank</span>
+          <span class="bank-figure-value" id="bk-approved">—</span>
+          <span class="bank-figure-unit" id="bk-approved-unit">exposures approved — frozen until reopened with a reason</span>
+          <button type="button" class="bank-behind-btn" data-behind="approved">Behind this figure</button>
+        </div>
       </div>
       <div class="bank-figure">
         <span class="bank-figure-label">Economic intensity</span>
@@ -64,12 +76,7 @@
         <span class="bank-figure-label">Before filing</span>
         <span class="bank-figure-value" id="bk-ready">—</span>
         <span class="bank-figure-unit" id="bk-ready-unit">items the disclosure still asks the bank for</span>
-      </div>
-      <div class="bank-figure">
-        <span class="bank-figure-label">Approved by the bank</span>
-        <span class="bank-figure-value" id="bk-approved">—</span>
-        <span class="bank-figure-unit" id="bk-approved-unit">exposures approved — frozen until reopened with a reason</span>
-        <button type="button" class="bank-behind-btn" data-behind="approved">Behind this figure</button>
+        <div class="bank-figure-chips" id="bk-ready-items"></div>
       </div>
     </div>
 

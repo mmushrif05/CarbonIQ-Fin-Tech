@@ -65,6 +65,8 @@ const PartARegisterPage = (() => {
     : `<span class="dqb dqb-${Math.round(v)}">${label ? `<i>${esc(label)}</i>` : ''}<b>${Number(v).toFixed(dp)}</b></span>`;
 
   const sevChip = sev => `<span class="partc-sev">${sev === 'material' ? 'material' : 'advisory'}</span>`;
+  /* The five-cell scale takes the same ramp every PCAF screen badges with. */
+  const DQ_RAMP = [1, 2, 3, 4, 5].map(n => `var(--dq${n})`);
 
   /* Each finding code, in the reader's words. The code is the engine's stable
      key for grouping; what a bank reads is what the finding is about. A code
@@ -488,34 +490,84 @@ const PartARegisterPage = (() => {
     say('pr-detail-status', '');
     const stateEl = $('pr-detail-state');
     if (stateEl) { stateEl.className = `pr-state pr-state-${e.status || 'recorded'}`; stateEl.textContent = STATE_LABEL[e.status || 'recorded'] || e.status; }
-    const line = (label, l) => `<dt>${label}</dt><dd>${l && !l.absent && Number.isFinite(l.value) ? fmt(l.value, 2) + ' tCO₂e' : (l && l.reason ? esc(l.reason) : '—')}</dd>`;
     const dq = inv.dataQuality;
     const findings = (x.validation && x.validation.findings) || [];
+    const ccy = x.exposure.outstanding && x.exposure.outstanding.currency;
+    const held = l => Boolean(l && !l.absent && Number.isFinite(l.value));
+    const charts = typeof Charts !== 'undefined';
+    /* The seven lines the engine returns, drawn: scope 1 and 2 in the page's
+       hue, scope 3 apart in grey — every value the engine's, the drawing only
+       scales them. The table beneath carries the lines the borrower did not
+       report with the standard's own sentence behind a disclosure, so the
+       panel reads as figures first and reasons on request. */
+    const bars = [
+      { key: 'scope1', label: 'Scope 1', value: held(inv.scope1) ? inv.scope1.value : null, color: 'var(--p-accent, #0d9488)' },
+      { key: 'scope2', label: 'Scope 2', value: held(inv.scope2) ? inv.scope2.value : null, color: 'color-mix(in srgb, var(--p-accent, #0d9488) 55%, white)' },
+      { key: 'scope3', label: 'Scope 3 — apart', value: held(inv.scope3) ? inv.scope3.value : null, color: 'var(--cls-scope3, #a3a3a3)' },
+    ];
+    const LINES = [['Scope 1', inv.scope1], ['Scope 2', inv.scope2], ['Scope 1 and 2', inv.scope1And2], ['Scope 3', inv.scope3],
+      ['Removals', inv.removals], ['Credits generated', inv.creditsGenerated], ['Credits retired', inv.creditsRetired]].filter(([, l]) => l);
+    const lineRow = ([label, l]) => `<tr><td>${esc(label)}</td><td class="num">${held(l) ? fmt(l.value, 2) : '—'}</td>
+      <td>${held(l) ? '<span class="pr-chip pr-chip-ok">Reported</span>'
+        : `<span class="pr-chip">Not reported</span>${l.reason ? `<details class="pr-why"><summary>Why</summary><p>${esc(l.reason)}</p></details>` : ''}`}</td></tr>`;
+    /* The attribution factor is the engine's; the ring shows it as the share
+       of the borrower it is, which is the factor in percent and nothing more. */
+    const af = x.attribution ? Number(x.attribution.value) : NaN;
+    const attributionPct = Number.isFinite(af) ? af * 100 : null;
+    const badge12 = dqBadge(dq.scope1And2.score, `Option ${dq.scope1And2.option}`);
+    const badge3 = dq.scope3 && !dq.scope3.absent ? `${dqBadge(dq.scope3.score, `Option ${dq.scope3.option}`)} scope 3` : 'scope 3 not scored';
+    const steps = ['recorded', 'under_review', 'approved'];
+    const at = steps.indexOf(e.status || 'recorded');
+    const trail = (e.approval && e.approval.history) || [];
     setHtml('pr-detail-body', `
+      <div class="pr-stats">
+        <div class="pr-stat pr-stat-primary">
+          <span class="pr-stat-label">Financed scope 1 and 2</span>
+          <span class="pr-stat-value">${held(inv.scope1And2) ? fmt(inv.scope1And2.value, 2) : '—'}</span>
+          <span class="pr-stat-unit">tCO₂e · the bank’s attributed share</span>
+        </div>
+        <div class="pr-stat">
+          <span class="pr-stat-label">Financed scope 3 — apart</span>
+          <span class="pr-stat-value${held(inv.scope3) ? '' : ' pr-stat-value-sm'}">${held(inv.scope3) ? fmt(inv.scope3.value, 2) : 'Not reported'}</span>
+          <span class="pr-stat-unit">${held(inv.scope3) ? 'tCO₂e · never summed with scope 1 and 2' : 'the reason is stated with the line below'}</span>
+        </div>
+        <div class="pr-stat">
+          <span class="pr-stat-label">Data quality</span>
+          ${charts ? Charts.scale(dq.scope1And2.score, { label: 'Data quality score, scope 1 and 2', colors: DQ_RAMP }) : ''}
+          <span class="pr-stat-unit">${badge12} scope 1 and 2 · ${badge3}</span>
+        </div>
+        <div class="pr-stat pr-stat-ring">
+          <div class="pr-stat-ring-draw">${charts ? Charts.ring(attributionPct, { label: 'Attribution share', color: 'var(--p-accent, #0d9488)' }) : ''}</div>
+          <div class="pr-stat-ring-text">
+            <span class="pr-stat-label">Attribution</span>
+            <span class="pr-stat-value pr-stat-value-sm">${x.attribution ? esc(String(x.attribution.value)) : '—'}</span>
+            <span class="pr-stat-unit">${x.attribution ? 'of the borrower’s emissions is the bank’s' : 'no attribution factor — a sector-average option'}</span>
+          </div>
+        </div>
+      </div>
       <div class="partc-panels">
         <div class="partc-panel">
           <h5 class="partc-subhead">Financed lines</h5>
-          <dl class="pr-kv">
-            ${line('Scope 1', inv.scope1)}${line('Scope 2', inv.scope2)}${line('Scope 1 and 2', inv.scope1And2)}
-            ${line('Scope 3', inv.scope3)}${line('Removals', inv.removals)}
-            ${inv.creditsRetired ? line('Credits retired', inv.creditsRetired) : ''}${line('Credits generated', inv.creditsGenerated)}
-          </dl>
+          ${charts ? Charts.hbars(bars, { label: 'Financed scope 1, scope 2 and scope 3 apart, tCO2e', decimals: 2, compact: true }) : ''}
+          <div class="pr-scroll"><table class="partc-table pr-lines">
+            <thead><tr><th>Line</th><th>tCO₂e</th><th>Basis</th></tr></thead>
+            <tbody>${LINES.map(lineRow).join('')}</tbody></table></div>
           <p class="partc-hint">${esc(inv.separation)}</p>
         </div>
         <div class="partc-panel">
-          <h5 class="partc-subhead">Data quality</h5>
-          <p>${dqBadge(dq.scope1And2.score, 'Option ' + dq.scope1And2.option)} scope 1 and 2${dq.scope1And2.note ? ` <span class="partc-hint">${esc(dq.scope1And2.note)}</span>` : ''}</p>
-          <p>${dq.scope3 && !dq.scope3.absent ? dqBadge(dq.scope3.score, 'Option ' + dq.scope3.option) + ' scope 3' : '<span class="dqb dqb-na">scope 3 not scored</span>'}</p>
-          <p class="partc-hint">${esc(dq.scale)}</p>
           <h5 class="partc-subhead">Attribution</h5>
           ${x.attribution ? `<p class="pr-eq">${esc(x.attribution.equation)}</p>
-            <dl class="pr-kv"><dt>Factor</dt><dd>${x.attribution.value}</dd>
-            <dt>Outstanding</dt><dd>${esc(money(x.exposure.outstanding.value, x.exposure.outstanding.currency))}</dd>
-            ${x.denominator ? `<dt>Company value</dt><dd>${esc(money(x.denominator.value, x.exposure.outstanding.currency))} <span class="partc-hint">${esc(x.denominator.equation)}</span></dd>` : ''}</dl>
+            <dl class="pr-kv"><dt>Factor</dt><dd>${esc(String(x.attribution.value))}</dd>
+            <dt>Outstanding</dt><dd>${esc(money(x.exposure.outstanding.value, ccy))}</dd>
+            ${x.denominator ? `<dt>Company value</dt><dd>${esc(money(x.denominator.value, ccy))} <span class="partc-hint">${esc(x.denominator.equation)}</span></dd>` : ''}</dl>
             ${x.denominator && x.denominator.assumptions && x.denominator.assumptions.length ? `<ul class="partc-hint">${x.denominator.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}`
             : '<p class="partc-hint">No attribution factor: the figure rests on a sector-average option and is a rough estimate of this institution\'s share.</p>'}
+          <h5 class="partc-subhead">Data quality</h5>
+          <p class="partc-hint">${esc(dq.scale)}${dq.scope1And2.note ? ` ${esc(dq.scope1And2.note)}` : ''}</p>
           ${x.factorRelease ? `<h5 class="partc-subhead">Factor set</h5>
-            <p class="partc-hint">${esc(x.factorRelease.tables[0].table)} v${esc(x.factorRelease.tables[0].version)}, ${esc(x.factorRelease.tables[0].status)} · rows ${esc(x.factorRelease.rows.join(', '))} · SHA-256 ${esc(x.factorRelease.checksum.slice(0, 16))}…</p>` : ''}
+            <dl class="pr-kv"><dt>Table</dt><dd>${esc(x.factorRelease.tables[0].table)} v${esc(x.factorRelease.tables[0].version)} · ${esc(x.factorRelease.tables[0].status)}</dd>
+            <dt>Rows</dt><dd>${esc(x.factorRelease.rows.join(', '))}</dd>
+            <dt>SHA-256</dt><dd><code>${esc(x.factorRelease.checksum.slice(0, 16))}…</code></dd></dl>` : ''}
           ${x.exposure.counterparty.sectorKey ? `<p class="partc-hint">Held sector: ${esc(x.exposure.counterparty.sectorKey)}</p>` : ''}
         </div>
       </div>
@@ -533,8 +585,10 @@ const PartARegisterPage = (() => {
               <span class="partc-hint">${esc(f.reference)}</span>
             </div>
           </div>`).join('')}
+      <h5 class="partc-subhead">Review</h5>
+      <ol class="pr-steps" aria-label="Review">${steps.map((s, i) => `<li class="${i < at ? 'is-done' : i === at ? 'is-on' : ''}"><i></i><span>${esc(STATE_LABEL[s])}</span></li>`).join('')}</ol>
       ${e.approval && e.approval.approvedAt ? `<p class="partc-hint">Approved by ${esc(e.approval.approvedBy || 'the reporting entity')} on ${esc(when(e.approval.approvedAt))} — frozen until reopened with a reason.</p>` : ''}
-      ${e.approval && e.approval.history && e.approval.history.length ? `<p class="partc-hint">Review trail: ${e.approval.history.map(m => `${esc(STATE_LABEL[m.from] || m.from)} → ${esc(STATE_LABEL[m.to] || m.to)} (${esc(m.by || 'system')}${m.reason ? `: ${esc(m.reason)}` : ''})`).join('; ')}.</p>` : ''}
+      ${trail.length ? `<p class="partc-hint">Review trail: ${trail.map(m => `${esc(STATE_LABEL[m.from] || m.from)} → ${esc(STATE_LABEL[m.to] || m.to)} (${esc(m.by || 'system')}${m.reason ? `: ${esc(m.reason)}` : ''})`).join('; ')}.</p>` : ''}
       <p class="partc-hint">Computed ${esc(when(e.computedAt))} · ${esc(e.standard)}</p>`);
     for (const el of document.querySelectorAll('#pr-detail [data-writes]')) el.hidden = preview();
     applyState(e);

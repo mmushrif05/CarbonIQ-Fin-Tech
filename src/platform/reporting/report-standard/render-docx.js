@@ -61,6 +61,17 @@ async function renderStandardDOCX(model, theme = defaultTheme) {
           if (blk.score) children.push(theme.wBody(blk.score));
           if (blk.note) children.push(theme.wCaption(blk.note));
           break;
+        case 'bars': {
+          /* Word carries the same rows as a table: the figures, not a picture of them. */
+          const d = blk.decimals === undefined ? 0 : blk.decimals;
+          const rows = (blk.rows || []).map(r => [String(r.label), Number.isFinite(Number(r.value))
+            ? Number(r.value).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }) : '—']);
+          children.push(theme.wH3(blk.label));
+          children.push(theme.wTable(['Item', blk.unit || 'Value'], rows, { align: ['left', 'right'] }));
+          if (blk.caption) children.push(theme.wCaption(blk.caption));
+          children.push(theme.wBody(''));
+          break;
+        }
         case 'table':
           children.push(theme.wTable(blk.head, blk.rows, { align: blk.align }));
           if (blk.caption) children.push(theme.wCaption(blk.caption));

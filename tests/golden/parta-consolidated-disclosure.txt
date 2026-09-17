@@ -95,6 +95,11 @@ SECTION 6 [s2CrossIndustry] Metrics and targets — cross-industry metrics
       row: Amount assessed and not vulnerable or not aligned | LKR 0
       row: Amount not yet assessed | LKR 720,000,000 (720 mn)
       row: Percentage of the amount assessed | —
+    bars: The three amounts, drawn (outstanding, LKR)
+      bar: Vulnerable to transition risk — S2 §29(b) = 0
+      bar: Vulnerable to physical risk — S2 §29(c) = 0
+      bar: Aligned with opportunities — S2 §29(d) = 0
+      bar: Not yet assessed = 720000000
     caption: The percentage is taken over the outstanding actually assessed; the amount not yet assessed is stated above rather than counted as not vulnerable, so a book that has not been classified reads as unclassified and never as safe.
     h2: Capital deployed, carbon price and remuneration
     table: Metric | Reporting year | Paragraph | Stated by
@@ -107,6 +112,10 @@ SECTION 7 [s2Industry] Metrics and targets — industry-based metrics
       row: Textiles and apparel | 1 | 480,000,000 | 1,752.000 | Yes
       row: Rubber and plastics | 1 | 40,000,000 | 36.000 | Yes
       row: Industry not recorded | 1 | 200,000,000 | 19.620 | —
+    bars: Gross exposure by industry, carbon-related industries in the darker bar (outstanding, LKR)
+      bar: Textiles and apparel = 480000000
+      bar: Rubber and plastics = 40000000
+      bar: Industry not recorded = 200000000
     figure: Outstanding to carbon-related industries = 520,000,000 LKR
     caption: Carbon-related industries follow the four non-financial groups of the TCFD 2021 implementing guidance — energy, transportation, materials and buildings, and agriculture, food and forest products — mapped onto this system's sector vocabulary. The boundary is the reporting entity's to set and this is the set applied here.
     caption: An industry row names a sector from this system’s own vocabulary. An exposure recorded without one is counted under "Industry not recorded" and sits outside the carbon-related subtotal: it is neither claimed to be carbon-related nor claimed not to be. Every asset class but business loans and unlisted equity keeps its own descriptor where a borrower’s sector stands — a building type, a dwelling type, a vehicle class — and none of those is an industry.
@@ -161,6 +170,14 @@ ANNEX A [annexFinanced] Financed emissions — scope, coverage and the position 
     h2: Absolute financed emissions
     figure: Financed emissions across the classes reported — the headline = 2,004.520 tCO2e
     figure: Financed scope 3 across the classes — a separate line = 3,120.000 tCO2e
+    bars: Financed emissions by asset class — the headline of each (tCO2e, each class on the boundary its section reports)
+      bar: Business loans and unlisted equity (§5.2) = 1788
+      bar: Commercial real estate (§5.4) = 19.62
+      bar: Sovereign debt (§5.9) = 196.9
+    bars: Financed scope 3 by asset class — apart, never added to the headline (tCO2e)
+      bar: Business loans and unlisted equity (§5.2) = 3120
+      bar: Commercial real estate (§5.4) = —
+      bar: Sovereign debt (§5.9) = —
     table: Asset class | Headline | tCO2e | Scope 3 tCO2e | Data quality
       row: Business loans and unlisted equity (§5.2) | Financed scope 1 and 2 | 1,788.000 | 3,120.000 | 2.23
       row: Commercial real estate (§5.4) | Financed scope 1 and 2 | 19.620 | — | 4
