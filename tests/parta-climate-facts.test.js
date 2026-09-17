@@ -143,6 +143,25 @@ describe('the illustrative pack, and telling its words from the bank\'s', () => 
     expect(after.items.find(i => i.path === 'governance.body').state).toBe('stated');
   });
 
+  test('provenance survives a store that rearranges keys', () => {
+    /* PostgreSQL's JSONB does not preserve key order. Compared with a plain
+       JSON.stringify, eight of the twenty-five items read as *stated by the
+       bank* the moment they had been saved and read back — illustrative
+       content printing as the entity's own statement, which is the failure
+       this mechanism exists to prevent. The in-process store preserves
+       insertion order, so only the PostgreSQL run found it; this test finds it
+       on either store by rearranging the keys itself. */
+    const shuffled = JSON.parse(JSON.stringify(climate.ILLUSTRATIVE), (_k, v) => {
+      if (!v || typeof v !== 'object' || Array.isArray(v)) return v;
+      const out = {};
+      for (const k of Object.keys(v).reverse()) out[k] = v[k];
+      return out;
+    });
+    expect(Object.keys(shuffled.governance)).not.toEqual(Object.keys(climate.ILLUSTRATIVE.governance));
+    expect(climate.readiness(shuffled).illustrative).toBe(climate.ILLUSTRATIVE_ITEMS);
+    expect(climate.readiness(shuffled).stated).toBe(0);
+  });
+
   test('an empty record is absent throughout, and every pillar says so', () => {
     const r = climate.readiness({});
     expect(r.stated + r.illustrative).toBe(0);

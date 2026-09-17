@@ -205,7 +205,29 @@ const normaliseWhole = pack => normalise({}, pack);
 // Provenance and readiness
 // ---------------------------------------------------------------------------
 
-const same = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+/**
+ * Two values compared by content rather than by how they were serialised.
+ *
+ * Keys are sorted at every level before the comparison, the rule the GCF
+ * period package already follows for its checksum, and for the same reason:
+ * PostgreSQL's JSONB does not preserve key order, so a value round-tripped
+ * through the store comes back with its keys rearranged. Compared with a plain
+ * `JSON.stringify`, eight of the twenty-five illustrative items read as
+ * *stated by the bank* the moment they had been saved and read again — the
+ * failure this whole mechanism exists to prevent, in the direction that
+ * matters most: content we wrote printing as the entity's own statement. The
+ * in-process store preserves insertion order, so the memory suite was green
+ * throughout and only the PostgreSQL run found it.
+ */
+function canonical(value) {
+  if (value === undefined) return 'null';
+  if (value === null || typeof value !== 'object') return JSON.stringify(value);
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
+  const keys = Object.keys(value).sort();
+  return `{${keys.map(k => `${JSON.stringify(k)}:${canonical(value[k])}`).join(',')}}`;
+}
+
+const same = (a, b) => canonical(a) === canonical(b);
 
 /**
  * How each S2 item stands: the entity's own words, illustrative trial content
@@ -264,4 +286,4 @@ function readiness(climate, illustrative) {
 /** True where nothing at all has been recorded. */
 const isEmpty = climate => !ITEMS.some(i => answered(get(climate, i.path)));
 
-module.exports = { normalise, normaliseWhole, readiness, isEmpty, answered, get, set };
+module.exports = { normalise, normaliseWhole, readiness, isEmpty, answered, get, set, canonical };
