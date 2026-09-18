@@ -29,6 +29,7 @@ const PAGE_META = {
   'taxonomy':        { title: 'Taxonomy',            subtitle: 'Check regional taxonomy alignment' },
   'pipeline':        { title: 'Pipelines',            subtitle: 'Multi-agent supervisor workflows — orchestrate screening · origination · covenant design' },
   'carbon-pricing':  { title: 'Carbon Pricing',      subtitle: 'Quantify carbon tax exposure · loan pricing adjustments · stranded asset risk' },
+  'gcf-overview':    { title: 'GCF Overview', subtitle: 'The candidate pipeline as a chief executive reads it — where each candidate sits, the gate, what is blocking and who holds the key, who has signed, and the file it yields' },
   'desk':            { title: 'Fund Desk', subtitle: 'Position, delivery, attributed emissions and the GCF pipeline' },
   'gcf':             { title: 'GCF Pipeline', subtitle: 'The candidate pipeline on the GCF project cycle — readiness, screening, emissions, disclosure and Concept Note inputs' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
@@ -124,6 +125,13 @@ const DYNAMIC_PAGES = {
     // The reporting-year position changes whenever an assessment is locked on
     // another screen, so this page re-reads the period on every return visit.
     refresh: () => typeof PartCPortfolio !== 'undefined' && PartCPortfolio.refresh(),
+  },
+  'gcf-overview': {
+    src:  'pages/gcf-overview.html',
+    init: () => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.init(),
+    // A candidate recorded, moved or signed on the Pipeline tab changes
+    // this position, so a return visit re-reads it.
+    refresh: () => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.refresh(),
   },
   'desk': {
     src:  'pages/desk.html',

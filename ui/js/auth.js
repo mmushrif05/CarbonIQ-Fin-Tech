@@ -80,6 +80,7 @@ const Auth = (() => {
     'parta-sovereign': 60,  // esg_analyst+ — the §5.9 sovereign book, same bar as the other PCAF screens
     'monitoring':     60,   // esg_analyst+
     'pipeline':       60,   // esg_analyst+
+    'gcf-overview':   60,   // esg_analyst+ — the accredited entity's own landing over its GCF pipeline, same bar as the Pipeline tab
     'gcf':            60,   // esg_analyst+ — candidates are recorded and moved through the cycle here
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
@@ -106,7 +107,7 @@ const Auth = (() => {
    */
   const PREVIEW_PAGES = [
     'dashboard', 'desk', 'portfolio', 'pcaf', 'pcaf-parta', 'bank', 'parta-position', 'parta-register', 'parta-sovereign',
-    'pcaf-partc', 'pcaf-demo', 'partc-book', 'partc-portfolio', 'gcf', 'taxonomy', 'ndc-sdg',
+    'pcaf-partc', 'pcaf-demo', 'partc-book', 'partc-portfolio', 'gcf-overview', 'gcf', 'taxonomy', 'ndc-sdg',
     'reports', 'carbon-pricing', 'baselines',
   ];
 

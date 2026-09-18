@@ -1,0 +1,178 @@
+<!-- The GCF Overview — the accredited entity's own landing over its Green
+     Climate Fund candidate pipeline: where each candidate sits on the cycle,
+     what the gate says, what is blocking and who holds the key, who has
+     signed, the results on their separate boundaries, and the disclosure the
+     pipeline yields. Every figure is one the portfolio, the gap register or
+     the report returned; the page computes nothing. -->
+
+<div class="partc gov">
+
+  <section class="gov-hero">
+    <div class="gov-hero-head">
+      <div class="gov-hero-title">
+        <p class="gov-eyebrow">Green Climate Fund — the candidate pipeline</p>
+        <h2 class="gov-entity" id="go-entity">Reporting entity not stated</h2>
+        <p class="gov-coverline" id="go-subtitle"></p>
+      </div>
+      <div class="partc-actions gov-actions">
+        <button class="btn btn-primary" id="go-pdf">GCF disclosure — PDF</button>
+        <button class="btn btn-secondary" id="go-docx">Word</button>
+        <button class="btn btn-secondary gov-btn-quiet" id="go-refresh">Refresh</button>
+      </div>
+    </div>
+    <p class="partc-hint gov-status" id="go-status"></p>
+
+    <div class="gov-sample" id="go-sample" hidden>
+      <span class="gov-pill">Illustrative dataset — not client records.</span>
+      <span class="partc-hint">Load the starter projects to begin the bank’s own book. A recorded book replaces the illustrative set entirely and is never merged with it.</span>
+      <button class="btn btn-primary" id="go-starter" data-writes>Load starter projects</button>
+    </div>
+
+    <!-- The figures: the money, the gate, what is blocking, who has signed,
+         and the results — six cards, each a figure an engine returned. -->
+    <div class="gov-figures" id="go-figures" hidden>
+      <div class="gov-figure gov-figure-primary">
+        <div class="gov-figure-top">
+          <span class="gov-figure-label">GCF ask</span>
+          <span class="gov-figure-tag">Across the pool</span>
+        </div>
+        <span class="gov-figure-value gov-figure-hero" id="go-ask">—</span>
+        <span class="gov-figure-unit" id="go-ask-unit">USD, at the ask recorded on each candidate</span>
+        <div class="gov-figure-chart" id="go-money-chart"></div>
+        <button type="button" class="gov-behind-btn" data-behind="money">Behind this figure</button>
+      </div>
+      <div class="gov-figure">
+        <span class="gov-figure-label">Total project cost</span>
+        <span class="gov-figure-value" id="go-cost">—</span>
+        <span class="gov-figure-unit" id="go-cost-unit">USD across the pool</span>
+        <button type="button" class="gov-behind-btn" data-behind="money">Behind this figure</button>
+      </div>
+      <div class="gov-figure">
+        <div class="gov-figure-top">
+          <span class="gov-figure-label">Within the accreditation</span>
+          <span class="gov-figure-tag">A gate, not a score</span>
+        </div>
+        <span class="gov-figure-value" id="go-gate">—</span>
+        <span class="gov-figure-unit" id="go-gate-unit">eligible · flagged · excluded — Board decision B.36/10</span>
+        <div class="gov-figure-chart" id="go-gate-chart"></div>
+        <button type="button" class="gov-behind-btn" data-behind="gate">Behind this figure</button>
+      </div>
+      <div class="gov-figure gov-figure-wide">
+        <div class="gov-figure-top">
+          <span class="gov-figure-label">Blocking now</span>
+          <span class="gov-figure-tag">Who holds the key</span>
+        </div>
+        <span class="gov-figure-value" id="go-blocking">—</span>
+        <span class="gov-figure-unit" id="go-blocking-unit">open items across the pipeline</span>
+        <div class="gov-figure-chips" id="go-blocking-owners"></div>
+        <button type="button" class="gov-behind-btn" data-behind="gaps">Behind this figure</button>
+      </div>
+      <div class="gov-figure">
+        <div class="gov-figure-top">
+          <span class="gov-figure-label">Assessed and signed</span>
+          <span class="gov-figure-tag">By a named assessor</span>
+        </div>
+        <span class="gov-figure-value" id="go-signed">—</span>
+        <span class="gov-figure-unit" id="go-signed-unit">validated — draft and under review beside it</span>
+        <div class="gov-figure-chart" id="go-signed-chart"></div>
+        <button type="button" class="gov-behind-btn" data-behind="assess">Behind this figure</button>
+      </div>
+      <div class="gov-figure">
+        <div class="gov-figure-top">
+          <span class="gov-figure-label">Lifetime mitigation</span>
+          <span class="gov-figure-tag">Core Indicator 1</span>
+        </div>
+        <span class="gov-figure-value" id="go-mitigation">—</span>
+        <span class="gov-figure-unit">tCO₂e reduced, avoided or removed — mitigation projects only</span>
+        <span class="gov-figure-apart" id="go-cobenefit"></span>
+        <button type="button" class="gov-behind-btn" data-behind="results">Behind this figure</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="partc-card gov-behind" id="go-behind" hidden>
+    <div class="partc-card-head"><h3 id="go-behind-title">What stands behind this figure</h3>
+      <span class="partc-hint">The accreditation every gate reads, the evidence tier behind every result, the clause behind every line of the disclosure, and the rules this pipeline is held to — each proved by its own test.</span>
+      <button type="button" class="btn btn-secondary" id="go-behind-close">Close</button></div>
+    <div id="go-behind-body"></div>
+  </section>
+
+  <div id="go-body" hidden>
+
+    <!-- The one filter row, above every chart it scopes. -->
+    <section class="gov-filter">
+      <span class="gov-filter-label">Candidate in focus</span>
+      <div class="gov-chips" id="go-chips"></div>
+    </section>
+    <section class="partc-card gov-focus" id="go-focus" hidden></section>
+
+    <div class="partc-panels gov-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Where each candidate sits</h3>
+          <span class="partc-hint">The Fund’s ten-stage project activity cycle. One bar per stage the pipeline occupies, the candidates on it, and the GCF ask they carry.</span></div>
+        <div id="go-chart-stages"></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>The gate</h3>
+          <span class="partc-hint">Accreditation is a gate, not a score — Board decision B.36/10. An excluded candidate is one the entity cannot carry as the accredited entity; a flagged one is eligible with something to verify.</span></div>
+        <div id="go-chart-gate"></div>
+        <div id="go-gate-reasons"></div>
+      </section>
+    </div>
+
+    <div class="partc-panels gov-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>What is blocking, and who holds the key</h3>
+          <span class="partc-hint">Every open item the engines raised — what the stage needs, what the six criteria lack, whether the assessment is signed, what the assessor returned — grouped by who closes it. A gap does not stop a stage move; it travels with the candidate.</span></div>
+        <div id="go-chart-owners"></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>By candidate, furthest along first</h3>
+          <span class="partc-hint">The items that block the next step, each with the clause that asks for it and who answers. A row opens the candidate.</span></div>
+        <div id="go-gaps-projects"></div>
+      </section>
+    </div>
+
+    <div class="partc-panels gov-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Results on three boundaries, drawn apart</h3>
+          <span class="partc-hint">Lifetime mitigation per candidate against its counterfactual — GCF Mitigation Core Indicator 1. An adaptation project’s carbon is a co-benefit on its own line and never in the headline; embodied carbon is a separate boundary and never deducted; financed emissions live on the capital book on PCAF Part A attribution.</span></div>
+        <div id="go-chart-results"></div>
+        <p class="partc-hint" id="go-results-note"></p>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Beneficiaries</h3>
+          <span class="partc-hint">IRMF Core Indicator 2. Direct and indirect are two indicators and are never summed; every figure carries its evidence tier on the record.</span></div>
+        <div id="go-chart-beneficiaries"></div>
+      </section>
+    </div>
+
+    <div class="partc-panels gov-charts">
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>Coming up</h3>
+          <span class="partc-hint">Targets the bank has set and the dates the Fund’s service standards imply. A projected date is marked as one and names the standard it rests on.</span></div>
+        <div id="go-upcoming"></div>
+      </section>
+      <section class="partc-card partc-panel">
+        <div class="partc-card-head"><h3>What the file answers</h3>
+          <span class="partc-hint">SLFRS S2 §29(d) opportunities, §29(e) capital deployment, and emissions avoided or reduced stated apart. A pipeline is not the entity’s inventory: §29(a) is absent by rule, with where the figure comes from.</span>
+          <button type="button" class="gov-behind-btn" data-behind="file">Behind the file</button></div>
+        <div id="go-s2"></div>
+      </section>
+    </div>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>By candidate</h3>
+        <span class="partc-hint">One row per candidate, as recorded. The weakest evidence tier is the one a reviewer should ask about first. Each row opens the candidate; the documents beside it are reads anyone may take.</span></div>
+      <div class="gov-scroll"><table class="partc-table gov-table" id="go-projects"></table></div>
+    </section>
+
+    <section class="partc-card">
+      <div class="partc-card-head"><h3>Before submission</h3>
+        <span class="partc-hint">What the disclosure still asks the reporting entity for, with the clause. Nothing is written on the entity’s behalf.</span>
+        <button type="button" class="gov-behind-btn" data-behind="method">The rules this pipeline is held to</button></div>
+      <div id="go-entity-gaps"></div>
+    </section>
+
+  </div>
+</div>

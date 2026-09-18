@@ -1,0 +1,260 @@
+/* ============================================================
+   CarbonIQ — the GCF Overview
+   ============================================================
+   The accredited entity's landing over its Green Climate Fund pipeline,
+   drawn in the same card language as the Bank Overview so the two screens
+   read as one product. Every colour is a token defined for both themes:
+   one hue per stream, one per gate verdict (always beside a word and a
+   mark, never colour alone), one per owner of a gap, one per assessment
+   state, a single-hue ramp for the ten stages of the cycle, and a neutral
+   for anything drawn apart. The stream, owner and money hues reuse the
+   categorical set validated for colour-vision deficiency on the Bank
+   Overview; the gate and state hues are the status set.
+
+   The page computes nothing; what is here is only how it looks.
+   ============================================================ */
+
+/* `hidden` must beat any display this sheet sets. */
+.gov [hidden] { display: none !important; }
+
+/* ── Tokens ──────────────────────────────────────────────────
+   Bare selector first: the complete light set. The dark media query is
+   guarded so an explicit light choice wins; the dark stamp wins the other
+   way. Every shell token this page inherits (.partc) is remapped here so
+   cards, tables, hints and buttons follow the document's palette. */
+.partc.gov {
+  --gv-paper: #f5f7f6;
+  --gv-card: #ffffff;
+  --gv-ink: #16201b;
+  --gv-ink-2: #5a665f;
+  --gv-ink-3: #98a19c;
+  --gv-rule: #dfe6e2;
+  --gv-band: #edf2ef;
+  --gv-zebra: #f7faf8;
+  --gv-green: #0a5c3a;
+  --gv-green-dk: #08462c;
+  --gv-on-green: #ffffff;
+  --gv-sage-soft: #e3efe8;
+  --gv-warm: #c46a1f;
+
+  --p-bg: var(--gv-card);
+  --p-card: var(--gv-card);
+  --p-card-2: var(--gv-band);
+  --p-bg-2: var(--gv-band);
+  --p-fill: var(--gv-band);
+  --p-fill-soft: var(--gv-zebra);
+  --p-label: var(--gv-ink);
+  --p-label-2: var(--gv-ink-2);
+  --p-label-3: var(--gv-ink-3);
+  --p-separator: var(--gv-rule);
+  --p-line: var(--gv-rule);
+  --p-accent: var(--gv-green);
+  --p-accent-bg: var(--gv-sage-soft);
+  --ch-surface: var(--gv-card);
+
+  /* Two streams, never one league table. */
+  --go-mitigation: #2c6b1c;
+  --go-adaptation: #3468a8;
+  /* The gate: a verdict, always with its mark and its word. */
+  --go-gate-eligible: #2f8a4e;
+  --go-gate-flagged: #b27f02;
+  --go-gate-excluded: #953543;
+  /* The assessment: draft, under review, validated. */
+  --go-state-draft: #98a19c;
+  --go-state-under-review: #b27f02;
+  --go-state-validated: #2f8a4e;
+  /* Who closes a gap — the closed vocabulary in domain/gaps.js. */
+  --go-owner-dfcc: #2c6b1c;
+  --go-owner-sponsor: #3890d2;
+  --go-owner-nda: #7e3d82;
+  --go-owner-fund: #b27f02;
+  --go-owner-co-financiers: #953543;
+  --go-owner-gender-specialist: #009cba;
+  --go-owner-communities: #847200;
+  --go-owner-assessor: #5b6b7c;
+  /* The money by source. */
+  --go-money-ask: #0a5c3a;
+  --go-money-dfcc: #3468a8;
+  --go-money-other: #98a19c;
+  /* Beneficiaries: two indicators, two hues, never summed. */
+  --go-ben-direct: #0a5c3a;
+  --go-ben-indirect: #7fbf95;
+  /* Anything drawn apart — the adaptation co-benefit, embodied carbon. */
+  --go-apart: #a9ada6;
+  /* The ten stages of the cycle: one hue, light to dark. */
+  --go-cycle-1: #dbeee3;
+  --go-cycle-2: #c4e2d0;
+  --go-cycle-3: #a9d3bb;
+  --go-cycle-4: #8cc3a5;
+  --go-cycle-5: #6fb18f;
+  --go-cycle-6: #559d79;
+  --go-cycle-7: #3f8863;
+  --go-cycle-8: #2c714f;
+  --go-cycle-9: #1a5a3c;
+  --go-cycle-10: #0b432b;
+
+  font-family: 'Work Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  color: var(--gv-ink);
+  min-width: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .partc.gov {
+    --gv-paper: #131917; --gv-card: #1c2421; --gv-ink: #e8ede9; --gv-ink-2: #a9b3ad; --gv-ink-3: #79837d;
+    --gv-rule: #303a35; --gv-band: #232c28; --gv-zebra: #192019;
+    --gv-green: #7fc79f; --gv-green-dk: #a3d6b9; --gv-on-green: #131917; --gv-sage-soft: #22322a; --gv-warm: #e08a44;
+    --go-mitigation: #4c9a38; --go-adaptation: #6fa0d8;
+    --go-gate-eligible: #5fb57e; --go-gate-flagged: #d3a35a; --go-gate-excluded: #c46a78;
+    --go-state-draft: #79837d; --go-state-under-review: #d3a35a; --go-state-validated: #5fb57e;
+    --go-owner-dfcc: #4c9a38; --go-owner-sponsor: #5aa7e6; --go-owner-nda: #a066a6; --go-owner-fund: #d3a35a;
+    --go-owner-co-financiers: #c46a78; --go-owner-gender-specialist: #2fbfd6; --go-owner-communities: #b8a33a; --go-owner-assessor: #94a3b8;
+    --go-money-ask: #7fc79f; --go-money-dfcc: #6fa0d8; --go-money-other: #79837d;
+    --go-ben-direct: #7fc79f; --go-ben-indirect: #3e7a5a;
+    --go-apart: #5c6360;
+    --go-cycle-1: #1f3d2f; --go-cycle-2: #244a38; --go-cycle-3: #2a5842; --go-cycle-4: #31664c; --go-cycle-5: #3a7557;
+    --go-cycle-6: #468565; --go-cycle-7: #569678; --go-cycle-8: #6ba88d; --go-cycle-9: #86bba4; --go-cycle-10: #a6d0bd;
+  }
+}
+:root[data-theme="dark"] .partc.gov {
+  --gv-paper: #131917; --gv-card: #1c2421; --gv-ink: #e8ede9; --gv-ink-2: #a9b3ad; --gv-ink-3: #79837d;
+  --gv-rule: #303a35; --gv-band: #232c28; --gv-zebra: #192019;
+  --gv-green: #7fc79f; --gv-green-dk: #a3d6b9; --gv-on-green: #131917; --gv-sage-soft: #22322a; --gv-warm: #e08a44;
+  --go-mitigation: #4c9a38; --go-adaptation: #6fa0d8;
+  --go-gate-eligible: #5fb57e; --go-gate-flagged: #d3a35a; --go-gate-excluded: #c46a78;
+  --go-state-draft: #79837d; --go-state-under-review: #d3a35a; --go-state-validated: #5fb57e;
+  --go-owner-dfcc: #4c9a38; --go-owner-sponsor: #5aa7e6; --go-owner-nda: #a066a6; --go-owner-fund: #d3a35a;
+  --go-owner-co-financiers: #c46a78; --go-owner-gender-specialist: #2fbfd6; --go-owner-communities: #b8a33a; --go-owner-assessor: #94a3b8;
+  --go-money-ask: #7fc79f; --go-money-dfcc: #6fa0d8; --go-money-other: #79837d;
+  --go-ben-direct: #7fc79f; --go-ben-indirect: #3e7a5a;
+  --go-apart: #5c6360;
+  --go-cycle-1: #1f3d2f; --go-cycle-2: #244a38; --go-cycle-3: #2a5842; --go-cycle-4: #31664c; --go-cycle-5: #3a7557;
+  --go-cycle-6: #468565; --go-cycle-7: #569678; --go-cycle-8: #6ba88d; --go-cycle-9: #86bba4; --go-cycle-10: #a6d0bd;
+}
+
+/* ── Furniture the shell tokens do not cover ─────────────── */
+.gov { background: var(--gv-paper); }
+.gov .partc-card { background: var(--gv-card); border-color: var(--gv-rule); min-width: 0; }
+.gov .partc-hint { color: var(--gv-ink-2); }
+.gov select { min-width: 0; max-width: 100%; }
+.gov .ch { display: block; }
+.gov-scroll { overflow-x: auto; max-width: 100%; }
+.gov-scroll table { min-width: 720px; }
+
+/* ── Hero ─────────────────────────────────────────────────── */
+.gov-hero {
+  background: var(--gv-card); border: 1px solid var(--gv-rule); border-radius: var(--card-radius, 18px);
+  padding: 22px 24px 20px; margin-bottom: 16px; min-width: 0;
+}
+.gov-hero-head { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: flex-start; justify-content: space-between; }
+.gov-hero-head > div { min-width: 0; }
+.gov-hero-title { flex: 1 1 320px; }
+.gov-eyebrow { margin: 0 0 6px; font-size: 11.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gv-green); font-weight: 700; }
+.gov-entity { margin: 0; font-family: 'Lora', Georgia, 'Times New Roman', serif; font-size: 30px; font-weight: 700; line-height: 1.15; color: var(--gv-ink); text-wrap: balance; overflow-wrap: anywhere; }
+.gov-coverline { margin: 8px 0 0; font-size: 13px; color: var(--gv-ink-2); line-height: 1.5; }
+.gov-actions { margin-top: 2px; align-items: center; flex-wrap: wrap; }
+.gov-status { margin: 12px 0 0; }
+.gov-btn-quiet { opacity: 0.8; }
+
+.gov-sample {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  margin-top: 14px; padding: 12px 14px; border: 1px solid var(--gv-rule); border-radius: 12px; background: var(--gv-band);
+}
+.gov-sample .partc-hint { flex: 1 1 320px; min-width: 0; }
+.gov-pill {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; line-height: 1.4; white-space: nowrap;
+  color: var(--pill, var(--gv-ink-2)); background: color-mix(in srgb, var(--pill, var(--gv-ink-3)) 14%, var(--gv-card));
+  border: 1px solid color-mix(in srgb, var(--pill, var(--gv-ink-3)) 45%, var(--gv-card));
+}
+.gov-sample .gov-pill { --pill: var(--gv-ink-2); }
+
+/* The figures band: six cards, the primary carrying the money drawing. */
+.gov-figures {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 12px; margin-top: 18px;
+}
+.gov-figure {
+  display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: 16px 18px; border: 1px solid var(--gv-rule); border-radius: var(--card-radius, 18px); background: var(--gv-card);
+}
+.gov-figure-primary { background: var(--gv-sage-soft); grid-column: span 2; }
+.gov-figure-wide { grid-column: span 2; }
+@media (max-width: 640px) { .gov-figure-primary, .gov-figure-wide { grid-column: auto; } }
+.gov-figure-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
+.gov-figure-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gv-ink-2); font-weight: 700; }
+.gov-figure-tag { font-size: 11.5px; color: var(--gv-ink-2); }
+.gov-figure-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; color: var(--gv-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.gov-figure-hero { font-size: 46px; letter-spacing: -0.03em; color: var(--gv-green-dk); }
+.gov-figure-unit { font-size: 12.5px; color: var(--gv-ink-2); line-height: 1.45; }
+.gov-figure-apart { font-size: 12.5px; color: var(--gv-ink-2); line-height: 1.45; border-top: 1px dashed var(--gv-rule); padding-top: 6px; margin-top: 2px; }
+.gov-figure-chart { margin-top: 8px; }
+.gov-figure-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.gov-chip-soft {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px; border-radius: 999px;
+  font-size: 12px; color: var(--gv-ink); background: var(--gv-band); border: 1px solid var(--gv-rule);
+}
+.gov-chip-soft i, .gov-chip i, .gov-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+.gov-dot { margin-right: 6px; vertical-align: middle; }
+.gov-behind-btn {
+  align-self: flex-start; margin-top: 4px; padding: 0; border: 0; background: none; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--gv-green);
+}
+.gov-behind-btn::after { content: ' ›'; }
+.gov-behind-btn:hover, .gov-behind-btn:focus-visible { text-decoration: underline; outline: none; }
+
+/* ── The drawer ───────────────────────────────────────────── */
+.gov-behind { margin-bottom: 16px; border-left: 4px solid var(--gv-green); }
+.gov-kv { display: grid; grid-template-columns: minmax(min(100%, 160px), max-content) minmax(0, 1fr); gap: 6px 16px; margin: 10px 0 0; font-size: 13px; }
+.gov-kv dt { color: var(--gv-ink-2); font-weight: 600; min-width: 0; }
+.gov-kv dd { margin: 0; color: var(--gv-ink); min-width: 0; overflow-wrap: anywhere; }
+.gov-rules { margin: 12px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.5; }
+.gov-rules li { margin-bottom: 6px; }
+
+/* ── Filter row, focus panel ──────────────────────────────── */
+.gov-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; min-width: 0; }
+.gov-filter-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gv-ink-2); font-weight: 700; }
+.gov-chips { display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.gov-chip {
+  display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--gv-ink); background: var(--gv-card); border: 1px solid var(--gv-rule);
+}
+.gov-chip.is-on { background: var(--gv-green); color: var(--gv-on-green); border-color: var(--gv-green); }
+.gov-chip:focus-visible { outline: 2px solid var(--gv-green); outline-offset: 2px; }
+.gov-focus { margin-bottom: 16px; border-left: 4px solid var(--swatch, var(--gv-green)); }
+.gov-focus-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 12px; margin-bottom: 12px; }
+.gov-focus-head > i { width: 14px; height: 14px; border-radius: 4px; flex: 0 0 auto; }
+.gov-focus-head > div { flex: 1 1 240px; min-width: 0; }
+.gov-focus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 10px 16px; }
+.gov-focus-grid > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gov-tile-value { font-size: 18px; font-weight: 700; color: var(--gv-ink); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+/* ── Lists: gaps, dates, reasons ──────────────────────────── */
+.gov-items { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.gov-items li { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.45; min-width: 0; }
+.gov-items li > span:last-child { min-width: 0; flex: 1 1 auto; overflow-wrap: anywhere; }
+.gov-items-tight li { font-size: 12.5px; }
+.gov-owner {
+  flex: 0 0 auto; display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap;
+  color: var(--pill, var(--gv-ink-2)); background: color-mix(in srgb, var(--pill, var(--gv-ink-3)) 14%, var(--gv-card));
+  border: 1px solid color-mix(in srgb, var(--pill, var(--gv-ink-3)) 45%, var(--gv-card));
+}
+.gov-gap-row { padding: 10px 12px; border: 1px solid var(--gv-rule); border-radius: 12px; margin-bottom: 8px; cursor: pointer; min-width: 0; }
+.gov-gap-row:hover { border-color: var(--gv-green); }
+.gov-gap-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; min-width: 0; }
+.gov-gap-head i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; }
+.gov-gap-head span { min-width: 0; overflow-wrap: anywhere; }
+/* A projected date is drawn as one: hatched, the only texture on the page. */
+.gov-date { flex: 0 0 auto; font-variant-numeric: tabular-nums; font-weight: 700; padding: 2px 8px; border-radius: 6px; background: var(--gv-band); color: var(--gv-ink); }
+.gov-date.is-projected {
+  background: repeating-linear-gradient(135deg, var(--gv-band) 0 4px, var(--gv-card) 4px 8px);
+  border: 1px dashed var(--gv-ink-3);
+}
+
+/* ── S2 lines, table ──────────────────────────────────────── */
+.gov-s2-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 12px 16px; }
+.gov-s2-grid > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gov-table th.num, .gov-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.gov-table tbody tr { cursor: pointer; }
+.gov-table tbody tr.is-dim { opacity: 0.45; }
+.gov-row-actions { white-space: nowrap; }
+.gov-charts .partc-panel { min-width: 0; }
