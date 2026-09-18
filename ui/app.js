@@ -234,6 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Reveal and animate
     target.style.display = 'block';
+    // The page shown is announced once it is on screen, so anything docked in
+    // the shell — the walkthrough strip — can follow it without polling.
+    document.dispatchEvent(new CustomEvent('carboniq:page', { detail: { page: pageId } }));
     target.style.animation = 'none';
     target.offsetHeight; // force reflow
     target.style.animation = '';

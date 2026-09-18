@@ -515,17 +515,24 @@
     <!-- The walkthrough strip: on every page while a walkthrough is on, the
          step, what to do and what to say. Hidden until one is started. -->
     <div class="wt-strip" id="wt-strip" role="status" hidden>
-      <span class="wt-strip-n" id="wt-strip-n"></span>
-      <span class="wt-strip-dots" id="wt-strip-dots" aria-hidden="true"></span>
-      <span class="wt-strip-title" id="wt-strip-title"></span>
-      <span class="wt-strip-action" id="wt-strip-action"></span>
-      <span class="wt-strip-say-row" id="wt-strip-say-row" hidden><span class="wt-say-label">Say</span><span id="wt-strip-say"></span></span>
-      <div class="wt-strip-buttons">
-        <label><input type="checkbox" id="wt-strip-notes"> Notes</label>
-        <button type="button" id="wt-strip-back">Back</button>
-        <button type="button" id="wt-strip-open">Open this screen</button>
-        <button type="button" id="wt-strip-next">Next</button>
-        <button type="button" id="wt-strip-end">End</button>
+      <div class="wt-strip-main">
+        <span class="wt-strip-kicker">Walkthrough</span>
+        <span class="wt-strip-n" id="wt-strip-n"></span>
+        <span class="wt-strip-dots" id="wt-strip-dots" aria-hidden="true"></span>
+        <span class="wt-strip-title" id="wt-strip-title"></span>
+        <span class="wt-strip-where" id="wt-strip-where"></span>
+        <div class="wt-strip-buttons">
+          <label><input type="checkbox" id="wt-strip-notes"> Notes</label>
+          <button type="button" id="wt-strip-back">Back</button>
+          <button type="button" id="wt-strip-open">Open this screen</button>
+          <button type="button" id="wt-strip-next">Next</button>
+          <button type="button" id="wt-strip-min" aria-expanded="true" aria-controls="wt-strip-detail">Hide</button>
+          <button type="button" id="wt-strip-end">End</button>
+        </div>
+      </div>
+      <div class="wt-strip-detail" id="wt-strip-detail">
+        <span class="wt-strip-action" id="wt-strip-action"></span>
+        <span class="wt-strip-say-row" id="wt-strip-say-row" hidden><span class="wt-say-label">Say</span><span id="wt-strip-say"></span></span>
       </div>
     </div>
 

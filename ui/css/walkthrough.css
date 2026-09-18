@@ -16,6 +16,8 @@
 .partc.walkthrough {
   --wt-ink: #1f231f;
   --wt-ink-2: #5f665d;
+  --wt-accent: #2f6b45;
+  --wt-on-accent: #ffffff;
   --wt-rule: #e3e3dd;
   --wt-card: #ffffff;
   --wt-zebra: #fafaf7;
@@ -39,7 +41,7 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .partc.walkthrough {
-    --wt-ink: #ece9e2; --wt-ink-2: #a8ada6; --wt-rule: #343a38; --wt-card: #1f2325; --wt-zebra: #1b1f20; --wt-band: #272c2c;
+    --wt-ink: #ece9e2; --wt-ink-2: #a8ada6; --wt-rule: #343a38; --wt-card: #1f2325; --wt-zebra: #1b1f20; --wt-band: #272c2c; --wt-accent: #7fbf95; --wt-on-accent: #141716; --wt-accent: #7fbf95; --wt-on-accent: #141716;
     --wt-green: #7fbf95; --wt-green-dk: #a5d3b4; --wt-on-green: #141716; --wt-sage-soft: #263129; --wt-ochre: #d3a35a;
   }
 }
@@ -69,6 +71,13 @@
 .walkthrough .wt-eyebrow { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wt-green); font-weight: 700; }
 .walkthrough .wt-title { margin: 0 0 6px; font-size: 30px; line-height: 1.1; font-weight: 700; text-wrap: balance; }
 .walkthrough .wt-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.walkthrough .wt-tracks { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid var(--wt-rule); border-radius: 999px; min-width: 0; }
+.walkthrough .wt-track {
+  border: 0; background: none; cursor: pointer; padding: 5px 12px; border-radius: 999px;
+  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--wt-ink-2);
+}
+.walkthrough .wt-track.is-on { background: var(--wt-accent); color: var(--wt-on-accent); }
+.walkthrough .wt-track:focus-visible { outline: 2px solid var(--wt-accent); outline-offset: 2px; }
 .walkthrough .wt-year { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--wt-ink-2); min-width: 0; }
 .walkthrough .wt-year select { min-width: 0; }
 .walkthrough .wt-start { padding-inline: 22px; }
@@ -116,28 +125,58 @@
 /* ── The strip: a floating bar under the topbar on every page while a
    walkthrough is on, in the forest green so it reads as the presenter's
    own rail and not as a warning. Nothing in it is a figure. ─── */
-.wt-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; padding: 10px 18px;
-  margin: 10px 16px 0; border-radius: 14px;
-  background: #2f6b45; color: #fff; font-size: 13.5px; min-width: 0;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
-  position: sticky; top: 0; z-index: 40; }
-.wt-strip .wt-strip-n { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .85; white-space: nowrap; font-weight: 700; }
-.wt-strip .wt-strip-dots { display: inline-flex; gap: 5px; align-items: center; }
-.wt-strip .wt-strip-dots i { display: block; width: 8px; height: 8px; border-radius: 50%; background: rgba(255, 255, 255, .35); }
-.wt-strip .wt-strip-dots i.is-done { background: rgba(255, 255, 255, .75); }
-.wt-strip .wt-strip-dots i.is-on { background: #fff; width: 18px; border-radius: 4px; }
-.wt-strip .wt-strip-title { font-weight: 700; font-size: 15px; }
-.wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; opacity: .95; font-size: 13px; line-height: 1.45; }
-.wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; opacity: .95; font-size: 13px; line-height: 1.45; }
-.wt-strip .wt-strip-say-row .wt-say-label { background: rgba(255,255,255,.16); color: #fff; margin-right: 6px; }
-.wt-strip .wt-strip-buttons { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-left: auto; }
-.wt-strip .wt-strip-buttons button { background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.3); border-radius: 999px;
-  padding: 6px 13px; font-size: 12.5px; font-weight: 600; cursor: pointer; font-family: inherit; }
-.wt-strip .wt-strip-buttons button:hover:not(:disabled) { background: rgba(255,255,255,.24); }
-.wt-strip .wt-strip-buttons #wt-strip-next { background: #fff; color: #2f6b45; border-color: #fff; }
+/* ── The strip ──────────────────────────────────────────────
+   A quiet bar docked at the foot of the viewport while a walkthrough is
+   on, in the shell's own surface and ink rather than a colour of its own,
+   so the screen keeps its theme and the strip reads as a control. One
+   line: the step, its title and the buttons; the detail — what to do,
+   and behind Notes what to say — opens beneath it and is closed on any
+   screen that is not the step's own, where the bar says which screen is.
+   It never pushes the page: it floats over it. */
+.wt-strip {
+  --wt-strip-bg: #ffffff; --wt-strip-ink: #1f231f; --wt-strip-ink-2: #5f665d; --wt-strip-rule: #d9dcd7;
+  --wt-strip-accent: #2f6b45; --wt-strip-on-accent: #ffffff; --wt-strip-soft: #eef3ee;
+  /* Docked inside the content area — the sidebar is 240px on a desk and
+     off-canvas on a phone — never centred on a viewport it does not own. */
+  position: fixed; left: 252px; right: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  max-width: 1040px; margin: 0 auto; min-width: 0; z-index: 40;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 0; border-radius: 12px;
+  background: var(--wt-strip-bg); color: var(--wt-strip-ink);
+  border: 1px solid var(--wt-strip-rule); border-left: 4px solid var(--wt-strip-accent);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  font-size: 12.5px; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .wt-strip { --wt-strip-bg: #1f2325; --wt-strip-ink: #ece9e2; --wt-strip-ink-2: #a8ada6; --wt-strip-rule: #3a403d;
+    --wt-strip-accent: #7fbf95; --wt-strip-on-accent: #141716; --wt-strip-soft: #263129; }
+}
+:root[data-theme="dark"] .wt-strip { --wt-strip-bg: #1f2325; --wt-strip-ink: #ece9e2; --wt-strip-ink-2: #a8ada6; --wt-strip-rule: #3a403d;
+  --wt-strip-accent: #7fbf95; --wt-strip-on-accent: #141716; --wt-strip-soft: #263129; }
+@media (max-width: 768px) { .wt-strip { left: 12px; } }
+.wt-strip .wt-strip-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 7px 12px; min-width: 0; }
+.wt-strip .wt-strip-kicker { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; color: var(--wt-strip-accent); white-space: nowrap; }
+.wt-strip .wt-strip-n { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--wt-strip-ink-2); white-space: nowrap; font-weight: 700; }
+.wt-strip .wt-strip-dots { display: inline-flex; gap: 4px; align-items: center; }
+.wt-strip .wt-strip-dots i { display: block; width: 6px; height: 6px; border-radius: 50%; background: var(--wt-strip-rule); }
+.wt-strip .wt-strip-dots i.is-done { background: var(--wt-strip-ink-2); }
+.wt-strip .wt-strip-dots i.is-on { background: var(--wt-strip-accent); width: 14px; border-radius: 3px; }
+.wt-strip .wt-strip-title { flex: 1 1 200px; min-width: 0; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wt-strip .wt-strip-where { font-size: 12px; color: var(--wt-strip-ink-2); white-space: nowrap; }
+.wt-strip .wt-strip-where:empty { display: none; }
+.wt-strip .wt-strip-detail { padding: 8px 12px 10px; border-top: 1px solid var(--wt-strip-rule); display: flex; flex-wrap: wrap; gap: 6px 14px; min-width: 0; }
+.wt-strip:not(.is-open) .wt-strip-detail { display: none; }
+.wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; font-size: 12.5px; line-height: 1.45; color: var(--wt-strip-ink); }
+.wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--wt-strip-ink-2); }
+.wt-strip .wt-strip-say-row .wt-say-label { background: var(--wt-strip-soft); color: var(--wt-strip-accent); margin-right: 6px; }
+.wt-strip .wt-strip-buttons { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.wt-strip .wt-strip-buttons button { background: none; color: var(--wt-strip-ink); border: 1px solid var(--wt-strip-rule); border-radius: 999px;
+  padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; line-height: 1.3; }
+.wt-strip .wt-strip-buttons button:hover:not(:disabled) { background: var(--wt-strip-soft); }
+.wt-strip .wt-strip-buttons #wt-strip-next { background: var(--wt-strip-accent); color: var(--wt-strip-on-accent); border-color: var(--wt-strip-accent); }
 .wt-strip .wt-strip-buttons button:disabled { opacity: .45; cursor: default; }
-.wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
-.wt-strip label { display: inline-flex; gap: 5px; align-items: center; font-size: 12.5px; white-space: nowrap; }
+.wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid var(--wt-strip-accent); outline-offset: 1px; }
+.wt-strip label { display: inline-flex; gap: 5px; align-items: center; font-size: 12px; white-space: nowrap; color: var(--wt-strip-ink-2); }
 
 /* The control a step asks for, marked for a few seconds: the document's
    one warm accent, on whichever screen the step opened. */
