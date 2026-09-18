@@ -432,6 +432,12 @@ const RULES = [
   },
 ];
 
+/* The rules the dashboard work added — the gap register, the assessment
+   state on the portfolio and the disclosure document — live in a sibling
+   file so this one stays under the length the repository holds a source file
+   to. One matrix, two files. */
+RULES.push(...require('./conformance-dashboard'));
+
 const VALID_STATUS = ['implemented', 'partial', 'excluded'];
 
 /**

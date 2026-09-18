@@ -58,6 +58,27 @@ router.get('/pipeline', authenticate, defaultLimiter, paged(),
   });
   }));
 
+/**
+ * One example candidate, served to pre-fill the intake form. Registered
+ * before `/pipeline/:id` because Express matches in order and "example" is
+ * not an id. A read: nothing is recorded until the caller presses Record.
+ */
+router.get('/pipeline/example', authenticate, defaultLimiter,
+  doc({ summary: 'An example candidate, served to pre-fill the intake form — never recorded by this route',
+    description: 'One illustrative Sri Lankan project with every figure carrying its evidence tier, so the '
+      + 'intake form can open already filled. Served, not recorded: `POST /v1/gcf/pipeline` records it under '
+      + 'the caller’s organisation, and a second press updates the same record in place. A read; stores nothing.',
+    response: body({ project: obj, note: str, provenanceSource: str }, ['project']) }),
+  handle(async (req, res) => {
+  const example = require('../../../domain/reference').EXAMPLE_PROJECT;
+  const project = JSON.parse(JSON.stringify(example.project));
+  res.json({
+    project: { ...project, provenance: { source: example._meta.provenanceSource } },
+    note: example._meta.note,
+    provenanceSource: example._meta.provenanceSource,
+  });
+}));
+
 router.get('/pipeline/:id', authenticate, defaultLimiter,
   doc({ summary: 'One candidate, with its evidence tiers and where it sits against accreditation',
     response: body({

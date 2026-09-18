@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **437**. Remaining: **234**.
+Checked across all three: **441**. Remaining: **237**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **384**. Remaining: **68** (408 errors, measured by
+Checked: **388**. Remaining: **68** (408 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -146,10 +146,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **136** (1513 errors, measured by
+Checked: **45**. Remaining: **139** (1538 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**15 of them raise no errors at all** and can be adopted by adding the
+**16 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -158,7 +158,7 @@ pragma and nothing else.
 | `tests/capital-adjust.test.js` | 48 |
 | `tests/gcf-screening.test.js` | 42 |
 | `tests/parta-ui.test.js` | 42 |
-| `tests/gcf-cycle.test.js` | 39 |
+| `tests/gcf-cycle.test.js` | 41 |
 | `tests/parta-generation.test.js` | 37 |
 | `tests/desk-stages456.test.js` | 33 |
 | `tests/gcf-pipeline.test.js` | 33 |
@@ -191,6 +191,7 @@ pragma and nothing else.
 | `tests/agent-call-budget.test.js` | 16 |
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
+| `tests/gcf-disclosure-document.test.js` | 16 |
 | `tests/pcaf-partc-dq-scoring.test.js` | 16 |
 | `tests/pcaf-partc-lifecycle.test.js` | 15 |
 | `tests/desk-engine.test.js` | 14 |
@@ -226,6 +227,7 @@ pragma and nothing else.
 | `tests/blob-store.test.js` | 7 |
 | `tests/decision-triage.test.js` | 7 |
 | `tests/gcf-assessment-journey.test.js` | 7 |
+| `tests/gcf-gap-register.test.js` | 7 |
 | `tests/parta-climate-exposure.test.js` | 7 |
 | `tests/pg-scale.test.js` | 7 |
 | `tests/responsive-layout.test.js` | 7 |
@@ -277,6 +279,7 @@ pragma and nothing else.
 | `tests/v1-info.test.js` | 1 |
 | `tests/bank-ui.test.js` | 0 |
 | `tests/charts.test.js` | 0 |
+| `tests/gcf-example-project.test.js` | 0 |
 | `tests/lending-pcaf-claim.test.js` | 0 |
 | `tests/money-format.test.js` | 0 |
 | `tests/netlify-function.test.js` | 0 |

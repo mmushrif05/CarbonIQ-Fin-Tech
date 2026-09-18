@@ -195,7 +195,7 @@ proved or it is not.
 | GCF pipeline | `G-CYCLE-04` | Concept note template v2.2 and funding proposal template — what each stage must contain; Sri Lanka NDA Operation Manual | `tests/gcf-cycle.test.js` | 85 | executed |
 | GCF pipeline | `G-CYCLE-05` | Board decision B.32/05 — Simplified Approval Process; Project Preparation Facility guidelines | `tests/gcf-cycle.test.js` | 85 | executed |
 | GCF pipeline | `G-CYCLE-06` | GCF investment framework — six investment criteria and their sub-criteria | `tests/gcf-cycle.test.js` | 52 | executed |
-| GCF pipeline | `G-CYCLE-07` | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund | `tests/gcf-cycle.test.js` | 92 | executed |
+| GCF pipeline | `G-CYCLE-07` | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund | `tests/gcf-cycle.test.js` | 101 | executed |
 | GCF pipeline | `G-CYCLE-08` | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it | `tests/gcf-cycle.test.js` | 84 | executed |
 | GCF pipeline | `G-ACCR-05` | Board decision B.36/10 — DFCC’s accreditation envelope; the entity’s own where recorded | `tests/gcf-cycle.test.js` | 84 | executed |
 | GCF pipeline | `G-VAL-01` | ToR Lot 2 — an accredited entity appraises and signs off a candidate before it is carried forward | `tests/gcf-validation.test.js` | 47 | executed |
@@ -206,11 +206,15 @@ proved or it is not.
 | GCF pipeline | `G-RET-02` | A return is a fact about a validated assessment, not a gesture | `tests/gcf-return-loop.test.js` | 48 | executed |
 | GCF pipeline | `G-EXCL-01` | ToR Lot 1, Milestones 1-3 and 5 | — | — | out of scope |
 | GCF pipeline | `G-EXCL-02` | GCF Funding Proposal preparation | — | — | out of scope |
+| GCF pipeline | `G-GAP-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; the worklist between a pipeline entry and a submission | `tests/gcf-gap-register.test.js` | 70 | executed |
+| GCF pipeline | `G-GAP-02` | CarbonIQ — a register a committee can act on names who holds the key | `tests/gcf-gap-register.test.js` | 128 | executed |
+| GCF pipeline | `G-RPT-02` | ToR Lot 1, Milestone 4 — sustainability reporting; SLFRS S2 §29(a), (d), (e); GRI 305; PCAF Part A p.126 | `tests/gcf-disclosure-document.test.js` | 101 | executed |
+| GCF pipeline | `G-VAL-04` | GCF assessment lifecycle — separation of duties, visible at pipeline level | `tests/gcf-cycle.test.js` | 101 | executed |
 
 ## Summary
 
-- 185 rules across the conformance matrices
-- **178 proved by execution**
+- 189 rules across the conformance matrices
+- **182 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

@@ -33,6 +33,7 @@ const groups = [
   ['Statutory reporting', r => r.id.startsWith('G-REPORT')],
   ['Concept Note package', r => r.id.startsWith('G-CN')],
   ['The assessor flow — validation, report, return', r => r.id.startsWith('G-VAL') || r.id.startsWith('G-RPT') || r.id.startsWith('G-RET')],
+  ['The pipeline as a dashboard — the gap register', r => r.id.startsWith('G-GAP')],
   ['Deliberately out of scope', r => r.id.startsWith('G-EXCL')],
 ];
 

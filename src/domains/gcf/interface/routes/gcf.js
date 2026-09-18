@@ -17,6 +17,7 @@ const router = Router();
 router.use(require('./gcf/reference'));
 router.use(require('./gcf/pipeline'));
 router.use(require('./gcf/disclosure'));
+router.use(require('./gcf/gaps'));
 router.use(require('./gcf/appraisal'));
 
 module.exports = router;

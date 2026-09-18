@@ -132,7 +132,18 @@ const starterBookSchema = Joi.object({
 const STARTER_BOOK = Object.freeze(
   checked('data/gcf/dfcc-starter-projects.json', require('../../../../data/gcf/dfcc-starter-projects.json'), starterBookSchema));
 
+/* One example candidate, served to pre-fill the intake form and never
+   recorded by this system: pressing Record is what records it, under the
+   caller's organisation. Checked for its envelope here; a test holds the
+   project to `record.validate` exactly as the starter book is. */
+const exampleProjectSchema = Joi.object({
+  _meta: Joi.object().unknown(true).optional(),
+  project: Joi.object().unknown(true).required(),
+}).unknown(false);
+const EXAMPLE_PROJECT = Object.freeze(
+  checked('data/gcf/dfcc-example-project.json', require('../../../../data/gcf/dfcc-example-project.json'), exampleProjectSchema));
+
 module.exports = {
-  IRMF, RESULTS_AREAS, INSTRUMENT_CATALOGUE, PIPELINE_SEED, STARTER_BOOK,
+  IRMF, RESULTS_AREAS, INSTRUMENT_CATALOGUE, PIPELINE_SEED, STARTER_BOOK, EXAMPLE_PROJECT,
   irmfSchema, resultsAreasSchema, instrumentsSchema, pipelineSeedSchema, starterBookSchema,
 };

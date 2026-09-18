@@ -1,0 +1,125 @@
+cover: GCF pipeline climate-related disclosure | DFCC Bank PLC | FY2026 | Self-declared
+section basis: Reporting entity and basis of preparation
+  body
+  table: Field | Stated
+    Reporting entity | DFCC Bank PLC
+    Accreditation | Green Climate Fund Direct Access Entity, Board decision B.36/10 (as shipped; the entity has not recorded its own)
+    Accredited size and risk category | medium; environmental and social category B/I-2
+    Grant award modality | Not held — a fact to verify with DFCC or the NDA
+    Reporting year | 2026
+    Prepared from | 5 candidate project(s) in the shipped illustrative pipeline
+    Standards | SLFRS S1 and S2 (IFRS S1/S2 as adopted in Sri Lanka); GRI 305: Emissions 2016; GCF IRMF
+  callout: Illustrative dataset
+  body
+section governance: Governance
+  body
+  callout: Board oversight
+  callout: Management’s role
+section strategy: Strategy — the pipeline as evidence
+  callout: Climate-related opportunities identified
+  body
+  table: Stage of the cycle | Projects | GCF ask
+    Concept | 1 | USD 14,000,000
+    Pre-feasibility | 2 | USD 31,000,000
+    Concept note drafted | 2 | USD 27,000,000
+section risk: Risk management
+  callout: Process for identifying, assessing and monitoring climate-related risks
+  body
+  table: Environmental and social category | Projects
+    Category B | 5
+  table: Accreditation gate | Projects
+    Eligible — within the accreditation, nothing to resolve | 4
+    Flagged — eligible with something to verify | 1
+    Excluded — outside the accreditation envelope | 0
+section inventory: Greenhouse gas inventory — SLFRS S2 §29(a)
+  callout: Not derivable from a pipeline
+  table: Line | Answer | Where the figure comes from
+    Absolute gross scope 1 emissions | Absent | This is the entity's own inventory. It is not derivable from a pipeline of candidate projects and is not held here. (SLFRS S2 §29(a)(i))
+    Absolute gross scope 2 emissions | Absent | As above — an entity-level inventory line. (SLFRS S2 §29(a)(i))
+    Absolute gross scope 3 emissions, including category 15 | Absent | Financed emissions are scope 3 Category 15 in full and are reported from the capital book on PCAF Part A attribution, not from this pipeline. (SLFRS S2 §29(a)(i)(3))
+section opportunities: Assets aligned with climate-related opportunities — SLFRS S2 §29(d)
+  body
+  table: Measure | Value
+    Projects aligned | 5
+    Aligned amount (total project cost) | USD 196,500,000
+    Share of the pipeline | 100%
+    Framework | Sri Lanka Green Finance Taxonomy (SLGFT v2024)
+  table: Taxonomy band | Projects
+    green | 5
+section capital: Capital deployment — SLFRS S2 §29(e)
+  body
+  bars: Pipeline financing by source
+    GCF ask | 72000000
+    DFCC commitment | 79000000
+    Other sources | 45500000
+section avoided: Emissions avoided, reduced and removed by financed projects — stated apart
+  callout: Never netted against an inventory
+  body
+  table: Line | Annual | Lifetime | Projects
+    GCF Mitigation Core Indicator 1 — tCO2eq reduced, avoided or removed | 65,800 tCO₂e | 1,202,600 tCO₂e | 3
+      of which reduced | 26,400 tCO₂e | 528,000 tCO₂e | 1
+      of which avoided | 39,400 tCO₂e | 674,600 tCO₂e | 2
+      of which removal | 0 tCO₂e | 0 tCO₂e | 0
+    Adaptation co-benefit — on its own line, never in the headline | 9,000 tCO₂e | 180,000 tCO₂e | 2
+    Embodied carbon A1–A5 — a separate boundary, never deducted | — | 44,900 tCO₂e | 1
+  caption
+section beneficiaries: Beneficiaries — IRMF core indicator 2
+  body
+  table: Indicator | People
+    Direct beneficiaries | 317,500
+    Indirect beneficiaries | 1,031,000
+section targets: Targets — SLFRS S2 §33–37, and the national context
+  callout: The entity’s own climate-related targets
+  body
+  table: Commitment | Target | Pipeline, inside the period | Share of the target
+    Reduction against BAU | 20.09% (8.11% unconditional, 11.98% conditional) | 658,000 tCO₂e | Absent — bauCumulative_tCO2e — the absolute BAU emissions for 2026-2035, with its source and vintage.
+    Increase in net removal | 4.49% (0.96% unconditional, 3.53% conditional) | 0 tCO₂e | Absent — bauCumulative_tCO2e — the absolute BAU emissions for 2026-2035, with its source and vintage.
+  caption
+  caption
+section gri: GRI 305 — answered honestly
+  table: Disclosure | Line | Answer
+    305-1 | Direct (Scope 1) GHG emissions | Entity inventory. Not derivable from a project pipeline.
+    305-2 | Energy indirect (Scope 2) GHG emissions | Entity inventory. Not derivable from a project pipeline.
+    305-3 | Other indirect (Scope 3) GHG emissions | For a lender this is dominated by Category 15 financed emissions, reported from the capital book on PCAF Part A attribution rather than from this pipeline.
+    305-4 | GHG emissions intensity | Requires the inventory above as its numerator.
+    305-5 | Reduction of GHG emissions | GRI 305-5 covers reductions in the organisation's own emissions achieved by its own initiatives. The mitigation below is achieved by financed third-party projects and is not the bank's own reduction, so it is reported as supplementary information rather than under this disclosure.
+  table: Emissions avoided, reduced and removed by financed projects | Annual | Lifetime
+    Financed projects | 65,800 tCO₂e | 1,202,600 tCO₂e
+section gaps: What this disclosure could not state, and what is blocking the pipeline
+  body
+  table: Where | What is missing | Clause
+    metricsAndTargets.inventory.scope1 | Absolute gross scope 1 emissions | SLFRS S2 §29(a)(i)
+    metricsAndTargets.inventory.scope2 | Absolute gross scope 2 emissions | SLFRS S2 §29(a)(i)
+    metricsAndTargets.inventory.scope3 | Absolute gross scope 3 emissions, including Category 15 | SLFRS S2 §29(a)(i)(3)
+    gri.305-1 | Direct (Scope 1) GHG emissions | GRI 305-1
+    gri.305-2 | Energy indirect (Scope 2) GHG emissions | GRI 305-2
+    gri.305-3 | Other indirect (Scope 3) GHG emissions | GRI 305-3
+    gri.305-4 | GHG emissions intensity | GRI 305-4
+    gri.305-5 | Reduction of GHG emissions | GRI 305-5
+  body
+  table: Who closes it | Open now | Projects
+    DFCC Bank | 24 | GCF-P1, GCF-P3, GCF-P2, GCF-P4, GCF-P5
+    Assessor | 5 | GCF-P1, GCF-P3, GCF-P2, GCF-P4, GCF-P5
+    Project sponsor | 2 | GCF-P1, GCF-P3
+  caption
+annex A: The candidate pipeline
+  body
+  table: Code | Project | Stream | Stage | Gate | ESS | Total cost | GCF ask | Weakest tier | Assessment
+    GCF-P1 | Jaffna Peninsula Solar Mini-grids and Storage | mitigation | Concept note drafted | eligible | B | USD 42,000,000 | USD 12,000,000 | benchmark | Draft
+    GCF-P2 | Dry Zone Irrigation and Tank Cascade Rehabilitation | adaptation | Pre-feasibility | eligible | B | USD 31,000,000 | USD 18,000,000 | declared | Draft
+    GCF-P3 | Colombo District Cooling and Commercial Retrofit | mitigation | Concept note drafted | eligible | B | USD 58,000,000 | USD 15,000,000 | declared | Draft
+    GCF-P4 | Puttalam-Mannar Mangrove and Coastal Restoration | adaptation | Concept | flagged | B | USD 19,500,000 | USD 14,000,000 | declared | Draft
+    GCF-P5 | Western Province Electric Bus Fleet and Depot Charging | mitigation | Pre-feasibility | eligible | B | USD 46,000,000 | USD 13,000,000 | benchmark | Draft
+annex B: Disclosure checklist — completed
+  checklist
+checklist: 9 yes of 10
+  D-1 Yes — The reporting entity is identified
+  D-2 Yes — Board oversight of climate-related risks and opportunities is described
+  D-3 Yes — Management's role is described
+  D-4 Yes — The climate-related opportunities and the response to them are described
+  D-5 Yes — The risk identification and monitoring process is described
+  D-6 No — Absolute gross scope 1, 2 and 3 emissions are disclosed
+  D-7 Yes — Assets aligned with climate-related opportunities are quantified
+  D-8 Yes — Capital deployed towards climate-related opportunities is quantified
+  D-9 Yes — Emissions avoided or reduced by financed projects are stated separately
+  D-10 Yes — Climate-related targets are disclosed

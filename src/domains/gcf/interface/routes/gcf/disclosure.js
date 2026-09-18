@@ -17,6 +17,8 @@ const validate = require('../../../../../platform/http/validate');
 const { gcfEntitySchema, gcfImportSchema } = require('../../schemas/gcf');
 const store = require('../../../infrastructure/store');
 const reporting = require('../../../application/reporting');
+const disclosureDocument = require('../../../application/disclosure-document');
+const { sendPdf, sendDocx } = require('../../../../../platform/reporting/pdf-response');
 const partcStore = require('../../../../../platform/database/store');
 const handle = require('../../../../../platform/http/async-handler');
 
@@ -57,12 +59,16 @@ router.put('/entity', authenticate, defaultLimiter,
  * disclosure itself.
  */
 router.get('/report', authenticate, defaultLimiter,
-  doc({ summary: 'SLFRS S1/S2 and GRI lines, with what it could not state',
+  doc({ summary: 'SLFRS S1/S2 and GRI lines, with what it could not state — JSON, PDF or Word',
     description: 'A pipeline of financed projects is not the bank\'s inventory, so the '
       + 'inventory lines are reported absent with the clause that requires them and where the '
-      + 'figure actually comes from. The checklist is answered from the report, so it can fail.',
+      + 'figure actually comes from. The checklist is answered from the report, so it can fail. '
+      + '`?format=pdf|word` renders the same report as a document through the platform report '
+      + 'standard — the file a bank puts beside its SLFRS S2 disclosure; JSON by default. A read; stores nothing.',
+    produces: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
     query: { year: 'The reporting year. Defaults to the current one.',
-      bau: 'Cumulative BAU tonnage, if the share of the national target is wanted.' },
+      bau: 'Cumulative BAU tonnage, if the share of the national target is wanted.',
+      format: 'json (default), pdf or word' },
     response: body({ report: obj, source: str }, ['report']) }),
   handle(async (req, res) => {
   const year = req.query.year === undefined ? undefined : Number(req.query.year);
@@ -81,6 +87,19 @@ router.get('/report', authenticate, defaultLimiter,
   }
   const { projects, source, sample } = await store.list(req.orgId);
   const settings = await store.entityDisclosures(req.orgId);
+  const format = String(req.query.format || 'json').toLowerCase();
+  if (!['json', 'pdf', 'word', 'docx'].includes(format)) {
+    return res.status(400).json({ error: 'INVALID_FORMAT', message: 'format must be json, pdf or word.' });
+  }
+  if (format !== 'json') {
+    const ctx = {
+      entityDisclosures: settings, accreditation: await store.accreditation(req.orgId),
+      reportingYear: year, sample, sampleNote: store.seedMeta().sampleNote, bauCumulative_tCO2e: bau, source,
+    };
+    const facts = disclosureDocument.disclosureFacts(projects, ctx);
+    if (format === 'pdf') return sendPdf(res, await disclosureDocument.disclosurePDF(req.orgId, projects, ctx), `${facts.safeName}.pdf`, 'disclosure');
+    return sendDocx(res, await disclosureDocument.disclosureDOCX(req.orgId, projects, ctx), `${facts.safeName}.docx`, 'disclosure');
+  }
   res.json({
     report: reporting.buildDisclosure(projects, {
       reportingYear: year,

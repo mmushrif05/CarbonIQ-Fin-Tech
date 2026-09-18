@@ -12773,6 +12773,146 @@
         ]
       }
     },
+    "/v1/gcf/gaps": {
+      "get": {
+        "operationId": "getGcfGaps",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "The gap register — what is blocking each project, and who holds the key",
+        "description": "Every open item across the pipeline, read off the engines that raise them — what the stage needs, what the six criteria lack, whether the assessment is signed, what the assessor returned, and what the disclosure could not state — each with its clause, its remedy and an owner from a closed vocabulary. By owner and by project, furthest along first. Nothing is judged afresh, and a gap does not stop a stage move. A read; stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "register": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sample": {
+                      "type": "boolean"
+                    },
+                    "sampleNote": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "owners": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "register",
+                    "source"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "register": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sample": {
+                          "type": "boolean"
+                        },
+                        "sampleNote": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "owners": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "register",
+                        "source"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/gcf/import": {
       "post": {
         "operationId": "postGcfImport",
@@ -16963,6 +17103,118 @@
         ]
       }
     },
+    "/v1/gcf/pipeline/example": {
+      "get": {
+        "operationId": "getGcfPipelineExample",
+        "tags": [
+          "gcf"
+        ],
+        "summary": "An example candidate, served to pre-fill the intake form — never recorded by this route",
+        "description": "One illustrative Sri Lankan project with every figure carrying its evidence tier, so the intake form can open already filled. Served, not recorded: `POST /v1/gcf/pipeline` records it under the caller’s organisation, and a second press updates the same record in place. A read; stores nothing. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "project": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "note": {
+                      "type": "string"
+                    },
+                    "provenanceSource": {
+                      "type": "string"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "project"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "project": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "note": {
+                          "type": "string"
+                        },
+                        "provenanceSource": {
+                          "type": "string"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "project"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/v1/gcf/pipeline/install-starter": {
       "post": {
         "operationId": "postGcfPipelineInstallStarter",
@@ -17837,8 +18089,8 @@
         "tags": [
           "gcf"
         ],
-        "summary": "SLFRS S1/S2 and GRI lines, with what it could not state",
-        "description": "A pipeline of financed projects is not the bank's inventory, so the inventory lines are reported absent with the clause that requires them and where the figure actually comes from. The checklist is answered from the report, so it can fail. Requires the `read` scope.",
+        "summary": "SLFRS S1/S2 and GRI lines, with what it could not state — JSON, PDF or Word",
+        "description": "A pipeline of financed projects is not the bank's inventory, so the inventory lines are reported absent with the clause that requires them and where the figure actually comes from. The checklist is answered from the report, so it can fail. `?format=pdf|word` renders the same report as a document through the platform report standard — the file a bank puts beside its SLFRS S2 disclosure; JSON by default. A read; stores nothing. Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {
@@ -17853,6 +18105,14 @@
             "name": "bau",
             "in": "query",
             "description": "Cumulative BAU tonnage, if the share of the national target is wanted.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "format",
+            "in": "query",
+            "description": "json (default), pdf or word",
             "schema": {
               "type": "string"
             }
@@ -17935,6 +18195,18 @@
                       "type": "null"
                     }
                   }
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
                 }
               }
             }
