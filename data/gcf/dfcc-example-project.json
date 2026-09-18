@@ -1,0 +1,49 @@
+{
+  "_meta": {
+    "title": "An example candidate, served for the intake form",
+    "note": "One illustrative Sri Lankan project, served to pre-fill the intake form so a presenter can show a candidate coming in with every field already carrying its evidence tier. It is served, never recorded: pressing Record is what records it, under the caller's own organisation, and a second press updates the same record in place. Not DFCC's figures.",
+    "provenanceSource": "Example values entered by Datum Solutions — illustrative; edit to the confirmed figures before any submission."
+  },
+  "project": {
+    "id": "gcf_dfcc_tea_biomass",
+    "code": "DFCC-EX",
+    "name": "Tea Factory Biomass Boiler Conversion and Rooftop Solar",
+    "location": { "province": "Central", "districts": ["Nuwara Eliya", "Kandy"], "country": "LK" },
+    "sector": "Industrial energy efficiency and fuel switching",
+    "resultsArea": "BA",
+    "stream": "mitigation",
+    "stage": "concept",
+    "selectionReason": "A credit line for regional tea factories to replace furnace-oil boilers with certified biomass boilers and add rooftop solar for withering and drying, where the fuel bill is the factory's largest controllable cost and the payback exceeds the tenor local lenders offer.",
+    "essCategory": "B",
+    "essNote": "Works within existing factory premises. Biomass is sourced from certified fuelwood plantations, with air-quality and sourcing conditions carried in the ESMP.",
+    "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
+    "barriers": ["tenor", "upfront_capex", "fragmented_borrowers"],
+    "financing": {
+      "currency": "USD",
+      "totalCost": 18000000,
+      "gcfAsk": 6000000,
+      "dfcc": 8000000,
+      "other": 4000000,
+      "otherLabel": "Factory owner equity",
+      "instrument": "concessional_credit_line",
+      "gcfInstrumentDetail": "A concessional tranche on-lent through DFCC to stretch tenor to the boiler's life. No grant element.",
+      "viabilityWithoutGcf": {
+        "viable": false,
+        "reason": "On a five-year commercial tenor the boiler conversion does not clear the factory's debt-service cover; the GCF tranche buys the years of tenor the payback needs, not a margin subsidy."
+      }
+    },
+    "mitigation": {
+      "annual_tCO2e": { "value": 18000, "tier": "modelled", "method": "furnace oil displaced x emission factor, net of biomass supply-chain emissions; rooftop generation x grid emission factor" },
+      "lifetime_tCO2e": { "value": 270000, "tier": "modelled", "method": "annual x 15-year boiler life, undiscounted" },
+      "baseline": {
+        "description": "Furnace-oil boilers and grid electricity for withering and drying at the participating factories",
+        "counterfactual": "Without the credit line the factories continue on furnace oil and grid power",
+        "type": "avoided"
+      }
+    },
+    "beneficiaries": {
+      "direct": { "value": 60, "tier": "declared", "definition": "Tea factories converted" },
+      "indirect": { "value": 25000, "tier": "modelled", "definition": "Estate workers and smallholder green-leaf suppliers to the participating factories" }
+    }
+  }
+}

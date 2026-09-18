@@ -435,3 +435,47 @@ describe('The DFCC starter book — real, editable, loaded in one click', () => 
     await auth(api().post('/v1/gcf/pipeline/install-starter')).expect(409);
   });
 });
+
+describe('The assessor’s sign-off is visible at pipeline level', () => {
+  const validation = require('../src/domains/gcf/domain/validation');
+  const signed = (p, by = 'Assessor A') => {
+    let v = validation.apply(p, { to: 'under_review' }, { by, at: '2026-09-15T10:00:00Z' });
+    v = validation.apply({ validation: v }, {
+      to: 'validated',
+      ratings: { impactPotential: { rating: 'strong' } },
+      recommendation: 'recommend',
+    }, { by, at: '2026-09-15T11:00:00Z' });
+    return { ...p, validation: v };
+  };
+
+  test('every row carries its assessment state, read off the record, and the unsigned are named', () => {
+    const projects = store.seedProjects();
+    projects[0] = signed(projects[0]);
+    const p = portfolio.portfolio(projects, { accreditation: store.seedMeta().accreditation, now: NOW });
+    const first = p.rows.find(r => r.id === projects[0].id);
+    expect(first.assessment).toMatchObject({ state: 'validated', stateLabel: 'Validated', validatedBy: 'Assessor A', recommendation: 'recommend' });
+    for (const r of p.rows.filter(r => r.id !== projects[0].id)) expect(r.assessment.state).toBe('draft');
+    expect(p.assessment.validated).toBe(1);
+    expect(p.assessment.draft).toBe(projects.length - 1);
+    expect(p.assessment.underReview).toBe(0);
+    expect(p.assessment.unsigned).toHaveLength(projects.length - 1);
+    expect(p.assessment.unsigned).not.toContain(projects[0].code);
+  });
+
+  test('the count partitions the pool — every project is in exactly one state', () => {
+    const p = portfolio.portfolio(store.seedProjects(), { accreditation: store.seedMeta().accreditation, now: NOW });
+    expect(p.assessment.draft + p.assessment.underReview + p.assessment.validated).toBe(p.count);
+  });
+
+  test('the ratings never reach the portfolio as a number', () => {
+    const projects = [signed(store.seedProjects()[0])];
+    const p = portfolio.portfolio(projects, { accreditation: store.seedMeta().accreditation, now: NOW });
+    expect(JSON.stringify(p.rows[0].assessment)).not.toMatch(/"rating"/);
+  });
+
+  test('over HTTP the portfolio carries the assessment count', async () => {
+    const r = (await auth(api().get('/v1/gcf/portfolio')).expect(200)).body;
+    expect(r.portfolio.assessment).toMatchObject({ draft: r.portfolio.count, underReview: 0, validated: 0 });
+    expect(r.portfolio.rows.every(row => row.assessment && row.assessment.state)).toBe(true);
+  });
+});

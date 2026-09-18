@@ -20,6 +20,7 @@ const criteria = require('./criteria');
 const emissions = require('./emissions');
 const record = require('./record');
 const screening = require('./screening');
+const validation = require('./validation');
 const { RESULTS_AREAS } = require('./reference');
 
 const num = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
@@ -68,6 +69,11 @@ function portfolio(projects, { accreditation, now = new Date().toISOString() }) 
       criteriaEvidenced: c.evidenced,
       selectedForCN: Boolean(p.selectedForCN),
       nextMilestone: nextMilestone(r.timeline, projected),
+      /* The assessor's sign-off, read off the record: who signed, when, and
+         what they recommended. Nothing here is a score, and an unsigned
+         assessment is visible at pipeline level rather than only on the
+         project page. */
+      assessment: assessmentOf(p),
     };
   });
 
@@ -138,6 +144,16 @@ function portfolio(projects, { accreditation, now = new Date().toISOString() }) 
       evidence: carbon.evidence,
     },
     byStage, byCycle, byStream, byArea,
+    /* One state per project, counted — draft, under review or validated —
+       and the unsigned ones named, because a pipeline with three candidates
+       and no signature is a fact a committee has to be told. */
+    assessment: {
+      draft: rows.filter(r => r.assessment.state === 'draft').length,
+      underReview: rows.filter(r => r.assessment.state === 'under_review').length,
+      validated: rows.filter(r => r.assessment.state === 'validated').length,
+      unsigned: rows.filter(r => r.assessment.state !== 'validated').map(r => r.code),
+      note: 'The assessor’s validation per project, read off the record. Validated means a named assessor signed the assessment off; the ratings behind it are words, never a number.',
+    },
     readiness: {
       averagePct: rows.length ? Math.round(sum(rows, r => r.readinessPct) / rows.length) : null,
       sapEligible: rows.filter(r => r.sapEligible).map(r => r.code),
@@ -150,6 +166,21 @@ function portfolio(projects, { accreditation, now = new Date().toISOString() }) 
   };
 }
 
+/** The assessor's validation on one record, in the shape a portfolio row carries. */
+function assessmentOf(project) {
+  const v = validation.current(project);
+  return {
+    state: v.state,
+    stateLabel: ASSESSMENT_LABEL[v.state] || v.state,
+    recommendation: v.recommendation,
+    validatedBy: v.validatedBy,
+    validatedAt: v.validatedAt,
+    returns: Array.isArray(v.returns) ? v.returns.length : 0,
+  };
+}
+
+const ASSESSMENT_LABEL = Object.freeze({ draft: 'Draft', under_review: 'Under review', validated: 'Validated' });
+
 function nextMilestone(t, projected) {
   const today = t.today;
   const pending = t.recorded.filter(m => m.target && m.date >= today).map(m => ({ milestone: m.label, date: m.date, projected: false, basis: 'Target set by the bank' }));
@@ -157,4 +188,4 @@ function nextMilestone(t, projected) {
   return all[0] || null;
 }
 
-module.exports = { portfolio, areaLabel };
+module.exports = { portfolio, areaLabel, assessmentOf, ASSESSMENT_LABEL };

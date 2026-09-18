@@ -6,8 +6,8 @@
 
 **Source of requirements:** DFCC Bank PLC DAE Readiness Pre-Qualified Delivery Partner Terms of Reference, version 21 November 2025
 
-**Status:** 44 implemented · 1 partial · 2 deliberately excluded
-(47 rules).
+**Status:** 48 implemented · 1 partial · 2 deliberately excluded
+(51 rules).
 
 > Nothing here is endorsed by the Green Climate Fund, and this system does not score a
 > proposal on GCF's behalf. This is a self-declaration of what has been built against a
@@ -450,6 +450,45 @@ exactly how a matrix goes quietly wrong.
 | **Requirement** | A return is a fact about a validated assessment, not a gesture |
 | **Implementation** | `src/domains/gcf/infrastructure/store.js — returnToSponsor()` |
 | **Proving test** | `tests/gcf-return-loop.test.js › the return store › a clean recommendation cannot be returned` |
+
+### G-RPT-02 — The pipeline disclosure renders to PDF and Word through the platform report standard with the inventory lines absent and their source named, avoided-and-reduced stated apart and never netted, the two NDC 3.0 ledgers unsummed, every entity statement the entity’s own or marked not stated, a checklist answered from the document, and one reference for one position.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 1, Milestone 4 — sustainability reporting; SLFRS S2 §29(a), (d), (e); GRI 305; PCAF Part A p.126 |
+| **Implementation** | `src/domains/gcf/application/disclosure-document.js — disclosureFacts(), buildModel(), disclosurePDF(), disclosureDOCX()` |
+| **Proving test** | `tests/gcf-disclosure-document.test.js › The document says what the report says, and no more › the inventory lines are absent with their source, the avoided line is apart, and the two ledgers are never summed` |
+
+### G-VAL-04 — The portfolio carries each project’s assessment state — draft, under review or validated, with who signed and when — read off the record and counted, so an unsigned assessment is a fact the pipeline shows rather than one a project page hides; the ratings behind it never reach the portfolio as a number.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF assessment lifecycle — separation of duties, visible at pipeline level |
+| **Implementation** | `src/domains/gcf/domain/portfolio.js — assessmentOf() per row and the assessment count` |
+| **Proving test** | `tests/gcf-cycle.test.js › The assessor’s sign-off is visible at pipeline level › every row carries its assessment state, read off the record, and the unsigned are named` |
+
+
+## The pipeline as a dashboard — the gap register
+
+### G-GAP-01 — Every item on the gap register is one an engine raised — the stage requirements, the six criteria, the assessor’s validation, the return loop or the disclosure — carried with its clause and the fact that clears it; nothing is judged afresh.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; the worklist between a pipeline entry and a submission |
+| **Implementation** | `src/domains/gcf/domain/gaps.js — projectGaps() and register() compose readiness, criteria, validation, return-loop and the disclosure’s own gaps` |
+| **Proving test** | `tests/gcf-gap-register.test.js › The register is composed, never judged › every item names its source, its clause, its remedy and an owner from the vocabulary` |
+
+### G-GAP-02 — Who closes a gap is one of a closed vocabulary — the bank, the sponsor, the NDA, the Fund, the co-financiers, a gender specialist, the affected communities, the assessor — never free text, and an item naming anyone else is refused at construction.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | CarbonIQ — a register a committee can act on names who holds the key |
+| **Implementation** | `src/domains/gcf/domain/gaps.js — OWNERS and item(); src/domains/gcf/domain/readiness.js — every requirement names its owner` |
+| **Proving test** | `tests/gcf-gap-register.test.js › The register is composed, never judged › an owner outside the vocabulary is refused at construction` |
 
 
 ## Deliberately out of scope
