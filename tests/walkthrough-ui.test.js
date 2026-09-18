@@ -158,3 +158,77 @@ describe('The page computes nothing and says what a presenter needs', () => {
     must(JS, /await loadYears\(\);\s*\n\s*await load\(\);/, 'the year is settled before the first request');
   });
 });
+
+describe('The GCF track — one candidate, from the door to the Fund', () => {
+  const GCF = source('ui/js/gcf.js');
+  const OVERVIEW = source('ui/js/gcf-overview.js');
+
+  test('two tracks over one product, the financed seven untouched beside the GCF eight', () => {
+    expect(Object.keys(Page.TRACKS)).toEqual(['financed', 'gcf']);
+    expect(Page.TRACKS.financed.steps).toBe(Page.STEPS);
+    expect(Page.TRACKS.gcf.steps).toBe(Page.GCF_STEPS);
+    expect(Page.GCF_STEPS).toHaveLength(8);
+    expect(Page.GCF_STEPS.map(s => s.page)).toEqual(
+      ['gcf-overview', 'gcf-overview', 'gcf', 'gcf', 'gcf', 'gcf', 'gcf', 'gcf-overview']);
+    for (const s of Page.GCF_STEPS) {
+      must(INDEX, `data-page="${s.page}"`, `step "${s.title}" names a page the shell has`);
+      expect(typeof s.apply).toBe('function');
+      expect(s.action.length).toBeGreaterThan(80);
+      expect(s.note.length).toBeGreaterThan(80);
+    }
+    must(HTML, /id="wt-tracks"[\s\S]*?data-track="financed"[\s\S]*?data-track="gcf"/, 'the page offers both tracks');
+    must(JS, /remember\(STATE_KEY, JSON\.stringify\(\{ track, step: i, open:/, 'the strip’s state carries its track');
+    must(JS, /const s0 = state\(\);[\s\S]*?track = s0 \? s0\.track/, 'the track is settled before the first request');
+  });
+
+  test('the steps open the real screens through the hand-overs those screens read', () => {
+    must(JS, /GCF_OVERVIEW_INTENT = 'carboniq\.gcf-overview\.intent'/, 'the overview’s intent');
+    must(OVERVIEW, /localStorage\.getItem\('carboniq\.gcf-overview\.intent'\)/, 'the overview reads it');
+    must(OVERVIEW, /applyIntent\(\);\s*\n\s*\}/, 'and applies it once the pipeline is on screen');
+    must(JS, /GCF_INTENT = 'carboniq\.gcf\.intent'/, 'the Pipeline tab’s intent');
+    must(GCF, /const INTENT_KEY = 'carboniq\.gcf\.intent'/, 'the Pipeline tab reads it');
+    /* Read before the first request, like the weights overlay beside it. */
+    const init = GCF.slice(GCF.indexOf('async function init()'));
+    expect(init.indexOf('readIntent();')).toBeGreaterThan(0);
+    expect(init.indexOf('readIntent();')).toBeLessThan(init.indexOf("await call('/reference')"));
+    must(GCF, /await applyIntent\(fromHash \|\| 'pipeline'\);/,
+      'and applied where the hash used to be read, with the pipeline as the panel when there is neither a hash nor an intent');
+    must(GCF, /async function refresh\(\) \{\s*readIntent\(\);/, 'a return visit reads it again');
+    for (const intent of ['intake:example', 'open:latest', 'panel:decision', 'validate:latest', 'cn:latest']) {
+      must(JS, `remember(GCF_INTENT, '${intent}')`, `a step hands over ${intent}`);
+    }
+    for (const kind of ["kind === 'panel'", "kind === 'intake'", "kind === 'open' || kind === 'validate'", "kind === 'cn'"]) {
+      must(GCF, kind, `the Pipeline tab handles ${kind}`);
+    }
+    must(JS, /remember\(GCF_OVERVIEW_INTENT, 'behind:gaps'\)/, 'the register step opens the drawer behind the figure');
+    must(JS, /remember\(GCF_OVERVIEW_INTENT, 'file:gcf'\)/, 'the file step marks the one press');
+    must(OVERVIEW, /if \(kind === 'file'\) \{ openBehind\('file'\)[^\n]*cue\('go-pdf'\)/, 'the overview marks the download on the file step');
+  });
+
+  test('the example candidate the intake opens on is the API’s, not the browser’s', () => {
+    must(GCF, /call\('\/pipeline\/example'\)/, 'the example is fetched');
+    mustNot(GCF, /Tea Factory/, 'no example figure lives in the browser');
+    must(GCF, /cue\('gcfIntakeSave'\)/, 'the record press is marked');
+    must(GCF, /cue\(\$\('gcfValStart'\) \? 'gcfValStart' : 'gcfValValidate'\)/, 'the assessor’s next control is marked');
+    must(GCF, /cue\('gcfCnPdf'\)/, 'the Concept Note download is marked');
+  });
+
+  test('the GCF readiness rows read the routes’ own fields', () => {
+    for (const path of ["call('/v1/gcf/portfolio')", "call('/v1/gcf/gaps')", "call('/v1/gcf/entity')", "call('/v1/gcf/report')"]) {
+      must(JS, path, `the day is read off ${path}`);
+    }
+    for (const field of ['assessment', 'totals', 'accreditation', 'checklist']) must(JS, field, `the ${field} row is read, not derived`);
+    must(JS, /the inventory item stays No by rule/, 'the checklist item that cannot pass is named as such');
+  });
+
+  test('the GCF notes keep the claims that matter and never the forbidden ones', () => {
+    must(JS, /Board decision B\.36\/10/, 'the accreditation is cited');
+    must(JS, /a gate, not a score/, 'the gate is named as one');
+    must(JS, /never PCAF’s 1–5 scale/, 'the evidence tiers are kept apart from the data-quality scale');
+    must(JS, /words and never a number/, 'the ratings are words');
+    must(JS, /not a decision of the Fund/, 'the assessment is the bank’s own');
+    must(JS, /not the entity’s inventory/, 'a pipeline is not the inventory');
+    must(HTML, /never a GCF endorsement/i, 'the language rule for the Fund');
+    mustNot(JS, /GCF (approved|endorsed|certified)/i, 'no endorsement language');
+  });
+});

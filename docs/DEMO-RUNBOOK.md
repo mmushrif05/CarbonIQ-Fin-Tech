@@ -223,6 +223,98 @@ document's checklist is answered from its own facts, so an item can answer
 No — *APR-1* until every exposure is approved, and the S2 provenance item
 until every illustrative statement is the bank's.
 
+## The GCF walkthrough — the accredited entity's pipeline
+
+The second walkthrough, for a Direct Access Entity: one candidate, from the
+door to the Fund. The product's *Walkthrough* tab offers it beside the
+SLFRS S2 one — choose **GCF — one candidate** — and the same strip follows
+you across the real screens; every step changes the screen and marks the
+control it asks you to press. The SLFRS S2 walkthrough above runs unchanged
+in the same organisation for the same audience; run it second, over the
+bank's own lending book.
+
+### Before the day
+
+1. **Sign in** with the administrator account. An administrator holds the
+   `validate` permission, so one sign-in runs the whole assessment; an
+   *assessor* account holds `validate` and nothing that writes the book, and
+   is the right account for the person who will sign off in production.
+2. **Load the entity's own pipeline once.** GCF Overview opens on the shipped
+   illustrative set, marked as one; press *Load starter projects* and confirm
+   the browser's question. Three realistic Sri Lankan candidates are recorded
+   through the same validated seam a keyed candidate goes through — recorded,
+   not sample, and every figure editable. A second press is refused
+   (`409 STARTER_NOT_EMPTY`). If the organisation already holds candidates,
+   the overview shows them and the button is not offered.
+3. **Record the entity's own facts** on the Pipeline tab under *Reporting*:
+   the entity's name (it is the cover of the disclosure), the accreditation
+   (every gate reads the entity's own once recorded, and the shipped B.36/10
+   envelope only until then), and the governance, strategy, risk-management
+   and targets statements SLFRS S2 asks for. Until they are stated the
+   disclosure prints *not stated* with the clause, and the register counts
+   them as the bank's own gaps.
+4. **Open the Walkthrough on the GCF track and read the readiness rows.**
+   Every row is a field a route returned: the pipeline recorded, the entity's
+   name, the accreditation, a signed assessment, what is blocking, the
+   entity's statements, and the disclosure with its checklist count. Download
+   the GCF disclosure once from the overview so the first render on the day
+   is not the first render on the site.
+5. **Check the origin** the presenter's browser will use is on
+   `ALLOWED_ORIGINS`; production CORS refuses any other, and the symptom is
+   that every step fails on the sign-in screen.
+
+### The eight steps
+
+1. **Where we stand** — *GCF Overview.* The money by source, the gate as a
+   verdict beside a word and a mark, the ten stages, who has signed, and
+   lifetime mitigation with the adaptation co-benefit on its own line.
+   **Say:** *"Accreditation is a gate, not a score — Board decision B.36/10.
+   An excluded candidate is one the entity cannot carry as the accredited
+   entity, never one ranked down."*
+2. **What is blocking, and who holds the key** — the register open behind the
+   figure, by owner and by candidate. **Say:** *"Every item is one the
+   engines raised, with the clause and the fact that clears it. This is the
+   worklist between a pipeline entry and a submission, written down."*
+3. **A candidate comes in** — *Pipeline tab, Intake*, the form filled from the
+   example the API serves, every figure with its evidence tier; press
+   **Record**. **Say:** *"A bare number is refused at the door. The tiers are
+   GCF appraisal classes and never PCAF's 1–5 scale."*
+4. **On the cycle** — the candidate open: held, partial, missing with the
+   clause; the next step and who takes it; the Fund's dates as projections.
+   **Say:** *"Held means the record holds the fact; whether it is enough is
+   for the Secretariat and the iTAP."*
+5. **Screened and structured** — *The decision*: two rankings never merged,
+   which two for a Concept Note, three criteria named unscored; *Instruments*
+   beside it. **Say:** *"One league table on carbon per dollar puts every
+   adaptation project last; the sort key decides that, not the projects."*
+6. **Assessed and signed** — the assessor's form with its controls marked.
+   Press **Start review**, rate the six criteria in words, record a
+   recommendation, press **Validate and sign off**. **Say:** *"The ratings
+   are words and never a number. It is the bank's own appraisal, signed by a
+   named assessor — not a decision of the Fund."*
+7. **The Concept Note package** — A–H held, partial or external, and the
+   external worklist; press **PDF**. **Say:** *"This does not write the
+   Concept Note. The external list is what only people can supply."*
+8. **In the file** — back on the overview, the signed count moved; press
+   **GCF disclosure — PDF**. **Say:** *"A pipeline is not the entity's
+   inventory: §29(a) is absent with where the figure comes from, avoided and
+   reduced are stated apart, and the checklist can answer No."*
+
+`npm run rehearse:gcf` drives exactly this against a site — `BASE`, `EMAIL`,
+`PASSWORD` — with a full-page screenshot at every step and a report of what
+refused.
+
+### If something refuses on the GCF day
+
+| Seen | Meaning | Do |
+|---|---|---|
+| The starter projects were not loaded | The organisation already holds recorded candidates | Use the book that is there; the shipped set is never merged with it |
+| `409 SAMPLE_NOT_EDITABLE` | The shipped illustrative set is read-only | Load the starter projects or adopt the set first |
+| `403 SCOPE_REQUIRED` on *Validate* | The account's role holds no `validate` scope | Sign in as an administrator or an assessor |
+| `409 NOTHING_TO_RETURN` | The assessment is not validated, or the recommendation is clean | A return needs a validated assessment with conditions or against |
+| `422 FORBIDDEN_LANGUAGE` on the disclosure | An entity statement claims endorsement | Edit the statement under Reporting; the refusal names the phrase |
+| A screen says a list could not be read | 100 requests a minute per caller | Wait a minute and reload; nothing is lost |
+
 ## Language
 
 - **Always** *PCAF-conformant*. **Never** *PCAF certified, approved or

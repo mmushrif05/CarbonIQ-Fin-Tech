@@ -14,6 +14,10 @@
         <p class="partc-hint" id="wt-subtitle"></p>
       </div>
       <div class="wt-controls">
+        <div class="wt-tracks" id="wt-tracks" role="group" aria-label="Which walkthrough">
+          <button type="button" class="wt-track is-on" data-track="financed" aria-pressed="true">SLFRS S2 — one loan</button>
+          <button type="button" class="wt-track" data-track="gcf" aria-pressed="false">GCF — one candidate</button>
+        </div>
         <label class="wt-year">Reporting year <select id="wt-year" class="cap-select"></select></label>
         <button class="btn btn-secondary" id="wt-refresh">Refresh</button>
         <button class="btn btn-primary wt-start" id="wt-start">Start the walkthrough</button>
@@ -36,8 +40,8 @@
   </section>
 
   <section class="partc-card">
-      <div class="partc-card-head"><h3>The seven steps — one loan, from the door to the file</h3>
-        <span class="partc-hint">The position and the SLFRS S2 file first; then one loan comes in with every field already filled, a second that does not know its emissions is priced on the held sector factor, the engine’s answer is read, it is reviewed and approved, and it is on the dashboard and in the file. <em>Open</em> takes you to the screen with the step already applied and the control to press marked; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</span></div>
+      <div class="partc-card-head"><h3 id="wt-steps-title">The seven steps — one loan, from the door to the file</h3>
+        <span class="partc-hint"><span id="wt-steps-hint">The position and the SLFRS S2 file first; then one loan comes in with every field already filled, a second that does not know its emissions is priced on the held sector factor, the engine’s answer is read, it is reviewed and approved, and it is on the dashboard and in the file.</span> <em>Open</em> takes you to the screen with the step already applied and the control to press marked; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</span></div>
       <ol class="wt-steps" id="wt-steps"></ol>
   </section>
 
@@ -50,6 +54,8 @@
         <li>Assurance mode is <em>self-declared</em> until every governed value resolves to a released baseline and the entity has recorded who assured the figures.</li>
         <li>SLFRS S2 is IFRS S2 as adopted in Sri Lanka. The document names every paragraph it answers and every one the bank has not yet stated.</li>
         <li>An SLFRS S2 statement still equal to the illustrative content is marked as such wherever it is printed, on screen and in the document.</li>
+        <li>Accreditation is a gate, not a score — Board decision B.36/10. An excluded candidate is one the entity cannot carry as the accredited entity.</li>
+        <li>The assessment is the bank’s own appraisal, signed by a named assessor. Never a decision of the Fund, and never a GCF endorsement.</li>
         <li>State what the figure is, cite the standard that governs it, and stop.</li>
       </ul>
     </section>
@@ -68,6 +74,10 @@
             <tr><td>A figure reads —</td><td>The server returned no figure</td><td>It is absent, not zero; the caption says what it needs</td></tr>
             <tr><td>An S2 share reads —</td><td>No exposure in the book is classified yet</td><td>Record a verdict on the Lending Book; a share over an unclassified book would be a number about nothing</td></tr>
             <tr><td>A pillar reads <em>Illustrative</em></td><td>The statement still equals the content shipped with the tool</td><td>Edit it on Financed Emissions; one changed word makes it the bank’s</td></tr>
+            <tr><td>The starter projects were not loaded</td><td>The organisation already holds recorded candidates</td><td>Use the book that is there; the shipped set is never merged with it</td></tr>
+            <tr><td>A move or an edit is refused on a candidate</td><td>It is the shipped illustrative set, which is read-only</td><td>Load the starter projects or adopt the set first</td></tr>
+            <tr><td>Validate is refused</td><td>The account’s role holds no validate scope</td><td>Sign in as an administrator or an assessor</td></tr>
+            <tr><td>Nothing to return</td><td>The assessment is not validated, or the recommendation is clean</td><td>A return needs a validated assessment with conditions or against</td></tr>
           </tbody>
         </table>
       </div>

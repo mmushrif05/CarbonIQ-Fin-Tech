@@ -40,10 +40,16 @@ const WalkthroughPage = (() => {
   const recall = key => { try { return localStorage.getItem(key); } catch (_) { return null; } };
 
   const STATE_KEY = 'carboniq.walkthrough';
+  const TRACK_PREF = 'carboniq.walkthrough.track';
   const BANK_INTENT = 'carboniq.bank.intent';
   const REGISTER_INTENT = 'carboniq.register.intent';
   const CLASS_KEY = 'carboniq.parta.class';
   const LOAN_CLASS = 'business-loans-unlisted-equity';
+  /* The GCF track's two hand-overs: the GCF Overview reads one once its
+     pipeline is on screen, the Pipeline tab reads the other before its first
+     request. */
+  const GCF_OVERVIEW_INTENT = 'carboniq.gcf-overview.intent';
+  const GCF_INTENT = 'carboniq.gcf.intent';
 
   /* Seven steps, one loan from the door to the file. `apply` sets the
      hand-over the target screen reads before it acts, so a step opens the
@@ -101,6 +107,82 @@ const WalkthroughPage = (() => {
     },
   ];
 
+  /* Eight steps, one candidate from the door to the Fund: where the entity
+     stands and what is blocking it, for the chief executive; then one
+     candidate comes in on the intake form already filled from the example
+     the API serves, is read against the cycle, screened and structured,
+     assessed and signed off by a named assessor, packaged for a Concept
+     Note, and is in the file the pipeline yields. */
+  const GCF_STEPS = [
+    {
+      title: 'Where we stand — the pipeline on one screen',
+      page: 'gcf-overview',
+      apply: () => { forget(GCF_OVERVIEW_INTENT); forget(GCF_INTENT); },
+      action: 'GCF Overview. The accredited entity over its candidate pipeline: the GCF ask and the money by source; how many candidates the accreditation gate lets through, flags or excludes; where each sits on the ten-stage project activity cycle; how many assessments a named assessor has signed; and lifetime mitigation with the adaptation co-benefit on its own line.',
+      note: 'Every figure on this screen is one the portfolio returned; the screen draws it and adds nothing. Accreditation is a gate, not a score — Board decision B.36/10 — and an excluded candidate is one the entity cannot carry as the accredited entity, never one ranked down.',
+    },
+    {
+      title: 'What is blocking, and who holds the key',
+      page: 'gcf-overview',
+      apply: () => remember(GCF_OVERVIEW_INTENT, 'behind:gaps'),
+      action: 'The same screen, with the register open behind the figure: every open item the engines raised — what the stage needs, what the six criteria lack, whether the assessment is signed, what the assessor returned — grouped by who closes it: the bank, the sponsor, the NDA, the Fund, the co-financiers, a gender specialist, the affected communities, the assessor. By candidate, furthest along first.',
+      note: 'Nothing here is judged afresh: each item carries the clause that asks for it and the fact that clears it. A gap does not stop a stage move; it travels with the candidate. This is the worklist between a pipeline entry and a submission, written down.',
+    },
+    {
+      title: 'A candidate comes in',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'intake:example'),
+      action: 'GCF Pipeline, on the intake form, already filled from the example candidate the API serves — a tea-factory biomass and rooftop-solar credit line — with every figure carrying its evidence tier: modelled, declared, benchmark or measured. Run the pre-check above it if you like; then press Record.',
+      note: 'A bare number is refused at the door: a benchmark grid factor would otherwise become a measured fact by the time it reaches a submission. The evidence tiers are GCF appraisal classes and never PCAF’s 1–5 scale. The pre-check answers in plain words from the accreditation — a category A design is a stop under B.36/10, with the separable component named.',
+    },
+    {
+      title: 'On the cycle — what this stage holds, and what the next will ask for',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'open:latest'),
+      action: 'The candidate just recorded is open: its place on the ten stages, what this stage holds, partly holds or is missing — each with the clause — the next step and who takes it, and the Fund’s dates as projections marked as such: six weeks for concept-note feedback, nine months to the Board.',
+      note: 'Held means the record holds the fact; whether it is enough is for the Secretariat and the iTAP. A projected date names the service standard it rests on and is never listed beside a recorded date without the label.',
+    },
+    {
+      title: 'Screened and structured — two rankings, never merged',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'panel:decision'),
+      action: 'The decision tab: the gate, then two ranked lists — mitigation on carbon per dollar, adaptation on beneficiaries per dollar — which two the engine recommends for a Concept Note, and the three criteria it names unscored. On the Instruments tab beside it, the structure that answers each candidate’s recorded barriers and the barrier it leaves standing.',
+      note: 'One league table on carbon per dollar puts every adaptation project last; the sort key decides that, not the projects. Three of the six investment criteria rest on judgement this system does not hold and are named unscored, with reasons. An instrument that needs the grant modality is a mandate question, not a low score.',
+    },
+    {
+      title: 'Assessed and signed — by a named assessor',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'validate:latest'),
+      action: 'The same candidate, on the assessor’s form with its controls marked. Press Start review, rate the six criteria in words — strong, adequate, weak — beside the evidence the record holds for each, record a recommendation, then Validate and sign off. The assessment is frozen, dated and attributed; the signable assessment report is one press beside it.',
+      note: 'The ratings are words and never a number, because a number here would be read as a GCF or a PCAF score. Validating is the assessor’s own permission, kept apart from writing the book. A validated assessment can only be reopened, never edited in place, and every move is on its audit trail. It is the bank’s own appraisal, not a decision of the Fund.',
+    },
+    {
+      title: 'The Concept Note package — what is held, and what only people can supply',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'cn:latest'),
+      action: 'The Concept Note tab, on the same candidate: every input laid out in GCF’s A–H order and marked held, partial or external, the readiness figure that measures what is held rather than how close the submission is, and the external worklist — the NDA’s no-objection, the gender assessment, the co-financing letters. Press PDF.',
+      note: 'This does not write the Concept Note. The external list is the deliverable most people actually need: the worklist between a pipeline entry and a submission. A package is never complete while an external input is outstanding.',
+    },
+    {
+      title: 'In the file — the GCF disclosure, in one press',
+      page: 'gcf-overview',
+      apply: () => remember(GCF_OVERVIEW_INTENT, 'file:gcf'),
+      action: 'Back on the overview: the signed count has moved and the register is shorter. Press GCF disclosure — PDF, the marked button. The document opens on its cover with a reference derived from its content, and reads in the standard’s order: governance, strategy, risk management, then the lines a pipeline can answer — SLFRS S2 §29(d) and §29(e), emissions avoided and reduced stated apart — with §29(a) absent by rule and the checklist answered from the document itself.',
+      note: 'A pipeline of financed projects is not the entity’s inventory: the inventory lines are absent with where the figure actually comes from, and nothing is netted against them. A statement the entity has not made prints as not stated with its clause; nothing is written on the bank’s behalf, and an item can answer No.',
+    },
+  ];
+
+  /* Two walkthroughs over one product. The financed track is the seven steps
+     above; the GCF track is the eight. The strip carries whichever is on. */
+  const TRACKS = {
+    financed: { label: 'SLFRS S2 — one loan', title: 'The seven steps — one loan, from the door to the file',
+      hint: 'The position and the SLFRS S2 file first; then one loan comes in with every field already filled, a second that does not know its emissions is priced on the held sector factor, the engine’s answer is read, it is reviewed and approved, and it is on the dashboard and in the file.', steps: STEPS },
+    gcf: { label: 'GCF — one candidate', title: 'The eight steps — one candidate, from the door to the Fund',
+      hint: 'Where the entity stands and what is blocking it first; then one candidate comes in on the intake form already filled, is read against the ten-stage cycle, screened and structured, assessed and signed off by a named assessor, packaged for a Concept Note, and is in the GCF disclosure the pipeline yields.', steps: GCF_STEPS },
+  };
+  let track = 'financed';
+  const steps = () => (TRACKS[track] || TRACKS.financed).steps;
+
   let year = '';
   let position = null;
 
@@ -128,6 +210,8 @@ const WalkthroughPage = (() => {
   // ── readiness, read off the position ───────────────────────
 
   async function load() {
+    renderTrack();
+    if (track === 'gcf') return loadGcf();
     year = $('wt-year').value;
     say('wt-status', 'Reading the position…');
     position = null;
@@ -192,10 +276,75 @@ const WalkthroughPage = (() => {
     setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
   }
 
-  const SCREEN = { bank: 'Bank Overview', 'parta-register': 'Lending Book', 'parta-position': 'Financed Emissions' };
+  /* The GCF day: every row a field a route returned — the portfolio, the gap
+     register, the entity's own facts and the report. */
+  async function loadGcf() {
+    say('wt-status', 'Reading the pipeline…');
+    let p = null, reg = null, entity = null, report = null, refusal = null;
+    try {
+      const [a, b, c, d] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report')]);
+      p = a; reg = b.register; entity = c.entity; report = d.report;
+    } catch (err) { refusal = err; }
+    renderGcfReadiness(p, reg, entity, report, refusal);
+    renderSummary();
+    renderSteps();
+    const name = report && report.basis && report.basis.entity && typeof report.basis.entity === 'string' ? report.basis.entity : null;
+    say('wt-entity', name || 'Reporting entity not stated');
+    say('wt-subtitle', p ? `${esc(p.portfolio.count)} candidate(s) on the ${p.sample ? 'illustrative' : 'recorded'} pipeline` : 'GCF pipeline');
+    say('wt-status', p ? 'Every row below is read off the pipeline, the register and the report.' : (refusal ? refusal.message : ''));
+  }
+
+  function renderGcfReadiness(p, reg, entity, report, refusal) {
+    const rows = [];
+    if (!p || !reg || !report) {
+      rows.push(['The pipeline', ready(false), esc(refusal ? refusal.message : 'The pipeline could not be read.'), opener('gcf-overview', 'Open GCF Overview')]);
+      setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
+      return;
+    }
+    const pf = p.portfolio;
+    rows.push(['The entity’s own pipeline', ready(!p.sample, p.sample ? 'Illustrative' : 'Recorded'),
+      p.sample ? 'The shipped illustrative set is showing; load the starter projects from the GCF Overview, or record a candidate on the Pipeline tab' : `${esc(pf.count)} candidate(s) recorded`, opener('gcf-overview', 'Open GCF Overview')]);
+    const name = report.basis && typeof report.basis.entity === 'string' ? report.basis.entity : null;
+    rows.push(['The entity’s name', ready(Boolean(name)), name ? `${esc(name)} — on the cover of the disclosure` : 'Not stated; record it under Reporting → Entity facts on the Pipeline tab', opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+    const acc = entity && entity.accreditation;
+    rows.push(['The accreditation every gate reads', ready(Boolean(acc), acc ? 'Recorded' : 'As shipped'),
+      acc ? `Board decision ${esc(acc.decision || '')}, recorded by the entity` : `Board decision ${esc(pf.envelope.decision || '')} as shipped; record the entity’s own under Reporting → Accreditation`, opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+    const a = pf.assessment || {};
+    rows.push(['A signed assessment', ready(Number(a.validated) > 0, Number(a.validated) > 0 ? 'Signed' : 'None yet'),
+      `${esc(a.validated)} validated · ${esc(a.underReview)} under review · ${esc(a.draft)} draft — step 6 signs one live`, opener('gcf-overview', 'Open GCF Overview')]);
+    const t = reg.totals || {};
+    rows.push(['What is blocking', ready(true, `${t.now} item(s)`),
+      `${esc(t.project)} on ${esc(t.blocked)} of ${esc(t.projects)} candidate(s) · ${esc(t.entity)} on the entity’s own statements — the register step 2 opens`, opener('gcf-overview', 'Open GCF Overview')]);
+    rows.push(['The entity’s own statements', ready(Number(t.entity) === 0, Number(t.entity) === 0 ? 'Stated' : `${t.entity} not stated`),
+      Number(t.entity) === 0 ? 'Governance, strategy, risk management and targets are on the record' : (reg.entity.items || []).map(x => esc(x.what)).join(' · '), opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+    const yes = (report.checklist || []).filter(i => i.met).length;
+    rows.push(['The GCF disclosure', ready(true, `${yes} of ${(report.checklist || []).length}`),
+      `${esc(yes)} of ${esc((report.checklist || []).length)} checklist items answered Yes; the inventory item stays No by rule — download the PDF once from the GCF Overview so the first render on the day is not the first on the site`, opener('gcf-overview', 'Open GCF Overview')]);
+    setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
+  }
+
+  /* The track on the page: the selector, the heading, and whether the year
+     selector applies. */
+  function renderTrack() {
+    for (const b of document.querySelectorAll('#wt-tracks [data-track]')) {
+      const on = b.getAttribute('data-track') === track;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on));
+    }
+    const t = TRACKS[track] || TRACKS.financed;
+    say('wt-steps-title', t.title); say('wt-steps-hint', t.hint);
+    const yearEl = document.querySelector('#page-walkthrough .wt-year'); if (yearEl) yearEl.hidden = track === 'gcf';
+  }
+
+  function setTrack(key) {
+    if (!TRACKS[key] || key === track) return;
+    track = key; remember(TRACK_PREF, key);
+    load();
+  }
+
+  const SCREEN = { bank: 'Bank Overview', 'parta-register': 'Lending Book', 'parta-position': 'Financed Emissions', 'gcf-overview': 'GCF Overview', gcf: 'GCF Pipeline' };
 
   function renderSteps() {
-    setHtml('wt-steps', STEPS.map((s, i) => `
+    setHtml('wt-steps', steps().map((s, i) => `
       <li class="wt-step">
         <span class="wt-step-n">${i + 1}</span>
         <div class="wt-step-body">
@@ -214,23 +363,29 @@ const WalkthroughPage = (() => {
     let ready = 0, needed = 0;
     for (const el of rows) { if (el.classList.contains('wt-ready')) ready += 1; else needed += 1; }
     setHtml('wt-summary', rows.length
-      ? `<span class="wt-sum"><b>${ready}</b> ready</span><span class="wt-sum"><b>${needed}</b> needed</span><span class="wt-sum"><b>${STEPS.length}</b> steps</span>`
+      ? `<span class="wt-sum"><b>${ready}</b> ready</span><span class="wt-sum"><b>${needed}</b> needed</span><span class="wt-sum"><b>${steps().length}</b> steps</span>`
       : '');
   }
 
   // ── the strip that follows the presenter ───────────────────
 
   function state() {
-    try { const s = JSON.parse(recall(STATE_KEY) || 'null'); return s && Number.isInteger(s.step) ? s : null; } catch (_) { return null; }
+    try {
+      const s = JSON.parse(recall(STATE_KEY) || 'null');
+      if (!s || !Number.isInteger(s.step)) return null;
+      return { track: TRACKS[s.track] ? s.track : 'financed', step: s.step, open: s.open !== false };
+    } catch (_) { return null; }
   }
+  const stepsOf = s => (TRACKS[s.track] || TRACKS.financed).steps;
 
   /* Whether the page a step names is the one on screen now. */
   const onPage = page => { const el = document.getElementById(`page-${page}`); return Boolean(el && el.offsetParent !== null); };
 
   function go(i, navigate) {
-    const step = STEPS[i];
+    const step = steps()[i];
     if (!step) return;
-    remember(STATE_KEY, JSON.stringify({ step: i }));
+    const prior = state();
+    remember(STATE_KEY, JSON.stringify({ track, step: i, open: prior ? prior.open : true }));
     if (step.apply) step.apply();
     renderStrip();
     if (!navigate) return;
@@ -242,7 +397,7 @@ const WalkthroughPage = (() => {
   }
 
   function end() {
-    forget(STATE_KEY); forget(BANK_INTENT); forget(REGISTER_INTENT);
+    forget(STATE_KEY); forget(BANK_INTENT); forget(REGISTER_INTENT); forget(GCF_OVERVIEW_INTENT); forget(GCF_INTENT);
     renderStrip();
     show('wt-start', true); show('wt-end', false);
   }
@@ -251,26 +406,48 @@ const WalkthroughPage = (() => {
     const strip = $('wt-strip');
     if (!strip) return;
     const s = state();
-    if (!s || !STEPS[s.step]) { strip.hidden = true; return; }
-    const step = STEPS[s.step];
+    if (!s || !stepsOf(s)[s.step]) { strip.hidden = true; return; }
+    /* The strip's track is the state's, so a strip started on one track and
+       reloaded on the other page keeps counting its own steps. */
+    track = s.track;
+    const list = stepsOf(s);
+    const step = list[s.step];
     strip.hidden = false;
-    say('wt-strip-n', `Step ${s.step + 1} of ${STEPS.length}`);
-    setHtml('wt-strip-dots', STEPS.map((_, i) => `<i class="${i < s.step ? 'is-done' : i === s.step ? 'is-on' : ''}"></i>`).join(''));
+    say('wt-strip-n', `Step ${s.step + 1} of ${list.length}`);
+    setHtml('wt-strip-dots', list.map((_, i) => `<i class="${i < s.step ? 'is-done' : i === s.step ? 'is-on' : ''}"></i>`).join(''));
     say('wt-strip-title', step.title);
     say('wt-strip-action', step.action);
     say('wt-strip-say', step.note);
     show('wt-strip-say-row', Boolean($('wt-strip-notes') && $('wt-strip-notes').checked));
     $('wt-strip-back').disabled = s.step === 0;
-    $('wt-strip-next').textContent = s.step === STEPS.length - 1 ? 'Finish' : 'Next';
+    $('wt-strip-next').textContent = s.step === list.length - 1 ? 'Finish' : 'Next';
+    /* The detail opens only on the step's own screen, and only while the
+       presenter has not hidden it; on any other screen the bar is one line
+       that says where the step is. A walkthrough must never cover the
+       screen a reader came to see. */
+    const here = onPage(step.page);
+    const open = here && s.open;
+    strip.classList.toggle('is-open', open);
+    say('wt-strip-where', here ? '' : `on ${SCREEN[step.page] || step.page}`);
+    const min = $('wt-strip-min');
+    if (min) { min.hidden = !here; min.textContent = s.open ? 'Hide' : 'Show'; min.setAttribute('aria-expanded', String(open)); }
     show('wt-start', false); show('wt-end', true);
+  }
+
+  function toggleOpen() {
+    const s = state();
+    if (!s) return;
+    remember(STATE_KEY, JSON.stringify({ track: s.track, step: s.step, open: !s.open }));
+    renderStrip();
   }
 
   function wireStrip() {
     on('wt-strip-back', 'click', () => { const s = state(); if (s && s.step > 0) go(s.step - 1, true); });
-    on('wt-strip-next', 'click', () => { const s = state(); if (!s) return; if (s.step >= STEPS.length - 1) end(); else go(s.step + 1, true); });
+    on('wt-strip-next', 'click', () => { const s = state(); if (!s) return; if (s.step >= stepsOf(s).length - 1) end(); else go(s.step + 1, true); });
     on('wt-strip-open', 'click', () => { const s = state(); if (s) go(s.step, true); });
     on('wt-strip-end', 'click', end);
     on('wt-strip-notes', 'change', renderStrip);
+    on('wt-strip-min', 'click', toggleOpen);
   }
 
   // ── lifecycle ──────────────────────────────────────────────
@@ -296,22 +473,10 @@ const WalkthroughPage = (() => {
     stripWired = true;
     window.CARBONIQ_cue = cueControl;
     wireStrip();
-    placeStrip();
-    window.addEventListener('resize', placeStrip);
+    /* The strip follows the page the shell shows: open on the step's own
+       screen, one line everywhere else. The shell announces each page. */
+    document.addEventListener('carboniq:page', renderStrip);
     renderStrip();
-  }
-
-  /* The strip sticks just under whichever bar is on screen — the page's
-     topbar, or the phone's fixed navbar — so it stays in view as the
-     presenter scrolls. */
-  function placeStrip() {
-    const strip = $('wt-strip');
-    if (!strip) return;
-    const mobile = document.querySelector('.mobile-navbar');
-    const top = document.querySelector('.topbar');
-    const shown = el => el && window.getComputedStyle(el).display !== 'none';
-    const bar = shown(mobile) ? mobile : (shown(top) ? top : null);
-    strip.style.top = bar && window.getComputedStyle(bar).position !== 'static' ? `${bar.offsetHeight}px` : '0px';
   }
 
   async function init() {
@@ -329,8 +494,15 @@ const WalkthroughPage = (() => {
       if (!b) return;
       const apply = b.getAttribute('data-apply') || '';
       if (apply.startsWith('class:')) remember(CLASS_KEY, apply.slice(6));
+      if (apply.startsWith('panel:')) remember(GCF_INTENT, apply);
       nav(b.getAttribute('data-page'));
     });
+    for (const b of document.querySelectorAll('#wt-tracks [data-track]')) b.addEventListener('click', () => setTrack(b.getAttribute('data-track')));
+    /* The track is settled before the first request: a walkthrough that is
+       on names it, otherwise the presenter's last choice. */
+    const s0 = state();
+    const pref = recall(TRACK_PREF);
+    track = s0 ? s0.track : (TRACKS[pref] ? pref : 'financed');
     await loadYears();
     await load();
     const s = state();
@@ -341,7 +513,7 @@ const WalkthroughPage = (() => {
     return load();
   }
 
-  return { init, refresh, load, mount, STEPS };
+  return { init, refresh, load, mount, STEPS, GCF_STEPS, TRACKS };
 })();
 
 /* The strip is part of the shell: mount it as soon as the script loads so

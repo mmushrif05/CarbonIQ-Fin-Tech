@@ -42,7 +42,7 @@ const GCFPage = (() => {
   const WEIGHT_KEY = 'carboniq.gcf.weights';
   const TIERS = ['measured', 'modelled', 'benchmark', 'declared'];
 
-  const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false };
+  const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false, intent: null };
 
   /* A preview session holds `read`; the server is the control and the
      screen withholds the buttons it would refuse. */
@@ -829,6 +829,107 @@ const GCFPage = (() => {
     } catch (_) { setHtml('gcfStorage', '<p class="gcf-hint">Storage mode unavailable.</p>'); }
   }
 
+  /* ── The walkthrough's hand-over ──────────────────────────── */
+
+  /* One key, read once, then forgotten: the GCF Overview and the Walkthrough
+     tell this screen what to show — a panel, a candidate to open, the intake
+     form filled from the served example, the assessor's form, or the Concept
+     Note package for one candidate — the way the Bank Overview hands the
+     Lending Book its class. Read before the first request, applied once the
+     reference is loaded. */
+  const INTENT_KEY = 'carboniq.gcf.intent';
+  function readIntent() {
+    try {
+      const v = localStorage.getItem(INTENT_KEY);
+      if (v) { localStorage.removeItem(INTENT_KEY); state.intent = v; }
+    } catch (_) { /* a courtesy */ }
+  }
+  const cue = id => { if (typeof window.CARBONIQ_cue === 'function' && $(id)) window.CARBONIQ_cue(id); };
+
+  /* The candidate a hand-over names, or the one most recently recorded. */
+  async function resolveId(key) {
+    if (key && key !== 'latest') return key;
+    let projects = state.pipeline;
+    if (!projects.length) {
+      try { projects = (await call('/pipeline')).pipeline.projects; state.pipeline = projects; } catch (_) { projects = []; }
+    }
+    if (!projects.length) return null;
+    const when = p => String((p.provenance && (p.provenance.updatedAt || p.provenance.enteredAt)) || '');
+    let latest = projects[projects.length - 1];
+    for (const p of projects) if (when(p) > when(latest)) latest = p;
+    return latest.id;
+  }
+
+  /* The intake form, filled from the example candidate the API serves — no
+     figure lives in the browser. Every field is set the way a hand would set
+     it, so Record sends exactly what the form shows. */
+  async function fillIntakeFromExample() {
+    const { project: p } = await call('/pipeline/example');
+    const set = (id, v) => { const el = $(`gcfI-${id}`); if (el && v !== undefined && v !== null) el.value = String(v); };
+    set('code', p.code); set('name', p.name); set('sector', p.sector); set('province', p.location && p.location.province);
+    set('stream', p.stream);
+    const streamSel = $('gcfI-stream'); if (streamSel) streamSel.dispatchEvent(new Event('change'));
+    set('resultsArea', p.resultsArea); set('stage', p.stage); set('essCategory', p.essCategory);
+    set('taxonomyBand', p.taxonomy && p.taxonomy.band); set('ndcTargets', (p.ndcSectorTargets || []).join(', '));
+    const f = p.financing || {};
+    set('totalCost', f.totalCost); set('gcfAsk', f.gcfAsk); set('dfcc', f.dfcc); set('other', f.other); set('instrument', f.instrument);
+    set('viable', f.viabilityWithoutGcf && f.viabilityWithoutGcf.viable ? 'yes' : 'no');
+    set('viabilityReason', f.viabilityWithoutGcf && f.viabilityWithoutGcf.reason);
+    for (const cb of document.querySelectorAll('#gcfI-barriers input')) cb.checked = (p.barriers || []).includes(cb.value);
+    const tier = (id, t) => { if (t && typeof t === 'object') { set(id, t.value); const sel = $(`gcfI-${id}-tier`); if (sel && t.tier) sel.value = t.tier; } };
+    const m = p.mitigation || {}; tier('annual', m.annual_tCO2e); tier('lifetime', m.lifetime_tCO2e);
+    const b = p.beneficiaries || {}; tier('direct', b.direct); tier('indirect', b.indirect);
+    tier('hectares', p.area && p.area.hectares); tier('assets', p.assets && p.assets.valueProtected_usd);
+    set('baselineType', m.baseline && m.baseline.type); set('baselineDesc', m.baseline && m.baseline.description);
+    set('counterfactual', m.baseline && m.baseline.counterfactual); set('selectionReason', p.selectionReason);
+    say('gcfIntakeHint', `Filled from the example candidate ${p.code}. Every figure is illustrative and carries its evidence tier; change any of them, then press Record.`);
+  }
+
+  // `fallback` is the panel to show when no intent is held: init passes the
+  // hash's panel or 'pipeline'; refresh passes nothing, because it only calls
+  // here with an intent. An undefined hash used to fall through this guard
+  // and open no panel at all, which read as an empty page.
+  async function applyIntent(fallback) {
+    const intent = state.intent; state.intent = null;
+    if (!intent) { if (fallback) show(fallback); return; }
+    const [kind, key] = intent.split(':');
+    if (kind === 'panel') {
+      const panel = key || 'pipeline';
+      if (loaded[panel]) LOADERS[panel]();
+      show(panel);
+      return;
+    }
+    if (kind === 'intake') {
+      loaded.intake = true; show('intake');
+      await loadIntake();
+      if (key === 'example') { try { await fillIntakeFromExample(); } catch (e) { say('gcfIntakeHint', e.message); } }
+      cue('gcfIntakeSave');
+      return;
+    }
+    if (kind === 'open' || kind === 'validate') {
+      loaded.pipeline = true; show('pipeline');
+      await loadPipeline();
+      const id = await resolveId(key);
+      if (!id) return;
+      await GCFPipeline.openProject(id, { quiet: kind === 'validate' });
+      if (kind === 'validate') {
+        const form = $('gcfValidationForm'); if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cue($('gcfValStart') ? 'gcfValStart' : 'gcfValValidate');
+      }
+      return;
+    }
+    if (kind === 'cn') {
+      loaded.cn = true; show('cn');
+      await loadCn();
+      const id = await resolveId(key);
+      const sel = $('gcfCnProject');
+      if (sel && id) { sel.value = id; await renderCn(); }
+      cue('gcfCnPdf');
+      return;
+    }
+    show(fallback || 'pipeline');
+  }
+
   const LOADERS = {
     pipeline: loadPipeline,
     emissions: loadEmissions,
@@ -847,8 +948,11 @@ const GCFPage = (() => {
   async function init() {
     /* Read the overlay BEFORE the first request. This is the fourth instance
        of this shape in this codebase: state loaded after the first fetch is
-       state that vanishes on reload. */
+       state that vanishes on reload. The walkthrough's hand-over is read
+       here for the same reason: an intent read after the first fetch is one
+       a reload loses. */
     loadWeights();
+    readIntent();
 
     try {
       const ref = await call('/reference');
@@ -945,8 +1049,20 @@ const GCFPage = (() => {
     });
 
     const fromHash = (window.location.hash.match(/^#gcf\/(\w+)/) || [])[1];
-    show(fromHash || 'pipeline');
+    await applyIntent(fromHash || 'pipeline');
   }
 
-  return { init, refresh: refreshAll };
+  /* A return visit re-reads every open panel, and reads the hand-over again
+     so a walkthrough step on the screen already shown is applied now. A
+     hand-over re-reads only the panel it opens: every open panel re-read on
+     every step, beside the four requests a project opens with, is how a
+     walkthrough reached the hundred requests a minute a session is allowed
+     and its next read was refused. */
+  async function refresh() {
+    readIntent();
+    if (state.intent) { await applyIntent(); return; }
+    refreshAll();
+  }
+
+  return { init, refresh };
 })();

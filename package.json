@@ -47,6 +47,7 @@
     "build:ui": "node scripts/build-ui.js",
     "test:e2e": "npm run build:ui && playwright test",
     "rehearse": "node scripts/rehearse-runbook.js",
+    "rehearse:gcf": "node scripts/rehearse-gcf.js",
     "pretypecheck": "node scripts/build-info.js",
     "user:create": "node scripts/manage-users.js create",
     "user:list": "node scripts/manage-users.js list",
