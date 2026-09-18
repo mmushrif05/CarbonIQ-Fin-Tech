@@ -191,7 +191,8 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
     const init = GCF.slice(GCF.indexOf('async function init()'));
     expect(init.indexOf('readIntent();')).toBeGreaterThan(0);
     expect(init.indexOf('readIntent();')).toBeLessThan(init.indexOf("await call('/reference')"));
-    must(GCF, /await applyIntent\(fromHash\);/, 'and applied where the hash used to be read');
+    must(GCF, /await applyIntent\(fromHash \|\| 'pipeline'\);/,
+      'and applied where the hash used to be read, with the pipeline as the panel when there is neither a hash nor an intent');
     must(GCF, /async function refresh\(\) \{\s*readIntent\(\);/, 'a return visit reads it again');
     for (const intent of ['intake:example', 'open:latest', 'panel:decision', 'validate:latest', 'cn:latest']) {
       must(JS, `remember(GCF_INTENT, '${intent}')`, `a step hands over ${intent}`);

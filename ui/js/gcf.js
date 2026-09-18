@@ -885,9 +885,13 @@ const GCFPage = (() => {
     say('gcfIntakeHint', `Filled from the example candidate ${p.code}. Every figure is illustrative and carries its evidence tier; change any of them, then press Record.`);
   }
 
-  async function applyIntent(fromHash) {
+  // `fallback` is the panel to show when no intent is held: init passes the
+  // hash's panel or 'pipeline'; refresh passes nothing, because it only calls
+  // here with an intent. An undefined hash used to fall through this guard
+  // and open no panel at all, which read as an empty page.
+  async function applyIntent(fallback) {
     const intent = state.intent; state.intent = null;
-    if (!intent) { if (fromHash !== undefined) show(fromHash || 'pipeline'); return; }
+    if (!intent) { if (fallback) show(fallback); return; }
     const [kind, key] = intent.split(':');
     if (kind === 'panel') {
       const panel = key || 'pipeline';
@@ -923,7 +927,7 @@ const GCFPage = (() => {
       cue('gcfCnPdf');
       return;
     }
-    show(fromHash || 'pipeline');
+    show(fallback || 'pipeline');
   }
 
   const LOADERS = {
@@ -1045,7 +1049,7 @@ const GCFPage = (() => {
     });
 
     const fromHash = (window.location.hash.match(/^#gcf\/(\w+)/) || [])[1];
-    await applyIntent(fromHash);
+    await applyIntent(fromHash || 'pipeline');
   }
 
   /* A return visit re-reads every open panel, and reads the hand-over again
