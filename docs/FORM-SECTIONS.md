@@ -267,3 +267,30 @@ handler. A submit that arrives another way — a keyboard press, a stale button 
 should ask `FormSteps.missing(form)` and say what is outstanding rather than
 sending a body the engine will refuse. `FormSteps.revealMissing(form)` opens
 the section holding the first one and puts the cursor in it.
+
+### How the register's requirements were arrived at
+
+Not by reading the engines and not by judgement: every field of the starter
+book's own inputs was blanked in turn and the engine's refusal recorded, per
+asset class. What a class asks for is what its engine actually refuses
+without — `EVIC_MARKET_CAP_REQUIRED`, `DQ_OPTION_REQUIRED`,
+`BUILDING_TYPE_NOT_HELD`, and so on — and nothing else is declared, so no
+legitimate record is held up by a field the standard does not need.
+
+Two of them turned out to be a **choice** rather than a field, which is the
+finding that matters and the reason `data-fs-group` exists:
+
+| Refusal | Answered by | Reaching |
+|---|---|---|
+| `ORIGINATION_VALUE_REQUIRED` | the origination value, **or** the latest valuation | — |
+| `BUILDING_ENERGY_INPUT_REQUIRED` | metered energy **or** floor area **or** the number of buildings | Option 1b · 2b · 3 |
+
+A bank that has answered the question one way must not be told it is missing
+the other two.
+
+**Motor vehicle loans carry only the outstanding amount and its date.** The
+engine's other refusal, `VEHICLES_REQUIRED`, is answered by the vehicle block
+as a whole rather than by any one field, and every control in it is a select
+with a valid default or a genuinely optional figure — there is nothing there
+a person can leave blank that the engine then refuses.
+
