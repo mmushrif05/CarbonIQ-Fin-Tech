@@ -36,7 +36,8 @@
   <section class="partc-card" id="pr-record" hidden data-writes>
     <div class="partc-card-head"><h3>Record an exposure</h3>
       <span class="partc-hint" id="pr-record-hint">The engine runs before anything is written; a refusal names its clause.</span></div>
-    <form id="pr-form" class="pr-form" autocomplete="off">
+    <form id="pr-form" class="pr-form" autocomplete="off"
+          data-steps="auto" data-step-first="The borrower">
       <div class="pr-grid">
         <label>Counterparty <input id="pr-f-name" type="text" required maxlength="200"></label>
         <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>

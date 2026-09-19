@@ -1,0 +1,110 @@
+/* FormSteps — a long form read one section at a time (ui/js/form-steps.js).
+ *
+ * Furniture only. The rail takes the surrounding screen's own tokens, so a
+ * form on the Lending Book and a form on the Sovereign Book look like the
+ * screens they sit on rather than like a component that arrived from
+ * somewhere else. Every colour here is a var() with a fallback and none is
+ * chosen in the module.
+ */
+
+.fs-head {
+  /* The rail scrolls itself where it is too wide. The page must never
+     scroll sideways; a strip of section names may. */
+  margin: 0 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--p-line, #e5e5ea);
+  min-width: 0;
+}
+
+.fs-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fs-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-width: 0; max-width: 100%;
+  padding: 7px 13px 7px 9px;
+  border: 1px solid var(--p-line, #e5e5ea);
+  border-radius: 999px;
+  background: var(--p-card, #fff);
+  color: var(--p-label-2, #6b6b70);
+  font: inherit; font-size: 12.5px; font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  text-align: left;
+}
+.fs-tab:hover { border-color: var(--p-accent, #0d9488); color: var(--p-label, #1c1c1e); }
+.fs-tab:focus-visible { outline: 2px solid var(--p-accent, #0d9488); outline-offset: 2px; }
+
+.fs-tab-label {
+  min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  max-width: 22ch;
+}
+
+/* The number is the section's place in the order, which is the one thing a
+   person filling a form wants to know that the title does not tell them. */
+.fs-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: 19px; height: 19px;
+  border-radius: 50%;
+  background: var(--p-fill-soft, rgba(120,120,128,.14));
+  color: var(--p-label-2, #6b6b70);
+  font-size: 11px; font-weight: 700; font-style: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.fs-tab.is-done { color: var(--p-label, #1c1c1e); }
+.fs-tab.is-done .fs-num {
+  background: var(--p-accent-bg, rgba(13,148,136,.12));
+  color: var(--p-accent, #0d9488);
+}
+
+.fs-tab.is-on {
+  background: var(--p-accent, #0d9488);
+  border-color: var(--p-accent, #0d9488);
+  color: #fff;
+}
+.fs-tab.is-on .fs-num { background: rgba(255,255,255,.22); color: #fff; }
+.fs-tab.is-on .fs-tab-label { max-width: none; white-space: normal; }
+
+/* The section in hand. `.fs-off` only ever hides — it is never used to show
+   an element, so a block the page itself hid stays hidden when its section
+   comes back. That is the `[hidden]` rule this codebase has broken before:
+   a class that sets `display` beats the user-agent sheet's `[hidden]`. */
+.fs-off { display: none !important; }
+
+.fs-nav {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  margin-top: 16px; padding-top: 14px;
+  border-top: 1px solid var(--p-line, #e5e5ea);
+  min-width: 0;
+}
+.fs-nav .fs-status {
+  font-size: 12.5px; color: var(--p-label-2, #6b6b70);
+  font-variant-numeric: tabular-nums;
+  order: 0;
+}
+.fs-nav .fs-next { margin-left: auto; }
+.fs-nav .btn[disabled] { opacity: .45; cursor: default; }
+
+/* A phone: the rail is a single scrolling line rather than six wrapped rows,
+   because wrapped chips push the fields themselves below the fold, which is
+   the problem this component exists to end. */
+@media (max-width: 620px) {
+  .fs-rail {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .fs-rail::-webkit-scrollbar { display: none; }
+  .fs-tab { flex: 0 0 auto; }
+  .fs-tab-label { max-width: 14ch; }
+  .fs-tab.is-on .fs-tab-label { white-space: nowrap; max-width: 18ch; }
+  .fs-nav .fs-next { margin-left: auto; }
+}

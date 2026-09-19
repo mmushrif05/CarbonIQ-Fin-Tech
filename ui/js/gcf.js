@@ -620,7 +620,9 @@ const GCFPage = (() => {
 
   function renderIntake() {
     setHtml('gcfIntakeForm', INTAKE().map(f => {
-      if (f.group) return `<div class="gcf-group">${esc(f.group)}</div>`;
+      /* The group line is what divides the intake into sections, so it
+         carries the title FormSteps reads; the text stays as it was. */
+      if (f.group) return `<div class="gcf-group" data-step-title="${esc(f.group)}">${esc(f.group)}</div>`;
       const wide = f.kind === 'wide' || f.kind === 'checks' || f.kind === 'logframe' ? ' gcf-field-wide' : '';
       let ctl;
       if (f.kind === 'select') {
@@ -671,6 +673,10 @@ const GCFPage = (() => {
       streamSel.addEventListener('change', syncAreas);
       syncAreas();
     }
+    /* The intake is thirty-odd fields down one column. Sectioned on its own
+       group lines, it is read a few fields at a time — and the rail has to
+       be rebuilt here because this render replaced the whole form. */
+    if (typeof FormSteps !== 'undefined') FormSteps.attach($('gcfIntakeForm'));
   }
 
   const val = id => ($(`gcfI-${id}`)?.value ?? '').trim();

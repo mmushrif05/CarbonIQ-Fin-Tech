@@ -182,6 +182,10 @@ const PartARegisterPage = (() => {
     say('pr-record-hint', isProperty()
       ? 'A property loan. Key the floor area in the unit the valuation states; the engine converts it and the trace shows the conversion.'
       : 'The engine runs before anything is written; a refusal names its clause.');
+    /* The form's shape has just changed — a class carries its own blocks and
+       the rest are hidden — so the sections are re-read and a section left
+       holding nothing is dropped from the rail rather than opening blank. */
+    if (typeof FormSteps !== 'undefined') FormSteps.reset($('pr-form'));
   }
 
   // ── years ──────────────────────────────────────────────────

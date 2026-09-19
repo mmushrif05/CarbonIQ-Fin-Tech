@@ -32,8 +32,16 @@
 .parta-register .pr-grid input:focus-visible,
 .parta-register .pr-grid select:focus-visible,
 .parta-register .pr-inline input:focus-visible { outline: 2px solid var(--brand, #0a7a4c); outline-offset: 1px; }
-.parta-register .pr-check { flex-direction: row; align-items: center; gap: 8px; align-self: end; }
-.parta-register .pr-check input { width: 16px; height: 16px; }
+/* A checkbox sits beside its words, not above them. This rule used to read
+   `.pr-check`, which is two classes, while `.pr-grid label` above it is two
+   classes and an element — so the column direction won on specificity and
+   every checkbox in the register form drew its box on the line above its
+   label. Matching the label here outranks it. */
+.parta-register .pr-grid label.pr-check {
+  flex-direction: row; align-items: center; gap: 8px; align-self: end;
+  min-height: 34px;
+}
+.parta-register .pr-grid label.pr-check input { width: 16px; height: 16px; flex: 0 0 auto; }
 .parta-register .pr-wide { grid-column: 1 / -1; }
 
 .parta-register .pr-inline { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: end; margin-top: 10px; }

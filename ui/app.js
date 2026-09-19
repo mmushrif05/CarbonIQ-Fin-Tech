@@ -266,6 +266,13 @@ document.addEventListener('DOMContentLoaded', () => {
       container.dataset.loaded = 'true';
       // Run the page module's init function (wires all event listeners)
       if (typeof config.init === 'function') config.init();
+      /* A form that asked to be read one section at a time is sectioned
+         here, after its own module has wired it, so the sections are
+         computed over the form the module left behind rather than the one
+         the fragment shipped. A form whose shape changes later — the
+         register's, which carries one block per asset class — calls
+         FormSteps.refresh() itself. */
+      if (typeof FormSteps !== 'undefined') FormSteps.init(container);
     } catch (err) {
       container.innerHTML = `
         <div style="padding:48px;text-align:center;color:var(--text-secondary);">

@@ -18,6 +18,7 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
+const { fillIn, openSectionOf } = require('./helpers/steps');
 
 const KEY = 'ck_test_e2e00000000000000000000000000000';
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
@@ -120,8 +121,10 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
      the engine reruns and the row carries the new figure. */
   await page.locator('#pr-detail-edit').click();
   await expect(page.locator('#pr-record')).toBeVisible();
-  await expect(page.locator('#pr-f-outstanding')).toHaveValue('50000');
   await expect(page.locator('#pr-form-submit')).toHaveText('Save changes');
+  /* The outstanding is the form's second section. */
+  await openSectionOf(page, 'pr-f-outstanding');
+  await expect(page.locator('#pr-f-outstanding')).toHaveValue('50000');
   await page.fill('#pr-f-outstanding', '75000');
   await page.locator('#pr-form-submit').click();
   await expect(page.locator('#pr-form-status')).toContainText('Saved');
@@ -162,14 +165,21 @@ test('a property is recorded from the screen in square feet, and the trace shows
   await expect(page.locator('#pr-pdf')).toBeHidden();
 
   await page.locator('#pr-record-toggle').click();
-  await expect(page.locator('[data-class-form="commercial-real-estate mortgages"]')).toBeVisible();
+  /* The property block is the one in play and the business-loan block is
+     not. The wrapper itself is no longer the thing to assert on: the form is
+     read a section at a time, so a wrapper whose section is not the one in
+     hand is legitimately of no height. Its own fields answer the question. */
   await expect(page.locator('[data-class-form="business-loans-unlisted-equity"]')).toBeHidden();
+  /* Section by section, the way the form is now read: the building and the
+     borrower first, then what is outstanding, then how its energy is known. */
   await page.fill('#pr-f-name', 'Colombo Office Tower');
   await page.fill('#pr-f-ref', `CRE-${Date.now()}`);
+  await openSectionOf(page, 'pr-f-building-type');
+  await expect(page.locator('#pr-f-building-type')).toBeVisible();
   await page.selectOption('#pr-f-building-type', 'office');
-  await page.fill('#pr-f-re-outstanding', '5000000');
+  await fillIn(page, 'pr-f-re-outstanding', '5000000');
   await page.fill('#pr-f-re-value', '20000000');
-  await page.fill('#pr-f-area', '10763.91');
+  await fillIn(page, 'pr-f-area', '10763.91');
   await page.selectOption('#pr-f-area-unit', 'ft2');
   await page.locator('#pr-form-submit').click();
   await expect(page.locator('#pr-detail')).toBeVisible();

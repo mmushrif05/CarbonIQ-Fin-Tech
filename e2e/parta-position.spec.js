@@ -15,6 +15,7 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
+const { fillIn } = require('./helpers/steps');
 
 const KEY = 'ck_test_e2e00000000000000000000000000000';
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
@@ -108,7 +109,8 @@ test('both classes are on screen, the entity facts record from the screen, the d
   await page.selectOption('#fe-e-approach', 'operational_control');
   await page.fill('#fe-e-fye', '12-31');
   await page.fill('#fe-e-gwp', 'IPCC AR6, 100-year');
-  await page.fill('#fe-e-prep-name', 'Ana Perera');
+  /* Who prepared and approved is the entity form's second section. */
+  await fillIn(page, 'fe-e-prep-name', 'Ana Perera');
   await page.fill('#fe-e-prep-role', 'Head of Sustainable Finance');
   await page.fill('#fe-e-appr-name', 'Chief Risk Officer');
   await page.locator('#fe-entity-save').click();

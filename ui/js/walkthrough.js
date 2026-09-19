@@ -519,8 +519,11 @@ const WalkthroughPage = (() => {
           <div class="wt-step-body">
             <div class="wt-step-head"><h4>${esc(s.title)}</h4><span class="wt-step-screen">${esc(SCREEN[s.page] || s.page)}</span>
               <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
-            <p>${esc(s.action)}</p>
-            <details class="wt-say"><summary><span class="wt-say-label">Say</span> What to say</summary><p>${esc(s.note)}</p></details>
+            <details class="wt-step-more"${i === 0 ? ' open' : ''}>
+              <summary>What to do${s.note ? ' \u00b7 what to say' : ''}</summary>
+              <p>${esc(s.action)}</p>
+              ${s.note ? `<p class="wt-say-note"><span class="wt-say-label">Say</span> ${esc(s.note)}</p>` : ''}
+            </details>
           </div>
         </li>`).join(''));
     }

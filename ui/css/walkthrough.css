@@ -105,6 +105,29 @@
 .walkthrough .wt-step-screen { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; background: var(--wt-band); color: var(--wt-ink-2); white-space: nowrap; }
 .walkthrough .wt-go { min-height: 32px; padding: 5px 12px; font-size: 12.5px; }
 .walkthrough .wt-step p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--wt-ink); }
+/* A step is a title a presenter scans and a detail they open. The seven
+   steps used to print every paragraph and every note, which made the page a
+   long scroll of prose to find the one step being presented — the same
+   fault the record form had. The first step is open; the rest are one
+   press. The strip carries the step during the walkthrough itself, so
+   nothing here is the only place the words appear. */
+.walkthrough .wt-step-more { margin-top: 6px; }
+.walkthrough .wt-step-more > summary {
+  cursor: pointer; font-size: 12px; color: var(--wt-ink-2);
+  list-style: none; display: inline-flex; align-items: center; gap: 6px;
+}
+.walkthrough .wt-step-more > summary::-webkit-details-marker { display: none; }
+.walkthrough .wt-step-more > summary::before {
+  content: '\203a'; display: inline-block; font-size: 15px; line-height: 1;
+  transition: transform 120ms ease;
+}
+.walkthrough .wt-step-more[open] > summary { color: var(--wt-ink); }
+.walkthrough .wt-step-more[open] > summary::before { transform: rotate(90deg); }
+.walkthrough .wt-say-note {
+  color: var(--wt-ink-2); font-style: italic;
+  padding-left: 12px; border-left: 2px solid var(--wt-rule);
+}
+
 .walkthrough .wt-say { margin-top: 8px; }
 .walkthrough .wt-say summary { cursor: pointer; font-size: 12px; color: var(--wt-ink-2); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
 .walkthrough .wt-say summary::-webkit-details-marker { display: none; }

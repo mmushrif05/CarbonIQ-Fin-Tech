@@ -19,7 +19,7 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **452**. Remaining: **242**.
+Checked across all three: **453**. Remaining: **243**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
@@ -107,7 +107,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **9**. Remaining: **31** (1859 errors, measured by
+Checked: **10**. Remaining: **31** (1859 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -148,10 +148,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **48**. Remaining: **142** (1544 errors, measured by
+Checked: **48**. Remaining: **143** (1544 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**18 of them raise no errors at all** and can be adopted by adding the
+**19 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -282,6 +282,7 @@ pragma and nothing else.
 | `tests/v1-info.test.js` | 1 |
 | `tests/bank-ui.test.js` | 0 |
 | `tests/charts.test.js` | 0 |
+| `tests/form-steps.test.js` | 0 |
 | `tests/gcf-example-project.test.js` | 0 |
 | `tests/gcf-overview-ui.test.js` | 0 |
 | `tests/lending-pcaf-claim.test.js` | 0 |

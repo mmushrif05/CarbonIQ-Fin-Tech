@@ -17,6 +17,7 @@
 'use strict';
 
 const { test, expect } = require('@playwright/test');
+const { fillIn, openSectionOf } = require('./helpers/steps');
 
 const KEY = 'ck_test_e2e00000000000000000000000000000';
 const ADMIN_KEY = 'ck_test_e2eadmin000000000000000000000000';
@@ -141,7 +142,9 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#pr-preview-body')).toContainText('Option 3a');
   await expect(page.locator('#pr-preview-body')).toContainText('sector-factors');
   await expect(page.locator('#pr-preview-body')).toContainText('What would raise the score');
-  /* With the revenue cleared the same borrower falls to the outstanding alone. */
+  /* With the revenue cleared the same borrower falls to the outstanding alone.
+     The revenue sits on the section that asks how the emissions are known. */
+  await openSectionOf(page, 'pr-f-revenue');
   await page.fill('#pr-f-revenue', '');
   await expect(page.locator('#pr-preview-body')).toContainText('Option 3b');
   await page.fill('#pr-f-revenue', '1500000000');

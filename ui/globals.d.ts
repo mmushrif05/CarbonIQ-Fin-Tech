@@ -98,3 +98,17 @@ declare const Actions: {
   register: (modules: Record<string, any>) => void;
   init: () => void;
 };
+
+/**
+ * A long form read one section at a time. Defined in `ui/js/form-steps.js`,
+ * which loads before the page modules that ask it to re-read a form whose
+ * shape has changed.
+ */
+declare const FormSteps: {
+  init: (root?: Element | Document) => void;
+  attach: (form: Element | null) => void;
+  refresh: (form?: Element | null) => void;
+  reset: (form: Element | null) => void;
+  reveal: (el: Element | null) => boolean;
+  open: (form: Element | null, index: number) => void;
+};
