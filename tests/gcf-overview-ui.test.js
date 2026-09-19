@@ -108,6 +108,16 @@ describe('The screen renders the engines rather than repeating them', () => {
     must(JS, /gcf\('\/gaps'\)/, 'the register is the gap route’s');
     must(JS, /gcf\('\/report'\)/, 'the disclosure lines are the report’s');
     must(JS, /gcf\('\/conformance'\)/, 'the rules are the matrix’s');
+    /* The journey: two reads per candidate in focus, drawn from the routes' own fields. */
+    must(JS, /gcf\(`\/pipeline\/\$\{encodeURIComponent\(id\)\}\/readiness`\)/, 'the journey’s checklist is the readiness route’s');
+    must(JS, /gcf\(`\/cn\/\$\{encodeURIComponent\(id\)\}`\)/, 'the journey’s package counts are the package’s');
+    must(JS, /\(portfolio\.byCycle \|\| \[\]\)\.map\(c => /, 'the rail is the Fund’s cycle as the portfolio lists it');
+    must(JS, /fmt\(rdy\.held\)\} held · \$\{fmt\(rdy\.partial\)\} partial · \$\{fmt\(rdy\.external\)\} external/, 'the package counts are printed as the package returned them');
+    must(JS, /STATUS_COLOR = s => `var\(--go-item-\$\{s\}/, 'held, partial and missing take their hue from the stylesheet');
+    must(JS, /if \(focus === id\) renderFocus\(\);/, 'a late answer never draws over another candidate');
+    must(JS, /detail\.clear\(\);/, 'the journey is dropped with the position');
+    must(CSS, /--go-item-held: #0a5c3a; --go-item-partial: #c46a1f; --go-item-missing: #98a19c;/, 'the three states are tokens for the light theme');
+    must(CSS, /--go-item-held: #7fc79f; --go-item-partial: #e08a44; --go-item-missing: #79837d;/, 'and stepped for the dark surface, never flipped');
     mustNot(JS, /\.reduce\(/, 'no sum in the browser');
     mustNot(JS, /\)\s*\/\s*\(?\s*(total|count|projects|candidates|ask|cost)/i, 'no share or average in the browser');
     mustNot(JS, /(mitigation|lifetime)[^\n]*\+[^\n]*(coBenefit|co-benefit)/i, 'the adaptation co-benefit is never added to the headline');

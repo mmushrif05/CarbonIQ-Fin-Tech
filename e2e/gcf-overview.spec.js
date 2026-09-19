@@ -72,6 +72,12 @@ test('the figures are the portfolio’s, the starter loads from the screen, a ca
   await page.locator('#go-chips .gov-chip').first().click();
   await expect(page.locator('#go-focus')).toBeVisible();
   await expect(page.locator('#go-focus .gov-items li').first()).toBeVisible();
+  /* The journey: the ten stages on the rail, one of them the candidate's,
+     the sections a proposal is written from, and the package counts. */
+  await expect(page.locator('#go-focus .gov-journey-rail .gov-jstep')).toHaveCount(10, { timeout: 15000 });
+  await expect(page.locator('#go-focus .gov-jstep.is-on')).toHaveCount(1);
+  await expect(page.locator('#go-focus .gov-jsec')).toHaveCount(8);
+  await expect(page.locator('#go-focus .gov-journey')).toContainText(/\d+ held · \d+ partial · \d+ external/);
 
   /* The gap register by owner, and the drawer behind the gate. */
   await expect(page.locator('#go-blocking')).not.toHaveText('—');
