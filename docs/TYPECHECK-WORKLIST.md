@@ -107,7 +107,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **10**. Remaining: **31** (1862 errors, measured by
+Checked: **10**. Remaining: **31** (1863 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -116,7 +116,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/partc-book.js` | 210 |
 | `ui/js/pcaf-parta.js` | 206 |
 | `ui/js/dashboard.js` | 118 |
-| `ui/js/parta-register.js` | 100 |
+| `ui/js/parta-register.js` | 101 |
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/gcf-pipeline.js` | 90 |
 | `ui/js/gcf.js` | 85 |
@@ -148,7 +148,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **48**. Remaining: **143** (1545 errors, measured by
+Checked: **48**. Remaining: **143** (1549 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **18 of them raise no errors at all** and can be adopted by adding the
@@ -201,6 +201,7 @@ pragma and nothing else.
 | `tests/error-handler.test.js` | 13 |
 | `tests/slgft-source-fidelity.test.js` | 13 |
 | `tests/gcf-cn-package.test.js` | 12 |
+| `tests/parta-business-loans.test.js` | 12 |
 | `tests/partc-disclosure.test.js` | 12 |
 | `tests/pcaf-partc-registers.test.js` | 12 |
 | `tests/gcf-return-loop.test.js` | 11 |
@@ -221,7 +222,6 @@ pragma and nothing else.
 | `tests/authorization.test.js` | 8 |
 | `tests/capital-engine.test.js` | 8 |
 | `tests/ip-surface.test.js` | 8 |
-| `tests/parta-business-loans.test.js` | 8 |
 | `tests/parta-consolidated.test.js` | 8 |
 | `tests/parta-factor-provenance.test.js` | 8 |
 | `tests/parta-preview.test.js` | 8 |
