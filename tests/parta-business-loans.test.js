@@ -473,4 +473,44 @@ describe('The held factor library, and the vintage of an economic factor', () =>
     expect(f.reference).toMatch(/Band: the LK baseline, version 3/);
     expect(f.observed.band.basis).toBe('the LK baseline, version 3');
   });
+
+  /* The refusal a borrower with no balance sheet actually meets. Option 3a
+     attributes by outstanding over equity plus debt, so it rests on a company
+     value; 3b does not. The date check used to run first, so an exposure
+     carrying no company value at all was told to state a balance-sheet date
+     for a section it had deliberately left empty. */
+  describe('a borrower with no company value', () => {
+    const sector = basis => ({ basis, activity: { revenue: basis === 'revenue-sector' ? 5e8 : undefined, currency: basis === 'revenue-sector' ? 'LKR' : undefined } });
+    const bare = emissions => ({
+      reportingYear: 2025, instrument: 'loan', borrowerListed: false, borrowerType: 'company',
+      counterparty: { name: 'A cement works', sectorKey: 'manufacturing_cement' },
+      outstanding: { amount: 1e6, asOf: '2025-12-31', currency: 'LKR' },
+      emissions,
+    });
+
+    test('Option 3b records from the outstanding amount alone', () => {
+      const r = assessBusinessLoan(bare({ scope1: sector('assets-sector'), scope2: sector('assets-sector') }));
+      expect(r.inventory.dataQuality.scope1And2.option).toBe('3b');
+      expect(r.inventory.dataQuality.scope1And2.score).toBe(5);
+      expect(r.inventory.scope1And2.value).toBeGreaterThan(0);
+    });
+
+    test('Option 3a names the company value it is missing, not the date it would be taken at', () => {
+      let err;
+      try { assessBusinessLoan(bare({ scope1: sector('revenue-sector'), scope2: sector('revenue-sector') })); }
+      catch (e) { err = e; }
+      expect(err.code).toBe('ED_INPUTS_REQUIRED');
+      expect(err.message).toMatch(/total equity and total debt/i);
+      expect(err.message).toMatch(/total assets/i);
+    });
+
+    test('the footnote 44 total balance sheet carries it to Option 3a', () => {
+      const r = assessBusinessLoan({
+        ...bare({ scope1: sector('revenue-sector'), scope2: sector('revenue-sector') }),
+        denominator: { totalAssets: 5e8, asOf: '2025-12-31', currency: 'LKR' },
+      });
+      expect(r.inventory.dataQuality.scope1And2.option).toBe('3a');
+      expect(r.attribution.value).toBeGreaterThan(0);
+    });
+  });
 });

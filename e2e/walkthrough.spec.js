@@ -142,12 +142,15 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#pr-preview-body')).toContainText('Option 3a');
   await expect(page.locator('#pr-preview-body')).toContainText('sector-factors');
   await expect(page.locator('#pr-preview-body')).toContainText('What would raise the score');
-  /* With the revenue cleared the same borrower falls to the outstanding alone.
-     The revenue sits on the section that asks how the emissions are known. */
-  await openSectionOf(page, 'pr-f-revenue');
-  await page.fill('#pr-f-revenue', '');
+  /* On the outstanding alone the same borrower falls to Option 3b. Which of
+     the two sector options applies is asked rather than read off whether a
+     revenue happens to be keyed — that field is the sector band check, and
+     reading it as the switch is what made a borrower with no company value
+     unrecordable for a reason nothing on screen named. */
+  await openSectionOf(page, 'pr-f-size-none');
+  await page.check('#pr-f-size-none');
   await expect(page.locator('#pr-preview-body')).toContainText('Option 3b');
-  await page.fill('#pr-f-revenue', '1500000000');
+  await page.check('#pr-f-size-revenue');
   await expect(page.locator('#pr-preview-body')).toContainText('Option 3a');
   await page.locator('#pr-form-submit').click();
   await expect(page.locator('#pr-form-status')).toContainText('Recorded Ruhunu Rice Millers');

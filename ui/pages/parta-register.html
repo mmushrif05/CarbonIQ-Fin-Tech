@@ -81,13 +81,14 @@
         <label>Total equity <input id="pr-f-equity" type="number" data-money step="any" data-engine-path="denominator.totalEquity"></label>
         <label>Total debt <input id="pr-f-debt" type="number" data-money min="0" step="any" data-engine-path="denominator.totalDebt"></label>
         <label>Customer deposits <input id="pr-f-deposits" type="number" data-money min="0" step="any" placeholder="financial institutions only"></label>
+        <label>Total assets <input id="pr-f-assets" type="number" data-money min="0" step="any" placeholder="where equity and debt cannot be obtained (footnote 44)" data-engine-path="denominator.totalAssets"></label>
       </div>
       <div class="pr-grid" id="pr-denom-listed" hidden>
         <label>Market capitalisation, ordinary <input id="pr-f-mcap" type="number" data-money min="0" step="any"></label>
         <label>Total debt, interest-bearing <input id="pr-f-debt-ib" type="number" data-money min="0" step="any"></label>
         <label>Minority interests <input id="pr-f-minorities" type="number" data-money min="0" step="any"></label>
       </div>
-      <p class="partc-hint">Leave the company value empty to estimate under Option 3b from the outstanding amount and a sector factor — a figure at score 5 with no attribution factor.</p>
+      <p class="partc-hint" id="pr-denom-hint">Leave the company value empty to estimate under Option 3b from the outstanding amount and a sector factor — a figure at score 5 with no attribution factor.</p>
 
       <h5 class="partc-subhead">How the borrower’s emissions are known</h5>
       <div class="pr-known" role="radiogroup" aria-label="How the borrower’s emissions are known">
@@ -113,7 +114,14 @@
       </div>
 
       <div id="pr-known-sector" hidden>
-        <p class="partc-hint" id="pr-sector-path">The industry is the held sector chosen above. With the borrower’s revenue keyed above the figure is revenue × the sector intensity per unit of revenue (Option 3a, score 4); with no revenue it is the outstanding amount × the sector intensity per unit of assets (Option 3b, score 5, no attribution factor). The run names the table, version and checksum it used.</p>
+        <p class="partc-hint">The industry is the held sector chosen above. The run names the table, version and checksum it used.</p>
+        <div class="pr-known" role="radiogroup" aria-label="How the borrower’s size is known">
+          <label class="pr-known-opt"><input type="radio" name="pr-size" id="pr-f-size-revenue" value="revenue" checked>
+            <span><b>Its annual revenue</b><small>Revenue × the sector intensity per unit of revenue — Option 3a, score 4</small></span></label>
+          <label class="pr-known-opt"><input type="radio" name="pr-size" id="pr-f-size-none" value="none">
+            <span><b>Nothing beyond the loan</b><small>The outstanding amount × the sector intensity per unit of assets — Option 3b, score 5, no attribution factor</small></span></label>
+        </div>
+        <p class="partc-hint" id="pr-sector-path"></p>
         <details class="pr-own-factor">
           <summary>Use the bank’s own sector factor instead of the held one</summary>
           <p class="partc-hint" id="pr-sector-factor-note">Leave the sector factors empty to use the held factor for the mapped sector. A factor typed here needs its source and vintage.</p>

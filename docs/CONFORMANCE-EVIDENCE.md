@@ -28,18 +28,18 @@ proved or it is not.
 | PCAF Part A §5.2 | `A-SCOPE-05` | Part A §5.2; GHG Protocol "Built on" mark | `tests/parta-report.test.js` | 99 | executed |
 | PCAF Part A §5.2 | `A-CLASS-01` | Part A §5.2, footnote 86 (p.55) | `tests/parta-business-loans.test.js` | 42 | executed |
 | PCAF Part A §5.2 | `A-ATTR-01` | Part A §5.2 (p.56) | `tests/parta-business-loans.test.js` | 39 | executed |
-| PCAF Part A §5.2 | `A-ATTR-02` | Part A §5.2 — attribution factor | `tests/parta-business-loans.test.js` | 22 | executed |
+| PCAF Part A §5.2 | `A-ATTR-02` | Part A §5.2 — attribution factor | `tests/parta-business-loans.test.js` | 30 | executed |
 | PCAF Part A §5.2 | `A-OPT-01` | Part A §5.2, Table 5.2-1 (p.60) | `tests/parta-business-loans.test.js` | 46 | executed |
 | PCAF Part A §5.2 | `A-OPT-02` | Part A §5.2 fn 87 (p.61) | `tests/parta-business-loans.test.js` | 41 | executed |
 | PCAF Part A §5.2 | `A-OPT-03` | Data-quality rendering (the scale has a direction) | `tests/parta-business-loans.test.js` | 3 | executed |
 | PCAF Part A §5.2 | `A-EST-01` | Part A §5.2 (p.62) | `tests/parta-business-loans.test.js` | 46 | executed |
 | PCAF Part A §5.2 | `A-EST-02` | Part A §5.2 (p.62) | `tests/parta-business-loans.test.js` | 43 | executed |
-| PCAF Part A §5.2 | `A-EST-03` | Part A Box 6.1-5 (p.167) | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-EST-03` | Part A Box 6.1-5 (p.167) | `tests/parta-business-loans.test.js` | 54 | executed |
 | PCAF Part A §5.2 | `A-LINE-01` | Part A §5.2, Tables 5.2-2/5.2-3 (p.63) | `tests/parta-business-loans.test.js` | 19 | executed |
 | PCAF Part A §5.2 | `A-FIND-01` | CarbonIQ — the engine blocks a claim, not a number | `tests/parta-business-loans.test.js` | 14 | executed |
-| PCAF Part A §5.2 | `A-FIND-02` | Part A footnote 71 (year-end balance) | `tests/parta-business-loans.test.js` | 53 | executed |
-| PCAF Part A §5.2 | `A-FIND-03` | CarbonIQ — a check that had nothing to check does not pass | `tests/parta-business-loans.test.js` | 53 | executed |
-| PCAF Part A §5.2 | `A-FIND-04` | CarbonIQ thresholds (stated on the finding, settable per request) | `tests/parta-business-loans.test.js` | 53 | executed |
+| PCAF Part A §5.2 | `A-FIND-02` | Part A footnote 71 (year-end balance) | `tests/parta-business-loans.test.js` | 54 | executed |
+| PCAF Part A §5.2 | `A-FIND-03` | CarbonIQ — a check that had nothing to check does not pass | `tests/parta-business-loans.test.js` | 54 | executed |
+| PCAF Part A §5.2 | `A-FIND-04` | CarbonIQ thresholds (stated on the finding, settable per request) | `tests/parta-business-loans.test.js` | 54 | executed |
 | PCAF Part A §5.2 | `A-REG-01` | Register (migration 0008) — both halves kept | `tests/parta-register.test.js` | 128 | executed |
 | PCAF Part A §5.2 | `A-REG-02` | Register (migration 0009) — one loan, once | `tests/parta-register.test.js` | 128 | executed |
 | PCAF Part A §5.2 | `A-REG-03` | Register — a recomputation is a decision, not a read | `tests/parta-register.test.js` | 128 | executed |

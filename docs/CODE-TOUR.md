@@ -170,7 +170,7 @@ flowchart TD
 |       `src/domains/pcaf-part-a/domain/` | 19 | 3,303 |
 |         `src/domains/pcaf-part-a/domain/business-loans/` | 10 | 1,376 |
 |         `src/domains/pcaf-part-a/domain/climate/` | 5 | 953 |
-|         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 896 |
+|         `src/domains/pcaf-part-a/domain/corporate/` | 5 | 904 |
 |         `src/domains/pcaf-part-a/domain/facility/` | 5 | 631 |
 |         `src/domains/pcaf-part-a/domain/listed-equity/` | 9 | 771 |
 |         `src/domains/pcaf-part-a/domain/motor-vehicles/` | 2 | 419 |
@@ -210,7 +210,7 @@ flowchart TD
 |         `src/platform/reporting/report-standard/theme/` | 4 | 775 |
 |   `src/shared/` | 11 | 2,079 |
 |     `src/shared/models/` | 8 | 1,236 |
-| **total** | **425** | **72,644** |
+| **total** | **425** | **72,652** |
 
 <!-- END MODULE-MAP -->
 

@@ -257,7 +257,7 @@ const PCAFCalculator = (() => {
 
     const now  = new Date().toISOString();
     const text = [
-      `PCAF v3 Attribution Result`,
+      `Attribution result`,
       `═══════════════════════════════`,
       `Project    : ${r.projectName}`,
       `Loan ID    : ${r.loanId}`,

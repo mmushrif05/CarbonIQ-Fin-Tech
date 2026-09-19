@@ -68,6 +68,26 @@ describe('The output does not claim to be PCAF', () => {
     expect(offenders).toEqual([]);
   });
 
+  test('nor does anything a reader sees', () => {
+    /* This swept `src/` alone, which is why the claim survived on screen for
+       as long as it did: the calculator's results panel was headed "PCAF v3
+       Results", the portfolio and monitoring tiles carried it as a badge, the
+       report card named it as the standard, and an executive summary row read
+       "Total Financed Emissions … PCAF v3 methodology" over a figure that is
+       the bank's attributed share of a project's A1–A3 carbon. A claim about
+       a standard is a claim wherever it is printed. */
+    expect(hits(/PCAF v3/, sourceFiles(path.join(ROOT, 'ui')))).toEqual([]);
+  });
+
+  test('the SLGFT edition on screen is the one this repository holds', () => {
+    /* `SLGFT-Sri-Lanka-Green-Finance-Taxonomy-May2022.pdf` reads May 2022.
+       "v2024" is an edition nobody here has seen — the same unevidenced
+       version string the Green Loan Certificate was corrected for, left
+       printed on the reports screen beside the real editions of GRI, TCFD
+       and IFRS S2. */
+    expect(hits(/Taxonomy v2024|SLGFT v2024/, sourceFiles(path.join(ROOT, 'ui')))).toEqual([]);
+  });
+
   /*
    * The three below match a **table row in a memo template** — `| Label |
    * value |` — rather than any mention of the words.

@@ -141,3 +141,33 @@ test('the page never widens at a phone width, whichever section is open', async 
     expect(over).toBeLessThanOrEqual(0);
   }
 });
+
+/* The borrower that cannot state its emissions — the largest shape on a Sri
+   Lankan book, and the one that used to refuse without saying why. Typing a
+   revenue moved the exposure to Option 3a, which attributes by outstanding
+   over equity plus debt, so a form with the company value deliberately empty
+   was refused for a balance-sheet date it had never been asked for. The
+   method is chosen now, and the revenue is only the band check it says it
+   is. */
+test('a borrower with no figures of its own records on the sector library', async ({ page, request }) => {
+  await signIn(page, request);
+  await openRecordForm(page);
+
+  const name = `Sector Borrower ${Date.now()}`;
+  await page.fill('#pr-f-name', name);
+  await page.selectOption('#pr-f-sector-key', 'manufacturing_cement');
+  await chip(page, '#pr-form', 'Outstanding at year-end').click();
+  await page.fill('#pr-f-outstanding', '1000000');
+  await page.fill('#pr-f-revenue', '500000000');
+  await chip(page, '#pr-form', 'How the borrower’s emissions are known').click();
+  await page.check('#pr-f-known-sector');
+
+  /* The revenue is keyed and the company value is not, which is exactly the
+     shape that used to refuse. On the outstanding-alone option it records. */
+  await page.check('#pr-f-size-none');
+  await expect(page.locator('#pr-sector-path')).toContainText('Option 3b');
+  await page.fill('#pr-f-s3-reason', 'the borrower states none');
+  await page.locator('#pr-form-submit').click();
+  await expect(page.locator('#pr-form-status')).toContainText('Recorded');
+  await expect(page.locator('#pr-body')).toContainText(name);
+});

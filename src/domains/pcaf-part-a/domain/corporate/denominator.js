@@ -204,21 +204,29 @@ function evic(d = {}) {
  */
 function equityPlusDebt(d = {}) {
   const assumptions = [];
-  if (!d.asOf) throw refuse('ED_DATE_REQUIRED', `State the balance-sheet date the figures are taken at (${refs.numeratorPage}).`);
 
   let equity = num(d.totalEquity);
   const debt = num(d.totalDebt);
   const assets = num(d.totalAssets);
 
+  /* What is missing is named before the date it would be taken at. The date
+     check used to run first, so an exposure carrying no company value at all
+     — which is most of a Sri Lankan book on the sector path — was told to
+     supply a balance-sheet date for a section it had deliberately left
+     empty, and the way forward (equity and debt, or the footnote 44 total
+     balance sheet) was never named. */
+  if ((equity === undefined || debt === undefined) && !(assets > 0)) {
+    throw refuse('ED_INPUTS_REQUIRED',
+      `Total equity and total debt from the balance sheet are required for a private company `
+      + `(${refs.evicPage}). Where they cannot be obtained, footnote ${fn.fallback} permits the total balance `
+      + 'sheet (total assets) as the denominator — supply totalAssets.');
+  }
+
+  if (!d.asOf) throw refuse('ED_DATE_REQUIRED', `State the balance-sheet date the figures are taken at (${refs.numeratorPage}).`);
+
   if (equity === undefined || debt === undefined) {
     /* The permitted fallback. It is recorded as one so the report can
        say the denominator is the balance sheet, not equity plus debt. */
-    if (!(assets > 0)) {
-      throw refuse('ED_INPUTS_REQUIRED',
-        `Total equity and total debt from the balance sheet are required for a private company `
-        + `(${refs.evicPage}). Where they cannot be obtained, footnote ${fn.fallback} permits the total balance `
-        + 'sheet (total assets) as the denominator — supply totalAssets.');
-    }
     assumptions.push('Total equity or total debt could not be obtained; the total balance sheet (total '
       + `assets) is used as the denominator under footnote ${fn.fallback}, with the intention of improving this `
       + 'data in future.');
