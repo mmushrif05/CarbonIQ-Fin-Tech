@@ -189,6 +189,11 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
     must(JS, /remember\(STATE_KEY, JSON\.stringify\(\{ track: trackKey, step: i, open:/, 'the strip’s state carries the track of the page that started it');
     must(JS, /const GCFWalkthroughPage = WalkthroughPage\.gcf;/, 'the GCF page is the same module on the other track');
     must(JS, /const gcf = pageFor\('gcf', 'gwt'\);/, 'bound to its own fragment prefix');
+    /* One state for two pages: a bank walkthrough left running must not
+       leave the GCF page reading End with no way to start its own. */
+    must(JS, /const mine = s \? s\.track === key : false;\s*\n\s*show\(id\('start'\), !mine\); show\(id\('end'\), mine\);/,
+      'Start is offered unless this page’s own track is on, and starting replaces whatever was on');
+    must(JS, /on\(id\('start'\), 'click', \(\) => go\(key, 0, true\)\);/, 'Start begins this page’s own track');
     must(JS, /const financed = pageFor\('financed', 'wt'\);/, 'as the bank’s page is to its own');
   });
 

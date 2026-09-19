@@ -59,6 +59,19 @@ test('the GCF track follows one candidate from the door to the Fund across the r
   await expect(page.locator('#wt-strip')).toBeHidden();
 
   /* Step 1: where we stand — the overview. */
+  /* A bank walkthrough left running must not capture this page: Start is
+     still offered, the strip says the bank's step is elsewhere, and Start
+     here begins the GCF track in its place. */
+  await page.evaluate(() => localStorage.setItem('carboniq.walkthrough', JSON.stringify({ track: 'financed', step: 2, open: true })));
+  await page.reload();
+  await page.locator('#sidebar').waitFor({ timeout: 15000 });
+  await page.locator('.nav-item[data-page="gcf-walkthrough"]').click();
+  await expect(page.locator('#gwt-steps .wt-step')).toHaveCount(8);
+  await expect(page.locator('#wt-strip')).toBeVisible();
+  await expect(page.locator('#wt-strip-n')).toHaveText('Step 3 of 7');
+  await expect(page.locator('#wt-strip-where')).toContainText('Lending Book');
+  await expect(page.locator('#gwt-start')).toBeVisible();
+  await expect(page.locator('#gwt-end')).toBeHidden();
   await page.locator('#gwt-start').click();
   await expect(page.locator('#page-gcf-overview')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
