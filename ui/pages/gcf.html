@@ -15,14 +15,25 @@
 
   <div id="gcfSampleBanner" class="gcf-chip-note" hidden></div>
 
+  <!-- Intake heads the strip: a candidate comes in first, and every other
+       tab reads what was recorded. The Pipeline panel is still the one the
+       page opens on, so the dashboard over every candidate is seen first. -->
   <div class="gcf-tabs" role="tablist" id="gcfTabs">
+    <button class="gcf-tab" role="tab" data-panel="intake"      aria-selected="false">Intake</button>
     <button class="gcf-tab" role="tab" data-panel="pipeline"    aria-selected="true">Pipeline</button>
     <button class="gcf-tab" role="tab" data-panel="emissions"   aria-selected="false">Emissions</button>
     <button class="gcf-tab" role="tab" data-panel="decision"    aria-selected="false">The decision</button>
     <button class="gcf-tab" role="tab" data-panel="instruments" aria-selected="false">Instruments</button>
     <button class="gcf-tab" role="tab" data-panel="reporting"   aria-selected="false">Reporting</button>
     <button class="gcf-tab" role="tab" data-panel="cn"          aria-selected="false">Concept Note</button>
-    <button class="gcf-tab" role="tab" data-panel="intake"      aria-selected="false">Intake</button>
+  </div>
+
+  <!-- The candidate in focus: one chip per recorded candidate, the choice
+       held in the browser, and every tab marks that candidate's own rows.
+       Hidden until the pipeline is read; nothing here is computed. -->
+  <div class="gcf-focus-row" id="gcfFocusRow" hidden>
+    <span class="gcf-focus-label">Candidate in focus</span>
+    <div class="gcf-focus-chips" id="gcfFocusChips"></div>
   </div>
 
   <!-- 1 — Pipeline: the portfolio, the cycle, the board, and one project at a time -->

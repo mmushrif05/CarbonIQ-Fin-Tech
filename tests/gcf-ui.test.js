@@ -258,6 +258,45 @@ describe('Every sub-tab exists in both the markup and the router', () => {
   });
 });
 
+describe('Intake heads the strip, and a candidate in focus is marked on every panel', () => {
+  test('the intake tab is first on the strip and the pipeline panel is still the one at rest', () => {
+    const tabs = [...HTML.matchAll(/<button class="gcf-tab" role="tab" data-panel="([a-z]+)"\s+aria-selected="(true|false)"/g)]
+      .map(m => ({ panel: m[1], on: m[2] === 'true' }));
+    expect(tabs[0].panel).toBe('intake');
+    expect(tabs.filter(t => t.on).map(t => t.panel)).toEqual(['pipeline']);
+    must(JS, /const PANELS = \['intake', 'pipeline'/, 'the router order follows the strip');
+  });
+
+  test('the chip row is in the fragment, hidden at rest, and computes nothing', () => {
+    must(HTML, /<div class="gcf-focus-row" id="gcfFocusRow" hidden>/, 'the chip row is hidden until the pipeline is read');
+    must(HTML, 'id="gcfFocusChips"', 'the chips have a container the module fills');
+    must(CSS, /\.gcf-focus-chip\.is-on \{ background: var\(--gcf-accent-soft\); border-color: var\(--gcf-accent\)/, 'the chosen chip takes the accent the selected tab takes, from the tokens');
+  });
+
+  test('the focus is read before the first request, held in the browser, and never on the record', () => {
+    must(JS, /const FOCUS_KEY = 'carboniq\.gcf\.focus'/, 'one key holds the candidate in focus');
+    const init = JS.slice(JS.indexOf('async function init()'));
+    const read = init.indexOf('readFocus()');
+    const first = init.indexOf("call('/reference')");
+    expect(read).toBeGreaterThan(-1);
+    expect(read).toBeLessThan(first);
+    mustNot(JS, /json\('(POST|PATCH)'[^)]*focus/, 'the focus is never written to a record', 'the focus is the browser’s');
+  });
+
+  test('every panel marks the candidate’s own rows by the code the panel prints', () => {
+    must(JS, /<tr data-code="\$\{esc\(c\.code\)\}">/, 'the emissions checks carry the code');
+    must(JS, /<tbody>\$\{instruments\.projects\.map\(p => `<tr data-code="\$\{esc\(p\.code\)\}">/, 'the instrument rows carry the code');
+    must(JS, /#gcfPoolTable tr\[data-open="\$\{CSS\.escape\(state\.focus\)\}"\]/, 'the board row is found by the id it opens');
+    expect((JS.match(/markFocus\(\);/g) || []).length).toBeGreaterThanOrEqual(5);
+    must(JS, /async function loadCn\(\{ select = state\.focus \} = \{\}\)/, 'the Concept Note opens on the candidate in focus');
+    must(JS, /setFocus\(payload\.id\);/, 'the candidate just recorded is the one in focus');
+  });
+
+  test('a chip on the Pipeline panel opens the candidate and All candidates folds it away', () => {
+    must(JS, /if \(state\.focus\) await GCFPipeline\.openProject\(state\.focus, \{ quiet: true \}\);\s*else GCFPipeline\.closeProject\(\);/, 'the board follows the chip');
+  });
+});
+
 describe('The assessor validation panel (Phase 1 Stage 4)', () => {
   test('the project page carries the panel and its containers', () => {
     must(HTML, 'id="gcfValidationState"', "the validation panel has a state container");

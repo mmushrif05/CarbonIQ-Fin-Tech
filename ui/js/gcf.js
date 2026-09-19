@@ -50,7 +50,10 @@ const GCFPage = (() => {
     /* Whether the board has been read in this visit. A project step opens the
        project directly once it has; re-reading the board first is what put a
        walkthrough over the hundred requests a minute a session is allowed. */
-    boardRead: false };
+    boardRead: false,
+    /* The candidate in focus — a project id the chip row holds and every
+       panel marks; held in the browser, read before the first request. */
+    focus: null };
 
   /* A preview session holds `read`; the server is the control and the
      screen withholds the buttons it would refuse. */
@@ -107,7 +110,7 @@ const GCFPage = (() => {
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&');
 
   /* ── Sub-tab router ───────────────────────────────────────── */
-  const PANELS = ['pipeline', 'emissions', 'decision', 'instruments', 'reporting', 'cn', 'intake'];
+  const PANELS = ['intake', 'pipeline', 'emissions', 'decision', 'instruments', 'reporting', 'cn'];
   const loaded = {};
 
   function show(panel) {
@@ -137,9 +140,11 @@ const GCFPage = (() => {
       const { pipeline } = await call('/pipeline');
       state.pipeline = pipeline.projects;
       onSample(pipeline.sample, pipeline.sampleNote);
+      renderFocusChips();
     } catch (_) { /* the portfolio load reports the failure on screen */ }
     await GCFPipeline.load(opts);
     state.boardRead = true;
+    markFocus();
   }
 
   const figure = (label, value, note, unit) => `
@@ -198,7 +203,7 @@ const GCFPage = (() => {
       setHtml('gcfChecks', `
         <thead><tr><th>Project</th><th>Figure</th><th class="num">Recorded</th>
           <th class="num">Recomputed</th><th>Outcome</th></tr></thead>
-        <tbody>${rows.map(c => `<tr>
+        <tbody>${rows.map(c => `<tr data-code="${esc(c.code)}">
           <td>${esc(c.code)}</td>
           <td>${esc(String(c.figure).replace('mitigation.', ''))}</td>
           <td class="num">${num(c.recorded)}</td>
@@ -209,6 +214,7 @@ const GCFPage = (() => {
               ? `<span class="gcf-pill gcf-pill-ok">agrees</span>`
               : `<span class="gcf-pill gcf-pill-stop">diverges ${c.divergencePct}%</span>`)}</td>
         </tr>`).join('')}</tbody>`);
+      markFocus();
     } catch (err) {
       setHtml('gcfEmissionFigures', `<div class="gcf-warn">${esc(err.message)}</div>`);
     }
@@ -288,6 +294,7 @@ const GCFPage = (() => {
           <div style="font-size:12px;color:var(--gcf-muted)">${esc(c.reason)}</div>
         </div>`).join('')
         + `<div class="gcf-rule">${esc(recommendation.ranking.criteria.note)}</div>`);
+      markFocus();
     } catch (err) {
       setHtml('gcfSelected', `<div class="gcf-warn">${esc(err.message)}</div>`);
     }
@@ -311,7 +318,7 @@ const GCFPage = (() => {
       setHtml('gcfInstrumentTable', `
         <thead><tr><th>Project</th><th>Barriers</th><th>Recommended structure</th>
           <th class="num">Coverage</th><th>Left standing</th></tr></thead>
-        <tbody>${instruments.projects.map(p => `<tr>
+        <tbody>${instruments.projects.map(p => `<tr data-code="${esc(p.code)}">
           <td><strong>${esc(p.code)}</strong></td>
           <td>${p.barriers.map(b => esc(b.label)).join('<br>') || '—'}</td>
           <td>${p.recommended ? esc(p.recommended.name)
@@ -323,7 +330,7 @@ const GCFPage = (() => {
         </tr>`).join('')}</tbody>`);
 
       setHtml('gcfConcessionality', instruments.projects.map(p => `
-        <div style="margin-bottom:10px;font-size:12.5px">
+        <div data-code="${esc(p.code)}" style="margin-bottom:10px;font-size:12.5px">
           <strong>${esc(p.code)}</strong>
           ${p.concessionality.assessed === false
             ? `<span class="gcf-pill gcf-pill-flag">not assessed</span>`
@@ -334,6 +341,7 @@ const GCFPage = (() => {
             p.concessionality.finding || p.concessionality.reason || '')}</div>
         </div>`).join('')
         + `<div class="gcf-rule">${esc(instruments.minimumConcessionality.note)}</div>`);
+      markFocus();
     } catch (err) {
       setHtml('gcfInstrumentTable', `<tbody><tr><td class="gcf-warn">${esc(err.message)}</td></tr></tbody>`);
     }
@@ -451,9 +459,9 @@ const GCFPage = (() => {
   /* ── 6. Concept Note ──────────────────────────────────────── */
   /* `select` names the candidate to open the panel on, so a hand-over reads
      one package rather than the first project's and then the candidate's. */
-  async function loadCn({ select } = {}) {
+  async function loadCn({ select = state.focus } = {}) {
     if (!state.pipeline.length) {
-      try { state.pipeline = (await call('/pipeline')).pipeline.projects; }
+      try { state.pipeline = (await call('/pipeline')).pipeline.projects; renderFocusChips(); }
       catch (_) { /* the select stays empty and the panel says so */ }
     }
     const sel = $('gcfCnProject');
@@ -814,6 +822,7 @@ const GCFPage = (() => {
     try {
       await call('/pipeline', json('POST', payload));
       say('gcfIntakeHint', `${code} recorded.`);
+      setFocus(payload.id);
       /* A new record changes every panel, so they are all re-read rather than
          showing what they said before the write. */
       refreshAll({ reopen: false });
@@ -850,6 +859,69 @@ const GCFPage = (() => {
      Lending Book its class. Read before the first request, applied once the
      reference is loaded. */
   const INTENT_KEY = 'carboniq.gcf.intent';
+  const FOCUS_KEY = 'carboniq.gcf.focus';
+
+  /* The candidate in focus is read before the first request, the rule the
+     hand-over and the weights already follow: read after it, a reload would
+     draw every panel unmarked and mark them on the next visit. */
+  function readFocus() {
+    try { state.focus = localStorage.getItem(FOCUS_KEY) || null; } catch (_) { state.focus = null; }
+  }
+  function setFocus(id) {
+    state.focus = id || null;
+    try { if (state.focus) localStorage.setItem(FOCUS_KEY, state.focus); else localStorage.removeItem(FOCUS_KEY); }
+    catch (_) { /* a courtesy */ }
+    renderFocusChips();
+    markFocus();
+  }
+  const focusCode = () => { const p = state.pipeline.find(x => x.id === state.focus); return p ? p.code : null; };
+
+  /* One chip per candidate the pipeline holds, from the list already read;
+     the row is hidden until there is one. A chip on the Pipeline panel opens
+     the candidate and "All candidates" folds it away; on the Concept Note
+     panel it changes the package shown; on every panel it marks the rows. */
+  function renderFocusChips() {
+    const row = $('gcfFocusRow'); const box = $('gcfFocusChips');
+    if (!row || !box) return;
+    const list = state.pipeline || [];
+    row.hidden = !list.length;
+    if (!list.length) { box.innerHTML = ''; return; }
+    if (state.focus && !list.some(p => p.id === state.focus)) state.focus = null;
+    box.innerHTML = list.map(p => `<button type="button" class="gcf-focus-chip${state.focus === p.id ? ' is-on' : ''}" data-id="${esc(p.id)}" title="${esc(p.name)}">${esc(p.code)}</button>`).join('')
+      + `<button type="button" class="gcf-focus-chip${state.focus ? '' : ' is-on'}" data-id="">All candidates</button>`;
+  }
+
+  /* Marks the candidate's rows on every panel — by its code, which the
+     panels print, and by its id on the board — and unmarks every other. */
+  function markFocus({ scroll = false } = {}) {
+    for (const el of document.querySelectorAll('.gcf .gcf-focus')) el.classList.remove('gcf-focus');
+    const code = focusCode();
+    if (!code) return;
+    const hits = [
+      ...document.querySelectorAll(`.gcf-panel [data-code="${CSS.escape(code)}"]`),
+      ...document.querySelectorAll(`#gcfPoolTable tr[data-open="${CSS.escape(state.focus)}"]`),
+    ];
+    hits.forEach(el => el.classList.add('gcf-focus'));
+    if (scroll) {
+      const shown = PANELS.find(p => { const el = $(`gcfPanel-${p}`); return el && !el.hidden; });
+      const first = hits.find(el => shown && el.closest(`#gcfPanel-${shown}`));
+      if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  /* A chip pressed: the focus moves, and the panel on screen follows it. */
+  async function chooseFocus(id) {
+    setFocus(id);
+    const shown = PANELS.find(p => { const el = $(`gcfPanel-${p}`); return el && !el.hidden; });
+    if (shown === 'pipeline') {
+      if (state.focus) await GCFPipeline.openProject(state.focus, { quiet: true });
+      else GCFPipeline.closeProject();
+      markFocus();
+      return;
+    }
+    if (shown === 'cn') { const sel = $('gcfCnProject'); if (sel && state.focus) { sel.value = state.focus; await renderCn(); } return; }
+    markFocus({ scroll: true });
+  }
   function readIntent() {
     try {
       const v = localStorage.getItem(INTENT_KEY);
@@ -859,16 +931,13 @@ const GCFPage = (() => {
   const cue = id => { if (typeof window.CARBONIQ_cue === 'function' && $(id)) window.CARBONIQ_cue(id); };
   const today = () => new Date().toISOString().slice(0, 10);
 
-  /* The candidate in focus on the decision tab: its rows marked and the
-     first brought into view. Rows are found by the candidate's code, which
-     the rankings print; nothing is re-ranked. */
+  /* The candidate a hand-over names becomes the candidate in focus: its
+     rows marked on the decision tab and the first brought into view. Rows
+     are found by the candidate's code, which the rankings print; nothing is
+     re-ranked. */
   function focusRows(id) {
-    const p = state.pipeline.find(x => x.id === id); const code = p && p.code;
-    for (const el of document.querySelectorAll('#gcfPanel-decision .gcf-focus')) el.classList.remove('gcf-focus');
-    if (!code) return;
-    const rows = document.querySelectorAll(`#gcfPanel-decision [data-code="${CSS.escape(code)}"]`);
-    rows.forEach(r => r.classList.add('gcf-focus'));
-    if (rows[0]) rows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setFocus(id);
+    markFocus({ scroll: true });
   }
 
   /* The candidate a hand-over names. 'example' is the served example once
@@ -887,13 +956,13 @@ const GCFPage = (() => {
         if (!state.exampleCode) { const { project } = await call('/pipeline/example'); state.exampleCode = project.code; }
         const held = state.pipeline.find(p => p.code === state.exampleCode);
         if (held) return held.id;
-        const { pipeline } = await call('/pipeline'); state.pipeline = pipeline.projects;
+        const { pipeline } = await call('/pipeline'); state.pipeline = pipeline.projects; renderFocusChips();
         const hit = state.pipeline.find(p => p.code === state.exampleCode);
         return hit ? hit.id : null;
       } catch (_) { return null; }
     }
     let projects = [];
-    try { projects = (await call('/pipeline')).pipeline.projects; state.pipeline = projects; } catch (_) { projects = state.pipeline; }
+    try { projects = (await call('/pipeline')).pipeline.projects; state.pipeline = projects; renderFocusChips(); } catch (_) { projects = state.pipeline; }
     if (!projects.length) return null;
     const when = p => String((p.provenance && (p.provenance.updatedAt || p.provenance.enteredAt)) || '');
     let latest = projects[projects.length - 1];
@@ -955,7 +1024,9 @@ const GCFPage = (() => {
       if (!state.boardRead) await loadPipeline({ reopen: false });
       const id = await resolveId(key);
       if (!id) { say('gcfProjectHint', 'The walkthrough candidate is not recorded yet; the intake step records it.'); return; }
+      setFocus(id);
       await GCFPipeline.openProject(id, { quiet: true });
+      markFocus();
       /* The candidate is the screen: the board is folded behind it and the
          panel is brought to the top, so a step lands on the project and not
          on the tab it lives in. */
@@ -991,6 +1062,7 @@ const GCFPage = (() => {
     if (kind === 'cn') {
       loaded.cn = true; show('cn');
       const id = await resolveId(key);
+      if (id) setFocus(id);
       await loadCn({ select: id || undefined });
       cue('gcfCnPdf');
       return;
@@ -1021,6 +1093,7 @@ const GCFPage = (() => {
        a reload loses. */
     loadWeights();
     readIntent();
+    readFocus();
 
     try {
       const ref = await call('/reference');
@@ -1035,6 +1108,10 @@ const GCFPage = (() => {
 
     document.querySelectorAll('#gcfTabs .gcf-tab').forEach(t => {
       t.addEventListener('click', () => show(t.dataset.panel));
+    });
+    on('gcfFocusChips', 'click', ev => {
+      const b = ev.target && ev.target.closest ? ev.target.closest('.gcf-focus-chip') : null;
+      if (b) chooseFocus(b.getAttribute('data-id') || null);
     });
 
     on('gcfRecompute', 'click', () => {

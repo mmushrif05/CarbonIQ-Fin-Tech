@@ -116,6 +116,7 @@ test('the GCF track follows one candidate from the door to the Fund across the r
   await expect(page.locator('#gcfPanel-decision')).toBeVisible();
   await expect(page.locator('#gcfPanel-decision .gcf-focus').first()).toBeVisible({ timeout: 15000 });
   await expect(page.locator('#gcfPanel-decision .gcf-focus').first()).toContainText('DFCC-EX');
+  await expect(page.locator('#gcfFocusChips .is-on')).toContainText('DFCC-EX');
 
   /* Step 6: assessed and signed — the assessor's form on the same candidate,
      its next control marked; reviewed, rated in words, recommended and

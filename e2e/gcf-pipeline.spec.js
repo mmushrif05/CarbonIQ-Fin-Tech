@@ -55,6 +55,10 @@ test('the cycle is on screen, the sample is adopted, a project moves a stage and
   await signIn(page, request);
   await openPage(page);
 
+  /* Intake heads the strip; the Pipeline panel is still the one at rest. */
+  await expect(page.locator('#gcfTabs .gcf-tab').first()).toHaveAttribute('data-panel', 'intake');
+  await expect(page.locator('#gcfPanel-pipeline')).toBeVisible();
+
   /* The portfolio over the shipped sample, marked as one. */
   await expect(page.locator('#gcfPoolTable tbody tr.gcf-row')).toHaveCount(5);
   await expect(page.locator('#gcfSubtitle')).toContainText('B.36/10');
@@ -122,6 +126,24 @@ test('the cycle is on screen, the sample is adopted, a project moves a stage and
   await expect(page.locator('#gcfPoolTable tr[data-open="gcf_p1_jaffna_solar"]')).toContainText('Concept note submitted');
   await expect(page.locator('#gcfPoolTable tr[data-open="gcf_p1_jaffna_solar"]')).toContainText('issued');
   await expect(page.locator('#gcfUpcoming')).toContainText('projected');
+
+  /* A candidate in focus: the chip opens it on the board, marks its rows on
+     the emissions and instruments panels, and All candidates folds it away. */
+  await page.locator('#gcfFocusChips [data-id="gcf_p1_jaffna_solar"]').click();
+  await expect(page.locator('#gcfProject')).toBeVisible();
+  await expect(page.locator('#gcfProjectTitle')).toContainText('GCF-P1');
+  await expect(page.locator('#gcfFocusChips .is-on')).toContainText('GCF-P1');
+  await page.locator('#gcfTabs [data-panel="emissions"]').click();
+  await expect(page.locator('#gcfChecks tr.gcf-focus').first()).toContainText('GCF-P1');
+  await page.locator('#gcfTabs [data-panel="instruments"]').click();
+  await expect(page.locator('#gcfInstrumentTable tr.gcf-focus')).toHaveCount(1);
+  await expect(page.locator('#gcfInstrumentTable tr.gcf-focus')).toContainText('GCF-P1');
+  await page.locator('#gcfTabs [data-panel="pipeline"]').click();
+  await page.locator('#gcfFocusChips [data-id=""]').click();
+  await expect(page.locator('#gcfPortfolio')).toBeVisible();
+  await expect(page.locator('#gcfProject')).toBeHidden();
+  await expect(page.locator('#gcfFocusChips .is-on')).toHaveText('All candidates');
+  await noOverflow(page);
 
   /* The pipeline downloads as a CSV. */
   const [download] = await Promise.all([
