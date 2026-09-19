@@ -94,6 +94,9 @@ const BankPage = (() => {
   }
   const partA = (path, opts) => call('/v1/pcaf/part-a' + path, opts);
 
+  /* Set when neither register answered — see loadYears(). */
+  let yearsUnread = null;
+
   // ── years ──────────────────────────────────────────────────
 
   /* The year the screen opens on is the one holding the fullest lending book.
@@ -109,8 +112,19 @@ const BankPage = (() => {
 
   async function loadYears() {
     let a = [], b = [];
-    try { ({ years: a } = await partA('/years')); } catch (_) { a = []; }
-    try { ({ years: b } = await partA('/sovereign/years')); } catch (_) { b = []; }
+    /* A read that got no answer names itself. Both of these used to be
+       swallowed, and the screen then fell back to the calendar year and said
+       "No asset class holds exposures for FY2026 yet" — a statement about the
+       bank's book made by a screen that had not managed to read it. On a
+       deployment whose database had gone away that is the difference between
+       "you have recorded nothing" and "your book cannot be reached", and the
+       first sends a bank to load a starter book over the top of the second.
+       Only a failure of BOTH is reported: one register answering and the
+       other not is a year list that is short, not a book that is unreadable. */
+    let failedA = null, failedB = null;
+    try { ({ years: a } = await partA('/years')); } catch (err) { a = []; failedA = err; }
+    try { ({ years: b } = await partA('/sovereign/years')); } catch (err) { b = []; failedB = err; }
+    yearsUnread = failedA && failedB ? (failedA.message || 'The book could not be read.') : null;
     const list = [...new Set([...a, ...b].map(y => String(y.reportingYear)))].sort();
     const counts = new Map(a.map(y => [String(y.reportingYear), val(y.exposures) || 0]));
     const chosen = $('bk-year') ? $('bk-year').value : '';
@@ -127,6 +141,15 @@ const BankPage = (() => {
     lineage = null;
     show('bk-behind', false);
     say('bk-status', 'Reading the book…');
+    /* The year list could not be read at all, so nothing below is known —
+       including which years exist. Say that, and offer no starter book: a
+       starter book loaded over a book that is merely unreachable is a second
+       problem on top of the first. */
+    if (yearsUnread) {
+      show('bk-body', false); show('bk-figures', false); show('bk-s2', false); show('bk-empty', false);
+      say('bk-status', `The book could not be read — ${yearsUnread} Nothing below is this bank's position.`);
+      return;
+    }
     try {
       position = await partA(`/financed-emissions/${encodeURIComponent(year)}`);
     } catch (err) {
@@ -757,7 +780,12 @@ const BankPage = (() => {
     await load();
   }
 
-  function refresh() {
+  async function refresh() {
+    /* The year list is read once, at init. Where that read failed there is
+       no list to return to, so a return visit re-reads it — otherwise a
+       bank whose database was briefly away stays on "the book could not be
+       read" until the whole page is reloaded. */
+    if (yearsUnread) await loadYears();
     return load();
   }
 

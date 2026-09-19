@@ -50,7 +50,11 @@ describe('The page is reachable and named', () => {
     must(APP, "src:  'pages/bank.html'", 'the router loads it');
     must(APP, 'BankPage.init()', 'the router initialises it');
     must(APP, /'bank':\s*\{[\s\S]*?refresh:/, 'a return visit re-reads rather than replaying');
-    must(JS, /function refresh\(\)\s*\{\s*return load\(\);/, 'refresh is load');
+    must(JS, /function refresh\(\)\s*\{[\s\S]{0,400}?return load\(\);/,
+      'a return visit re-reads the position');
+    must(JS, /if \(yearsUnread\) await loadYears\(\);/,
+      'and re-reads the year list where that read had failed, so a book that '
+      + 'was briefly out of reach does not need the whole page reloaded');
     must(AUTH, /org !== 'ui' && org !== 'preview'[^\n]*return 'bank'/, 'a bank signed in to its own organisation lands here; the demonstration organisation and a preview keep the dashboard');
   });
 
