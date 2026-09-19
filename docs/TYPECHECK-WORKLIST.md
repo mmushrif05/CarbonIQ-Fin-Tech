@@ -19,7 +19,7 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **443**. Remaining: **241**.
+Checked across all three: **443**. Remaining: **242**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
@@ -107,7 +107,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **9**. Remaining: **31** (1860 errors, measured by
+Checked: **9**. Remaining: **31** (1859 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -133,7 +133,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/parta-position.js` | 31 |
 | `ui/js/extract.js` | 30 |
 | `ui/js/new-project.js` | 29 |
-| `ui/js/walkthrough.js` | 23 |
+| `ui/js/walkthrough.js` | 22 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |
 | `ui/js/bank.js` | 20 |
@@ -148,10 +148,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **141** (1546 errors, measured by
+Checked: **45**. Remaining: **142** (1546 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**17 of them raise no errors at all** and can be adopted by adding the
+**18 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -296,4 +296,5 @@ pragma and nothing else.
 | `tests/parta-sovereign-report-golden.test.js` | 0 |
 | `tests/parta-sovereign-ui.test.js` | 0 |
 | `tests/preview-access.test.js` | 0 |
+| `tests/ui-request-helper.test.js` | 0 |
 | `tests/walkthrough-ui.test.js` | 0 |

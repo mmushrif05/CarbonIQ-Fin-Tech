@@ -55,7 +55,7 @@ describe('The page is reachable and named', () => {
     must(APP, 'GCFOverviewPage.init()', 'the router initialises it');
     must(APP, /'gcf-overview':\s*\{[\s\S]*?refresh:/, 'a return visit re-reads rather than replaying');
     must(JS, /function refresh\(\{ shown = false \} = \{\}\)/, 'refresh is load, except for a hand-over on the screen already shown');
-    must(JS, /if \(shown && held && portfolio && register && report\) \{ applyIntent\(\); return Promise\.resolve\(\); \}\s*return load\(\);/, 'a return visit re-reads; only a hand-over on the screen already shown is applied over the position held');
+    must(JS, /if \(shown && held && portfolio && register\) \{ applyIntent\(\); return Promise\.resolve\(\); \}\s*return load\(\);/, 'a return visit re-reads; only a hand-over on the screen already shown is applied over the position held');
     must(APP, /page\.refresh\(\{ shown: true \}\)/, 'the shell says when a page is re-read in place');
   });
 
@@ -125,6 +125,19 @@ describe('The screen renders the engines rather than repeating them', () => {
     must(JS, /co-benefit, apart/, 'the co-benefit bar says so in its label');
     must(HTML, /never summed/, 'the beneficiaries card says so on its face');
     must(HTML, /never in the headline/, 'the co-benefit is stated apart on the card');
+  });
+
+  test('the three reads are answered on their own, and a read that did not complete names itself', () => {
+    /* One read that never got an answer used to blank the whole screen with
+       the browser's one sentence. The pipeline and the register are the
+       screen; the disclosure lines are one card and one drawer. */
+    must(JS, /Promise\.allSettled\(\[gcf\('\/portfolio'\), gcf\('\/gaps'\), gcf\('\/report'\)\]\)/, 'the three reads are settled, not raced to the first failure');
+    must(JS, /if \(p\.status !== 'fulfilled' \|\| g\.status !== 'fulfilled'\)/, 'without the pipeline or the register there is nothing to draw');
+    must(JS, /reportError = r\.status === 'fulfilled' \? null : r\.reason\.message/, 'a disclosure read that did not complete is kept as its reason');
+    must(JS, /if \(!report\) \{\s*setHtml\('go-s2', `<p class="partc-hint">\$\{esc\(reportError/, 'the disclosure card says why it is empty');
+    const CFG = source('ui/config.js');
+    must(CFG, /throw noResponse\(url, second\)/, 'a read is asked once more, then the request is named');
+    must(CFG, /if \(!isRead\(opts\.method\)\) throw noResponse\(url, first\)/, 'a write is never asked twice');
   });
 
   test('the gate is a verdict beside a word and a mark, never a colour alone', () => {

@@ -459,11 +459,13 @@ const WalkthroughPage = (() => {
        register, the entity's own facts and the report. */
     async function loadGcf() {
       say(id('status'), 'Reading the pipeline…');
-      let p = null, reg = null, entity = null, report = null, example = null, refusal = null;
-      try {
-        const [a, b, c, d, x] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report'), call('/v1/gcf/pipeline/example')]);
-        p = a; reg = b.register; entity = c.entity; report = d.report; example = x.project;
-      } catch (err) { refusal = err; }
+      /* Five reads, each answered on its own, so one that did not complete
+         is a row naming the request rather than an empty page. */
+      const [a, b, c, d, x] = await Promise.allSettled([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report'), call('/v1/gcf/pipeline/example')]);
+      const got = r => (r.status === 'fulfilled' ? r.value : null);
+      const p = got(a), reg = (got(b) || {}).register || null, entity = (got(c) || {}).entity || null;
+      const report = (got(d) || {}).report || null, example = (got(x) || {}).project || null;
+      const refusal = [a, b, c, d, x].filter(r => r.status === 'rejected').map(r => r.reason)[0] || null;
       renderGcfReadiness(p, reg, entity, report, refusal, example);
       const name = report && report.basis && report.basis.entity && typeof report.basis.entity === 'string' ? report.basis.entity : null;
       say(id('entity'), name || 'Reporting entity not stated');
@@ -473,12 +475,13 @@ const WalkthroughPage = (() => {
 
     function renderGcfReadiness(p, reg, entity, report, refusal, example) {
       const rows = [];
-      if (!p || !reg || !report) {
+      if (!p || !reg) {
         rows.push(['The pipeline', ready(false), esc(refusal ? refusal.message : 'The pipeline could not be read.'), opener('gcf-overview', 'Open GCF Overview')]);
         setHtml(id('readiness-rows'), rowsHtml(rows));
         return;
       }
       const pf = p.portfolio;
+      report = report || { basis: {}, checklist: [] };
       rows.push(['The entity’s own pipeline', ready(!p.sample, p.sample ? 'Illustrative' : 'Recorded'),
         p.sample ? 'The shipped illustrative set is showing; load the starter projects from the GCF Overview, or record a candidate on the Pipeline tab' : `${esc(pf.count)} candidate(s) recorded`, opener('gcf-overview', 'Open GCF Overview')]);
       const name = report.basis && typeof report.basis.entity === 'string' ? report.basis.entity : null;
@@ -502,8 +505,10 @@ const WalkthroughPage = (() => {
       rows.push(['The entity’s own statements', ready(Number(tt.entity) === 0, Number(tt.entity) === 0 ? 'Stated' : `${tt.entity} not stated`),
         Number(tt.entity) === 0 ? 'Governance, strategy, risk management and targets are on the record' : (reg.entity.items || []).map(x => esc(x.what)).join(' · '), opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
       const yes = (report.checklist || []).filter(i => i.met).length;
-      rows.push(['The GCF disclosure', ready(true, `${yes} of ${(report.checklist || []).length}`),
-        `${esc(yes)} of ${esc((report.checklist || []).length)} checklist items answered Yes; the inventory item stays No by rule — download the PDF once from the GCF Overview so the first render on the day is not the first on the site`, opener('gcf-overview', 'Open GCF Overview')]);
+      rows.push(report.checklist.length
+        ? ['The GCF disclosure', ready(true, `${yes} of ${report.checklist.length}`),
+          `${esc(yes)} of ${esc(report.checklist.length)} checklist items answered Yes; the inventory item stays No by rule — download the PDF once from the GCF Overview so the first render on the day is not the first on the site`, opener('gcf-overview', 'Open GCF Overview')]
+        : ['The GCF disclosure', ready(false), esc(refusal ? refusal.message : 'The disclosure lines were not read.'), opener('gcf-overview', 'Open GCF Overview')]);
       setHtml(id('readiness-rows'), rowsHtml(rows));
     }
 

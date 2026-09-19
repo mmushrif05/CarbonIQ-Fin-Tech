@@ -62,6 +62,8 @@ const GCFOverviewPage = (() => {
 
   let portfolio = null;
   let register = null;
+  /* Why the disclosure lines are not on screen, where their read did not complete. */
+  let reportError = null;
   let report = null;
   let source = 'seed';
   let sample = true;
@@ -96,16 +98,22 @@ const GCFOverviewPage = (() => {
     detail.clear();
     show('go-behind', false);
     say('go-status', 'Reading the pipeline…');
-    try {
-      const [p, g, r] = await Promise.all([gcf('/portfolio'), gcf('/gaps'), gcf('/report')]);
-      portfolio = p.portfolio; source = p.source; sample = Boolean(p.sample);
-      register = g.register;
-      report = r.report;
-    } catch (err) {
+    /* Three reads, each answered on its own: the pipeline and the register
+       are the screen, and without either there is nothing to draw; the
+       disclosure lines are one card and one drawer, so a read of them that
+       did not complete is said in that card and the rest of the screen
+       still reads. A failure names the request it was. */
+    const [p, g, r] = await Promise.allSettled([gcf('/portfolio'), gcf('/gaps'), gcf('/report')]);
+    const failed = [p, g, r].find(x => x.status === 'rejected');
+    if (p.status !== 'fulfilled' || g.status !== 'fulfilled') {
       show('go-body', false); show('go-figures', false); show('go-sample', false);
-      say('go-status', err.message);
+      say('go-status', failed.reason.message);
       return;
     }
+    portfolio = p.value.portfolio; source = p.value.source; sample = Boolean(p.value.sample);
+    register = g.value.register;
+    report = r.status === 'fulfilled' ? r.value.report : null;
+    reportError = r.status === 'fulfilled' ? null : r.reason.message;
     render();
     show('go-figures', true);
     show('go-body', true);
@@ -141,7 +149,7 @@ const GCFOverviewPage = (() => {
 
   function render() {
     const env = portfolio.envelope || {};
-    say('go-entity', stated(report.basis.entity) || 'Reporting entity not stated');
+    say('go-entity', (report && stated(report.basis.entity)) || 'Reporting entity not stated');
     say('go-subtitle', `Direct Access Entity · Board decision ${env.decision || '—'} · ${env.sizeCategory || '—'} · environmental and social category ${env.essCategory || '—'} · ${fmt(portfolio.count)} candidate(s) · ${sample ? 'illustrative pipeline' : 'recorded pipeline'}`);
     renderFigures();
     renderChips();
@@ -418,6 +426,10 @@ const GCFOverviewPage = (() => {
   }
 
   function renderS2() {
+    if (!report) {
+      setHtml('go-s2', `<p class="partc-hint">${esc(reportError || 'The disclosure lines were not read.')}</p>`);
+      return;
+    }
     const m = report.metricsAndTargets || {};
     const co = m.climateOpportunities || {};
     const cd = m.capitalDeployment || {};
@@ -551,6 +563,9 @@ const GCFOverviewPage = (() => {
         ...Object.entries(ev.byTier || {}).map(([k, v]) => [`Figures at tier ${k}`, fmt(v)]),
         ['Evidence tiers', ev.note || ''],
       ]) + ruleList(mx, ['G-CARBON', 'G-DATA-01', 'G-DATA-02']);
+    } else if (kind === 'file' && !report) {
+      say('go-behind-title', 'Behind the file');
+      html = `<p class="partc-hint">${esc(reportError || 'The disclosure lines were not read.')}</p>`;
     } else if (kind === 'file') {
       say('go-behind-title', 'Behind the file');
       html = `<p class="partc-hint">${esc((report.basis || {}).covers || '')}</p>
@@ -622,7 +637,7 @@ const GCFOverviewPage = (() => {
   function refresh({ shown = false } = {}) {
     let held = null;
     try { held = localStorage.getItem('carboniq.gcf-overview.intent'); } catch (_) { held = null; }
-    if (shown && held && portfolio && register && report) { applyIntent(); return Promise.resolve(); }
+    if (shown && held && portfolio && register) { applyIntent(); return Promise.resolve(); }
     return load();
   }
 
