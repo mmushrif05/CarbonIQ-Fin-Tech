@@ -952,6 +952,7 @@ reach the core engine read `CORE_APP_URL`.
 | `docs/RELEASE-AND-ROLLBACK.md` | How a release is cut, and the order to reverse code and schema in |
 | `docs/SLFRS-S2-PLAN.md` | Part A, the dashboard and the S2 file: what the consolidated disclosure already answers beyond S2, what S2 still asks for, and the six stages that add it without moving a figure |
 | `docs/DEMO-RUNBOOK.md` | The walkthrough of a bank's own book inside one administrator account: before the day, the five steps, the language rules, what each refusal means |
+| `docs/GCF-PIPELINE-CLARITY-PLAN.md` | Making the GCF pipeline simple without losing anything: the four defects found by driving the schema, the intake generated from the cycle rather than hand-written, the theory of change as a structured chain, and the five phases |
 | `docs/DFCC-IMPLEMENTATION-PLAN.md` | DFCC's phased implementation plan: what is built, the phases from the briefing to the first Concept Note and the first report, who does what in each, what only DFCC can supply, how each phase is proved |
 | `docs/CODE-TOUR.md` | Request lifecycle, module map, ERD — the first thing a new developer reads |
 | `docs/GLOSSARY.md` | The vocabulary, and §1: the three 1–5 scales and why they are not interchangeable |
