@@ -32,6 +32,7 @@ const PAGE_META = {
   'gcf-overview':    { title: 'GCF Overview', subtitle: 'The candidate pipeline as a chief executive reads it — where each candidate sits, the gate, what is blocking and who holds the key, who has signed, and the file it yields' },
   'desk':            { title: 'Fund Desk', subtitle: 'Position, delivery, attributed emissions and the GCF pipeline' },
   'gcf':             { title: 'GCF Pipeline', subtitle: 'The candidate pipeline on the GCF project cycle — readiness, screening, emissions, disclosure and Concept Note inputs' },
+  'gcf-walkthrough': { title: 'GCF Walkthrough', subtitle: 'The accredited entity’s pipeline in the order the Fund reads it — what the day still needs, the eight steps, and a strip that follows you across them' },
   'ndc-sdg':         { title: 'NDC & SDG Alignment', subtitle: 'NDC 3.0 and SDG alignment under the Sri Lanka Green Finance Taxonomy' },
   'baselines':       { title: 'Baselines', subtitle: 'The governed figures this product screens against — in force, by country and by institution, with the version behind each' },
   'accounts':        { title: 'Accounts', subtitle: 'Who can sign in, under which role, and until when' },
@@ -132,6 +133,13 @@ const DYNAMIC_PAGES = {
     // A candidate recorded, moved or signed on the Pipeline tab changes
     // this position, so a return visit re-reads it.
     refresh: () => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.refresh(),
+  },
+  'gcf-walkthrough': {
+    src:  'pages/gcf-walkthrough.html',
+    init: () => typeof GCFWalkthroughPage !== 'undefined' && GCFWalkthroughPage.init(),
+    // The readiness rows are the pipeline, the register and the report, so a
+    // return visit re-reads.
+    refresh: () => typeof GCFWalkthroughPage !== 'undefined' && GCFWalkthroughPage.refresh(),
   },
   'desk': {
     src:  'pages/desk.html',

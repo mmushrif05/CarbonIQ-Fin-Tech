@@ -82,6 +82,7 @@ const Auth = (() => {
     'pipeline':       60,   // esg_analyst+
     'gcf-overview':   60,   // esg_analyst+ — the accredited entity's own landing over its GCF pipeline, same bar as the Pipeline tab
     'gcf':            60,   // esg_analyst+ — candidates are recorded and moved through the cycle here
+    'gcf-walkthrough': 60,  // esg_analyst+ — the presenter's rail over the entity's own pipeline; not a preview page
     'carbon-pricing': 40,   // relationship_manager+
     'reports':        30,   // auditor+
     'taxonomy':       30,   // auditor+

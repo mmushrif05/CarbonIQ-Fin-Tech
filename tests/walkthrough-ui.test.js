@@ -19,6 +19,7 @@ const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
 const HTML = source('ui/pages/walkthrough.html');
+const GHTML = source('ui/pages/gcf-walkthrough.html');
 const JS = source('ui/js/walkthrough.js');
 const CSS = source('ui/css/walkthrough.css');
 const INDEX = source('ui/index.html');
@@ -75,13 +76,20 @@ describe('The strip follows the presenter', () => {
     must(JS, /WalkthroughPage\.mount\(\)/, 'the strip is mounted when the script loads, so a reload keeps it');
   });
 
-  test('every id the page module reads is in its fragment', () => {
-    const ids = new Set([...JS.matchAll(/\$\('([a-z0-9-]+)'\)|\bon\('([a-z0-9-]+)'|\bshow\('([a-z0-9-]+)'|\bsay\('([a-z0-9-]+)'|setHtml\('([a-z0-9-]+)'/g)]
-      .map(m => m[1] || m[2] || m[3] || m[4] || m[5]).filter(Boolean));
-    for (const id of ids) {
-      if (id.startsWith('wt-strip')) continue;
-      expect({ id, present: HTML.includes(`id="${id}"`) }).toEqual({ id, present: true });
+  test('every id the module reads is in both fragments, under each page’s own prefix', () => {
+    /* One module serves two pages that sit in one document, so each
+       fragment's ids carry the page's prefix and the module reads them
+       through id(name). */
+    const names = new Set([...JS.matchAll(/\bid\('([a-z0-9-]+)'\)/g)].map(m => m[1]));
+    expect(names.size).toBeGreaterThan(8);
+    for (const name of names) {
+      expect({ name, present: HTML.includes(`id="wt-${name}"`) }).toEqual({ name, present: true });
+      if (name === 'year') continue; // the GCF page reads the whole pipeline and has no year selector
+      expect({ name, present: GHTML.includes(`id="gwt-${name}"`) }).toEqual({ name, present: true });
     }
+    mustNot(GHTML, /id="wt-/, 'the GCF fragment carries no bank-page id', 'prefix it gwt-');
+    mustNot(HTML, /id="gwt-/, 'the bank fragment carries no GCF-page id');
+    mustNot(GHTML, /id="gwt-year"/, 'the GCF page has no year selector', 'the pipeline is read whole');
   });
 
   test('the steps open the real screens through the hand-overs those screens already read', () => {
@@ -163,7 +171,7 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
   const GCF = source('ui/js/gcf.js');
   const OVERVIEW = source('ui/js/gcf-overview.js');
 
-  test('two tracks over one product, the financed seven untouched beside the GCF eight', () => {
+  test('two pages over one product, the financed seven untouched beside the GCF eight', () => {
     expect(Object.keys(Page.TRACKS)).toEqual(['financed', 'gcf']);
     expect(Page.TRACKS.financed.steps).toBe(Page.STEPS);
     expect(Page.TRACKS.gcf.steps).toBe(Page.GCF_STEPS);
@@ -176,9 +184,12 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
       expect(s.action.length).toBeGreaterThan(80);
       expect(s.note.length).toBeGreaterThan(80);
     }
-    must(HTML, /id="wt-tracks"[\s\S]*?data-track="financed"[\s\S]*?data-track="gcf"/, 'the page offers both tracks');
-    must(JS, /remember\(STATE_KEY, JSON\.stringify\(\{ track, step: i, open:/, 'the strip’s state carries its track');
-    must(JS, /const s0 = state\(\);[\s\S]*?track = s0 \? s0\.track/, 'the track is settled before the first request');
+    mustNot(HTML, /data-track=/, 'the bank’s page offers no track selector', 'the GCF walkthrough is its own page');
+    mustNot(GHTML, /data-track=/, 'nor does the GCF page');
+    must(JS, /remember\(STATE_KEY, JSON\.stringify\(\{ track: trackKey, step: i, open:/, 'the strip’s state carries the track of the page that started it');
+    must(JS, /const GCFWalkthroughPage = WalkthroughPage\.gcf;/, 'the GCF page is the same module on the other track');
+    must(JS, /const gcf = pageFor\('gcf', 'gwt'\);/, 'bound to its own fragment prefix');
+    must(JS, /const financed = pageFor\('financed', 'wt'\);/, 'as the bank’s page is to its own');
   });
 
   test('the steps open the real screens through the hand-overs those screens read', () => {
@@ -228,7 +239,47 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
     must(JS, /words and never a number/, 'the ratings are words');
     must(JS, /not a decision of the Fund/, 'the assessment is the bank’s own');
     must(JS, /not the entity’s inventory/, 'a pipeline is not the inventory');
-    must(HTML, /never a GCF endorsement/i, 'the language rule for the Fund');
+    must(GHTML, /never a GCF endorsement/i, 'the language rule for the Fund, on the GCF page');
+    mustNot(HTML, /GCF endorsement/i, 'and the bank’s page carries the bank’s rules alone');
     mustNot(JS, /GCF (approved|endorsed|certified)/i, 'no endorsement language');
+  });
+});
+
+describe('The GCF Walkthrough is its own page, under Capital & GCF', () => {
+  test('the nav carries an entry beside the GCF screens, the shell a container, the router a title and a loader', () => {
+    must(INDEX, 'data-page="gcf-walkthrough"', 'the sidebar carries a nav item for it');
+    must(INDEX, /data-page="gcf-walkthrough"[\s\S]{0,600}?GCF Walkthrough/, 'the nav item is labelled');
+    const nav = INDEX.slice(INDEX.indexOf('<nav class="sidebar-nav">'), INDEX.indexOf('</nav>'));
+    const at = id => nav.indexOf(`data-page="${id}"`);
+    expect(at('gcf-walkthrough')).toBeGreaterThan(nav.indexOf('Capital &amp; GCF</div>'));
+    expect(at('gcf-walkthrough')).toBeGreaterThan(at('gcf'));
+    expect(at('gcf-walkthrough')).toBeLessThan(nav.indexOf('Compliance</div>'));
+    /* Not under the reporting entity's own group: that is the bank's
+       walkthrough, and the accredited entity is another organisation. */
+    expect(at('gcf-walkthrough')).toBeGreaterThan(nav.indexOf('Insurance-associated emissions</div>'));
+    must(INDEX, 'id="page-gcf-walkthrough" data-src="pages/gcf-walkthrough.html"', 'the page container names its fragment');
+    must(APP, /'gcf-walkthrough':\s*\{\s*title:\s*'GCF Walkthrough'/, 'the router titles it');
+    must(APP, "src:  'pages/gcf-walkthrough.html'", 'the router loads it');
+    must(APP, 'GCFWalkthroughPage.init()', 'the router initialises it');
+    must(APP, /'gcf-walkthrough':\s*\{[\s\S]*?GCFWalkthroughPage\.refresh\(\)/, 'a return visit re-reads');
+    expect(fs.existsSync(path.join(ROOT, 'ui/pages/gcf-walkthrough.html'))).toBe(true);
+  });
+
+  test('the role gate holds it to the GCF bar, and a preview visitor is not offered a presenter’s rail', () => {
+    const level = Number((AUTH.match(/'gcf-walkthrough':\s*(\d+)/) || [])[1]);
+    const gcf = Number((AUTH.match(/'gcf':\s*(\d+)/) || [])[1]);
+    expect(level).toBe(gcf);
+    const previewList = (AUTH.match(/PREVIEW_PAGES = \[([\s\S]*?)\]/) || [])[1] || '';
+    expect(previewList).not.toMatch(/'gcf-walkthrough'/);
+  });
+
+  test('the page reads as the accredited entity’s, in the GCF register', () => {
+    must(GHTML, /The GCF walkthrough/, 'the eyebrow names it');
+    must(GHTML, /eight steps — one candidate, from the door to the Fund/, 'the steps card names the track');
+    must(GHTML, /Board decision B\.36\/10/, 'the accreditation is cited');
+    must(GHTML, /never PCAF’s 1–5 data-quality scale/, 'the evidence tiers are kept apart from the data-quality scale');
+    must(GHTML, /not the entity’s inventory/, 'a pipeline is not the inventory');
+    mustNot(GHTML, /SLFRS S2 — one loan|Lending Book|Load starter book/, 'nothing of the bank’s walkthrough is on it');
+    for (const src of [GHTML]) mustNot(src, /GCF (approved|endorsed|certified)|certified by PCAF|PCAF (approved|endorsed|certified)/i, 'no endorsement language');
   });
 });

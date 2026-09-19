@@ -71,13 +71,6 @@
 .walkthrough .wt-eyebrow { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--wt-green); font-weight: 700; }
 .walkthrough .wt-title { margin: 0 0 6px; font-size: 30px; line-height: 1.1; font-weight: 700; text-wrap: balance; }
 .walkthrough .wt-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
-.walkthrough .wt-tracks { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid var(--wt-rule); border-radius: 999px; min-width: 0; }
-.walkthrough .wt-track {
-  border: 0; background: none; cursor: pointer; padding: 5px 12px; border-radius: 999px;
-  font: inherit; font-size: 12.5px; font-weight: 600; color: var(--wt-ink-2);
-}
-.walkthrough .wt-track.is-on { background: var(--wt-accent); color: var(--wt-on-accent); }
-.walkthrough .wt-track:focus-visible { outline: 2px solid var(--wt-accent); outline-offset: 2px; }
 .walkthrough .wt-year { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--wt-ink-2); min-width: 0; }
 .walkthrough .wt-year select { min-width: 0; }
 .walkthrough .wt-start { padding-inline: 22px; }

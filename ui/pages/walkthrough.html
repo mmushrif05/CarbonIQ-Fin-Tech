@@ -1,5 +1,6 @@
 <!-- The Walkthrough — one loan, from the door to the file, shown from
-     inside the product. Two parts: what the day still needs, read live off
+     inside the product, under the reporting entity’s own name; the GCF
+     walkthrough is its own page under Capital & GCF. Two parts: what the day still needs, read live off
      the position; and the seven steps, each opened from here with a strip
      that follows the presenter across the real screens. Every figure on
      this page is one a route returned; the page computes nothing. -->
@@ -9,15 +10,11 @@
   <section class="partc-card wt-head">
     <div class="wt-head-row">
       <div class="wt-head-title">
-        <p class="wt-eyebrow">The walkthrough</p>
+        <p class="wt-eyebrow">The SLFRS S2 walkthrough</p>
         <h2 class="wt-title" id="wt-entity">Reporting entity not stated</h2>
         <p class="partc-hint" id="wt-subtitle"></p>
       </div>
       <div class="wt-controls">
-        <div class="wt-tracks" id="wt-tracks" role="group" aria-label="Which walkthrough">
-          <button type="button" class="wt-track is-on" data-track="financed" aria-pressed="true">SLFRS S2 — one loan</button>
-          <button type="button" class="wt-track" data-track="gcf" aria-pressed="false">GCF — one candidate</button>
-        </div>
         <label class="wt-year">Reporting year <select id="wt-year" class="cap-select"></select></label>
         <button class="btn btn-secondary" id="wt-refresh">Refresh</button>
         <button class="btn btn-primary wt-start" id="wt-start">Start the walkthrough</button>
@@ -54,8 +51,6 @@
         <li>Assurance mode is <em>self-declared</em> until every governed value resolves to a released baseline and the entity has recorded who assured the figures.</li>
         <li>SLFRS S2 is IFRS S2 as adopted in Sri Lanka. The document names every paragraph it answers and every one the bank has not yet stated.</li>
         <li>An SLFRS S2 statement still equal to the illustrative content is marked as such wherever it is printed, on screen and in the document.</li>
-        <li>Accreditation is a gate, not a score — Board decision B.36/10. An excluded candidate is one the entity cannot carry as the accredited entity.</li>
-        <li>The assessment is the bank’s own appraisal, signed by a named assessor. Never a decision of the Fund, and never a GCF endorsement.</li>
         <li>State what the figure is, cite the standard that governs it, and stop.</li>
       </ul>
     </section>
@@ -74,10 +69,6 @@
             <tr><td>A figure reads —</td><td>The server returned no figure</td><td>It is absent, not zero; the caption says what it needs</td></tr>
             <tr><td>An S2 share reads —</td><td>No exposure in the book is classified yet</td><td>Record a verdict on the Lending Book; a share over an unclassified book would be a number about nothing</td></tr>
             <tr><td>A pillar reads <em>Illustrative</em></td><td>The statement still equals the content shipped with the tool</td><td>Edit it on Financed Emissions; one changed word makes it the bank’s</td></tr>
-            <tr><td>The starter projects were not loaded</td><td>The organisation already holds recorded candidates</td><td>Use the book that is there; the shipped set is never merged with it</td></tr>
-            <tr><td>A move or an edit is refused on a candidate</td><td>It is the shipped illustrative set, which is read-only</td><td>Load the starter projects or adopt the set first</td></tr>
-            <tr><td>Validate is refused</td><td>The account’s role holds no validate scope</td><td>Sign in as an administrator or an assessor</td></tr>
-            <tr><td>Nothing to return</td><td>The assessment is not validated, or the recommendation is clean</td><td>A return needs a validated assessment with conditions or against</td></tr>
           </tbody>
         </table>
       </div>

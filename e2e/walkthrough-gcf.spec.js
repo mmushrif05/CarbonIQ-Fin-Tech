@@ -37,7 +37,7 @@ async function signIn(page, request) {
 
 test('the GCF track follows one candidate from the door to the Fund across the real screens', async ({ page, request }) => {
   await signIn(page, request);
-  await page.evaluate(() => { localStorage.removeItem('carboniq.walkthrough'); localStorage.removeItem('carboniq.walkthrough.track'); });
+  await page.evaluate(() => { localStorage.removeItem('carboniq.walkthrough'); });
 
   /* The entity's own pipeline first: the starter, loaded from the overview. */
   await page.locator('.nav-item[data-page="gcf-overview"]').click();
@@ -49,18 +49,17 @@ test('the GCF track follows one candidate from the door to the Fund across the r
   }
 
   /* The Walkthrough on the GCF track: the readiness rows are the pipeline's. */
-  await page.locator('.nav-item[data-page="walkthrough"]').click();
-  await expect(page.locator('#page-walkthrough')).toBeVisible();
-  await page.locator('#wt-tracks [data-track="gcf"]').click();
-  await expect(page.locator('#wt-steps-title')).toContainText('eight steps');
-  await expect(page.locator('#wt-readiness-rows tr')).toHaveCount(7);
-  await expect(page.locator('#wt-readiness-rows')).toContainText('candidate(s) recorded');
-  await expect(page.locator('#wt-readiness-rows')).toContainText('checklist items answered Yes');
-  await expect(page.locator('#wt-steps .wt-step')).toHaveCount(8);
+  await page.locator('.nav-item[data-page="gcf-walkthrough"]').click();
+  await expect(page.locator('#page-gcf-walkthrough')).toBeVisible();
+  await expect(page.locator('#gwt-steps-title')).toContainText('eight steps');
+  await expect(page.locator('#gwt-readiness-rows tr')).toHaveCount(7);
+  await expect(page.locator('#gwt-readiness-rows')).toContainText('candidate(s) recorded');
+  await expect(page.locator('#gwt-readiness-rows')).toContainText('checklist items answered Yes');
+  await expect(page.locator('#gwt-steps .wt-step')).toHaveCount(8);
   await expect(page.locator('#wt-strip')).toBeHidden();
 
   /* Step 1: where we stand — the overview. */
-  await page.locator('#wt-start').click();
+  await page.locator('#gwt-start').click();
   await expect(page.locator('#page-gcf-overview')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
   await expect(page.locator('#wt-strip-n')).toHaveText('Step 1 of 8');

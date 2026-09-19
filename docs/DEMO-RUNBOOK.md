@@ -226,10 +226,11 @@ until every illustrative statement is the bank's.
 ## The GCF walkthrough — the accredited entity's pipeline
 
 The second walkthrough, for a Direct Access Entity: one candidate, from the
-door to the Fund. The product's *Walkthrough* tab offers it beside the
-SLFRS S2 one — choose **GCF — one candidate** — and the same strip follows
-you across the real screens; every step changes the screen and marks the
-control it asks you to press. The SLFRS S2 walkthrough above runs unchanged
+door to the Fund. It is the **GCF Walkthrough** page under *Capital & GCF*,
+beside the GCF Overview and the Pipeline tab — the bank's own walkthrough
+stays under the reporting entity's name and carries the SLFRS S2 steps
+alone — and the same strip follows you across the real screens; every step
+changes the screen and marks the control it asks you to press. The SLFRS S2 walkthrough above runs unchanged
 in the same organisation for the same audience; run it second, over the
 bank's own lending book.
 
@@ -253,7 +254,7 @@ bank's own lending book.
    and targets statements SLFRS S2 asks for. Until they are stated the
    disclosure prints *not stated* with the clause, and the register counts
    them as the bank's own gaps.
-4. **Open the Walkthrough on the GCF track and read the readiness rows.**
+4. **Open the GCF Walkthrough and read the readiness rows.**
    Every row is a field a route returned: the pipeline recorded, the entity's
    name, the accreditation, a signed assessment, what is blocking, the
    entity's statements, and the disclosure with its checklist count. Download
