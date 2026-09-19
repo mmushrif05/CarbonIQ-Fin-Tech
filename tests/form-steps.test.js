@@ -241,6 +241,47 @@ describe('the record button is gated on a checklist', () => {
     must(REG, /FormSteps\.revealMissing\(\$\('pr-form'\)\)/, 'and opens the first one');
   });
 
+  /* What each class insists on was read off the engines rather than guessed:
+     every field of the starter book's own inputs was blanked in turn and the
+     refusal recorded. Two of them turned out to be a CHOICE rather than a
+     field, which is the finding that matters — a bank that has answered the
+     question one way must not be told it is missing the other two. */
+  test('every class asks for what its engine refuses without', () => {
+    const HTML = source('ui/pages/parta-register.html');
+    const PLAIN = [
+      ['pr-f-mcap', '§5.2 listed — EVIC_MARKET_CAP_REQUIRED'],
+      ['pr-f-debt-ib', '§5.2 listed — EVIC_TOTAL_DEBT_REQUIRED'],
+      ['pr-f-le-mcap', '§5.1 — EVIC_MARKET_CAP_REQUIRED'],
+      ['pr-f-le-debt', '§5.1 — EVIC_TOTAL_DEBT_REQUIRED'],
+      ['pr-f-le-s1', '§5.1 — SCOPE_1_2_REQUIRED'],
+      ['pr-f-le-s2', '§5.1 — SCOPE_1_2_REQUIRED'],
+      ['pr-f-pf-denominator', '§5.3 — INVALID_DENOMINATOR'],
+      ['pr-f-pf-s1', '§5.3 — SCOPE_1_2_REQUIRED'],
+      ['pr-f-pf-s2', '§5.3 — SCOPE_1_2_REQUIRED'],
+      ['pr-f-pf-option', '§5.3 — DQ_OPTION_REQUIRED'],
+      ['pr-f-building-type', '§5.4/§5.5 — BUILDING_TYPE_NOT_HELD'],
+    ];
+    for (const [id, why] of PLAIN) {
+      must(HTML, new RegExp(`id="${id}"[^>]*data-fs-required`), `${id} is required — ${why}`);
+    }
+  });
+
+  test('a choice is one requirement, not three missing fields', () => {
+    const HTML = source('ui/pages/parta-register.html');
+    /* ORIGINATION_VALUE_REQUIRED is answered by either. */
+    for (const id of ['pr-f-re-value', 'pr-f-re-latest']) {
+      must(HTML, new RegExp(`id="${id}"[^>]*data-fs-group="property-value"`),
+        `${id} answers the property value`);
+    }
+    /* BUILDING_ENERGY_INPUT_REQUIRED is answered by any of the three, and
+       each reaches a different option — metered 1b, floor area 2b, the
+       count alone 3. */
+    for (const id of ['pr-f-area', 'pr-f-count', 'pr-f-elec']) {
+      must(HTML, new RegExp(`id="${id}"[^>]*data-fs-group="building-energy"`),
+        `${id} answers how the building's energy is known`);
+    }
+  });
+
   test('the register declares its own requirements', () => {
     const HTML = source('ui/pages/parta-register.html');
     must(HTML, /id="pr-form"[^>]*data-steps-gate="pr-form-submit"/, 'the form names its record control');

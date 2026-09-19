@@ -182,8 +182,15 @@ test('a property is recorded from the screen in square feet, and the trace shows
   await page.selectOption('#pr-f-building-type', 'office');
   await fillIn(page, 'pr-f-re-outstanding', '5000000');
   await page.fill('#pr-f-re-value', '20000000');
+  /* How the building's energy is known is ONE requirement across three
+     fields — floor area, the number of buildings, or metered energy, each
+     reaching a different option. Until one of them is answered the record is
+     held; answering any one answers it. */
+  await expect(page.locator('#pr-form .fs-check-row', { hasText: 'How the building’s energy is known' })).toHaveCount(1);
+  await expect(page.locator('#pr-form-submit')).toBeDisabled();
   await fillIn(page, 'pr-f-area', '10763.91');
   await page.selectOption('#pr-f-area-unit', 'ft2');
+  await expect(page.locator('#pr-form-submit')).toBeEnabled();
   await page.locator('#pr-form-submit').click();
   await expect(page.locator('#pr-detail')).toBeVisible();
   await expect(page.locator('#pr-detail-body')).toContainText('Floor area as keyed');
