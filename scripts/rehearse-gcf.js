@@ -100,7 +100,7 @@ if (!EMAIL || !PASSWORD) {
     await page.fill('#login-password', PASSWORD);
     await page.locator('#login-btn').click();
     await wait(page, '#sidebar');
-    await page.evaluate(() => { localStorage.removeItem('carboniq.walkthrough'); localStorage.removeItem('carboniq.walkthrough.track'); });
+    await page.evaluate(() => { localStorage.removeItem('carboniq.walkthrough'); });
     e.notes.push(`Signed in as ${EMAIL}`);
   }, page);
 
@@ -119,17 +119,15 @@ if (!EMAIL || !PASSWORD) {
   }, page);
 
   await step('Before the day 4 · readiness on the GCF track', async e => {
-    await page.locator('.nav-item[data-page="walkthrough"]').click();
-    await wait(page, '#wt-tracks');
-    await page.locator('#wt-tracks [data-track="gcf"]').click();
-    await expectText(page, '#wt-steps-title', 'eight steps');
-    await wait(page, '#wt-readiness-rows tr');
-    const rows = await page.locator('#wt-readiness-rows tr').evaluateAll(trs => trs.map(tr => Array.from(tr.querySelectorAll('td')).slice(0, 3).map(td => td.textContent.trim()).join(' · ')));
+    await page.locator('.nav-item[data-page="gcf-walkthrough"]').click();
+    await expectText(page, '#gwt-steps-title', 'eight steps');
+    await wait(page, '#gwt-readiness-rows tr');
+    const rows = await page.locator('#gwt-readiness-rows tr').evaluateAll(trs => trs.map(tr => Array.from(tr.querySelectorAll('td')).slice(0, 3).map(td => td.textContent.trim()).join(' · ')));
     e.notes.push(...rows);
   }, page);
 
   await step('Step 1 · where we stand', async e => {
-    await page.locator('#wt-start').click();
+    await page.locator('#gwt-start').click();
     await wait(page, '#page-gcf-overview');
     await expectText(page, '#wt-strip-n', 'Step 1 of 8');
     await wait(page, '#go-figures');
@@ -216,7 +214,7 @@ if (!EMAIL || !PASSWORD) {
 
   await step('Phone width · nothing widens', async e => {
     await page.setViewportSize({ width: 430, height: 900 });
-    for (const pg of ['gcf-overview', 'gcf', 'walkthrough']) {
+    for (const pg of ['gcf-overview', 'gcf', 'gcf-walkthrough']) {
       await page.locator(`.nav-item[data-page="${pg}"]`).click().catch(() => {});
       await page.waitForTimeout(1200);
       const o = await overflow(page);

@@ -1,28 +1,26 @@
 /* ============================================================
-   CarbonIQ — the Walkthrough
+   CarbonIQ — the two walkthroughs, and the strip that follows the presenter
    ============================================================
-   The bank's book shown in the order a committee reads it, from inside
-   the product. Two things and no arithmetic:
+   Two pages, one module, one strip. The bank's Walkthrough sits under the
+   reporting entity's name and runs the SLFRS S2 track — one loan, from the
+   door to the file. The GCF Walkthrough sits under Capital & GCF beside the
+   GCF Overview and runs the GCF track — one candidate, from the door to the
+   Fund. They shipped as two tracks on the bank's page, so a reader looking
+   for the accredited entity's walkthrough found a page headed by another
+   bank; each is its own screen now, and the element ids on each carry the
+   page's own prefix so both fragments can sit in one document.
 
-     What the day still needs, read live off the reporting year's
-     position — the book, the bank's name, who prepared and approved,
-     the approvals, what the disclosure still lists, and whether the
-     document renders. Every row is a field a route returned.
-
-     The seven steps: one loan, from the door to the file. The position and
-     the file first, for the chief executive; then one loan — it comes in
-     with every field already filled, a second that does not know its
-     emissions is priced on the sector library, the engine's answer is read,
-     it is reviewed and approved, and it is on the dashboard. Opening a step navigates to
-     the real screen with the step already applied, through the doors the
-     screens already read: the class hand-over and a one-shot intent each
-     screen reads once its own load is done. Every step changes the screen
-     and marks the one control it asks the presenter to press. Starting the
-     walkthrough keeps a strip on every screen — the step, what to do, what
-     to say — held in the browser so it survives navigation and a reload.
+   Each page shows two things and no arithmetic: what the day still needs,
+   read live off the routes — every row a field a route returned — and the
+   steps, each opened from the page with the real screen already showing
+   what the step is about, through the hand-overs those screens read once
+   their own load is done. Starting a walkthrough keeps a strip on every
+   screen — the step, what to do, what to say — held in the browser so it
+   survives navigation and a reload; the strip is shell markup and there is
+   one, whichever page started it.
 
    Nothing here fetches a figure to show as its own: the strip and the
-   readiness table print what the position said.
+   readiness tables print what the routes said.
    ============================================================ */
 
 const WalkthroughPage = (() => {
@@ -40,7 +38,6 @@ const WalkthroughPage = (() => {
   const recall = key => { try { return localStorage.getItem(key); } catch (_) { return null; } };
 
   const STATE_KEY = 'carboniq.walkthrough';
-  const TRACK_PREF = 'carboniq.walkthrough.track';
   const BANK_INTENT = 'carboniq.bank.intent';
   const REGISTER_INTENT = 'carboniq.register.intent';
   const CLASS_KEY = 'carboniq.parta.class';
@@ -172,19 +169,14 @@ const WalkthroughPage = (() => {
     },
   ];
 
-  /* Two walkthroughs over one product. The financed track is the seven steps
-     above; the GCF track is the eight. The strip carries whichever is on. */
+  /* Two walkthroughs over one product, one per page. The strip carries
+     whichever is on. */
   const TRACKS = {
     financed: { label: 'SLFRS S2 — one loan', title: 'The seven steps — one loan, from the door to the file',
       hint: 'The position and the SLFRS S2 file first; then one loan comes in with every field already filled, a second that does not know its emissions is priced on the held sector factor, the engine’s answer is read, it is reviewed and approved, and it is on the dashboard and in the file.', steps: STEPS },
     gcf: { label: 'GCF — one candidate', title: 'The eight steps — one candidate, from the door to the Fund',
       hint: 'Where the entity stands and what is blocking it first; then one candidate comes in on the intake form already filled, is read against the ten-stage cycle, screened and structured, assessed and signed off by a named assessor, packaged for a Concept Note, and is in the GCF disclosure the pipeline yields.', steps: GCF_STEPS },
   };
-  let track = 'financed';
-  const steps = () => (TRACKS[track] || TRACKS.financed).steps;
-
-  let year = '';
-  let position = null;
 
   const call = path => (typeof window.CARBONIQ_fetch === 'function'
     ? window.CARBONIQ_fetch(path) : fetch(path)).then(async r => {
@@ -194,180 +186,17 @@ const WalkthroughPage = (() => {
   });
   const partA = path => call(`/v1/pcaf/part-a${path}`);
 
-  // ── years ──────────────────────────────────────────────────
-
-  async function loadYears() {
-    let years = [];
-    try { ({ years } = await partA('/years')); } catch (_) { years = []; }
-    const chosen = $('wt-year') ? $('wt-year').value : '';
-    const list = years.map(y => String(y.reportingYear));
-    if (!list.length) list.push(String(new Date().getFullYear()));
-    setHtml('wt-year', list.map(y => `<option value="${esc(y)}">${esc(y)}</option>`).join(''));
-    $('wt-year').value = list.includes(chosen) ? chosen : list[list.length - 1];
-    year = $('wt-year').value;
-  }
-
-  // ── readiness, read off the position ───────────────────────
-
-  async function load() {
-    renderTrack();
-    if (track === 'gcf') return loadGcf();
-    year = $('wt-year').value;
-    say('wt-status', 'Reading the position…');
-    position = null;
-    let refusal = null;
-    try { position = await partA(`/financed-emissions/${encodeURIComponent(year)}`); } catch (err) { refusal = err; }
-    let document_ = null;
-    if (position) {
-      try { ({ report: document_ } = await partA(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=json`)); } catch (_) { document_ = null; }
-    }
-    renderReadiness(position, refusal, document_);
-    renderSummary();
-    renderSteps();
-    const e = (position && position.entity) || {};
-    say('wt-entity', e.reportingEntity || 'Reporting entity not stated');
-    say('wt-subtitle', position ? `FY${position.reportingYear} · ${position.exposures} exposure(s)` : `FY${year}`);
-    say('wt-status', position ? 'Every row below is read off the position for this year.' : (refusal ? refusal.message : ''));
-  }
-
+  const SCREEN = { bank: 'Bank Overview', 'parta-register': 'Lending Book', 'parta-position': 'Financed Emissions', 'gcf-overview': 'GCF Overview', gcf: 'GCF Pipeline' };
   const ready = (yes, word) => `<span class="wt-state ${yes ? 'wt-ready' : 'wt-needed'}">${esc(word || (yes ? 'Ready' : 'Needed'))}</span>`;
   const opener = (page, label, apply) => `<button type="button" class="btn btn-secondary wt-open" data-page="${esc(page)}" ${apply ? `data-apply="${esc(apply)}"` : ''}>${esc(label)}</button>`;
-
-  function renderReadiness(p, refusal, doc) {
-    const rows = [];
-    if (!p) {
-      rows.push(['The bank’s book', ready(false), esc(refusal ? refusal.message : 'No position for this year.'), opener('bank', 'Open Bank Overview')]);
-      setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
-      return;
-    }
-    const e = p.entity || {};
-    const recorded = (p.classes || []).filter(c => c.status === 'recorded');
-    rows.push(['The bank’s book', ready(recorded.length > 0),
-      `${esc(p.exposures)} exposure(s) across ${esc(recorded.length)} asset class(es) in FY${esc(p.reportingYear)}`, opener('bank', 'Open Bank Overview')]);
-    rows.push(['The bank’s name', ready(Boolean(e.reportingEntity)),
-      e.reportingEntity ? `${esc(e.reportingEntity)} — heads the sidebar group` : 'Not stated; type it beside Load starter book, or record it on Financed Emissions', opener('parta-position', 'Open Financed Emissions')]);
-    rows.push(['Who prepared and who approved', ready(Boolean(e.preparedBy && e.approvedBy)),
-      e.preparedBy && e.approvedBy
-        ? `Prepared by ${esc(e.preparedBy.name || '')}; approved by ${esc(e.approvedBy.name || '')}`
-        : 'Not stated; the entity form on Financed Emissions records both', opener('parta-position', 'Open Financed Emissions')]);
-    const a = p.approval || {};
-    rows.push(['Approved exposures', ready(Number(a.approved) > 0, Number(a.approved) > 0 ? 'Moving' : 'None yet'),
-      a.total != null ? `${esc(a.approved)} of ${esc(a.total)} approved — the ring and the tile show movement once one is` : 'Register classes only', opener('parta-register', 'Open Lending Book', 'class:business-loans-unlisted-equity')]);
-    const items = p.outstandingItems || [];
-    rows.push(['What the disclosure still lists', ready(items.length === 0, items.length === 0 ? 'Nothing' : `${items.length} item(s)`),
-      items.length ? items.map(x => esc(x.what)).join(' · ') : 'Every Chapter 6 item the bank must state is on the record', opener('parta-position', 'Open Financed Emissions')]);
-    /* The two S2 rows: what the bank has said about itself, and how much of
-       the book it has classified. Both are fields the position returned. */
-    const r = e.climateReadiness || null;
-    rows.push(['The bank’s SLFRS S2 statements', ready(Boolean(r) && r.absent === 0 && r.illustrative === 0,
-      !r ? 'None' : r.absent === 0 && r.illustrative === 0 ? 'Stated' : r.stated > 0 || r.illustrative > 0 ? 'Part stated' : 'None'),
-      r ? `${esc(r.stated)} stated by the bank · ${esc(r.illustrative)} illustrative · ${esc(r.absent)} not stated, of ${esc(r.total)}`
-        : 'Governance, strategy, risk management and the entity’s own metrics are the bank’s to state',
-      opener('parta-position', 'Open Financed Emissions')]);
-    const band = (p.climateExposure && p.climateExposure.transitionRisk) || null;
-    rows.push(['The climate classification on the book', ready(Boolean(band) && band.exposuresAssessed > 0 && !band.unassessedAmount,
-      !band || !band.exposuresAssessed ? 'None' : band.unassessedAmount ? 'Part classified' : 'Classified'),
-      band ? `${esc(band.exposuresAssessed)} exposure(s) assessed for transition risk${band.unassessedAmount ? '; some outstanding is not yet assessed and is reported beside the share' : ''}`
-        : 'Each exposure carries the bank’s own verdict; the engine sums them for S2 §29(b)–(d)',
-      opener('parta-register', 'Open Lending Book', 'class:business-loans-unlisted-equity')]);
-    const cover = (doc && doc.cover) || null;
-    rows.push(['The SLFRS S2 disclosure renders', ready(Boolean(cover)),
-      cover ? `Reference ${esc(cover.reportId || '')}; download it once from Bank Overview so the first render on the day is not the first render on the site` : 'The document did not render for this year', opener('bank', 'Open Bank Overview')]);
-    setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
-  }
-
-  /* The GCF day: every row a field a route returned — the portfolio, the gap
-     register, the entity's own facts and the report. */
-  async function loadGcf() {
-    say('wt-status', 'Reading the pipeline…');
-    let p = null, reg = null, entity = null, report = null, refusal = null;
-    try {
-      const [a, b, c, d] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report')]);
-      p = a; reg = b.register; entity = c.entity; report = d.report;
-    } catch (err) { refusal = err; }
-    renderGcfReadiness(p, reg, entity, report, refusal);
-    renderSummary();
-    renderSteps();
-    const name = report && report.basis && report.basis.entity && typeof report.basis.entity === 'string' ? report.basis.entity : null;
-    say('wt-entity', name || 'Reporting entity not stated');
-    say('wt-subtitle', p ? `${esc(p.portfolio.count)} candidate(s) on the ${p.sample ? 'illustrative' : 'recorded'} pipeline` : 'GCF pipeline');
-    say('wt-status', p ? 'Every row below is read off the pipeline, the register and the report.' : (refusal ? refusal.message : ''));
-  }
-
-  function renderGcfReadiness(p, reg, entity, report, refusal) {
-    const rows = [];
-    if (!p || !reg || !report) {
-      rows.push(['The pipeline', ready(false), esc(refusal ? refusal.message : 'The pipeline could not be read.'), opener('gcf-overview', 'Open GCF Overview')]);
-      setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
-      return;
-    }
-    const pf = p.portfolio;
-    rows.push(['The entity’s own pipeline', ready(!p.sample, p.sample ? 'Illustrative' : 'Recorded'),
-      p.sample ? 'The shipped illustrative set is showing; load the starter projects from the GCF Overview, or record a candidate on the Pipeline tab' : `${esc(pf.count)} candidate(s) recorded`, opener('gcf-overview', 'Open GCF Overview')]);
-    const name = report.basis && typeof report.basis.entity === 'string' ? report.basis.entity : null;
-    rows.push(['The entity’s name', ready(Boolean(name)), name ? `${esc(name)} — on the cover of the disclosure` : 'Not stated; record it under Reporting → Entity facts on the Pipeline tab', opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
-    const acc = entity && entity.accreditation;
-    rows.push(['The accreditation every gate reads', ready(Boolean(acc), acc ? 'Recorded' : 'As shipped'),
-      acc ? `Board decision ${esc(acc.decision || '')}, recorded by the entity` : `Board decision ${esc(pf.envelope.decision || '')} as shipped; record the entity’s own under Reporting → Accreditation`, opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
-    const a = pf.assessment || {};
-    rows.push(['A signed assessment', ready(Number(a.validated) > 0, Number(a.validated) > 0 ? 'Signed' : 'None yet'),
-      `${esc(a.validated)} validated · ${esc(a.underReview)} under review · ${esc(a.draft)} draft — step 6 signs one live`, opener('gcf-overview', 'Open GCF Overview')]);
-    const t = reg.totals || {};
-    rows.push(['What is blocking', ready(true, `${t.now} item(s)`),
-      `${esc(t.project)} on ${esc(t.blocked)} of ${esc(t.projects)} candidate(s) · ${esc(t.entity)} on the entity’s own statements — the register step 2 opens`, opener('gcf-overview', 'Open GCF Overview')]);
-    rows.push(['The entity’s own statements', ready(Number(t.entity) === 0, Number(t.entity) === 0 ? 'Stated' : `${t.entity} not stated`),
-      Number(t.entity) === 0 ? 'Governance, strategy, risk management and targets are on the record' : (reg.entity.items || []).map(x => esc(x.what)).join(' · '), opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
-    const yes = (report.checklist || []).filter(i => i.met).length;
-    rows.push(['The GCF disclosure', ready(true, `${yes} of ${(report.checklist || []).length}`),
-      `${esc(yes)} of ${esc((report.checklist || []).length)} checklist items answered Yes; the inventory item stays No by rule — download the PDF once from the GCF Overview so the first render on the day is not the first on the site`, opener('gcf-overview', 'Open GCF Overview')]);
-    setHtml('wt-readiness-rows', rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join(''));
-  }
-
-  /* The track on the page: the selector, the heading, and whether the year
-     selector applies. */
-  function renderTrack() {
-    for (const b of document.querySelectorAll('#wt-tracks [data-track]')) {
-      const on = b.getAttribute('data-track') === track;
-      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on));
-    }
-    const t = TRACKS[track] || TRACKS.financed;
-    say('wt-steps-title', t.title); say('wt-steps-hint', t.hint);
-    const yearEl = document.querySelector('#page-walkthrough .wt-year'); if (yearEl) yearEl.hidden = track === 'gcf';
-  }
-
-  function setTrack(key) {
-    if (!TRACKS[key] || key === track) return;
-    track = key; remember(TRACK_PREF, key);
-    load();
-  }
-
-  const SCREEN = { bank: 'Bank Overview', 'parta-register': 'Lending Book', 'parta-position': 'Financed Emissions', 'gcf-overview': 'GCF Overview', gcf: 'GCF Pipeline' };
-
-  function renderSteps() {
-    setHtml('wt-steps', steps().map((s, i) => `
-      <li class="wt-step">
-        <span class="wt-step-n">${i + 1}</span>
-        <div class="wt-step-body">
-          <div class="wt-step-head"><h4>${esc(s.title)}</h4><span class="wt-step-screen">${esc(SCREEN[s.page] || s.page)}</span>
-            <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
-          <p>${esc(s.action)}</p>
-          <details class="wt-say"><summary><span class="wt-say-label">Say</span> What to say</summary><p>${esc(s.note)}</p></details>
-        </div>
-      </li>`).join(''));
-  }
-
-  /* The day at a glance: how many rows stand ready, read off the rows
-     already rendered — a count of states, not a figure. */
-  function renderSummary() {
-    const rows = document.querySelectorAll('#wt-readiness-rows .wt-state');
-    let ready = 0, needed = 0;
-    for (const el of rows) { if (el.classList.contains('wt-ready')) ready += 1; else needed += 1; }
-    setHtml('wt-summary', rows.length
-      ? `<span class="wt-sum"><b>${ready}</b> ready</span><span class="wt-sum"><b>${needed}</b> needed</span><span class="wt-sum"><b>${steps().length}</b> steps</span>`
-      : '');
-  }
+  const rowsHtml = rows => rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="partc-hint">${r[2]}</td><td>${r[3]}</td></tr>`).join('');
 
   // ── the strip that follows the presenter ───────────────────
+
+  /* The pages that have initialised, so the strip can tell each to show
+     Start or End. */
+  const pages = new Set();
+  const syncPages = () => { for (const pg of pages) pg.syncControls(); };
 
   function state() {
     try {
@@ -381,11 +210,11 @@ const WalkthroughPage = (() => {
   /* Whether the page a step names is the one on screen now. */
   const onPage = page => { const el = document.getElementById(`page-${page}`); return Boolean(el && el.offsetParent !== null); };
 
-  function go(i, navigate) {
-    const step = steps()[i];
+  function go(trackKey, i, navigate) {
+    const step = (TRACKS[trackKey] || TRACKS.financed).steps[i];
     if (!step) return;
     const prior = state();
-    remember(STATE_KEY, JSON.stringify({ track, step: i, open: prior ? prior.open : true }));
+    remember(STATE_KEY, JSON.stringify({ track: trackKey, step: i, open: prior ? prior.open : true }));
     if (step.apply) step.apply();
     renderStrip();
     if (!navigate) return;
@@ -399,17 +228,13 @@ const WalkthroughPage = (() => {
   function end() {
     forget(STATE_KEY); forget(BANK_INTENT); forget(REGISTER_INTENT); forget(GCF_OVERVIEW_INTENT); forget(GCF_INTENT);
     renderStrip();
-    show('wt-start', true); show('wt-end', false);
   }
 
   function renderStrip() {
     const strip = $('wt-strip');
     if (!strip) return;
     const s = state();
-    if (!s || !stepsOf(s)[s.step]) { strip.hidden = true; return; }
-    /* The strip's track is the state's, so a strip started on one track and
-       reloaded on the other page keeps counting its own steps. */
-    track = s.track;
+    if (!s || !stepsOf(s)[s.step]) { strip.hidden = true; syncPages(); return; }
     const list = stepsOf(s);
     const step = list[s.step];
     strip.hidden = false;
@@ -431,7 +256,7 @@ const WalkthroughPage = (() => {
     say('wt-strip-where', here ? '' : `on ${SCREEN[step.page] || step.page}`);
     const min = $('wt-strip-min');
     if (min) { min.hidden = !here; min.textContent = s.open ? 'Hide' : 'Show'; min.setAttribute('aria-expanded', String(open)); }
-    show('wt-start', false); show('wt-end', true);
+    syncPages();
   }
 
   function toggleOpen() {
@@ -442,20 +267,16 @@ const WalkthroughPage = (() => {
   }
 
   function wireStrip() {
-    on('wt-strip-back', 'click', () => { const s = state(); if (s && s.step > 0) go(s.step - 1, true); });
-    on('wt-strip-next', 'click', () => { const s = state(); if (!s) return; if (s.step >= stepsOf(s).length - 1) end(); else go(s.step + 1, true); });
-    on('wt-strip-open', 'click', () => { const s = state(); if (s) go(s.step, true); });
+    on('wt-strip-back', 'click', () => { const s = state(); if (s && s.step > 0) go(s.track, s.step - 1, true); });
+    on('wt-strip-next', 'click', () => { const s = state(); if (!s) return; if (s.step >= stepsOf(s).length - 1) end(); else go(s.track, s.step + 1, true); });
+    on('wt-strip-open', 'click', () => { const s = state(); if (s) go(s.track, s.step, true); });
     on('wt-strip-end', 'click', end);
     on('wt-strip-notes', 'change', renderStrip);
     on('wt-strip-min', 'click', toggleOpen);
   }
 
-  // ── lifecycle ──────────────────────────────────────────────
-
   let stripWired = false;
 
-  /* The strip lives in the shell and is wired once, before any page loads,
-     so a walkthrough begun before a reload is on screen again after it. */
   /* Marks one control for a few seconds — the button a step asks the
      presenter to press — so a step is visible as well as read. Any screen
      may call it; it is defined here because the strip is. */
@@ -468,6 +289,8 @@ const WalkthroughPage = (() => {
     setTimeout(() => el.classList.remove('wt-cue'), 7000);
   }
 
+  /* The strip lives in the shell and is wired once, before any page loads,
+     so a walkthrough begun before a reload is on screen again after it. */
   function mount() {
     if (stripWired) return;
     stripWired = true;
@@ -479,42 +302,215 @@ const WalkthroughPage = (() => {
     renderStrip();
   }
 
-  async function init() {
-    mount();
-    on('wt-refresh', 'click', load);
-    on('wt-year', 'change', load);
-    on('wt-start', 'click', () => go(0, true));
-    on('wt-end', 'click', end);
-    on('wt-steps', 'click', ev => {
-      const b = ev.target && ev.target.closest ? ev.target.closest('.wt-go') : null;
-      if (b) go(Number(b.getAttribute('data-step')), true);
-    });
-    on('wt-readiness-rows', 'click', ev => {
-      const b = ev.target && ev.target.closest ? ev.target.closest('.wt-open') : null;
-      if (!b) return;
-      const apply = b.getAttribute('data-apply') || '';
-      if (apply.startsWith('class:')) remember(CLASS_KEY, apply.slice(6));
-      if (apply.startsWith('panel:')) remember(GCF_INTENT, apply);
-      nav(b.getAttribute('data-page'));
-    });
-    for (const b of document.querySelectorAll('#wt-tracks [data-track]')) b.addEventListener('click', () => setTrack(b.getAttribute('data-track')));
-    /* The track is settled before the first request: a walkthrough that is
-       on names it, otherwise the presenter's last choice. */
-    const s0 = state();
-    const pref = recall(TRACK_PREF);
-    track = s0 ? s0.track : (TRACKS[pref] ? pref : 'financed');
-    await loadYears();
-    await load();
-    const s = state();
-    show('wt-start', !s); show('wt-end', Boolean(s));
+  // ── a page: one track, one fragment, ids under one prefix ──
+
+  function pageFor(key, prefix) {
+    const t = TRACKS[key];
+    const id = name => `${prefix}-${name}`;
+    let year = '';
+
+    async function loadYears() {
+      let years = [];
+      try { ({ years } = await partA('/years')); } catch (_) { years = []; }
+      const sel = $(id('year'));
+      const chosen = sel ? sel.value : '';
+      const list = years.map(y => String(y.reportingYear));
+      if (!list.length) list.push(String(new Date().getFullYear()));
+      setHtml(id('year'), list.map(y => `<option value="${esc(y)}">${esc(y)}</option>`).join(''));
+      if (sel) { sel.value = list.includes(chosen) ? chosen : list[list.length - 1]; year = sel.value; }
+    }
+
+    // ── readiness, read off the position ───────────────────────
+
+    async function loadFinanced() {
+      year = $(id('year')) ? $(id('year')).value : year;
+      say(id('status'), 'Reading the position…');
+      let position = null, refusal = null;
+      try { position = await partA(`/financed-emissions/${encodeURIComponent(year)}`); } catch (err) { refusal = err; }
+      let document_ = null;
+      if (position) {
+        try { ({ report: document_ } = await partA(`/financed-emissions/${encodeURIComponent(year)}/disclosure?format=json`)); } catch (_) { document_ = null; }
+      }
+      renderReadiness(position, refusal, document_);
+      const e = (position && position.entity) || {};
+      say(id('entity'), e.reportingEntity || 'Reporting entity not stated');
+      say(id('subtitle'), position ? `FY${position.reportingYear} · ${position.exposures} exposure(s)` : `FY${year}`);
+      say(id('status'), position ? 'Every row below is read off the position for this year.' : (refusal ? refusal.message : ''));
+    }
+
+    function renderReadiness(p, refusal, doc) {
+      const rows = [];
+      if (!p) {
+        rows.push(['The bank’s book', ready(false), esc(refusal ? refusal.message : 'No position for this year.'), opener('bank', 'Open Bank Overview')]);
+        setHtml(id('readiness-rows'), rowsHtml(rows));
+        return;
+      }
+      const e = p.entity || {};
+      const recorded = (p.classes || []).filter(c => c.status === 'recorded');
+      rows.push(['The bank’s book', ready(recorded.length > 0),
+        `${esc(p.exposures)} exposure(s) across ${esc(recorded.length)} asset class(es) in FY${esc(p.reportingYear)}`, opener('bank', 'Open Bank Overview')]);
+      rows.push(['The bank’s name', ready(Boolean(e.reportingEntity)),
+        e.reportingEntity ? `${esc(e.reportingEntity)} — heads the sidebar group` : 'Not stated; type it beside Load starter book, or record it on Financed Emissions', opener('parta-position', 'Open Financed Emissions')]);
+      rows.push(['Who prepared and who approved', ready(Boolean(e.preparedBy && e.approvedBy)),
+        e.preparedBy && e.approvedBy
+          ? `Prepared by ${esc(e.preparedBy.name || '')}; approved by ${esc(e.approvedBy.name || '')}`
+          : 'Not stated; the entity form on Financed Emissions records both', opener('parta-position', 'Open Financed Emissions')]);
+      const a = p.approval || {};
+      rows.push(['Approved exposures', ready(Number(a.approved) > 0, Number(a.approved) > 0 ? 'Moving' : 'None yet'),
+        a.total != null ? `${esc(a.approved)} of ${esc(a.total)} approved — the ring and the tile show movement once one is` : 'Register classes only', opener('parta-register', 'Open Lending Book', 'class:business-loans-unlisted-equity')]);
+      const items = p.outstandingItems || [];
+      rows.push(['What the disclosure still lists', ready(items.length === 0, items.length === 0 ? 'Nothing' : `${items.length} item(s)`),
+        items.length ? items.map(x => esc(x.what)).join(' · ') : 'Every Chapter 6 item the bank must state is on the record', opener('parta-position', 'Open Financed Emissions')]);
+      /* The two S2 rows: what the bank has said about itself, and how much of
+         the book it has classified. Both are fields the position returned. */
+      const r = e.climateReadiness || null;
+      rows.push(['The bank’s SLFRS S2 statements', ready(Boolean(r) && r.absent === 0 && r.illustrative === 0,
+        !r ? 'None' : r.absent === 0 && r.illustrative === 0 ? 'Stated' : r.stated > 0 || r.illustrative > 0 ? 'Part stated' : 'None'),
+        r ? `${esc(r.stated)} stated by the bank · ${esc(r.illustrative)} illustrative · ${esc(r.absent)} not stated, of ${esc(r.total)}`
+          : 'Governance, strategy, risk management and the entity’s own metrics are the bank’s to state',
+        opener('parta-position', 'Open Financed Emissions')]);
+      const band = (p.climateExposure && p.climateExposure.transitionRisk) || null;
+      rows.push(['The climate classification on the book', ready(Boolean(band) && band.exposuresAssessed > 0 && !band.unassessedAmount,
+        !band || !band.exposuresAssessed ? 'None' : band.unassessedAmount ? 'Part classified' : 'Classified'),
+        band ? `${esc(band.exposuresAssessed)} exposure(s) assessed for transition risk${band.unassessedAmount ? '; some outstanding is not yet assessed and is reported beside the share' : ''}`
+          : 'Each exposure carries the bank’s own verdict; the engine sums them for S2 §29(b)–(d)',
+        opener('parta-register', 'Open Lending Book', 'class:business-loans-unlisted-equity')]);
+      const cover = (doc && doc.cover) || null;
+      rows.push(['The SLFRS S2 disclosure renders', ready(Boolean(cover)),
+        cover ? `Reference ${esc(cover.reportId || '')}; download it once from Bank Overview so the first render on the day is not the first render on the site` : 'The document did not render for this year', opener('bank', 'Open Bank Overview')]);
+      setHtml(id('readiness-rows'), rowsHtml(rows));
+    }
+
+    /* The GCF day: every row a field a route returned — the portfolio, the gap
+       register, the entity's own facts and the report. */
+    async function loadGcf() {
+      say(id('status'), 'Reading the pipeline…');
+      let p = null, reg = null, entity = null, report = null, refusal = null;
+      try {
+        const [a, b, c, d] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report')]);
+        p = a; reg = b.register; entity = c.entity; report = d.report;
+      } catch (err) { refusal = err; }
+      renderGcfReadiness(p, reg, entity, report, refusal);
+      const name = report && report.basis && report.basis.entity && typeof report.basis.entity === 'string' ? report.basis.entity : null;
+      say(id('entity'), name || 'Reporting entity not stated');
+      say(id('subtitle'), p ? `${esc(p.portfolio.count)} candidate(s) on the ${p.sample ? 'illustrative' : 'recorded'} pipeline` : 'GCF pipeline');
+      say(id('status'), p ? 'Every row below is read off the pipeline, the register and the report.' : (refusal ? refusal.message : ''));
+    }
+
+    function renderGcfReadiness(p, reg, entity, report, refusal) {
+      const rows = [];
+      if (!p || !reg || !report) {
+        rows.push(['The pipeline', ready(false), esc(refusal ? refusal.message : 'The pipeline could not be read.'), opener('gcf-overview', 'Open GCF Overview')]);
+        setHtml(id('readiness-rows'), rowsHtml(rows));
+        return;
+      }
+      const pf = p.portfolio;
+      rows.push(['The entity’s own pipeline', ready(!p.sample, p.sample ? 'Illustrative' : 'Recorded'),
+        p.sample ? 'The shipped illustrative set is showing; load the starter projects from the GCF Overview, or record a candidate on the Pipeline tab' : `${esc(pf.count)} candidate(s) recorded`, opener('gcf-overview', 'Open GCF Overview')]);
+      const name = report.basis && typeof report.basis.entity === 'string' ? report.basis.entity : null;
+      rows.push(['The entity’s name', ready(Boolean(name)), name ? `${esc(name)} — on the cover of the disclosure` : 'Not stated; record it under Reporting → Entity facts on the Pipeline tab', opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+      const acc = entity && entity.accreditation;
+      rows.push(['The accreditation every gate reads', ready(Boolean(acc), acc ? 'Recorded' : 'As shipped'),
+        acc ? `Board decision ${esc(acc.decision || '')}, recorded by the entity` : `Board decision ${esc(pf.envelope.decision || '')} as shipped; record the entity’s own under Reporting → Accreditation`, opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+      const a = pf.assessment || {};
+      rows.push(['A signed assessment', ready(Number(a.validated) > 0, Number(a.validated) > 0 ? 'Signed' : 'None yet'),
+        `${esc(a.validated)} validated · ${esc(a.underReview)} under review · ${esc(a.draft)} draft — step 6 signs one live`, opener('gcf-overview', 'Open GCF Overview')]);
+      const tt = reg.totals || {};
+      rows.push(['What is blocking', ready(true, `${tt.now} item(s)`),
+        `${esc(tt.project)} on ${esc(tt.blocked)} of ${esc(tt.projects)} candidate(s) · ${esc(tt.entity)} on the entity’s own statements — the register step 2 opens`, opener('gcf-overview', 'Open GCF Overview')]);
+      rows.push(['The entity’s own statements', ready(Number(tt.entity) === 0, Number(tt.entity) === 0 ? 'Stated' : `${tt.entity} not stated`),
+        Number(tt.entity) === 0 ? 'Governance, strategy, risk management and targets are on the record' : (reg.entity.items || []).map(x => esc(x.what)).join(' · '), opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+      const yes = (report.checklist || []).filter(i => i.met).length;
+      rows.push(['The GCF disclosure', ready(true, `${yes} of ${(report.checklist || []).length}`),
+        `${esc(yes)} of ${esc((report.checklist || []).length)} checklist items answered Yes; the inventory item stays No by rule — download the PDF once from the GCF Overview so the first render on the day is not the first on the site`, opener('gcf-overview', 'Open GCF Overview')]);
+      setHtml(id('readiness-rows'), rowsHtml(rows));
+    }
+
+    function renderSteps() {
+      setHtml(id('steps'), t.steps.map((s, i) => `
+        <li class="wt-step">
+          <span class="wt-step-n">${i + 1}</span>
+          <div class="wt-step-body">
+            <div class="wt-step-head"><h4>${esc(s.title)}</h4><span class="wt-step-screen">${esc(SCREEN[s.page] || s.page)}</span>
+              <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
+            <p>${esc(s.action)}</p>
+            <details class="wt-say"><summary><span class="wt-say-label">Say</span> What to say</summary><p>${esc(s.note)}</p></details>
+          </div>
+        </li>`).join(''));
+    }
+
+    /* The day at a glance: how many rows stand ready, read off the rows
+       already rendered — a count of states, not a figure. */
+    function renderSummary() {
+      const host = $(id('readiness-rows'));
+      const rows = host ? host.querySelectorAll('.wt-state') : [];
+      let readyN = 0, needed = 0;
+      for (const el of rows) { if (el.classList.contains('wt-ready')) readyN += 1; else needed += 1; }
+      setHtml(id('summary'), rows.length
+        ? `<span class="wt-sum"><b>${readyN}</b> ready</span><span class="wt-sum"><b>${needed}</b> needed</span><span class="wt-sum"><b>${t.steps.length}</b> steps</span>`
+        : '');
+    }
+
+    async function load() {
+      say(id('steps-title'), t.title); say(id('steps-hint'), t.hint);
+      if (key === 'gcf') await loadGcf(); else await loadFinanced();
+      renderSummary();
+      renderSteps();
+    }
+
+    /* Start is offered while no walkthrough is on; End while one is — on
+       either page, whichever started it. */
+    function syncControls() {
+      const s = state();
+      show(id('start'), !s); show(id('end'), Boolean(s));
+    }
+
+    async function init() {
+      mount();
+      pages.add(page);
+      on(id('refresh'), 'click', load);
+      on(id('year'), 'change', load);
+      on(id('start'), 'click', () => go(key, 0, true));
+      on(id('end'), 'click', end);
+      on(id('steps'), 'click', ev => {
+        const b = ev.target && ev.target.closest ? ev.target.closest('.wt-go') : null;
+        if (b) go(key, Number(b.getAttribute('data-step')), true);
+      });
+      on(id('readiness-rows'), 'click', ev => {
+        const b = ev.target && ev.target.closest ? ev.target.closest('.wt-open') : null;
+        if (!b) return;
+        const apply = b.getAttribute('data-apply') || '';
+        if (apply.startsWith('class:')) remember(CLASS_KEY, apply.slice(6));
+        if (apply.startsWith('panel:')) remember(GCF_INTENT, apply);
+        nav(b.getAttribute('data-page'));
+      });
+      /* The bank's page has a year selector and it is settled before the
+         first request; the GCF page reads the whole pipeline and has none. */
+      if (key === 'financed') {
+        await loadYears();
+        await load();
+      } else {
+        await load();
+      }
+      syncControls();
+    }
+
+    function refresh() {
+      return load();
+    }
+
+    const page = { init, refresh, load, syncControls };
+    return page;
   }
 
-  function refresh() {
-    return load();
-  }
+  const financed = pageFor('financed', 'wt');
+  const gcf = pageFor('gcf', 'gwt');
 
-  return { init, refresh, load, mount, STEPS, GCF_STEPS, TRACKS };
+  return { init: financed.init, refresh: financed.refresh, load: financed.load, gcf, mount, STEPS, GCF_STEPS, TRACKS };
 })();
+
+/* The GCF Walkthrough page: the same module, the other track, its own ids. */
+const GCFWalkthroughPage = WalkthroughPage.gcf;
 
 /* The strip is part of the shell: mount it as soon as the script loads so
    it is on screen whatever page a reload lands on. */

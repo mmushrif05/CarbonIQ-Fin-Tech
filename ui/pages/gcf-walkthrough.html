@@ -1,0 +1,77 @@
+<!-- The GCF Walkthrough — one candidate, from the door to the Fund, shown
+     from inside the product. Two parts: what the day still needs, read live
+     off the pipeline, the register and the report; and the eight steps, each
+     opened from here with a strip that follows the presenter across the real
+     screens. Every figure on this page is one a route returned; the page
+     computes nothing. The element ids carry the gwt prefix because the
+     bank's walkthrough sits in the same document under wt. -->
+
+<div class="partc walkthrough">
+
+  <section class="partc-card wt-head">
+    <div class="wt-head-row">
+      <div class="wt-head-title">
+        <p class="wt-eyebrow">The GCF walkthrough</p>
+        <h2 class="wt-title" id="gwt-entity">Reporting entity not stated</h2>
+        <p class="partc-hint" id="gwt-subtitle"></p>
+      </div>
+      <div class="wt-controls">
+        <button class="btn btn-secondary" id="gwt-refresh">Refresh</button>
+        <button class="btn btn-primary wt-start" id="gwt-start">Start the walkthrough</button>
+        <button class="btn btn-secondary" id="gwt-end" hidden>End the walkthrough</button>
+      </div>
+    </div>
+    <p class="partc-hint wt-status" id="gwt-status"></p>
+    <div class="wt-summary" id="gwt-summary"></div>
+  </section>
+
+  <section class="partc-card">
+      <div class="partc-card-head"><h3>Before the day</h3>
+        <span class="partc-hint">Read off the pipeline, the gap register, the entity’s own facts and the disclosure. A row marked <em>needed</em> opens the screen that answers it.</span></div>
+      <div class="bk-scroll">
+        <table class="partc-table wt-table" id="gwt-readiness">
+          <thead><tr><th>What</th><th>Stands at</th><th>Detail</th><th></th></tr></thead>
+          <tbody id="gwt-readiness-rows"></tbody>
+        </table>
+      </div>
+  </section>
+
+  <section class="partc-card">
+      <div class="partc-card-head"><h3 id="gwt-steps-title">The eight steps — one candidate, from the door to the Fund</h3>
+        <span class="partc-hint"><span id="gwt-steps-hint">Where the entity stands and what is blocking it first; then one candidate comes in on the intake form already filled, is read against the ten-stage cycle, screened and structured, assessed and signed off by a named assessor, packaged for a Concept Note, and is in the GCF disclosure the pipeline yields.</span> <em>Open</em> takes you to the screen with the step already applied and the control to press marked; <em>Start the walkthrough</em> keeps a strip on every screen with the step, what to do, and what to say.</span></div>
+      <ol class="wt-steps" id="gwt-steps"></ol>
+  </section>
+
+  <div class="partc-panels wt-panels">
+    <section class="partc-card partc-panel">
+      <div class="partc-card-head"><h3>Language</h3></div>
+      <ul class="wt-language">
+        <li>Accreditation is a gate, not a score — Board decision B.36/10. An excluded candidate is one the entity cannot carry as the accredited entity.</li>
+        <li>The assessment is the bank’s own appraisal, signed by a named assessor. Never a decision of the Fund, and never a GCF endorsement.</li>
+        <li>Every figure carries its evidence tier — measured, modelled, benchmark or declared. These are GCF appraisal classes, never PCAF’s 1–5 data-quality scale.</li>
+        <li>A pipeline of financed projects is not the entity’s inventory. SLFRS S2 §29(a) is absent with where the figure comes from; avoided and reduced emissions are stated apart and netted against nothing.</li>
+        <li>The shipped illustrative set and the starter projects say so on their face. Recorded candidates replace them entirely and are never merged with them.</li>
+        <li>State what the figure is, cite the standard that governs it, and stop.</li>
+      </ul>
+    </section>
+
+    <section class="partc-card partc-panel">
+      <div class="partc-card-head"><h3>If something refuses</h3></div>
+      <div class="bk-scroll">
+        <table class="partc-table wt-table">
+          <thead><tr><th>Seen</th><th>Meaning</th><th>Do</th></tr></thead>
+          <tbody>
+            <tr><td>The starter projects were not loaded</td><td>The organisation already holds recorded candidates</td><td>Use the book that is there; the shipped set is never merged with it</td></tr>
+            <tr><td>A move or an edit is refused on a candidate</td><td>It is the shipped illustrative set, which is read-only</td><td>Load the starter projects or adopt the set first</td></tr>
+            <tr><td>Validate is refused</td><td>The account’s role holds no validate scope</td><td>Sign in as an administrator or an assessor</td></tr>
+            <tr><td>Nothing to return</td><td>The assessment is not validated, or the recommendation is clean</td><td>A return needs a validated assessment with conditions or against</td></tr>
+            <tr><td>The disclosure is refused on a statement</td><td>An entity statement claims endorsement</td><td>Edit the statement under Reporting; the refusal names the phrase</td></tr>
+            <tr><td>A list could not be read</td><td>100 requests a minute per caller</td><td>Wait a minute and reload; nothing is lost</td></tr>
+            <tr><td>Signed out</td><td>Sessions end at 60 minutes idle, 12 hours absolute</td><td>Sign in again</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+</div>
