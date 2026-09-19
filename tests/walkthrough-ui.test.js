@@ -273,6 +273,7 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
   });
 
   test('the GCF readiness rows read the routes’ own fields', () => {
+    must(JS, /Promise\.allSettled\(\[call\('\/v1\/gcf\/portfolio'\)/, 'the five reads are answered on their own, so one that did not complete is a row and not an empty page');
     for (const path of ["call('/v1/gcf/portfolio')", "call('/v1/gcf/gaps')", "call('/v1/gcf/entity')", "call('/v1/gcf/report')"]) {
       must(JS, path, `the day is read off ${path}`);
     }

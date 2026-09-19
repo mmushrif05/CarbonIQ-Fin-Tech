@@ -34,6 +34,23 @@
     } catch (_) { return {}; }
   }
 
+  /* The browser answers every request that never got a response with one
+     sentence — a dropped connection, a request something on the machine
+     blocked, a function cut off at the gateway — and names nothing. What is
+     thrown here names the request, base included, so a screen can say which
+     of its reads did not complete and a stale base shows itself. */
+  function noResponse(url, cause) {
+    const reason = cause && cause.message ? cause.message : 'no response';
+    const err = new Error(`The request to ${url} did not complete (${reason}). The server sent no answer: check the connection, then press Refresh.`);
+    err.code = 'NO_RESPONSE';
+    err.url = url;
+    err.cause = cause;
+    return err;
+  }
+  const isRead = method => !method || ['GET', 'HEAD'].includes(String(method).toUpperCase());
+  const RETRY_AFTER_MS = 700;
+  const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+
   window.CARBONIQ_fetch = async function (path, opts = {}) {
     const url = `${window.CARBONIQ_API_BASE}${path}`;
     const headers = {
@@ -41,7 +58,17 @@
       ...(authHeader()),
       ...(opts.headers || {}),
     };
-    const res = await fetch(url, { ...opts, headers });
+    let res;
+    try {
+      res = await fetch(url, { ...opts, headers });
+    } catch (first) {
+      /* A read is asked once more a moment later, because a dropped
+         connection is the common case and the second ask usually completes;
+         a write is not, because it may already have gone through. */
+      if (!isRead(opts.method)) throw noResponse(url, first);
+      await pause(RETRY_AFTER_MS);
+      try { res = await fetch(url, { ...opts, headers }); } catch (second) { throw noResponse(url, second); }
+    }
 
     /* A session the server has ended — expired, idle, revoked, or the
        account disabled — must not leave the shell showing a signed-in
