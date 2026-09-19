@@ -188,7 +188,8 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
        recorded last. */
     mustNot(JS, /GCF_INTENT, '[a-z]+:latest'/, 'no GCF step follows whichever candidate was recorded last', 'name the example');
     must(JS, /call\('\/v1\/gcf\/pipeline\/example'\)/, 'the readiness reads the example the steps follow');
-    must(JS, /data-action="reset"/, 'a presenter can remove the candidate to rehearse from the door again');
+    must(JS, /data-remove="\$\{esc\(cand\.id\)\}"/, 'a presenter can remove the candidate to rehearse from the door again');
+    mustNot(JS, /data-action="reset"/, 'the removal never borrows the shell’s dispatch attribute', 'data-action names Module.method; use data-remove');
     must(JS, /method: 'DELETE'/, 'and the removal is the pipeline route’s own delete');
     for (const s of Page.GCF_STEPS) {
       must(INDEX, `data-page="${s.page}"`, `step "${s.title}" names a page the shell has`);

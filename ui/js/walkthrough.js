@@ -436,7 +436,7 @@ const WalkthroughPage = (() => {
       const cand = example ? (pf.rows || []).find(r => r.code === example.code) : null;
       rows.push([`The walkthrough candidate — ${esc(example ? example.name : 'the served example')}`, ready(Boolean(cand), cand ? 'Recorded' : 'Not yet'),
         cand ? `${esc(cand.code)} at ${esc(cand.stageLabel || cand.stage || '')}; remove it to rehearse from the door again` : 'Step 3 records it from the served example, and every later step follows it',
-        cand ? `<button type="button" class="btn btn-secondary wt-open" data-action="reset" data-id="${esc(cand.id)}">Remove it</button>` : opener('gcf', 'Open the Pipeline tab', 'panel:intake')]);
+        cand ? `<button type="button" class="btn btn-secondary wt-open" data-remove="${esc(cand.id)}">Remove it</button>` : opener('gcf', 'Open the Pipeline tab', 'panel:intake')]);
       const a = pf.assessment || {};
       rows.push(['A signed assessment', ready(Number(a.validated) > 0, Number(a.validated) > 0 ? 'Signed' : 'None yet'),
         `${esc(a.validated)} validated · ${esc(a.underReview)} under review · ${esc(a.draft)} draft — step 6 signs one live`, opener('gcf-overview', 'Open GCF Overview')]);
@@ -508,9 +508,12 @@ const WalkthroughPage = (() => {
       on(id('readiness-rows'), 'click', async ev => {
         const b = ev.target && ev.target.closest ? ev.target.closest('.wt-open') : null;
         if (!b) return;
-        if (b.getAttribute('data-action') === 'reset') {
+        /* `data-remove` carries the candidate's id: `data-action` is the
+           shell's dispatch attribute and names a registered module's method. */
+        const removeId = b.getAttribute('data-remove');
+        if (removeId) {
           if (!window.confirm('Remove the walkthrough candidate from the pipeline, so the next walkthrough records it again from the door?')) return;
-          try { await call(`/v1/gcf/pipeline/${encodeURIComponent(b.getAttribute('data-id'))}`, { method: 'DELETE' }); }
+          try { await call(`/v1/gcf/pipeline/${encodeURIComponent(removeId)}`, { method: 'DELETE' }); }
           catch (err) { say(id('status'), err.message); return; }
           return load();
         }

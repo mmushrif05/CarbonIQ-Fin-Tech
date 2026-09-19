@@ -198,9 +198,9 @@ test('a bank walkthrough left running never captures the page, and the candidate
   /* The candidate the journey recorded reads Recorded on the readiness rows,
      with the removal that rehearses from the door again. */
   await expect(page.locator('#gwt-readiness-rows')).toContainText('Recorded', { timeout: 15000 });
-  await expect(page.locator('#gwt-readiness-rows [data-action="reset"]')).toBeVisible();
+  await expect(page.locator('#gwt-readiness-rows [data-remove]')).toBeVisible();
   page.once('dialog', d => d.accept());
-  await page.locator('#gwt-readiness-rows [data-action="reset"]').click();
+  await page.locator('#gwt-readiness-rows [data-remove]').click();
   await expect(page.locator('#gwt-readiness-rows')).toContainText('Not yet', { timeout: 15000 });
   await page.evaluate(() => { localStorage.removeItem('carboniq.walkthrough'); });
 });
