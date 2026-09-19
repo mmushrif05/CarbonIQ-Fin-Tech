@@ -19,6 +19,7 @@
 'use strict';
 
 const cycle = require('./cycle');
+const sections = require('./sections');
 
 const HELD = 'held'; const PARTIAL = 'partial'; const MISSING = 'missing';
 
@@ -33,6 +34,9 @@ const ndaAtLeast = (project, level) => {
   return order.indexOf(status) >= order.indexOf(level) ? HELD : MISSING;
 };
 const date = (project, key) => (project.timeline && has(project.timeline[key]) ? HELD : MISSING);
+/* A section held as a structured fact, or as a document of the same kind:
+   the better answer, so nothing held by a document becomes missing. */
+const section = (project, key, docKind) => sections.best(sections.status(project, key).status, docKind ? doc(project, docKind) : MISSING);
 
 /**
  * The requirements, by the cycle stage they belong to. `check` answers from
@@ -42,7 +46,11 @@ const date = (project, key) => (project.timeline && has(project.timeline[key]) ?
  * co-financiers, a gender specialist, affected communities). A requirement
  * with no owner cannot be put on the register, and a test holds every one to
  * the vocabulary.
- * @type {ReadonlyArray<{id:string, owner:string, cycle:number, label:string, clause:string, remedy:string, check:(p:any)=>string}>}
+ * `applies`, where present, says whether the requirement is asked of this
+ * project at all — the adaptation climate rationale is asked of an adaptation
+ * project and not of a mitigation one — and a requirement that does not apply
+ * is left off the list rather than answered held.
+ * @type {ReadonlyArray<{id:string, owner:string, cycle:number, label:string, clause:string, remedy:string, check:(p:any)=>string, applies?:(p:any)=>boolean}>}
  */
 const REQUIREMENTS = Object.freeze([
   /* Stage 2 — origination: the idea with its rationale. */
@@ -78,6 +86,9 @@ const REQUIREMENTS = Object.freeze([
     remedy: 'Record that the Ministry of Environment has been informed.', check: p => ndaAtLeast(p, 'informed') },
   { id: 'cn_target', owner: 'dfcc', cycle: 3, label: 'Concept-note submission date targeted', clause: 'CarbonIQ — the pipeline carries a date',
     remedy: 'Set the target submission date.', check: p => date(p, 'cnSubmissionTarget') },
+  { id: 'adaptation_rationale', owner: 'dfcc', cycle: 3, label: 'Climate rationale — hazards, vulnerability and the evidence behind them', clause: 'Concept note B.1; GCF adaptation rationale — the climate science basis',
+    remedy: 'Name the climate hazards, state the vulnerability and exposure, and cite the evidence (the NAP, national projections).',
+    applies: p => p.stream === 'adaptation', check: p => sections.status(p, 'climateRationale').status },
 
   /* Stage 4 — funding proposal development. */
   { id: 'cn_submitted', owner: 'dfcc', cycle: 4, label: 'Concept note submitted', clause: 'Project cycle stage 3',
@@ -94,7 +105,12 @@ const REQUIREMENTS = Object.freeze([
     check: p => { const a = docStatus(p.safeguards && p.safeguards.genderAssessment); const b = docStatus(p.safeguards && p.safeguards.genderActionPlan);
       return a === HELD && b === HELD ? HELD : a === MISSING && b === MISSING ? MISSING : PARTIAL; } },
   { id: 'stakeholders', owner: 'sponsor', cycle: 4, label: 'Stakeholder consultation recorded', clause: 'Funding proposal annex — summary of consultations',
-    remedy: 'Record the consultations held.', check: p => docStatus(p.safeguards && p.safeguards.stakeholderConsultation) },
+    remedy: 'Record each consultation with who was consulted and its outcome, or the consultation summary document.',
+    check: p => sections.best(sections.status(p, 'stakeholders').status, docStatus(p.safeguards && p.safeguards.stakeholderConsultation)) },
+  { id: 'implementation_arrangements', owner: 'dfcc', cycle: 4, label: 'Implementation arrangements and timetable', clause: 'Funding proposal B.4 — implementation arrangements; concept note B',
+    remedy: 'State who implements and how it is governed, and record the timetable milestones.', check: p => sections.status(p, 'implementation').status },
+  { id: 'sustainability_exit', owner: 'sponsor', cycle: 4, label: 'Sustainability and exit strategy', clause: 'Funding proposal B.6 — sustainability and exit; project cycle stage 10',
+    remedy: 'State how the results are sustained after GCF funding ends and how the Fund exits.', check: p => sections.status(p, 'sustainability').status },
   { id: 'fpic', owner: 'communities', cycle: 4, label: 'Free, prior and informed consent where Indigenous Peoples are affected', clause: 'GCF Indigenous Peoples Policy',
     remedy: 'Record the consent process with the affected communities.',
     check: p => { const f = p.safeguards && p.safeguards.fpic; const required = (f && f.required) || (Array.isArray(p.essFlags) && p.essFlags.includes('fpic_required'));
@@ -106,11 +122,11 @@ const REQUIREMENTS = Object.freeze([
     check: p => { const c = Array.isArray(p.coFinancing) ? p.coFinancing : []; if (!c.length) return MISSING;
       return c.every(x => x.status === 'committed' || x.status === 'letter_received') ? HELD : PARTIAL; } },
   { id: 'me_plan', owner: 'sponsor', cycle: 4, label: 'Monitoring and evaluation plan', clause: 'Funding proposal annex — M&E plan',
-    remedy: 'Attach the monitoring and evaluation plan.', check: p => doc(p, 'me_plan') },
+    remedy: 'Record the monitoring arrangements and each indicator with its frequency and who measures it, or attach the plan.', check: p => section(p, 'monitoring', 'me_plan') },
   { id: 'procurement', owner: 'dfcc', cycle: 4, label: 'Procurement plan', clause: 'Funding proposal annex — procurement plan',
     remedy: 'Attach the procurement plan.', check: p => doc(p, 'procurement_plan') },
   { id: 'risk_register', owner: 'dfcc', cycle: 4, label: 'Risk register', clause: 'Funding proposal F — risk assessment and management',
-    remedy: 'Attach the risk register.', check: p => doc(p, 'risk_register') },
+    remedy: 'Record each risk with its likelihood, impact and mitigation, or attach the risk register.', check: p => section(p, 'risks', 'risk_register') },
   { id: 'nda_requested', owner: 'dfcc', cycle: 4, label: 'NDA no-objection requested', clause: 'Sri Lanka NDA Operation Manual — no-objection procedure',
     remedy: 'Request the no-objection letter from the Ministry of Environment.', check: p => ndaAtLeast(p, 'requested') },
 
@@ -121,6 +137,8 @@ const REQUIREMENTS = Object.freeze([
     remedy: 'Record the letter reference and date.', check: p => ndaAtLeast(p, 'issued') },
   { id: 'term_sheet', owner: 'dfcc', cycle: 5, label: 'Term sheet', clause: 'Funding proposal annex — term sheet',
     remedy: 'Attach the term sheet.', check: p => doc(p, 'term_sheet') },
+  { id: 'financial_terms', owner: 'dfcc', cycle: 5, label: 'Financial terms — tenor, pricing and repayment', clause: 'Funding proposal C.2 and C.3 — financial terms',
+    remedy: 'Record the tenor, the rate and the repayment profile the term sheet will carry.', check: p => sections.status(p, 'financialTerms').status },
 
   /* Stages 6 to 8 and 10 — dates the Fund and the bank set. */
   { id: 'board_target', owner: 'dfcc', cycle: 6, label: 'Board meeting targeted', clause: 'CarbonIQ — the pipeline carries a date',
@@ -133,6 +151,8 @@ const REQUIREMENTS = Object.freeze([
     remedy: 'Record the effectiveness date.', check: p => date(p, 'faaEffective') },
   { id: 'first_disbursement', owner: 'fund', cycle: 8, label: 'First disbursement', clause: 'Project cycle stage 8',
     remedy: 'Record the date.', check: p => date(p, 'firstDisbursement') },
+  { id: 'apr_reporting', owner: 'dfcc', cycle: 8, label: 'Annual performance reporting under the FAA', clause: 'Project cycle stage 8 — implementation and monitoring; FAA reporting covenants',
+    remedy: 'Record each annual performance report as it falls due and is filed, with its reference.', check: p => sections.status(p, 'reporting').status },
   { id: 'completion', owner: 'dfcc', cycle: 10, label: 'Completion report', clause: 'Project cycle stage 10',
     remedy: 'Record the completion date and attach the completion report.', check: p => (date(p, 'completion') === HELD && doc(p, 'completion_report') === HELD ? HELD : date(p, 'completion') === HELD ? PARTIAL : MISSING) },
 ]);
@@ -171,8 +191,9 @@ function assess(project, { now = new Date().toISOString() } = {}) {
   const nextCycle = nextInfo ? nextInfo.cycle.n : null;
 
   const answer = r => ({ id: r.id, owner: r.owner, cycle: r.cycle, label: r.label, clause: r.clause, remedy: r.remedy, status: r.check(project) });
-  const current = REQUIREMENTS.filter(r => r.cycle <= currentCycle).map(answer);
-  const ahead = nextCycle && nextCycle > currentCycle ? REQUIREMENTS.filter(r => r.cycle === nextCycle).map(answer) : [];
+  const asked = REQUIREMENTS.filter(r => !r.applies || r.applies(project));
+  const current = asked.filter(r => r.cycle <= currentCycle).map(answer);
+  const ahead = nextCycle && nextCycle > currentCycle ? asked.filter(r => r.cycle === nextCycle).map(answer) : [];
   const held = current.filter(i => i.status === HELD).length;
 
   return {

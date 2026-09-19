@@ -50,6 +50,7 @@ const STREAMS = ['mitigation', 'adaptation'];
  *  one of the Fund's ten cycle stages in ./cycle.js. The list used to stop at
  *  the Board; a pipeline has to carry a project past the day it is approved. */
 const STAGES = [...require('./cycle').STAGES];
+const sections = require('./sections');
 
 const ISO_DATE = Joi.string().pattern(/^\d{4}-\d{2}-\d{2}$/).allow(null);
 const DOC_STATUS = Joi.object({
@@ -289,6 +290,22 @@ const projectSchema = Joi.object({
     note: Joi.string().max(600).allow('', null).optional(),
   }).unknown(false)).default({}),
 
+  /* The sections a concept note and a funding proposal are written from,
+     held as structured facts (domain/sections.js): the risk register, the
+     implementation arrangements and timetable, sustainability and exit, the
+     stakeholder consultations, the adaptation climate rationale, the
+     financial terms, monitoring and evaluation, and post-approval reporting.
+     Every one optional and every record recorded before this existed is
+     unaffected; a document of the same kind still counts. */
+  risks: sections.SCHEMAS.risks.optional(),
+  implementation: sections.SCHEMAS.implementation.optional(),
+  sustainability: sections.SCHEMAS.sustainability.optional(),
+  stakeholders: sections.SCHEMAS.stakeholders.optional(),
+  climateRationale: sections.SCHEMAS.climateRationale.optional(),
+  financialTerms: sections.SCHEMAS.financialTerms.optional(),
+  monitoring: sections.SCHEMAS.monitoring.optional(),
+  reporting: sections.SCHEMAS.reporting.optional(),
+
   /* The sponsor's pre-check — the plain-language self-screen answered before
      the full form. Recorded as given, never believed: the counterfactual and
      the environmental category are the two that decide whether this is a GCF
@@ -468,4 +485,9 @@ module.exports = {
   weakestTier, tracedFigures, withinAccreditation,
   TIERS, AREA_CODES, STREAMS, STAGES, ESS_CATEGORIES, ESS_WITHIN_DFCC_ACCREDITATION,
   BASELINE_TYPES, DOCUMENT_KINDS, NDA_STATUSES, COFINANCING_STATUSES, accreditationSchema,
+  SECTION_KEYS: sections.SECTION_KEYS,
+  RISK_CATEGORIES: sections.RISK_CATEGORIES, RISK_LEVELS: sections.RISK_LEVELS,
+  STAKEHOLDER_GROUPS: sections.STAKEHOLDER_GROUPS, CONSULTATION_MODES: sections.CONSULTATION_MODES,
+  CLIMATE_HAZARDS: sections.CLIMATE_HAZARDS, REPAYMENT_PROFILES: sections.REPAYMENT_PROFILES,
+  MONITORING_FREQUENCIES: sections.MONITORING_FREQUENCIES, APR_STATUSES: sections.APR_STATUSES,
 };

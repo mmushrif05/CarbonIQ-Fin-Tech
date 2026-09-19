@@ -34,6 +34,7 @@ const groups = [
   ['Concept Note package', r => r.id.startsWith('G-CN')],
   ['The assessor flow — validation, report, return', r => r.id.startsWith('G-VAL') || r.id.startsWith('G-RPT') || r.id.startsWith('G-RET')],
   ['The pipeline as a dashboard — the gap register', r => r.id.startsWith('G-GAP')],
+  ['The sections held as structured facts — the risk register, arrangements, exit, consultations, rationale, terms, M&E, reporting', r => r.id.startsWith('G-SEC')],
   ['Deliberately out of scope', r => r.id.startsWith('G-EXCL')],
 ];
 

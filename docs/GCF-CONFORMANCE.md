@@ -6,8 +6,8 @@
 
 **Source of requirements:** DFCC Bank PLC DAE Readiness Pre-Qualified Delivery Partner Terms of Reference, version 21 November 2025
 
-**Status:** 48 implemented · 1 partial · 2 deliberately excluded
-(51 rules).
+**Status:** 51 implemented · 1 partial · 2 deliberately excluded
+(54 rules).
 
 > Nothing here is endorsed by the Green Climate Fund, and this system does not score a
 > proposal on GCF's behalf. This is a self-declaration of what has been built against a
@@ -489,6 +489,36 @@ exactly how a matrix goes quietly wrong.
 | **Requirement** | CarbonIQ — a register a committee can act on names who holds the key |
 | **Implementation** | `src/domains/gcf/domain/gaps.js — OWNERS and item(); src/domains/gcf/domain/readiness.js — every requirement names its owner` |
 | **Proving test** | `tests/gcf-gap-register.test.js › The register is composed, never judged › an owner outside the vocabulary is refused at construction` |
+
+
+## The sections held as structured facts — the risk register, arrangements, exit, consultations, rationale, terms, M&E, reporting
+
+### G-SEC-01 — The risk register, implementation arrangements and timetable, sustainability and exit, stakeholder consultations, adaptation climate rationale, financial terms, monitoring and evaluation, and post-approval reporting are held as structured facts on the record, each in a closed vocabulary and refused outside it; a record recorded before they existed is unaffected.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; GCF concept note B, funding proposal B.4, B.6, C.2–C.3, F and annexes |
+| **Implementation** | `src/domains/gcf/domain/sections.js — SCHEMAS; src/domains/gcf/domain/record.js — the eight optional blocks` |
+| **Proving test** | `tests/gcf-sections.test.js › The eight sections are blocks on the record, each in a closed vocabulary › a stakeholder group, a hazard, a repayment profile, a frequency and a report status are each held to their list` |
+
+### G-SEC-02 — Readiness reads each section as held, partial or missing from the record alone, asks the climate rationale of an adaptation project only, and a document of the same kind still counts — nothing that was held by a document becomes missing.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | GCF funding proposal template — what each section must contain; project cycle stages 3 to 8 |
+| **Implementation** | `src/domains/gcf/domain/readiness.js — the section() check and the applies predicate; src/domains/gcf/domain/sections.js — status(), best()` |
+| **Proving test** | `tests/gcf-sections.test.js › Readiness reads the sections, and a document of the same kind still counts › the same project with the sections recorded holds them, and a risk register document alone still holds the register` |
+
+### G-SEC-03 — The Concept Note package resolves its inputs from the sections — held with what is recorded, partial with what is missing, and external only where nothing is recorded — so the external worklist shrinks as the facts are recorded rather than as documents are named.
+
+| | |
+|---|---|
+| **Status** | implemented |
+| **Requirement** | ToR Lot 2 — the Concept Note inputs; GCF concept note sections B to G |
+| **Implementation** | `src/domains/gcf/application/cn-package.js — sectionLine()` |
+| **Proving test** | `tests/gcf-sections.test.js › The Concept Note package resolves its inputs from the sections › the served example holds six inputs from its blocks, each with what is recorded` |
 
 
 ## Deliberately out of scope

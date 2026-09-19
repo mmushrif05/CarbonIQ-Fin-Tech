@@ -43,6 +43,7 @@ const ndc = require('../domain/ndc-contribution');
 const screening = require('../domain/screening');
 const instruments = require('../domain/instruments');
 const record = require('../domain/record');
+const sections = require('../domain/sections');
 
 const HELD = 'held';
 const PARTIAL = 'partial';
@@ -57,6 +58,12 @@ const money = (n) => (n === null || n === undefined ? null : `USD ${Number(n).to
 
 /** One input line. `needs` is what to go and get, and only an external has one. */
 const held = (label, value, source) => ({ label, status: HELD, value, source: source || 'Project record' });
+/* A section held as a structured fact (domain/sections.js): held with its summary, partial with what is missing, else the caller's line. */
+function sectionLine(project, key, label, fallback) {
+  const s = sections.status(project, key);
+  if (s.status === sections.HELD) return held(label, s.summary, 'Recorded on the project');
+  return s.status === sections.PARTIAL && !(fallback && fallback.status === HELD) ? partial(label, s.summary, s.missing) : fallback;
+}
 const partial = (label, value, missing) => ({ label, status: PARTIAL, value, missing });
 const external = (label, needs, who) => ({ label, status: EXTERNAL, value: null, needs, from: who });
 
@@ -175,9 +182,14 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
             'The causal chain from activities to the result, and why it holds here. GCF reads this '
             + 'as the core of the argument; it is a sector judgement, not a computation.',
             'Project developer with DFCC'),
-        external('Detailed activity description and implementation timetable',
-          'Work packages, sequencing, procurement approach and delivery milestones.',
-          'Feasibility study'),
+        sectionLine(project, 'implementation', 'Detailed activity description and implementation timetable',
+          external('Detailed activity description and implementation timetable',
+            'Work packages, sequencing, procurement approach and delivery milestones.',
+            'Feasibility study')),
+        ...(project.stream === 'adaptation' ? [sectionLine(project, 'climateRationale', 'Climate rationale — hazards, vulnerability and the evidence',
+          external('Climate rationale — hazards, vulnerability and the evidence',
+            'The climate hazards the project answers, the vulnerability and exposure of the people and assets, and the evidence behind them — the NAP, national projections, observed records.',
+            'Project developer with DFCC'))] : []),
         docLine(project, 'feasibility_study', 'Feasibility study or pre-feasibility assessment',
           'Technical and economic feasibility at the depth GCF requires for the project stage.',
           'Project developer'),
@@ -204,6 +216,8 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           structuring.recommended
             ? `${structuring.recommended.name} — ${structuring.recommended.basis}`
             : structuring.recommendedNote),
+        sectionLine(project, 'financialTerms', 'Indicative financial terms — tenor, pricing and repayment', external('Indicative financial terms — tenor, pricing and repayment',
+          'The tenor, grace period, rate, repayment profile and security the term sheet will carry.', 'DFCC structuring')),
         cofinancingLine(project),
         docLine(project, 'financial_model', 'Financial model',
           'Cash-flow model with the assumptions behind the viability statement above.',
@@ -228,6 +242,8 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           f.gcfAsk ? `${(f.totalCost / f.gcfAsk).toFixed(2)}x total cost per USD of GCF ask` : null),
         ...screening.GCF_CRITERIA.filter(c => !c.scored).map(c =>
           external(`${c.name}`, c.reason, 'Sector and country specialists')),
+        sectionLine(project, 'sustainability', 'Sustainability and exit strategy', external('Sustainability and exit strategy',
+          'How the results are sustained after GCF funding ends, who owns the assets and the outcomes, and how the Fund exits.', 'Project developer with DFCC')),
         ndaLine(project),
       ],
     },
@@ -253,9 +269,10 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
             + `(${project.beneficiaries.womenPct.tier})` : null,
           'A district population share is not a project beneficiary disaggregation. GCF requires '
           + 'it disaggregated at source.'),
-        docLine(project, 'me_plan', 'Monitoring and evaluation arrangements',
-          'Who measures each indicator, how often, and against what verification protocol.',
-          'DFCC with the executing entity'),
+        sectionLine(project, 'monitoring', 'Monitoring and evaluation arrangements',
+          docLine(project, 'me_plan', 'Monitoring and evaluation arrangements',
+            'Who measures each indicator, how often, and against what verification protocol.',
+            'DFCC with the executing entity')),
       ],
     },
     {
@@ -277,10 +294,11 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           ? [held('Deliverability finding', structuring.structuralGap.note)]
           : []),
         held('Structuring watch-out', structuring.recommended?.watchOut || null),
-        docLine(project, 'risk_register', 'Full risk register',
-          'Technical, financial, political, social and environmental risks with likelihood, impact '
-          + 'and mitigation, at the depth GCF requires.',
-          'Project developer with DFCC risk'),
+        sectionLine(project, 'risks', 'Full risk register',
+          docLine(project, 'risk_register', 'Full risk register',
+            'Technical, financial, political, social and environmental risks with likelihood, impact '
+            + 'and mitigation, at the depth GCF requires.',
+            'Project developer with DFCC risk')),
       ],
     },
     {
@@ -300,6 +318,8 @@ function buildPackage(project, { accreditation = {}, sample = false, sampleNote 
           'Scaled to the category. A category B project requires an ESMP at minimum.',
           'Qualified E&S consultant'),
         genderLine(project),
+        sectionLine(project, 'stakeholders', 'Summary of stakeholder consultations', safeguardLine(project, 'stakeholderConsultation', 'Summary of stakeholder consultations',
+          'Who was consulted, when, how, and what came of it — the annex the funding proposal carries.', 'Project developer')),
         ...(fpicRequired(project)
           ? [fpicLine(project)]
           : []),

@@ -26,6 +26,7 @@ const { source, must, mustNot } = require('./helpers/ui-source');
 
 const ROOT = path.join(__dirname, '..');
 const HTML = source('ui/pages/gcf.html');
+const JS_PIPELINE = source('ui/js/gcf-pipeline.js');
 const CSS = source('ui/css/gcf.css');
 const JS = source('ui/js/gcf.js');
 const PIPE = source('ui/js/gcf-pipeline.js');
@@ -294,6 +295,37 @@ describe('Intake heads the strip, and a candidate in focus is marked on every pa
 
   test('a chip on the Pipeline panel opens the candidate and All candidates folds it away', () => {
     must(JS, /if \(state\.focus\) await GCFPipeline\.openProject\(state\.focus, \{ quiet: true \}\);\s*else GCFPipeline\.closeProject\(\);/, 'the board follows the chip');
+  });
+});
+
+describe('The sections held as structured facts are on the project page', () => {
+  const SECTIONS = ['Risks', 'Impl', 'Sustain', 'Stakeholders', 'Climate', 'Terms', 'Monitoring', 'Reporting'];
+  const SEC = source('ui/js/gcf-sections.js');
+
+  test('each section has a read and a form the server may withhold', () => {
+    for (const s of SECTIONS) {
+      must(HTML, `id="gcfProject${s}"`, 'each section has a read');
+      must(HTML, new RegExp(`id="gcfProject${s}Form" data-writes`), 'each section has a form withheld from a read-only session');
+    }
+  });
+
+  test('the sections module is loaded before the pipeline module and rendered from it', () => {
+    const idx = INDEX.indexOf('js/gcf-sections.js'); const pipe = INDEX.indexOf('js/gcf-pipeline.js');
+    expect(idx).toBeGreaterThan(-1);
+    expect(idx).toBeLessThan(pipe);
+    must(JS_PIPELINE, /GCFSections\.render\(p, \{ write, \$, esc, setHtml, on, vocab, words, patch, hint, usd \}\)/, 'the project page hands the sections module its helpers');
+    must(SEC, /^const GCFSections = \(\(\) => \{/m, 'the module is a top-level constant like its siblings');
+  });
+
+  test('the module writes through the same patch, holds no state, and offers the vocabularies the reference serves', () => {
+    must(SEC, /patch\(p\.id, \{ risks: /, 'a risk is written to the record');
+    must(SEC, /patch\(p\.id, \{ implementation: \{ timetable: /, 'a milestone is written to the record');
+    must(SEC, /patch\(p\.id, \{ reporting: \{ aprs: /, 'an annual report is written to the record');
+    for (const v of ['riskCategories', 'riskLevels', 'stakeholderGroups', 'consultationModes', 'climateHazards', 'repaymentProfiles', 'monitoringFrequencies', 'aprStatuses']) {
+      must(SEC, `'${v}'`, 'every closed vocabulary comes from the reference, never the browser');
+    }
+    mustNot(SEC, /fetch\(|reduce\(|\bsum\b/, 'the module fetches and computes nothing', 'every figure is the record’s own');
+    mustNot(SEC, /data-action=/, 'the module never borrows the shell’s dispatch attribute', 'listeners are wired with on()');
   });
 });
 

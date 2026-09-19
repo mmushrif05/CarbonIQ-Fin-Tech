@@ -293,7 +293,12 @@ tab marks that candidate's own rows, and *All candidates* clears it.
    and never PCAF's 1–5 scale."*
 4. **On the cycle** — the candidate open on its own, the board folded: held,
    partial, missing with the clause; the next step and who takes it; the
-   Fund's dates as projections. **Say:** *"Held means the record holds the
+   Fund's dates as projections. Lower on the page, the eight sections a
+   proposal is written from — the risk register, the arrangements and
+   timetable, sustainability and exit, the consultations, the climate
+   rationale, the financial terms, monitoring and evaluation, post-approval
+   reporting — each a read with a form beneath it; the example arrives with
+   six of them recorded. **Say:** *"Held means the record holds the
    fact; whether it is enough is for the Secretariat and the iTAP."*
 5. **Screened and structured** — *The decision*, with the candidate marked
    in the rankings: two rankings never merged, which two for a Concept Note,
