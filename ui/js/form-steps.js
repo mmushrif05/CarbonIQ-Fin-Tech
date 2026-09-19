@@ -415,7 +415,15 @@ const FormSteps = (() => {
   function attachGroup(members) {
     const first = members[0];
     const parent = first.parentElement;
-    if (!parent || live.has(first)) return;
+    if (!parent) return;
+    /* A flow whose cards are re-rendered — the walkthrough writes its steps
+       afresh on every load — hands us new elements each time, so the entry
+       under the old first card is dead. Dead entries are dropped rather than
+       accumulating, and a flow already carrying its rail is left alone. */
+    for (const key of [...live.keys()]) {
+      if (key instanceof Element && !key.isConnected) live.delete(key);
+    }
+    if (live.has(first)) return;
 
     const head = document.createElement('div');
     head.className = 'fs-head fs-head-group';

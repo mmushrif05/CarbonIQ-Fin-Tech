@@ -117,6 +117,26 @@ mind if you change the module itself.
 | PCAF calculator | form | 2 |
 | PCAF Part C intake | card flow | 5 |
 | Insurance Book | card flow | 6, revealed as you go |
+| Walkthrough (bank) | card flow | 7 steps |
+| GCF Walkthrough | card flow | 10 steps |
+
+### The walkthroughs are a special case worth knowing about
+
+Their steps are a card flow like any other, but the walkthrough **already
+owns a current step** — the strip on every screen reads it, and `Open` acts
+on it. So the rail follows that state and never writes it:
+
+- moving the rail **browses the plan**; it does not change what is being
+  presented;
+- `Start`, the strip's `Next`, and a step's own `Open` are what present it,
+  and the rail moves to match through `syncControls()`.
+
+One-way, walkthrough → rail. Two-way syncing between a component's index and
+a page's own state is where this would have gone wrong.
+
+Each track names its own flow with its page prefix (`wt-…`, `gwt-…`), so the
+bank's seven steps and the GCF's ten never share a rail — both fragments can
+sit in one document.
 
 ### Deliberately not switched on
 

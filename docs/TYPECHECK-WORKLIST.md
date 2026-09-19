@@ -107,7 +107,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **10**. Remaining: **31** (1860 errors, measured by
+Checked: **10**. Remaining: **31** (1861 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -133,7 +133,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/parta-position.js` | 31 |
 | `ui/js/extract.js` | 30 |
 | `ui/js/new-project.js` | 28 |
-| `ui/js/walkthrough.js` | 22 |
+| `ui/js/walkthrough.js` | 23 |
 | `ui/js/bank.js` | 21 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |

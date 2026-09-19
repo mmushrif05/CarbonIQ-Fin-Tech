@@ -513,19 +513,39 @@ const WalkthroughPage = (() => {
     }
 
     function renderSteps() {
+      /* One flow per page — the bank's steps and the GCF's are two lists and
+         must never share a rail, so the flow is named with the page's own
+         prefix. */
+      const flow = `${prefix}-walkthrough-steps`;
       setHtml(id('steps'), t.steps.map((s, i) => `
-        <li class="wt-step">
+        <div class="wt-step" role="listitem" data-step-group="${flow}" data-step-title="${esc(s.title)}">
           <span class="wt-step-n">${i + 1}</span>
           <div class="wt-step-body">
             <div class="wt-step-head"><h4>${esc(s.title)}</h4><span class="wt-step-screen">${esc(SCREEN[s.page] || s.page)}</span>
               <button type="button" class="btn btn-secondary wt-go" data-step="${i}">Open</button></div>
-            <details class="wt-step-more"${i === 0 ? ' open' : ''}>
+            <!-- Open: one step is on screen at a time now, so its own words
+                 need no second press. The disclosure stays because a
+                 presenter may want the step's title alone. -->
+            <details class="wt-step-more" open>
               <summary>What to do${s.note ? ' \u00b7 what to say' : ''}</summary>
               <p>${esc(s.action)}</p>
               ${s.note ? `<p class="wt-say-note"><span class="wt-say-label">Say</span> ${esc(s.note)}</p>` : ''}
             </details>
           </div>
-        </li>`).join(''));
+        </div>`).join(''));
+      /* The rail is drawn over the steps just written. */
+      if (typeof FormSteps !== 'undefined') FormSteps.init($(id('steps')));
+      syncRail();
+    }
+
+    /* The walkthrough already owns a current step — the strip reads it — so
+       the rail follows that and never argues with it. Moving the rail browses
+       the plan; Start and the strip's Next are what present it. */
+    function syncRail() {
+      const s = state();
+      if (!s || s.track !== key || typeof FormSteps === 'undefined') return;
+      const first = document.querySelector(`#${id('steps')} .wt-step`);
+      if (first) FormSteps.open(first, s.step);
     }
 
     /* The day at a glance: how many rows stand ready, read off the rows
@@ -556,6 +576,9 @@ const WalkthroughPage = (() => {
       const s = state();
       const mine = s ? s.track === key : false;
       show(id('start'), !mine); show(id('end'), mine);
+      /* renderStrip() calls this on every step change, so the rail follows
+         the presenter without a second wire. */
+      syncRail();
     }
 
     async function init() {

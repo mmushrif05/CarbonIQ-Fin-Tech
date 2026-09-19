@@ -208,3 +208,8 @@ body.wt-presenting .main [id], body.wt-presenting .partc-card, body.wt-presentin
 .wt-cue { box-shadow: 0 0 0 4px #d9782f !important; animation: wt-pulse 1.1s ease-in-out 4; position: relative; z-index: 1; }
 @keyframes wt-pulse { 0%, 100% { box-shadow: 0 0 0 4px #d9782f; } 50% { box-shadow: 0 0 0 9px rgba(217, 120, 47, 0.35); } }
 @media (prefers-reduced-motion: reduce) { .wt-cue { animation: none; } }
+
+/* One step on screen means the connector line between steps has nothing to
+   connect, so it is drawn only while the whole list is shown. */
+.walkthrough .wt-steps:has(.fs-rail) .wt-step::before { display: none; }
+.walkthrough .wt-steps:has(.fs-rail) .wt-step { padding-bottom: 0; }
