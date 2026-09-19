@@ -115,30 +115,39 @@
 .walkthrough .wt-language { margin: 0; padding-left: 18px; font-size: 13.5px; line-height: 1.55; display: grid; gap: 6px; }
 .walkthrough .wt-language em { font-style: normal; font-weight: 700; color: var(--wt-green-dk); }
 
-/* ── The strip: a floating bar under the topbar on every page while a
-   walkthrough is on, in the forest green so it reads as the presenter's
-   own rail and not as a warning. Nothing in it is a figure. ─── */
-/* ── The strip ──────────────────────────────────────────────
-   A quiet bar docked at the foot of the viewport while a walkthrough is
-   on, in the shell's own surface and ink rather than a colour of its own,
-   so the screen keeps its theme and the strip reads as a control. One
-   line: the step, its title and the buttons; the detail — what to do,
-   and behind Notes what to say — opens beneath it and is closed on any
-   screen that is not the step's own, where the bar says which screen is.
-   It never pushes the page: it floats over it. */
+/* ── The rail, and presenter mode ───────────────────────────
+   While a walkthrough is on the screen is the whole screen. The sidebar,
+   the topbar and the phone's navbar leave (body.wt-presenting), the page
+   takes the full width, and the rail sits at the top in the page's own
+   flow — it pushes the page down and never covers it. It shipped as a
+   bar floating over the foot of the viewport, and a bar that floats over
+   a screen hides the part of it a reader is being shown. Menu brings the
+   sidebar back over the page until the next screen opens; Full screen is
+   the browser's own, asked for on the press that starts a walkthrough.
+   The rail is in the shell's surface and ink rather than a colour of its
+   own, so the screen keeps its theme and the rail reads as a control. One
+   line: the step, its title and the buttons; the detail — what to do, and
+   behind Notes what to say — opens beneath it on the step's own screen,
+   where on any other screen the line says which screen the step is on. */
+body.wt-presenting .sidebar { display: none !important; }
+/* The sidebar comes back beneath the rail, never over it, so Menu stays
+   reachable to close it; the rail's height is read when the menu opens. */
+body.wt-presenting.wt-menu-open .sidebar { display: flex !important; transform: none !important; top: var(--wt-rail-h, 0px); box-shadow: 0 0 40px rgba(0, 0, 0, 0.28); }
+body.wt-presenting.wt-menu-open .wt-strip { z-index: 110; }
+body.wt-presenting .topbar, body.wt-presenting .mobile-navbar { display: none !important; }
+body.wt-presenting .main { margin-left: 0; padding-top: 0; }
+/* Anything scrolled to programmatically clears the rail. */
+body.wt-presenting .main [id], body.wt-presenting .partc-card, body.wt-presenting .partc-result { scroll-margin-top: 80px; }
 .wt-strip {
   --wt-strip-bg: #ffffff; --wt-strip-ink: #1f231f; --wt-strip-ink-2: #5f665d; --wt-strip-rule: #d9dcd7;
   --wt-strip-accent: #2f6b45; --wt-strip-on-accent: #ffffff; --wt-strip-soft: #eef3ee;
-  /* Docked inside the content area — the sidebar is 240px on a desk and
-     off-canvas on a phone — never centred on a viewport it does not own. */
-  position: fixed; left: 252px; right: 12px;
-  bottom: calc(12px + env(safe-area-inset-bottom, 0px));
-  max-width: 1040px; margin: 0 auto; min-width: 0; z-index: 40;
+  position: sticky; top: 0; z-index: 60;
+  width: 100%; min-width: 0; box-sizing: border-box;
   display: flex; flex-direction: column; gap: 0;
-  padding: 0; border-radius: 12px;
+  padding: env(safe-area-inset-top, 0px) 0 0 0;
   background: var(--wt-strip-bg); color: var(--wt-strip-ink);
-  border: 1px solid var(--wt-strip-rule); border-left: 4px solid var(--wt-strip-accent);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.16);
+  border-top: 3px solid var(--wt-strip-accent); border-bottom: 1px solid var(--wt-strip-rule);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   font-size: 12.5px; }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .wt-strip { --wt-strip-bg: #1f2325; --wt-strip-ink: #ece9e2; --wt-strip-ink-2: #a8ada6; --wt-strip-rule: #3a403d;
@@ -146,8 +155,7 @@
 }
 :root[data-theme="dark"] .wt-strip { --wt-strip-bg: #1f2325; --wt-strip-ink: #ece9e2; --wt-strip-ink-2: #a8ada6; --wt-strip-rule: #3a403d;
   --wt-strip-accent: #7fbf95; --wt-strip-on-accent: #141716; --wt-strip-soft: #263129; }
-@media (max-width: 768px) { .wt-strip { left: 12px; } }
-.wt-strip .wt-strip-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 7px 12px; min-width: 0; }
+.wt-strip .wt-strip-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 7px 16px; min-width: 0; }
 .wt-strip .wt-strip-kicker { font-size: 10.5px; letter-spacing: .09em; text-transform: uppercase; font-weight: 700; color: var(--wt-strip-accent); white-space: nowrap; }
 .wt-strip .wt-strip-n { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--wt-strip-ink-2); white-space: nowrap; font-weight: 700; }
 .wt-strip .wt-strip-dots { display: inline-flex; gap: 4px; align-items: center; }
@@ -157,15 +165,16 @@
 .wt-strip .wt-strip-title { flex: 1 1 200px; min-width: 0; font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wt-strip .wt-strip-where { font-size: 12px; color: var(--wt-strip-ink-2); white-space: nowrap; }
 .wt-strip .wt-strip-where:empty { display: none; }
-.wt-strip .wt-strip-detail { padding: 8px 12px 10px; border-top: 1px solid var(--wt-strip-rule); display: flex; flex-wrap: wrap; gap: 6px 14px; min-width: 0; }
+.wt-strip .wt-strip-detail { padding: 8px 16px 10px; border-top: 1px solid var(--wt-strip-rule); display: flex; flex-wrap: wrap; gap: 6px 14px; min-width: 0; }
 .wt-strip:not(.is-open) .wt-strip-detail { display: none; }
 .wt-strip .wt-strip-action { flex: 1 1 320px; min-width: 0; font-size: 12.5px; line-height: 1.45; color: var(--wt-strip-ink); }
 .wt-strip .wt-strip-say-row { flex-basis: 100%; font-style: italic; font-size: 12.5px; line-height: 1.45; color: var(--wt-strip-ink-2); }
 .wt-strip .wt-strip-say-row .wt-say-label { background: var(--wt-strip-soft); color: var(--wt-strip-accent); margin-right: 6px; }
 .wt-strip .wt-strip-buttons { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; margin-left: auto; }
-.wt-strip .wt-strip-buttons button { background: none; color: var(--wt-strip-ink); border: 1px solid var(--wt-strip-rule); border-radius: 999px;
+.wt-strip .wt-strip-buttons button, .wt-strip .wt-strip-menu { background: none; color: var(--wt-strip-ink); border: 1px solid var(--wt-strip-rule); border-radius: 999px;
   padding: 4px 10px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; line-height: 1.3; }
 .wt-strip .wt-strip-buttons button:hover:not(:disabled) { background: var(--wt-strip-soft); }
+.wt-strip .wt-strip-menu:hover, body.wt-menu-open .wt-strip .wt-strip-menu { background: var(--wt-strip-soft); }
 .wt-strip .wt-strip-buttons #wt-strip-next { background: var(--wt-strip-accent); color: var(--wt-strip-on-accent); border-color: var(--wt-strip-accent); }
 .wt-strip .wt-strip-buttons button:disabled { opacity: .45; cursor: default; }
 .wt-strip .wt-strip-buttons button:focus-visible { outline: 2px solid var(--wt-strip-accent); outline-offset: 1px; }

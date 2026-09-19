@@ -76,6 +76,17 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#page-bank')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
   await expect(page.locator('#wt-strip-n')).toHaveText('Step 1 of 7');
+  /* Presenter mode: the shell's chrome leaves, the page takes the whole
+     width, and the rail is a header at the top of the page rather than a
+     bar floating over it. Menu brings the sidebar back over the page. */
+  await expect(page.locator('#sidebar')).toBeHidden();
+  await expect(page.locator('.topbar')).toBeHidden();
+  expect((await page.locator('#wt-strip').boundingBox()).y).toBe(0);
+  expect((await page.locator('#main').boundingBox()).x).toBe(0);
+  await page.locator('#wt-strip-menu').click();
+  await expect(page.locator('#sidebar')).toBeVisible();
+  await page.locator('#wt-strip-menu').click();
+  await expect(page.locator('#sidebar')).toBeHidden();
   await expect(page.locator('#wt-strip-say-row')).toBeHidden();
   await page.locator('#wt-strip-notes').check();
   await expect(page.locator('#wt-strip-say-row')).toBeVisible();
@@ -159,10 +170,10 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#pr-detail-state')).toContainText('Approved');
   await expect(page.locator('#pr-detail-edit')).toBeHidden();
 
-  /* A reload keeps the walkthrough on. */
+  /* A reload keeps the walkthrough on, and presenter mode with it. */
   await page.reload();
-  await expect(page.locator('#sidebar')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
+  await expect(page.locator('#sidebar')).toBeHidden();
   await expect(page.locator('#wt-strip-n')).toHaveText('Step 6 of 7');
 
   /* Step 7: on the dashboard — the class in focus, the approved count moved;
@@ -177,6 +188,7 @@ test('the readiness rows are the position’s, and the strip follows the steps a
   await expect(page.locator('#wt-strip-next')).toHaveText('Finish');
   await page.locator('#wt-strip-next').click();
   await expect(page.locator('#wt-strip')).toBeHidden();
+  await expect(page.locator('#sidebar')).toBeVisible();
 
   /* A phone width: the page body never scrolls sideways. */
   await page.locator('.nav-item[data-page="walkthrough"]').click();
