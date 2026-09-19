@@ -458,11 +458,15 @@ const WalkthroughPage = (() => {
       renderSteps();
     }
 
-    /* Start is offered while no walkthrough is on; End while one is — on
-       either page, whichever started it. */
+    /* Start is offered unless THIS page's own walkthrough is on; End only
+       while it is. The strip holds one state for both pages, so a bank
+       walkthrough left running used to leave the GCF page reading End with
+       no way to start its own — and Next drove the bank's steps from the
+       GCF page. Starting here replaces whatever was on. */
     function syncControls() {
       const s = state();
-      show(id('start'), !s); show(id('end'), Boolean(s));
+      const mine = Boolean(s) && s.track === key;
+      show(id('start'), !mine); show(id('end'), mine);
     }
 
     async function init() {
