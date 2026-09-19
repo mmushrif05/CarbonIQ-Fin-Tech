@@ -348,6 +348,8 @@ _233 operations across 195 paths. Generated from `docs/openapi.json`, which is i
 | `POST` | `/v1/extract` | Extract construction materials from a BOQ |
 | `GET` | `/v1/extract/factors` | The A1-A3 material factors the engine multiplies by, with the source of each |
 | `POST` | `/v1/extract/upload` | Upload a BOQ PDF once and reuse its file id across extractions |
+| `POST` | `/v1/lending/attribution` | PCAF attribution for one facility — outstanding over equity plus debt, applied to the project's emissions |
+| `POST` | `/v1/lending/estimate` | A bill of materials priced on the factor table, with intensity and attribution — the wizard's review figures |
 | `GET` | `/v1/portfolio` | Portfolio carbon risk aggregation across the key's projects |
 | `GET` | `/v1/portfolio/sample` | The sample book — a worked example drawn only when the live portfolio has nothing to show |
 | `GET` | `/v1/projects` | List the organisation's lending projects |
@@ -381,6 +383,8 @@ _233 operations across 195 paths. Generated from `docs/openapi.json`, which is i
 | `POST` | `/v1/ndc-sdg/certificate` | Generate an SLGFT Green Loan Certificate |
 | `POST` | `/v1/ndc-sdg/certificate/verify` | Verify a certificate against its own audit hash |
 | `GET` | `/v1/ndc-sdg/framework` | SLGFT framework metadata, and the intensity screen in force |
+| `GET` | `/v1/taxonomy/frameworks` | The five frameworks the intensity screen draws, with their bands and what each band is |
+| `POST` | `/v1/taxonomy/screen` | One embodied-carbon intensity screened against the five frameworks |
 
 ### Operating the service
 
