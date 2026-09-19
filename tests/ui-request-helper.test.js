@@ -11,11 +11,14 @@
  * a read once more before giving up, and never asks a write twice.
  */
 
-const fs = require('fs');
-const path = require('path');
 const vm = require('vm');
 
-const SRC = fs.readFileSync(path.join(__dirname, '..', 'ui', 'config.js'), 'utf8');
+const { source } = require('./helpers/ui-source');
+
+/* Through the located helper, as every suite that reads the frontend does —
+   this one executes the file rather than sweeping it, and the instrument
+   holds the two the same way. */
+const SRC = source('ui/config.js').text;
 
 function boot(fetchImpl, stored) {
   const store = new Map(stored ? [['carboniq_config', JSON.stringify(stored)]] : []);
