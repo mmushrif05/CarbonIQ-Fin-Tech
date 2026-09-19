@@ -272,6 +272,9 @@ candidate — the served example, a tea-factory biomass boiler conversion with
 rooftop solar — followed from the door to the Fund. Every step opens the real
 screen with that candidate on it and marks the one control to press, and the
 readiness rows and the register move as the facts are recorded.
+Under the Pipeline tab's strip — Intake first, then the rest — a chip row
+names the candidate in focus; the walkthrough sets it to the example, every
+tab marks that candidate's own rows, and *All candidates* clears it.
 
 1. **Where we stand** — *GCF Overview.* Every candidate: the money by
    source, the gate as a verdict beside a word and a mark, the ten stages,

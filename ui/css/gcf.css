@@ -303,3 +303,21 @@
 /* The candidate a walkthrough step marks on the decision tab: an outline in
    the accent, the row it names and nothing re-ranked. */
 .gcf-focus { outline: 2px solid var(--gcf-accent); outline-offset: 3px; border-radius: 8px; background: var(--gcf-accent-soft); }
+
+/* The candidate in focus — a chip row under the tabs. The chosen chip takes
+   the accent the selected tab takes; every panel marks that candidate's
+   rows with .gcf-focus. Chips wrap; the row never sets the page width. */
+.gcf-focus-row {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin: -4px 0 14px; min-width: 0;
+}
+.gcf-focus-label { font-size: 11px; letter-spacing: .04em; text-transform: uppercase; color: var(--gcf-muted); font-weight: 600; }
+.gcf-focus-chips { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.gcf-focus-chip {
+  font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--gcf-line); background: var(--gcf-surface); color: var(--gcf-muted);
+  max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.gcf-focus-chip:hover { color: var(--gcf-ink); }
+.gcf-focus-chip.is-on { background: var(--gcf-accent-soft); border-color: var(--gcf-accent); color: var(--gcf-ink); }
+.gcf-focus-chip:focus-visible { outline: 2px solid var(--gcf-accent); outline-offset: 2px; }
