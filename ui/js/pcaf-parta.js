@@ -988,7 +988,8 @@ const PCAFPartAPage = (() => {
         <text class="parta-axis-label parta-bar-label-end" x="${W - PAD_R}" y="${H - 8}">${last.year}</text>
       </svg>`;
 
-    const declinePct = (1 - last.avoided_tCO2e / first.avoided_tCO2e) * 100;
+    /* The decline is the engine's figure, beside the series it describes. */
+    const declinePct = Number.isFinite(Number(life.declinePct)) ? Number(life.declinePct) : null;
     /* In metered mode the headline is what actually happened, so a 25-year
        curve beside it has to say plainly that it is a projection FROM that
        year — otherwise ex-post and ex-ante sit together unlabelled. */
@@ -1001,8 +1002,8 @@ const PCAFPartAPage = (() => {
         : '')
       + (metered ? ' · projected forward from the metered year' : '');
     el('paChartNote').textContent =
-      `Output falls ${life.degradationPct}% a year, so the final year avoids ${_round(declinePct, 1)}% `
-      + `less than the first. ${life.trajectory === 'flat'
+      `Output falls ${life.degradationPct}% a year, so the final year avoids ${declinePct === null ? 'less' : `${declinePct}% less`} `
+      + `than the first. ${life.trajectory === 'flat'
         ? 'The grid factor is held flat across the whole life, which is conservative in one '
           + 'direction only: on a grid that is decarbonising this OVERSTATES the later years.'
         : 'A declining grid factor has been applied year by year.'}`;

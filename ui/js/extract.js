@@ -28,24 +28,13 @@ const ExtractPage = (() => {
   const API_ENDPOINT = '/v1/extract';
   const FETCH_TIMEOUT_MS = 15_000;
 
-  /* There is no emission factor table here, and there must not be one.
-     A copy lived in this file and the page multiplied by it, handing back rows
-     sourced "ICE v3" that no engine had computed. Densities stay below because
-     converting m3 to kg is a unit conversion the row states on its own face; a
-     factor is a measurement, and measurements come from the engine. */
-
-  /** Standard densities for unit conversion (kg / m³) */
-  const DENSITIES = Object.freeze({
-    concrete:   2400,
-    steel:      7850,
-    timber:      550,
-    glass:      2500,
-    aluminium:  2700,
-    masonry:    1800,
-    insulation:   30,
-    plastics:    950,
-    other:      1000,
-  });
+  /* There is no emission factor table here, no density table and no unit
+     conversion, and there must not be. A copy of the factor table lived in
+     this file and the page multiplied by it, handing back rows sourced
+     "ICE v3" that no engine had computed; a density table then stayed to
+     convert cubic metres, which is a measurement of the material as much as
+     a factor is. The browser-side parse below reads lines and quantities as
+     they are written; every conversion and every figure is the engine's. */
 
   /** Tailwind-free colour tokens mapped to ICE categories */
   const CATEGORY_COLORS = Object.freeze({
@@ -362,19 +351,20 @@ Internal fit-out and services:
       }
 
       const category  = _detectCategory(name);
-      const qtyKg     = _toKilograms(rawQty, rawUnit, category);
+      /* The quantity as written, in the unit written. Only a kilogram figure
+         is a kilogram figure; anything else is left for the engine to
+         convert, because a density is a measurement this page does not hold. */
+      const isKg      = rawUnit.toLowerCase() === 'kg';
 
       materials.push({
         name,
         category,
-        quantity:         qtyKg != null ? parseFloat(qtyKg.toFixed(1)) : null,
+        quantity:         isKg && rawQty != null ? parseFloat(rawQty.toFixed(1)) : null,
         originalQuantity: rawQty,
         originalUnit:     rawUnit,
         recycledContent:  null,
         confidence:       category === 'other' ? 'low' : 'high',
-        notes:            rawUnit.toLowerCase() !== 'kg'
-          ? `Converted from ${rawQty} ${rawUnit} using standard density`
-          : '',
+        notes:            isKg ? '' : `${rawQty} ${rawUnit} as written — not converted here; the engine converts`,
         /* Absent, not zero. Null is "the engine has not measured this"; zero
            would be "this material has no impact", which is a different claim
            and one no line here is entitled to make. */
@@ -415,15 +405,6 @@ Internal fit-out and services:
       if (re.test(name)) return cat;
     }
     return 'other';
-  }
-
-  function _toKilograms(qty, unit, category) {
-    if (qty == null) return null;
-    const u = unit.toLowerCase();
-    if (u === 'kg')                 return qty;
-    if (u === 't' || /tonnes?/.test(u)) return qty * 1000;
-    if (u === 'm3')                 return qty * (DENSITIES[category] ?? DENSITIES.other);
-    return qty; // m, m2, pieces — return as-is (no density conversion)
   }
 
   /* ──────────────────────────────────────────────────────────

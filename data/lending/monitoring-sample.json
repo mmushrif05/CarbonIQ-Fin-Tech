@@ -1,0 +1,12 @@
+{
+  "_meta": {
+    "label": "SAMPLE DATA",
+    "what": "Three illustrative monitoring years for one construction loan. Every figure here is invented.",
+    "why": "The Monitoring screen needs a series to draw when a project has no recorded entries yet. It is served by GET /v1/projects/:projectId/monitoring with source 'sample' and the screen says so; a recorded entry replaces it entirely."
+  },
+  "entries": [
+    { "year": 2024, "outstanding": 62000000, "equity": 80000000, "debt": 120000000, "emissions": 10500, "dq": 4 },
+    { "year": 2025, "outstanding": 56000000, "equity": 80000000, "debt": 120000000, "emissions": 10180, "dq": 3 },
+    { "year": 2026, "outstanding": 50000000, "equity": 80000000, "debt": 120000000, "emissions": 10000, "dq": 2 }
+  ]
+}

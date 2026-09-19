@@ -174,6 +174,8 @@ function assessExposure(input) {
             trajectory: derivedGeneration.lifetime.trajectory,
             trajectoryNote: derivedGeneration.lifetime.trajectoryNote,
             degradationNote: derivedGeneration.lifetime.degradationNote,
+            /* The decline is a ratio, so it is the same attributed or not. */
+            declinePct: derivedGeneration.lifetime.declinePct,
 
             /* The ATTRIBUTED series, so anything plotting a lifetime curve
                reads it from the same place it reads the total. Previously

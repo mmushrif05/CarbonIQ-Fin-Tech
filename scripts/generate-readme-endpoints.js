@@ -36,8 +36,8 @@ const GROUPS = [
   ['The GCF pipeline', p => p.startsWith('/v1/gcf')],
   ['The capital book and the Fund Desk', p => p.startsWith('/v1/capital') || p.startsWith('/v1/desk')],
   ['Baselines', p => p.startsWith('/v1/baselines')],
-  ['Lending — assessment, scoring, covenants', p => /^\/v1\/(assess|extract|projects|portfolio|reports|agent|supervisor|webhooks|assurance)/.test(p)],
-  ['Sri Lanka — taxonomy, NDC and carbon pricing', p => p.startsWith('/v1/ndc-sdg') || p.startsWith('/v1/carbon-pricing')],
+  ['Lending — assessment, scoring, covenants', p => /^\/v1\/(assess|extract|projects|portfolio|lending|reports|agent|supervisor|webhooks|assurance)/.test(p)],
+  ['Sri Lanka — taxonomy, NDC and carbon pricing', p => p.startsWith('/v1/ndc-sdg') || p.startsWith('/v1/carbon-pricing') || p.startsWith('/v1/taxonomy')],
   ['Operating the service', p => p.startsWith('/v1/jobs') || p.startsWith('/v1/metrics') || p.startsWith('/v1/openapi')],
 ];
 

@@ -5,7 +5,8 @@
     "why": "The Dashboard and Portfolio screens need something to draw when GET /v1/portfolio has nothing to give — either because no projects are linked to the API key yet, or because the API could not be reached. Rendering zeros in that situation reads as 'this bank finances nothing carbon-intensive', which is a different claim from 'we have not measured yet'.",
     "howToReplace": "Link real projects to your API key (npm run key:create ... --projects) and the screens switch to live figures on their own. Nothing here is ever mixed into a live portfolio: the two are all-or-nothing, and the page says which one it is showing.",
     "internallyConsistent": "The totals reconcile on purpose. Region emissions and asset-class emissions each sum to totalFinancedEmissions_tCO2e; region outstanding sums to totalOutstanding; taxonomyDistribution and every region project count sum to totalProjects; dqDistribution is a percentage split whose weighted mean is exactly weightedDQ; assetTypes sums to 100.",
-    "partC": "The insurance-associated position is a SEPARATE inventory from the financed emissions above and is never added to them: financed emissions are what the institution lends against, insurance-associated emissions are what it underwrites. PCAF keeps the two apart and so does this file. These sample figures are drawn only when the real book holds no locked assessment for the reporting year, and the screen says which it is showing."
+    "partC": "The insurance-associated position is a SEPARATE inventory from the financed emissions above and is never added to them: financed emissions are what the institution lends against, insurance-associated emissions are what it underwrites. PCAF keeps the two apart and so does this file. These sample figures are drawn only when the real book holds no locked assessment for the reporting year, and the screen says which it is showing.",
+    "intensity": "topContributors carry an embodied-carbon intensity (kgCO2e per square metre) so the Taxonomy screen can place a sample project against the five frameworks; it is invented like every other figure here."
   },
   "totalProjects": 87,
   "totalFinancedEmissions_tCO2e": 48230,
@@ -109,7 +110,8 @@
       "region": "Singapore",
       "buildingType": "Commercial",
       "loanOutstanding": 185000000,
-      "cfsScore": 82
+      "cfsScore": 82,
+      "intensity_kgCO2e_m2": 380
     },
     {
       "projectId": "SG-2024-015",
@@ -119,7 +121,8 @@
       "region": "Singapore",
       "buildingType": "Commercial",
       "loanOutstanding": 142000000,
-      "cfsScore": 58
+      "cfsScore": 58,
+      "intensity_kgCO2e_m2": 455
     },
     {
       "projectId": "MY-2024-003",
@@ -129,7 +132,8 @@
       "region": "Malaysia",
       "buildingType": "Residential",
       "loanOutstanding": 98000000,
-      "cfsScore": 74
+      "cfsScore": 74,
+      "intensity_kgCO2e_m2": 415
     },
     {
       "projectId": "HK-2024-008",
@@ -139,7 +143,8 @@
       "region": "Hong Kong",
       "buildingType": "Mixed-Use",
       "loanOutstanding": 210000000,
-      "cfsScore": 32
+      "cfsScore": 32,
+      "intensity_kgCO2e_m2": 620
     },
     {
       "projectId": "SG-2024-042",
@@ -149,7 +154,8 @@
       "region": "Singapore",
       "buildingType": "Industrial",
       "loanOutstanding": 76000000,
-      "cfsScore": 51
+      "cfsScore": 51,
+      "intensity_kgCO2e_m2": 500
     },
     {
       "projectId": "TH-2024-004",
@@ -159,7 +165,8 @@
       "region": "Thailand",
       "buildingType": "Mixed-Use",
       "loanOutstanding": 64000000,
-      "cfsScore": 37
+      "cfsScore": 37,
+      "intensity_kgCO2e_m2": 500
     },
     {
       "projectId": "MY-2024-019",
@@ -169,7 +176,8 @@
       "region": "Malaysia",
       "buildingType": "Industrial",
       "loanOutstanding": 71000000,
-      "cfsScore": 55
+      "cfsScore": 55,
+      "intensity_kgCO2e_m2": 500
     },
     {
       "projectId": "HK-2024-021",
@@ -179,7 +187,8 @@
       "region": "Hong Kong",
       "buildingType": "Residential",
       "loanOutstanding": 88000000,
-      "cfsScore": 71
+      "cfsScore": 71,
+      "intensity_kgCO2e_m2": 500
     }
   ],
   "regulatoryReadiness": [

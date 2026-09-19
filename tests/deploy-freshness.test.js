@@ -52,11 +52,18 @@ describe('Every file the shell fetches by a stable name is revalidated', () => {
     ['page fragments',   '/pages/*'],
     ['page modules',     '/js/*'],
     ['stylesheets',      '/css/*'],
-    ['bundled data',     '/data/*'],
   ])('%s are never served without asking (%s)', (_label, glob) => {
     const rule = rules.find(r => r.glob === glob);
     expect(rule).toBeTruthy();
     expect(rule.value).toMatch(/no-cache|no-store|max-age=0/);
+  });
+
+  test('the site publishes no data directory, so no rule for one is needed', () => {
+    /* The sample book was a static file under /data/, fetched without a
+       credential; it is served by the API now. A cache rule for a path that
+       does not exist would read as if something were still there. */
+    expect(fs.existsSync(path.join(ROOT, 'ui', 'data'))).toBe(false);
+    expect(rules.find(r => r.glob === '/data/*')).toBeUndefined();
   });
 
   test('no rule tells a browser to hold one of them', () => {

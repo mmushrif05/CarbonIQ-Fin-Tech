@@ -30,7 +30,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
       + 'benchmark, declared — and are deliberately not PCAF\'s 1-5 data-quality scale.',
     response: body({
       resultsAreas: obj, irmf: obj, ndc3: obj, instruments: obj,
-      criteria: arr(), defaultWeights: obj, accreditation: obj, cycle: obj, vocabulary: obj, storage: obj,
+      criteria: arr(), defaultWeights: obj, accreditation: obj, sizeCeilings_usd: obj, cycle: obj, vocabulary: obj, storage: obj,
     }, ['resultsAreas', 'irmf', 'ndc3', 'instruments']) }), (_req, res) => {
   res.json({
     resultsAreas: AREAS,
@@ -42,6 +42,7 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
     /* The shipped accreditation — reference data, cached. The entity's own,
        once recorded, is read by every gate and by GET /v1/gcf/portfolio. */
     accreditation: store.seedMeta().accreditation,
+    sizeCeilings_usd: screening.SIZE_CEILINGS_USD,
     /* The project cycle as the screen draws it: the ten stages, the record's
        stage vocabulary on them, the next step per stage, the milestone keys,
        the service standards with their sources. */

@@ -81,6 +81,7 @@ const OVERRIDES = Object.freeze([
   { method: 'POST', pattern: /^\/v1\/score$/, scope: 'read', why: 'Carbon Finance Score, stateless' },
   { method: 'POST', pattern: /^\/v1\/pcaf$/, scope: 'read', why: 'financed-emissions formatter, stateless' },
   { method: 'POST', pattern: /^\/v1\/taxonomy/, scope: 'read', why: 'taxonomy alignment, stateless' },
+  { method: 'POST', pattern: /^\/v1\/lending\//, scope: 'read', why: 'the lending calculators — attribution and the bill-of-materials estimate — store nothing' },
   { method: 'POST', pattern: /^\/v1\/covenant/, scope: 'read', why: 'covenant check, stateless' },
   { method: 'POST', pattern: /^\/v1\/carbon-pricing/, scope: 'read', why: 'carbon-pricing exposure, stateless' },
   { method: 'POST', pattern: /^\/v1\/pcaf\/part-c\/dq-preview$/, scope: 'read', why: 'data-quality preview, nothing persisted' },

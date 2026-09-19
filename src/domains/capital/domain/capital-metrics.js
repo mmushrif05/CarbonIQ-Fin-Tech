@@ -205,6 +205,9 @@ function emissionsLedger(book, { attributionBasis = 'outstanding' } = {}) {
       scale: 'PCAF scale 1-5, where 1 is the highest data quality and 5 the lowest.',
       investmentsScored: scored.length,
       investmentsWithoutScore: held.length - scored.length,
+      /* The share of the book the score speaks for — a 2.40 over a fifth of
+         a book and a 2.40 over all of it are different claims. */
+      coveragePct: held.length ? Math.round((scored.length / held.length) * 100) : null,
       note: held.length && !scored.length
         ? 'No holding carries a data-quality score. Unscored holdings are excluded from the weighting.'
         : (scored.length && weightBase === 0

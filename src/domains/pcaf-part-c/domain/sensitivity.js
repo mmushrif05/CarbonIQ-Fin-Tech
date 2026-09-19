@@ -42,6 +42,17 @@ function moduleContributions({ a4, a5, construction }) {
 }
 
 /**
+ * The share of the construction figure that material quantities reach at
+ * all: A4 transport and A5.3 waste, the only two paths a bill of quantities
+ * has into the total. It is why a variation order moves the figure far less
+ * than a reader expects, and the screen used to add it up for itself.
+ */
+function materialPathSharePct(rows) {
+  return rows.filter(m => m.module === 'A4' || m.module === 'A5.3')
+    .reduce((t, m) => t + (m.sharePct || 0), 0);
+}
+
+/**
  * Rank the factors by the emissions flowing through them.
  *
  * A factor's materiality is the sum of the values of every leaf node that
@@ -123,10 +134,11 @@ function analyse({ a4, a5, construction, tree }) {
   const factorRank = factorMateriality(tree, constructionValue);
   return {
     moduleContributions: moduleContributions({ a4, a5, construction }),
+    materialPathSharePct: materialPathSharePct(moduleContributions({ a4, a5, construction })),
     rankedInputs: rankedInputs({ a4, a5, construction }),
     factorMateriality: factorRank,
     topFactorGaps: factorRank.filter(f => f.gap || f.isFallback).slice(0, 10)
   };
 }
 
-module.exports = { analyse, moduleContributions, factorMateriality, rankedInputs };
+module.exports = { analyse, moduleContributions, materialPathSharePct, factorMateriality, rankedInputs };

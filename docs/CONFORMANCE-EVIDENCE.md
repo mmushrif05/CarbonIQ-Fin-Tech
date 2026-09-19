@@ -130,7 +130,7 @@ proved or it is not.
 | PCAF Part C | `C-ATTR-01` | Part C v2 — attribution | `tests/pcaf-partc-engine.test.js` | 23 | executed |
 | PCAF Part C | `C-ATTR-02` | Part C v2 — double counting | `tests/pcaf-partc-engine.test.js` | 23 | executed |
 | PCAF Part C | `C-ATTR-03` | Part C v2 — aggregation | `tests/pcaf-partc-lifecycle.test.js` | 52 | executed |
-| PCAF Part C | `C-METH-01` | RICS WLCA 2nd ed — A4 | `tests/pcaf-partc-engine.test.js` | 52 | executed |
+| PCAF Part C | `C-METH-01` | RICS WLCA 2nd ed — A4 | `tests/pcaf-partc-engine.test.js` | 54 | executed |
 | PCAF Part C | `C-METH-02` | RICS WLCA 2nd ed — A5 | `tests/pcaf-partc-engine.test.js` | 61 | executed |
 | PCAF Part C | `C-METH-03` | RICS WLCA 2nd ed, Table 18 | `tests/pcaf-partc-engine.test.js` | — | no code path cited |
 | PCAF Part C | `C-METH-04` | IPCC 2019 Refinement Table 7.9; IPCC AR5 | `tests/pcaf-partc-engine.test.js` | 32 | executed |
@@ -171,23 +171,23 @@ proved or it is not.
 | GCF pipeline | `G-NDC-02` | Sri Lanka NDC 3.0 — cumulative over 2026-2035 | `tests/gcf-emissions.test.js` | 71 | executed |
 | GCF pipeline | `G-NDC-03` | Sri Lanka NDC 3.0 — targets are percentages against a BAU scenario | `tests/gcf-emissions.test.js` | 71 | executed |
 | GCF pipeline | `G-NDC-04` | Sri Lanka NDC 3.0 — no net-zero year is stated | `tests/ndc3-currency.test.js` | 14 | executed |
-| GCF pipeline | `G-ACCR-01` | ToR section 1.1 — Board decision B.36/10, E&S category B/I-2 | `tests/gcf-screening.test.js` | 151 | executed |
-| GCF pipeline | `G-ACCR-02` | ToR section 1.1 — medium size (USD 50-250m) | `tests/gcf-screening.test.js` | 151 | executed |
-| GCF pipeline | `G-ACCR-03` | ToR section 1.1 — modalities: basic, project management, on-lending and blending. The grant box is not ticked. | `tests/gcf-screening.test.js` | 237 | executed |
+| GCF pipeline | `G-ACCR-01` | ToR section 1.1 — Board decision B.36/10, E&S category B/I-2 | `tests/gcf-screening.test.js` | 152 | executed |
+| GCF pipeline | `G-ACCR-02` | ToR section 1.1 — medium size (USD 50-250m) | `tests/gcf-screening.test.js` | 152 | executed |
+| GCF pipeline | `G-ACCR-03` | ToR section 1.1 — modalities: basic, project management, on-lending and blending. The grant box is not ticked. | `tests/gcf-screening.test.js` | 238 | executed |
 | GCF pipeline | `G-ACCR-04` | ToR section 1.1 — three open accreditation conditions | `tests/gcf-cn-package.test.js` | 143 | executed |
-| GCF pipeline | `G-LOT2-01` | ToR Lot 2 — screening candidates and recommending Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
-| GCF pipeline | `G-LOT2-02` | GCF investment framework — six investment criteria | `tests/gcf-screening.test.js` | 151 | executed |
-| GCF pipeline | `G-LOT2-03` | ToR Lot 2 — at least two high-potential concepts, up to two Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
+| GCF pipeline | `G-LOT2-01` | ToR Lot 2 — screening candidates and recommending Concept Notes | `tests/gcf-screening.test.js` | 152 | executed |
+| GCF pipeline | `G-LOT2-02` | GCF investment framework — six investment criteria | `tests/gcf-screening.test.js` | 152 | executed |
+| GCF pipeline | `G-LOT2-03` | ToR Lot 2 — at least two high-potential concepts, up to two Concept Notes | `tests/gcf-screening.test.js` | 152 | executed |
 | GCF pipeline | `G-LOT2-04` | ToR Lot 2 — five to seven innovative instruments evaluated | `tests/gcf-screening.test.js` | 86 | executed |
 | GCF pipeline | `G-LOT2-05` | ToR Lot 2 — viability with and without concessional support; GCF minimum concessionality | `tests/gcf-screening.test.js` | 86 | executed |
-| GCF pipeline | `G-LOT2-06` | GCF investment policy — no minimum co-financing requirement | `tests/gcf-reporting.test.js` | 85 | executed |
+| GCF pipeline | `G-LOT2-06` | GCF investment policy — no minimum co-financing requirement | `tests/gcf-reporting.test.js` | 86 | executed |
 | GCF pipeline | `G-REPORT-01` | SLFRS S2 §29(a); GRI 305-1/2/3 | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-REPORT-02` | GRI 305-5 | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-REPORT-03` | SLFRS S1 §27; SLFRS S2 §6, §25, §33 | `tests/gcf-reporting.test.js` | 92 | executed |
 | GCF pipeline | `G-REPORT-04` | Report honesty — a checklist answered from the report | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-CN-01` | GCF Concept Note / Funding Proposal structure, sections A-H | `tests/gcf-cn-package.test.js` | 143 | executed |
 | GCF pipeline | `G-CN-02` | GCF policies — NDA no-objection, gender assessment, ESIA/ESMP, FPIC | `tests/gcf-cn-package.test.js` | 143 | executed |
-| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 171 | executed |
+| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 172 | executed |
 | GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 171 | executed |
 | GCF pipeline | `G-CYCLE-01` | GCF project activity cycle — ten stages from programming to closure | `tests/gcf-cycle.test.js` | 46 | executed |
 | GCF pipeline | `G-CYCLE-02` | ToR Lot 1, Milestone 4 — systems and procedures to capture data; a pipeline has a time axis | `tests/gcf-cycle.test.js` | 84 | executed |

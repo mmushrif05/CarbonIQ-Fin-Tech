@@ -2958,3 +2958,9 @@ body.adj-open { overflow: hidden; }
 /* The assurance badge inside a KPI card sits under the meter, on its own
    line, so it never competes with the figure for the first glance. */
 .kpi-assurance { margin-top: 10px; display: flex; }
+
+/* The lending screens print what the API returns; these are the lines that say so. */
+.mon-source { margin: 8px 0 0; font-size: 12px; color: var(--text-tertiary); }
+.mon-source[hidden] { display: none; }
+.pcaf-scope-note { margin: 10px 0 0; font-size: 12px; color: var(--text-tertiary); line-height: 1.45; }
+.np-review-wait { color: var(--text-secondary); font-size: 13px; }

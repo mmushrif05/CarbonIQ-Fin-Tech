@@ -148,6 +148,9 @@ function a4Total(materials = [], distances = {}) {
 
   node.items    = items;
   node.vitalFew = vitalFew.map(i => ({ name: i.label, value: i.value, contributionPct: i.contributionPct }));
+  /* The share of A4 the vital few carry, as a fraction — the arc the screen
+     draws, computed where the figures are rather than summed in the browser. */
+  node.vitalFewShare = Math.max(0, Math.min(1, vitalFew.reduce((t, i) => t + (i.contributionPct || 0), 0)));
   return node;
 }
 

@@ -6,23 +6,16 @@
    ============================================================ */
 
 const Monitoring = (() => {
-  // Demo projects list (used when API unavailable)
-  const DEMO_PROJECTS = [
-    { id: 'SG-2024-001', name: 'Marina Bay Tower',          region: 'SG' },
-    { id: 'SG-2024-017', name: 'Orchard Green Residences',  region: 'SG' },
-    { id: 'SG-2025-003', name: 'Jurong Data Centre',        region: 'SG' },
-    { id: 'MY-2024-003', name: 'KL Eco Residences',         region: 'MY' },
-    { id: 'HK-2024-008', name: 'Kowloon Gateway',           region: 'HK' },
-  ];
-
-  // Demo history keyed by projectId
-  const DEMO_HISTORY = {
-    default: [
-      { year: 2024, outstanding: 62e6, equity: 80e6, debt: 120e6, attribution: 0.31, emissions: 10500, financed: 3255, dq: 4 },
-      { year: 2025, outstanding: 56e6, equity: 80e6, debt: 120e6, attribution: 0.28, emissions: 10180, financed: 2850, dq: 3 },
-      { year: 2026, outstanding: 50e6, equity: 80e6, debt: 120e6, attribution: 0.25, emissions: 10000, financed: 2500, dq: 2, current: true },
-    ],
-  };
+  /*
+   * No arithmetic and no sample lives here. The series, each year's
+   * attribution and financed figure, the timeline bar lengths and the
+   * year-on-year comparison — the emissions movement, the data-quality trend
+   * and the PCAF fluctuation analysis — are what
+   * `GET /v1/projects/:id/monitoring` returns; where a project has no
+   * recorded entry it answers the illustrative series and says so
+   * (`source: sample`). The project list comes from the portfolio, or from
+   * the sample book the API serves when the portfolio is empty.
+   */
 
   let _projects = null;
   let _currentId = null;
@@ -36,49 +29,37 @@ const Monitoring = (() => {
   // ── Fetch project list ────────────────────────────────────
   async function _loadProjects() {
     if (_projects) return _projects;
+    const fromContributors = (data) => (data.topContributors || []).map(p => ({
+      id: p.projectId,
+      name: p.name || p.projectId,
+      region: p.region || p.projectId.slice(0, 2),
+    }));
     try {
-      // Try to get projects from portfolio API
       const res = await window.CARBONIQ_fetch('/v1/portfolio');
       if (res.ok) {
         const data = await res.json();
         if (data.topContributors && data.topContributors.length > 0) {
-          _projects = data.topContributors.map(p => ({
-            id: p.projectId,
-            name: p.name || p.projectId,
-            region: p.projectId.slice(0, 2),
-          }));
+          _projects = fromContributors(data);
           return _projects;
         }
       }
     } catch (_) {}
-    _projects = DEMO_PROJECTS;
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/portfolio/sample');
+      if (res.ok) {
+        _projects = fromContributors(await res.json());
+        if (_projects.length) return _projects;
+      }
+    } catch (_) {}
+    _projects = [];
     return _projects;
   }
 
   // ── Fetch project history ─────────────────────────────────
   async function _loadHistory(projectId) {
-    // First try GET /v1/projects/:projectId/monitoring for persisted entries
-    try {
-      const res = await window.CARBONIQ_fetch(`/v1/projects/${projectId}/monitoring`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.entries && data.entries.length > 0) {
-          return data.entries;
-        }
-      }
-    } catch (_) {}
-    // Fall back to PCAF history
-    try {
-      const res = await window.CARBONIQ_fetch(`/v1/projects/${projectId}/pcaf`);
-      if (res.ok) {
-        const data = await res.json();
-        // If API returns pcaf history array, use it
-        if (data.annualHistory && data.annualHistory.length > 0) {
-          return data.annualHistory;
-        }
-      }
-    } catch (_) {}
-    return DEMO_HISTORY[projectId] || DEMO_HISTORY.default;
+    const res = await window.CARBONIQ_fetch(`/v1/projects/${encodeURIComponent(projectId)}/monitoring`);
+    if (!res.ok) throw new Error(`The monitoring history could not be read (${res.status}).`);
+    return res.json();
   }
 
   // ── Build project selector ────────────────────────────────
@@ -95,79 +76,90 @@ const Monitoring = (() => {
   function _renderTimeline(history) {
     const wrap = $$('mon-timeline');
     if (!wrap) return;
-    const maxAttr = Math.max(...history.map(h => h.attribution));
     wrap.innerHTML = history.map(h => `
       <div class="tl-row${h.current ? ' highlight' : ''}">
         <div class="tl-year">${h.year}</div>
         <div class="tl-bar-area">
-          <div class="tl-bar${h.current ? ' tl-current' : ''}" style="width:${Math.round((h.attribution/maxAttr)*100)}%">
+          <div class="tl-bar${h.current ? ' tl-current' : ''}" style="width:${h.timelineBarPct}%">
             <span>${h.attribution.toFixed(2)}</span>
           </div>
         </div>
-        <div class="tl-detail">${_fmtM(h.outstanding)} / ${_fmtM(h.equity + h.debt)}</div>
+        <div class="tl-detail">${_fmtM(h.outstanding)} / ${_fmtM(h.totalValue)}</div>
       </div>
     `).join('');
   }
 
   // ── Render KPI cards ──────────────────────────────────────
-  function _renderKPIs(history) {
-    if (history.length < 2) return;
-    const cur  = history[history.length - 1];
-    const prev = history[history.length - 2];
+  function _renderKPIs(comparison) {
+    const emEl = $$('mon-kpi-em');
+    const dqEl = $$('mon-kpi-dq');
+    const flEl = $$('mon-kpi-fluct');
+    if (!comparison) {
+      const one = '<div class="kpi-secondary">One year recorded — a comparison needs two.</div>';
+      if (emEl) emEl.innerHTML = one;
+      if (dqEl) dqEl.innerHTML = one;
+      if (flEl) flEl.innerHTML = one;
+      return;
+    }
+    const c = comparison;
 
     // Emissions vs last year
-    const emChg = ((cur.financed - prev.financed) / prev.financed * 100).toFixed(1);
-    const emSign = emChg < 0 ? '' : '+';
-    const emEl = $$('mon-kpi-em');
     if (emEl) {
+      const chg = c.financed.changePct;
+      const sign = chg === null || chg < 0 ? '' : '+';
       emEl.innerHTML = `
-        <div class="kpi-value ${emChg < 0 ? 'kpi-value-green' : 'kpi-value-red'}">${emSign}${emChg}%</div>
-        <div class="kpi-secondary">${_fmtN(cur.financed)} vs ${_fmtN(prev.financed)} tCO2e</div>
+        <div class="kpi-value ${chg !== null && chg < 0 ? 'kpi-value-green' : 'kpi-value-red'}">${chg === null ? '—' : `${sign}${chg}%`}</div>
+        <div class="kpi-secondary">${_fmtN(c.financed.current)} vs ${_fmtN(c.financed.previous)} tCO2e</div>
       `;
     }
 
     // DQ trend
-    const dqEl = $$('mon-kpi-dq');
     if (dqEl) {
-      const improving = cur.dq < prev.dq;
+      const improving = c.dataQuality.trend === 'improving';
       const arrow = improving
         ? `<svg width="20" height="14" viewBox="0 0 20 14"><path d="M2 7h16M14 2l4 5-4 5" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
         : `<svg width="20" height="14" viewBox="0 0 20 14"><path d="M2 7h16M14 2l4 5-4 5" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+      const label = { improving: 'Improving', weakening: 'Weakening', stable: 'Stable' }[c.dataQuality.trend] || 'Not scored';
       dqEl.innerHTML = `
         <div class="dq-trend">
-          <span class="dq-badge dq-${prev.dq}">${prev.dq}</span>
+          <span class="dq-badge dq-${c.dataQuality.previous}">${c.dataQuality.previous ?? '—'}</span>
           ${arrow}
-          <span class="dq-badge dq-${cur.dq}">${cur.dq}</span>
+          <span class="dq-badge dq-${c.dataQuality.current}">${c.dataQuality.current ?? '—'}</span>
         </div>
-        <div class="kpi-secondary">${improving ? 'Improving' : 'Stable'} over ${history.length} years</div>
+        <div class="kpi-secondary">${label} over ${c.dataQuality.years} years</div>
       `;
     }
 
-    // Fluctuation analysis (PCAF v3)
-    const attrChg  = Math.round((cur.attribution - prev.attribution) * prev.emissions);
-    const emissChg = Math.round((cur.emissions - prev.emissions) * cur.attribution);
-    const netChg   = attrChg + emissChg;
-    const flEl = $$('mon-kpi-fluct');
+    // Fluctuation analysis (PCAF Part A)
     if (flEl) {
+      const f = c.fluctuation;
       const sign = (n) => n < 0 ? '' : '+';
       const cls  = (n) => n < 0 ? 'fluct-neg' : 'fluct-pos';
       flEl.innerHTML = `
         <div class="fluctuation-breakdown">
           <div class="fluct-row">
             <span>Attribution change</span>
-            <span class="fluct-val ${cls(attrChg)}">${sign(attrChg)}${_fmtN(attrChg)} tCO2e</span>
+            <span class="fluct-val ${cls(f.attributionEffect_tCO2e)}">${sign(f.attributionEffect_tCO2e)}${_fmtN(f.attributionEffect_tCO2e)} tCO2e</span>
           </div>
           <div class="fluct-row">
             <span>Emissions change</span>
-            <span class="fluct-val ${cls(emissChg)}">${sign(emissChg)}${_fmtN(emissChg)} tCO2e</span>
+            <span class="fluct-val ${cls(f.emissionsEffect_tCO2e)}">${sign(f.emissionsEffect_tCO2e)}${_fmtN(f.emissionsEffect_tCO2e)} tCO2e</span>
           </div>
           <div class="fluct-row fluct-total">
             <span>Net change</span>
-            <span class="fluct-val ${cls(netChg)}">${sign(netChg)}${_fmtN(netChg)} tCO2e</span>
+            <span class="fluct-val ${cls(f.net_tCO2e)}">${sign(f.net_tCO2e)}${_fmtN(f.net_tCO2e)} tCO2e</span>
           </div>
         </div>
       `;
     }
+  }
+
+  /** Which series this is — recorded, or the illustrative one — said on the page. */
+  function _renderSource(data) {
+    const el = $$('mon-source');
+    if (!el) return;
+    el.hidden = data.source !== 'sample';
+    el.textContent = data.source === 'sample' ? 'Illustrative dataset — not client records.' : '';
   }
 
   // ── Render history table ──────────────────────────────────
@@ -183,7 +175,7 @@ const Monitoring = (() => {
         <td>${h.attribution.toFixed(2)}</td>
         <td>${_fmtN(h.emissions)} tCO2e</td>
         <td>${_fmtN(h.financed)} tCO2e</td>
-        <td><span class="dq-badge dq-${h.dq}">${h.dq}</span></td>
+        <td><span class="dq-badge dq-${h.dq}">${h.dq ?? '—'}</span></td>
       </tr>
     `).join('');
   }
@@ -191,11 +183,18 @@ const Monitoring = (() => {
   // ── Load a project ────────────────────────────────────────
   async function loadProject(projectId) {
     _currentId = projectId;
-    _history = await _loadHistory(projectId);
-    _renderTimeline(_history);
-    _renderKPIs(_history);
-    _renderTable(_history);
     const loader = $$('mon-loading');
+    try {
+      const data = await _loadHistory(projectId);
+      _history = data.entries;
+      _renderSource(data);
+      _renderTimeline(data.entries);
+      _renderKPIs(data.comparison);
+      _renderTable(data.entries);
+    } catch (err) {
+      const tbody = $$('mon-tbody');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="mon-msg-error">${String(err instanceof Error ? err.message : err).replace(/[<>&]/g, '')}</td></tr>`;
+    }
     if (loader) loader.style.display = 'none';
   }
 
@@ -226,48 +225,28 @@ const Monitoring = (() => {
       return;
     }
 
-    const attribution = outstanding / (equity + debt);
-    const financed    = Math.round(emissions * attribution);
-
-    // Add to local history immediately for responsive UI
-    const newRow = { year, outstanding, equity, debt, attribution, emissions, financed, dq, current: true };
-    if (_history) {
-      _history = _history.map(h => ({ ...h, current: false }));
-      _history.push(newRow);
-    }
-    _renderTimeline(_history);
-    _renderKPIs(_history);
-    _renderTable(_history);
-
-    // POST to API to persist the entry
+    // The entry is priced where it is recorded; the screen re-reads the series.
+    const msg = $$('mon-modal-msg');
     try {
-      const res = await window.CARBONIQ_fetch(`/v1/projects/${_currentId}/monitoring`, {
+      const res = await window.CARBONIQ_fetch(`/v1/projects/${encodeURIComponent(_currentId)}/monitoring`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          year,
-          outstanding,
-          equity,
-          debt,
-          emissions,
-          dq,
-        }),
+        body: JSON.stringify({ year, outstanding, equity, debt, emissions, dq }),
       });
-      const successMsg = `Annual update submitted. Attribution factor: ${attribution.toFixed(3)}, Financed emissions: ${_fmtN(financed)} tCO2e`;
-      const msg = $$('mon-modal-msg');
-      if (res.ok) {
-        if (msg) { msg.textContent = successMsg; msg.className = 'mon-msg-success'; }
-        if (typeof Toast !== 'undefined' && Toast.success) Toast.success(successMsg);
-      } else {
-        const errMsg = `Update saved locally. API error: ${res.status}`;
-        if (msg) { msg.textContent = errMsg; msg.className = 'mon-msg-success'; }
-        if (typeof Toast !== 'undefined' && Toast.success) Toast.success(errMsg);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errMsg = data.message || `The update was refused (${res.status}).`;
+        if (msg) { msg.textContent = errMsg; msg.className = 'mon-msg-error'; }
+        return;
       }
-    } catch (_) {
-      const msg = $$('mon-modal-msg');
-      const offlineMsg = `Annual update saved locally. Attribution factor: ${attribution.toFixed(3)}, Financed emissions: ${_fmtN(financed)} tCO2e`;
-      if (msg) { msg.textContent = offlineMsg; msg.className = 'mon-msg-success'; }
-      if (typeof Toast !== 'undefined' && Toast.success) Toast.success(offlineMsg);
+      const successMsg = `Annual update recorded. Attribution factor: ${Number(data.attribution).toFixed(3)}, Financed emissions: ${_fmtN(data.financed)} tCO2e`;
+      if (msg) { msg.textContent = successMsg; msg.className = 'mon-msg-success'; }
+      if (typeof Toast !== 'undefined' && Toast.success) Toast.success(successMsg);
+      await loadProject(_currentId);
+    } catch (err) {
+      const offlineMsg = err instanceof Error ? err.message : String(err);
+      if (msg) { msg.textContent = offlineMsg; msg.className = 'mon-msg-error'; }
+      return;
     }
     setTimeout(closeModal, 2500);
   }
@@ -288,7 +267,8 @@ const Monitoring = (() => {
     const sel = $$('mon-project-select');
     if (sel) {
       sel.addEventListener('change', (e) => loadProject(e.target.value));
-      await loadProject(sel.value || projects[0]?.id || 'SG-2024-001');
+      if (sel.value || projects[0]?.id) await loadProject(sel.value || projects[0].id);
+      else { const loader2 = $$('mon-loading'); if (loader2) loader2.style.display = 'none'; }
     }
   }
 

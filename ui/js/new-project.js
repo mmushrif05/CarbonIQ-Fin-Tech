@@ -8,57 +8,64 @@
 
 const NewProject = (() => {
   /**
-   * The material factors are **not** held here.
+   * Neither the material factors nor the arithmetic are held here.
    *
-   * A copy lived in this file and disagreed with the engine's — timber at
-   * 0.263 against -1.00, aluminium at 8.240 against 6.67 — and the screen
-   * multiplied by it, so the carbon total on the review step, and the SLGFT
-   * tier drawn from that total, were computed on factors the engine does not
-   * use. A relationship manager filling this in with a client saw a figure
-   * this product would not stand behind.
+   * A copy of the factor table lived in this file and disagreed with the
+   * engine's — timber at 0.263 against -1.00, aluminium at 8.240 against 6.67
+   * — and the screen multiplied by it, so the carbon total on the review
+   * step, and the SLGFT tier drawn from that total, were computed on factors
+   * the engine does not use. The table then came from `GET /v1/extract/factors`
+   * and the browser still did the multiplying, the intensity, the attribution
+   * and two taxonomy quick-checks on thresholds no framework publishes.
    *
-   * They come from `GET /v1/extract/factors` now, which serves what the
-   * engine multiplies by, with the source of each row.
+   * `POST /v1/lending/estimate` prices the bill now and returns every figure
+   * the bill and the review step print; the factor route is read only for
+   * the category list the dropdown offers. `POST /v1/taxonomy/screen` answers
+   * the quick-check. This module computes nothing.
    */
-  let _factors = null;
+  let _categories = null;
 
-  async function loadFactors() {
-    if (_factors) return _factors;
+  async function loadCategories() {
+    if (_categories) return _categories;
     const res = await window.CARBONIQ_fetch('/v1/extract/factors');
-    _factors = res.factors || null;
-    return _factors;
+    const data = await res.json();
+    _categories = Object.keys(data.factors || {});
+    return _categories;
+  }
+
+  /** The engine's pricing of the bill as it stands — lines, totals, attribution. */
+  let _estimate = null;
+  let _estimateTicket = 0;
+
+  async function _priceBill() {
+    const ticket = ++_estimateTicket;
+    const body = {
+      materials: _materials.map(m => ({ name: m.name, category: m.category, qty: m.qty, unit: m.unit })),
+      floorArea_m2: parseFloat($$('np-proj-area')?.value || 0) || undefined,
+      loan: {
+        outstanding: parseFloat($$('np-outstanding')?.value || 0) * 1e6 || undefined,
+        equity:      parseFloat($$('np-equity')?.value || 0) * 1e6 || undefined,
+        debt:        parseFloat($$('np-debt')?.value || 0) * 1e6 || undefined,
+      },
+    };
+    const res = await window.CARBONIQ_fetch('/v1/lending/estimate', { method: 'POST', body: JSON.stringify(body) });
+    if (!res.ok) throw new Error(`The estimate was refused (${res.status}).`);
+    const data = await res.json();
+    if (ticket !== _estimateTicket) return null;   // a later bill is already being priced
+    _estimate = data;
+    return data;
   }
 
   let _step = 1;
   const _materials = [
-    { name: 'Concrete C30/37', category: 'Concrete', qty: 850000, unit: 'kg' },
-    { name: 'Rebar Steel',     category: 'Steel',    qty: 120000, unit: 'kg' },
-    { name: 'Float Glass',     category: 'Glass',    qty: 45000,  unit: 'kg' },
+    { name: 'Concrete C30/37', category: 'concrete', qty: 850000, unit: 'kg' },
+    { name: 'Rebar Steel',     category: 'steel',    qty: 120000, unit: 'kg' },
+    { name: 'Float Glass',     category: 'glass',    qty: 45000,  unit: 'kg' },
   ];
 
   // ── Helpers ───────────────────────────────────────────────
   function $$(id)  { return document.getElementById(id); }
   function _fmtN(n){ return Math.round(n).toLocaleString('en-US'); }
-  /** The factor for a category, or absent — never a stand-in. */
-  function _factorFor(category) {
-    if (!_factors) return null;
-    const row = _factors[String(category || '').toLowerCase()];
-    return row && typeof row.factor === 'number' ? row.factor : null;
-  }
-
-  /**
-   * The line's figure, or null where the factor is not known.
-   *
-   * Null rather than a default: a line priced at 0.5 because nothing matched
-   * is a measurement nobody made, and it used to be summed into the total the
-   * review step showed. */
-  function _kgCO2e(mat) {
-    const factor = _factorFor(mat.category);
-    if (factor === null) return null;
-    const qty = mat.unit === 'tonnes' ? mat.qty * 1000 : mat.qty;
-    return qty * factor;
-  }
-
   // ── Step navigation ───────────────────────────────────────
   function goTo(step) {
     _step = step;
@@ -79,8 +86,8 @@ const NewProject = (() => {
       if (panel) panel.style.display = i === step ? 'block' : 'none';
     }
 
-    if (step === 2) _renderBOM();
-    if (step === 4) _runReview();
+    if (step === 2) _repriceBOM();
+    if (step === 4) void _runReview();
   }
 
   // ── BOM rendering ─────────────────────────────────────────
@@ -88,14 +95,14 @@ const NewProject = (() => {
     const tbody = $$('np-bom-tbody');
     if (!tbody) return;
 
+    const lines = (_estimate && _estimate.lines) || [];
     tbody.innerHTML = _materials.map((m, i) => {
-      const co2 = _kgCO2e(m);
-      const factor = _factorFor(m.category);
-      const catOpts = Object.keys(_factors || {}).map(k =>
+      const line = lines[i] && lines[i].category === String(m.category || '').toLowerCase() ? lines[i] : null;
+      const catOpts = (_categories || []).map(k =>
         `<option value="${k}" ${k === m.category ? 'selected' : ''}>${k}</option>`
       ).join('');
       return `<tr>
-        <td><input type="text" class="form-input form-input-sm" value="${m.name}"
+        <td><input type="text" class="form-input form-input-sm" value="${esc(m.name)}"
           data-action-change="NewProject.editMaterial" data-index="${i}" data-field="name" /></td>
         <td><select class="form-input form-input-sm"
           data-action-change="NewProject.editMaterial" data-index="${i}" data-field="category">${catOpts}</select></td>
@@ -108,8 +115,8 @@ const NewProject = (() => {
             <option value="tonnes" ${m.unit==='tonnes'?'selected':''}>tonnes</option>
           </select>
         </td>
-        <td class="cell-auto">${factor === null ? '—' : factor.toFixed(3)}</td>
-        <td class="cell-computed">${co2 === null ? '—' : _fmtN(co2)}</td>
+        <td class="cell-auto">${line && line.factor !== null ? line.factor.toFixed(3) : '—'}</td>
+        <td class="cell-computed">${line && line.kgCO2e !== null ? _fmtN(line.kgCO2e) : '—'}</td>
         <td><button class="btn-icon-sm" data-action="NewProject.removeMaterial" data-arg="${i}">×</button></td>
       </tr>`;
     }).join('');
@@ -118,19 +125,20 @@ const NewProject = (() => {
   }
 
   function _renderBOMTotal() {
-    /* A line with no factor is not counted as zero, and the count of what was
-       left out travels with the total — a total drawn from six of nine lines
-       means something different from one drawn from all nine. */
-    const priced = _materials.map(_kgCO2e).filter(v => v !== null);
-    const total = priced.reduce((s, v) => s + v, 0);
-    const missing = _materials.length - priced.length;
+    /* The total and the count of what was left out are the engine's: a line
+       with no factor is not counted as zero, and a total drawn from six of
+       nine lines means something different from one drawn from all nine. */
     const el = $$('np-bom-total');
-    if (el) {
-      el.textContent = !_factors
-        ? 'Factors not loaded'
-        : `${_fmtN(total)} kgCO2e${missing > 0 ? ` (${missing} line${missing === 1 ? '' : 's'} unpriced)` : ''}`;
-    }
-    return total;
+    if (!el) return;
+    const t = _estimate && _estimate.totals;
+    if (!t) { el.textContent = 'Not yet priced'; return; }
+    const missing = t.unpricedCount || 0;
+    el.textContent = `${_fmtN(t.totalKgCO2e)} kgCO2e${missing > 0 ? ` (${missing} line${missing === 1 ? '' : 's'} unpriced)` : ''}`;
+  }
+
+  /** Price the bill again and redraw it; a refusal leaves the last answer standing. */
+  function _repriceBOM() {
+    _priceBill().then(() => _renderBOM()).catch(() => { _renderBOM(); });
   }
 
   /*
@@ -161,17 +169,17 @@ const NewProject = (() => {
 
   function _updateMat(idx, field, value) {
     _materials[idx][field] = value;
-    _renderBOM();
+    _repriceBOM();
   }
 
   function _removeMat(idx) {
     _materials.splice(idx, 1);
-    _renderBOM();
+    _repriceBOM();
   }
 
   function addMaterial() {
-    _materials.push({ name: '', category: 'Concrete', qty: 0, unit: 'kg' });
-    _renderBOM();
+    _materials.push({ name: '', category: 'concrete', qty: 0, unit: 'kg' });
+    _repriceBOM();
     // Focus the new name input
     const rows = document.querySelectorAll('#np-bom-tbody tr');
     const last = rows[rows.length - 1];
@@ -267,65 +275,87 @@ const NewProject = (() => {
   }
 
   // ── Step 4: Review & Score ────────────────────────────────
-  function _runReview() {
+  /**
+   * The review step prints what two reads return and computes nothing:
+   * `POST /v1/lending/estimate` prices the bill and attributes it, and
+   * `POST /v1/taxonomy/screen` places the intensity against the five
+   * frameworks. The quick-check used to screen on 1,000 and 900 kgCO2e/m2,
+   * two thresholds no framework publishes, held in this file.
+   */
+  async function _runReview() {
+    const panel = $$('np-review-body');
+    if (!panel) return;
+    panel.innerHTML = '<p class="np-review-wait">Pricing the bill…</p>';
+
+    let est;
+    try { est = await _priceBill(); } catch (err) {
+      panel.innerHTML = `<p class="mon-msg-error">${esc(err instanceof Error ? err.message : String(err))}</p>`;
+      return;
+    }
+    if (!est) return;
+
     const name         = $$('np-proj-name')?.value?.trim() || 'New Project';
     const type         = $$('np-proj-type')?.value || 'Commercial';
     const region       = $$('np-proj-region')?.value || 'SG';
-    const area         = parseFloat($$('np-proj-area')?.value || 0);
     const slsicSector  = $$('np-slsic-sector')?.value || '';
     const activityCode = ($$('np-activity-code')?.value || '').trim().toUpperCase();
-    const outstanding  = parseFloat($$('np-outstanding')?.value || 50) * 1e6;
-    const equity       = parseFloat($$('np-equity')?.value || 80) * 1e6;
-    const debt         = parseFloat($$('np-debt')?.value || 120) * 1e6;
+    const t = est.totals;
+    const attribution = est.attribution;
+    const intensity = t.intensity_kgCO2e_m2;
 
-    /* Unpriced lines are skipped, not counted as zero — the same rule the
-       running total follows, so the review step and the bill agree. */
-    const pricedLines = _materials.map(_kgCO2e).filter(v => v !== null);
-    const unpricedCount = _materials.length - pricedLines.length;
-    const totalKgCO2e = pricedLines.reduce((sum, v) => sum + v, 0);
-    const totalTCO2e  = totalKgCO2e / 1000;
-    const intensity   = area > 0 ? (totalKgCO2e / area).toFixed(1) : '—';
-    const attribution = outstanding / (equity + debt);
-    const financed    = Math.round(totalTCO2e * attribution);
-
-    // Taxonomy quick-checks
-    const SG_THRESHOLD = 1000;
-    const EU_THRESHOLD = 450;
-    const sgAligned = area > 0 && (totalKgCO2e / area) < SG_THRESHOLD;
-    const euAligned = area > 0 && (totalKgCO2e / area) < EU_THRESHOLD * 2;
+    /* The screen, where there is an intensity to screen. */
+    let screen = null;
+    if (intensity !== null) {
+      try {
+        const res = await window.CARBONIQ_fetch('/v1/taxonomy/screen', {
+          method: 'POST', body: JSON.stringify({ intensity_kgCO2e_m2: intensity, country: 'LK' }),
+        });
+        if (res.ok) screen = await res.json();
+      } catch (_) { screen = null; }
+    }
+    const fw = id => screen ? screen.frameworks.find(f => f.id === id) : null;
+    const quick = (id) => {
+      const f = fw(id);
+      if (!f) return { cls: 'badge-neutral', text: intensity === null ? 'Pending (no area)' : 'Not screened' };
+      return f.tier === 'aligned'
+        ? { cls: 'badge-green', text: 'Likely Aligned' }
+        : { cls: 'badge-amber', text: 'Review Needed' };
+    };
+    const sg = quick('sg');
+    const eu = quick('eu');
 
     // Sri Lanka SLGFT quick-check
     let lkSection = '';
     if (region === 'LK') {
-      const intVal = area > 0 ? (totalKgCO2e / area) : null;
       const actMatch = _slgft ? _slgft.activities[activityCode] : null;
-      /* The bands come from the registry that governs them, never from a
-         constant here. This screen used to carry 600/900 while the endpoint
-         beside it screened on 520/780 — two answers to one question about
-         what a bank may call a green loan. */
-      const bands = _slgft && _slgft.screen ? _slgft.screen : null;
+      const sl = fw('sl');
       let lkTier, lkBadge;
       if (actMatch && actMatch.eligibility === 'direct') {
         lkTier = 'Directly Eligible'; lkBadge = 'badge-blue';
-      } else if (!bands) {
+      } else if (intensity === null) {
+        lkTier = 'Pending (no area)'; lkBadge = 'badge-red';
+      } else if (!sl) {
         /* Absence is an answer: a tier assigned on a band this screen invented
            would be quoted as the taxonomy's. */
         lkTier = 'Not screened — bands unavailable'; lkBadge = 'badge-amber';
-      } else if (intVal !== null && intVal <= bands.green) {
+      } else if (sl.tier === 'aligned') {
         lkTier = 'Green — Aligned';  lkBadge = 'badge-green';
-      } else if (intVal !== null && intVal <= bands.transition) {
+      } else if (sl.tier === 'transition') {
         lkTier = 'Transition';        lkBadge = 'badge-amber';
       } else {
-        lkTier = intVal === null ? 'Pending (no area)' : 'Not Aligned'; lkBadge = 'badge-red';
+        lkTier = 'Not Aligned'; lkBadge = 'badge-red';
       }
       const actDesc = actMatch ? ` — ${esc(actMatch.label)}` : '';
+      const bandNote = sl
+        ? ` <span style="color:var(--text-tertiary);font-weight:400">(screen: ≤${sl.threshold_kgCO2e_m2} green${sl.provisional ? ', provisional' : ''})</span>`
+        : '';
       lkSection = `
         <div class="review-section review-section-full slgft-review-section">
           <h4>🇱🇰 Sri Lanka Green Finance Taxonomy (SLGFT)</h4>
           <div class="review-row"><span>SLGFT Tier</span><strong><span class="kpi-badge ${lkBadge}">${lkTier}</span></strong></div>
-          ${slsicSector ? `<div class="review-row"><span>SLSIC Sector</span><strong>Sector ${slsicSector}</strong></div>` : ''}
-          ${activityCode ? `<div class="review-row"><span>Activity Code</span><strong>${activityCode}${actDesc}</strong></div>` : ''}
-          ${intVal !== null ? `<div class="review-row"><span>Intensity</span><strong>${intVal.toFixed(1)} kgCO2e/m²${bands ? ` <span style="color:var(--text-tertiary);font-weight:400">(screen: ≤${bands.green} green, ≤${bands.transition} transition${bands.provisional ? ', provisional' : ''})</span>` : ''}</strong></div>` : ''}
+          ${slsicSector ? `<div class="review-row"><span>SLSIC Sector</span><strong>Sector ${esc(slsicSector)}</strong></div>` : ''}
+          ${activityCode ? `<div class="review-row"><span>Activity Code</span><strong>${esc(activityCode)}${actDesc}</strong></div>` : ''}
+          ${intensity !== null ? `<div class="review-row"><span>Intensity</span><strong>${intensity.toFixed(1)} kgCO2e/m²${bandNote}</strong></div>` : ''}
           <div class="review-row"><span>NDC Contribution</span><strong>NDC 3.0 &mdash; 20.09% cumulative GHG reduction vs BAU, 2026–2035</strong></div>
           <div class="review-row"><span>Key SDGs</span><strong>SDG 7 · 9 · 11 · 13 · 14 · 15</strong></div>
           <div style="margin-top:8px">
@@ -336,40 +366,39 @@ const NewProject = (() => {
         </div>`;
     }
 
-    const panel = $$('np-review-body');
-    if (!panel) return;
     panel.innerHTML = `
       <div class="review-grid">
         <div class="review-section">
           <h4>Project Summary</h4>
-          <div class="review-row"><span>Name</span><strong>${name}</strong></div>
-          <div class="review-row"><span>Type</span><strong>${type}</strong></div>
-          <div class="review-row"><span>Region</span><strong>${region}${region === 'LK' ? ' 🇱🇰' : ''}</strong></div>
-          <div class="review-row"><span>Floor Area</span><strong>${area ? _fmtN(area)+' m²' : '—'}</strong></div>
+          <div class="review-row"><span>Name</span><strong>${esc(name)}</strong></div>
+          <div class="review-row"><span>Type</span><strong>${esc(type)}</strong></div>
+          <div class="review-row"><span>Region</span><strong>${esc(region)}${region === 'LK' ? ' 🇱🇰' : ''}</strong></div>
+          <div class="review-row"><span>Floor Area</span><strong>${t.floorArea_m2 ? _fmtN(t.floorArea_m2)+' m²' : '—'}</strong></div>
         </div>
         <div class="review-section">
           <h4>Carbon Footprint</h4>
-          <div class="review-row"><span>Total Embodied</span><strong>${_fmtN(totalKgCO2e)} kgCO2e</strong></div>
-          <div class="review-row"><span>Intensity</span><strong>${intensity} kgCO2e/m²</strong></div>
-          ${unpricedCount > 0 ? `<div class="review-row"><span>Not counted</span><strong>${unpricedCount} line${unpricedCount === 1 ? '' : 's'} with no factor</strong></div>` : ''}
+          <div class="review-row"><span>Total Embodied</span><strong>${_fmtN(t.totalKgCO2e)} kgCO2e</strong></div>
+          <div class="review-row"><span>Intensity</span><strong>${intensity === null ? '—' : intensity.toFixed(1)} kgCO2e/m²</strong></div>
+          ${t.unpricedCount > 0 ? `<div class="review-row"><span>Not counted</span><strong>${t.unpricedCount} line${t.unpricedCount === 1 ? '' : 's'} with no factor</strong></div>` : ''}
           <div class="review-row"><span>Materials</span><strong>${_materials.length} items</strong></div>
         </div>
         <div class="review-section">
           <h4>PCAF Attribution</h4>
-          <div class="review-row"><span>Attribution Factor</span><strong>${attribution.toFixed(3)}</strong></div>
-          <div class="review-row"><span>Financed Emissions</span><strong>${_fmtN(financed)} tCO2e</strong></div>
-          <div class="review-row"><span>Outstanding</span><strong>${window.CARBONIQ_money.moneyShort(outstanding, 'USD')}</strong></div>
+          <div class="review-row"><span>Attribution Factor</span><strong>${attribution ? attribution.factor.toFixed(3) : '—'}</strong></div>
+          <div class="review-row"><span>Financed Emissions</span><strong>${attribution ? _fmtN(attribution.financedEmissions_tCO2e) : '—'} tCO2e</strong></div>
+          <div class="review-row"><span>Outstanding</span><strong>${attribution ? window.CARBONIQ_money.moneyShort(attribution.outstanding, 'USD') : '—'}</strong></div>
         </div>
         <div class="review-section">
           <h4>Taxonomy Quick-Check</h4>
           <div class="review-row">
             <span>SG Green Mark</span>
-            <strong><span class="kpi-badge ${sgAligned?'badge-green':'badge-amber'}">${sgAligned?'Likely Aligned':'Review Needed'}</span></strong>
+            <strong><span class="kpi-badge ${sg.cls}">${sg.text}</span></strong>
           </div>
           <div class="review-row">
             <span>EU Taxonomy</span>
-            <strong><span class="kpi-badge ${euAligned?'badge-green':'badge-amber'}">${euAligned?'Likely Aligned':'Review Needed'}</span></strong>
+            <strong><span class="kpi-badge ${eu.cls}">${eu.text}</span></strong>
           </div>
+          ${screen ? `<div class="review-row"><span>Basis</span><strong style="font-weight:400;color:var(--text-tertiary)">Indicative embodied-carbon proxies — the frameworks decide alignment on other evidence</strong></div>` : ''}
         </div>
         ${lkSection}
       </div>
@@ -391,7 +420,9 @@ const NewProject = (() => {
     if (msg) { msg.textContent = 'Submitting…'; msg.className = ''; }
 
     const name        = $$('np-proj-name')?.value?.trim() || 'New Project';
-    const totalKgCO2e = _materials.reduce((s, m) => s + _kgCO2e(m), 0);
+    /* The total is the engine's, priced on the review step; a bill the engine
+       has not priced carries no total rather than one summed here. */
+    const totalKgCO2e = _estimate && _estimate.totals ? _estimate.totals.totalKgCO2e : null;
     const bomText     = _materials.map(m =>
       `${m.name}: ${m.qty} ${m.unit} (${m.category})`
     ).join('\n');
@@ -416,7 +447,7 @@ const NewProject = (() => {
         debt:        parseFloat($$('np-debt')?.value || 0) * 1e6,
         currency:    $$('np-currency')?.value || 'USD',
       },
-      totalEmbodiedCarbon_kgCO2e: totalKgCO2e,
+      ...(totalKgCO2e !== null && { totalEmbodiedCarbon_kgCO2e: totalKgCO2e }),
     };
 
     try {
@@ -444,7 +475,7 @@ const NewProject = (() => {
       });
       if (res.ok) {
         const data = await res.json();
-        const successMsg = `Project submitted${savedProjectId ? ` (ID: ${savedProjectId})` : ''}. AI assessment complete — ${data.assessment?.materials?.length || _materials.length} materials, ${_fmtN(Math.round(data.assessment?.carbonTotals?.totalKgCO2e || totalKgCO2e))} kgCO2e.`;
+        const successMsg = `Project submitted${savedProjectId ? ` (ID: ${savedProjectId})` : ''}. AI assessment complete — ${data.assessment?.materials?.length || _materials.length} materials, ${_fmtN(Math.round(data.assessment?.carbonTotals?.totalKgCO2e ?? totalKgCO2e ?? 0))} kgCO2e.`;
         if (msg) { msg.textContent = successMsg; msg.className = 'mon-msg-success'; }
         if (typeof Toast !== 'undefined' && Toast.success) Toast.success(successMsg);
         // Refresh dashboard data
@@ -454,7 +485,9 @@ const NewProject = (() => {
       }
     } catch (_) {
       // Graceful offline mode
-      const offlineMsg = `Project saved locally. Total: ${_fmtN(Math.round(totalKgCO2e))} kgCO2e. Connect to API for full assessment.`;
+      const offlineMsg = totalKgCO2e === null
+        ? 'The API did not answer, so the project was not assessed.'
+        : `Project saved locally. Total: ${_fmtN(Math.round(totalKgCO2e))} kgCO2e. Connect to API for full assessment.`;
       if (msg) { msg.textContent = offlineMsg; msg.className = 'mon-msg-success'; }
       if (typeof Toast !== 'undefined' && Toast.success) Toast.success(offlineMsg);
     } finally {
@@ -482,7 +515,7 @@ const NewProject = (() => {
        screen must never describe a code, or assign a tier, from something it
        has not got. */
     loadSlgft().catch(() => { _slgft = null; });
-    loadFactors().then(() => _renderBOM()).catch(() => { _factors = null; });
+    loadCategories().then(() => _repriceBOM()).catch(() => { _categories = null; _repriceBOM(); });
     goTo(1);
   }
 

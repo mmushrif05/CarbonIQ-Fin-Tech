@@ -26,26 +26,13 @@ const PCAFCalculator = (() => {
     dq:            '2',
   };
 
-  const DQ_LABELS = {
-    '1': 'Verified Reported',
-    '2': 'Unverified Reported',
-    '3': 'Physical Activity-Based',
-    '4': 'Economic (Revenue Known)',
-    '5': 'Economic (Revenue Unknown)',
-  };
-
-  // Scope split by project type + phase.
-  // Construction phase is always dominated by Scope 3 (embodied carbon).
-  const SCOPE_SPLITS = {
-    Construction: { s1: 0.08, s2: 0.14, s3: 0.78 },
-    Operational: {
-      Commercial:     { s1: 0.08, s2: 0.42, s3: 0.50 },
-      Residential:    { s1: 0.15, s2: 0.35, s3: 0.50 },
-      Industrial:     { s1: 0.35, s2: 0.40, s3: 0.25 },
-      Infrastructure: { s1: 0.20, s2: 0.30, s3: 0.50 },
-      'Mixed-Use':    { s1: 0.10, s2: 0.40, s3: 0.50 },
-    },
-  };
+  /*
+   * No arithmetic lives here. The attribution factor, the financed figure,
+   * the economic intensity and the scope lines are what
+   * `POST /v1/lending/attribution` returns; this module keys the form in and
+   * prints the answer. The formulas, the scope profiles and the data-quality
+   * labels used to be constants in this file, published to every browser.
+   */
 
   // ── Helpers ──────────────────────────────────────────────────
 
@@ -55,11 +42,6 @@ const PCAFCalculator = (() => {
 
   function _fmtMoney(n, currency) {
     return `${currency} ${_fmt(n)}`;
-  }
-
-  function _round(n, decimals = 1) {
-    const factor = Math.pow(10, decimals);
-    return Math.round(n * factor) / factor;
   }
 
   /**
@@ -82,11 +64,6 @@ const PCAFCalculator = (() => {
     return parseFloat(_val(id)) || 0;
   }
 
-  function _getScopeSplit(phase, type) {
-    if (phase === 'Construction') return SCOPE_SPLITS.Construction;
-    return SCOPE_SPLITS.Operational[type] || SCOPE_SPLITS.Operational.Commercial;
-  }
-
   function _showError(msg) {
     const el = document.getElementById('pcaf-error');
     if (!el) return;
@@ -98,15 +75,13 @@ const PCAFCalculator = (() => {
     _showError('');
   }
 
-  // ── Core Calculation ─────────────────────────────────────────
+  // ── The engine's answer ──────────────────────────────────────
 
-  function calculate() {
+  let _pending = 0;
+
+  async function calculate() {
     _clearError();
 
-    const outstanding  = _num('pcaf-outstanding');
-    const equity       = _num('pcaf-equity');
-    const debt         = _num('pcaf-debt');
-    const emissions    = _num('pcaf-emissions');
     const projectName  = _val('pcaf-project-name') || 'Unnamed Project';
     const loanId       = _val('pcaf-loan-id') || '—';
     const currency     = _val('pcaf-currency') || 'USD';
@@ -115,62 +90,51 @@ const PCAFCalculator = (() => {
     const dqScore      = /** @type {HTMLInputElement|null} */
       (document.querySelector('input[name="dq"]:checked'))?.value || '2';
 
-    // Validation
-    if (outstanding <= 0) { _showError('Outstanding amount must be greater than 0.'); return; }
-    if (equity < 0 || debt < 0) { _showError('Equity and debt cannot be negative.'); return; }
-    if (emissions <= 0) { _showError('Project emissions must be greater than 0.'); return; }
+    const body = {
+      outstanding:     _num('pcaf-outstanding'),
+      equity:          _num('pcaf-equity'),
+      debt:            _num('pcaf-debt'),
+      emissions_tCO2e: _num('pcaf-emissions'),
+      projectPhase, projectType,
+      dqScore: Number(dqScore),
+    };
 
-    const totalValue = equity + debt;
-    if (totalValue <= 0) { _showError('Total project value (Equity + Debt) must be greater than 0.'); return; }
+    const ticket = ++_pending;
+    let answer;
+    try {
+      const res = await window.CARBONIQ_fetch('/v1/lending/attribution', { method: 'POST', body: JSON.stringify(body) });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { _showError(data.message || `The calculation was refused (${res.status}).`); return; }
+      answer = data;
+    } catch (err) {
+      _showError(err instanceof Error ? err.message : String(err));
+      return;
+    }
+    /* A late answer never draws over a newer one. */
+    if (ticket !== _pending) return;
 
-    // PCAF attribution: Outstanding / (Equity + Debt), capped at 1
-    const attribution      = Math.min(1, outstanding / totalValue);
-    const financedEmissions = _round(attribution * emissions, 1);
-    const economicIntensity = outstanding > 0
-      ? _round(financedEmissions / (outstanding / 1e6), 1)
-      : 0;
-
-    // Scope breakdown applied to financed emissions
-    const split = _getScopeSplit(projectPhase, projectType);
-    const s1    = _round(financedEmissions * split.s1, 1);
-    const s2    = _round(financedEmissions * split.s2, 1);
-    const s3    = _round(financedEmissions * split.s3, 1);
-
-    // Bar widths relative to the largest scope
-    const maxScope  = Math.max(s1, s2, s3, 1);
-    const s1Pct     = Math.round((s1 / maxScope) * 100);
-    const s2Pct     = Math.round((s2 / maxScope) * 100);
-    const s3Pct     = Math.round((s3 / maxScope) * 100);
-
-    // Render
-    _render({
-      attribution:       _round(attribution, 3),
-      outstanding,
-      equity,
-      debt,
-      totalValue,
-      financedEmissions,
-      economicIntensity,
+    const r = {
+      attribution:        answer.attribution,
+      outstanding:        answer.outstanding,
+      equity:             answer.equity,
+      debt:               answer.debt,
+      totalValue:         answer.totalValue,
+      financedEmissions:  answer.financedEmissions_tCO2e,
+      economicIntensity:  answer.economicIntensity_tCO2e_per_M,
       dqScore,
-      dqLabel:           DQ_LABELS[dqScore] || '—',
-      emissions,
-      currency,
-      projectName,
-      loanId,
-      s1, s2, s3,
-      s1Pct, s2Pct, s3Pct,
-      projectType,
-      projectPhase,
-    });
+      dqLabel:            answer.dataQuality ? answer.dataQuality.label : '—',
+      emissions:          answer.emissions_tCO2e,
+      currency, projectName, loanId,
+      s1: answer.scopes.s1.value_tCO2e, s2: answer.scopes.s2.value_tCO2e, s3: answer.scopes.s3.value_tCO2e,
+      s1Pct: answer.scopes.s1.barPct,   s2Pct: answer.scopes.s2.barPct,   s3Pct: answer.scopes.s3.barPct,
+      scopeNote: answer.scopes.note,
+      projectType, projectPhase,
+    };
+
+    _render(r);
 
     // Store for export / copy
-    window._pcafCurrentResult = {
-      attribution, outstanding, equity, debt, totalValue,
-      financedEmissions, economicIntensity, dqScore,
-      dqLabel: DQ_LABELS[dqScore] || '—',
-      emissions, currency, projectName, loanId,
-      s1, s2, s3, projectType, projectPhase,
-    };
+    window._pcafCurrentResult = r;
 
     // Animate panel
     const panel = document.getElementById('resultsPanel');
@@ -214,10 +178,11 @@ const PCAFCalculator = (() => {
     _setText('pcaf-result-project-value',        `${r.currency} ${_fmtShort(r.totalValue)}`);
     _setText('pcaf-result-project-value-label',  `${_fmtShort(r.equity)} equity + ${_fmtShort(r.debt)} debt`);
 
-    // Scope bars
+    // Scope bars, and what they are
     _setScope('s1', r.s1, r.s1Pct);
     _setScope('s2', r.s2, r.s2Pct);
     _setScope('s3', r.s3, r.s3Pct);
+    _setText('pcaf-scope-note', r.scopeNote || '');
   }
 
   function _setText(id, val) {
@@ -268,7 +233,7 @@ const PCAFCalculator = (() => {
     }
 
     // Recalculate with defaults
-    calculate();
+    void calculate();
   }
 
   function _setInput(id, value) {
@@ -286,7 +251,7 @@ const PCAFCalculator = (() => {
   function saveAndSubmit() {
     const r = window._pcafCurrentResult;
     if (!r) {
-      calculate();
+      void calculate();
       return;
     }
 
@@ -306,6 +271,7 @@ const PCAFCalculator = (() => {
       `  Scope 1 (Direct)  : ${_fmt(r.s1)} tCO2e`,
       `  Scope 2 (Energy)  : ${_fmt(r.s2)} tCO2e`,
       `  Scope 3 (Value Chain) : ${_fmt(r.s3)} tCO2e`,
+      `  (${r.scopeNote || 'indicative allocation'})`,
       ``,
       `Economic Intensity  : ${r.economicIntensity} tCO2e / ${r.currency}M outstanding`,
       `Data Quality Score  : ${r.dqScore} — ${r.dqLabel}`,
@@ -344,12 +310,11 @@ const PCAFCalculator = (() => {
   // ── Export PDF ───────────────────────────────────────────────
 
   async function exportPDF() {
-    const r = window._pcafCurrentResult;
+    let r = window._pcafCurrentResult;
     if (!r) {
-      calculate();
-      // Wait for result then retry
-      setTimeout(exportPDF, 100);
-      return;
+      await calculate();
+      r = window._pcafCurrentResult;
+      if (!r) return;
     }
 
     const btn      = /** @type {HTMLButtonElement|null} */
@@ -422,7 +387,7 @@ const PCAFCalculator = (() => {
   // Auto-calculates so the results panel is never blank on first load.
 
   function init() {
-    calculate();
+    void calculate();
   }
 
   return { calculate, reset, saveAndSubmit, exportPDF, init };

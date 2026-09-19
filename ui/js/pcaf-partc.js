@@ -634,7 +634,8 @@ const PCAFPartCPage = (() => {
   async function loadSampleBook() {
     if (_sampleBook !== null) return _sampleBook;
     try {
-      const res = await fetch('/data/portfolio-sample.json', { cache: 'no-store' });
+      /* The sample book is served by the API, behind the door, never a file. */
+      const res = await window.CARBONIQ_fetch('/v1/portfolio/sample');
       _sampleBook = res.ok ? (await res.json()).partC || false : false;
     } catch (_) { _sampleBook = false; }
     return _sampleBook;
@@ -1038,9 +1039,8 @@ const PCAFPartCPage = (() => {
       </div>`).join('');
 
     const lead = rows[0];
-    const materialShare = rows
-      .filter(m => m.module === 'A4' || m.module === 'A5.3')
-      .reduce((t, m) => t + m.sharePct, 0);
+    /* The share material quantities reach at all is the engine's figure. */
+    const materialShare = Number(d.sensitivity.materialPathSharePct) || 0;
     $('partcModuleNote').textContent =
       `${lead.label} is ${lead.sharePct.toFixed(1)}% of the construction figure. `
       + `Material quantities reach the total only through A4 transport and A5.3 waste, `
@@ -1060,8 +1060,8 @@ const PCAFPartCPage = (() => {
     if (!few.length) { box.hidden = true; return; }
     box.hidden = false;
 
-    const share = few.reduce((t, v) => t + (v.contributionPct || 0), 0);
-    const frac = Math.max(0, Math.min(1, share));
+    /* The share the vital few carry is the engine's; the arc is drawn from it. */
+    const frac = Math.max(0, Math.min(1, Number(d.paretoVitalFewShare) || 0));
 
     const R = 44, CX = 52, CY = 52;
     const LEN = Math.PI * R;                       // a half-turn
