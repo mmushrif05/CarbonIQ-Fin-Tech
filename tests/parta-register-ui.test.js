@@ -267,7 +267,15 @@ describe('How the borrower’s emissions are known, and the engine’s answer be
     must(HTML, /Option 3, score 4 or 5/, 'the sector path says what it earns on its face');
     must(HTML, /id="pr-known-sector" hidden/, 'the sector path’s fields are hidden until it is chosen');
     must(JS, /function knownPath\(\)/, 'the module reads the path from the control');
-    must(JS, /const basis = revenue !== undefined \? 'revenue-sector' : 'assets-sector';/, 'with a revenue the line is 3a; without, 3b — the engine chooses the row, the form only says what it has');
+    must(HTML, /<input type="radio" name="pr-size" id="pr-f-size-revenue" value="revenue" checked>/, 'which of the two sector options applies is asked');
+    must(HTML, /<input type="radio" name="pr-size" id="pr-f-size-none" value="none">/, 'and the outstanding-alone path is the second answer');
+    must(JS, /function sizePath\(\)/, 'the module reads that answer from the control');
+    must(JS, /const basis = sizePath\(\) === 'revenue' \? 'revenue-sector' : 'assets-sector';/,
+      'the option follows the answer, never whether a revenue happens to be keyed: that field is the band '
+      + 'check, and reading it as the switch moved an exposure to 3a — which needs a company value — with '
+      + 'nothing on screen saying so');
+    must(JS, /set\('pr-f-size-revenue', onRevenue\); set\('pr-f-size-none', !onRevenue\);/,
+      'an edit reopens on the option the stored figure rests on');
     must(JS, /activity: \{ revenue: basis === 'revenue-sector' \? revenue : undefined/, 'the revenue travels on the line for Option 3a');
     must(JS, /const onSector = SECTOR_BASES\.includes\(s1\.basis \|\| s2\.basis\);/, 'an edit reopens on the path the stored input is on');
     must(JS, /el\.type === 'checkbox' \|\| el\.type === 'radio'/, 'the setter fills a radio');

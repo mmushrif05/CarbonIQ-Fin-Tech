@@ -96,7 +96,14 @@ const PartARegisterPage = (() => {
     let data = {};
     try { data = await res.json(); } catch (_) { /* empty */ }
     if (!res.ok) {
-      const err = new Error([data.message, data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
+      /* A refusal names its fields. `validate()` answers a bad body with a
+         `details` array naming each one, and joining only message and remedy
+         threw it away — so every schema refusal read as "Request validation
+         failed." with nothing to act on. */
+      const details = Array.isArray(data.details)
+        ? data.details.map(d => (d && (d.message || d.field)) ? `${d.field ? `${d.field}: ` : ''}${d.message || ''}`.trim() : String(d)).filter(Boolean)
+        : [];
+      const err = new Error([data.message, details.join('; '), data.remedy].filter(Boolean).join(' ') || `Request failed (${res.status})`);
       err.status = res.status;
       err.code = data.error || data.code;
       throw err;
@@ -1104,12 +1111,12 @@ const PartARegisterPage = (() => {
 
     const hasValue = listed
       ? num('pr-f-mcap') !== undefined
-      : (num('pr-f-equity') !== undefined || num('pr-f-debt') !== undefined);
+      : (num('pr-f-equity') !== undefined || num('pr-f-debt') !== undefined || num('pr-f-assets') !== undefined);
     if (hasValue) {
       body.denominator = listed
         ? { marketCapOrdinary: num('pr-f-mcap'), totalDebtInterestBearing: num('pr-f-debt-ib'), minorityInterests: num('pr-f-minorities'),
           financialInstitution: fi || undefined, customerDeposits: fi ? num('pr-f-deposits') : undefined, asOf: str('pr-f-asof'), currency: str('pr-f-currency') }
-        : { totalEquity: num('pr-f-equity'), totalDebt: num('pr-f-debt'),
+        : { totalEquity: num('pr-f-equity'), totalDebt: num('pr-f-debt'), totalAssets: num('pr-f-assets'),
           financialInstitution: fi || undefined, customerDeposits: fi ? num('pr-f-deposits') : undefined, asOf: str('pr-f-asof'), currency: str('pr-f-currency') };
     }
 
@@ -1123,7 +1130,13 @@ const PartARegisterPage = (() => {
     const s3 = num('pr-f-s3');
     if (knownPath() === 'sector') {
       const revenue = num('pr-f-revenue');
-      const basis = revenue !== undefined ? 'revenue-sector' : 'assets-sector';
+      /* The form asks which of the two sector options applies; it used to
+         read it off whether a revenue happened to be keyed. That field sits
+         in the outstanding block as the sector band check, so typing one
+         silently moved the exposure to Option 3a — which attributes by
+         outstanding over equity plus debt and so needs a company value —
+         and the record then refused for a reason nothing on screen named. */
+      const basis = sizePath() === 'revenue' ? 'revenue-sector' : 'assets-sector';
       const factor = sf => (sf === undefined ? undefined
         : { value: sf, unit: basis === 'revenue-sector' ? 'tCO2e per unit of revenue' : 'tCO2e per unit of assets', source: str('pr-f-sf-source'), vintage: num('pr-f-sf-vintage') });
       const line = sf => ({ basis, activity: { revenue: basis === 'revenue-sector' ? revenue : undefined, currency: basis === 'revenue-sector' ? str('pr-f-currency') : undefined, factor: factor(sf) } });
@@ -1147,11 +1160,35 @@ const PartARegisterPage = (() => {
     return el && el.checked ? 'sector' : 'reported';
   }
 
-  /* Show the path's own fields and nothing of the other's. */
+  /** On the sector path, how the borrower's size is known: 'revenue' or 'none'. */
+  function sizePath() {
+    const el = $('pr-f-size-none');
+    return el && el.checked ? 'none' : 'revenue';
+  }
+
+  /* What each sector option needs, in the desk's words. Option 3a earns an
+     attribution factor, so it rests on the company value; 3b does not, and
+     records from the outstanding amount alone. */
+  const SECTOR_NEEDS = {
+    revenue: 'Option 3a needs the borrower’s revenue above and its company value — total equity and total debt, '
+      + 'or the total assets where those cannot be obtained (footnote 44).',
+    none: 'Option 3b needs the outstanding amount and its date, and nothing of the borrower’s balance sheet.',
+  };
+
+  /* Show the path's own fields and nothing of the other's, and say what the
+     chosen one asks for before Record is pressed. */
   function applyKnown() {
     const sector = knownPath() === 'sector';
     show('pr-known-reported', !sector);
     show('pr-known-sector', sector);
+    const size = sizePath();
+    say('pr-sector-path', sector ? SECTOR_NEEDS[size] : '');
+    const hint = $('pr-denom-hint');
+    if (hint) {
+      hint.textContent = sector && size === 'none'
+        ? 'On Option 3b the company value is not read: the figure is the outstanding amount × the sector intensity per unit of assets, at score 5 with no attribution factor.'
+        : 'Total equity and total debt give the denominator. Where they cannot be obtained, footnote 44 permits the total balance sheet (total assets) instead, and the run records that it was taken.';
+    }
   }
 
   const SECTOR_BASES = ['revenue-sector', 'assets-sector', 'turnover-sector'];
@@ -1279,9 +1316,14 @@ const PartARegisterPage = (() => {
     set('pr-f-outstanding', o.amount); set('pr-f-average', o.averageOutstanding); set('pr-f-asof', o.asOf); set('pr-f-currency', o.currency);
     set('pr-f-mcap', d.marketCapOrdinary); set('pr-f-debt-ib', d.totalDebtInterestBearing); set('pr-f-minorities', d.minorityInterests);
     set('pr-f-deposits', d.customerDeposits); set('pr-f-equity', d.totalEquity); set('pr-f-debt', d.totalDebt);
+    set('pr-f-assets', d.totalAssets);
     const s1 = e.scope1 || {}, s2 = e.scope2 || {}, s3 = e.scope3 || {};
     const onSector = SECTOR_BASES.includes(s1.basis || s2.basis);
     set('pr-f-known-sector', onSector); set('pr-f-known-reported', !onSector);
+    /* The option the exposure was recorded on is what the size radio says,
+       so an edit re-opens on the method the figure actually rests on. */
+    const onRevenue = (s1.basis || s2.basis) !== 'assets-sector';
+    set('pr-f-size-revenue', onRevenue); set('pr-f-size-none', !onRevenue);
     set('pr-f-s1', s1.value); set('pr-f-s2', s2.value); set('pr-f-s3', s3.value);
     if (!onSector) set('pr-f-basis', s1.basis || s2.basis);
     set('pr-f-period', s1.period || s2.period); set('pr-f-verifier', s1.verifier || s2.verifier);
@@ -1476,6 +1518,8 @@ const PartARegisterPage = (() => {
     }
     on('pr-f-known-reported', 'change', applyKnown);
     on('pr-f-known-sector', 'change', applyKnown);
+    on('pr-f-size-revenue', 'change', applyKnown);
+    on('pr-f-size-none', 'change', applyKnown);
     /* Every change to the form re-asks the engine, a moment after the typing
        stops; the answer is the preview and never a record. */
     on('pr-form', 'input', () => schedulePreview());
