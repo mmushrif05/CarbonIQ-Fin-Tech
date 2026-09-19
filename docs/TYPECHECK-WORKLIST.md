@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **441**. Remaining: **240**.
+Checked across all three: **443**. Remaining: **241**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **388**. Remaining: **69** (424 errors, measured by
+Checked: **389**. Remaining: **69** (424 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -107,7 +107,7 @@ pragma and nothing else.
 
 `ui/jsconfig.json` over `ui/js`. Browser globals, and the application's own surface declared once in `ui/globals.d.ts`. Separate from the server configuration because `lib: dom` in that one would let a server module reach for `document` and still check clean. This is the largest consumer of these API responses and where four mechanical defects have shipped.
 
-Checked: **8**. Remaining: **31** (1851 errors, measured by
+Checked: **9**. Remaining: **31** (1851 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 | File | Errors to fix before it joins |
@@ -148,7 +148,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **140** (1538 errors, measured by
+Checked: **45**. Remaining: **141** (1546 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **17 of them raise no errors at all** and can be adopted by adding the
@@ -180,7 +180,6 @@ pragma and nothing else.
 | `tests/partc-methodology.test.js` | 22 |
 | `tests/pcaf-partc-api.test.js` | 22 |
 | `tests/slgft-report.test.js` | 22 |
-| `tests/gcf-cn-package.test.js` | 20 |
 | `tests/pg-store.test.js` | 20 |
 | `tests/gcf-emissions.test.js` | 19 |
 | `tests/gcf-reporting.test.js` | 19 |
@@ -194,12 +193,14 @@ pragma and nothing else.
 | `tests/capital-baseline.test.js` | 16 |
 | `tests/capital-forecast.test.js` | 16 |
 | `tests/gcf-disclosure-document.test.js` | 16 |
+| `tests/gcf-sections.test.js` | 16 |
 | `tests/pcaf-partc-dq-scoring.test.js` | 16 |
 | `tests/pcaf-partc-lifecycle.test.js` | 15 |
 | `tests/desk-engine.test.js` | 14 |
 | `tests/parta-register-classes.test.js` | 14 |
 | `tests/error-handler.test.js` | 13 |
 | `tests/slgft-source-fidelity.test.js` | 13 |
+| `tests/gcf-cn-package.test.js` | 12 |
 | `tests/partc-disclosure.test.js` | 12 |
 | `tests/pcaf-partc-registers.test.js` | 12 |
 | `tests/gcf-return-loop.test.js` | 11 |

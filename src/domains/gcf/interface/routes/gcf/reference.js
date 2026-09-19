@@ -53,6 +53,11 @@ router.get('/reference', authenticate, defaultLimiter, referenceCache(), doc({ s
       tiers: record.TIERS, essCategories: record.ESS_CATEGORIES, streams: record.STREAMS,
       documentKinds: record.DOCUMENT_KINDS, ndaStatuses: record.NDA_STATUSES,
       coFinancingStatuses: record.COFINANCING_STATUSES, baselineTypes: record.BASELINE_TYPES,
+      /* The sections held as structured facts (domain/sections.js). */
+      sectionKeys: record.SECTION_KEYS, riskCategories: record.RISK_CATEGORIES, riskLevels: record.RISK_LEVELS,
+      stakeholderGroups: record.STAKEHOLDER_GROUPS, consultationModes: record.CONSULTATION_MODES,
+      climateHazards: record.CLIMATE_HAZARDS, repaymentProfiles: record.REPAYMENT_PROFILES,
+      monitoringFrequencies: record.MONITORING_FREQUENCIES, aprStatuses: record.APR_STATUSES,
       requirements: readiness.REQUIREMENTS.map(r => ({ id: r.id, cycle: r.cycle, label: r.label, clause: r.clause })),
     },
     storage: partcStore.capability(),

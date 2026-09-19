@@ -120,6 +120,18 @@ test('the cycle is on screen, the sample is adopted, a project moves a stage and
   await expect(page.locator('#gcfProjectNda')).toContainText('issued');
   await expect(page.locator('#gcfProjectNda')).toContainText('Jaffna Solar Co-operative');
 
+  /* A risk recorded from the screen, read back on the register and on the
+     checklist the next stage asks for — a structured fact, not a document. */
+  await page.selectOption('#gcfSec-risk-category', 'financial');
+  await page.fill('#gcfSec-risk-description', 'Tariff falls below the model');
+  await page.selectOption('#gcfSec-risk-impact', 'high');
+  await page.fill('#gcfSec-risk-mitigation', 'Floor price in the power purchase agreement');
+  await page.locator('#gcfSec-risk-add').click();
+  await expect(page.locator('#gcfProjectHint')).toHaveText('Saved.');
+  await expect(page.locator('#gcfProjectRisks')).toContainText('Tariff falls below the model');
+  await expect(page.locator('#gcfProjectRisks')).toContainText('Floor price');
+  await expect(page.locator('#gcfProjectNextChecklist')).toContainText('Risk register');
+
   /* Back to the board: the row carries the new stage. */
   await page.locator('#gcfProjectBack').click();
   await expect(page.locator('#gcfPortfolio')).toBeVisible();

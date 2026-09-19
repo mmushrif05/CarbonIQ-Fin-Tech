@@ -205,6 +205,32 @@ FP's A–H order and marks each **held · partial · external**. What §11 adds 
 item can be **recorded as obtained** — reference, date, holder — so the worklist shrinks as the
 bank works, and the readiness figure can move.
 
+### 7.1 Eight sections held as structured facts, not document flags
+
+A document on the list says a file exists; it cannot say what is in it, so the readiness
+checklist could only ask for the file and the package could only mark the input external. Eight
+of the sections the two templates are written from are now blocks on the record
+(`domain/sections.js`), each in a closed vocabulary where GCF's own templates use one, every
+one optional, and a document of the same kind still counting so nothing held becomes missing:
+
+| Block | Template clause | What it holds | Asked at |
+|---|---|---|---|
+| `risks` | FP **F** — risk assessment and management | category, description, likelihood, impact, mitigation, owner | stage 4 |
+| `implementation` | FP **B.4** — implementation arrangements; CN B | arrangements, governance, procurement approach, timetable milestones | stage 4 |
+| `sustainability` | FP **B.6** — sustainability and exit strategy; cycle stage 10 | strategy, exit strategy, ownership after closure, financial sustainability | stage 4 |
+| `stakeholders` | FP annex — summary of consultations | who, group, date, how, outcome | stage 4 (beside the consultation document) |
+| `climateRationale` | CN **B.1** — the adaptation climate rationale | hazards, vulnerability, exposure, adaptive capacity, evidence source, scenario | stage 3, of an adaptation project only |
+| `financialTerms` | FP **C.2–C.3** — financial terms; the term sheet | currency, tenor, grace, rate, repayment profile, security, on-lending, tranches | stage 5 |
+| `monitoring` | FP annex — M&E plan | arrangements, indicators (frequency, method, responsible, verification), evaluation plan, reporting schedule | stage 4 (beside the plan document) |
+| `reporting` | Cycle stage **8** — implementation and monitoring; FAA covenants | annual performance reports, mid-term review, final evaluation, audits | stage 8 |
+
+One function answers **held · partial · missing** for the readiness checklist and the package
+alike, with a summary in words and the sentence that would raise it, so the two cannot disagree.
+The climate rationale is asked of an adaptation project and left off a mitigation project's list
+rather than answered held — a requirement that does not apply is not a requirement met. The
+served example carries six of the eight so the walkthrough's Concept Note step shows the
+worklist shrinking as facts are recorded rather than as documents are named.
+
 ---
 
 ## 8. What a pipeline dashboard has to show — CarbonIQ's design rule
@@ -324,3 +350,4 @@ watches the sample pill clear, moves it a stage, and downloads the pack.
 | 2026-09-15 | §9 | **Phase 1 Stage 5 — the signable GCF assessment report.** `application/assessment-report.js` builds the appraisal a committee reads and the assessor signs, from the record + validation + the engine's six-criteria evidence + the logframe, rendered through the platform report standard (the one renderer Part A/Part C use; the GCF domain imports platform, never another domain). Sections: appraisal summary, the six criteria with the assessor's rating (words) beside the engine's evidence, the IRMF logframe, the recommendation, a sign-off block naming the assessor and date, and the validation audit trail. It is DFCC's own appraisal, not a GCF decision — no PCAF conformance language, no endorsement claim — and a draft is told apart from a sign-off on the document's face. Deterministic report reference (SHA-256 over canonical facts + build + validation). `GET /v1/gcf/pipeline/:id/assessment-report?format=json\|pdf\|word` (read, stores nothing); the assessor panel downloads it outside the validate-gated form. `tests/gcf-assessment-report.test.js` pins the model, the reference, words-not-numbers, a well-formed PDF and the route in all three formats | this repository |
 | 2026-09-15 | §9 | **Phase 1 Stage 4 — the assessor validation lifecycle.** `domain/validation.js` is the pure state machine — draft → under_review → validated, reopened back — with per-criterion ratings in words (strong/adequate/weak, never a number), a recommendation required to sign off, a validated assessment frozen until reopened, and every change a dated, attributed history entry. The record gained an optional backward-compatible `validation` object; `store.setValidation` persists a transition and refuses the sample (409 SAMPLE_NOT_EDITABLE); `GET /v1/gcf/pipeline/:id/validation` (read) returns it beside the six-criteria evidence, `POST` (the `validate` scope, so the assessor's alone) applies one change. The project page renders the assessor panel with the ratings beside the engine's evidence coverage, the sign-off controls hidden where the server would refuse. `tests/gcf-validation.test.js` proves the machine, the store, the scope refusal and (on PostgreSQL) an assessor-scoped key driving it | this repository |
 | 2026-09-15 | §9 | **Phase 1 Stage 3 — the assessor role and the `validate` scope.** A sixth scope, `validate`, is the assessor's act — record a qualitative rating and validate a GCF assessment — kept apart from `write` and `lock` because it is a different person's authority. The `assessor` role (level 60, read-oriented permissions) resolves its scopes by role rather than by level (`scopesForRole`): `read` and `validate` only, so an assessor reads the whole book and signs an assessment off but does not write the book, run an engine or lock a Part C assessment. The role is grantable on the Accounts screen and through `npm run user:role`; no route requires `validate` yet — the validation lifecycle is Stage 4. `tests/scopes.test.js` proves the role→scope mapping | `src/platform/auth/scopes.js`, `src/shared/policies.js` |
+| 2026-09-19 | §7.1 | **Phase C — eight sections held as structured facts.** `domain/sections.js` holds the risk register, implementation arrangements and timetable, sustainability and exit, stakeholder consultations, adaptation climate rationale, financial terms, monitoring and evaluation, and post-approval reporting as optional, backward-compatible blocks on the record in closed vocabularies; one `status()` answers held / partial / missing for readiness and the package. Readiness gained `implementation_arrangements`, `sustainability_exit`, `adaptation_rationale` (asked of an adaptation project only, through an `applies` predicate), `financial_terms` and `apr_reporting`, and `risk_register`, `me_plan` and `stakeholders` accept the structured fact beside the document. The Concept Note package resolves seven inputs from them. The project page carries the eight as cards with inline forms writing through the same patch; the reference serves every vocabulary; the served example carries six. Three conformance rules (G-SEC-01…03) proved by execution in `tests/gcf-sections.test.js` on both stores | GCF concept note template v2.2; funding proposal template; this repository |

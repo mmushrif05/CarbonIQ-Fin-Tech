@@ -479,6 +479,11 @@ const GCFPipeline = (() => {
       patch(p.id, body);
     });
 
+    /* The sections held as structured facts — rendered by the sibling
+       module, handed the helpers it needs; every block it shows is the
+       record's own and every form writes through the same patch. */
+    if (typeof GCFSections !== 'undefined') GCFSections.render(p, { write, $, esc, setHtml, on, vocab, words, patch, hint, usd });
+
     /* Dates */
     const ms = (ref().cycle && ref().cycle.milestones) || [];
     const tl = p.timeline || {};

@@ -44,6 +44,139 @@
     "beneficiaries": {
       "direct": { "value": 60, "tier": "declared", "definition": "Tea factories converted" },
       "indirect": { "value": 25000, "tier": "modelled", "definition": "Estate workers and smallholder green-leaf suppliers to the participating factories" }
+    },
+    "risks": [
+      {
+        "category": "technical",
+        "description": "Biomass supply falls short of the boilers’ demand in the dry months, pushing factories back to furnace oil.",
+        "likelihood": "medium",
+        "impact": "high",
+        "mitigation": "Supply agreements with two certified fuelwood plantations per factory, with a minimum-stock covenant in the loan terms.",
+        "owner": "Factory owner with DFCC"
+      },
+      {
+        "category": "financial",
+        "description": "Tea auction prices fall and factories cannot service the converted-boiler loan.",
+        "likelihood": "medium",
+        "impact": "medium",
+        "mitigation": "Debt-service cover tested at a 20% price fall at appraisal; a one-year grace period on principal.",
+        "owner": "DFCC credit"
+      },
+      {
+        "category": "environmental",
+        "description": "Particulate emissions from biomass combustion exceed the air-quality standard at factories near settlements.",
+        "likelihood": "low",
+        "impact": "medium",
+        "mitigation": "Cyclone separators specified in the boiler standard; the ESMP carries the emission limit and the monitoring.",
+        "owner": "Factory owner"
+      }
+    ],
+    "implementation": {
+      "arrangements": "DFCC on-lends the GCF tranche to participating factories through its regional branches; a technical partner appraises each boiler conversion against the specification, and the factory owner contracts the installer.",
+      "governance": "A steering committee — DFCC sustainability unit, the technical partner and the Planters’ Association — meets quarterly; the executing entity reports to it and to the Fund through DFCC.",
+      "procurementApproach": "Factories procure boilers from a pre-qualified supplier list under DFCC’s procurement policy; the technical partner is procured by open tender.",
+      "timetable": [
+        {
+          "milestone": "Technical partner appointed and boiler specification published",
+          "start": "2027-01-01",
+          "end": "2027-03-31"
+        },
+        {
+          "milestone": "First twenty factories appraised and financed",
+          "start": "2027-04-01",
+          "end": "2027-12-31"
+        },
+        {
+          "milestone": "Remaining factories financed; rooftop solar commissioned",
+          "start": "2028-01-01",
+          "end": "2029-06-30"
+        },
+        {
+          "milestone": "Final commissioning and closure of the credit line",
+          "start": "2029-07-01",
+          "end": "2029-12-31"
+        }
+      ]
+    },
+    "sustainability": {
+      "strategy": "The fuel saving repays the loan within the boiler’s life, so the conversion pays for itself; the pre-qualified supplier list and the boiler specification stay with the Planters’ Association after closure.",
+      "exitStrategy": "The GCF tranche is repaid through DFCC over the loan tenor; no further concessional funding is needed once the converted factories are operating.",
+      "ownershipAfterClosure": "Each factory owns its boiler and rooftop installation; DFCC holds the loans to maturity.",
+      "financialSustainability": "Operating cost falls by the fuel-oil bill less biomass and maintenance; the model shows debt-service cover above 1.3x at the appraisal price."
+    },
+    "stakeholders": [
+      {
+        "name": "Planters’ Association of Ceylon",
+        "group": "private_sector",
+        "date": "2026-06-12",
+        "mode": "workshop",
+        "outcome": "Endorsed the credit line; asked that the boiler specification be published before the first appraisal."
+      },
+      {
+        "name": "Ministry of Environment — Climate Change Secretariat",
+        "group": "government",
+        "date": "2026-07-03",
+        "mode": "consultation",
+        "outcome": "Informed of the concept; confirmed the NDC 3.0 industrial sector target it serves."
+      },
+      {
+        "name": "Estate worker representatives, Nuwara Eliya",
+        "group": "workers",
+        "date": "2026-07-20",
+        "mode": "site_visit",
+        "outcome": "Raised air quality near factory housing; the emission limit and monitoring were added to the ESMP."
+      }
+    ],
+    "financialTerms": {
+      "currency": "USD",
+      "tenorYears": 12,
+      "gracePeriodYears": 2,
+      "interestRatePct": 2.5,
+      "repaymentProfile": "annuity",
+      "securityPackage": "Charge over the boiler and rooftop installation; corporate guarantee of the factory owner.",
+      "onLendingTerms": "On-lent in rupees at DFCC’s cost of the tranche plus a 2% margin, tenor matched to the boiler’s life.",
+      "disbursements": [
+        {
+          "tranche": "Tranche 1",
+          "amount": 2000000,
+          "condition": "Technical partner appointed; first ten loans approved",
+          "date": "2027-04-01"
+        },
+        {
+          "tranche": "Tranche 2",
+          "amount": 4000000,
+          "condition": "Twenty factories commissioned and reported",
+          "date": "2028-01-15"
+        }
+      ]
+    },
+    "monitoring": {
+      "arrangements": "The technical partner reads each factory’s fuel-oil and biomass purchases and the rooftop generation meter quarterly; DFCC consolidates them into the annual performance report.",
+      "indicators": [
+        {
+          "indicator": "MCI-1 — tCO2e avoided",
+          "frequency": "annual",
+          "method": "Fuel-oil displaced × emission factor, net of biomass supply-chain emissions; rooftop generation × grid factor",
+          "responsible": "Technical partner",
+          "verification": "Fuel invoices and meter readings, sampled by DFCC internal audit"
+        },
+        {
+          "indicator": "Factories converted",
+          "frequency": "quarterly",
+          "method": "Commissioning certificates",
+          "responsible": "DFCC sustainability unit",
+          "verification": "Site inspection on a sample"
+        },
+        {
+          "indicator": "Particulate emissions at stack",
+          "frequency": "semi_annual",
+          "method": "Stack test against the ESMP limit",
+          "responsible": "Factory owner",
+          "verification": "Accredited laboratory report"
+        }
+      ],
+      "evaluationPlan": "A mid-term review after the first twenty factories; a final evaluation within a year of closure, by an independent evaluator DFCC engages.",
+      "reportingSchedule": "Quarterly to the steering committee; annually to the Fund through the annual performance report."
     }
   }
 }

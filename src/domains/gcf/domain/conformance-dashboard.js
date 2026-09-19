@@ -44,4 +44,29 @@ module.exports = [
     test: 'tests/gcf-cycle.test.js › The assessor’s sign-off is visible at pipeline level › every row carries its assessment state, read off the record, and the unsigned are named',
     status: 'implemented',
   },
+  // ---- The sections held as structured facts (Phase C) -----------------
+  {
+    id: 'G-SEC-01',
+    clause: 'ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; GCF concept note B, funding proposal B.4, B.6, C.2–C.3, F and annexes',
+    rule: 'The risk register, implementation arrangements and timetable, sustainability and exit, stakeholder consultations, adaptation climate rationale, financial terms, monitoring and evaluation, and post-approval reporting are held as structured facts on the record, each in a closed vocabulary and refused outside it; a record recorded before they existed is unaffected.',
+    implementation: 'src/domains/gcf/domain/sections.js — SCHEMAS; src/domains/gcf/domain/record.js — the eight optional blocks',
+    test: 'tests/gcf-sections.test.js › The eight sections are blocks on the record, each in a closed vocabulary › a stakeholder group, a hazard, a repayment profile, a frequency and a report status are each held to their list',
+    status: 'implemented',
+  },
+  {
+    id: 'G-SEC-02',
+    clause: 'GCF funding proposal template — what each section must contain; project cycle stages 3 to 8',
+    rule: 'Readiness reads each section as held, partial or missing from the record alone, asks the climate rationale of an adaptation project only, and a document of the same kind still counts — nothing that was held by a document becomes missing.',
+    implementation: 'src/domains/gcf/domain/readiness.js — the section() check and the applies predicate; src/domains/gcf/domain/sections.js — status(), best()',
+    test: 'tests/gcf-sections.test.js › Readiness reads the sections, and a document of the same kind still counts › the same project with the sections recorded holds them, and a risk register document alone still holds the register',
+    status: 'implemented',
+  },
+  {
+    id: 'G-SEC-03',
+    clause: 'ToR Lot 2 — the Concept Note inputs; GCF concept note sections B to G',
+    rule: 'The Concept Note package resolves its inputs from the sections — held with what is recorded, partial with what is missing, and external only where nothing is recorded — so the external worklist shrinks as the facts are recorded rather than as documents are named.',
+    implementation: 'src/domains/gcf/application/cn-package.js — sectionLine()',
+    test: 'tests/gcf-sections.test.js › The Concept Note package resolves its inputs from the sections › the served example holds six inputs from its blocks, each with what is recorded',
+    status: 'implemented',
+  },
 ];

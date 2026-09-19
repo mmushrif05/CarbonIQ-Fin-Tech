@@ -91,6 +91,18 @@
       "beneficiaries": {
         "direct": { "value": 12000, "tier": "declared", "definition": "Smallholder farming households" },
         "indirect": { "value": 55000, "tier": "modelled", "definition": "Wider rural community dependent on the same catchment" }
+      },
+      "climateRationale": {
+        "hazards": [
+          "drought",
+          "erratic_rainfall",
+          "flood"
+        ],
+        "vulnerability": "Rain-fed smallholder paddy and vegetable farms in the dry zone lose whole seasons to a failed north-east monsoon and to flash floods at its onset; the households have little savings and no crop insurance.",
+        "exposure": "Farm plots and tank-fed irrigation in the districts the credit line serves.",
+        "adaptiveCapacity": "Limited: shallow wells and diesel pumps, no access to drought-tolerant seed or micro-irrigation without credit.",
+        "evidenceSource": "National Adaptation Plan for Sri Lanka 2016–2025 (agriculture sector); Department of Meteorology observed rainfall records; NDC 3.0 adaptation priorities",
+        "scenario": "Dry-zone rainfall variability rising through 2050 under the projections the NAP cites."
       }
     },
     {
