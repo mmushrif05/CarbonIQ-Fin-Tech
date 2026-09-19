@@ -8,14 +8,7 @@
     "id": "gcf_dfcc_tea_biomass",
     "code": "DFCC-EX",
     "name": "Tea Factory Biomass Boiler Conversion and Rooftop Solar",
-    "location": {
-      "province": "Central",
-      "districts": [
-        "Nuwara Eliya",
-        "Kandy"
-      ],
-      "country": "LK"
-    },
+    "location": { "province": "Central", "districts": ["Nuwara Eliya", "Kandy"], "country": "LK" },
     "sector": "Industrial energy efficiency and fuel switching",
     "resultsArea": "BA",
     "stream": "mitigation",
@@ -23,16 +16,8 @@
     "selectionReason": "A credit line for regional tea factories to replace furnace-oil boilers with certified biomass boilers and add rooftop solar for withering and drying, where the fuel bill is the factory's largest controllable cost and the payback exceeds the tenor local lenders offer.",
     "essCategory": "B",
     "essNote": "Works within existing factory premises. Biomass is sourced from certified fuelwood plantations, with air-quality and sourcing conditions carried in the ESMP.",
-    "taxonomy": {
-      "framework": "SLGFT",
-      "band": "green",
-      "objective": "M"
-    },
-    "barriers": [
-      "tenor",
-      "upfront_capex",
-      "fragmented_borrowers"
-    ],
+    "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
+    "barriers": ["tenor", "upfront_capex", "fragmented_borrowers"],
     "financing": {
       "currency": "USD",
       "totalCost": 18000000,
@@ -48,16 +33,8 @@
       }
     },
     "mitigation": {
-      "annual_tCO2e": {
-        "value": 18000,
-        "tier": "modelled",
-        "method": "furnace oil displaced x emission factor, net of biomass supply-chain emissions; rooftop generation x grid emission factor"
-      },
-      "lifetime_tCO2e": {
-        "value": 270000,
-        "tier": "modelled",
-        "method": "annual x 15-year boiler life, undiscounted"
-      },
+      "annual_tCO2e": { "value": 18000, "tier": "modelled", "method": "furnace oil displaced x emission factor, net of biomass supply-chain emissions; rooftop generation x grid emission factor" },
+      "lifetime_tCO2e": { "value": 270000, "tier": "modelled", "method": "annual x 15-year boiler life, undiscounted" },
       "baseline": {
         "description": "Furnace-oil boilers and grid electricity for withering and drying at the participating factories",
         "counterfactual": "Without the credit line the factories continue on furnace oil and grid power",
@@ -65,16 +42,8 @@
       }
     },
     "beneficiaries": {
-      "direct": {
-        "value": 60,
-        "tier": "declared",
-        "definition": "Tea factories converted"
-      },
-      "indirect": {
-        "value": 25000,
-        "tier": "modelled",
-        "definition": "Estate workers and smallholder green-leaf suppliers to the participating factories"
-      }
+      "direct": { "value": 60, "tier": "declared", "definition": "Tea factories converted" },
+      "indirect": { "value": 25000, "tier": "modelled", "definition": "Estate workers and smallholder green-leaf suppliers to the participating factories" }
     },
     "risks": [
       {

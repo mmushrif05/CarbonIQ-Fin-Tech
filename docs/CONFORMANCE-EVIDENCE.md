@@ -159,13 +159,13 @@ proved or it is not.
 | PCAF Part C | `C-REST-01` | Part C v2 §6 — restatement | `tests/partc-comparatives.test.js` | 36 | executed |
 | PCAF Part C | `C-REST-02` | Part C v2 §6 — restatement | `tests/partc-comparatives.test.js` | 36 | executed |
 | PCAF Part C | `C-REST-03` | Comparability | `tests/partc-comparatives.test.js` | 36 | executed |
-| GCF pipeline | `G-DATA-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data for sustainable reporting" | `tests/gcf-pipeline.test.js` | 65 | executed |
-| GCF pipeline | `G-DATA-02` | ToR Lot 1, Milestone 4 — data systems for carbon accounting | `tests/gcf-pipeline.test.js` | 65 | executed |
+| GCF pipeline | `G-DATA-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data for sustainable reporting" | `tests/gcf-pipeline.test.js` | 66 | executed |
+| GCF pipeline | `G-DATA-02` | ToR Lot 1, Milestone 4 — data systems for carbon accounting | `tests/gcf-pipeline.test.js` | 66 | executed |
 | GCF pipeline | `G-DATA-03` | ToR Lot 1, Milestone 4 — data "should be stored and can be transferred and assessed" | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-DATA-04` | ToR Lot 1, Milestone 4 — durable capture | `tests/gcf-pipeline.test.js` | 44 | executed |
 | GCF pipeline | `G-CARBON-01` | ToR Lot 1, Milestone 4 — emissions | `tests/gcf-emissions.test.js` | 108 | executed |
 | GCF pipeline | `G-CARBON-02` | PCAF Part A p.126, applied to project appraisal | `tests/gcf-reporting.test.js` | 72 | executed |
-| GCF pipeline | `G-CARBON-03` | GCF Mitigation Core Indicator 1 (IRMF, decision B.29/01) | `tests/gcf-pipeline.test.js` | 65 | executed |
+| GCF pipeline | `G-CARBON-03` | GCF Mitigation Core Indicator 1 (IRMF, decision B.29/01) | `tests/gcf-pipeline.test.js` | 66 | executed |
 | GCF pipeline | `G-CARBON-04` | Engine discipline — no LLM computes a regulatory figure | `tests/gcf-emissions.test.js` | 108 | executed |
 | GCF pipeline | `G-NDC-01` | Sri Lanka NDC 3.0 (September 2025), ToR section 1.2 | `tests/gcf-emissions.test.js` | 71 | executed |
 | GCF pipeline | `G-NDC-02` | Sri Lanka NDC 3.0 — cumulative over 2026-2035 | `tests/gcf-emissions.test.js` | 71 | executed |
@@ -174,7 +174,7 @@ proved or it is not.
 | GCF pipeline | `G-ACCR-01` | ToR section 1.1 — Board decision B.36/10, E&S category B/I-2 | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-ACCR-02` | ToR section 1.1 — medium size (USD 50-250m) | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-ACCR-03` | ToR section 1.1 — modalities: basic, project management, on-lending and blending. The grant box is not ticked. | `tests/gcf-screening.test.js` | 237 | executed |
-| GCF pipeline | `G-ACCR-04` | ToR section 1.1 — three open accreditation conditions | `tests/gcf-cn-package.test.js` | 139 | executed |
+| GCF pipeline | `G-ACCR-04` | ToR section 1.1 — three open accreditation conditions | `tests/gcf-cn-package.test.js` | 143 | executed |
 | GCF pipeline | `G-LOT2-01` | ToR Lot 2 — screening candidates and recommending Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-LOT2-02` | GCF investment framework — six investment criteria | `tests/gcf-screening.test.js` | 151 | executed |
 | GCF pipeline | `G-LOT2-03` | ToR Lot 2 — at least two high-potential concepts, up to two Concept Notes | `tests/gcf-screening.test.js` | 151 | executed |
@@ -185,15 +185,15 @@ proved or it is not.
 | GCF pipeline | `G-REPORT-02` | GRI 305-5 | `tests/gcf-reporting.test.js` | 72 | executed |
 | GCF pipeline | `G-REPORT-03` | SLFRS S1 §27; SLFRS S2 §6, §25, §33 | `tests/gcf-reporting.test.js` | 92 | executed |
 | GCF pipeline | `G-REPORT-04` | Report honesty — a checklist answered from the report | `tests/gcf-reporting.test.js` | 72 | executed |
-| GCF pipeline | `G-CN-01` | GCF Concept Note / Funding Proposal structure, sections A-H | `tests/gcf-cn-package.test.js` | 139 | executed |
-| GCF pipeline | `G-CN-02` | GCF policies — NDA no-objection, gender assessment, ESIA/ESMP, FPIC | `tests/gcf-cn-package.test.js` | 139 | executed |
-| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 167 | executed |
-| GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 167 | executed |
+| GCF pipeline | `G-CN-01` | GCF Concept Note / Funding Proposal structure, sections A-H | `tests/gcf-cn-package.test.js` | 143 | executed |
+| GCF pipeline | `G-CN-02` | GCF policies — NDA no-objection, gender assessment, ESIA/ESMP, FPIC | `tests/gcf-cn-package.test.js` | 143 | executed |
+| GCF pipeline | `G-CN-03` | Scope limit stated in the gap analysis | `tests/gcf-cn-package.test.js` | 171 | executed |
+| GCF pipeline | `G-CN-04` | Document delivery | `tests/gcf-cn-package.test.js` | 171 | executed |
 | GCF pipeline | `G-CYCLE-01` | GCF project activity cycle — ten stages from programming to closure | `tests/gcf-cycle.test.js` | 46 | executed |
 | GCF pipeline | `G-CYCLE-02` | ToR Lot 1, Milestone 4 — systems and procedures to capture data; a pipeline has a time axis | `tests/gcf-cycle.test.js` | 84 | executed |
 | GCF pipeline | `G-CYCLE-03` | GCF-2 service standards — six weeks for concept-note feedback, nine months to approval, eleven months to first disbursement | `tests/gcf-cycle.test.js` | 46 | executed |
-| GCF pipeline | `G-CYCLE-04` | Concept note template v2.2 and funding proposal template — what each stage must contain; Sri Lanka NDA Operation Manual | `tests/gcf-cycle.test.js` | 85 | executed |
-| GCF pipeline | `G-CYCLE-05` | Board decision B.32/05 — Simplified Approval Process; Project Preparation Facility guidelines | `tests/gcf-cycle.test.js` | 85 | executed |
+| GCF pipeline | `G-CYCLE-04` | Concept note template v2.2 and funding proposal template — what each stage must contain; Sri Lanka NDA Operation Manual | `tests/gcf-cycle.test.js` | 95 | executed |
+| GCF pipeline | `G-CYCLE-05` | Board decision B.32/05 — Simplified Approval Process; Project Preparation Facility guidelines | `tests/gcf-cycle.test.js` | 95 | executed |
 | GCF pipeline | `G-CYCLE-06` | GCF investment framework — six investment criteria and their sub-criteria | `tests/gcf-cycle.test.js` | 52 | executed |
 | GCF pipeline | `G-CYCLE-07` | ToR Lot 2 — the pipeline as a whole, read by the bank and the Fund | `tests/gcf-cycle.test.js` | 101 | executed |
 | GCF pipeline | `G-CYCLE-08` | ToR Lot 1, Milestone 4 — illustrative data replaced by the entity’s own, never mixed with it | `tests/gcf-cycle.test.js` | 84 | executed |
@@ -207,14 +207,17 @@ proved or it is not.
 | GCF pipeline | `G-EXCL-01` | ToR Lot 1, Milestones 1-3 and 5 | — | — | out of scope |
 | GCF pipeline | `G-EXCL-02` | GCF Funding Proposal preparation | — | — | out of scope |
 | GCF pipeline | `G-GAP-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; the worklist between a pipeline entry and a submission | `tests/gcf-gap-register.test.js` | 70 | executed |
-| GCF pipeline | `G-GAP-02` | CarbonIQ — a register a committee can act on names who holds the key | `tests/gcf-gap-register.test.js` | 128 | executed |
+| GCF pipeline | `G-GAP-02` | CarbonIQ — a register a committee can act on names who holds the key | `tests/gcf-gap-register.test.js` | 134 | executed |
 | GCF pipeline | `G-RPT-02` | ToR Lot 1, Milestone 4 — sustainability reporting; SLFRS S2 §29(a), (d), (e); GRI 305; PCAF Part A p.126 | `tests/gcf-disclosure-document.test.js` | 101 | executed |
 | GCF pipeline | `G-VAL-04` | GCF assessment lifecycle — separation of duties, visible at pipeline level | `tests/gcf-cycle.test.js` | 101 | executed |
+| GCF pipeline | `G-SEC-01` | ToR Lot 1, Milestone 4 — "lack of proper systems and procedures to capture data"; GCF concept note B, funding proposal B.4, B.6, C.2–C.3, F and annexes | `tests/gcf-sections.test.js` | 173 | executed |
+| GCF pipeline | `G-SEC-02` | GCF funding proposal template — what each section must contain; project cycle stages 3 to 8 | `tests/gcf-sections.test.js` | 210 | executed |
+| GCF pipeline | `G-SEC-03` | ToR Lot 2 — the Concept Note inputs; GCF concept note sections B to G | `tests/gcf-sections.test.js` | 94 | executed |
 
 ## Summary
 
-- 189 rules across the conformance matrices
-- **182 proved by execution**
+- 192 rules across the conformance matrices
+- **185 proved by execution**
 - 3 deliberately out of scope
 - 2 proved by the absence of a path
 - 2 evidenced by a data table rather than a code path

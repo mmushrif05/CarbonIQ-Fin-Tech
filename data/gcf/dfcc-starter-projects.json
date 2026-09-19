@@ -9,15 +9,7 @@
       "id": "gcf_dfcc_ci_solar",
       "code": "DFCC-1",
       "name": "Commercial & Industrial Rooftop Solar Facility",
-      "location": {
-        "province": "Western",
-        "districts": [
-          "Colombo",
-          "Gampaha",
-          "Kalutara"
-        ],
-        "country": "LK"
-      },
+      "location": { "province": "Western", "districts": ["Colombo", "Gampaha", "Kalutara"], "country": "LK" },
       "sector": "Renewable generation",
       "resultsArea": "EP",
       "stream": "mitigation",
@@ -25,15 +17,8 @@
       "selectionReason": "A concessional facility on-lent to commercial and industrial rooftop solar on estates DFCC already banks, extending tenor beyond what commercial debt reaches for these borrowers.",
       "essCategory": "B",
       "essNote": "Rooftop installations on existing buildings; limited, site-specific, readily mitigated impacts.",
-      "taxonomy": {
-        "framework": "SLGFT",
-        "band": "green",
-        "objective": "M"
-      },
-      "barriers": [
-        "tenor",
-        "upfront_capex"
-      ],
+      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
+      "barriers": ["tenor", "upfront_capex"],
       "financing": {
         "currency": "USD",
         "totalCost": 30000000,
@@ -49,16 +34,8 @@
         }
       },
       "mitigation": {
-        "annual_tCO2e": {
-          "value": 14000,
-          "tier": "modelled",
-          "method": "installed capacity x specific yield x grid emission factor"
-        },
-        "lifetime_tCO2e": {
-          "value": 280000,
-          "tier": "modelled",
-          "method": "annual x 20 years, undiscounted"
-        },
+        "annual_tCO2e": { "value": 14000, "tier": "modelled", "method": "installed capacity x specific yield x grid emission factor" },
+        "lifetime_tCO2e": { "value": 280000, "tier": "modelled", "method": "annual x 20 years, undiscounted" },
         "baseline": {
           "description": "Grid electricity displaced at the Sri Lankan national average emission factor",
           "counterfactual": "Without the facility the same demand is met from the national grid",
@@ -66,30 +43,15 @@
         }
       },
       "beneficiaries": {
-        "direct": {
-          "value": 220,
-          "tier": "declared",
-          "definition": "Commercial and industrial sites connected"
-        },
-        "indirect": {
-          "value": 40000,
-          "tier": "modelled",
-          "definition": "People working on the served sites"
-        }
+        "direct": { "value": 220, "tier": "declared", "definition": "Commercial and industrial sites connected" },
+        "indirect": { "value": 40000, "tier": "modelled", "definition": "People working on the served sites" }
       }
     },
     {
       "id": "gcf_dfcc_resilient_ag",
       "code": "DFCC-2",
       "name": "Smallholder Climate-Resilient Agriculture and Micro-Irrigation",
-      "location": {
-        "province": "North Central",
-        "districts": [
-          "Anuradhapura",
-          "Polonnaruwa"
-        ],
-        "country": "LK"
-      },
+      "location": { "province": "North Central", "districts": ["Anuradhapura", "Polonnaruwa"], "country": "LK" },
       "sector": "Climate-resilient livelihoods",
       "resultsArea": "VC",
       "stream": "adaptation",
@@ -97,15 +59,8 @@
       "selectionReason": "Resilience of smallholder farming to drought and erratic monsoon through micro-irrigation and drought-tolerant inputs, in the districts the National Adaptation Plan prioritises.",
       "essCategory": "B",
       "essNote": "Community-level works with a gender and stakeholder plan; no large infrastructure.",
-      "taxonomy": {
-        "framework": "SLGFT",
-        "band": "green",
-        "objective": "A"
-      },
-      "barriers": [
-        "no_revenue_stream",
-        "fragmented_borrowers"
-      ],
+      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "A" },
+      "barriers": ["no_revenue_stream", "fragmented_borrowers"],
       "financing": {
         "currency": "USD",
         "totalCost": 15000000,
@@ -122,15 +77,8 @@
         }
       },
       "mitigation": {
-        "annual_tCO2e": {
-          "value": null,
-          "tier": "declared",
-          "note": "Adaptation project; mitigation is a co-benefit and not the basis for ranking."
-        },
-        "lifetime_tCO2e": {
-          "value": null,
-          "tier": "declared"
-        },
+        "annual_tCO2e": { "value": null, "tier": "declared", "note": "Adaptation project; mitigation is a co-benefit and not the basis for ranking." },
+        "lifetime_tCO2e": { "value": null, "tier": "declared" },
         "baseline": {
           "description": "Not a mitigation project; no mitigation baseline is claimed",
           "counterfactual": "Resilience of livelihoods, measured in beneficiaries reached rather than tonnes",
@@ -141,16 +89,8 @@
         "coBenefitNote": "Any emissions benefit is incidental to the resilience objective and sits on its own line."
       },
       "beneficiaries": {
-        "direct": {
-          "value": 12000,
-          "tier": "declared",
-          "definition": "Smallholder farming households"
-        },
-        "indirect": {
-          "value": 55000,
-          "tier": "modelled",
-          "definition": "Wider rural community dependent on the same catchment"
-        }
+        "direct": { "value": 12000, "tier": "declared", "definition": "Smallholder farming households" },
+        "indirect": { "value": 55000, "tier": "modelled", "definition": "Wider rural community dependent on the same catchment" }
       },
       "climateRationale": {
         "hazards": [
@@ -169,13 +109,7 @@
       "id": "gcf_dfcc_ebus",
       "code": "DFCC-3",
       "name": "Electric Bus Fleet and Depot Charging",
-      "location": {
-        "province": "Western",
-        "districts": [
-          "Colombo"
-        ],
-        "country": "LK"
-      },
+      "location": { "province": "Western", "districts": ["Colombo"], "country": "LK" },
       "sector": "Low-emission transport",
       "resultsArea": "LT",
       "stream": "mitigation",
@@ -183,15 +117,8 @@
       "selectionReason": "A risk-sharing facility for a private operator's electric bus fleet and depot charging, displacing diesel on high-frequency Colombo routes where ridership and duty cycle are known.",
       "essCategory": "B",
       "essNote": "Depot works on existing land and fleet replacement; site-specific, mitigable impacts.",
-      "taxonomy": {
-        "framework": "SLGFT",
-        "band": "green",
-        "objective": "M"
-      },
-      "barriers": [
-        "perceived_technology_risk",
-        "tenor"
-      ],
+      "taxonomy": { "framework": "SLGFT", "band": "green", "objective": "M" },
+      "barriers": ["perceived_technology_risk", "tenor"],
       "financing": {
         "currency": "USD",
         "totalCost": 45000000,
@@ -207,16 +134,8 @@
         }
       },
       "mitigation": {
-        "annual_tCO2e": {
-          "value": 22000,
-          "tier": "modelled",
-          "method": "diesel bus-km displaced x diesel emission factor, net of grid charging emissions"
-        },
-        "lifetime_tCO2e": {
-          "value": 264000,
-          "tier": "modelled",
-          "method": "annual x 12-year fleet life, undiscounted"
-        },
+        "annual_tCO2e": { "value": 22000, "tier": "modelled", "method": "diesel bus-km displaced x diesel emission factor, net of grid charging emissions" },
+        "lifetime_tCO2e": { "value": 264000, "tier": "modelled", "method": "annual x 12-year fleet life, undiscounted" },
         "baseline": {
           "description": "Diesel buses operating the same routes and schedule",
           "counterfactual": "Without the facility the routes continue on diesel buses",
@@ -224,16 +143,8 @@
         }
       },
       "beneficiaries": {
-        "direct": {
-          "value": 180000,
-          "tier": "modelled",
-          "definition": "Daily riders on the electrified routes"
-        },
-        "indirect": {
-          "value": 500000,
-          "tier": "modelled",
-          "definition": "Wider population along the corridors from cleaner air and quieter streets"
-        }
+        "direct": { "value": 180000, "tier": "modelled", "definition": "Daily riders on the electrified routes" },
+        "indirect": { "value": 500000, "tier": "modelled", "definition": "Wider population along the corridors from cleaner air and quieter streets" }
       }
     }
   ]
