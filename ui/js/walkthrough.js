@@ -465,7 +465,7 @@ const WalkthroughPage = (() => {
        GCF page. Starting here replaces whatever was on. */
     function syncControls() {
       const s = state();
-      const mine = Boolean(s) && s.track === key;
+      const mine = s ? s.track === key : false;
       show(id('start'), !mine); show(id('end'), mine);
     }
 
