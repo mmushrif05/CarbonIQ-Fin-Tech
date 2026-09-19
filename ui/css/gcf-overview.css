@@ -36,6 +36,8 @@
   --gv-on-green: #ffffff;
   --gv-sage-soft: #e3efe8;
   --gv-warm: #c46a1f;
+  /* An item on the checklist: held, partial, missing — a word and a mark beside each, never a colour alone. */
+  --go-item-held: #0a5c3a; --go-item-partial: #c46a1f; --go-item-missing: #98a19c;
 
   --p-bg: var(--gv-card);
   --p-card: var(--gv-card);
@@ -103,6 +105,7 @@
     --gv-paper: #131917; --gv-card: #1c2421; --gv-ink: #e8ede9; --gv-ink-2: #a9b3ad; --gv-ink-3: #79837d;
     --gv-rule: #303a35; --gv-band: #232c28; --gv-zebra: #192019;
     --gv-green: #7fc79f; --gv-green-dk: #a3d6b9; --gv-on-green: #131917; --gv-sage-soft: #22322a; --gv-warm: #e08a44;
+    --go-item-held: #7fc79f; --go-item-partial: #e08a44; --go-item-missing: #79837d;
     --go-mitigation: #4c9a38; --go-adaptation: #6fa0d8;
     --go-gate-eligible: #5fb57e; --go-gate-flagged: #d3a35a; --go-gate-excluded: #c46a78;
     --go-state-draft: #79837d; --go-state-under-review: #d3a35a; --go-state-validated: #5fb57e;
@@ -119,6 +122,7 @@
   --gv-paper: #131917; --gv-card: #1c2421; --gv-ink: #e8ede9; --gv-ink-2: #a9b3ad; --gv-ink-3: #79837d;
   --gv-rule: #303a35; --gv-band: #232c28; --gv-zebra: #192019;
   --gv-green: #7fc79f; --gv-green-dk: #a3d6b9; --gv-on-green: #131917; --gv-sage-soft: #22322a; --gv-warm: #e08a44;
+  --go-item-held: #7fc79f; --go-item-partial: #e08a44; --go-item-missing: #79837d;
   --go-mitigation: #4c9a38; --go-adaptation: #6fa0d8;
   --go-gate-eligible: #5fb57e; --go-gate-flagged: #d3a35a; --go-gate-excluded: #c46a78;
   --go-state-draft: #79837d; --go-state-under-review: #d3a35a; --go-state-validated: #5fb57e;
@@ -258,3 +262,26 @@
 .gov-table tbody tr.is-dim { opacity: 0.45; }
 .gov-row-actions { white-space: nowrap; }
 .gov-charts .partc-panel { min-width: 0; }
+
+/* The journey — one candidate across the ten stages. The rail wraps; a
+   stage the candidate has passed is filled, the one it is on is ringed, a
+   stage with a recorded date carries a mark. Every value is one the
+   readiness route or the package returned. */
+.gov-journey { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--gv-rule); min-width: 0; }
+.gov-journey-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 10px; }
+.gov-journey-rail { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 10px; min-width: 0; }
+.gov-jstep { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--gv-ink-3); min-width: 0; }
+.gov-jstep i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--gv-rule); background: transparent; flex: 0 0 auto; }
+.gov-jstep span { font-variant-numeric: tabular-nums; }
+.gov-jstep b { font-weight: 500; }
+.gov-jstep.is-done { color: var(--gv-ink-2); }
+.gov-jstep.is-done i { background: var(--gv-green); border-color: var(--gv-green); }
+.gov-jstep.is-on { color: var(--gv-ink); }
+.gov-jstep.is-on i { border-color: var(--gv-green); box-shadow: 0 0 0 3px var(--gv-sage-soft); }
+.gov-jstep.is-on b { font-weight: 700; }
+.gov-jstep.is-dated b::after { content: ' ·'; color: var(--gv-green); }
+.gov-journey-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 10px 16px; }
+.gov-journey-grid > div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gov-jsecs { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; min-width: 0; }
+.gov-jsec { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--gv-ink-2); padding: 3px 9px; border-radius: 999px; border: 1px solid var(--gv-rule); background: var(--gv-card); max-width: 100%; }
+.gov-jsec i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--pill, var(--gv-ink-3)); flex: 0 0 auto; }

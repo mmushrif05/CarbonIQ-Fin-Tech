@@ -279,7 +279,10 @@ tab marks that candidate's own rows, and *All candidates* clears it.
 1. **Where we stand** — *GCF Overview.* Every candidate: the money by
    source, the gate as a verdict beside a word and a mark, the ten stages,
    who has signed, lifetime mitigation with the adaptation co-benefit on its
-   own line, and the file the pipeline yields. **Say:** *"Accreditation is a
+   own line, and the file the pipeline yields. Press a candidate's chip and
+   its journey opens beneath: its stage ringed on the ten-stage rail, what
+   the stage asks for and who holds each open item, the eight sections, the
+   package's counts and the next step. **Say:** *"Accreditation is a
    gate, not a score — Board decision B.36/10. An excluded candidate is one
    the entity cannot carry as the accredited entity, never one ranked down."*
 2. **What is blocking, and who holds the key** — the register open behind the

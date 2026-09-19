@@ -66,6 +66,12 @@ const GCFOverviewPage = (() => {
   let source = 'seed';
   let sample = true;
   let focus = null;
+  /* The candidate in focus, read one level deeper: its readiness (the
+     checklist for its stage, the next stage's, its timeline, the next step)
+     and its Concept Note package (what is held, partial and external). Two
+     reads per candidate, kept for the visit and dropped with the position,
+     so the journey never shows a candidate that has since moved. */
+  const detail = new Map();
   /* The conformance matrix, read once on demand for the drawer and dropped
      on every reload. */
   let matrix = null;
@@ -87,6 +93,7 @@ const GCFOverviewPage = (() => {
 
   async function load() {
     matrix = null;
+    detail.clear();
     show('go-behind', false);
     say('go-status', 'Reading the pipeline…');
     try {
@@ -209,6 +216,19 @@ const GCFOverviewPage = (() => {
     focus = focus === id ? null : id;
     if (!portfolio) return;
     renderChips(); renderFocus(); renderCharts(); renderGapsByProject(); renderProjects();
+    if (focus && !detail.has(focus)) readJourney(focus);
+  }
+
+  /* The journey's two reads. A late answer for a candidate no longer in
+     focus is kept for its next turn and draws nothing now. */
+  async function readJourney(id) {
+    try {
+      const [rd, cn] = await Promise.all([gcf(`/pipeline/${encodeURIComponent(id)}/readiness`), gcf(`/cn/${encodeURIComponent(id)}`)]);
+      detail.set(id, { readiness: rd.readiness, criteria: rd.criteria, package: cn.package });
+    } catch (err) {
+      detail.set(id, { error: err.message });
+    }
+    if (focus === id) renderFocus();
   }
 
   /* Every figure on the panel is the candidate's own row on the portfolio
@@ -237,6 +257,7 @@ const GCFOverviewPage = (() => {
         <div><span class="gov-figure-label">Blocking</span><span class="gov-tile-value">${fmt(g.now)}</span><span class="partc-hint">now · ${fmt(g.next)} at the next stage</span></div>
       </div>
       ${g.items.filter(i => i.horizon === 'now').length ? `<ul class="gov-items">${g.items.filter(i => i.horizon === 'now').slice(0, 6).map(i => `<li><span class="gov-owner" style="--pill:${OWNER_COLOR(i.owner)}">${esc(i.ownerLabel)}</span><span><b>${esc(i.what)}</b> <span class="partc-hint">${esc(i.clause)}</span><br><span class="partc-hint">${esc(i.remedy)}</span></span></li>`).join('')}</ul>` : '<p class="partc-hint">Nothing blocks the next step.</p>'}
+      ${journeyHtml(r, detail.get(r.id))}
     `);
     el.hidden = false;
     const open = el.querySelector('.gov-focus-open');
@@ -245,6 +266,60 @@ const GCFOverviewPage = (() => {
     if (rep) rep.addEventListener('click', () => download(`/pipeline/${encodeURIComponent(r.id)}/assessment-report?format=pdf`, `gcf-assessment-${r.code}.pdf`, 'assessment report (PDF)'));
     const cn = el.querySelector('.gov-focus-cn');
     if (cn) cn.addEventListener('click', () => download(`/cn/${encodeURIComponent(r.id)}?format=pdf`, `gcf-concept-note-${r.code}.pdf`, 'Concept Note package (PDF)'));
+  }
+
+  /* The journey — one candidate across the ten stages, read from the
+     readiness route, the Concept Note package and the portfolio row. The
+     rail is the Fund's cycle as the portfolio lists it; the candidate's
+     stage marks where it is and the recorded milestones which stages have a
+     date; the checklist is the readiness route's own items with their
+     owners; the eight sections are read off the same items by id; the
+     package counts are the package's own. Nothing here is computed. */
+  const SECTION_ITEMS = [['risk_register', 'Risk register'], ['implementation_arrangements', 'Arrangements and timetable'], ['sustainability_exit', 'Sustainability and exit'],
+    ['stakeholders', 'Consultations'], ['adaptation_rationale', 'Climate rationale'], ['financial_terms', 'Financial terms'], ['me_plan', 'Monitoring and evaluation'], ['apr_reporting', 'Annual reporting']];
+  const STATUS_WORD = { held: 'Held', partial: 'Partial', missing: 'Missing' };
+  const STATUS_COLOR = s => `var(--go-item-${s}, var(--p-label-3, #98a19c))`;
+  const ownerLabel = o => ((register && register.owners && register.owners[o]) || {}).label || String(o || '').replace(/_/g, ' ');
+
+  function journeyHtml(r, d) {
+    if (!d) return '<p class="partc-hint gov-journey-wait">Reading the candidate’s journey…</p>';
+    if (d.error) return `<p class="partc-hint">The journey could not be read: ${esc(d.error)}</p>`;
+    const rd = d.readiness || {}; const pkg = d.package || {};
+    const items = rd.items || []; const ahead = (rd.next && rd.next.items) || [];
+    const dated = new Set(((rd.timeline && rd.timeline.recorded) || []).map(m => m.cycle));
+    const stages = (portfolio.byCycle || []).map(c => `<li class="gov-jstep${c.n < (r.cycle || 0) ? ' is-done' : ''}${c.n === r.cycle ? ' is-on' : ''}${dated.has(c.n) ? ' is-dated' : ''}"><i></i><span>${esc(c.n)}</span><b>${esc(c.label)}</b></li>`).join('');
+    const open = items.filter(i => i.status !== 'held');
+    const sec = SECTION_ITEMS.map(([id, label]) => {
+      const it = items.find(i => i.id === id) || ahead.find(i => i.id === id);
+      return `<span class="gov-jsec" style="--pill:${it ? STATUS_COLOR(it.status) : 'var(--gv-ink-3)'}"><i></i>${esc(label)} · ${it ? esc(STATUS_WORD[it.status] || it.status) : 'asked later'}</span>`;
+    }).join('');
+    const ns = r.nextStep || {};
+    const rdy = pkg.readiness || {};
+    return `
+      <div class="gov-journey">
+        <div class="gov-journey-head"><span class="gov-figure-label">The journey — one candidate across the Fund’s ten stages</span><span class="partc-hint">${esc(rd.stageLabel || r.stageLabel)}${rd.cycle ? ` · stage ${esc(rd.cycle.n)} of 10, ${esc(rd.cycle.actor)}` : ''}</span></div>
+        <ol class="gov-journey-rail">${stages}</ol>
+        <div class="gov-journey-grid">
+          <div>
+            <span class="gov-figure-label">This stage asks for</span>
+            <span class="gov-tile-value">${fmt(items.length - open.length)} of ${fmt(items.length)} held</span>
+            ${open.length ? `<ul class="gov-items">${open.slice(0, 5).map(i => `<li><span class="gov-owner" style="--pill:${OWNER_COLOR(i.owner)}">${esc(ownerLabel(i.owner))}</span><span><b>${esc(i.label)}</b> <span class="gov-pill" style="--pill:${STATUS_COLOR(i.status)}">${esc(STATUS_WORD[i.status] || i.status)}</span><br><span class="partc-hint">${esc(i.remedy)}</span></span></li>`).join('')}</ul>` : '<p class="partc-hint">Everything this stage asks for is on the record.</p>'}
+          </div>
+          <div>
+            <span class="gov-figure-label">The sections a proposal is written from</span>
+            <div class="gov-jsecs">${sec}</div>
+            <span class="gov-figure-label">Concept Note package</span>
+            <span class="gov-tile-value">${fmt(rdy.held)} held · ${fmt(rdy.partial)} partial · ${fmt(rdy.external)} external</span>
+            <span class="partc-hint">${(pkg.externalInputs || []).slice(0, 3).map(x => esc(x.input)).join(' · ') || 'no external input outstanding'}</span>
+          </div>
+          <div>
+            <span class="gov-figure-label">Next step</span>
+            <span class="gov-tile-value">${esc(ns.what || '—')}</span>
+            <span class="partc-hint">${ns.who ? `${esc(ns.who)}${ns.document ? ` · ${esc(ns.document)}` : ''}` : ''}</span>
+            ${rd.next && (rd.next.items || []).length ? `<span class="partc-hint">Then ${esc(rd.next.stageLabel)}: ${fmt(rd.next.missing)} of ${fmt(rd.next.items.length)} still needed</span>` : rd.next ? `<span class="partc-hint">Then ${esc(rd.next.stageLabel)}: nothing further is asked of the record</span>` : ''}
+          </div>
+        </div>
+      </div>`;
   }
 
   /* The Pipeline tab reads this once its own load is done and opens the
