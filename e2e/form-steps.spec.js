@@ -100,13 +100,17 @@ test('a required field left empty brings its own section back', async ({ page, r
   await signIn(page, request);
   await openRecordForm(page);
 
-  /* Walk away from the section holding the one required field, and press
-     Record. The browser will not submit a form it cannot focus the offending
-     control in, and it says so to the console rather than to the person —
-     so the section has to come back on its own. */
+  /* Walk away from the section holding the required field. The gate holds
+     Record shut and the checklist names the field wherever you are standing,
+     and its line is the way back to it. The browser's own refusal — which it
+     reports to the console rather than to the person, and which the module
+     answers by opening the offending control's section — is still wired and
+     is swept for in tests/form-steps.test.js; it is the path a form without
+     a gate takes. */
   await chip(page, '#pr-form', 'Company value').click();
   await expect(page.locator('#pr-f-name')).toBeHidden();
-  await page.locator('#pr-form-submit').click();
+  await expect(page.locator('#pr-form-submit')).toBeDisabled();
+  await page.locator('#pr-form .fs-check-row', { hasText: 'Counterparty name' }).click();
   await expect(page.locator('#pr-form .fs-tab.is-on .fs-tab-label')).toHaveText('The borrower');
   await expect(page.locator('#pr-f-name')).toBeVisible();
 });
@@ -170,4 +174,53 @@ test('a borrower with no figures of its own records on the sector library', asyn
   await page.locator('#pr-form-submit').click();
   await expect(page.locator('#pr-form-status')).toContainText('Recorded');
   await expect(page.locator('#pr-body')).toContainText(name);
+});
+
+/* The gate. A button that is always live answers a press with a refusal from
+   the engine, and where the refusal names a clause rather than a field, the
+   person pressing it learns nothing. */
+test('Record is refused until the checklist is answered, and says how many', async ({ page, request }) => {
+  await signIn(page, request);
+  await openRecordForm(page);
+
+  const record = page.locator('#pr-form-submit');
+  await expect(record).toBeDisabled();
+  await expect(record).toContainText('still needed');
+  await expect(page.locator('#pr-form .fs-checklist')).toContainText('Before this can be recorded');
+  /* The list reads in the order the sections do, so the counterparty leads. */
+  await expect(page.locator('#pr-form .fs-check-row').first()).toContainText('Counterparty name');
+  await expect(page.locator('#pr-form .fs-check-row', { hasText: 'Outstanding amount at year-end' })).toHaveCount(1);
+
+  /* A line in the list is the way to the field it names. */
+  await page.locator('#pr-form .fs-check-row', { hasText: 'Outstanding amount at year-end' }).click();
+  await expect(page.locator('#pr-f-outstanding')).toBeVisible();
+  await expect(page.locator('#pr-f-outstanding')).toBeFocused();
+
+  await page.fill('#pr-f-outstanding', '1000000');
+  /* The company value is one requirement between three fields, because the
+     standard accepts the total balance sheet where equity and debt cannot be
+     obtained. Answering any one of them answers it. */
+  await chip(page, '#pr-form', 'Company value').click();
+  await expect(page.locator('#pr-form .fs-check-row', { hasText: 'Company value' })).toHaveCount(1);
+  await page.fill('#pr-f-assets', '5000000');
+  await chip(page, '#pr-form', 'How the borrower’s emissions are known').click();
+  await page.fill('#pr-f-s1', '1000');
+  await page.fill('#pr-f-s2', '100');
+  await chip(page, '#pr-form', 'The borrower').click();
+  await page.fill('#pr-f-name', `Gated Borrower ${Date.now()}`);
+
+  await expect(record).toBeEnabled();
+  await expect(record).toHaveText('Record');
+  await expect(page.locator('#pr-form .fs-checklist')).toContainText('Everything this record needs is here');
+  await record.click();
+  await expect(page.locator('#pr-form-status')).toContainText('Recorded');
+
+  /* The button's words are the page's, not the gate's: the register renames
+     it while an exposure is being edited, and the gate appends its count to
+     whatever the page last called it. */
+  await page.locator('#pr-detail-edit').click();
+  await expect(record).toHaveText('Save changes');
+  await chip(page, '#pr-form', 'Outstanding at year-end').click();
+  await page.fill('#pr-f-outstanding', '');
+  await expect(record).toContainText('Save changes — 1 still needed');
 });

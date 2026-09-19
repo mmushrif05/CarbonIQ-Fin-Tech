@@ -37,9 +37,9 @@
     <div class="partc-card-head"><h3>Record an exposure</h3>
       <span class="partc-hint" id="pr-record-hint">The engine runs before anything is written; a refusal names its clause.</span></div>
     <form id="pr-form" class="pr-form" autocomplete="off"
-          data-steps="auto" data-step-first="The borrower">
+          data-steps="auto" data-step-first="The borrower" data-steps-gate="pr-form-submit">
       <div class="pr-grid">
-        <label>Counterparty <input id="pr-f-name" type="text" required maxlength="200"></label>
+        <label>Counterparty <input id="pr-f-name" type="text" required maxlength="200" data-fs-required data-fs-label="Counterparty name"></label>
         <label>Facility reference <input id="pr-f-ref" type="text" maxlength="80" placeholder="the bank's own loan number"></label>
       </div>
 
@@ -69,11 +69,11 @@
 
       <h5 class="partc-subhead">Outstanding at year-end</h5>
       <div class="pr-grid">
-        <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any" data-engine-path="outstanding.amount"></label>
+        <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any" data-engine-path="outstanding.amount" data-fs-required data-fs-label="Outstanding amount at year-end"></label>
         <label>Average over the year <input id="pr-f-average" type="number" data-money min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
         <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="runs the sector band check; prices Option 3a" data-engine-path="plausibility.sectorBand"></label>
-        <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
-        <label>As of <input id="pr-f-asof" type="date"></label>
+        <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR" data-fs-required data-fs-label="Currency"></label>
+        <label>As of <input id="pr-f-asof" type="date" data-fs-required data-fs-label="Date the outstanding is taken at"></label>
       </div>
 
       <h5 class="partc-subhead">Company value</h5>
@@ -100,8 +100,8 @@
 
       <div id="pr-known-reported">
         <div class="pr-grid">
-          <label>Scope 1, tCO₂e <input id="pr-f-s1" type="number" min="0" step="any" data-engine-path="emissions"></label>
-          <label>Scope 2, tCO₂e <input id="pr-f-s2" type="number" min="0" step="any" data-engine-path="emissions"></label>
+          <label>Scope 1, tCO₂e <input id="pr-f-s1" type="number" min="0" step="any" data-engine-path="emissions" data-fs-required data-fs-label="Scope 1 reported by the borrower"></label>
+          <label>Scope 2, tCO₂e <input id="pr-f-s2" type="number" min="0" step="any" data-engine-path="emissions" data-fs-required data-fs-label="Scope 2 reported by the borrower"></label>
           <label>Scope 3, tCO₂e <input id="pr-f-s3" type="number" min="0" step="any" data-engine-path="emissions.scope3"></label>
           <label>Basis
             <select id="pr-f-basis">
@@ -156,11 +156,11 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the property value at origination</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-re-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-re-outstanding" type="number" data-money min="0" step="any" data-fs-required data-fs-label="Outstanding amount at year-end"></label>
         <label>Property value at origination <input id="pr-f-re-value" type="number" data-money min="0" step="any"></label>
         <label>Latest valuation <input id="pr-f-re-latest" type="number" data-money min="0" step="any" placeholder="optional — used only where no origination value is held"></label>
         <label>Currency <input id="pr-f-re-currency" type="text" maxlength="10" value="LKR"></label>
-        <label>As of <input id="pr-f-re-asof" type="date"></label>
+        <label>As of <input id="pr-f-re-asof" type="date" data-fs-required data-fs-label="Date the outstanding is taken at"></label>
       </div>
       <h5 class="partc-subhead">How the building’s energy is known</h5>
       <p class="partc-hint">Metered energy reaches Option 1; an energy label with floor area Option 2a; a floor area alone Option 2b; a building count alone Option 3. The engine derives the option from what is supplied — PCAF Part A Tables 5.4-1 and 5.5-1.</p>
@@ -221,10 +221,10 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the value at origination</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-mv-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-mv-outstanding" type="number" data-money min="0" step="any" data-fs-required data-fs-label="Outstanding amount at year-end"></label>
         <label>Total value at origination <input id="pr-f-mv-value" type="number" data-money min="0" step="any" placeholder="unknown — 100% attribution (p.91)"></label>
         <label>Currency <input id="pr-f-mv-currency" type="text" maxlength="10" value="LKR"></label>
-        <label>As of <input id="pr-f-mv-asof" type="date"></label>
+        <label>As of <input id="pr-f-mv-asof" type="date" data-fs-required data-fs-label="Date the outstanding is taken at"></label>
       </div>
       <h5 class="partc-subhead">How the vehicle’s use is known</h5>
       <p class="partc-hint">Fuel consumed over the year reaches Option 1a; make/model efficiency with an odometer distance Option 1b; with the Sri Lankan distance statistic Option 2a; the class alone Option 3a — PCAF Part A Table 5.6-1. Two options score 1 in this class.</p>
@@ -262,7 +262,7 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the project value</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-pf-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-pf-outstanding" type="number" data-money min="0" step="any" data-fs-required data-fs-label="Outstanding amount at year-end"></label>
         <label>Total project equity plus debt <input id="pr-f-pf-denominator" type="number" data-money min="0" step="any"></label>
         <label>Currency <input id="pr-f-pf-currency" type="text" maxlength="10" value="LKR"></label>
       </div>
@@ -288,13 +288,13 @@
       </div>
       <h5 class="partc-subhead">Outstanding and the investee’s value (EVIC)</h5>
       <div class="pr-grid">
-        <label>Outstanding at year-end <input id="pr-f-le-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Outstanding at year-end <input id="pr-f-le-outstanding" type="number" data-money min="0" step="any" data-fs-required data-fs-label="Outstanding amount at year-end"></label>
         <label>Market capitalisation, ordinary <input id="pr-f-le-mcap" type="number" data-money min="0" step="any"></label>
         <label>Market capitalisation, preferred <input id="pr-f-le-mcap-pref" type="number" data-money min="0" step="any"></label>
         <label>Total debt, interest-bearing <input id="pr-f-le-debt" type="number" data-money min="0" step="any"></label>
         <label>Minority interests <input id="pr-f-le-minorities" type="number" data-money min="0" step="any"></label>
         <label>Currency <input id="pr-f-le-currency" type="text" maxlength="10" value="LKR"></label>
-        <label>As of <input id="pr-f-le-asof" type="date"></label>
+        <label>As of <input id="pr-f-le-asof" type="date" data-fs-required data-fs-label="Date the outstanding is taken at"></label>
       </div>
       <h5 class="partc-subhead">Investee emissions, tCO₂e</h5>
       <div class="pr-grid">
@@ -370,6 +370,11 @@
         <label>Taxonomy activity code <input id="pr-f-cl-code" type="text" maxlength="20" placeholder="e.g. M6.3"></label>
         <label class="pr-wide">Note <input id="pr-f-cl-note" type="text" maxlength="1000" placeholder="what the judgement rests on"></label>
       </div>
+
+      <!-- What the record still needs. Built by FormSteps from the fields
+           carrying data-fs-required, so a field is added to or dropped from
+           this list by editing the field itself. -->
+      <div class="fs-checklist" data-fs-checklist data-fs-keep hidden></div>
 
       <div class="partc-actions">
         <button class="btn btn-primary" type="submit" id="pr-form-submit">Record</button>

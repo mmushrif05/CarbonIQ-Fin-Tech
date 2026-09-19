@@ -195,3 +195,62 @@ describe('the component keeps the house rules', () => {
     expect(loose).toEqual([]);
   });
 });
+
+describe('the record button is gated on a checklist', () => {
+  /* The button was always live, so the only way to learn that a field was
+     missing was to press it and read a refusal from the engine — and where
+     the refusal named a clause rather than a field, not even then. */
+
+  test('a requirement is declared on the field, and read only where it shows', () => {
+    must(JS, /function requirementsOf\(state\)/, 'the walk is over the sections on screen');
+    must(JS, /if \(el\.disabled \|\| !visible\(el, state\.form\)\) continue;/,
+      'a requirement inside a block the page has hidden is not a requirement: the register '
+      + 'carries one block per asset class, and a native required control in a hidden block '
+      + 'stops the browser submitting a form nobody can fix');
+    mustNot(JS, /querySelectorAll\('\[required\]'\)/,
+      'native required is not how this is declared, for that reason');
+  });
+
+  test('the button says how many are outstanding, and refuses until none are', () => {
+    must(JS, /button\.disabled = missing\.length > 0;/, 'the gate is the button');
+    must(JS, /\$\{base\} — \$\{missing\.length\} still needed/, 'and it says how many');
+    must(JS, /function gateOf\(form\)/, 'the form names its own record control');
+  });
+
+  test('the checklist names each one and opens the section holding it', () => {
+    must(JS, /'Before this can be recorded'/, 'the heading says what the list is');
+    must(JS, /row\.addEventListener\('click', \(\) => \{\s*go\(state, r\.index\);/,
+      'a line is the way to the field, not only a note about it');
+    must(CSS, /\.fs-check-row/, 'the rows are drawn');
+    mustNot(CSS, /\.fs-checklist[^{]*\{[^}]*background:\s*(#f[a-f0-9]|rgba\(2[0-9][0-9])/i,
+      'an unfinished form is the ordinary state of a form being filled in, so the list is '
+      + 'furniture and not a warning');
+  });
+
+  test('the last section ends on the act rather than on a dead button', () => {
+    must(JS, /if \(last && gateButton\) \{/, 'Next becomes the record control on the last section');
+    must(JS, /if \(button && !button\.disabled\) button\.click\(\);/,
+      'it presses that button rather than submitting, so the gate and the page’s own '
+      + 'handler apply exactly as they do to a direct press');
+  });
+
+  test('a submit that gets through another way names the fields', () => {
+    const REG = source('ui/js/parta-register.js');
+    must(REG, /FormSteps\.missing\(\$\('pr-form'\)\)/, 'the page asks what is outstanding');
+    must(REG, /Not recorded — \$\{still\.length\} field/, 'and says so rather than sending it');
+    must(REG, /FormSteps\.revealMissing\(\$\('pr-form'\)\)/, 'and opens the first one');
+  });
+
+  test('the register declares its own requirements', () => {
+    const HTML = source('ui/pages/parta-register.html');
+    must(HTML, /id="pr-form"[^>]*data-steps-gate="pr-form-submit"/, 'the form names its record control');
+    must(HTML, /<div class="fs-checklist" data-fs-checklist data-fs-keep hidden><\/div>/,
+      'the checklist belongs to the form, not to its last section');
+    for (const id of ['pr-f-outstanding', 'pr-f-asof', 'pr-f-re-outstanding', 'pr-f-mv-outstanding', 'pr-f-le-outstanding']) {
+      must(HTML, new RegExp(`id="${id}"[^>]*data-fs-required`), `${id} is required`);
+    }
+    must(source('ui/js/parta-register.js'), /sectorKey\.setAttribute\('data-fs-required', ''\)/,
+      'the held sector is required on the sector path alone — the one control visible on both, '
+      + 'so the rule is in the module rather than on the field');
+  });
+});
