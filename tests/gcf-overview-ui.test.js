@@ -54,7 +54,9 @@ describe('The page is reachable and named', () => {
     must(APP, "src:  'pages/gcf-overview.html'", 'the router loads it');
     must(APP, 'GCFOverviewPage.init()', 'the router initialises it');
     must(APP, /'gcf-overview':\s*\{[\s\S]*?refresh:/, 'a return visit re-reads rather than replaying');
-    must(JS, /function refresh\(\)\s*\{\s*return load\(\);/, 'refresh is load');
+    must(JS, /function refresh\(\{ shown = false \} = \{\}\)/, 'refresh is load, except for a hand-over on the screen already shown');
+    must(JS, /if \(shown && held && portfolio && register && report\) \{ applyIntent\(\); return Promise\.resolve\(\); \}\s*return load\(\);/, 'a return visit re-reads; only a hand-over on the screen already shown is applied over the position held');
+    must(APP, /page\.refresh\(\{ shown: true \}\)/, 'the shell says when a page is re-read in place');
   });
 
   test('the role gate holds it to the Pipeline tab’s bar, and the sample pipeline reaches it', () => {

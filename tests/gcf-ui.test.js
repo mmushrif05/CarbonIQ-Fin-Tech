@@ -172,7 +172,7 @@ describe('The renderer obeys the engine rules', () => {
 
   test('a write re-reads every open panel rather than leaving stale rows', () => {
     /* Stale rows after a write are what made an earlier agent look static. */
-    must(JS, /function refreshAll\(\)/, "a write re-reads every open panel rather than leaving stale rows");
+    must(JS, /function refreshAll\(/, "a write re-reads every open panel rather than leaving stale rows");
     must(JS, /refreshAll\(\);/, "a write re-reads every open panel rather than leaving stale rows");
   });
 });

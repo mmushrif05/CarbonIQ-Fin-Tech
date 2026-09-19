@@ -83,7 +83,10 @@ const GCFPipeline = (() => {
     </div>`;
 
   /* ── The portfolio ────────────────────────────────────────── */
-  async function load() {
+  /* `reopen: false` is for a write that has just re-read the project it
+     changed: the board's re-read then leaves the project as it is, rather
+     than reading the same four routes a second time. */
+  async function load({ reopen = true } = {}) {
     try {
       const r = await deps.call('/portfolio');
       view.portfolio = r.portfolio;
@@ -91,7 +94,7 @@ const GCFPipeline = (() => {
       deps.onSample(r.sample, r.sampleNote);
       renderEnvelope(r.portfolio.envelope);
       renderPortfolio(r.portfolio);
-      if (view.project) await openProject(view.project.id, { quiet: true });
+      if (view.project && reopen) await openProject(view.project.id, { quiet: true });
     } catch (err) {
       setHtml('gcfMoney', `<div class="gcf-warn">${esc(err.message)}</div>`);
     }
@@ -646,7 +649,7 @@ const GCFPipeline = (() => {
       });
       hint('Recorded.');
       await openProject(id, { quiet: true });
-      deps.refreshAll();
+      deps.refreshAll({ reopen: false });
     } catch (err) {
       hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
     }
@@ -704,7 +707,7 @@ const GCFPipeline = (() => {
       await deps.call(`/pipeline/${encodeURIComponent(id)}/return`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       hint('Returned to the sponsor. The gap list has been snapshotted for the comparison.');
       await openProject(id, { quiet: true });
-      deps.refreshAll();
+      deps.refreshAll({ reopen: false });
     } catch (err) {
       hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
     }
@@ -747,7 +750,7 @@ const GCFPipeline = (() => {
       await deps.call(`/pipeline/${encodeURIComponent(id)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       hint('Saved.');
       await openProject(id, { quiet: true });
-      deps.refreshAll();
+      deps.refreshAll({ reopen: false });
     } catch (err) {
       hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
     }
@@ -765,7 +768,7 @@ const GCFPipeline = (() => {
       await deps.call(`/pipeline/${encodeURIComponent(id)}/stage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       hint(`Moved to ${stageLabel(stage).toLowerCase()}.`);
       await openProject(id, { quiet: true });
-      deps.refreshAll();
+      deps.refreshAll({ reopen: false });
     } catch (err) {
       hint(''); const e = $('gcfProjectError'); if (e) { e.hidden = false; e.textContent = err.message; }
     }

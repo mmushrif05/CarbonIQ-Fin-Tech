@@ -299,3 +299,7 @@
 .gcf-precheck-list li b { display: inline-block; margin: 4px 0 2px; }
 .gcf-precheck-list li div { color: var(--gcf-muted); }
 .gcf-pill-flag { background: var(--gcf-warn-soft); color: var(--gcf-warn); }
+
+/* The candidate a walkthrough step marks on the decision tab: an outline in
+   the accent, the row it names and nothing re-ranked. */
+.gcf-focus { outline: 2px solid var(--gcf-accent); outline-offset: 3px; border-radius: 8px; background: var(--gcf-accent-soft); }

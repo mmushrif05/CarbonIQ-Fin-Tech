@@ -538,7 +538,16 @@ const GCFOverviewPage = (() => {
     await load();
   }
 
-  function refresh() {
+  /* A return visit re-reads the position. A walkthrough step landing on the
+     screen already shown (`shown`, from the shell) carries a hand-over for a
+     drawer over the position already read, and re-reading three routes for
+     it is what put a walkthrough over the hundred requests a minute a
+     session is allowed — that hand-over is applied over what is on screen;
+     every other refresh is load. */
+  function refresh({ shown = false } = {}) {
+    let held = null;
+    try { held = localStorage.getItem('carboniq.gcf-overview.intent'); } catch (_) { held = null; }
+    if (shown && held && portfolio && register && report) { applyIntent(); return Promise.resolve(); }
     return load();
   }
 

@@ -104,18 +104,22 @@ const WalkthroughPage = (() => {
     },
   ];
 
-  /* Eight steps, one candidate from the door to the Fund: where the entity
-     stands and what is blocking it, for the chief executive; then one
-     candidate comes in on the intake form already filled from the example
-     the API serves, is read against the cycle, screened and structured,
-     assessed and signed off by a named assessor, packaged for a Concept
-     Note, and is in the file the pipeline yields. */
+  /* Ten steps, one candidate from the door to the Fund, in the cycle's own
+     order. The dashboard first — where the entity stands over every
+     candidate, and what is blocking — then one candidate, the served
+     example, followed by its code and never by whichever was recorded last:
+     it comes in on the intake form already filled, is read against the
+     cycle, screened and structured, assessed and signed off by a named
+     assessor, told to the NDA, packaged for a Concept Note, moved to the
+     next stage with its date, and is in the file the pipeline yields. Every
+     step opens the real screen with the candidate on it and marks the one
+     control to press. */
   const GCF_STEPS = [
     {
       title: 'Where we stand — the pipeline on one screen',
       page: 'gcf-overview',
       apply: () => { forget(GCF_OVERVIEW_INTENT); forget(GCF_INTENT); },
-      action: 'GCF Overview. The accredited entity over its candidate pipeline: the GCF ask and the money by source; how many candidates the accreditation gate lets through, flags or excludes; where each sits on the ten-stage project activity cycle; how many assessments a named assessor has signed; and lifetime mitigation with the adaptation co-benefit on its own line.',
+      action: 'GCF Overview. The accredited entity over every candidate on its pipeline: the GCF ask and the money by source; how many the accreditation gate lets through, flags or excludes; where each sits on the ten-stage project activity cycle; how many assessments a named assessor has signed; lifetime mitigation with the adaptation co-benefit on its own line; and the file the pipeline yields.',
       note: 'Every figure on this screen is one the portfolio returned; the screen draws it and adds nothing. Accreditation is a gate, not a score — Board decision B.36/10 — and an excluded candidate is one the entity cannot carry as the accredited entity, never one ranked down.',
     },
     {
@@ -129,42 +133,56 @@ const WalkthroughPage = (() => {
       title: 'A candidate comes in',
       page: 'gcf',
       apply: () => remember(GCF_INTENT, 'intake:example'),
-      action: 'GCF Pipeline, on the intake form, already filled from the example candidate the API serves — a tea-factory biomass and rooftop-solar credit line — with every figure carrying its evidence tier: modelled, declared, benchmark or measured. Run the pre-check above it if you like; then press Record.',
+      action: 'GCF Pipeline, on the intake form, already filled from the example candidate the API serves — a tea-factory biomass boiler conversion with rooftop solar — with every figure carrying its evidence tier: modelled, declared, benchmark or measured. Run the pre-check above it if you like; then press Record. This is the candidate every step from here follows.',
       note: 'A bare number is refused at the door: a benchmark grid factor would otherwise become a measured fact by the time it reaches a submission. The evidence tiers are GCF appraisal classes and never PCAF’s 1–5 scale. The pre-check answers in plain words from the accreditation — a category A design is a stop under B.36/10, with the separable component named.',
     },
     {
       title: 'On the cycle — what this stage holds, and what the next will ask for',
       page: 'gcf',
-      apply: () => remember(GCF_INTENT, 'open:latest'),
-      action: 'The candidate just recorded is open: its place on the ten stages, what this stage holds, partly holds or is missing — each with the clause — the next step and who takes it, and the Fund’s dates as projections marked as such: six weeks for concept-note feedback, nine months to the Board.',
+      apply: () => remember(GCF_INTENT, 'open:example'),
+      action: 'The candidate just recorded, open on its own: its place on the ten stages, what this stage holds, partly holds or is missing — each with the clause — the next step and who takes it, and the Fund’s dates as projections marked as such: six weeks for concept-note feedback, nine months to the Board.',
       note: 'Held means the record holds the fact; whether it is enough is for the Secretariat and the iTAP. A projected date names the service standard it rests on and is never listed beside a recorded date without the label.',
     },
     {
       title: 'Screened and structured — two rankings, never merged',
       page: 'gcf',
-      apply: () => remember(GCF_INTENT, 'panel:decision'),
-      action: 'The decision tab: the gate, then two ranked lists — mitigation on carbon per dollar, adaptation on beneficiaries per dollar — which two the engine recommends for a Concept Note, and the three criteria it names unscored. On the Instruments tab beside it, the structure that answers each candidate’s recorded barriers and the barrier it leaves standing.',
+      apply: () => remember(GCF_INTENT, 'decision:example'),
+      action: 'The decision tab, with the candidate marked in it: the gate, then two ranked lists — mitigation on carbon per dollar, adaptation on beneficiaries per dollar — which two the engine recommends for a Concept Note, and the three criteria it names unscored. On the Instruments tab beside it, the structure that answers each candidate’s recorded barriers and the barrier it leaves standing.',
       note: 'One league table on carbon per dollar puts every adaptation project last; the sort key decides that, not the projects. Three of the six investment criteria rest on judgement this system does not hold and are named unscored, with reasons. An instrument that needs the grant modality is a mandate question, not a low score.',
     },
     {
       title: 'Assessed and signed — by a named assessor',
       page: 'gcf',
-      apply: () => remember(GCF_INTENT, 'validate:latest'),
+      apply: () => remember(GCF_INTENT, 'validate:example'),
       action: 'The same candidate, on the assessor’s form with its controls marked. Press Start review, rate the six criteria in words — strong, adequate, weak — beside the evidence the record holds for each, record a recommendation, then Validate and sign off. The assessment is frozen, dated and attributed; the signable assessment report is one press beside it.',
       note: 'The ratings are words and never a number, because a number here would be read as a GCF or a PCAF score. Validating is the assessor’s own permission, kept apart from writing the book. A validated assessment can only be reopened, never edited in place, and every move is on its audit trail. It is the bank’s own appraisal, not a decision of the Fund.',
     },
     {
+      title: 'The NDA is informed',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'nda:example'),
+      action: 'The same candidate, on its NDA form: the no-objection status is set to informed with today’s date, and the executing entity beside it. Press Save. The readiness row the stage asked for turns from missing to held, and the register above loses the item.',
+      note: 'The National Designated Authority is the Ministry of Environment through the Climate Change Secretariat, and every funding proposal carries its no-objection letter. Informing it at the concept is the Sri Lanka NDA Operation Manual’s first step; the letter itself is the NDA’s to issue and stays on the register until it does.',
+    },
+    {
       title: 'The Concept Note package — what is held, and what only people can supply',
       page: 'gcf',
-      apply: () => remember(GCF_INTENT, 'cn:latest'),
-      action: 'The Concept Note tab, on the same candidate: every input laid out in GCF’s A–H order and marked held, partial or external, the readiness figure that measures what is held rather than how close the submission is, and the external worklist — the NDA’s no-objection, the gender assessment, the co-financing letters. Press PDF.',
+      apply: () => remember(GCF_INTENT, 'cn:example'),
+      action: 'The Concept Note tab, on the same candidate: every input laid out in GCF’s A–H order and marked held, partial or external, the readiness figure that measures what is held rather than how close the submission is, and the external worklist — the gender assessment, the co-financing letters, the no-objection letter. Press PDF.',
       note: 'This does not write the Concept Note. The external list is the deliverable most people actually need: the worklist between a pipeline entry and a submission. A package is never complete while an external input is outstanding.',
+    },
+    {
+      title: 'Submitted — the stage moves, dated',
+      page: 'gcf',
+      apply: () => remember(GCF_INTENT, 'move:example'),
+      action: 'The same candidate, on its move control: the next stage is set to Concept note submitted, today’s date and the note are in. Press Record the move. The move is dated into the candidate’s history with who made it, the submission date lands on the timeline where the Fund’s six-week feedback window is projected from it, and the rail on the overview counts it at the new stage.',
+      note: 'A move is a recorded event, attributed and dated, never an edit. The Fund’s dates that follow it are projections drawn as such — six weeks for feedback, nine months to the Board under the GCF-2 service standards — and never listed beside a recorded date without the label.',
     },
     {
       title: 'In the file — the GCF disclosure, in one press',
       page: 'gcf-overview',
       apply: () => remember(GCF_OVERVIEW_INTENT, 'file:gcf'),
-      action: 'Back on the overview: the signed count has moved and the register is shorter. Press GCF disclosure — PDF, the marked button. The document opens on its cover with a reference derived from its content, and reads in the standard’s order: governance, strategy, risk management, then the lines a pipeline can answer — SLFRS S2 §29(d) and §29(e), emissions avoided and reduced stated apart — with §29(a) absent by rule and the checklist answered from the document itself.',
+      action: 'Back on the overview: the candidate sits one stage further along the rail, the signed count has moved and the register is shorter. Press GCF disclosure — PDF, the marked button. The document opens on its cover with a reference derived from its content, and reads in the standard’s order: governance, strategy, risk management, then the lines a pipeline can answer — SLFRS S2 §29(d) and §29(e), emissions avoided and reduced stated apart — with §29(a) absent by rule and the checklist answered from the document itself.',
       note: 'A pipeline of financed projects is not the entity’s inventory: the inventory lines are absent with where the figure actually comes from, and nothing is netted against them. A statement the entity has not made prints as not stated with its clause; nothing is written on the bank’s behalf, and an item can answer No.',
     },
   ];
@@ -174,12 +192,12 @@ const WalkthroughPage = (() => {
   const TRACKS = {
     financed: { label: 'SLFRS S2 — one loan', title: 'The seven steps — one loan, from the door to the file',
       hint: 'The position and the SLFRS S2 file first; then one loan comes in with every field already filled, a second that does not know its emissions is priced on the held sector factor, the engine’s answer is read, it is reviewed and approved, and it is on the dashboard and in the file.', steps: STEPS },
-    gcf: { label: 'GCF — one candidate', title: 'The eight steps — one candidate, from the door to the Fund',
-      hint: 'Where the entity stands and what is blocking it first; then one candidate comes in on the intake form already filled, is read against the ten-stage cycle, screened and structured, assessed and signed off by a named assessor, packaged for a Concept Note, and is in the GCF disclosure the pipeline yields.', steps: GCF_STEPS },
+    gcf: { label: 'GCF — one candidate', title: 'The ten steps — one candidate, from the door to the Fund',
+      hint: 'The pipeline first — where the entity stands over every candidate, and what is blocking; then one candidate comes in on the intake form already filled, is read against the ten-stage cycle, screened and structured, assessed and signed off by a named assessor, told to the NDA, packaged for a Concept Note, moved to the next stage with its date, and is in the GCF disclosure the pipeline yields.', steps: GCF_STEPS },
   };
 
-  const call = path => (typeof window.CARBONIQ_fetch === 'function'
-    ? window.CARBONIQ_fetch(path) : fetch(path)).then(async r => {
+  const call = (path, opts) => (typeof window.CARBONIQ_fetch === 'function'
+    ? window.CARBONIQ_fetch(path, opts) : fetch(path, opts)).then(async r => {
     const body = await r.json().catch(() => ({}));
     if (!r.ok) { const err = new Error(body.message || `${r.status}`); err.status = r.status; err.code = body.error; throw err; }
     return body;
@@ -385,19 +403,19 @@ const WalkthroughPage = (() => {
        register, the entity's own facts and the report. */
     async function loadGcf() {
       say(id('status'), 'Reading the pipeline…');
-      let p = null, reg = null, entity = null, report = null, refusal = null;
+      let p = null, reg = null, entity = null, report = null, example = null, refusal = null;
       try {
-        const [a, b, c, d] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report')]);
-        p = a; reg = b.register; entity = c.entity; report = d.report;
+        const [a, b, c, d, x] = await Promise.all([call('/v1/gcf/portfolio'), call('/v1/gcf/gaps'), call('/v1/gcf/entity'), call('/v1/gcf/report'), call('/v1/gcf/pipeline/example')]);
+        p = a; reg = b.register; entity = c.entity; report = d.report; example = x.project;
       } catch (err) { refusal = err; }
-      renderGcfReadiness(p, reg, entity, report, refusal);
+      renderGcfReadiness(p, reg, entity, report, refusal, example);
       const name = report && report.basis && report.basis.entity && typeof report.basis.entity === 'string' ? report.basis.entity : null;
       say(id('entity'), name || 'Reporting entity not stated');
       say(id('subtitle'), p ? `${esc(p.portfolio.count)} candidate(s) on the ${p.sample ? 'illustrative' : 'recorded'} pipeline` : 'GCF pipeline');
       say(id('status'), p ? 'Every row below is read off the pipeline, the register and the report.' : (refusal ? refusal.message : ''));
     }
 
-    function renderGcfReadiness(p, reg, entity, report, refusal) {
+    function renderGcfReadiness(p, reg, entity, report, refusal, example) {
       const rows = [];
       if (!p || !reg || !report) {
         rows.push(['The pipeline', ready(false), esc(refusal ? refusal.message : 'The pipeline could not be read.'), opener('gcf-overview', 'Open GCF Overview')]);
@@ -412,6 +430,13 @@ const WalkthroughPage = (() => {
       const acc = entity && entity.accreditation;
       rows.push(['The accreditation every gate reads', ready(Boolean(acc), acc ? 'Recorded' : 'As shipped'),
         acc ? `Board decision ${esc(acc.decision || '')}, recorded by the entity` : `Board decision ${esc(pf.envelope.decision || '')} as shipped; record the entity’s own under Reporting → Accreditation`, opener('gcf', 'Open the Pipeline tab', 'panel:reporting')]);
+      /* The walkthrough's own candidate: the served example, found on the
+         pipeline by its code once step 3 has recorded it. Removing it is how
+         a presenter rehearses from the door again. */
+      const cand = example ? (pf.rows || []).find(r => r.code === example.code) : null;
+      rows.push([`The walkthrough candidate — ${esc(example ? example.name : 'the served example')}`, ready(Boolean(cand), cand ? 'Recorded' : 'Not yet'),
+        cand ? `${esc(cand.code)} at ${esc(cand.stageLabel || cand.stage || '')}; remove it to rehearse from the door again` : 'Step 3 records it from the served example, and every later step follows it',
+        cand ? `<button type="button" class="btn btn-secondary wt-open" data-remove="${esc(cand.id)}">Remove it</button>` : opener('gcf', 'Open the Pipeline tab', 'panel:intake')]);
       const a = pf.assessment || {};
       rows.push(['A signed assessment', ready(Number(a.validated) > 0, Number(a.validated) > 0 ? 'Signed' : 'None yet'),
         `${esc(a.validated)} validated · ${esc(a.underReview)} under review · ${esc(a.draft)} draft — step 6 signs one live`, opener('gcf-overview', 'Open GCF Overview')]);
@@ -480,9 +505,18 @@ const WalkthroughPage = (() => {
         const b = ev.target && ev.target.closest ? ev.target.closest('.wt-go') : null;
         if (b) go(key, Number(b.getAttribute('data-step')), true);
       });
-      on(id('readiness-rows'), 'click', ev => {
+      on(id('readiness-rows'), 'click', async ev => {
         const b = ev.target && ev.target.closest ? ev.target.closest('.wt-open') : null;
         if (!b) return;
+        /* `data-remove` carries the candidate's id: `data-action` is the
+           shell's dispatch attribute and names a registered module's method. */
+        const removeId = b.getAttribute('data-remove');
+        if (removeId) {
+          if (!window.confirm('Remove the walkthrough candidate from the pipeline, so the next walkthrough records it again from the door?')) return;
+          try { await call(`/v1/gcf/pipeline/${encodeURIComponent(removeId)}`, { method: 'DELETE' }); }
+          catch (err) { say(id('status'), err.message); return; }
+          return load();
+        }
         const apply = b.getAttribute('data-apply') || '';
         if (apply.startsWith('class:')) remember(CLASS_KEY, apply.slice(6));
         if (apply.startsWith('panel:')) remember(GCF_INTENT, apply);

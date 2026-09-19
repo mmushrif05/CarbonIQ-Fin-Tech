@@ -256,50 +256,77 @@ bank's own lending book.
    them as the bank's own gaps.
 4. **Open the GCF Walkthrough and read the readiness rows.**
    Every row is a field a route returned: the pipeline recorded, the entity's
-   name, the accreditation, a signed assessment, what is blocking, the
-   entity's statements, and the disclosure with its checklist count. Download
+   name, the accreditation, the walkthrough's own candidate (recorded or not
+   yet), a signed assessment, what is blocking, the entity's statements, and
+   the disclosure with its checklist count. Download
    the GCF disclosure once from the overview so the first render on the day
    is not the first render on the site.
 5. **Check the origin** the presenter's browser will use is on
    `ALLOWED_ORIGINS`; production CORS refuses any other, and the symptom is
    that every step fails on the sign-in screen.
 
-### The eight steps
+### The ten steps — the dashboard first, then one candidate
 
-1. **Where we stand** — *GCF Overview.* The money by source, the gate as a
-   verdict beside a word and a mark, the ten stages, who has signed, and
-   lifetime mitigation with the adaptation co-benefit on its own line.
-   **Say:** *"Accreditation is a gate, not a score — Board decision B.36/10.
-   An excluded candidate is one the entity cannot carry as the accredited
-   entity, never one ranked down."*
+The dashboard over every candidate first, for the chief executive; then one
+candidate — the served example, a tea-factory biomass boiler conversion with
+rooftop solar — followed from the door to the Fund. Every step opens the real
+screen with that candidate on it and marks the one control to press, and the
+readiness rows and the register move as the facts are recorded.
+
+1. **Where we stand** — *GCF Overview.* Every candidate: the money by
+   source, the gate as a verdict beside a word and a mark, the ten stages,
+   who has signed, lifetime mitigation with the adaptation co-benefit on its
+   own line, and the file the pipeline yields. **Say:** *"Accreditation is a
+   gate, not a score — Board decision B.36/10. An excluded candidate is one
+   the entity cannot carry as the accredited entity, never one ranked down."*
 2. **What is blocking, and who holds the key** — the register open behind the
    figure, by owner and by candidate. **Say:** *"Every item is one the
    engines raised, with the clause and the fact that clears it. This is the
    worklist between a pipeline entry and a submission, written down."*
-3. **A candidate comes in** — *Pipeline tab, Intake*, the form filled from the
-   example the API serves, every figure with its evidence tier; press
-   **Record**. **Say:** *"A bare number is refused at the door. The tiers are
-   GCF appraisal classes and never PCAF's 1–5 scale."*
-4. **On the cycle** — the candidate open: held, partial, missing with the
-   clause; the next step and who takes it; the Fund's dates as projections.
-   **Say:** *"Held means the record holds the fact; whether it is enough is
-   for the Secretariat and the iTAP."*
-5. **Screened and structured** — *The decision*: two rankings never merged,
-   which two for a Concept Note, three criteria named unscored; *Instruments*
-   beside it. **Say:** *"One league table on carbon per dollar puts every
-   adaptation project last; the sort key decides that, not the projects."*
+3. **A candidate comes in** — *Pipeline tab, Intake*, the form filled from
+   the example the API serves, every figure with its evidence tier; press
+   **Record**. This is the candidate every later step follows. **Say:** *"A
+   bare number is refused at the door. The tiers are GCF appraisal classes
+   and never PCAF's 1–5 scale."*
+4. **On the cycle** — the candidate open on its own, the board folded: held,
+   partial, missing with the clause; the next step and who takes it; the
+   Fund's dates as projections. **Say:** *"Held means the record holds the
+   fact; whether it is enough is for the Secretariat and the iTAP."*
+5. **Screened and structured** — *The decision*, with the candidate marked
+   in the rankings: two rankings never merged, which two for a Concept Note,
+   three criteria named unscored; *Instruments* beside it. **Say:** *"One
+   league table on carbon per dollar puts every adaptation project last; the
+   sort key decides that, not the projects."*
 6. **Assessed and signed** — the assessor's form with its controls marked.
    Press **Start review**, rate the six criteria in words, record a
    recommendation, press **Validate and sign off**. **Say:** *"The ratings
    are words and never a number. It is the bank's own appraisal, signed by a
    named assessor — not a decision of the Fund."*
-7. **The Concept Note package** — A–H held, partial or external, and the
+7. **The NDA is informed** — the candidate's NDA form, set to *informed*
+   with today's date; press **Save**. The readiness row turns from missing to
+   held and the register loses the item. **Say:** *"The NDA is the Ministry
+   of Environment through the Climate Change Secretariat; informing it at the
+   concept is the Operation Manual's first step. The letter itself is the
+   NDA's to issue and stays on the register until it does."*
+8. **The Concept Note package** — A–H held, partial or external, and the
    external worklist; press **PDF**. **Say:** *"This does not write the
    Concept Note. The external list is what only people can supply."*
-8. **In the file** — back on the overview, the signed count moved; press
-   **GCF disclosure — PDF**. **Say:** *"A pipeline is not the entity's
-   inventory: §29(a) is absent with where the figure comes from, avoided and
-   reduced are stated apart, and the checklist can answer No."*
+9. **Submitted — the stage moves, dated** — the move control set to *Concept
+   note submitted*, today's date and the note in; press **Record the move**.
+   The move is dated into the history with who made it, and the Fund's
+   six-week feedback window is projected from it. **Say:** *"A move is a
+   recorded event, never an edit. The dates that follow it are projections
+   drawn as such."*
+10. **In the file** — back on the overview, the candidate one stage further
+    along the rail, the signed count moved; press **GCF disclosure — PDF**.
+    **Say:** *"A pipeline is not the entity's inventory: §29(a) is absent
+    with where the figure comes from, avoided and reduced are stated apart,
+    and the checklist can answer No."*
+
+**To rehearse again from the door**, open the GCF Walkthrough and press
+*Remove it* on the walkthrough-candidate row: the candidate is deleted from
+the pipeline and step 3 records it afresh. Recording it a second time without
+removing it updates the same candidate in place.
 
 `npm run rehearse:gcf` drives exactly this against a site — `BASE`, `EMAIL`,
 `PASSWORD` — with a full-page screenshot at every step and a report of what
