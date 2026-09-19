@@ -41,6 +41,13 @@
 
 'use strict';
 
+/**
+ * GCF's accreditation size categories are nested ceilings in US dollars —
+ * micro up to 10m, small up to 50m, medium up to 250m, large above — and the
+ * screen reads them from the reference rather than holding its own copy.
+ */
+const SIZE_CEILINGS_USD = Object.freeze({ micro: 10e6, small: 50e6, medium: 250e6, large: null });
+
 const record = require('./record');
 const emissions = require('./emissions');
 const { numberOr, numberOrNull } = require('../../../shared/numbers');
@@ -467,4 +474,4 @@ function recommend(projects = [], { accreditation, weights, take = 2 } = {}) {
 module.exports = {
   screen, screenOne, rank, rankStream, recommend, metricsFor,
   DEFAULT_WEIGHTS, GCF_CRITERIA, STAGE_RANK, TIER_STRENGTH,
-};
+ SIZE_CEILINGS_USD };

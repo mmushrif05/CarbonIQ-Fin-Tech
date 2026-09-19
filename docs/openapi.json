@@ -62,6 +62,9 @@
       "name": "jobs"
     },
     {
+      "name": "lending"
+    },
+    {
       "name": "metrics"
     },
     {
@@ -87,6 +90,9 @@
     },
     {
       "name": "supervisor"
+    },
+    {
+      "name": "taxonomy"
     },
     {
       "name": "ui-config.js"
@@ -18547,6 +18553,10 @@
                       "type": "object",
                       "additionalProperties": true
                     },
+                    "sizeCeilings_usd": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
                     "cycle": {
                       "type": "object",
                       "additionalProperties": true
@@ -18609,6 +18619,10 @@
                           "additionalProperties": true
                         },
                         "accreditation": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "sizeCeilings_usd": {
                           "type": "object",
                           "additionalProperties": true
                         },
@@ -19516,6 +19530,397 @@
         "security": [
           {
             "ApiKeyAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/lending/attribution": {
+      "post": {
+        "operationId": "postLendingAttribution",
+        "tags": [
+          "lending"
+        ],
+        "summary": "PCAF attribution for one facility — outstanding over equity plus debt, applied to the project's emissions",
+        "description": "A read that stores nothing. The scope lines are an indicative allocation by phase and building type, never a measured inventory, and the response says so beside them. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "outstanding": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "The bank's outstanding amount"
+                  },
+                  "equity": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Project equity"
+                  },
+                  "debt": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Project debt"
+                  },
+                  "emissions_tCO2e": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "The project's annual emissions, tCO2e"
+                  },
+                  "projectPhase": {
+                    "type": "string",
+                    "enum": [
+                      "Construction",
+                      "Operational"
+                    ],
+                    "default": "Operational"
+                  },
+                  "projectType": {
+                    "type": "string",
+                    "maxLength": 40,
+                    "default": "Commercial"
+                  },
+                  "dqScore": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 5
+                  }
+                },
+                "required": [
+                  "outstanding",
+                  "equity",
+                  "debt",
+                  "emissions_tCO2e"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "attribution": {
+                      "type": "number"
+                    },
+                    "financedEmissions_tCO2e": {
+                      "type": "number"
+                    },
+                    "economicIntensity_tCO2e_per_M": {
+                      "type": "number"
+                    },
+                    "scopes": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "dataQuality": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "attribution",
+                    "financedEmissions_tCO2e"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "attribution": {
+                          "type": "number"
+                        },
+                        "financedEmissions_tCO2e": {
+                          "type": "number"
+                        },
+                        "economicIntensity_tCO2e_per_M": {
+                          "type": "number"
+                        },
+                        "scopes": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "dataQuality": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "attribution",
+                        "financedEmissions_tCO2e"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/lending/estimate": {
+      "post": {
+        "operationId": "postLendingEstimate",
+        "tags": [
+          "lending"
+        ],
+        "summary": "A bill of materials priced on the factor table, with intensity and attribution — the wizard's review figures",
+        "description": "A read that stores nothing. A line whose category the table does not hold is unpriced (null, never zero) and the count left out travels with the total. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "materials": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200,
+                          "default": ""
+                        },
+                        "category": {
+                          "type": "string",
+                          "maxLength": 60,
+                          "default": ""
+                        },
+                        "qty": {
+                          "type": "number",
+                          "minimum": 0,
+                          "default": 0
+                        },
+                        "unit": {
+                          "type": "string",
+                          "enum": [
+                            "kg",
+                            "tonnes"
+                          ],
+                          "default": "kg"
+                        }
+                      }
+                    },
+                    "maxItems": 500
+                  },
+                  "floorArea_m2": {
+                    "type": "number",
+                    "minimum": 0
+                  },
+                  "loan": {
+                    "type": "object",
+                    "properties": {
+                      "outstanding": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "equity": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "debt": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "lines": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "totals": {
+                      "type": "object",
+                      "additionalProperties": true
+                    },
+                    "attribution": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "lines",
+                    "totals"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "lines": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "totals": {
+                          "type": "object",
+                          "additionalProperties": true
+                        },
+                        "attribution": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "lines",
+                        "totals"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
           }
         ]
       }
@@ -45419,6 +45824,12 @@
                         "additionalProperties": true
                       }
                     },
+                    "paretoVitalFewShare": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "a4MaterialMass_t": {
                       "type": [
                         "number",
@@ -45559,6 +45970,12 @@
                             "type": "object",
                             "additionalProperties": true
                           }
+                        },
+                        "paretoVitalFewShare": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
                         },
                         "a4MaterialMass_t": {
                           "type": [
@@ -47957,6 +48374,12 @@
                         "additionalProperties": true
                       }
                     },
+                    "paretoVitalFewShare": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
                     "a4MaterialMass_t": {
                       "type": [
                         "number",
@@ -48097,6 +48520,12 @@
                             "type": "object",
                             "additionalProperties": true
                           }
+                        },
+                        "paretoVitalFewShare": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
                         },
                         "a4MaterialMass_t": {
                           "type": [
@@ -48705,6 +49134,129 @@
                       },
                       "additionalProperties": true,
                       "required": [
+                        "totalProjects"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/portfolio/sample": {
+      "get": {
+        "operationId": "getPortfolioSample",
+        "tags": [
+          "portfolio"
+        ],
+        "summary": "The sample book — a worked example drawn only when the live portfolio has nothing to show",
+        "description": "Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "304": {
+            "$ref": "#/components/responses/NotModified"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "sample": {
+                      "type": "boolean"
+                    },
+                    "sampleNote": {
+                      "type": "string"
+                    },
+                    "totalProjects": {
+                      "type": "number"
+                    },
+                    "derived": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "sample",
+                    "totalProjects"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "sample": {
+                          "type": "boolean"
+                        },
+                        "sampleNote": {
+                          "type": "string"
+                        },
+                        "totalProjects": {
+                          "type": "number"
+                        },
+                        "derived": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "sample",
                         "totalProjects"
                       ]
                     },
@@ -49545,8 +50097,8 @@
         "tags": [
           "projects"
         ],
-        "summary": "Every monitoring entry recorded against a project",
-        "description": "Requires the `read` scope.",
+        "summary": "Every monitoring entry recorded against a project, priced, with the year-on-year comparison",
+        "description": "Each entry carries its attribution and financed figure and the comparison of the latest year against the one before — the emissions movement, the data-quality trend and the fluctuation analysis. A project with no recorded entry is answered with the illustrative series and `source: sample`. Requires the `read` scope.",
         "x-scope": "read",
         "parameters": [
           {
@@ -49601,13 +50153,30 @@
                     },
                     "total": {
                       "type": "number"
+                    },
+                    "comparison": {
+                      "type": [
+                        "object",
+                        "null"
+                      ],
+                      "additionalProperties": true
+                    },
+                    "source": {
+                      "type": "string"
+                    },
+                    "sampleNote": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
                     }
                   },
                   "additionalProperties": true,
                   "required": [
                     "projectId",
                     "entries",
-                    "total"
+                    "total",
+                    "source"
                   ]
                 }
               },
@@ -49635,13 +50204,30 @@
                         },
                         "total": {
                           "type": "number"
+                        },
+                        "comparison": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "additionalProperties": true
+                        },
+                        "source": {
+                          "type": "string"
+                        },
+                        "sampleNote": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         }
                       },
                       "additionalProperties": true,
                       "required": [
                         "projectId",
                         "entries",
-                        "total"
+                        "total",
+                        "source"
                       ]
                     },
                     "meta": {
@@ -51371,6 +51957,272 @@
                       "required": [
                         "success",
                         "templates"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/taxonomy/frameworks": {
+      "get": {
+        "operationId": "getTaxonomyFrameworks",
+        "tags": [
+          "taxonomy"
+        ],
+        "summary": "The five frameworks the intensity screen draws, with their bands and what each band is",
+        "description": "Requires the `read` scope. Reference data: cacheable for 3600s, answers 304 to a matching If-None-Match.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "responses": {
+          "304": {
+            "$ref": "#/components/responses/NotModified"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "frameworks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "scaleMax_kgCO2e_m2": {
+                      "type": "number"
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "frameworks"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "frameworks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "scaleMax_kgCO2e_m2": {
+                          "type": "number"
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "frameworks"
+                      ]
+                    },
+                    "meta": {
+                      "$ref": "#/components/schemas/Meta"
+                    },
+                    "error": {
+                      "type": "null"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "$ref": "#/components/responses/Default"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/v1/taxonomy/screen": {
+      "post": {
+        "operationId": "postTaxonomyScreen",
+        "tags": [
+          "taxonomy"
+        ],
+        "summary": "One embodied-carbon intensity screened against the five frameworks",
+        "description": "A read that stores nothing. Only ASEAN publishes an embodied-carbon threshold; the Sri Lanka bands are governed baselines and the other three are indicative proxies, and every row says which. Requires the `read` scope.",
+        "x-scope": "read",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/envelope"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "intensity_kgCO2e_m2": {
+                    "type": "number",
+                    "minimum": 0,
+                    "description": "Embodied carbon per square metre"
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 2,
+                    "default": "LK"
+                  }
+                },
+                "required": [
+                  "intensity_kgCO2e_m2"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "2XX": {
+            "description": "Success",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/XRequestID"
+              },
+              "X-Api-Envelope": {
+                "$ref": "#/components/headers/XApiEnvelope"
+              },
+              "X-Key-Scopes": {
+                "$ref": "#/components/headers/XKeyScopes"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "intensity_kgCO2e_m2": {
+                      "type": "number"
+                    },
+                    "frameworks": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": true
+                      }
+                    },
+                    "summary": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "additionalProperties": true,
+                  "required": [
+                    "frameworks",
+                    "summary"
+                  ]
+                }
+              },
+              "application/vnd.carboniq.v1+json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta",
+                    "error"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "intensity_kgCO2e_m2": {
+                          "type": "number"
+                        },
+                        "frameworks": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "additionalProperties": true
+                        }
+                      },
+                      "additionalProperties": true,
+                      "required": [
+                        "frameworks",
+                        "summary"
                       ]
                     },
                     "meta": {

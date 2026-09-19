@@ -223,6 +223,11 @@ function _lifetime({ annualGeneration_MWh, factorValue, country, years, degradat
     series,
     firstYear: series[0] ? series[0].avoided_tCO2e : null,
     lastYear: series.length ? series[series.length - 1].avoided_tCO2e : null,
+    /* How much less the final year avoids than the first, in percent — the
+       sentence under the chart, computed beside the series it describes. */
+    declinePct: series.length > 1 && series[0].avoided_tCO2e > 0
+      ? +((1 - series[series.length - 1].avoided_tCO2e / series[0].avoided_tCO2e) * 100).toFixed(1)
+      : null,
     years,
     degradationPct,
     trajectory: traj ? 'configured' : 'flat',

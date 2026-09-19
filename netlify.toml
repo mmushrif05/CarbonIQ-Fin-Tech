@@ -121,11 +121,6 @@
     Cache-Control = "no-cache"
 
 [[headers]]
-  for = "/data/*"
-  [headers.values]
-    Cache-Control = "no-cache"
-
-[[headers]]
   for = "/*.js"
   [headers.values]
     Cache-Control = "no-cache"

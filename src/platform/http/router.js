@@ -33,6 +33,8 @@ const taxonomyRouter = require('../../domains/taxonomy/interface/routes/taxonomy
 const pcafRouter = require('../../domains/lending/interface/routes/pcaf');
 const covenantRouter = require('../../domains/lending/interface/routes/covenant');
 const portfolioRouter = require('../../domains/lending/interface/routes/portfolio');
+const lendingCalculatorRouter = require('../../domains/lending/interface/routes/calculator');
+const intensityScreenRouter = require('../../domains/taxonomy/interface/routes/intensity-screen');
 const webhookRouter = require('../../domains/lending/interface/routes/webhook');
 const extractRouter       = require('../../domains/lending/interface/routes/extract');
 const extractUploadRouter = require('../../domains/lending/interface/routes/extract-upload');
@@ -191,6 +193,8 @@ router.use('/projects', taxonomyRouter);
 router.use('/projects', pcafRouter);
 router.use('/projects', covenantRouter);
 router.use('/portfolio', portfolioRouter);
+router.use('/lending', lendingCalculatorRouter);
+router.use('/taxonomy', intensityScreenRouter);
 router.use('/webhooks', webhookRouter);
 router.use('/agent', agentRouter);
 router.use('/supervisor', supervisorRouter);

@@ -8,8 +8,11 @@ type check).
 `npm run build:ui` — `scripts/build-ui.js` — produces `dist/ui`, the
 directory Netlify publishes, from `ui/`:
 
-- every script and stylesheet minified with esbuild, a source map beside
-  it (`1557 KB → 1212 KB` at the time of writing);
+- every script and stylesheet minified with esbuild, **with no source map
+  and no pointer to one** — a map beside a minified file hands the original
+  source, comments and all, to anyone who opens the developer tools on the
+  published site, and `tests/structure.test.js` fails the build if one
+  returns;
 - every other file — the shell, the page fragments, the brand artwork, the
   data — copied as it is;
 - `build-manifest.json` naming the commit and every file with its size.

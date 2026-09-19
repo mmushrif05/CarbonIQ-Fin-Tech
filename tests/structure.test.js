@@ -108,8 +108,13 @@ describe('The frontend build (H1) and the browser tests (H3)', () => {
     for (const [k, v] of js) {
       expect(v.minified).toBe(true);
       expect(v.bytes).toBeLessThan(v.sourceBytes);
-      expect(fs.existsSync(path.join(out, `${k}.map`))).toBe(true);
+      /* No source map, and no pointer to one: a map beside a minified file
+         hands the whole original — comments, reasoning, tables — to anyone
+         who opens the developer tools on the published site. */
+      expect(fs.existsSync(path.join(out, `${k}.map`))).toBe(false);
+      expect(fs.readFileSync(path.join(out, k), 'utf8')).not.toMatch(/sourceMappingURL/);
     }
+    expect(walk(out).filter(f => f.endsWith('.map'))).toEqual([]);
     expect(manifest.files['vendor/marked.min.js']).toMatchObject({ minified: false });
     mustNot(source('ui/index.html'), /<script src="https?:\/\//,
       'no page fetches a script from another origin — the markdown library is vendored',

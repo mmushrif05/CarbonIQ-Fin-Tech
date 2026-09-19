@@ -217,7 +217,8 @@ const DeskPage = (() => {
       ['exited', 'Exited', 'var(--dk-neutral)'],
       ['declined', 'Declined', 'var(--dk-neutral)'],
     ].filter(([k]) => (l[k] || 0) > 0);
-    const lTotal = order.reduce((t, [k]) => t + (l[k] || 0), 0);
+    /* The whole the segments are drawn against is the engine's own count. */
+    const lTotal = Number(l.total) || 0;
     setHtml('deskPositionSplit', order
       .map(([k, , c]) => `<i style="width:${width(l[k], lTotal).toFixed(1)}%;background:${c}"></i>`).join(''));
     setHtml('deskPositionLegend', order

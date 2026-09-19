@@ -8,16 +8,17 @@
 
 const Dashboard = (() => {
   // ── Sample figures ────────────────────────────────────────
-  // The sample book lives in ui/data/portfolio-sample.json rather than in
-  // this file, so it is data a person can replace without editing code, and
-  // so there is exactly one copy of it. It is drawn only when the API has
-  // nothing to give, never blended into a live portfolio.
-  const SAMPLE_URL = '/data/portfolio-sample.json';
+  // The sample book is served by the API — `GET /v1/portfolio/sample`, behind
+  // the door like every other figure, with its derived shares computed beside
+  // it. It was a static file under ui/data/, readable by anyone who knew the
+  // path without signing in. It is drawn only when the live portfolio has
+  // nothing to give, never blended into one.
+  const SAMPLE_PATH = '/v1/portfolio/sample';
 
   let _sample = null;
   async function _loadSample() {
     if (_sample) return _sample;
-    const res = await fetch(SAMPLE_URL, { cache: 'no-store' });
+    const res = await window.CARBONIQ_fetch(SAMPLE_PATH);
     if (!res.ok) throw new Error(`sample data ${res.status}`);
     _sample = await res.json();
     return _sample;
@@ -120,7 +121,7 @@ const Dashboard = (() => {
         headline = 'No figures to show.';
         advice = 'The API returned nothing and the sample book could not be loaded either '
                + `(${String(src.sampleError || '').replace(/[<>&]/g, '')}). `
-               + 'Check that data/portfolio-sample.json is deployed with the site.';
+               + 'Check that the API is reachable and the session is signed in.';
       } else if (src.cause === 'empty') {
         headline = 'Showing sample data — not your portfolio.';
         advice = 'The API answered, but no projects are linked to this API key yet, so there is '
@@ -156,10 +157,11 @@ const Dashboard = (() => {
     if (typeof out.totalFinancedEmissions_tCO2e !== 'number') out.totalFinancedEmissions_tCO2e = 0;
     if (typeof out.totalProjects !== 'number') out.totalProjects = 0;
     if (typeof out.totalOutstanding !== 'number') out.totalOutstanding = 0;
+    /* Every share the screen prints is the engine's, under `derived`; a
+       portfolio that did not carry the block carries no shares. */
+    if (!out.derived) out.derived = {};
     if (typeof out.coveragePct !== 'number') {
-      const req = out.meta?.requestedProjects || 0;
-      const got = out.meta?.resolvedProjects || 0;
-      out.coveragePct = req > 0 ? Math.round((got / req) * 100) : 0;
+      out.coveragePct = typeof out.derived.coveragePct === 'number' ? out.derived.coveragePct : 0;
     }
     return out;
   }
@@ -730,7 +732,7 @@ const Dashboard = (() => {
     const scored = Number(dq.investmentsScored) || 0;
     const unscored = Number(dq.investmentsWithoutScore) || 0;
     const total = scored + unscored;
-    const pct = total > 0 ? Math.round((scored / total) * 100) : null;
+    const pct = typeof dq.coveragePct === 'number' ? dq.coveragePct : null;
 
     $('cap-dq-coverage').innerHTML = pct == null
       ? '—'
@@ -1415,8 +1417,8 @@ const Dashboard = (() => {
 
     // KPI 3: Economic Intensity
     const intensity = $('pf-intensity');
-    const intensityVal = d.totalOutstanding > 0
-      ? (d.totalFinancedEmissions_tCO2e / (d.totalOutstanding / 1e6)).toFixed(1)
+    const intensityVal = typeof d.derived.economicIntensity_tCO2e_per_M === 'number'
+      ? d.derived.economicIntensity_tCO2e_per_M.toFixed(1)
       : '—';
     if (intensity) intensity.innerHTML = `${intensityVal} <span class="kpi-unit">tCO2e/$M</span>`;
     const intBadge = $('pf-intensity-badge');
@@ -1459,8 +1461,9 @@ const Dashboard = (() => {
 
     // KPI 6: Green Loan Ratio
     const tax = d.taxonomyDistribution || {};
-    const totalProj = (tax.green || 0) + (tax.transition || 0) + (tax.brown || 0);
-    const greenPct = totalProj > 0 ? Math.round((tax.green / totalProj) * 100) : 0;
+    const shares = d.derived.taxonomySharePct || {};
+    const totalProj = shares.classified || 0;
+    const greenPct = d.derived.greenLoanPct ?? 0;
     const greenRatio = $('pf-green-ratio');
     if (greenRatio) greenRatio.innerHTML = `${greenPct}<span class="kpi-unit">%</span>`;
     const greenBadge = $('pf-green-badge');
@@ -1472,9 +1475,11 @@ const Dashboard = (() => {
     const CIRC = 2 * Math.PI * 52;
     const taxTotal = $('pf-tax-total');
     if (taxTotal) taxTotal.textContent = `${totalProj} projects`;
-    const gPct = totalProj > 0 ? (tax.green || 0) / totalProj : 0;
-    const tPct = totalProj > 0 ? (tax.transition || 0) / totalProj : 0;
-    const bPct = totalProj > 0 ? (tax.brown || 0) / totalProj : 0;
+    /* The arcs are drawn from the engine's shares; the fraction of a circle
+       an arc covers is geometry, not a figure. */
+    const gPct = (shares.green ?? 0) / 100;
+    const tPct = (shares.transition ?? 0) / 100;
+    const bPct = (shares.brown ?? 0) / 100;
 
     const greenArc = $('pf-tax-green-arc');
     const transArc = $('pf-tax-trans-arc');
@@ -1494,9 +1499,9 @@ const Dashboard = (() => {
     const legend = $('pf-tax-legend');
     if (legend) {
       legend.innerHTML = [
-        { cls: 'green', label: 'Green (CFS ≥ 70)', count: tax.green || 0, pct: Math.round(gPct * 100) },
-        { cls: 'transition', label: 'Transition (40–69)', count: tax.transition || 0, pct: Math.round(tPct * 100) },
-        { cls: 'brown', label: 'Brown (CFS < 40)', count: tax.brown || 0, pct: Math.round(bPct * 100) },
+        { cls: 'green', label: 'Green (CFS ≥ 70)', count: tax.green || 0, pct: shares.green ?? 0 },
+        { cls: 'transition', label: 'Transition (40–69)', count: tax.transition || 0, pct: shares.transition ?? 0 },
+        { cls: 'brown', label: 'Brown (CFS < 40)', count: tax.brown || 0, pct: shares.brown ?? 0 },
       ].map(r => `
         <div class="pf-tax-legend-row">
           <span class="pf-tax-dot pf-tax-dot-${r.cls}"></span>
@@ -1510,14 +1515,14 @@ const Dashboard = (() => {
     const cfsBars = $('pf-cfs-bars');
     const cfs = d.cfsDistribution || d.taxonomyDistribution || {};
     if (cfsBars) {
-      const cfsTotal = (cfs.green || 0) + (cfs.transition || 0) + (cfs.brown || 0);
+      const cfsShares = d.derived.cfsSharePct || {};
       const bands = [
-        { label: 'Green (70–100)',      count: cfs.green || 0,      barCls: 'pf-cfs-bar-green',      labelCls: 'pf-cfs-label-green' },
-        { label: 'Transition (40–69)',   count: cfs.transition || 0, barCls: 'pf-cfs-bar-transition', labelCls: 'pf-cfs-label-transition' },
-        { label: 'Brown (0–39)',         count: cfs.brown || 0,      barCls: 'pf-cfs-bar-brown',      labelCls: 'pf-cfs-label-brown' },
+        { label: 'Green (70–100)',      count: cfs.green || 0,      pct: cfsShares.green ?? 0,      barCls: 'pf-cfs-bar-green',      labelCls: 'pf-cfs-label-green' },
+        { label: 'Transition (40–69)',   count: cfs.transition || 0, pct: cfsShares.transition ?? 0, barCls: 'pf-cfs-bar-transition', labelCls: 'pf-cfs-label-transition' },
+        { label: 'Brown (0–39)',         count: cfs.brown || 0,      pct: cfsShares.brown ?? 0,      barCls: 'pf-cfs-bar-brown',      labelCls: 'pf-cfs-label-brown' },
       ];
       cfsBars.innerHTML = bands.map(b => {
-        const pct = cfsTotal > 0 ? Math.round((b.count / cfsTotal) * 100) : 0;
+        const pct = b.pct;
         return `<div class="pf-cfs-row">
           <span class="pf-cfs-label ${b.labelCls}">${b.label}</span>
           <div class="pf-cfs-bar-track"><div class="pf-cfs-bar ${b.barCls}" style="width:${pct}%">${pct}%</div></div>
@@ -1530,17 +1535,17 @@ const Dashboard = (() => {
     const topTbody = $('pf-top-tbody');
     const topPctBadge = $('pf-top-pct');
     if (topTbody && d.topContributors) {
-      const totalEm = d.totalFinancedEmissions_tCO2e || 1;
-      const top5Em = d.topContributors.reduce((s, p) => s + (p.financedEmissions_tCO2e || 0), 0);
-      const concPct = Math.round((top5Em / totalEm) * 100);
-      if (topPctBadge) topPctBadge.textContent = `Top ${d.topContributors.length} = ${concPct}% of portfolio emissions`;
+      const conc = d.derived.concentration || {};
+      const concPct = conc.pct ?? null;
+      if (topPctBadge) topPctBadge.textContent = concPct === null
+        ? `Top ${d.topContributors.length} — share not stated`
+        : `Top ${d.topContributors.length} = ${concPct}% of portfolio emissions`;
+      const intensityOf = Object.fromEntries((d.derived.contributors || []).map(c => [c.projectId, c.intensity_tCO2e_per_M]));
 
       topTbody.innerHTML = d.topContributors.map(p => {
         const cls = p.classification || 'brown';
         const badgeCls = cls === 'green' ? 'badge-green' : cls === 'transition' ? 'badge-amber' : 'badge-red';
-        const pIntensity = p.loanOutstanding > 0
-          ? (p.financedEmissions_tCO2e / (p.loanOutstanding / 1e6)).toFixed(1)
-          : '—';
+        const pIntensity = typeof intensityOf[p.projectId] === 'number' ? intensityOf[p.projectId].toFixed(1) : '—';
         return `<tr>
           <td><div class="project-cell"><span class="project-name">${p.name || p.projectId}</span><span class="project-id">${p.projectId}</span></div></td>
           <td>${p.region || '—'}</td>
@@ -1701,15 +1706,18 @@ const Dashboard = (() => {
   }
 
   function _buildLocalReport(d) {
+    /* Every figure here is one the portfolio carried — the engine's shares
+       under `derived` — and none is computed on the way into the report. */
     const tax = d.taxonomyDistribution || {};
-    const totalProj = (tax.green || 0) + (tax.transition || 0) + (tax.brown || 0);
-    const greenPct = totalProj > 0 ? Math.round((tax.green / totalProj) * 100) : 0;
-    const intensityVal = d.totalOutstanding > 0
-      ? (d.totalFinancedEmissions_tCO2e / (d.totalOutstanding / 1e6)).toFixed(1)
+    const der = d.derived || {};
+    const shares = der.taxonomySharePct || {};
+    const greenPct = der.greenLoanPct ?? 0;
+    const intensityVal = typeof der.economicIntensity_tCO2e_per_M === 'number'
+      ? der.economicIntensity_tCO2e_per_M.toFixed(1)
       : 'N/A';
-    const top5Em = (d.topContributors || []).reduce((s, p) => s + (p.financedEmissions_tCO2e || 0), 0);
-    const concPct = d.totalFinancedEmissions_tCO2e > 0
-      ? Math.round((top5Em / d.totalFinancedEmissions_tCO2e) * 100) : 0;
+    const conc = der.concentration || {};
+    const top5Em = conc.topEmissions_tCO2e ?? 0;
+    const concPct = conc.pct ?? 0;
 
     return `
       <h4>1. Executive Summary</h4>
@@ -1727,8 +1735,8 @@ const Dashboard = (() => {
       <table>
         <tr><th>Classification</th><th>Count</th><th>% of Portfolio</th><th>CFS Range</th></tr>
         <tr><td>Green</td><td>${tax.green || 0}</td><td>${greenPct}%</td><td>70 – 100</td></tr>
-        <tr><td>Transition</td><td>${tax.transition || 0}</td><td>${totalProj > 0 ? Math.round(((tax.transition || 0) / totalProj) * 100) : 0}%</td><td>40 – 69</td></tr>
-        <tr><td>Brown</td><td>${tax.brown || 0}</td><td>${totalProj > 0 ? Math.round(((tax.brown || 0) / totalProj) * 100) : 0}%</td><td>0 – 39</td></tr>
+        <tr><td>Transition</td><td>${tax.transition || 0}</td><td>${shares.transition ?? 0}%</td><td>40 – 69</td></tr>
+        <tr><td>Brown</td><td>${tax.brown || 0}</td><td>${shares.brown ?? 0}%</td><td>0 – 39</td></tr>
       </table>
 
       <h4>3. Concentration Risk Analysis</h4>
@@ -1761,7 +1769,7 @@ const Dashboard = (() => {
 
       <h4>6. Priority Actions</h4>
       <ul>
-        <li>Improve data quality for DQ 4–5 assets (currently ${(d.dqDistribution?.[4] || 0) + (d.dqDistribution?.[5] || 0)}% of portfolio) to meet PCAF DQ target of 2.0</li>
+        <li>Improve data quality for DQ 4–5 assets (currently ${der.lowDataQualityPct ?? 0}% of portfolio) to meet PCAF DQ target of 2.0</li>
         <li>Transition ${tax.brown || 0} brown-classified assets through green retrofit programs</li>
         <li>Increase portfolio coverage from ${d.coveragePct}% to 90%+ for next PCAF reporting cycle</li>
         ${concPct > 40 ? '<li>Reduce concentration risk — top 5 assets at ' + concPct + '% exceeds 40% threshold</li>' : ''}

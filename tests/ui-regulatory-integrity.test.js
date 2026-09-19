@@ -198,10 +198,16 @@ describe('The engine does every arithmetic operation, including against the brow
     expect(src).not.toMatch(/qtyKg \* factor/);
   });
 
-  test('densities stay, because a unit conversion is not a measurement', () => {
-    const src = fs.readFileSync(path.join(UI, 'js/extract.js'), 'utf8');
-    expect(src).toMatch(/DENSITIES/);
-    expect(src).toMatch(/Converted from \$\{rawQty\} \$\{rawUnit\} using standard density/);
+  test('no density table either — a conversion is a measurement of the material, and the engine makes it', () => {
+    /* A density table stayed in the browser after the factor table went, on
+       the argument that a unit conversion is not a measurement. It is: a
+       cubic metre of "concrete" at 2,400 kg is a claim about the material,
+       and the table was published to every browser. The browser-side parse
+       keeps a quantity only where it was written in kilograms. */
+    const src = code(path.join(UI, 'js/extract.js'));
+    expect(src).not.toMatch(/DENSITIES/);
+    expect(src).not.toMatch(/using standard density/);
+    expect(src).not.toMatch(/\* 1000\b/);
   });
 });
 
@@ -235,8 +241,12 @@ describe('No screen restates a threshold the engine owns', () => {
   test('the intensity screen on the new-project form is the governed one', () => {
     const src = fs.readFileSync(path.join(UI, 'js/new-project.js'), 'utf8');
     expect(src).toMatch(/CARBONIQ_fetch\('\/v1\/ndc-sdg\/framework'\)/);
-    expect(src).toMatch(/bands\.green/);
-    expect(src).toMatch(/bands\.transition/);
+    /* The form no longer compares an intensity with a band at all: it asks
+       `POST /v1/taxonomy/screen`, which resolves the Sri Lanka bands from the
+       registry, and prints the tier the engine returned. */
+    expect(src).toMatch(/\/v1\/taxonomy\/screen/);
+    expect(src).toMatch(/sl\.tier === 'aligned'/);
+    expect(code(path.join(UI, 'js/new-project.js'))).not.toMatch(/intVal <= |intensity <= /);
     /* It screened on 600/900 while the endpoint beside it screened on
        520/780 — two answers to one question about what a bank may call a
        green loan, on the form a relationship manager fills in with a client. */

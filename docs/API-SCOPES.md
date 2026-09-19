@@ -16,7 +16,7 @@ A key issued before scopes existed carries none: it keeps everything it could do
 A signed-in user's scopes follow the role level: administrator everything; credit officer and ESG analyst read, write, lock, assess;
 relationship manager read, write, assess; auditor and borrower read.
 
-228 routes.
+233 routes.
 
 | Method | Route | Scope | Why |
 |---|---|---|---|
@@ -126,6 +126,8 @@ relationship manager read, write, assess; auditor and borrower read.
 | GET | `/v1/jobs/:jobId` | `read` | read |
 | GET | `/v1/jobs/:jobId/artifact` | `read` | read |
 | GET | `/v1/jobs/types` | `read` | read |
+| POST | `/v1/lending/attribution` | `read` | the lending calculators — attribution and the bill-of-materials estimate — store nothing |
+| POST | `/v1/lending/estimate` | `read` | the lending calculators — attribution and the bill-of-materials estimate — store nothing |
 | GET | `/v1/metrics` | `read` | read |
 | POST | `/v1/ndc-sdg/assess` | `assess` | AI alignment analysis |
 | POST | `/v1/ndc-sdg/certificate` | `write` | changes a record |
@@ -227,6 +229,7 @@ relationship manager read, write, assess; auditor and borrower read.
 | POST | `/v1/pcaf/part-c/runs/:runId/resume` | `assess` | Part C runs, forms, reports and agents |
 | POST | `/v1/pcaf/part-c/runs/start` | `assess` | Part C runs, forms, reports and agents |
 | GET | `/v1/portfolio` | `read` | read |
+| GET | `/v1/portfolio/sample` | `read` | read |
 | GET | `/v1/projects` | `read` | read |
 | POST | `/v1/projects` | `write` | changes a record |
 | GET | `/v1/projects/:projectId` | `read` | read |
@@ -244,6 +247,8 @@ relationship manager read, write, assess; auditor and borrower read.
 | POST | `/v1/supervisor/pipeline/:pipelineId/resume` | `assess` | agent pipeline |
 | GET | `/v1/supervisor/pipelines` | `read` | read |
 | GET | `/v1/supervisor/templates` | `read` | read |
+| GET | `/v1/taxonomy/frameworks` | `read` | read |
+| POST | `/v1/taxonomy/screen` | `read` | taxonomy alignment, stateless |
 | GET | `/v1/ui-config.js` (no credential) | `read` | read |
 | GET | `/v1/webhooks` | `read` | read |
 | POST | `/v1/webhooks` | `write` | changes a record |

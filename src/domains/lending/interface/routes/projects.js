@@ -24,6 +24,23 @@ const engine = require('../../../../platform/bridge/engine');
    domain's own records go through the storage seam. */
 const { getProject } = require('../../../../platform/bridge/firebase');
 const lendingStore = require('../../infrastructure/lending-store');
+const { monitoringSeries } = require('../../domain/calculator');
+const { checked } = require('../../../../shared/reference-data');
+const Joi = require('joi');
+
+/* The illustrative monitoring years, served where a project has recorded
+   none — the screen used to hold them itself, and computed the comparison
+   over them in the browser. */
+const MONITORING_SAMPLE = checked('data/lending/monitoring-sample.json',
+  require('../../../../../data/lending/monitoring-sample.json'),
+  Joi.object({
+    _meta: Joi.object({ label: Joi.string().valid('SAMPLE DATA').required() }).unknown(true).required(),
+    entries: Joi.array().min(2).items(Joi.object({
+      year: Joi.number().integer().required(), outstanding: Joi.number().min(0).required(),
+      equity: Joi.number().min(0).required(), debt: Joi.number().min(0).required(),
+      emissions: Joi.number().min(0).required(), dq: Joi.number().integer().min(1).max(5).required(),
+    })).required(),
+  }));
 
 const router = Router();
 
@@ -135,9 +152,11 @@ router.post('/:projectId/monitoring',
       const value = req.body;
       const { projectId } = req.params;
 
-      const attribution = value.outstanding / (value.equity + value.debt);
-      const financed = Math.round(value.emissions * attribution);
-      const entry = { ...value, attribution: parseFloat(attribution.toFixed(4)), financed };
+      /* One arithmetic, in the domain: the same function that prices the
+         series on read prices the entry on write, so the two cannot disagree. */
+      const [priced] = monitoringSeries([value]).entries;
+      const { attribution, financed } = priced;
+      const entry = { ...value, attribution, financed };
 
       await lendingStore.saveMonitoringEntry(req.orgId, projectId, value.year, entry);
       res.json({ success: true, projectId, year: value.year, attribution, financed, message: 'Monitoring entry saved.' });
@@ -147,17 +166,27 @@ router.post('/:projectId/monitoring',
 
 // GET /v1/projects/:projectId/monitoring — list monitoring history
 router.get('/:projectId/monitoring',
-  doc({ summary: 'Every monitoring entry recorded against a project',
-    response: body({ projectId: str, entries: arr(), total: num },
-      ['projectId', 'entries', 'total']) }),
+  doc({ summary: 'Every monitoring entry recorded against a project, priced, with the year-on-year comparison',
+    description: 'Each entry carries its attribution and financed figure and the comparison of the latest year '
+      + 'against the one before — the emissions movement, the data-quality trend and the fluctuation analysis. '
+      + 'A project with no recorded entry is answered with the illustrative series and `source: sample`.',
+    response: body({ projectId: str, entries: arr(), total: num, comparison: orNull(obj), source: str, sampleNote: orNull(str) },
+      ['projectId', 'entries', 'total', 'source']) }),
   authenticate,
   requireProjectAccess,
   defaultLimiter,
   async (req, res, next) => {
     try {
       const { projectId } = req.params;
-      const entries = await lendingStore.listMonitoringEntries(req.orgId, projectId);
-      res.json({ projectId, entries, total: entries.length });
+      const recorded = await lendingStore.listMonitoringEntries(req.orgId, projectId);
+      const source = recorded.length ? 'recorded' : 'sample';
+      const series = monitoringSeries(/** @type {any[]} */ (recorded.length ? recorded : MONITORING_SAMPLE.entries));
+      res.json({
+        projectId, entries: series.entries, total: recorded.length, comparison: series.comparison, source,
+        sampleNote: source === 'sample'
+          ? 'Sample data — an illustrative series, not this project\'s monitoring history. Record an annual update to replace it.'
+          : null,
+      });
     } catch (err) { next(err); }
   }
 );

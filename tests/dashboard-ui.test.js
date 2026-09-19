@@ -23,7 +23,11 @@
 
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { source, must, mustNot } = require('./helpers/ui-source');
+
+const ROOT = path.join(__dirname, '..');
 
 const read = (...p) => source(p.join('/'));
 
@@ -31,7 +35,7 @@ const appJs  = read('ui', 'app.js');
 const login  = read('ui', 'js', 'login.js');
 const dashJs = read('ui', 'js', 'dashboard.js');
 const css    = read('ui', 'styles.css');
-const sample = JSON.parse(read('ui', 'data', 'portfolio-sample.json').text);
+const sample = JSON.parse(fs.readFileSync(path.join(ROOT, 'data', 'lending', 'portfolio-sample.json'), 'utf8'));
 
 describe('A returning user lands on a page rather than on a spinner', () => {
   test('the router runs on load, not only on a nav click', () => {
@@ -70,7 +74,8 @@ describe('Sample figures are named as samples, and never blended', () => {
   });
 
   test('the sample book is a data file, not a literal in the code', () => {
-    must(dashJs, "/data/portfolio-sample.json", "the sample book is a data file, not a literal in the code");
+    must(dashJs, "/v1/portfolio/sample", "the sample book is served by the API behind the door, not a file the site publishes");
+    mustNot(dashJs, "/data/portfolio-sample.json", "the sample book is no longer a static file anyone can fetch without signing in");
     expect(sample._meta.label).toBe('SAMPLE DATA');
   });
 

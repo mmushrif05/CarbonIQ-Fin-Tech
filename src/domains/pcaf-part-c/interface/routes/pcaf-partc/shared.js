@@ -49,6 +49,7 @@ function _shapeResult(result, registers, extra = {}) {
       b7: result.modules.b7.value
     },
     paretoVitalFew: result.modules.a4.vitalFew,
+    paretoVitalFewShare: result.modules.a4.vitalFewShare == null ? null : result.modules.a4.vitalFewShare,
     // A figure, not a step: the tonnage the A4 module carried. It used to be
     // read off the calculation trace, which is no longer sent.
     a4MaterialMass_t: (result.modules.a4.inputs && result.modules.a4.inputs.totalMass_t) || null,
@@ -99,7 +100,7 @@ function _toEngineInput(body) {
 const engineResultSchema = body({
   standard: obj, scopeModel: obj, policy: obj, summary: obj,
   modules: body({ a4: num, a5: num, a5Breakdown: obj, b1: num, b4: num, b7: num }),
-  paretoVitalFew: arr(), a4MaterialMass_t: orNull(num),
+  paretoVitalFew: arr(), paretoVitalFewShare: orNull(num), a4MaterialMass_t: orNull(num),
   beyondPcafAnnex: body({ total: num, breakdown: arr(), scopeNote: str }),
   deMinimis: obj,
   /* PCAF requires a score beside any disclosed figure, so the scoring travels

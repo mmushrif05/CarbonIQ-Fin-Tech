@@ -19,13 +19,13 @@ checked, under the settings the build uses. Adopting one on its own can differ
 by a little, because a checked dependency infers differently from an unchecked
 one — so treat the figure as the size of the job, not as a contract.
 
-Checked across all three: **443**. Remaining: **242**.
+Checked across all three: **452**. Remaining: **242**.
 
 ## The server — `src/`, `netlify/functions/`, `scripts/`
 
 `jsconfig.json` over `src`, `netlify/functions`, `scripts`. Node globals only. Every file under `src/platform`, `src/shared`, the composition roots and the Netlify functions carries the pragma; so does every clean file elsewhere.
 
-Checked: **389**. Remaining: **69** (424 errors, measured by
+Checked: **395**. Remaining: **69** (424 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **6 of them raise no errors at all** and can be adopted by adding the
@@ -119,7 +119,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/parta-register.js` | 99 |
 | `ui/js/pcaf-demo.js` | 95 |
 | `ui/js/gcf-pipeline.js` | 90 |
-| `ui/js/gcf.js` | 84 |
+| `ui/js/gcf.js` | 85 |
 | `ui/js/desk.js` | 72 |
 | `ui/js/carbon-pricing.js` | 59 |
 | `ui/js/baselines.js` | 54 |
@@ -132,7 +132,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 | `ui/js/parta-sovereign.js` | 35 |
 | `ui/js/parta-position.js` | 31 |
 | `ui/js/extract.js` | 30 |
-| `ui/js/new-project.js` | 29 |
+| `ui/js/new-project.js` | 28 |
 | `ui/js/walkthrough.js` | 22 |
 | `ui/js/capital-adjust.js` | 21 |
 | `ui/js/reports.js` | 21 |
@@ -148,7 +148,7 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **45**. Remaining: **142** (1546 errors, measured by
+Checked: **48**. Remaining: **142** (1544 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
 **18 of them raise no errors at all** and can be adopted by adding the
@@ -205,7 +205,6 @@ pragma and nothing else.
 | `tests/pcaf-partc-registers.test.js` | 12 |
 | `tests/gcf-return-loop.test.js` | 11 |
 | `tests/parta-climate-facts.test.js` | 11 |
-| `tests/partc-ui.test.js` | 11 |
 | `tests/projects.test.js` | 11 |
 | `tests/ndc-sdg.test.js` | 10 |
 | `tests/parta-approval.test.js` | 10 |
@@ -216,6 +215,7 @@ pragma and nothing else.
 | `tests/gcf-journey.test.js` | 9 |
 | `tests/gcf-validation.test.js` | 9 |
 | `tests/partc-comparatives.test.js` | 9 |
+| `tests/partc-ui.test.js` | 9 |
 | `tests/pcaf-partc-engine.test.js` | 9 |
 | `tests/agent-availability.test.js` | 8 |
 | `tests/authorization.test.js` | 8 |

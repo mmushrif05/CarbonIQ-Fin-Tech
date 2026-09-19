@@ -19,10 +19,50 @@ const authenticate = require('../../../../platform/auth/authenticate');
 const { portfolioLimiter } = require('../../../../platform/http/rate-limit');
 const config = require('../../../../platform/config');
 const engine = require('../../../../platform/bridge/engine');
-const { aggregatePortfolio } = require('../../domain/portfolio');
-const { doc, body, str, num } = require('../../../../platform/http/openapi-hints');
+const { aggregatePortfolio, withDerivedFigures } = require('../../domain/portfolio');
+const { doc, body, str, num, bool, obj } = require('../../../../platform/http/openapi-hints');
+const referenceCache = require('../../../../platform/http/reference-cache');
+const { checked } = require('../../../../shared/reference-data');
+const Joi = require('joi');
 
 const router = Router();
+
+/**
+ * The sample book.
+ *
+ * It was a static file under `ui/data/`, fetched by the browser with no
+ * credential and published with the site, so anyone who knew the path could
+ * read a worked example of a bank's book without signing in. It is served
+ * here now, behind the door like every other figure, with the derived shares
+ * computed beside it; the Portfolio screen asks for it only when the live
+ * book has nothing in it, and says which it is showing.
+ */
+const sampleSchema = Joi.object({
+  _meta: Joi.object({ label: Joi.string().valid('SAMPLE DATA').required() }).unknown(true).required(),
+  totalProjects: Joi.number().integer().min(1).required(),
+  totalFinancedEmissions_tCO2e: Joi.number().min(0).required(),
+  totalOutstanding: Joi.number().min(0).required(),
+  topContributors: Joi.array().items(Joi.object({
+    projectId: Joi.string().required(), name: Joi.string().required(),
+    financedEmissions_tCO2e: Joi.number().required(),
+  }).unknown(true)).required(),
+}).unknown(true);
+const SAMPLE = checked('data/lending/portfolio-sample.json', require('../../../../../data/lending/portfolio-sample.json'), sampleSchema);
+
+router.get('/sample',
+  doc({ summary: 'The sample book — a worked example drawn only when the live portfolio has nothing to show',
+    response: body({ sample: bool, sampleNote: str, totalProjects: num, derived: obj }, ['sample', 'totalProjects']) }),
+  authenticate,
+  portfolioLimiter,
+  referenceCache(),
+  (req, res) => {
+    res.json({
+      ...withDerivedFigures(SAMPLE),
+      sample: true,
+      sampleNote: 'Sample data — a worked example, not this organisation\'s portfolio. Every figure is invented.',
+    });
+  }
+);
 
 router.get('/',
   doc({ summary: 'Portfolio carbon risk aggregation across the key\'s projects',

@@ -4,6 +4,35 @@ The record of every change to the contract (`docs/API-CONTRACT.md`).
 Additive changes ship at any time; a breaking change ships only in a new
 major version, announced here and on the wire first.
 
+## 2026-09-19 — the browser computes nothing
+
+**Added**
+- `POST /v1/lending/attribution` — the PCAF calculator's answer: attribution,
+  financed emissions, economic intensity, and an indicative scope allocation
+  that says it is one. A read; `read` scope.
+- `POST /v1/lending/estimate` — a bill of materials priced on the engine's
+  factor table, with intensity and attribution. A read; `read` scope.
+- `GET /v1/taxonomy/frameworks` and `POST /v1/taxonomy/screen` — the five
+  frameworks the intensity screen draws, and one intensity against them,
+  each band saying whether it is published, governed or indicative.
+- `GET /v1/portfolio/sample` — the sample book, served behind the door with
+  its derived shares; it was a static file the site published.
+- `GET /v1/portfolio` carries `derived` — coverage, the green-loan share, the
+  taxonomy and CFS shares, the top-emitter concentration, economic intensity
+  and each contributor's intensity — the figures the Portfolio screen used to
+  compute for itself.
+- `GET /v1/projects/{id}/monitoring` carries every entry priced
+  (`attribution`, `financed`, `timelineBarPct`), the `comparison` of the
+  latest year with the one before, and `source: recorded | sample`.
+- `sensitivity.materialPathSharePct` and `paretoVitalFewShare` on the Part C
+  assessment; `impact.lifetime.declinePct` on the Part A assessment;
+  `dataQuality.coveragePct` on the capital dashboard; `sizeCeilings_usd` on
+  the GCF reference.
+
+**Changed**
+- The published site no longer ships source maps beside its minified
+  scripts. No route, shape or parameter changed.
+
 ## 2026-09-10 — E5: structure
 
 **Added**

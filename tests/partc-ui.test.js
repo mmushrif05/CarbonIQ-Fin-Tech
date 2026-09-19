@@ -32,7 +32,7 @@ const read = (...p) => source(p.join('/'));
 
 const page  = read('ui', 'pages', 'pcaf-partc.html');
 const appJs = read('ui', 'app.js');
-const sampleBook = JSON.parse(read('ui', 'data', 'portfolio-sample.json')).partC;
+const sampleBook = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'lending', 'portfolio-sample.json'), 'utf8')).partC;
 const js   = read('ui', 'js', 'pcaf-partc.js');
 const css  = read('ui', 'css', 'pcaf-partc.css');
 
@@ -402,7 +402,10 @@ describe('The Part C screen opens on the position, not on a file upload', () => 
   test('nothing here is a financed-emissions figure', () => {
     // A different inventory over a different book. The two are never summed,
     // and this screen does not reach for the lending endpoint at all.
-    mustNot(js, '/v1/portfolio', "nothing here is a financed-emissions figure");
+    /* The sample book is read for its Part C block alone — served by the API
+       now rather than fetched as a file — and never the financed position. */
+    mustNot(js, /\/v1\/portfolio(?!\/sample)/, "nothing here is a financed-emissions figure");
+    must(js, /\/v1\/portfolio\/sample'\)[\s\S]{0,120}\.partC/, "the sample book is read for its Part C block");
     mustNot(js, 'totalFinancedEmissions', "nothing here is a financed-emissions figure");
   });
 

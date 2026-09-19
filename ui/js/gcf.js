@@ -366,7 +366,8 @@ const GCFPage = (() => {
     ['modalities', 'Fiduciary standards held (comma-separated)', 'text'],
     ['source', 'Source', 'text'],
   ];
-  const SIZE_CEILING = { micro: 10e6, small: 50e6, medium: 250e6, large: null };
+  /* The size ceilings are the reference's, never a copy held here. */
+  const sizeCeiling = cat => ((state.reference && state.reference.sizeCeilings_usd) || {})[cat] || null;
 
   function control(id, kind, options, value = '') {
     if (kind === 'textarea') return `<textarea id="${id}" rows="2">${esc(value)}</textarea>`;
@@ -396,7 +397,7 @@ const GCFPage = (() => {
     setHtml('gcfAccreditationForm', ACCREDITATION_FIELDS.map(([k, label, kind, options]) => `
       <div class="gcf-field"><label for="gcfA-${k}">${esc(label)}</label>${control(`gcfA-${k}`, kind, options, current[k] ?? '')}</div>`).join(''));
     say('gcfAccreditationHint', entity && entity.accreditation ? 'Recorded by the entity.' : 'Showing the shipped accreditation. Record the entity’s own to replace it.');
-    on('gcfA-sizeCategory', 'change', () => { const c = SIZE_CEILING[$('gcfA-sizeCategory').value]; if (c) $('gcfA-ceiling').value = c; });
+    on('gcfA-sizeCategory', 'change', () => { const c = sizeCeiling($('gcfA-sizeCategory').value); if (c) $('gcfA-ceiling').value = c; });
 
     for (const el of document.querySelectorAll('#gcfPanel-reporting [data-writes]')) el.hidden = !canWrite();
     await refreshReport();
@@ -1147,7 +1148,7 @@ const GCFPage = (() => {
       const ceiling = Number(g('ceiling'));
       const accreditation = {
         decision: g('decision'), sizeCategory: g('sizeCategory'),
-        sizeRange_usd: [0, Number.isFinite(ceiling) && ceiling > 0 ? ceiling : (SIZE_CEILING[g('sizeCategory')] || 0)],
+        sizeRange_usd: [0, Number.isFinite(ceiling) && ceiling > 0 ? ceiling : (sizeCeiling(g('sizeCategory')) || 0)],
         essCategory: g('essCategory'), grantModality: g('grantModality') === 'yes',
         modalities: g('modalities').split(',').map(s => s.trim()).filter(Boolean),
         accreditedAt: g('accreditedAt') || undefined, amaEffectiveAt: g('amaEffectiveAt') || undefined,

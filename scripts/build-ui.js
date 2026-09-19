@@ -5,8 +5,11 @@
  *
  * The dashboard is a static shell that loads page fragments and modules by
  * path. This produces the directory Netlify publishes, `dist/ui`, from
- * `ui/`: every script and stylesheet minified with esbuild, with a source
- * map beside it; every other file copied as it is; and a manifest naming
+ * `ui/`: every script and stylesheet minified with esbuild, **with no source
+ * map** — a map beside a minified file hands the original source, comments
+ * and all, to anyone who opens the browser's developer tools, and the
+ * published site is the one place this repository's reasoning must not be
+ * readable from; every other file copied as it is; and a manifest naming
  * the commit and every file with its size. Paths are preserved exactly, so
  * nothing the shell fetches moves. A module that does not parse fails the
  * build here, before it fails in a browser.
@@ -52,14 +55,12 @@ async function build() {
       const result = await esbuild.transform(source, {
         loader: ext === '.js' ? 'js' : 'css',
         minify: true,
-        sourcemap: true,
-        sourcefile: rel,
+        sourcemap: false,
         target: ['es2020'],
         legalComments: 'none',
       });
-      const code = `${result.code}\n//# sourceMappingURL=${path.basename(rel)}.map\n`;
-      fs.writeFileSync(dest, ext === '.js' ? code : `${result.code}\n/*# sourceMappingURL=${path.basename(rel)}.map */\n`);
-      fs.writeFileSync(`${dest}.map`, result.map);
+      const code = `${result.code}\n`;
+      fs.writeFileSync(dest, code);
       manifest.files[rel] = { bytes: Buffer.byteLength(code), sourceBytes: Buffer.byteLength(source), minified: true };
       minified += 1;
     } else {
