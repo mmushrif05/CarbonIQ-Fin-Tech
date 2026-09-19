@@ -132,7 +132,7 @@ const DYNAMIC_PAGES = {
     init: () => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.init(),
     // A candidate recorded, moved or signed on the Pipeline tab changes
     // this position, so a return visit re-reads it.
-    refresh: () => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.refresh(),
+    refresh: opts => typeof GCFOverviewPage !== 'undefined' && GCFOverviewPage.refresh(opts),
   },
   'gcf-walkthrough': {
     src:  'pages/gcf-walkthrough.html',
@@ -299,7 +299,10 @@ document.addEventListener('DOMContentLoaded', () => {
      applied now rather than on the next visit. */
   window.CARBONIQ_refreshPage = async pageId => {
     const page = DYNAMIC_PAGES[pageId];
-    if (page && page.refresh) { try { await page.refresh(); } catch (_) { /* page reports its own errors */ } }
+    /* `shown` says the page is the one on screen: a return visit re-reads
+       the position; a step on the screen already shown may apply its
+       hand-over over the position already read. */
+    if (page && page.refresh) { try { await page.refresh({ shown: true }); } catch (_) { /* page reports its own errors */ } }
   };
 
   // ── The client workspace ───────────────────────────────────

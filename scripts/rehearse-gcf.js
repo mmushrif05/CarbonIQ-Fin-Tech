@@ -7,10 +7,11 @@
  * The same driver as `npm run rehearse`, over the other track: sign in, load
  * the entity's own pipeline from the GCF Overview where the illustrative set
  * is showing, read the readiness rows off the Walkthrough on the GCF track,
- * then run the eight steps across the real screens — the register behind the
+ * then run the ten steps across the real screens — the register behind the
  * figure, the intake form filled from the served example and recorded live,
- * the candidate on the cycle, the decision tab, the assessor's form and the
- * sign-off, the Concept Note package, and the disclosure downloaded — with a
+ * the candidate on the cycle, the decision tab with it marked, the assessor's
+ * form and the sign-off, the NDA informed, the Concept Note package, the
+ * stage moved and dated, and the disclosure downloaded — with a
  * full-page screenshot at every step and a report of what refused.
  *
  *   BASE=https://carboniqfintech.netlify.app EMAIL=you@bank.lk PASSWORD=… \
@@ -120,7 +121,7 @@ if (!EMAIL || !PASSWORD) {
 
   await step('Before the day 4 · readiness on the GCF track', async e => {
     await page.locator('.nav-item[data-page="gcf-walkthrough"]').click();
-    await expectText(page, '#gwt-steps-title', 'eight steps');
+    await expectText(page, '#gwt-steps-title', 'ten steps');
     await wait(page, '#gwt-readiness-rows tr');
     const rows = await page.locator('#gwt-readiness-rows tr').evaluateAll(trs => trs.map(tr => Array.from(tr.querySelectorAll('td')).slice(0, 3).map(td => td.textContent.trim()).join(' · ')));
     e.notes.push(...rows);
@@ -129,7 +130,7 @@ if (!EMAIL || !PASSWORD) {
   await step('Step 1 · where we stand', async e => {
     await page.locator('#gwt-start').click();
     await wait(page, '#page-gcf-overview');
-    await expectText(page, '#wt-strip-n', 'Step 1 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 1 of 10');
     await wait(page, '#go-figures');
     e.notes.push(`GCF ask ${await text(page, '#go-ask')} · gate ${await text(page, '#go-gate')} · blocking ${await text(page, '#go-blocking')} · signed ${await text(page, '#go-signed')}`);
     e.signedBefore = await text(page, '#go-signed');
@@ -137,14 +138,14 @@ if (!EMAIL || !PASSWORD) {
 
   await step('Step 2 · what is blocking, and who holds the key', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 2 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 2 of 10');
     await expectText(page, '#go-behind-title', 'Behind the register');
     e.notes.push(`Drawer: ${(await text(page, '#go-behind-body')).slice(0, 200)}`);
   }, page);
 
   await step('Step 3 · a candidate comes in', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 3 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 3 of 10');
     await wait(page, '#gcfPanel-intake');
     await page.waitForFunction(() => (document.getElementById('gcfI-code') || {}).value === 'DFCC-EX', null, { timeout: 15000 });
     await expectClass(page, '#gcfIntakeSave', 'wt-cue');
@@ -156,7 +157,7 @@ if (!EMAIL || !PASSWORD) {
 
   await step('Step 4 · on the cycle', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 4 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 4 of 10');
     await wait(page, '#gcfProject');
     e.notes.push(`${await text(page, '#gcfProjectTitle')} — ${await text(page, '#gcfProjectStageLine')}`);
     e.notes.push(`Readiness: ${await text(page, '#gcfProjectReadyPct')}`);
@@ -164,14 +165,15 @@ if (!EMAIL || !PASSWORD) {
 
   await step('Step 5 · screened and structured', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 5 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 5 of 10');
     await wait(page, '#gcfPanel-decision');
-    e.notes.push('The decision tab is on screen');
+    await wait(page, '#gcfPanel-decision .gcf-focus');
+    e.notes.push(`Marked on the decision tab: ${(await text(page, '#gcfPanel-decision .gcf-focus')).slice(0, 120)}`);
   }, page);
 
   await step('Step 6 · assessed and signed', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 6 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 6 of 10');
     await wait(page, '#gcfProject');
     await expectClass(page, '#gcfValStart', 'wt-cue');
     await page.locator('#gcfValStart').click();
@@ -187,9 +189,21 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Assessment report: ${d.name}, ${d.bytes} bytes`);
   }, page);
 
-  await step('Step 7 · the Concept Note package', async e => {
+  await step('Step 7 · the NDA is informed', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 7 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 7 of 10');
+    await wait(page, '#gcfProject');
+    await expectClass(page, '#gcfNdaSave', 'wt-cue');
+    e.notes.push(`NDA form: ${await page.locator('#gcfNdaStatus').inputValue()} on ${await page.locator('#gcfNdaReq').inputValue()}`);
+    await page.locator('#gcfNdaSave').click();
+    await page.waitForLoadState('networkidle');
+    await expectText(page, '#gcfProjectNda', 'nformed');
+    e.notes.push(`Saved: ${(await text(page, '#gcfProjectNda')).slice(0, 160)}`);
+  }, page);
+
+  await step('Step 8 · the Concept Note package', async e => {
+    await next(page);
+    await expectText(page, '#wt-strip-n', 'Step 8 of 10');
     await wait(page, '#gcfPanel-cn');
     await expectClass(page, '#gcfCnPdf', 'wt-cue');
     e.notes.push(`Package: ${(await text(page, '#gcfCnReadiness')).slice(0, 200)}`);
@@ -197,9 +211,20 @@ if (!EMAIL || !PASSWORD) {
     e.notes.push(`Concept Note package: ${d.name}, ${d.bytes} bytes`);
   }, page);
 
-  await step('Step 8 · in the file', async e => {
+  await step('Step 9 · submitted — the stage moves, dated', async e => {
     await next(page);
-    await expectText(page, '#wt-strip-n', 'Step 8 of 8');
+    await expectText(page, '#wt-strip-n', 'Step 9 of 10');
+    await wait(page, '#gcfProject');
+    await expectClass(page, '#gcfMoveGo', 'wt-cue');
+    e.notes.push(`Move: to ${await page.locator('#gcfMoveStage').inputValue()} on ${await page.locator('#gcfMoveAt').inputValue()} — ${await page.locator('#gcfMoveNote').inputValue()}`);
+    await page.locator('#gcfMoveGo').click();
+    await expectText(page, '#gcfProjectStageLine', 'ubmitted');
+    e.notes.push(`Now: ${await text(page, '#gcfProjectStageLine')}`);
+  }, page);
+
+  await step('Step 10 · in the file', async e => {
+    await next(page);
+    await expectText(page, '#wt-strip-n', 'Step 10 of 10');
     await wait(page, '#page-gcf-overview');
     await expectClass(page, '#go-pdf', 'wt-cue');
     await expectText(page, '#go-behind-title', 'Behind the file');

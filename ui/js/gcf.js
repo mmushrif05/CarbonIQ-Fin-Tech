@@ -42,7 +42,15 @@ const GCFPage = (() => {
   const WEIGHT_KEY = 'carboniq.gcf.weights';
   const TIERS = ['measured', 'modelled', 'benchmark', 'declared'];
 
-  const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false, intent: null };
+  const state = { reference: null, pipeline: [], weights: {}, defaults: {}, sample: false, intent: null,
+    /* The served example's code, read once: the walkthrough's steps resolve
+       the candidate by it, and a code is a fact about the example rather than
+       about the book, so it need not be re-read on every step. */
+    exampleCode: null,
+    /* Whether the board has been read in this visit. A project step opens the
+       project directly once it has; re-reading the board first is what put a
+       walkthrough over the hundred requests a minute a session is allowed. */
+    boardRead: false };
 
   /* A preview session holds `read`; the server is the control and the
      screen withholds the buttons it would refuse. */
@@ -124,13 +132,14 @@ const GCFPage = (() => {
   }
 
   /* ── 1. Pipeline — the portfolio, the cycle, one project ──── */
-  async function loadPipeline() {
+  async function loadPipeline(opts) {
     try {
       const { pipeline } = await call('/pipeline');
       state.pipeline = pipeline.projects;
       onSample(pipeline.sample, pipeline.sampleNote);
     } catch (_) { /* the portfolio load reports the failure on screen */ }
-    await GCFPipeline.load();
+    await GCFPipeline.load(opts);
+    state.boardRead = true;
   }
 
   const figure = (label, value, note, unit) => `
@@ -231,7 +240,7 @@ const GCFPage = (() => {
       const { recommendation } = await call(`/recommendation${q ? `?${q}` : ''}`);
 
       setHtml('gcfSelected', recommendation.selected.map(s => `
-        <div style="border:1px solid var(--gcf-line);border-radius:8px;padding:12px;margin-bottom:10px">
+        <div data-code="${esc(s.code)}" style="border:1px solid var(--gcf-line);border-radius:8px;padding:12px;margin-bottom:10px">
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline">
             <strong>${esc(s.code)} — ${esc(s.name)}</strong>
             <span class="gcf-pill gcf-pill-ok">${esc(s.stream)}</span>
@@ -261,7 +270,7 @@ const GCFPage = (() => {
           <strong>${esc(title)}</strong>
           <div style="font-size:12px;color:var(--gcf-muted);margin-bottom:6px">${esc(l.note)}</div>
           ${l.projects.map(p => `
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;min-width:0">
+            <div data-code="${esc(p.code)}" style="display:flex;gap:8px;align-items:center;margin-bottom:6px;min-width:0">
               <span style="width:60px;flex:0 0 auto;font-size:12px"><strong>${esc(p.code)}</strong></span>
               <span style="flex:1 1 auto;min-width:0"><span class="gcf-bar"><i style="width:${
                 Math.round((p.score || 0) * 100)}%"></i></span></span>
@@ -440,7 +449,9 @@ const GCFPage = (() => {
   }
 
   /* ── 6. Concept Note ──────────────────────────────────────── */
-  async function loadCn() {
+  /* `select` names the candidate to open the panel on, so a hand-over reads
+     one package rather than the first project's and then the candidate's. */
+  async function loadCn({ select } = {}) {
     if (!state.pipeline.length) {
       try { state.pipeline = (await call('/pipeline')).pipeline.projects; }
       catch (_) { /* the select stays empty and the panel says so */ }
@@ -451,6 +462,7 @@ const GCFPage = (() => {
       sel.innerHTML = state.pipeline.map(p =>
         `<option value="${esc(p.id)}">${esc(p.code)} — ${esc(p.name)}</option>`).join('');
       if (was && state.pipeline.some(p => p.id === was)) sel.value = was;
+      if (select && state.pipeline.some(p => p.id === select)) sel.value = select;
       /* One listener, however many times the panel reloads. */
       sel.onchange = renderCn;
     }
@@ -804,7 +816,7 @@ const GCFPage = (() => {
       say('gcfIntakeHint', `${code} recorded.`);
       /* A new record changes every panel, so they are all re-read rather than
          showing what they said before the write. */
-      refreshAll();
+      refreshAll({ reopen: false });
       GCFPipeline.openProject(payload.id);
       show('pipeline');
     } catch (e) {
@@ -845,14 +857,43 @@ const GCFPage = (() => {
     } catch (_) { /* a courtesy */ }
   }
   const cue = id => { if (typeof window.CARBONIQ_cue === 'function' && $(id)) window.CARBONIQ_cue(id); };
+  const today = () => new Date().toISOString().slice(0, 10);
 
-  /* The candidate a hand-over names, or the one most recently recorded. */
+  /* The candidate in focus on the decision tab: its rows marked and the
+     first brought into view. Rows are found by the candidate's code, which
+     the rankings print; nothing is re-ranked. */
+  function focusRows(id) {
+    const p = state.pipeline.find(x => x.id === id); const code = p && p.code;
+    for (const el of document.querySelectorAll('#gcfPanel-decision .gcf-focus')) el.classList.remove('gcf-focus');
+    if (!code) return;
+    const rows = document.querySelectorAll(`#gcfPanel-decision [data-code="${CSS.escape(code)}"]`);
+    rows.forEach(r => r.classList.add('gcf-focus'));
+    if (rows[0]) rows[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* The candidate a hand-over names. 'example' is the served example once
+     it is recorded — found by its code, the id the intake derives from it —
+     so a walkthrough follows one candidate from the door to the Fund and
+     never whichever was recorded last; 'latest' is that one; anything else
+     is an id. The pipeline is read fresh, because the step before may have
+     recorded the candidate this one opens. */
   async function resolveId(key) {
-    if (key && key !== 'latest') return key;
-    let projects = state.pipeline;
-    if (!projects.length) {
-      try { projects = (await call('/pipeline')).pipeline.projects; state.pipeline = projects; } catch (_) { projects = []; }
+    if (key && key !== 'latest' && key !== 'example') return key;
+    if (key === 'example') {
+      /* The list already held is tried first — the book only grows during a
+         walkthrough, so a candidate found there is the candidate — and the
+         list is re-read only when it is not there yet. */
+      try {
+        if (!state.exampleCode) { const { project } = await call('/pipeline/example'); state.exampleCode = project.code; }
+        const held = state.pipeline.find(p => p.code === state.exampleCode);
+        if (held) return held.id;
+        const { pipeline } = await call('/pipeline'); state.pipeline = pipeline.projects;
+        const hit = state.pipeline.find(p => p.code === state.exampleCode);
+        return hit ? hit.id : null;
+      } catch (_) { return null; }
     }
+    let projects = [];
+    try { projects = (await call('/pipeline')).pipeline.projects; state.pipeline = projects; } catch (_) { projects = state.pipeline; }
     if (!projects.length) return null;
     const when = p => String((p.provenance && (p.provenance.updatedAt || p.provenance.enteredAt)) || '');
     let latest = projects[projects.length - 1];
@@ -865,6 +906,7 @@ const GCFPage = (() => {
      it, so Record sends exactly what the form shows. */
   async function fillIntakeFromExample() {
     const { project: p } = await call('/pipeline/example');
+    state.exampleCode = p.code;
     const set = (id, v) => { const el = $(`gcfI-${id}`); if (el && v !== undefined && v !== null) el.value = String(v); };
     set('code', p.code); set('name', p.name); set('sector', p.sector); set('province', p.location && p.location.province);
     set('stream', p.stream);
@@ -906,24 +948,50 @@ const GCFPage = (() => {
       cue('gcfIntakeSave');
       return;
     }
-    if (kind === 'open' || kind === 'validate') {
+    if (kind === 'open' || kind === 'validate' || kind === 'nda' || kind === 'move') {
       loaded.pipeline = true; show('pipeline');
-      await loadPipeline();
+      /* A hand-over re-reads only the panel it opens: the project. The board
+         behind it is read once, on the first project step of a visit. */
+      if (!state.boardRead) await loadPipeline({ reopen: false });
       const id = await resolveId(key);
-      if (!id) return;
-      await GCFPipeline.openProject(id, { quiet: kind === 'validate' });
+      if (!id) { say('gcfProjectHint', 'The walkthrough candidate is not recorded yet; the intake step records it.'); return; }
+      await GCFPipeline.openProject(id, { quiet: true });
+      /* The candidate is the screen: the board is folded behind it and the
+         panel is brought to the top, so a step lands on the project and not
+         on the tab it lives in. */
+      const panel = $('gcfProject'); if (panel) panel.scrollIntoView({ block: 'start' });
       if (kind === 'validate') {
         const form = $('gcfValidationForm'); if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
         cue($('gcfValStart') ? 'gcfValStart' : 'gcfValValidate');
       }
+      if (kind === 'nda') {
+        /* The fact the step records — the NDA informed today — set the way a
+           hand would set it, so Save sends exactly what the form shows. */
+        const st = $('gcfNdaStatus'); if (st && st.value === 'not_requested') st.value = 'informed';
+        const req = $('gcfNdaReq'); if (req && !req.value) req.value = today();
+        const form = $('gcfProjectNdaForm'); if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cue('gcfNdaSave');
+      }
+      if (kind === 'move') {
+        const sel = $('gcfMoveStage');
+        if (sel && Array.from(sel.options).some(o => o.value === 'cn_submitted')) sel.value = 'cn_submitted';
+        const note = $('gcfMoveNote'); if (note && !note.value) note.value = 'Submitted to the Secretariat through the NDA';
+        const form = $('gcfProjectMove'); if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        cue('gcfMoveGo');
+      }
+      return;
+    }
+    if (kind === 'decision') {
+      loaded.decision = true; show('decision');
+      await LOADERS.decision();
+      const id = await resolveId(key);
+      focusRows(id);
       return;
     }
     if (kind === 'cn') {
       loaded.cn = true; show('cn');
-      await loadCn();
       const id = await resolveId(key);
-      const sel = $('gcfCnProject');
-      if (sel && id) { sel.value = id; await renderCn(); }
+      await loadCn({ select: id || undefined });
       cue('gcfCnPdf');
       return;
     }
@@ -940,8 +1008,8 @@ const GCFPage = (() => {
     intake: loadIntake,
   };
 
-  function refreshAll() {
-    for (const p of PANELS) if (loaded[p]) LOADERS[p]();
+  function refreshAll(opts) {
+    for (const p of PANELS) if (loaded[p]) LOADERS[p](opts);
   }
 
   /* ── Wiring ───────────────────────────────────────────────── */
