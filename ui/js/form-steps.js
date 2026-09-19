@@ -268,7 +268,7 @@ const FormSteps = (() => {
         const has = el.type === 'checkbox' || el.type === 'radio'
           ? el.checked : String(el.value || '').trim() !== '';
         if (has) filled += 1;
-        else if (el.required) outstanding = true;
+        else if (el.required || el.hasAttribute('data-fs-required')) outstanding = true;
         /* `el.validity.valid`, never `el.checkValidity()`: the method
            DISPATCHES an `invalid` event on a failing control, and the
            listener below catches that and opens the control's section,
@@ -317,6 +317,156 @@ const FormSteps = (() => {
       if (visible(block, form)) return true;
     }
     return false;
+  }
+
+  /* ── What a form still needs before it can be sent ──────────────────
+     A control asks to be required with `data-fs-required`, and it is read
+     only where the control is VISIBLE. Native `required` is deliberately
+     not used for this: the register form carries one block per asset class
+     and hides the rest, and a native required control inside a hidden block
+     stops the browser submitting a form nobody can fix — it reports that to
+     the console rather than to the person pressing the button.
+
+     A requirement names itself from the `<label>` it was written in, or
+     from `data-fs-label` where that reads badly. Nothing here decides WHAT
+     is required: the markup says so, which is what lets a maintainer add or
+     drop one by editing the field rather than this module. */
+
+  /**
+   * The control a form named with `data-steps-gate` — the button that
+   * records. Returned typed, because a gate that cannot be disabled is not
+   * a gate.
+   *
+   * @param {Element} form
+   * @returns {HTMLButtonElement|null}
+   */
+  function gateOf(form) {
+    const id = form.getAttribute('data-steps-gate');
+    if (!id) return null;
+    const el = document.getElementById(id);
+    return el instanceof HTMLButtonElement ? el : null;
+  }
+
+  /** The words for one required control, as a person would say them. */
+  function requirementLabel(el) {
+    const given = el.getAttribute('data-fs-label');
+    if (given) return given;
+    const label = el.closest('label');
+    const text = label ? String(label.textContent || '').trim() : '';
+    return text || el.id || 'This field';
+  }
+
+  /** Is this control answered? A box ticked, or anything typed in. */
+  function answered(el) {
+    return el.type === 'checkbox' || el.type === 'radio'
+      ? el.checked : String(el.value || '').trim() !== '';
+  }
+
+  /**
+   * Every requirement this form is currently asking for, in the order the
+   * sections are read, each saying whether it has been met.
+   *
+   * @returns {{el: Element, label: string, section: string, index: number, ok: boolean}[]}
+   */
+  function requirementsOf(state) {
+    const out = [];
+    /* Some requirements are a choice rather than a field. The company value
+       is the standard's own example: total equity and total debt, or the
+       total balance sheet where those cannot be obtained (footnote 44) —
+       any one of the three answers it. Controls sharing `data-fs-group`
+       collapse to one line, met as soon as one of them holds something.
+       Listing them separately would tell a bank two fields are missing when
+       it has already answered the question. */
+    const groups = new Map();
+    const shown = state.shown || [];
+    shown.forEach((section, index) => {
+      for (const block of section.blocks) {
+        const controls = block.matches && block.matches('[data-fs-required]')
+          ? [block] : block.querySelectorAll('[data-fs-required]');
+        for (const el of controls) {
+          if (el.disabled || !visible(el, state.form)) continue;
+          const group = el.getAttribute('data-fs-group');
+          const ok = answered(el);
+          if (!group) {
+            out.push({ el, label: requirementLabel(el), section: section.title, index, ok });
+            continue;
+          }
+          const held = groups.get(group);
+          if (!held) {
+            const row = { el, label: requirementLabel(el), section: section.title, index, ok };
+            groups.set(group, row);
+            out.push(row);
+          } else if (ok && !held.ok) {
+            held.ok = true;
+          }
+        }
+      }
+    });
+    return out;
+  }
+
+  /**
+   * The button that records, and the checklist above it.
+   *
+   * A form names its own submit control with `data-steps-gate="<id>"`. While
+   * anything is outstanding the button is disabled and says how many, and
+   * the checklist says which — each line a button that opens the section and
+   * puts the cursor in the field. An always-live button that answers a press
+   * with a refusal from the server is the thing this replaces.
+   */
+  function applyGate(state) {
+    const button = gateOf(state.form);
+    const list = state.form.querySelector('[data-fs-checklist]');
+    const reqs = requirementsOf(state);
+    const missing = reqs.filter(r => !r.ok);
+    state.missing = missing;
+
+    if (button) {
+      /* The button's own words are the page's, not this module's: the
+         register renames it to "Save changes" while an exposure is being
+         edited. So the base is re-read whenever the text is not the text
+         this module last wrote — caching it once put "Record" back over the
+         page's label the next time anything on the form changed. */
+      const now = button.textContent || '';
+      const base = now === state.gateWrote ? (state.gateBase || now) : now;
+      button.disabled = missing.length > 0;
+      button.textContent = missing.length ? `${base} — ${missing.length} still needed` : base;
+      state.gateBase = base;
+      state.gateWrote = button.textContent;
+    }
+
+    if (!list) return;
+    list.textContent = '';
+    if (!reqs.length) { list.hidden = true; return; }
+    list.hidden = false;
+    const head = document.createElement('p');
+    head.className = 'fs-checklist-head';
+    head.textContent = missing.length
+      ? 'Before this can be recorded'
+      : 'Everything this record needs is here';
+    list.appendChild(head);
+    for (const r of reqs) {
+      const row = document.createElement('button');
+      row.type = 'button';
+      row.className = `fs-check-row${r.ok ? ' is-ok' : ''}`;
+      const mark = document.createElement('i');
+      mark.className = 'fs-check-mark';
+      mark.setAttribute('aria-hidden', 'true');
+      mark.textContent = r.ok ? '\u2713' : '\u00d7';
+      const what = document.createElement('span');
+      what.className = 'fs-check-what';
+      what.textContent = r.label;
+      const where = document.createElement('span');
+      where.className = 'fs-check-where';
+      where.textContent = r.section;
+      row.append(mark, what, where);
+      row.setAttribute('aria-label', `${r.label} — ${r.section} — ${r.ok ? 'answered' : 'still needed'}`);
+      row.addEventListener('click', () => {
+        go(state, r.index);
+        if (r.el instanceof HTMLElement) r.el.focus();
+      });
+      list.appendChild(row);
+    }
   }
 
   function render(state) {
@@ -386,11 +536,25 @@ const FormSteps = (() => {
       rail.appendChild(b);
     });
 
+    applyGate(state);
+
     const at = shown.length ? state.index + 1 : 0;
     status.textContent = shown.length ? `Section ${at} of ${shown.length}` : '';
     back.disabled = state.index <= 0;
-    next.disabled = state.index >= shown.length - 1;
-    next.textContent = state.index >= shown.length - 1 ? 'Last section' : 'Next';
+    const last = state.index >= shown.length - 1;
+    /* On the last section the Next button becomes the form's own record
+       control where the form named one, so the walk ends on the act rather
+       than on a dead button reading "Last section". It presses that button
+       rather than submitting, so the gate and the page's own handler both
+       apply exactly as they do to a direct press. */
+    const gateButton = gateOf(state.form);
+    if (last && gateButton) {
+      next.textContent = gateButton.textContent || 'Record';
+      next.disabled = gateButton.disabled;
+    } else {
+      next.disabled = last;
+      next.textContent = last ? 'Last section' : 'Next';
+    }
     state.nav.hidden = shown.length < 2;
   }
 
@@ -481,7 +645,15 @@ const FormSteps = (() => {
     const state = { form, head, rail, status, back, next, nav, index: 0, sections: [], shown: [] };
     live.set(form, state);
     back.addEventListener('click', () => go(state, state.index - 1));
-    next.addEventListener('click', () => go(state, state.index + 1));
+    next.addEventListener('click', () => {
+      const shown = state.shown || [];
+      if (state.index >= shown.length - 1) {
+        const button = gateOf(state.form);
+        if (button && !button.disabled) button.click();
+        return;
+      }
+      go(state, state.index + 1);
+    });
 
     /* A required field in a section that is not the one in hand would be a
        button that does nothing: the browser refuses to submit a form it
@@ -606,7 +778,15 @@ const FormSteps = (() => {
     }));
     live.set(first, state);
     back.addEventListener('click', () => go(state, state.index - 1));
-    next.addEventListener('click', () => go(state, state.index + 1));
+    next.addEventListener('click', () => {
+      const shown = state.shown || [];
+      if (state.index >= shown.length - 1) {
+        const button = gateOf(state.form);
+        if (button && !button.disabled) button.click();
+        return;
+      }
+      go(state, state.index + 1);
+    });
     render(state);
 
     /* A flow reveals itself as the work proceeds: the Insurance Book shows
@@ -643,7 +823,34 @@ const FormSteps = (() => {
     if (state) go(state, index);
   }
 
-  return { init, attach, refresh, reset, reveal, open, flag };
+  /**
+   * What this form still needs, for a page that wants to say so itself —
+   * the register names them in its own status line when a submit gets
+   * through by another route.
+   *
+   * @param {Element} form
+   * @returns {{label: string, section: string}[]}
+   */
+  function missing(form) {
+    const state = live.get(form);
+    if (!state) return [];
+    return (state.missing || []).map(r => ({ label: r.label, section: r.section }));
+  }
+
+  /**
+   * Open the section holding the first requirement still outstanding, and
+   * put the cursor in it.
+   */
+  function revealMissing(form) {
+    const state = live.get(form);
+    const first = state && (state.missing || [])[0];
+    if (!first) return false;
+    go(state, first.index);
+    if (first.el instanceof HTMLElement) first.el.focus();
+    return true;
+  }
+
+  return { init, attach, refresh, reset, reveal, open, flag, missing, revealMissing };
 })();
 
 if (typeof window !== 'undefined') /** @type {any} */ (window).FormSteps = FormSteps;

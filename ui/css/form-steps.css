@@ -165,3 +165,53 @@
 
 /* On the chip in hand the mark sits on the filled ground. */
 .fs-tab.is-on .fs-mark { background: rgba(255, 255, 255, .28); color: #fff; }
+
+/* ── The checklist above the record button ───────────────────────────
+   What the form still needs, each line a button that opens the section and
+   puts the cursor in the field. It reads as a list rather than a warning:
+   an unfinished form is the ordinary state of a form being filled in, and
+   amber in this product means something the reader has to act on now. */
+.fs-checklist {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid var(--p-line, #e5e5ea);
+  border-radius: 12px;
+  background: var(--p-fill-soft, rgba(120, 120, 128, .08));
+  min-width: 0;
+}
+.fs-checklist-head {
+  margin: 0 0 8px;
+  font-size: 12.5px; font-weight: 700;
+  color: var(--p-label, #1c1c1e);
+}
+.fs-check-row {
+  display: flex; align-items: baseline; gap: 9px;
+  width: 100%; min-width: 0;
+  padding: 5px 2px;
+  border: 0; background: none;
+  font: inherit; font-size: 12.5px;
+  color: var(--p-label, #1c1c1e);
+  text-align: left;
+  cursor: pointer;
+}
+.fs-check-row + .fs-check-row { border-top: 1px solid var(--p-line, #e5e5ea); }
+.fs-check-row:hover .fs-check-what { text-decoration: underline; }
+.fs-check-row:focus-visible { outline: 2px solid var(--p-accent, #0d9488); outline-offset: 2px; }
+.fs-check-mark {
+  flex: 0 0 auto;
+  font-style: normal; font-weight: 700;
+  color: var(--fs-attention);
+}
+.fs-check-row.is-ok .fs-check-mark { color: var(--fs-answered); }
+.fs-check-what { min-width: 0; flex: 1 1 auto; }
+.fs-check-where {
+  flex: 0 0 auto;
+  color: var(--p-label-2, #6b6b70);
+  font-size: 11.5px;
+}
+.fs-check-row.is-ok .fs-check-what { color: var(--p-label-2, #6b6b70); }
+
+@media (max-width: 620px) {
+  .fs-check-row { flex-wrap: wrap; }
+  .fs-check-where { flex-basis: 100%; padding-left: 20px; }
+}

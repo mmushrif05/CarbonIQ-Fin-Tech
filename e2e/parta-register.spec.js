@@ -130,7 +130,10 @@ test('a seeded book is on screen, an exposure opens with its findings, and the p
   await expect(page.locator('#pr-form-status')).toContainText('Saved');
   await expect(page.locator('#pr-detail')).toBeVisible();
   await expect(row.locator('td').nth(2)).toContainText('75,000');
-  await expect(page.locator('#pr-form-submit')).toHaveText('Record');
+  /* The label is the page's again once the edit is done. The gate appends
+     its own count to it: the form was reset with the save, so what it needs
+     is outstanding again. */
+  await expect(page.locator('#pr-form-submit')).toContainText('Record');
 
   /* Review from the screen: sent for review, approved — frozen, no edit
      offered — and reopened with a reason the server records. */

@@ -189,6 +189,10 @@ const PartARegisterPage = (() => {
     say('pr-record-hint', isProperty()
       ? 'A property loan. Key the floor area in the unit the valuation states; the engine converts it and the trace shows the conversion.'
       : 'The engine runs before anything is written; a refusal names its clause.');
+    /* Which fields §5.2 insists on depends on the path within it, and the
+       class decides whether that block is on screen at all, so the two are
+       applied together. */
+    applyKnown();
     /* The form's shape has just changed — a class carries its own blocks and
        the rest are hidden — so the sections are re-read and a section left
        holding nothing is dropped from the rail rather than opening blank. */
@@ -1183,6 +1187,41 @@ const PartARegisterPage = (() => {
     show('pr-known-sector', sector);
     const size = sizePath();
     say('pr-sector-path', sector ? SECTOR_NEEDS[size] : '');
+    /* The held sector is what the estimate rests on, so it is required on
+       the sector path and optional on the reported one. Every other
+       requirement belongs to a block that is shown or hidden with its class,
+       and is declared on the field itself; this one control is visible on
+       both paths, so the rule lives here. */
+    const sectorKey = $('pr-f-sector-key');
+    if (sectorKey) {
+      if (sector) {
+        sectorKey.setAttribute('data-fs-required', '');
+        sectorKey.setAttribute('data-fs-label', 'Industry — the held sector the estimate rests on');
+      } else {
+        sectorKey.removeAttribute('data-fs-required');
+        sectorKey.removeAttribute('data-fs-label');
+      }
+    }
+    /* The company value is what the attribution factor is computed from, so
+       it is required on every option that earns one — which is all of them
+       but Option 3b, where the figure rests on the outstanding amount alone.
+       Total equity, total debt and the footnote 44 total balance sheet are
+       one requirement between them, not three. */
+    const needsValue = !(sector && size === 'none');
+    for (const id of ['pr-f-equity', 'pr-f-debt', 'pr-f-assets']) {
+      const el = $(id);
+      if (!el) continue;
+      if (needsValue) {
+        el.setAttribute('data-fs-required', '');
+        el.setAttribute('data-fs-group', 'company-value');
+        el.setAttribute('data-fs-label', 'Company value — total equity and total debt, or the total assets (footnote 44)');
+      } else {
+        el.removeAttribute('data-fs-required');
+        el.removeAttribute('data-fs-group');
+        el.removeAttribute('data-fs-label');
+      }
+    }
+    if (typeof FormSteps !== 'undefined') FormSteps.refresh($('pr-form'));
     const hint = $('pr-denom-hint');
     if (hint) {
       hint.textContent = sector && size === 'none'
@@ -1210,6 +1249,16 @@ const PartARegisterPage = (() => {
 
   async function submitForm(ev) {
     ev.preventDefault();
+    /* The gate disables the button, so this is the path a keyboard submit or
+       a stale button takes. It names the fields rather than sending a body
+       the engine will refuse with a clause, and opens the first one. */
+    const still = typeof FormSteps !== 'undefined' ? FormSteps.missing($('pr-form')) : [];
+    if (still.length) {
+      say('pr-form-status', `Not recorded — ${still.length} field${still.length === 1 ? '' : 's'} still needed: `
+        + `${still.map(m => `${m.label} (${m.section})`).join(', ')}.`);
+      FormSteps.revealMissing($('pr-form'));
+      return;
+    }
     const editing = editingId;
     say('pr-form-status', editing ? 'Saving — the engine reruns over the edited input…' : 'Recording…');
     try {

@@ -206,3 +206,64 @@ sit in one document.
   every section reachable, the rail following the asset class, a loan
   recorded section by section, and the required-field trap.
 - `e2e/form-sections.spec.js` — the other screens, each one driven.
+
+## Gating the button that records
+
+A form whose record button is always live answers a press with a refusal from
+the engine, and where that refusal names a clause rather than a field, the
+person pressing it learns nothing. So a form may name its own record control
+and let the component hold it shut until the record is answerable.
+
+Three edits, and no code:
+
+```html
+<form id="pr-form" data-steps="auto" data-steps-gate="pr-form-submit">
+  ...
+  <label>Amount
+    <input id="pr-f-outstanding" type="number"
+           data-fs-required data-fs-label="Outstanding amount at year-end"></label>
+  ...
+  <div class="fs-checklist" data-fs-checklist data-fs-keep hidden></div>
+  <div class="partc-actions">
+    <button type="submit" id="pr-form-submit">Record</button>
+  </div>
+</form>
+```
+
+- **`data-steps-gate="<id>"`** names the button. While anything is outstanding
+  it is disabled and reads *Record — 3 still needed*.
+- **`data-fs-required`** on a field makes it a requirement. **`data-fs-label`**
+  is the words the checklist uses; without it the field's own `<label>` is
+  read, which is usually enough.
+- **`data-fs-checklist`** is where the list is drawn. It carries `data-fs-keep`
+  so it belongs to the form rather than to whichever section happens to be last.
+- **`data-fs-group="<name>"`** makes several fields *one* requirement, met as
+  soon as any of them holds something. The company value is the standard's own
+  example: total equity and total debt, **or** the total balance sheet where
+  those cannot be obtained (footnote 44). Listing them separately would tell a
+  bank two fields are missing when it has already answered the question.
+
+### Two rules worth knowing before you add one
+
+**A requirement is read only where its field is visible.** Native `required` is
+deliberately not used for this: the register form carries one block per asset
+class and hides the rest, and a natively required control inside a hidden block
+stops the browser submitting a form nobody can fix — it reports that to the
+console rather than to the person pressing the button.
+
+**A requirement that depends on an answer rather than on the class lives in the
+page's module, not on the field.** Most requirements belong to a block that is
+shown or hidden with its asset class, so declaring them on the field is enough.
+Two in the register are not: the held sector is required on the sector path
+alone, and the company value on every option that earns an attribution factor —
+which is all of them but Option 3b. Both are set and cleared in
+`applyKnown()` in `ui/js/parta-register.js`, which is the one place that knows
+which path the form is on.
+
+### What a page still owns
+
+The gate disables the button; it does not replace the page's own submit
+handler. A submit that arrives another way — a keyboard press, a stale button —
+should ask `FormSteps.missing(form)` and say what is outstanding rather than
+sending a body the engine will refuse. `FormSteps.revealMissing(form)` opens
+the section holding the first one and puts the cursor in it.
