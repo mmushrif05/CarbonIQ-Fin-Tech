@@ -15067,6 +15067,581 @@
                   "results": {
                     "type": "object"
                   },
+                  "risks": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "category": {
+                          "type": "string",
+                          "enum": [
+                            "technical",
+                            "financial",
+                            "political",
+                            "social",
+                            "environmental",
+                            "climate",
+                            "operational",
+                            "fiduciary",
+                            "other"
+                          ]
+                        },
+                        "description": {
+                          "type": "string",
+                          "maxLength": 600
+                        },
+                        "likelihood": {
+                          "type": "string",
+                          "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                          ]
+                        },
+                        "impact": {
+                          "type": "string",
+                          "enum": [
+                            "low",
+                            "medium",
+                            "high"
+                          ]
+                        },
+                        "mitigation": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 800
+                        },
+                        "owner": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 160
+                        }
+                      },
+                      "required": [
+                        "category",
+                        "description",
+                        "likelihood",
+                        "impact"
+                      ]
+                    }
+                  },
+                  "implementation": {
+                    "type": "object",
+                    "properties": {
+                      "arrangements": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "governance": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "procurementApproach": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "timetable": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "milestone": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "start": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "end": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "note": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 400
+                            }
+                          },
+                          "required": [
+                            "milestone"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "sustainability": {
+                    "type": "object",
+                    "properties": {
+                      "strategy": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "exitStrategy": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "ownershipAfterClosure": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "financialSustainability": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      }
+                    }
+                  },
+                  "stakeholders": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "group": {
+                          "type": "string",
+                          "enum": [
+                            "government",
+                            "community",
+                            "private_sector",
+                            "ngo",
+                            "academia",
+                            "financier",
+                            "indigenous_peoples",
+                            "workers",
+                            "other"
+                          ]
+                        },
+                        "date": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                        },
+                        "mode": {
+                          "type": "string",
+                          "enum": [
+                            "consultation",
+                            "workshop",
+                            "interview",
+                            "survey",
+                            "written",
+                            "site_visit",
+                            "other"
+                          ],
+                          "default": "consultation"
+                        },
+                        "outcome": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 800
+                        },
+                        "reference": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "maxLength": 200
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "group"
+                      ]
+                    }
+                  },
+                  "climateRationale": {
+                    "type": "object",
+                    "properties": {
+                      "hazards": {
+                        "type": "array",
+                        "items": {
+                          "type": "string",
+                          "enum": [
+                            "flood",
+                            "drought",
+                            "sea_level_rise",
+                            "cyclone",
+                            "storm_surge",
+                            "heat",
+                            "salinity",
+                            "landslide",
+                            "erratic_rainfall",
+                            "coastal_erosion",
+                            "other"
+                          ]
+                        }
+                      },
+                      "vulnerability": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "exposure": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "adaptiveCapacity": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "evidenceSource": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 600
+                      },
+                      "scenario": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 600
+                      }
+                    }
+                  },
+                  "financialTerms": {
+                    "type": "object",
+                    "properties": {
+                      "currency": {
+                        "type": "string",
+                        "maxLength": 8,
+                        "default": "USD"
+                      },
+                      "tenorYears": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 60
+                      },
+                      "gracePeriodYears": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 30
+                      },
+                      "interestRatePct": {
+                        "type": [
+                          "number",
+                          "null"
+                        ],
+                        "minimum": 0,
+                        "maximum": 100
+                      },
+                      "repaymentProfile": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "enum": [
+                          "bullet",
+                          "equal_principal",
+                          "annuity",
+                          "other"
+                        ]
+                      },
+                      "securityPackage": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "onLendingTerms": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "disbursements": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "tranche": {
+                              "type": "string",
+                              "maxLength": 80
+                            },
+                            "amount": {
+                              "type": [
+                                "number",
+                                "null"
+                              ],
+                              "minimum": 0
+                            },
+                            "condition": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 400
+                            },
+                            "date": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "tranche"
+                          ]
+                        }
+                      }
+                    }
+                  },
+                  "monitoring": {
+                    "type": "object",
+                    "properties": {
+                      "arrangements": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 2000
+                      },
+                      "indicators": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "indicator": {
+                              "type": "string",
+                              "maxLength": 200
+                            },
+                            "frequency": {
+                              "type": "string",
+                              "enum": [
+                                "monthly",
+                                "quarterly",
+                                "semi_annual",
+                                "annual",
+                                "once"
+                              ]
+                            },
+                            "method": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 400
+                            },
+                            "responsible": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            },
+                            "verification": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 400
+                            }
+                          },
+                          "required": [
+                            "indicator",
+                            "frequency"
+                          ]
+                        }
+                      },
+                      "evaluationPlan": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 1200
+                      },
+                      "reportingSchedule": {
+                        "type": [
+                          "string",
+                          "null"
+                        ],
+                        "maxLength": 600
+                      }
+                    }
+                  },
+                  "reporting": {
+                    "type": "object",
+                    "properties": {
+                      "aprs": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "year": {
+                              "type": "integer",
+                              "minimum": 2000,
+                              "maximum": 2100
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": [
+                                "due",
+                                "submitted",
+                                "accepted"
+                              ],
+                              "default": "due"
+                            },
+                            "submittedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            },
+                            "reference": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            }
+                          },
+                          "required": [
+                            "year"
+                          ]
+                        }
+                      },
+                      "midTermReview": {
+                        "type": "object",
+                        "properties": {
+                          "plannedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          }
+                        }
+                      },
+                      "finalEvaluation": {
+                        "type": "object",
+                        "properties": {
+                          "plannedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "completedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                          },
+                          "reference": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "maxLength": 200
+                          }
+                        }
+                      },
+                      "audits": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "year": {
+                              "type": "integer",
+                              "minimum": 2000,
+                              "maximum": 2100
+                            },
+                            "reference": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "maxLength": 200
+                            },
+                            "submittedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+                            }
+                          },
+                          "required": [
+                            "year"
+                          ]
+                        }
+                      }
+                    }
+                  },
                   "preCheck": {
                     "type": "object",
                     "properties": {
