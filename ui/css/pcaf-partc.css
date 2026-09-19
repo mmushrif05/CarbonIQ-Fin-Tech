@@ -46,9 +46,33 @@
   flex-direction: column;
   gap: 22px;
   padding-bottom: 96px;                 /* clearance for the sticky action bar */
-  max-width: 940px;
+  /* The measure is a token, not a constant. 940px is a reading measure and
+     it was applied to every screen that carries this shell — including the
+     dashboards, whose widest table is nine columns. On a desktop that left
+     ~450px of empty gutter each side and squeezed a nine-column row into
+     940px, so labels wrapped to four lines and a figure broke across two.
+     A screen states its own measure below; the default stays the reading
+     one, so a form or a document screen is unchanged. */
+  max-width: var(--p-measure, 940px);
   margin: 0 auto;
 }
+
+/* The dashboards: a wide measure, because these are tables and chart
+   bands read across, not prose read down. It is still a measure and not
+   100% — a figure band stretched the full width of a 27in monitor puts
+   the label and its value too far apart to read as one thing. */
+.partc.bank,
+.partc.parta-position,
+.partc.parta-register,
+.partc.parta-sovereign,
+.partc.partc-portfolio,
+.partc.partc-book,
+.partc.gov            { --p-measure: 1560px; }
+
+/* The presenter's screens sit between the two: wider than prose so a
+   step's screen is not a column, narrower than a book so the rail stays
+   readable from the back of a room. */
+.partc.walkthrough    { --p-measure: 1200px; }
 
 @media (prefers-color-scheme: dark) {
   .partc {
@@ -493,19 +517,42 @@
   .dqb-3, .dq-seg.dqb-3 { color: #042f2e; }
 }
 
+/* The note sits under what it qualifies. It carried a -10px top margin,
+   which pulled it up over the element above: on the reporting-year screen
+   that is the figure row, so the scope rule was drawn across the bottom of
+   the four cards. An empty note is collapsed rather than left holding a
+   gap — this one is filled from the record and is often blank. */
 .partc-scope-warning {
-  margin: -10px 2px 0; font-size: 13px; line-height: 1.5;
+  margin: 10px 2px 0; font-size: 13px; line-height: 1.5;
   color: var(--ios-orange); font-weight: 500;
 }
+.partc-scope-warning:empty { display: none; }
 
 .partc-panels { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; }
-/* Module breakdown holds three columns; the other two hold two. */
+/* The track count follows the panels the row actually holds.
+   This rule used to set three tracks on every panel row above 1080px,
+   whatever it contained — sized for the module breakdown, which holds
+   three. A row of two then filled tracks 1 and 2 and left the third
+   standing empty, which on a wide screen is a ~470px dead column down
+   the right of the page and reads as two cards squeezed into the left.
+   A browser without :has() drops these and keeps the auto-fit above,
+   which fills the row too. */
 @media (min-width: 1080px) {
-  .partc-panels { grid-template-columns: 1.3fr 1fr 1fr; }
+  /* Three or more: the first column carries the longest labels, so it
+     takes the extra. */
+  .partc-panels:has(> :nth-child(3)) { grid-template-columns: 1.3fr 1fr 1fr; }
+  /* Exactly two: they share the row. */
+  .partc-panels:has(> :nth-child(2)):not(:has(> :nth-child(3))) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .partc-panel {
   background: var(--p-card); border-radius: var(--p-radius);
   box-shadow: var(--p-shadow); padding: 18px 20px;
+  /* A grid item's min-width is auto, so one long label sets the track
+     width and pushes the page sideways. Stated once here rather than per
+     screen — the fourth instance of this fault in this codebase. */
+  min-width: 0;
 }
 .partc-panel h4 {
   margin: 0 0 2px; font-size: 16px; font-weight: 620; letter-spacing: -0.012em;

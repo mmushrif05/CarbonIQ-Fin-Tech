@@ -40,6 +40,26 @@ const Charts = (() => {
     return max;
   }
 
+  /* The label column, sized to the longest label it must hold.
+     It was a constant, so a label longer than the column ran off the left
+     of the viewBox and was clipped by it — "Listed equity & bonds — scope
+     3, apart" drew as "puty & bonds — scope 3, apart", which reads as a
+     different row rather than as a truncation. The plot grows by the same
+     amount, so the bars keep their room instead of paying for the labels.
+     ~6.1 user units a character at the 12px the label is set in; the
+     ceiling stops one runaway label from taking the whole drawing, and a
+     label past it is ellipsised, which at least reads as truncation. */
+  const CHAR = 6.1;
+  function labelColumn(rows, min, max) {
+    const longest = Math.max(0, ...rows.map(r => String((r && r.label) || '').length));
+    return Math.min(max, Math.max(min, Math.round(longest * CHAR) + 14));
+  }
+  function clip(label, lw) {
+    const room = Math.floor((lw - 14) / CHAR);
+    const t = String(label == null ? '' : label);
+    return t.length > room ? `${t.slice(0, Math.max(1, room - 1))}\u2026` : t;
+  }
+
   const WIDE = 640;
   const ROW = 28;
   const TOP = 4;
@@ -74,10 +94,11 @@ const Charts = (() => {
     /* Compact: a drawing that sits inside a card rather than across a panel —
        a narrower label column and shorter rows, the same geometry. */
     const compact = Boolean(opts.compact);
-    const LW = compact ? 150 : 190;
+    const LWMIN = compact ? 150 : 190;
+    const LW = labelColumn(rows, LWMIN, compact ? 250 : 320);
     const VW = compact ? 80 : 96;
     const PAD = 6;
-    const W = compact ? 460 : WIDE;
+    const W = (compact ? 460 : WIDE) + (LW - LWMIN);
     const RH = compact ? 22 : ROW;
     const BH = compact ? 10 : 14;
     const max = ceiling(rows);
@@ -111,7 +132,7 @@ const Charts = (() => {
       const readout = tip(r.label, [[opts.valueLabel || 'Value', `${fmt(r.value, d)}${unit}`], ...(r.projected ? [['Basis', 'Projection — not measured']] : []), ...(r.segments || []).map(s => [s.label, `${fmt(s.value, d)}${unit}`])]);
       return `<g class="ch-row${r.dim ? ' is-dim' : ''}${r.projected ? ' is-projected' : ''}" data-key="${esc(r.key || '')}" tabindex="0" data-tip="${readout}">
         <rect class="ch-hit" x="0" y="${y}" width="${W}" height="${RH}"/>
-        <text class="ch-label" x="${LW - 10}" y="${y + RH / 2 + 4}" text-anchor="end">${esc(r.label)}</text>
+        <text class="ch-label" x="${LW - 10}" y="${y + RH / 2 + 4}" text-anchor="end">${esc(clip(r.label, LW))}</text>
         ${body}
         <text class="ch-value" x="${(LW + whole + 8).toFixed(1)}" y="${y + RH / 2 + 4}">${fmt(r.value, d)}</text>
       </g>`;
@@ -129,9 +150,9 @@ const Charts = (() => {
    * rows: [{ key, label, dim, segments: [{ label, share, color }] }]
    */
   function shares(rows, opts = {}) {
-    const LW = 190;
+    const LW = labelColumn(rows, 190, 320);
     const PAD = 8;
-    const W = WIDE;
+    const W = WIDE + (LW - 190);
     const RH = ROW;
     const BH = 14;
     const usable = W - LW - PAD;
@@ -152,7 +173,7 @@ const Charts = (() => {
       const readout = tip(r.label, segs.map(s => [s.label, `${fmt(s.share * 100, 1)}%`]));
       return `<g class="ch-row${r.dim ? ' is-dim' : ''}" data-key="${esc(r.key || '')}" tabindex="0" data-tip="${readout}">
         <rect class="ch-hit" x="0" y="${y}" width="${W}" height="${RH}"/>
-        <text class="ch-label" x="${LW - 10}" y="${y + RH / 2 + 4}" text-anchor="end">${esc(r.label)}</text>
+        <text class="ch-label" x="${LW - 10}" y="${y + RH / 2 + 4}" text-anchor="end">${esc(clip(r.label, LW))}</text>
         <rect class="ch-track" x="${LW}" y="${by}" width="${usable}" height="${BH}" rx="${R}"/>
         ${parts}
       </g>`;
