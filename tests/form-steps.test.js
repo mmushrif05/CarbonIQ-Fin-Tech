@@ -66,6 +66,51 @@ describe('the forms that asked for it still ask for it', () => {
   });
 });
 
+describe('the two shapes a screen can adopt', () => {
+  test('a <fieldset> is a section and its <legend> is the title', () => {
+    must(JS, /el\.tagName === 'FIELDSET' \? el\.querySelector\(':scope > legend'\) : null/,
+      'a form written as fieldsets adopts this with one attribute and no new markup');
+    must(source('ui/pages/pcaf-parta.html'), /id="paForm"[\s\S]{0,120}?data-steps="auto"/,
+      'the Part A engine is sectioned on its own fieldsets');
+  });
+
+  test('a run of numbered cards is a flow, named on each card', () => {
+    must(JS, /scope\.querySelectorAll\('\[data-step-group\]'\)/, 'cards name their flow');
+    must(JS, /if \(members\.length > 1\) attachGroup\(members\)/,
+      'one card is not a flow');
+    for (const [file, flow, n] of [
+      ['ui/pages/pcaf-partc.html', 'partc-intake', 5],
+      ['ui/pages/partc-book.html', 'insurance-book', 6],
+    ]) {
+      const HTML = String(source(file));
+      expect((HTML.match(new RegExp(`data-step-group="${flow}"`, 'g')) || []).length).toBe(n);
+    }
+  });
+
+  test('a card flow follows the cards the page reveals', () => {
+    must(JS, /attributeFilter: \['hidden'\]/,
+      'the rail re-reads itself rather than asking every page to remember');
+    mustNot(JS, /attributeFilter: \[[^\]]*class/,
+      'watching class would loop: putting a card away is a class');
+  });
+
+  test('the pages written into the shell are sectioned too', () => {
+    must(source('ui/app.js'), /FormSteps\.init\(document\)/,
+      'the inline screens are never loaded as fragments, so the per-fragment '
+      + 'call never reaches them');
+  });
+
+  test('a title is not repeated by the number the rail already prints', () => {
+    must(JS, /function stepTitle\(raw\)/, 'a leading number is dropped from a title');
+    must(JS, /\.partc-step, \.step-number, \.fs-num/, 'and so is a number badge inside a heading');
+  });
+
+  test('a container marked as a section is not hidden as if it were a heading', () => {
+    must(JS, /\/\^H\[1-6\]\$\/\.test\(section\.heading\.tagName\)/,
+      'hiding a container that carries data-step-title would hide the section itself');
+  });
+});
+
 describe('the rules the implementation was caught breaking', () => {
   /* Each of these four is a defect this component actually shipped during
      the hour it was written, found by driving it rather than by reading it. */

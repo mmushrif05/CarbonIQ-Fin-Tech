@@ -89,7 +89,7 @@
   <div class="partc-ai-status" id="partcAiStatus" hidden></div>
 
   <!-- ── Step 0: policy document ─────────────────────────── -->
-  <section class="partc-card">
+  <section class="partc-card" data-step-group="partc-intake">
     <header class="partc-card-head">
       <h3><span class="partc-step">1</span> Policy document</h3>
       <p>Drop the policy schedule as a PDF, or paste it. The intake agent classifies the policy — which decides the entire scope of the assessment — and pre-fills the fields below.</p>
@@ -110,7 +110,7 @@
   </section>
 
   <!-- ── Step 2: BOQ ─────────────────────────────────────── -->
-  <section class="partc-card">
+  <section class="partc-card" data-step-group="partc-intake">
     <header class="partc-card-head">
       <h3><span class="partc-step">2</span> Bill of quantities</h3>
       <p>Paste any BOQ — any length, any wording. The mapping agent resolves each line to a material key, density, RICS waste category and service life.</p>
@@ -133,7 +133,7 @@
   </section>
 
   <!-- ── Step 2: Policy gate ─────────────────────────────── -->
-  <section class="partc-card">
+  <section class="partc-card" data-step-group="partc-intake">
     <header class="partc-card-head">
       <h3><span class="partc-step">3</span> Policy</h3>
       <p>Policy type sets the scope. CAR and EAR cover construction only — the use-stage sections disappear.</p>
@@ -163,7 +163,7 @@
   </section>
 
   <!-- ── Step 3: Construction ────────────────────────────── -->
-  <section class="partc-card">
+  <section class="partc-card" data-step-group="partc-intake">
     <header class="partc-card-head">
       <h3><span class="partc-step">4</span> Construction stage</h3>
       <p>Diesel and grid emission factors are applied automatically and are not shown — they are hidden constants carrying their own source and tier.</p>
@@ -189,7 +189,7 @@
   </section>
 
   <!-- ── Step 4: Use stage (gated) ───────────────────────── -->
-  <section class="partc-card" id="partcUseStageCard">
+  <section class="partc-card" data-step-group="partc-intake" id="partcUseStageCard">
     <header class="partc-card-head">
       <h3><span class="partc-step">5</span> Use stage</h3>
       <p>Optional under PCAF Part C §5.3. Computed only when the policy carries a use stage, and always reported as a separate line.</p>

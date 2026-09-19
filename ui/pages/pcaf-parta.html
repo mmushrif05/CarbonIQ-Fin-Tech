@@ -42,7 +42,12 @@
   <div class="parta-split">
 
     <!-- ─────────────── Manual entry ─────────────── -->
-    <form class="parta-form" id="paForm" autocomplete="off">
+    <!-- Read a section at a time (ui/js/form-steps.js). Each <fieldset>
+         below is one section and its <legend> is the section's name, so
+         adding or reordering a section here is adding or reordering a
+         fieldset — nothing else to change. -->
+    <form class="parta-form" id="paForm" autocomplete="off"
+          data-steps="auto" data-step-first="The exposure">
 
       <fieldset class="parta-card">
         <legend>1 · The exposure</legend>

@@ -71,6 +71,29 @@ const FormSteps = (() => {
   const text = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim();
 
   /**
+   * A section's own words, without a number it already carries. Several forms
+   * number their headings ("1 · The exposure", "2. Attribution"), and the rail
+   * numbers them too, so the chip would otherwise read "1 1 · The exposure".
+   * Only a leading number is dropped; the rest of the title is untouched.
+   */
+  /**
+   * A card's own name, taken from its first heading with the little number
+   * badge left out. Several screens print the step number in a <span> inside
+   * the heading ("1 Policy document"), and the rail numbers the chips itself.
+   */
+  function titleOf(el) {
+    const h = el.querySelector('h2, h3, h4, h5');
+    if (!h) return '';
+    const copy = /** @type {Element} */ (h.cloneNode(true));
+    for (const badge of copy.querySelectorAll('.partc-step, .step-number, .fs-num')) badge.remove();
+    return stepTitle(text(copy));
+  }
+
+  function stepTitle(raw) {
+    return String(raw).replace(/^\s*\d+[a-z]?\s*[·.)\u2013-]\s*/i, '').trim() || String(raw).trim();
+  }
+
+  /**
    * Is this element showing anything? An element the page has hidden — a
    * class block for another asset class — does not count towards its
    * section, and a section of nothing but hidden blocks is dropped.
@@ -164,8 +187,17 @@ const FormSteps = (() => {
         current.blocks.push(el);
         continue;
       }
-      if (el.matches(HEADING)) {
-        open(el.getAttribute('data-step-title') || text(el), el, group);
+      const legend = el.tagName === 'FIELDSET' ? el.querySelector(':scope > legend') : null;
+      if (legend) {
+        /* A <fieldset> is already a section in HTML's own vocabulary and its
+           <legend> is already its title, so a form written that way needs no
+           extra markup at all: `data-steps="auto"` on the form is the whole
+           adoption. The legend is NOT passed as the heading, because it lives
+           inside the fieldset — the fieldset is the block that is shown and
+           put away, and the legend travels with it. */
+        open(el.getAttribute('data-step-title') || stepTitle(text(legend)), null, group);
+      } else if (el.matches(HEADING)) {
+        open(el.getAttribute('data-step-title') || stepTitle(text(el)), el, group);
       } else {
         if (!current || group !== currentGroup) current = first();
       }
@@ -210,8 +242,12 @@ const FormSteps = (() => {
       const on = shown[state.index] === section;
       for (const block of section.blocks) block.classList.toggle(OFF, !on);
       /* The heading names the section on the rail, so it is not repeated
-         above the fields. */
-      if (section.heading) section.heading.classList.add(OFF);
+         above the fields — but only where the heading is a heading. A form
+         may instead mark the section's whole container with
+         `data-step-title`, and hiding that would hide the section itself. */
+      if (section.heading && /^H[1-6]$/.test(section.heading.tagName)) {
+        section.heading.classList.add(OFF);
+      }
     }
 
     rail.textContent = '';
@@ -366,10 +402,82 @@ const FormSteps = (() => {
     render(state);
   }
 
-  /** Every form on the page that asked for this, however it was rendered. */
+  /**
+   * A page whose cards ARE the flow — Part C's intake and the Insurance Book
+   * are each a numbered run of sibling cards down one page, not one long
+   * form. Each card carries `data-step-group="<name>"`; the cards sharing a
+   * name are that flow, in the order they appear, one on screen at a time.
+   *
+   * To add a card to a flow: put the attribute on it. To take one out:
+   * remove the attribute. To reorder: move the card. Nothing else, and no
+   * markup is moved by this module — the cards stay exactly where they are.
+   */
+  function attachGroup(members) {
+    const first = members[0];
+    const parent = first.parentElement;
+    if (!parent || live.has(first)) return;
+
+    const head = document.createElement('div');
+    head.className = 'fs-head fs-head-group';
+    head.setAttribute('data-fs-chrome', '');
+    const rail = document.createElement('div');
+    rail.className = 'fs-rail';
+    rail.setAttribute('role', 'tablist');
+    rail.setAttribute('aria-label', 'Steps on this screen');
+    head.appendChild(rail);
+
+    const nav = document.createElement('div');
+    nav.className = 'fs-nav fs-nav-group';
+    nav.setAttribute('data-fs-chrome', '');
+    const back = document.createElement('button');
+    back.type = 'button'; back.className = 'btn btn-secondary fs-back'; back.textContent = 'Back';
+    const next = document.createElement('button');
+    next.type = 'button'; next.className = 'btn btn-secondary fs-next'; next.textContent = 'Next';
+    const status = document.createElement('span');
+    status.className = 'fs-status'; status.setAttribute('aria-live', 'polite');
+    nav.append(back, status, next);
+
+    /* The rail and its buttons sit above the first card, because the card
+       itself is what fills the screen below them. */
+    parent.insertBefore(head, first);
+    parent.insertBefore(nav, first);
+
+    /** @type {any} */
+    const state = { form: parent, head, rail, status, back, next, nav, index: 0, sections: [], shown: [] };
+    state.sections = members.map(el => ({
+      title: el.getAttribute('data-step-title') || titleOf(el) || 'Step',
+      heading: null, group: el, blocks: [el],
+    }));
+    live.set(first, state);
+    back.addEventListener('click', () => go(state, state.index - 1));
+    next.addEventListener('click', () => go(state, state.index + 1));
+    render(state);
+
+    /* A flow reveals itself as the work proceeds: the Insurance Book shows
+       Projects only once a client is chosen, and Assessments only once there
+       is a project. The rail has to follow that, and asking every page to
+       call refresh() after every toggle would be a rule someone forgets. So
+       the cards are watched for the one thing that decides it — their
+       `hidden` attribute — and the rail re-reads itself. This cannot loop:
+       putting a card away is a class (`.fs-off`), never `hidden`. */
+    if (typeof MutationObserver !== 'undefined') {
+      const watch = new MutationObserver(() => render(state));
+      for (const el of members) watch.observe(el, { attributes: true, attributeFilter: ['hidden'] });
+    }
+  }
+
+  /** Every form and every card flow on the page that asked for this. */
   function init(root) {
     const scope = root || document;
     for (const form of scope.querySelectorAll('[data-steps]')) attach(form);
+
+    const flows = new Map();
+    for (const el of scope.querySelectorAll('[data-step-group]')) {
+      const name = el.getAttribute('data-step-group') || '';
+      if (!flows.has(name)) flows.set(name, []);
+      flows.get(name).push(el);
+    }
+    for (const members of flows.values()) if (members.length > 1) attachGroup(members);
   }
 
   /** Open a form's nth section. The public call takes the form, not the

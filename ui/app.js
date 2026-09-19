@@ -301,6 +301,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // Landing is therefore the same code path as clicking, so a page cannot be
   // visible without having been navigated to.
   window.CARBONIQ_navigateTo = navigateTo;
+
+  /* The pages written straight into the shell — the PCAF calculator, the
+     monitoring screen, the project wizard — are never loaded as fragments,
+     so the per-fragment call above never reaches them. Sectioning them is
+     this one call, made once the shell is up. `attach` is idempotent: a
+     form that already carries its rail is left alone, so a fragment
+     sectioned later is not sectioned twice. */
+  if (typeof FormSteps !== 'undefined') FormSteps.init(document);
   /* The page already on screen, re-read: what the walkthrough's Next needs
      when two consecutive steps sit on one screen, so the step's intent is
      applied now rather than on the next visit. */

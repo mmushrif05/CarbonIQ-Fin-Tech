@@ -108,3 +108,16 @@
   .fs-tab.is-on .fs-tab-label { white-space: nowrap; max-width: 18ch; }
   .fs-nav .fs-next { margin-left: auto; }
 }
+
+/* A page whose numbered cards are the flow (attachGroup in the module).
+   The rail and its buttons sit above the first card and span the page, so
+   they read as the page's own navigation rather than one card's. */
+.fs-head-group {
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+}
+.fs-nav-group {
+  margin: -6px 0 16px;
+  padding-top: 0;
+  border-top: 0;
+}

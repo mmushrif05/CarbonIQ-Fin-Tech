@@ -148,10 +148,10 @@ adopting the pragma on all of them at once and running this tree's own check).
 
 `tests/jsconfig.json` over `tests`. Jest globals. Separate for the same reason: `types: [jest]` in the server configuration would let a production file call `expect()` and still check clean.
 
-Checked: **48**. Remaining: **143** (1544 errors, measured by
+Checked: **48**. Remaining: **143** (1545 errors, measured by
 adopting the pragma on all of them at once and running this tree's own check).
 
-**19 of them raise no errors at all** and can be adopted by adding the
+**18 of them raise no errors at all** and can be adopted by adding the
 pragma and nothing else.
 
 | File | Errors to fix before it joins |
@@ -274,6 +274,7 @@ pragma and nothing else.
 | `tests/schemas.test.js` | 2 |
 | `tests/db.test.js` | 1 |
 | `tests/desk-ui.test.js` | 1 |
+| `tests/form-steps.test.js` | 1 |
 | `tests/parta-sovereign-checks.test.js` | 1 |
 | `tests/parta-sovereign-data.test.js` | 1 |
 | `tests/pcaf-parta-conformance.test.js` | 1 |
@@ -282,7 +283,6 @@ pragma and nothing else.
 | `tests/v1-info.test.js` | 1 |
 | `tests/bank-ui.test.js` | 0 |
 | `tests/charts.test.js` | 0 |
-| `tests/form-steps.test.js` | 0 |
 | `tests/gcf-example-project.test.js` | 0 |
 | `tests/gcf-overview-ui.test.js` | 0 |
 | `tests/lending-pcaf-claim.test.js` | 0 |

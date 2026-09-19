@@ -19,7 +19,7 @@
        protocol are requirements of a Part C disclosure, not preferences.
        They belong to the entity rather than to any one assessment, so they
        are captured once here and printed in every report. -->
-  <section class="partc-card" id="bookSettingsCard">
+  <section class="partc-card" data-step-group="insurance-book" id="bookSettingsCard">
     <header class="partc-card-head">
       <h3><span class="partc-step">0</span> Reporting entity</h3>
       <p>What every disclosure this book produces must state about itself.</p>
@@ -64,7 +64,7 @@
   </section>
 
   <!-- ── Clients ─────────────────────────────────────────── -->
-  <section class="partc-card" id="bookClientsCard">
+  <section class="partc-card" data-step-group="insurance-book" id="bookClientsCard">
     <header class="partc-card-head">
       <h3><span class="partc-step">1</span> Clients</h3>
       <p>The insured parties. Each holds the projects you have written cover against.</p>
@@ -91,7 +91,7 @@
   </section>
 
   <!-- ── Projects ────────────────────────────────────────── -->
-  <section class="partc-card" id="bookProjectsCard" hidden>
+  <section class="partc-card" data-step-group="insurance-book" data-step-title="Projects" id="bookProjectsCard" hidden>
     <header class="partc-card-head">
       <h3><span class="partc-step">2</span> Projects — <span id="bookProjectsFor"></span></h3>
       <p>The physical asset. Floor area and project cost are captured once here and reused by every policy and every assessment.</p>
@@ -146,7 +146,7 @@
   </section>
 
   <!-- ── Project detail ──────────────────────────────────── -->
-  <section class="partc-card" id="bookProjectDetail" hidden>
+  <section class="partc-card" data-step-group="insurance-book" data-step-title="Project detail" id="bookProjectDetail" hidden>
     <header class="partc-card-head">
       <h3><span class="partc-step">3</span> <span id="bookDetailName"></span></h3>
       <p id="bookDetailMeta"></p>
@@ -166,7 +166,7 @@
   </section>
 
   <!-- ── BOQ revisions ───────────────────────────────────── -->
-  <section class="partc-card" id="bookBoqCard" hidden>
+  <section class="partc-card" data-step-group="insurance-book" id="bookBoqCard" hidden>
     <header class="partc-card-head">
       <h3><span class="partc-step">4</span> Bill of quantities</h3>
       <p>A BOQ is never final. Each revision inherits the mappings of the one before it, so only genuinely new lines need review.</p>
@@ -195,7 +195,7 @@
   </section>
 
   <!-- ── Assessments ─────────────────────────────────────── -->
-  <section class="partc-card" id="bookAssessCard" hidden>
+  <section class="partc-card" data-step-group="insurance-book" id="bookAssessCard" hidden>
     <header class="partc-card-head">
       <h3><span class="partc-step">5</span> Assessments</h3>
       <p>One calculation bound to a policy, a BOQ revision and a reporting year. Only a locked assessment enters the annual disclosure.</p>

@@ -1039,8 +1039,12 @@
       <div class="page" id="page-pcaf">
         <div class="form-layout">
           <!-- Left: Form -->
-          <div class="form-panel">
-            <div class="form-section">
+          <!-- Read a section at a time (ui/js/form-steps.js). Each
+               .form-section carrying data-step-title is one section; the
+               results panel beside this one is output, not input, and is
+               deliberately not part of the rail. -->
+          <div class="form-panel" data-steps="auto">
+            <div class="form-section" data-step-title="Project finance details">
               <h3 class="form-section-title">Project Finance Details</h3>
               <p class="form-section-desc">Enter the capital structure as reported on the project balance sheet</p>
 
@@ -1083,7 +1087,7 @@
 
             <div class="form-divider"></div>
 
-            <div class="form-section">
+            <div class="form-section" data-step-title="Emissions data">
               <h3 class="form-section-title">Emissions Data</h3>
               <p class="form-section-desc">Select your best available data quality tier</p>
 
