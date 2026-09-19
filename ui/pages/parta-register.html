@@ -48,7 +48,7 @@
       <div class="pr-grid">
         <label>Sector <input id="pr-f-sector" type="text" maxlength="120" placeholder="e.g. Textiles"></label>
         <label>Industry — held sector
-          <select id="pr-f-sector-key"><option value="">Not mapped</option></select></label>
+          <select id="pr-f-sector-key" data-engine-path="plausibility.sectorBand"><option value="">Not mapped</option></select></label>
         <label>Instrument
           <select id="pr-f-instrument">
             <option value="business-loan">Term loan</option>
@@ -69,17 +69,17 @@
 
       <h5 class="partc-subhead">Outstanding at year-end</h5>
       <div class="pr-grid">
-        <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any"></label>
+        <label>Amount <input id="pr-f-outstanding" type="number" data-money min="0" step="any" data-engine-path="outstanding.amount"></label>
         <label>Average over the year <input id="pr-f-average" type="number" data-money min="0" step="any" placeholder="optional — runs the footnote 71 check"></label>
-        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="runs the sector band check; prices Option 3a"></label>
+        <label>Borrower revenue over the year <input id="pr-f-revenue" type="number" data-money min="0" step="any" placeholder="runs the sector band check; prices Option 3a" data-engine-path="plausibility.sectorBand"></label>
         <label>Currency <input id="pr-f-currency" type="text" maxlength="10" value="LKR"></label>
         <label>As of <input id="pr-f-asof" type="date"></label>
       </div>
 
       <h5 class="partc-subhead">Company value</h5>
       <div class="pr-grid" id="pr-denom-private">
-        <label>Total equity <input id="pr-f-equity" type="number" data-money step="any"></label>
-        <label>Total debt <input id="pr-f-debt" type="number" data-money min="0" step="any"></label>
+        <label>Total equity <input id="pr-f-equity" type="number" data-money step="any" data-engine-path="denominator.totalEquity"></label>
+        <label>Total debt <input id="pr-f-debt" type="number" data-money min="0" step="any" data-engine-path="denominator.totalDebt"></label>
         <label>Customer deposits <input id="pr-f-deposits" type="number" data-money min="0" step="any" placeholder="financial institutions only"></label>
       </div>
       <div class="pr-grid" id="pr-denom-listed" hidden>
@@ -99,9 +99,9 @@
 
       <div id="pr-known-reported">
         <div class="pr-grid">
-          <label>Scope 1, tCO₂e <input id="pr-f-s1" type="number" min="0" step="any"></label>
-          <label>Scope 2, tCO₂e <input id="pr-f-s2" type="number" min="0" step="any"></label>
-          <label>Scope 3, tCO₂e <input id="pr-f-s3" type="number" min="0" step="any"></label>
+          <label>Scope 1, tCO₂e <input id="pr-f-s1" type="number" min="0" step="any" data-engine-path="emissions"></label>
+          <label>Scope 2, tCO₂e <input id="pr-f-s2" type="number" min="0" step="any" data-engine-path="emissions"></label>
+          <label>Scope 3, tCO₂e <input id="pr-f-s3" type="number" min="0" step="any" data-engine-path="emissions.scope3"></label>
           <label>Basis
             <select id="pr-f-basis">
               <option value="reported-unverified">Reported by the borrower, unverified</option>
@@ -127,7 +127,7 @@
       </div>
 
       <div class="pr-grid">
-        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given"></label>
+        <label class="pr-wide">Why scope 3 is absent <input id="pr-f-s3-reason" type="text" maxlength="400" placeholder="required where no scope 3 figure is given" data-engine-path="emissions.scope3"></label>
       </div>
       </div>
 
@@ -317,7 +317,7 @@
         <label>Sanctioned amount <input id="pr-f-fac-committed" type="number" data-money min="0" step="any" placeholder="the total loan commitment"></label>
         <label>Drawn to date <input id="pr-f-fac-disbursed" type="number" data-money min="0" step="any"></label>
         <label>Originated <input id="pr-f-fac-orig" type="date"></label>
-        <label>Matures <input id="pr-f-fac-maturity" type="date"></label>
+        <label>Matures <input id="pr-f-fac-maturity" type="date" data-engine-path="facility.maturityDate"></label>
         <label>Repayment
           <select id="pr-f-fac-profile">
             <option value="equal-principal">Equal principal instalments</option>

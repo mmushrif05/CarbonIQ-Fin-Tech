@@ -121,3 +121,47 @@
   padding-top: 0;
   border-top: 0;
 }
+
+/* ── Where a section stands ──────────────────────────────────────────
+   A mark on the chip, never colour alone: each state also carries a shape
+   and its own words in the button's label. The hues are tokens defined for
+   both themes and read through var(), never chosen in the module. */
+:root {
+  --fs-answered: #0d7a52;
+  --fs-attention: #b3251d;
+  --fs-started: #7a7a80;
+  --fs-noted: #8a6d1f;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --fs-answered: #4ec08d;
+    --fs-attention: #ff6b5e;
+    --fs-started: #9a9aa0;
+    --fs-noted: #d9b24a;
+  }
+}
+:root[data-theme="dark"] {
+  --fs-answered: #4ec08d;
+  --fs-attention: #ff6b5e;
+  --fs-started: #9a9aa0;
+  --fs-noted: #d9b24a;
+}
+
+.fs-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  flex: 0 0 auto; width: 15px; height: 15px; margin-left: 2px;
+  border-radius: 50%; font-style: normal; font-size: 10px; font-weight: 700;
+  line-height: 1;
+}
+.fs-tab.is-answered  .fs-mark { background: var(--fs-answered);  color: #fff; }
+.fs-tab.is-attention .fs-mark { background: var(--fs-attention); color: #fff; }
+.fs-tab.is-started   .fs-mark { background: var(--fs-started);   color: #fff; }
+.fs-tab.is-noted     .fs-mark { background: var(--fs-noted);     color: #fff; }
+
+/* The chip itself takes a hint of the state, so a rail scanned quickly
+   reads before the marks are looked at individually. */
+.fs-tab.is-attention:not(.is-on) { border-color: var(--fs-attention); }
+.fs-tab.is-answered:not(.is-on)  { border-color: var(--fs-answered); }
+
+/* On the chip in hand the mark sits on the filled ground. */
+.fs-tab.is-on .fs-mark { background: rgba(255, 255, 255, .28); color: #fff; }

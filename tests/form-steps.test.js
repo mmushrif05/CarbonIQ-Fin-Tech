@@ -177,9 +177,21 @@ describe('the component keeps the house rules', () => {
   });
 
   test('no colour is chosen here that the screen does not own', () => {
-    const hard = String(CSS).match(/#[0-9a-fA-F]{3,6}/g) || [];
-    for (const hex of hard) {
-      expect(String(CSS)).toMatch(new RegExp(`var\\(--[a-z0-9-]+,\\s*${hex}`, 'i'));
+    /* A hex is allowed in exactly three places: defining a token of this
+       component's own (`--fs-answered: #…`), as the fallback of a var() that
+       reads one of the screen's (`var(--p-line, #…)`), and plain white or
+       black as ink on a coloured ground. Anything else is a colour picked in
+       a stylesheet that the screen's theme cannot reach. */
+    const text = String(CSS);
+    const allowed = new Set();
+    for (const m of text.matchAll(/--[a-z0-9-]+:\s*(#[0-9a-fA-F]{3,8})/g)) allowed.add(m.index);
+    for (const m of text.matchAll(/var\(--[a-z0-9-]+,\s*(#[0-9a-fA-F]{3,8})/g)) allowed.add(m.index);
+    const loose = [];
+    for (const m of text.matchAll(/#[0-9a-fA-F]{3,8}\b/g)) {
+      if ([...allowed].some(i => m.index >= i && m.index <= i + 40)) continue;
+      if (/^#(fff|ffffff|000|000000)$/i.test(m[0])) continue;
+      loose.push(`${m[0]} at ${m.index}`);
     }
+    expect(loose).toEqual([]);
   });
 });

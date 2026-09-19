@@ -1391,6 +1391,14 @@ const PartARegisterPage = (() => {
     const fr = x.factorRelease;
     const findings = (x.validation && x.validation.findings) || [];
     const material = findings.filter(f => f.severity === 'material');
+    /* The rail marks the sections holding a figure the engine took issue
+       with. Material findings only: an advisory one changes nothing the
+       reader would act on, and a mark that is always lit is a mark nobody
+       reads. The names are the engine's own — a control claims one with
+       `data-engine-path` — so nothing here decides which field is at fault. */
+    if (typeof FormSteps !== 'undefined') {
+      FormSteps.flag($('pr-form'), material.map(f => f.field).filter(Boolean));
+    }
     const basisWord = BASIS_WORD[(dq.scope1And2.option || '').slice(0, 1)] || '';
     const steps = (p.raise && p.raise.steps) || [];
     setHtml('pr-preview-body', `

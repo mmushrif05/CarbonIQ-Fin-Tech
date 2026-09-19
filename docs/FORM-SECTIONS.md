@@ -78,6 +78,55 @@ Give those cards an explicit `data-step-title`.
 
 ---
 
+## What the mark on a chip means
+
+Each chip can carry a mark. There are four states and every one of them is
+literally true — none is this module's opinion of your figures.
+
+| Mark | State | What it means |
+|---|---|---|
+| **✓** green | `answered` | Something was entered here and nothing the form insists on is blank |
+| **·** grey | `started` | Something was entered, but a required field here is still empty |
+| **i** amber | `noted` | The **engine** raised a material finding about a figure here. The record is valid; the report will say so |
+| **!** red | `attention` | The **browser** refuses a control here. Record will not go through until it is fixed |
+| *(none)* | — | Nothing entered yet, or this section holds no fields at all |
+
+Two of these come from outside and neither is guessed:
+
+- **attention** is the browser's own `validity.valid`. Note the module reads
+  `el.validity.valid` and never calls `el.checkValidity()` — the *method*
+  dispatches an `invalid` event, which this module listens for, which
+  re-draws the rail, which reads validity again. That recursion rendered the
+  rail to a stack overflow once.
+- **noted** is the engine's. A finding carries the name of the figure it is
+  about (`field: 'emissions.scope3'`), and a control claims a figure with
+  `data-engine-path`, so the two meet without anything inferring a link. The
+  page hands them over:
+
+  ```js
+  FormSteps.flag(form, material.map(f => f.field).filter(Boolean));
+  ```
+
+  A name no control claims marks nothing. The engine's answer is printed in
+  full beneath the form either way, so nothing is lost by not guessing.
+
+**Why an error and a note are not the same mark.** `SCOPE_3_NOT_REPORTED` is
+material and can never be cleared — a borrower that does not measure its
+scope 3 never will, the stated reason is the remedy's content rather than a
+way to remove it. Under one mark that section would sit lit as "needs
+attention" forever over something already done, and a mark that is always
+lit is a mark nobody reads. As a *note* the same permanence is correct: the
+report will always say so.
+
+**A form nobody has touched is not a form full of mistakes.** An empty
+required field only counts once someone has typed something or pressed the
+button.
+
+**"Answered" is not "every box filled".** Most of these fields are optional,
+and a section that can never be ticked is a tick nobody trusts.
+
+---
+
 ## Four rules the module keeps, and why
 
 These are here because each was a real defect during the build. Keep them in

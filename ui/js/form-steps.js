@@ -55,7 +55,8 @@
  * @typedef {{ title: string, heading: Element|null, group: Element, blocks: Element[] }} Section
  * @typedef {{ form: Element, head: Element, rail: Element, status: Element,
  *             back: HTMLButtonElement, next: HTMLButtonElement, nav: HTMLElement,
- *             index: number, sections: Section[], shown: Section[] }} State
+ *             index: number, sections: Section[], shown: Section[],
+ *             touched?: boolean, flagged?: Set<string> }} State
  */
 
 const FormSteps = (() => {
@@ -64,6 +65,14 @@ const FormSteps = (() => {
      sections are not introduced by one. */
   const HEADING = 'h5.partc-subhead, [data-step-title]';
   const OFF = 'fs-off';
+
+  /** What each state is called, so the mark is never colour alone. */
+  const STATE_WORDS = {
+    attention: 'needs attention',
+    noted: 'the report will note this',
+    answered: 'answered',
+    started: 'partly answered',
+  };
 
   /** Every registered form, so a page can refresh the one it just changed. */
   const live = new Map();
@@ -213,6 +222,86 @@ const FormSteps = (() => {
    * its heading behind in the walk, and counting that would keep an empty
    * section on the rail.
    */
+  /**
+   * Where a section stands, for the mark on its chip. Three states and a
+   * fourth that is deliberately nothing:
+   *
+   *   'attention'  a control here is invalid, or the engine objected to one
+   *   'answered'   every control here has been given a value
+   *   'started'    some have, some have not
+   *   null         this section holds no controls at all
+   *
+   * The last matters: the walkthrough's steps are prose, not fields, and a
+   * rail of "untouched" marks over them would be noise that means nothing.
+   * A section with nothing to fill in gets no mark.
+   *
+   * "Answered" is not "correct". It says the fields carry values; whether
+   * the engine accepts them is what 'attention' reports, and that only ever
+   * comes from the engine itself — this module never judges a figure.
+   */
+  /**
+   * Is this control one the engine objected to? A control says which figure
+   * it carries with `data-engine-path`, and the engine names the same figure
+   * on its finding, so the two meet without anything guessing. A path
+   * matches its own children as well — a finding about `denominator` marks
+   * the fields that make the denominator up.
+   */
+  function isFlagged(el, flagged) {
+    if (el.id && flagged.has(el.id)) return true;
+    const path = el.getAttribute('data-engine-path');
+    if (!path) return false;
+    for (const f of flagged) {
+      if (f === path || path.startsWith(`${f}.`) || f.startsWith(`${path}.`)) return true;
+    }
+    return false;
+  }
+
+  function sectionState(section, form, flagged, touched) {
+    let total = 0, filled = 0, bad = false, noted = false, outstanding = false;
+    for (const block of section.blocks) {
+      const controls = block.matches && block.matches('input, select, textarea')
+        ? [block] : block.querySelectorAll('input, select, textarea');
+      for (const el of controls) {
+        if (el.type === 'hidden' || el.disabled) continue;
+        if (!visible(el, form)) continue;
+        total += 1;
+        const has = el.type === 'checkbox' || el.type === 'radio'
+          ? el.checked : String(el.value || '').trim() !== '';
+        if (has) filled += 1;
+        else if (el.required) outstanding = true;
+        /* `el.validity.valid`, never `el.checkValidity()`: the method
+           DISPATCHES an `invalid` event on a failing control, and the
+           listener below catches that and opens the control's section,
+           which re-draws the rail, which reads validity again — the rail
+           rendered itself to a stack overflow. The property is a plain
+           read. */
+        if (el.willValidate && touched && !el.validity.valid) bad = true;
+        if (flagged && flagged.size && isFlagged(el, flagged)) noted = true;
+      }
+    }
+    if (!total) return null;
+    /* Two different things, and one mark for each, because one mark for both
+       would be a lie half the time. A control the browser refuses is an
+       error: Record will not go through until it is fixed. A figure the
+       engine raised a material finding about is a NOTE: the record is
+       perfectly valid and the report will say so — and some of those can
+       never be cleared. `SCOPE_3_NOT_REPORTED` is the plain case: a borrower
+       that does not measure its scope 3 never will, the reason is the remedy
+       and the finding stands anyway. Calling that "needs attention" would
+       leave a mark lit forever over something already done, and a mark that
+       is always lit is a mark nobody reads. */
+    if (bad) return 'attention';
+    if (noted) return 'noted';
+    if (!filled) return null;
+    /* "Answered" is not "every box filled" — most of these fields are
+       optional, and a section that can never be ticked is a tick nobody
+       trusts. It means: something was entered here, and nothing this form
+       insists on is still blank. A section nobody has reached carries no
+       mark at all, which is the same as a section with nothing to fill in
+       — in both cases there is nothing yet to say. */
+    return outstanding ? 'started' : 'answered';
+  }
+
   function populated(section, form) {
     /* A titled section belongs to the block of markup its heading was
        written in, and applies only where that block applies. A section runs
@@ -260,6 +349,14 @@ const FormSteps = (() => {
       b.tabIndex = i === state.index ? 0 : -1;
       if (i === state.index) b.classList.add('is-on');
       if (i < state.index) b.classList.add('is-done');
+      /* Where the section stands, as a class AND as words: the mark is a
+         shape and a colour, and the words go into the button's own label so
+         it is never colour alone that carries it. */
+      const where = sectionState(section, form, state.flagged, state.touched);
+      if (where) {
+        b.classList.add(`is-${where}`);
+        b.setAttribute('data-fs-state', where);
+      }
       /* Built rather than written as markup: the number and the title are a
          section's own words and go in as text, never as HTML. */
       const num = document.createElement('i');
@@ -269,6 +366,16 @@ const FormSteps = (() => {
       label.className = 'fs-tab-label';
       label.textContent = section.title;
       b.append(num, label);
+      if (where) {
+        const mark = document.createElement('i');
+        mark.className = 'fs-mark';
+        mark.setAttribute('aria-hidden', 'true');
+        mark.textContent = where === 'attention' ? '!'
+          : where === 'noted' ? 'i'
+            : where === 'answered' ? '\u2713' : '\u00b7';
+        b.appendChild(mark);
+        b.setAttribute('aria-label', `${section.title} — ${STATE_WORDS[where]}`);
+      }
       b.addEventListener('click', () => go(state, i));
       b.addEventListener('keydown', (e) => {
         const d = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
@@ -391,14 +498,55 @@ const FormSteps = (() => {
       const submit = target.closest('[type="submit"]');
       if (!submit || !form.contains(submit)) return;
       if (form.noValidate || form.checkValidity === undefined) return;
+      state.touched = true;
       let bad = null;
       for (const el of form.querySelectorAll('input, select, textarea')) {
-        if (el.willValidate && !el.checkValidity()) { bad = el; break; }
+        if (el.willValidate && !el.validity.valid) { bad = el; break; }
       }
       if (bad) reveal(bad);
     }, true);
     form.addEventListener('invalid', (e) => { reveal(e.target); }, true);
+
+    /* The marks follow what is typed. One listener on the form rather than
+       one per control, so a form that renders new fields later is covered
+       without re-wiring; and the re-draw waits for the browser to go quiet
+       so holding a key down does not redraw the rail on every character. */
+    let pending = null;
+    const restate = () => {
+      /* A form nobody has touched is not a form full of mistakes: an empty
+         required field is only a mistake once someone has begun, or has
+         pressed the button. Before that the rail says nothing about it. */
+      state.touched = true;
+      if (pending) clearTimeout(pending);
+      pending = setTimeout(() => { pending = null; render(state); }, 120);
+    };
+    form.addEventListener('input', restate);
+    form.addEventListener('change', restate);
+
     state.sections = sectionsOf(form);
+    render(state);
+  }
+
+  /**
+   * The fields the engine objected to, by their element id. Their sections
+   * are marked as needing attention until the next call.
+   *
+   * This module never decides that a figure is wrong — it cannot, and a
+   * browser that judged a number would be a second engine. It is told, by
+   * the page that asked the engine:
+   *
+   *   FormSteps.flag(form, ['outstanding.amount', 'denominator'])
+   *   FormSteps.flag(form, [])        // the engine is content
+   *
+   * The names are the engine's own — whatever it put on the finding's
+   * `field` — and a control claims one with `data-engine-path`. A name no
+   * control claims marks nothing; it is still shown on the form, where the
+   * engine's answer is printed in full. Nothing is attributed by guesswork.
+   */
+  function flag(form, fieldIds) {
+    const state = live.get(form);
+    if (!state) return;
+    state.flagged = new Set(fieldIds || []);
     render(state);
   }
 
@@ -495,7 +643,7 @@ const FormSteps = (() => {
     if (state) go(state, index);
   }
 
-  return { init, attach, refresh, reset, reveal, open };
+  return { init, attach, refresh, reset, reveal, open, flag };
 })();
 
 if (typeof window !== 'undefined') /** @type {any} */ (window).FormSteps = FormSteps;
