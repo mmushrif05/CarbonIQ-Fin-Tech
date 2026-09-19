@@ -159,6 +159,26 @@ describe('The page computes nothing and says what a presenter needs', () => {
     for (const src of [JS, HTML]) mustNot(src, /certified by PCAF|PCAF (approved|endorsed|certified)/i, 'no endorsement language', 'always PCAF-conformant');
   });
 
+  test('presenter mode: the walkthrough takes the whole screen, and the rail sits at the top in the page’s flow', () => {
+    /* The rail shipped floating over the foot of the viewport, and a bar
+       that floats over a screen hides the part of it the reader is being
+       shown. It is a sticky header in the page's own flow now, and the
+       shell's chrome leaves while a walkthrough is on. */
+    must(CSS, /\.wt-strip \{[^}]*position: sticky; top: 0;/, 'the rail is a sticky header at the top of the page');
+    mustNot(CSS, /\.wt-strip \{[^}]*position: fixed/, 'the rail never floats over the page', 'position: sticky; top: 0');
+    mustNot(CSS, /\.wt-strip \{[^}]*\sbottom:/, 'the rail is never docked at the foot of the viewport');
+    must(CSS, /body\.wt-presenting \.sidebar \{ display: none !important; \}/, 'the sidebar leaves while a walkthrough is on');
+    must(CSS, /body\.wt-presenting \.topbar, body\.wt-presenting \.mobile-navbar \{ display: none !important; \}/, 'the topbar and the phone’s navbar leave too');
+    must(CSS, /body\.wt-presenting \.main \{ margin-left: 0; padding-top: 0; \}/, 'the page takes the whole width');
+    must(CSS, /body\.wt-presenting\.wt-menu-open \.sidebar \{ display: flex !important;/, 'Menu brings the sidebar back over the page');
+    must(JS, /document\.body\.classList\.toggle\('wt-presenting', presenting\)/, 'presenter mode follows the walkthrough’s own state, so a reload keeps it');
+    must(JS, /function start\(trackKey, i\) \{\s*go\(trackKey, i, true\);\s*enterFull\(\);/, 'Start asks for the browser’s full screen on the press that begins a walkthrough');
+    must(JS, /exitFull\(\);\s*renderStrip\(\);/, 'End leaves full screen');
+    must(JS, /document\.addEventListener\('fullscreenchange', syncFull\)/, 'the rail’s Full screen control follows the browser, not a flag of its own');
+    must(JS, /document\.addEventListener\('carboniq:page', \(\) => \{ setMenu\(false\); renderStrip\(\); \}\)/, 'opening a screen closes the menu');
+    for (const id of ['wt-strip-menu', 'wt-strip-full']) must(INDEX, `id="${id}"`, `the rail carries #${id}`);
+  });
+
   test('the four mechanical rules hold', () => {
     must(CSS, /\.walkthrough \[hidden\], \.wt-strip\[hidden\] \{ display: none !important; \}/, 'hidden beats any display this sheet sets');
     must(CSS, /\.wt-strip \{[^}]*min-width: 0/, 'the strip may shrink');
@@ -206,7 +226,7 @@ describe('The GCF track — one candidate, from the door to the Fund', () => {
        leave the GCF page reading End with no way to start its own. */
     must(JS, /const mine = s \? s\.track === key : false;\s*\n\s*show\(id\('start'\), !mine\); show\(id\('end'\), mine\);/,
       'Start is offered unless this page’s own track is on, and starting replaces whatever was on');
-    must(JS, /on\(id\('start'\), 'click', \(\) => go\(key, 0, true\)\);/, 'Start begins this page’s own track');
+    must(JS, /on\(id\('start'\), 'click', \(\) => start\(key, 0\)\);/, 'Start begins this page’s own track');
     must(JS, /const financed = pageFor\('financed', 'wt'\);/, 'as the bank’s page is to its own');
   });
 

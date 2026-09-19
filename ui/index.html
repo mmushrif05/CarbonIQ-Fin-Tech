@@ -516,10 +516,13 @@
       <div class="topbar-right"></div>
     </header>
 
-    <!-- The walkthrough strip: on every page while a walkthrough is on, the
-         step, what to do and what to say. Hidden until one is started. -->
+    <!-- The walkthrough rail: at the top of every page while a walkthrough is
+         on, in the page's own flow, with the step, what to do and what to
+         say. The shell's own chrome leaves while it is on (body.wt-presenting);
+         Menu brings the sidebar back over the page. Hidden until one is started. -->
     <div class="wt-strip" id="wt-strip" role="status" hidden>
       <div class="wt-strip-main">
+        <button type="button" class="wt-strip-menu" id="wt-strip-menu" aria-expanded="false" aria-controls="sidebar">Menu</button>
         <span class="wt-strip-kicker">Walkthrough</span>
         <span class="wt-strip-n" id="wt-strip-n"></span>
         <span class="wt-strip-dots" id="wt-strip-dots" aria-hidden="true"></span>
@@ -531,6 +534,7 @@
           <button type="button" id="wt-strip-open">Open this screen</button>
           <button type="button" id="wt-strip-next">Next</button>
           <button type="button" id="wt-strip-min" aria-expanded="true" aria-controls="wt-strip-detail">Hide</button>
+          <button type="button" id="wt-strip-full" aria-pressed="false">Full screen</button>
           <button type="button" id="wt-strip-end">End</button>
         </div>
       </div>

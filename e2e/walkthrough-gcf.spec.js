@@ -79,6 +79,8 @@ test('the GCF track follows one candidate from the door to the Fund across the r
   await expect(page.locator('#page-gcf-overview')).toBeVisible();
   await expect(page.locator('#wt-strip')).toBeVisible();
   await expect(page.locator('#wt-strip-n')).toHaveText('Step 1 of 10');
+  await expect(page.locator('#sidebar')).toBeHidden();
+  expect((await page.locator('#wt-strip').boundingBox()).y).toBe(0);
   await expect(page.locator('#go-ask')).not.toHaveText('—');
   const signedBefore = await page.locator('#go-signed').textContent();
 
@@ -187,8 +189,13 @@ test('a bank walkthrough left running never captures the page, and the candidate
      here begins the GCF track in its place. */
   await page.evaluate(() => localStorage.setItem('carboniq.walkthrough', JSON.stringify({ track: 'financed', step: 2, open: true })));
   await page.reload();
-  await page.locator('#sidebar').waitFor({ timeout: 15000 });
+  await page.locator('#wt-strip').waitFor({ timeout: 15000 });
+  /* The bank's walkthrough is on, so the shell is in presenter mode: the
+     sidebar is reached through the rail's Menu. */
+  await expect(page.locator('#sidebar')).toBeHidden();
+  await page.locator('#wt-strip-menu').click();
   await page.locator('.nav-item[data-page="gcf-walkthrough"]').click();
+  await expect(page.locator('#sidebar')).toBeHidden();
   await expect(page.locator('#gwt-steps .wt-step')).toHaveCount(10);
   await expect(page.locator('#wt-strip')).toBeVisible();
   await expect(page.locator('#wt-strip-n')).toHaveText('Step 3 of 7');

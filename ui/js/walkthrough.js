@@ -243,19 +243,71 @@ const WalkthroughPage = (() => {
     else nav(step.page);
   }
 
+  /* Starting is the one press a page may take the browser's full screen
+     on, so the screen is the whole screen from the first step; leaving
+     full screen does not end the walkthrough, and the rail offers it
+     again. A browser that refuses is left as it is. */
+  function start(trackKey, i) {
+    go(trackKey, i, true);
+    enterFull();
+  }
+
   function end() {
     forget(STATE_KEY); forget(BANK_INTENT); forget(REGISTER_INTENT); forget(GCF_OVERVIEW_INTENT); forget(GCF_INTENT);
+    exitFull();
     renderStrip();
+  }
+
+  // ── presenter mode: the whole screen, and the browser's full screen ──
+
+  const fullOn = () => Boolean(document.fullscreenElement);
+  function enterFull() {
+    const el = document.documentElement;
+    if (fullOn() || typeof el.requestFullscreen !== 'function') return;
+    try { const p = el.requestFullscreen(); if (p && typeof p.catch === 'function') p.catch(() => {}); } catch (_) { /* refused */ }
+  }
+  function exitFull() {
+    if (!fullOn() || typeof document.exitFullscreen !== 'function') return;
+    try { const p = document.exitFullscreen(); if (p && typeof p.catch === 'function') p.catch(() => {}); } catch (_) { /* nothing to leave */ }
+  }
+  function syncFull() {
+    const b = $('wt-strip-full');
+    if (!b) return;
+    b.textContent = fullOn() ? 'Exit full screen' : 'Full screen';
+    b.setAttribute('aria-pressed', String(fullOn()));
+  }
+
+  /* While a walkthrough is on the shell's chrome leaves and the page takes
+     the whole width; Menu brings the sidebar back over the page until the
+     next screen opens. Both are classes on the body, read by the sheet. */
+  function setMenu(open) {
+    const strip = $('wt-strip');
+    if (open && strip) document.body.style.setProperty('--wt-rail-h', `${strip.offsetHeight}px`);
+    document.body.classList.toggle('wt-menu-open', open);
+    const b = $('wt-strip-menu');
+    if (b) b.setAttribute('aria-expanded', String(open));
+  }
+  const menuOpen = () => document.body.classList.contains('wt-menu-open');
+  const toggleMenu = () => setMenu(!menuOpen());
+  /* A press anywhere but the sidebar or the rail closes the menu. */
+  function closeMenuOutside(ev) {
+    if (!menuOpen()) return;
+    const t = ev.target;
+    if (t && t.closest && (t.closest('#sidebar') || t.closest('#wt-strip'))) return;
+    setMenu(false);
   }
 
   function renderStrip() {
     const strip = $('wt-strip');
     if (!strip) return;
     const s = state();
-    if (!s || !stepsOf(s)[s.step]) { strip.hidden = true; syncPages(); return; }
+    const presenting = Boolean(s && stepsOf(s)[s.step]);
+    document.body.classList.toggle('wt-presenting', presenting);
+    if (!presenting) { strip.hidden = true; setMenu(false); syncPages(); return; }
     const list = stepsOf(s);
     const step = list[s.step];
     strip.hidden = false;
+    syncFull();
     say('wt-strip-n', `Step ${s.step + 1} of ${list.length}`);
     setHtml('wt-strip-dots', list.map((_, i) => `<i class="${i < s.step ? 'is-done' : i === s.step ? 'is-on' : ''}"></i>`).join(''));
     say('wt-strip-title', step.title);
@@ -271,7 +323,7 @@ const WalkthroughPage = (() => {
     const here = onPage(step.page);
     const open = here && s.open;
     strip.classList.toggle('is-open', open);
-    say('wt-strip-where', here ? '' : `on ${SCREEN[step.page] || step.page}`);
+    say('wt-strip-where', here ? (SCREEN[step.page] || '') : `on ${SCREEN[step.page] || step.page}`);
     const min = $('wt-strip-min');
     if (min) { min.hidden = !here; min.textContent = s.open ? 'Hide' : 'Show'; min.setAttribute('aria-expanded', String(open)); }
     syncPages();
@@ -291,6 +343,10 @@ const WalkthroughPage = (() => {
     on('wt-strip-end', 'click', end);
     on('wt-strip-notes', 'change', renderStrip);
     on('wt-strip-min', 'click', toggleOpen);
+    on('wt-strip-menu', 'click', toggleMenu);
+    on('wt-strip-full', 'click', () => { if (fullOn()) exitFull(); else enterFull(); });
+    document.addEventListener('fullscreenchange', syncFull);
+    document.addEventListener('click', closeMenuOutside);
   }
 
   let stripWired = false;
@@ -316,7 +372,7 @@ const WalkthroughPage = (() => {
     wireStrip();
     /* The strip follows the page the shell shows: open on the step's own
        screen, one line everywhere else. The shell announces each page. */
-    document.addEventListener('carboniq:page', renderStrip);
+    document.addEventListener('carboniq:page', () => { setMenu(false); renderStrip(); });
     renderStrip();
   }
 
@@ -499,11 +555,11 @@ const WalkthroughPage = (() => {
       pages.add(page);
       on(id('refresh'), 'click', load);
       on(id('year'), 'change', load);
-      on(id('start'), 'click', () => go(key, 0, true));
+      on(id('start'), 'click', () => start(key, 0));
       on(id('end'), 'click', end);
       on(id('steps'), 'click', ev => {
         const b = ev.target && ev.target.closest ? ev.target.closest('.wt-go') : null;
-        if (b) go(key, Number(b.getAttribute('data-step')), true);
+        if (b) start(key, Number(b.getAttribute('data-step')));
       });
       on(id('readiness-rows'), 'click', async ev => {
         const b = ev.target && ev.target.closest ? ev.target.closest('.wt-open') : null;
