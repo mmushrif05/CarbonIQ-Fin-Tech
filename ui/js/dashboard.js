@@ -1646,7 +1646,7 @@ const Dashboard = (() => {
     const stepLabels = [
       'Scoring assets with Carbon Finance Score engine...',
       'Checking taxonomy alignment across EU, ASEAN, HK, SG...',
-      'Calculating PCAF v3 financed emissions attribution...',
+      'Calculating each project\u2019s attribution to the bank\u2019s share...',
       'Analyzing concentration and transition risk...',
       'Mapping TCFD disclosures and regulatory requirements...',
     ];
@@ -1724,7 +1724,7 @@ const Dashboard = (() => {
       <table>
         <tr><th>Metric</th><th>Value</th><th>Status</th></tr>
         <tr><td>Total Loan Outstanding</td><td>${_fmt(d.totalOutstanding || 0)}</td><td>${d.totalProjects} active loans</td></tr>
-        <tr><td>Total Financed Emissions</td><td>${_fmtN(d.totalFinancedEmissions_tCO2e)} tCO2e</td><td>PCAF v3 methodology</td></tr>
+        <tr><td>Total Financed Emissions</td><td>${_fmtN(d.totalFinancedEmissions_tCO2e)} tCO2e</td><td>A1–A3 attributed to the bank’s share</td></tr>
         <tr><td>Economic Intensity</td><td>${intensityVal} tCO2e/$M</td><td>${parseFloat(intensityVal) < 40 ? 'Below sector avg' : 'Above sector avg'}</td></tr>
         <tr><td>Green Loan Ratio</td><td>${greenPct}%</td><td>${greenPct >= 40 ? 'On target' : 'Below 40% target'}</td></tr>
         <tr><td>Weighted Data Quality</td><td>${_dqText(d.weightedDQ, 2)}</td><td>PCAF scale 1–5, 1 = highest quality</td></tr>
